@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Agent } from '@/types/agent';
 import { Button } from '@/components/ui/button';
 import {
@@ -5,8 +6,9 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { Users, Check } from 'lucide-react';
+import { Users, Check, Search } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 
 interface AgentSelectorProps {
   agents: Agent[];
@@ -19,6 +21,14 @@ export const AgentSelector = ({
   selectedAgents,
   onAgentsChange,
 }: AgentSelectorProps) => {
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredAgents = agents.filter(
+    (agent) =>
+      agent.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      agent.description.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   const toggleAgent = (agent: Agent) => {
     const isSelected = selectedAgents.some((a) => a.id === agent.id);
     if (isSelected) {
@@ -44,10 +54,27 @@ export const AgentSelector = ({
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-80 p-3 glass" align="start">
-        <div className="space-y-1">
-          <h4 className="font-medium text-sm mb-2">Select Agents</h4>
-          {agents.map((agent, index) => {
+      <PopoverContent className="w-96 p-4 glass" align="start">
+        <div className="space-y-3">
+          <div className="space-y-2">
+            <h4 className="font-medium text-sm">Select Agents</h4>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search agents..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 h-9"
+              />
+            </div>
+          </div>
+          <div className="space-y-1 max-h-[300px] overflow-y-auto">
+            {filteredAgents.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                No agents found
+              </p>
+            ) : (
+              filteredAgents.map((agent, index) => {
             const isSelected = selectedAgents.some((a) => a.id === agent.id);
             return (
               <button
@@ -69,8 +96,10 @@ export const AgentSelector = ({
                   <Check className="w-4 h-4 text-primary shrink-0" />
                 )}
               </button>
-            );
-          })}
+              );
+            })
+            )}
+          </div>
         </div>
       </PopoverContent>
     </Popover>

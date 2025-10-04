@@ -57,19 +57,10 @@ export const ChatInterface = ({ agents }: ChatInterfaceProps) => {
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full max-w-4xl mx-auto w-full">
       <MessageList messages={messages} />
       
-      <div className="sticky bottom-0 border-t bg-background/80 backdrop-blur-xl p-4 space-y-4">
-        <div className="flex items-center gap-3">
-          <ExecutionModeToggle mode={executionMode} onModeChange={setExecutionMode} />
-          <AgentSelector
-            agents={agents}
-            selectedAgents={selectedAgents}
-            onAgentsChange={setSelectedAgents}
-          />
-        </div>
-
+      <div className="sticky bottom-0 bg-background p-6 space-y-4">
         <div className="flex gap-3 items-end">
           <Textarea
             value={input}
@@ -80,18 +71,27 @@ export const ChatInterface = ({ agents }: ChatInterfaceProps) => {
                 handleSubmit();
               }
             }}
-            placeholder="Ask something..."
-            className="min-h-[60px] max-h-[200px] resize-none bg-card/50 border-border/50 focus:border-primary transition-smooth"
+            placeholder="Message AgentFlow..."
+            className="min-h-[56px] max-h-[200px] resize-none rounded-3xl bg-muted/50 border-border/50 focus:border-primary transition-smooth px-5 py-4"
             disabled={isLoading}
           />
           <Button
             onClick={handleSubmit}
             disabled={!input.trim() || selectedAgents.length === 0 || isLoading}
             size="icon"
-            className="h-[60px] w-[60px] rounded-xl shadow-medium hover:shadow-glow transition-smooth"
+            className="h-[56px] w-[56px] rounded-full shadow-medium hover:shadow-glow transition-smooth shrink-0"
           >
             <Send className="h-5 w-5" />
           </Button>
+        </div>
+
+        <div className="flex items-center justify-center gap-3 flex-wrap">
+          <AgentSelector
+            agents={agents}
+            selectedAgents={selectedAgents}
+            onAgentsChange={setSelectedAgents}
+          />
+          <ExecutionModeToggle mode={executionMode} onModeChange={setExecutionMode} />
         </div>
       </div>
     </div>

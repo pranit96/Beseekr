@@ -7,7 +7,7 @@ const Chat = () => {
   const [agents] = useState<Agent[]>(defaultAgents);
 
   return (
-    <div className="h-screen flex flex-col bg-gradient-to-br from-background to-muted/20">
+    <div className="h-full flex flex-col">
       <ChatInterface agents={agents} />
     </div>
   );

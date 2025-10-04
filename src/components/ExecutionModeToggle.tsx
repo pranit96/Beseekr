@@ -12,12 +12,12 @@ export const ExecutionModeToggle = ({
   onModeChange,
 }: ExecutionModeToggleProps) => {
   return (
-    <div className="flex gap-1 p-1 glass rounded-lg">
+    <div className="flex gap-1 p-1 glass rounded-full">
       <Button
         variant={mode === 'sequential' ? 'default' : 'ghost'}
         size="sm"
         onClick={() => onModeChange('sequential')}
-        className="gap-2 transition-smooth"
+        className="gap-2 transition-smooth rounded-full"
       >
         <ArrowRight className="w-4 h-4" />
         <span className="hidden sm:inline">Sequential</span>
@@ -26,7 +26,7 @@ export const ExecutionModeToggle = ({
         variant={mode === 'parallel' ? 'default' : 'ghost'}
         size="sm"
         onClick={() => onModeChange('parallel')}
-        className="gap-2 transition-smooth"
+        className="gap-2 transition-smooth rounded-full"
       >
         <Grid2X2 className="w-4 h-4" />
         <span className="hidden sm:inline">Parallel</span>
