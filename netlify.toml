@@ -1,3 +1,7 @@
+[build]
+  command = "npm ci && npm run build"
+  publish = "dist"
+
 [build.environment]
   NODE_ENV = "production"
   SECRETS_SCAN_OMIT_KEYS = "VITE_API_BASE_URL"
