@@ -26,14 +26,20 @@ export const AgentDialog = ({
 }: AgentDialogProps) => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [domain, setDomain] = useState('');
+  const [systemPrompt, setSystemPrompt] = useState('');
 
   useEffect(() => {
     if (agent) {
       setName(agent.name);
       setDescription(agent.description);
+      setDomain(agent.domain || '');
+      setSystemPrompt(agent.system_prompt || '');
     } else {
       setName('');
       setDescription('');
+      setDomain('');
+      setSystemPrompt('');
     }
   }, [agent]);
 
@@ -43,6 +49,8 @@ export const AgentDialog = ({
       id: agent?.id || `agent-custom-${Date.now()}`,
       name,
       description,
+      domain,
+      system_prompt: systemPrompt,
       color: agent?.color || 'hsl(var(--primary))',
       isCustom: true,
     });
@@ -50,13 +58,15 @@ export const AgentDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md glass">
+      <DialogContent className="sm:max-w-2xl glass max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{agent ? 'Edit Agent' : 'Create New Agent'}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Agent Name</Label>
+            <Label htmlFor="name">
+              Agent Name <span className="text-destructive">*</span>
+            </Label>
             <Input
               id="name"
               value={name}
@@ -65,16 +75,48 @@ export const AgentDialog = ({
               required
             />
           </div>
+
           <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
+            <Label htmlFor="domain">Domain</Label>
+            <Input
+              id="domain"
+              value={domain}
+              onChange={(e) => setDomain(e.target.value)}
+              placeholder="e.g., legal, medical, technical, marketing"
+            />
+            <p className="text-xs text-muted-foreground">
+              Specify the area of expertise for this agent
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="description">
+              Description <span className="text-destructive">*</span>
+            </Label>
             <Textarea
               id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Describe what this agent does..."
+              rows={3}
               required
             />
           </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="system_prompt">System Prompt</Label>
+            <Textarea
+              id="system_prompt"
+              value={systemPrompt}
+              onChange={(e) => setSystemPrompt(e.target.value)}
+              placeholder="Define the agent's behavior, expertise, and how it should respond to users..."
+              rows={6}
+            />
+            <p className="text-xs text-muted-foreground">
+              This prompt defines how the agent will behave and respond to queries
+            </p>
+          </div>
+
           <div className="flex gap-2 pt-4">
             <Button
               type="button"
@@ -85,7 +127,7 @@ export const AgentDialog = ({
               Cancel
             </Button>
             <Button type="submit" className="flex-1">
-              {agent ? 'Update' : 'Create'}
+              {agent ? 'Update Agent' : 'Create Agent'}
             </Button>
           </div>
         </form>
