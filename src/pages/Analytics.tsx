@@ -1,93 +1,133 @@
+import { useEffect, useState } from 'react';
 import { Card } from '@/components/ui/card';
-import { BarChart3, TrendingUp, Users, MessageSquare } from 'lucide-react';
+import { apiClient } from '@/lib/api';
+import { useToast } from '@/hooks/use-toast';
+import { Activity, MessageSquare, Zap, DollarSign } from 'lucide-react';
 
 const Analytics = () => {
-  const stats = [
+  const [stats, setStats] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    fetchStats();
+  }, []);
+
+  const fetchStats = async () => {
+    try {
+      const end = new Date().toISOString().split('T')[0];
+      const start = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      
+      const response = await apiClient.getUsageStats(start, end);
+      if (response.success && response.data) {
+        setStats(response.data);
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Failed to load analytics',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="h-full flex items-center justify-center">
+        <div className="animate-pulse text-muted-foreground">Loading analytics...</div>
+      </div>
+    );
+  }
+
+  const statCards = [
     {
-      label: 'Total Messages',
-      value: '1,247',
-      change: '+12.3%',
+      title: 'Total Requests',
+      value: stats?.totalRequests || 0,
+      icon: Activity,
+      color: 'hsl(var(--agent-1))',
+    },
+    {
+      title: 'Messages Sent',
+      value: stats?.actionBreakdown?.message_sent?.count || 0,
       icon: MessageSquare,
+      color: 'hsl(var(--agent-2))',
     },
     {
-      label: 'Active Agents',
-      value: '8',
-      change: '+2',
-      icon: Users,
+      title: 'Orchestrations',
+      value: stats?.actionBreakdown?.orchestration_executed?.count || 0,
+      icon: Zap,
+      color: 'hsl(var(--agent-3))',
     },
     {
-      label: 'Success Rate',
-      value: '94.2%',
-      change: '+2.1%',
-      icon: TrendingUp,
-    },
-    {
-      label: 'Avg Response Time',
-      value: '1.4s',
-      change: '-0.3s',
-      icon: BarChart3,
+      title: 'Total Cost',
+      value: `$${(stats?.totalCost || 0).toFixed(4)}`,
+      icon: DollarSign,
+      color: 'hsl(var(--agent-4))',
     },
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-muted/20 p-8">
-      <div className="max-w-6xl mx-auto space-y-8">
-        <div>
-          <h1 className="text-3xl font-bold">Analytics Dashboard</h1>
-          <p className="text-muted-foreground mt-1">
-            Monitor your agent performance and usage
-          </p>
-        </div>
+    <div className="container mx-auto p-8 max-w-7xl">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+          Analytics
+        </h1>
+        <p className="text-muted-foreground mt-2">
+          Track your usage and performance over the last 30 days
+        </p>
+      </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {stats.map((stat, index) => (
-            <Card
-              key={stat.label}
-              className="p-6 glass shadow-soft hover:shadow-medium transition-smooth"
-              style={{ animationDelay: `${index * 0.1}s` }}
-            >
-              <div className="flex items-center justify-between mb-4">
-                <div
-                  className="w-10 h-10 rounded-lg flex items-center justify-center"
-                  style={{
-                    backgroundColor: `hsl(var(--agent-${(index % 5) + 1}) / 0.15)`,
-                  }}
-                >
-                  <stat.icon
-                    className="w-5 h-5"
-                    style={{ color: `hsl(var(--agent-${(index % 5) + 1}))` }}
-                  />
-                </div>
-                <span
-                  className={`text-sm font-medium ${
-                    stat.change.startsWith('+')
-                      ? 'text-green-600'
-                      : 'text-red-600'
-                  }`}
-                >
-                  {stat.change}
-                </span>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {statCards.map((stat, index) => (
+          <Card
+            key={index}
+            className="p-6 glass hover:shadow-glow transition-smooth"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center"
+                style={{ backgroundColor: `${stat.color}20` }}
+              >
+                <stat.icon className="w-5 h-5" style={{ color: stat.color }} />
               </div>
-              <div>
-                <div className="text-2xl font-bold">{stat.value}</div>
-                <div className="text-sm text-muted-foreground mt-1">
-                  {stat.label}
-                </div>
-              </div>
-            </Card>
-          ))}
-        </div>
-
-        <Card className="p-8 glass shadow-soft">
-          <h2 className="text-xl font-semibold mb-4">Usage Overview</h2>
-          <div className="h-64 flex items-center justify-center text-muted-foreground">
-            <div className="text-center">
-              <BarChart3 className="w-12 h-12 mx-auto mb-2 opacity-50" />
-              <p>Chart visualization coming soon</p>
             </div>
+            <div className="text-2xl font-bold mb-1">{stat.value}</div>
+            <div className="text-sm text-muted-foreground">{stat.title}</div>
+          </Card>
+        ))}
+      </div>
+
+      {stats?.actionBreakdown && (
+        <Card className="p-6 glass">
+          <h2 className="text-xl font-semibold mb-4">Usage Breakdown</h2>
+          <div className="space-y-4">
+            {Object.entries(stats.actionBreakdown).map(([key, value]: [string, any]) => (
+              <div key={key} className="flex items-center justify-between py-3 border-b border-border/50 last:border-0">
+                <div>
+                  <div className="font-medium capitalize">{key.replace(/_/g, ' ')}</div>
+                  <div className="text-sm text-muted-foreground">
+                    {value.tokens.toLocaleString()} tokens
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="font-semibold">{value.count} requests</div>
+                  <div className="text-sm text-muted-foreground">
+                    ${value.cost.toFixed(4)}
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </Card>
-      </div>
+      )}
+
+      {!stats?.totalRequests && (
+        <div className="text-center py-16">
+          <p className="text-muted-foreground">No usage data available yet. Start using agents to see analytics!</p>
+        </div>
+      )}
     </div>
   );
 };

@@ -4,22 +4,39 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [signupName, setSignupName] = useState('');
+  const [signupEmail, setSignupEmail] = useState('');
+  const [signupPassword, setSignupPassword] = useState('');
+  const { login, signup } = useAuth();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    // Placeholder for auth logic
-    setTimeout(() => setIsLoading(false), 1000);
+    try {
+      await login(loginEmail, loginPassword);
+    } catch (error) {
+      // Error handled in context
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    // Placeholder for auth logic
-    setTimeout(() => setIsLoading(false), 1000);
+    try {
+      await signup(signupEmail, signupPassword, signupName);
+    } catch (error) {
+      // Error handled in context
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -63,6 +80,8 @@ const Auth = () => {
                   placeholder="you@example.com"
                   required
                   className="h-11"
+                  value={loginEmail}
+                  onChange={(e) => setLoginEmail(e.target.value)}
                 />
               </div>
               <div className="space-y-2">
@@ -73,6 +92,8 @@ const Auth = () => {
                   placeholder="••••••••"
                   required
                   className="h-11"
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
                 />
               </div>
               <Button
@@ -98,6 +119,8 @@ const Auth = () => {
                   placeholder="John Doe"
                   required
                   className="h-11"
+                  value={signupName}
+                  onChange={(e) => setSignupName(e.target.value)}
                 />
               </div>
               <div className="space-y-2">
@@ -108,6 +131,8 @@ const Auth = () => {
                   placeholder="you@example.com"
                   required
                   className="h-11"
+                  value={signupEmail}
+                  onChange={(e) => setSignupEmail(e.target.value)}
                 />
               </div>
               <div className="space-y-2">
@@ -118,6 +143,8 @@ const Auth = () => {
                   placeholder="••••••••"
                   required
                   className="h-11"
+                  value={signupPassword}
+                  onChange={(e) => setSignupPassword(e.target.value)}
                 />
               </div>
               <Button

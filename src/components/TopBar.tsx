@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Moon, Sun, User, LogOut, Download, Trash2 } from 'lucide-react';
+import { Moon, Sun, User, LogOut, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -9,6 +9,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useTheme } from '@/hooks/use-theme';
+import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 
 const navigation = [
@@ -20,6 +21,7 @@ const navigation = [
 export const TopBar = () => {
   const location = useLocation();
   const { theme, setTheme } = useTheme();
+  const { user, logout } = useAuth();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-xl">
@@ -74,27 +76,21 @@ export const TopBar = () => {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
-              <div className="px-2 py-2">
-                <p className="text-sm font-medium">John Doe</p>
-                <p className="text-xs text-muted-foreground">john@example.com</p>
-              </div>
+              {user && (
+                <div className="px-2 py-2">
+                  <p className="text-sm font-medium">{user.full_name || 'User'}</p>
+                  <p className="text-xs text-muted-foreground">{user.email}</p>
+                </div>
+              )}
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <Link to="/profile" className="flex items-center w-full">
-                  <User className="mr-2 h-4 w-4" />
-                  Profile
+              <DropdownMenuItem asChild>
+                <Link to="/profile" className="flex items-center w-full cursor-pointer">
+                  <Settings className="mr-2 h-4 w-4" />
+                  Profile Settings
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Download className="mr-2 h-4 w-4" />
-                Export Data
-              </DropdownMenuItem>
-              <DropdownMenuItem className="text-destructive focus:text-destructive">
-                <Trash2 className="mr-2 h-4 w-4" />
-                Delete All Data
-              </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={logout} className="cursor-pointer">
                 <LogOut className="mr-2 h-4 w-4" />
                 Logout
               </DropdownMenuItem>

@@ -1,32 +1,105 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Plus, Edit, Trash2 } from 'lucide-react';
-import { defaultAgents } from '@/lib/mockAgents';
-import { Agent } from '@/types/agent';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { AgentDialog } from '@/components/AgentDialog';
+import { Agent } from '@/types/agent';
+import { apiClient } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const Agents = () => {
-  const [agents, setAgents] = useState<Agent[]>(defaultAgents);
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
+  const [editingAgent, setEditingAgent] = useState<Agent | undefined>();
+  const [deleteAgentId, setDeleteAgentId] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const handleSaveAgent = (agent: Agent) => {
-    if (editingAgent) {
-      setAgents(agents.map((a) => (a.id === agent.id ? agent : a)));
-      toast({ title: 'Agent updated successfully' });
-    } else {
-      setAgents([...agents, { ...agent, isCustom: true }]);
-      toast({ title: 'Agent created successfully' });
+  useEffect(() => {
+    fetchAgents();
+  }, []);
+
+  const fetchAgents = async () => {
+    try {
+      const response = await apiClient.getMyAgents();
+      if (response.success && response.data) {
+        setAgents(response.data);
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Failed to load agents',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
     }
-    setIsDialogOpen(false);
-    setEditingAgent(null);
   };
 
-  const handleDeleteAgent = (agentId: string) => {
-    setAgents(agents.filter((a) => a.id !== agentId));
-    toast({ title: 'Agent deleted' });
+  const handleSaveAgent = async (agent: Agent) => {
+    try {
+      if (agent.id && editingAgent) {
+        const response = await apiClient.updateAgent(agent.id, agent);
+        if (response.success) {
+          setAgents(agents.map((a) => (a.id === agent.id ? agent : a)));
+          toast({
+            title: 'Agent updated',
+            description: `${agent.name} has been updated successfully.`,
+          });
+        }
+      } else {
+        const response = await apiClient.createAgent(agent);
+        if (response.success && response.data) {
+          setAgents([...agents, response.data]);
+          toast({
+            title: 'Agent created',
+            description: `${agent.name} has been created successfully.`,
+          });
+        }
+      }
+      setIsDialogOpen(false);
+      setEditingAgent(undefined);
+    } catch (error: any) {
+      toast({
+        title: 'Failed to save agent',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleDeleteAgent = async () => {
+    if (!deleteAgentId) return;
+
+    try {
+      const response = await apiClient.deleteAgent(deleteAgentId);
+      if (response.success) {
+        setAgents(agents.filter((a) => a.id !== deleteAgentId));
+        toast({
+          title: 'Agent deleted',
+          description: 'The agent has been permanently deleted.',
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Failed to delete agent',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setDeleteAgentId(null);
+    }
   };
 
   const handleEditAgent = (agent: Agent) => {
@@ -34,85 +107,104 @@ const Agents = () => {
     setIsDialogOpen(true);
   };
 
+  if (loading) {
+    return (
+      <div className="h-full flex items-center justify-center">
+        <div className="animate-pulse text-muted-foreground">Loading agents...</div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-muted/20 p-8">
-      <div className="max-w-6xl mx-auto space-y-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Manage Agents</h1>
-            <p className="text-muted-foreground mt-1">
-              Create and customize your AI agents
+    <div className="container mx-auto p-8 max-w-7xl">
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+            My Agents
+          </h1>
+          <p className="text-muted-foreground mt-2">
+            Create and manage your AI agents
+          </p>
+        </div>
+        <Button
+          onClick={() => {
+            setEditingAgent(undefined);
+            setIsDialogOpen(true);
+          }}
+          className="gap-2 shadow-medium hover:shadow-glow transition-smooth"
+        >
+          <Plus className="w-4 h-4" />
+          Create Agent
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {agents.map((agent, index) => (
+          <Card
+            key={agent.id}
+            className="p-6 glass hover:shadow-glow transition-smooth group relative"
+          >
+            <div className="flex items-start gap-3 mb-4">
+              <div
+                className="w-10 h-10 rounded-xl shrink-0 flex items-center justify-center"
+                style={{
+                  backgroundColor: `hsl(var(--agent-${(index % 5) + 1}) / 0.2)`,
+                }}
+              >
+                <div
+                  className="w-4 h-4 rounded-full"
+                  style={{ backgroundColor: `hsl(var(--agent-${(index % 5) + 1}))` }}
+                />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-lg truncate">{agent.name}</h3>
+                <Badge variant="secondary" className="mt-1">
+                  {agent.domain || 'General'}
+                </Badge>
+              </div>
+            </div>
+
+            <p className="text-sm text-muted-foreground line-clamp-3 mb-4">
+              {agent.description}
             </p>
-          </div>
+
+            <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-smooth">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => handleEditAgent(agent)}
+                className="flex-1"
+              >
+                <Pencil className="w-3 h-3 mr-1" />
+                Edit
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setDeleteAgentId(agent.id)}
+                className="flex-1 text-destructive hover:bg-destructive hover:text-destructive-foreground"
+              >
+                <Trash2 className="w-3 h-3 mr-1" />
+                Delete
+              </Button>
+            </div>
+          </Card>
+        ))}
+      </div>
+
+      {agents.length === 0 && (
+        <div className="text-center py-16">
+          <p className="text-muted-foreground mb-4">No agents yet. Create your first agent to get started!</p>
           <Button
-            onClick={() => {
-              setEditingAgent(null);
-              setIsDialogOpen(true);
-            }}
-            className="gap-2 shadow-medium hover:shadow-glow transition-smooth"
+            onClick={() => setIsDialogOpen(true)}
+            variant="outline"
+            className="gap-2"
           >
             <Plus className="w-4 h-4" />
-            Create Agent
+            Create Your First Agent
           </Button>
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {agents.map((agent, index) => (
-            <div
-              key={agent.id}
-              className="glass rounded-xl p-6 shadow-soft hover:shadow-medium transition-smooth group"
-            >
-              <div className="flex items-start gap-4">
-                <div
-                  className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
-                  style={{
-                    backgroundColor: `hsl(var(--agent-${(index % 5) + 1}) / 0.15)`,
-                  }}
-                >
-                  <div
-                    className="w-6 h-6 rounded-full"
-                    style={{ backgroundColor: `hsl(var(--agent-${(index % 5) + 1}))` }}
-                  />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold">{agent.name}</h3>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {agent.description}
-                  </p>
-                  {agent.isCustom && (
-                    <span className="inline-block mt-2 text-xs px-2 py-1 rounded-full bg-primary/10 text-primary">
-                      Custom
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {agent.isCustom && (
-                <div className="flex gap-2 mt-4 opacity-0 group-hover:opacity-100 transition-smooth">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleEditAgent(agent)}
-                    className="flex-1 gap-2"
-                  >
-                    <Edit className="w-3 h-3" />
-                    Edit
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDeleteAgent(agent.id)}
-                    className="flex-1 gap-2 text-destructive hover:text-destructive"
-                  >
-                    <Trash2 className="w-3 h-3" />
-                    Delete
-                  </Button>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
+      )}
 
       <AgentDialog
         open={isDialogOpen}
@@ -120,6 +212,26 @@ const Agents = () => {
         agent={editingAgent}
         onSave={handleSaveAgent}
       />
+
+      <AlertDialog open={!!deleteAgentId} onOpenChange={() => setDeleteAgentId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Agent</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this agent? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteAgent}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

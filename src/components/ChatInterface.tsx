@@ -29,31 +29,54 @@ export const ChatInterface = ({ agents }: ChatInterfaceProps) => {
     };
 
     setMessages((prev) => [...prev, userMessage]);
+    const messageContent = input;
     setInput('');
     setIsLoading(true);
 
-    // Simulate agent responses (placeholder for backend integration)
-    setTimeout(() => {
-      const agentResponses: AgentResponse[] = selectedAgents.map((agent, index) => ({
-        agentId: agent.id,
-        agentName: agent.name,
-        content: `Response from ${agent.name}: Processing "${input}"... [This is a placeholder response]`,
-        timestamp: new Date(Date.now() + (executionMode === 'sequential' ? index * 1000 : 0)),
-        status: 'success',
-      }));
+    try {
+      const { apiClient } = await import('@/lib/api');
+      const response = await apiClient.executeOrchestration({
+        agent_ids: selectedAgents.map(a => a.id),
+        message: messageContent,
+        mode: executionMode,
+        save_to_conversation: false,
+      });
 
-      const agentMessage: ChatMessage = {
-        id: `msg-${Date.now()}-agents`,
-        type: 'agent',
-        content: '',
-        timestamp: new Date(),
-        agentResponses,
-        executionMode,
-      };
+      if (response.success && response.data) {
+        const agentResponses: AgentResponse[] = response.data.results.map((result: any) => ({
+          agentId: result.agent_id,
+          agentName: result.agent_name,
+          content: result.response,
+          timestamp: new Date(),
+          status: 'success',
+          metadata: {
+            usage: result.usage,
+            domain: result.agent_domain,
+          },
+        }));
 
-      setMessages((prev) => [...prev, agentMessage]);
+        const agentMessage: ChatMessage = {
+          id: `msg-${Date.now()}-agents`,
+          type: 'agent',
+          content: '',
+          timestamp: new Date(),
+          agentResponses,
+          executionMode,
+        };
+
+        setMessages((prev) => [...prev, agentMessage]);
+      }
+    } catch (error: any) {
+      const { useToast } = await import('@/hooks/use-toast');
+      const { toast } = useToast();
+      toast({
+        title: 'Orchestration failed',
+        description: error.message || 'Failed to execute agents',
+        variant: 'destructive',
+      });
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   return (
