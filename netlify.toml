@@ -1,28 +1,3 @@
-[build]
-  # Command to build your frontend
-  command = "npm run build"
-  # Directory where the build output is located
-  publish = "dist"
-
-[dev]
-  # Optional: local dev server proxy to your backend
-  framework = "#custom"
-  port = 5173
-  publish = "dist"
-
 [build.environment]
-  # Environment variables
   NODE_ENV = "production"
-  # Add your VITE_ variables here
-  # Only include non-sensitive variables; Netlify will embed these
-  VITE_API_BASE_URL = "https://your-public-api.example.com"
-
-  # Optional: omit scanning this key if it is public
   SECRETS_SCAN_OMIT_KEYS = "VITE_API_BASE_URL"
-
-# Optional: redirect API calls to your backend server
-[[redirects]]
-  from = "/api/*"
-  to = "http://localhost:3000/:splat"  # your Express backend URL in dev
-  status = 200
-  force = true
