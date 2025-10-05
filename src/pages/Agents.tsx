@@ -50,15 +50,18 @@ const Agents = () => {
   const handleSaveAgent = async (agent: Agent) => {
     try {
       if (agent.id && editingAgent) {
+        // Update existing agent
         const response = await apiClient.updateAgent(agent.id, agent);
-        if (response.success) {
-          setAgents(agents.map((a) => (a.id === agent.id ? agent : a)));
+        if (response.success && response.data) {
+          // Use the response data instead of local agent object
+          setAgents(agents.map((a) => (a.id === agent.id ? response.data : a)));
           toast({
             title: 'Agent updated',
             description: `${agent.name} has been updated successfully.`,
           });
         }
       } else {
+        // Create new agent
         const response = await apiClient.createAgent(agent);
         if (response.success && response.data) {
           setAgents([...agents, response.data]);
@@ -167,6 +170,15 @@ const Agents = () => {
             <p className="text-sm text-muted-foreground line-clamp-3 mb-4">
               {agent.description}
             </p>
+
+            {agent.system_prompt && (
+              <div className="mb-4 p-3 bg-muted/50 rounded-md">
+                <p className="text-xs font-medium text-muted-foreground mb-1">System Prompt:</p>
+                <p className="text-xs text-muted-foreground line-clamp-2">
+                  {agent.system_prompt}
+                </p>
+              </div>
+            )}
 
             <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-smooth">
               <Button
