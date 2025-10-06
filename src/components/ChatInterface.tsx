@@ -175,8 +175,9 @@ export const ChatInterface = ({ agents, activeConversationId, onConversationChan
               type: 'agent' as const,
               agentResponses,
               executionMode: msg.metadata?.orchestration_mode || 'sequential',
-              markdownOutput: msg.content, // Use the content as markdown output
-              finalOutput: msg.content, // Use the content as final output
+              // Remove these to prevent duplication:
+              // markdownOutput: msg.content,
+              // finalOutput: msg.content,
             };
           }
 
