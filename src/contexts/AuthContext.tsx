@@ -47,6 +47,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
       logout();
     });
+
+    // Cleanup on unmount
+    return () => {
+      // Don't cleanup here as we want background refresh to continue
+    };
   }, []);
 
   const fetchCurrentUser = async () => {
@@ -106,7 +111,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const logout = () => {
-    apiClient.setTokens(null);
+    apiClient.cleanup(); // This stops background refresh and clears tokens
     setUser(null);
     navigate('/auth');
     toast({
@@ -135,7 +140,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const response = await apiClient.deleteProfile(email);
       if (response.success) {
-        apiClient.setTokens(null);
+        apiClient.cleanup();
         setUser(null);
         navigate('/auth');
         toast({

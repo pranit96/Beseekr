@@ -17,6 +17,7 @@ interface ApiResponse<T> {
 interface SessionData {
   access_token: string;
   refresh_token: string;
+  expires_in?: number;
   expires_at?: number;
 }
 
@@ -26,15 +27,20 @@ class ApiClient {
   private refreshToken: string | null = null;
   private isRefreshing = false;
   private refreshSubscribers: ((token: string) => void)[] = [];
+  private refreshInterval: NodeJS.Timeout | null = null;
+  private lastActivity: number = Date.now();
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
     this.loadTokensFromStorage();
+    this.setupActivityListeners();
+    this.startBackgroundRefresh();
   }
 
   private loadTokensFromStorage() {
     this.token = localStorage.getItem('access_token');
     this.refreshToken = localStorage.getItem('refresh_token');
+    this.lastActivity = Date.now();
   }
 
   private saveTokensToStorage() {
@@ -51,7 +57,7 @@ class ApiClient {
     }
   }
 
-  setTokens(tokens: { access_token: string; refresh_token: string } | null) {
+  setTokens(tokens: SessionData | null) {
     if (tokens) {
       this.token = tokens.access_token;
       this.refreshToken = tokens.refresh_token;
@@ -60,6 +66,10 @@ class ApiClient {
       this.refreshToken = null;
     }
     this.saveTokensToStorage();
+    this.lastActivity = Date.now();
+    
+    // Restart background refresh when tokens are updated
+    this.startBackgroundRefresh();
   }
 
   setToken(token: string | null) {
@@ -69,12 +79,70 @@ class ApiClient {
     } else {
       localStorage.removeItem('access_token');
     }
+    this.lastActivity = Date.now();
+  }
+
+  // Setup activity listeners to track user activity
+  private setupActivityListeners() {
+    const activityEvents = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
+    
+    activityEvents.forEach(event => {
+      document.addEventListener(event, () => {
+        this.lastActivity = Date.now();
+      }, { passive: true });
+    });
+  }
+
+  // Check if user is active (within last 5 minutes)
+  private isUserActive(): boolean {
+    const fiveMinutesAgo = Date.now() - (5 * 60 * 1000);
+    return this.lastActivity > fiveMinutesAgo;
+  }
+
+  // Start background token refresh
+  private startBackgroundRefresh() {
+    // Clear existing interval
+    if (this.refreshInterval) {
+      clearInterval(this.refreshInterval);
+    }
+
+    // Only start if we have a refresh token
+    if (!this.refreshToken) {
+      return;
+    }
+
+    // Refresh token every 10 minutes (adjust as needed)
+    this.refreshInterval = setInterval(async () => {
+      // Only refresh if user is active
+      if (this.isUserActive() && this.refreshToken && !this.isRefreshing) {
+        try {
+          await this.refreshAuthToken();
+          console.log('Background token refresh successful');
+        } catch (error) {
+          console.warn('Background token refresh failed:', error);
+          // If refresh fails, clear tokens and trigger logout
+          if (this.onUnauthorized) {
+            this.onUnauthorized();
+          }
+        }
+      }
+    }, 10 * 60 * 1000); // 10 minutes
+  }
+
+  // Stop background refresh
+  private stopBackgroundRefresh() {
+    if (this.refreshInterval) {
+      clearInterval(this.refreshInterval);
+      this.refreshInterval = null;
+    }
   }
 
   private async refreshAuthToken(): Promise<string> {
     if (!this.refreshToken) {
       throw new Error('No refresh token available');
     }
+
+    this.isRefreshing = true;
 
     try {
       const response = await fetch(`${this.baseUrl}/api/auth/refresh`, {
@@ -94,12 +162,16 @@ class ApiClient {
       if (data.data?.session) {
         const { access_token, refresh_token } = data.data.session;
         this.setTokens({ access_token, refresh_token });
+        this.isRefreshing = false;
+        this.onRefresh(access_token);
         return access_token;
       }
 
       throw new Error('Invalid response format from token refresh');
     } catch (error) {
+      this.isRefreshing = false;
       this.setTokens(null);
+      this.stopBackgroundRefresh();
       if (this.onUnauthorized) {
         this.onUnauthorized();
       }
@@ -131,6 +203,9 @@ class ApiClient {
         ...options,
         headers,
       });
+
+      // Update activity timestamp on API call
+      this.lastActivity = Date.now();
 
       // If token is expired, try to refresh and retry the request
       if (response.status === 401 && retry && this.refreshToken && !this.isRefreshing) {
@@ -183,6 +258,12 @@ class ApiClient {
 
   setUnauthorizedHandler(handler: () => void) {
     this.onUnauthorized = handler;
+  }
+
+  // Clean up method to call when logging out
+  cleanup() {
+    this.stopBackgroundRefresh();
+    this.setTokens(null);
   }
 
   // Auth endpoints
