@@ -63,10 +63,14 @@ export const ChatInterface = ({ agents }: ChatInterfaceProps) => {
         const agentMessage: ChatMessage = {
           id: `msg-${Date.now()}-agents`,
           type: 'agent',
-          content: '',
+          content: response.data.markdown_output || '',
           timestamp: new Date(),
           agentResponses,
           executionMode,
+          markdownOutput: response.data.markdown_output,
+          finalOutput: executionMode === 'sequential' 
+            ? response.data.final_output 
+            : response.data.aggregated_output,
         };
 
         setMessages((prev) => [...prev, agentMessage]);
@@ -152,6 +156,27 @@ export const ChatInterface = ({ agents }: ChatInterfaceProps) => {
           <MessageList messages={messages} />
           
           <div className="sticky bottom-0 bg-background p-6 space-y-4">
+            <div className="flex items-center justify-center gap-3 flex-wrap mb-3">
+              <AgentSelector
+                agents={agents}
+                selectedAgents={selectedAgents}
+                onAgentsChange={setSelectedAgents}
+              />
+              
+              <Button
+                onClick={() => setWorkflowDialogOpen(true)}
+                disabled={selectedAgents.length === 0}
+                variant="outline"
+                size="sm"
+                className="gap-2"
+              >
+                <Workflow className="w-4 h-4" />
+                Design Flow
+              </Button>
+
+              <ExecutionModeToggle mode={executionMode} onModeChange={setExecutionMode} />
+            </div>
+
             <div className="flex gap-3 items-end">
               <Textarea
                 value={input}
@@ -174,27 +199,6 @@ export const ChatInterface = ({ agents }: ChatInterfaceProps) => {
               >
                 <Send className="h-5 w-5" />
               </Button>
-            </div>
-
-            <div className="flex items-center justify-center gap-3 flex-wrap">
-              <AgentSelector
-                agents={agents}
-                selectedAgents={selectedAgents}
-                onAgentsChange={setSelectedAgents}
-              />
-              
-              <Button
-                onClick={() => setWorkflowDialogOpen(true)}
-                disabled={selectedAgents.length === 0}
-                variant="outline"
-                size="sm"
-                className="gap-2"
-              >
-                <Workflow className="w-4 h-4" />
-                Design Flow
-              </Button>
-
-              <ExecutionModeToggle mode={executionMode} onModeChange={setExecutionMode} />
             </div>
           </div>
         </>

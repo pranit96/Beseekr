@@ -43,6 +43,8 @@ const Chat = () => {
     setKey(prev => prev + 1); // Force re-render of ChatInterface
   };
 
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+
   if (loading) {
     return (
       <div className="h-full flex items-center justify-center">
@@ -52,12 +54,27 @@ const Chat = () => {
   }
 
   return (
-    <div className="h-full flex">
-      <ConversationHistory
-        onSelectConversation={handleSelectConversation}
-        onNewSession={handleNewSession}
-        currentConversationId={currentConversationId}
-      />
+    <div className="h-full flex relative">
+      <div
+        className={`transition-all duration-300 ${
+          sidebarOpen ? 'w-80' : 'w-0'
+        } overflow-hidden`}
+      >
+        <ConversationHistory
+          onSelectConversation={handleSelectConversation}
+          onNewSession={handleNewSession}
+          currentConversationId={currentConversationId}
+        />
+      </div>
+      
+      <button
+        onClick={() => setSidebarOpen(!sidebarOpen)}
+        className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-primary text-primary-foreground p-2 rounded-r-lg shadow-medium hover:shadow-glow transition-smooth"
+        style={{ left: sidebarOpen ? '320px' : '0' }}
+      >
+        {sidebarOpen ? '←' : '→'}
+      </button>
+
       <div className="flex-1 flex flex-col">
         <ChatInterface key={key} agents={agents} />
       </div>

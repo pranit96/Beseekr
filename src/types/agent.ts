@@ -41,4 +41,6 @@ export interface ChatMessage {
   timestamp: Date;
   agentResponses?: AgentResponse[];
   executionMode?: ExecutionMode;
+  markdownOutput?: string;
+  finalOutput?: string;
 }

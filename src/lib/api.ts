@@ -140,7 +140,13 @@ class ApiClient {
     mode: 'sequential' | 'parallel';
     save_to_conversation?: boolean;
   }) {
-    return this.request<any>('/api/orchestration/execute', {
+    return this.request<{
+      markdown_output: string;
+      results: any[];
+      final_output?: string;
+      aggregated_output?: string;
+      total_usage: { total_tokens: number };
+    }>('/api/orchestration/execute', {
       method: 'POST',
       body: JSON.stringify(payload),
     });
@@ -150,32 +156,6 @@ class ApiClient {
     return this.request<any>('/api/orchestration/models');
   }
 
-  // Conversations endpoints
-  async getConversations(params?: { status?: string; page?: number; limit?: number }) {
-    const query = new URLSearchParams(params as any).toString();
-    return this.request<any>(`/api/conversations?${query}`);
-  }
-
-  async createConversation(agent_id: string, title?: string) {
-    return this.request<any>('/api/conversations', {
-      method: 'POST',
-      body: JSON.stringify({ agent_id, title }),
-    });
-  }
-
-  // Messages endpoints
-  async sendMessage(conversation_id: string, content: string) {
-    return this.request<any>('/api/messages', {
-      method: 'POST',
-      body: JSON.stringify({ conversation_id, content }),
-    });
-  }
-
-  async getMessages(conversation_id: string, page?: number, limit?: number) {
-    return this.request<any>(`/api/messages/conversation/${conversation_id}?page=${page || 1}&limit=${limit || 50}`);
-  }
-
-  // Orchestration Session endpoints
   async createOrchestrationSession(payload: {
     agent_ids: string[];
     mode: 'sequential' | 'parallel';
@@ -187,15 +167,57 @@ class ApiClient {
     });
   }
 
-  // Usage endpoints
-  async getUsageStats(start_date?: string, end_date?: string) {
-    const query = new URLSearchParams({ start_date: start_date || '', end_date: end_date || '' }).toString();
-    return this.request<any>(`/api/usage/stats?${query}`);
+  // Conversation endpoints
+  async getConversations(params?: { status?: string; page?: number; limit?: number }) {
+    const query = new URLSearchParams(params as any).toString();
+    return this.request<any>(`/api/conversations?${query}`);
   }
 
-  async getUsageLogs(params?: { start_date?: string; end_date?: string; page?: number; limit?: number }) {
+  async getConversationHistory(conversationId: string) {
+    return this.request<any>(`/api/conversations/${conversationId}/history`);
+  }
+
+  async createConversation(conversation: { agent_id: string; title?: string }) {
+    return this.request<any>('/api/conversations', {
+      method: 'POST',
+      body: JSON.stringify(conversation),
+    });
+  }
+
+  // Message endpoints
+  async sendMessage(conversation_id: string, content: string) {
+    return this.request<any>('/api/messages', {
+      method: 'POST',
+      body: JSON.stringify({ conversation_id, content }),
+    });
+  }
+
+  async getMessages(conversation_id: string, page?: number, limit?: number) {
+    return this.request<any>(
+      `/api/messages/conversation/${conversation_id}?page=${page || 1}&limit=${limit || 50}`
+    );
+  }
+
+  // Usage endpoints
+  async getUsageLogs(params?: { start_date?: string; end_date?: string; page?: number }) {
     const query = new URLSearchParams(params as any).toString();
     return this.request<any>(`/api/usage?${query}`);
+  }
+
+  async getUsageStats(params?: { start_date?: string; end_date?: string }) {
+    const query = new URLSearchParams(params as any).toString();
+    return this.request<{
+      totalTokens: number;
+      totalCost: number;
+      totalRequests: number;
+      actionBreakdown: {
+        [key: string]: {
+          count: number;
+          tokens: number;
+          cost: number;
+        };
+      };
+    }>(`/api/usage/stats?${query}`);
   }
 }
 

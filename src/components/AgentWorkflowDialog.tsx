@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { GripVertical, X } from 'lucide-react';
 import {
   Dialog,
@@ -26,6 +26,11 @@ export const AgentWorkflowDialog = ({
   onConfirm,
 }: AgentWorkflowDialogProps) => {
   const [orderedAgents, setOrderedAgents] = useState<Agent[]>(selectedAgents);
+
+  // Update orderedAgents when selectedAgents changes
+  useEffect(() => {
+    setOrderedAgents(selectedAgents);
+  }, [selectedAgents]);
 
   const moveAgent = (index: number, direction: 'up' | 'down') => {
     const newOrder = [...orderedAgents];

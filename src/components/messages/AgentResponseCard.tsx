@@ -1,5 +1,6 @@
 import { AgentResponse } from '@/types/agent';
 import { CheckCircle2, AlertCircle } from 'lucide-react';
+import { MarkdownRenderer } from './MarkdownRenderer';
 
 interface AgentResponseCardProps {
   response: AgentResponse;
@@ -31,9 +32,9 @@ export const AgentResponseCard = ({
           <AlertCircle className="w-4 h-4 text-destructive ml-auto" />
         )}
       </div>
-      <p className="text-sm text-foreground/90 whitespace-pre-wrap">
-        {response.content}
-      </p>
+      <div className="text-sm">
+        <MarkdownRenderer content={response.content} />
+      </div>
       <span className="text-xs text-muted-foreground mt-2 block">
         {response.timestamp.toLocaleTimeString([], {
           hour: '2-digit',

@@ -15,10 +15,14 @@ const Analytics = () => {
 
   const fetchStats = async () => {
     try {
-      const end = new Date().toISOString().split('T')[0];
-      const start = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      const start = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+        .toISOString()
+        .split('T')[0];
       
-      const response = await apiClient.getUsageStats(start, end);
+      const response = await apiClient.getUsageStats({
+        start_date: start,
+      });
+
       if (response.success && response.data) {
         setStats(response.data);
       }
