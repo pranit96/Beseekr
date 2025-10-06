@@ -1,3 +1,4 @@
+// pages/Agents.tsx - With smart caching and immediate UI updates
 import { useState, useEffect, useMemo } from 'react';
 import { Plus, Pencil, Trash2, Search, ArrowUpDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -93,8 +94,12 @@ const Agents = () => {
   const handleSaveAgent = async (agent: Agent) => {
     try {
       if (agent.id && editingAgent) {
+        // Optimistic update
+        setAgents(agents.map((a) => (a.id === agent.id ? { ...agent } : a)));
+        
         const response = await apiClient.updateAgent(agent.id, agent);
         if (response.success && response.data) {
+          // Update with server response
           setAgents(agents.map((a) => (a.id === agent.id ? response.data : a)));
           toast({
             title: 'Agent updated',
@@ -104,6 +109,7 @@ const Agents = () => {
       } else {
         const response = await apiClient.createAgent(agent);
         if (response.success && response.data) {
+          // Add new agent immediately
           setAgents([...agents, response.data]);
           toast({
             title: 'Agent created',
@@ -114,6 +120,10 @@ const Agents = () => {
       setIsDialogOpen(false);
       setEditingAgent(undefined);
     } catch (error: any) {
+      // Revert optimistic update on error
+      if (editingAgent) {
+        setAgents(agents.map((a) => (a.id === editingAgent.id ? editingAgent : a)));
+      }
       toast({
         title: 'Failed to save agent',
         description: error.message,
@@ -125,16 +135,23 @@ const Agents = () => {
   const handleDeleteAgent = async () => {
     if (!deleteAgentId) return;
 
+    // Optimistic update
+    const deletedAgent = agents.find(a => a.id === deleteAgentId);
+    setAgents(agents.filter((a) => a.id !== deleteAgentId));
+
     try {
       const response = await apiClient.deleteAgent(deleteAgentId);
       if (response.success) {
-        setAgents(agents.filter((a) => a.id !== deleteAgentId));
         toast({
           title: 'Agent deleted',
           description: 'The agent has been permanently deleted.',
         });
       }
     } catch (error: any) {
+      // Revert on error
+      if (deletedAgent) {
+        setAgents([...agents, deletedAgent]);
+      }
       toast({
         title: 'Failed to delete agent',
         description: error.message,
