@@ -59,7 +59,7 @@ export const ChatInterface = ({ agents, activeConversationId, onConversationChan
       const { apiClient } = await import('@/lib/api');
       let convId = conversationId;
 
-      // Create session if saving is ON and no session exists
+      // Create session only if saving is ON and no session exists
       if (saveToConversation && !convId) {
         const sessionResponse = await apiClient.createOrchestrationSession({
           agent_ids: selectedAgents.map(a => a.id),
@@ -76,13 +76,20 @@ export const ChatInterface = ({ agents, activeConversationId, onConversationChan
         }
       }
 
-      const response = await apiClient.executeOrchestration({
+      // Prepare payload - only include conversation_id when saveToConversation is true
+      const payload: any = {
         agent_ids: selectedAgents.map(a => a.id),
         message: messageContent,
         mode: executionMode,
-        conversation_id: convId,
         save_to_conversation: saveToConversation,
-      });
+      };
+
+      // Only include conversation_id if we're saving to conversation
+      if (saveToConversation && convId) {
+        payload.conversation_id = convId;
+      }
+
+      const response = await apiClient.executeOrchestration(payload);
 
       if (response.success && response.data) {
         const agentResponses: AgentResponse[] = response.data.results.map((result: any) => ({
