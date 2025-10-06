@@ -4,9 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { AgentSelector } from './AgentSelector';
 import { MessageList } from './MessageList';
-import { ExecutionModeToggle } from './ExecutionModeToggle';
 import { AgentWorkflowDialog } from './AgentWorkflowDialog';
 import { ChatMessage, ExecutionMode, Agent, AgentResponse } from '@/types/agent';
+import { useToast } from '@/hooks/use-toast';
 
 interface ChatInterfaceProps {
   agents: Agent[];
@@ -20,13 +20,12 @@ export const ChatInterface = ({ agents }: ChatInterfaceProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [workflowDialogOpen, setWorkflowDialogOpen] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
+  const { toast } = useToast();
 
   const handleSubmit = async () => {
     if (!input.trim()) return;
     
     if (selectedAgents.length === 0) {
-      const { useToast } = await import('@/hooks/use-toast');
-      const { toast } = useToast();
       toast({
         title: 'No agents selected',
         description: 'Please select at least one agent before sending a message',
@@ -87,8 +86,6 @@ export const ChatInterface = ({ agents }: ChatInterfaceProps) => {
         setMessages((prev) => [...prev, agentMessage]);
       }
     } catch (error: any) {
-      const { useToast } = await import('@/hooks/use-toast');
-      const { toast } = useToast();
       toast({
         title: 'Orchestration failed',
         description: error.message || 'Failed to execute agents',
