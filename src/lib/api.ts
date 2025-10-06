@@ -138,6 +138,7 @@ class ApiClient {
     agent_ids: string[];
     message: string;
     mode: 'sequential' | 'parallel';
+    conversation_id: string;
     save_to_conversation?: boolean;
   }) {
     return this.request<{
