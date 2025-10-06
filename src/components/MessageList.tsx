@@ -5,15 +5,12 @@ import { AgentMessage } from './messages/AgentMessage';
 
 interface MessageListProps {
   messages: ChatMessage[];
-  isLoading?: boolean;
 }
 
-export const MessageList = ({ messages, isLoading = false }: MessageListProps) => {
+export const MessageList = ({ messages }: MessageListProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [isAutoScroll, setIsAutoScroll] = useState(true);
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
-  const previousMessagesLength = useRef(0);
 
   // Handle scroll behavior
   useEffect(() => {
@@ -21,6 +18,7 @@ export const MessageList = ({ messages, isLoading = false }: MessageListProps) =
     if (!container) return;
 
     const handleScroll = () => {
+      // If user scrolls up, disable auto-scroll
       const { scrollTop, scrollHeight, clientHeight } = container;
       const isAtBottom = scrollHeight - scrollTop - clientHeight < 100;
       setIsAutoScroll(isAtBottom);
@@ -30,41 +28,20 @@ export const MessageList = ({ messages, isLoading = false }: MessageListProps) =
     return () => container.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Initial load - scroll to bottom instantly without animation
+  // Smooth scroll to bottom when new messages arrive and auto-scroll is enabled
   useEffect(() => {
-    if (isInitialLoad && messages.length > 0 && messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ block: 'end' });
-      setIsInitialLoad(false);
-      previousMessagesLength.current = messages.length;
-    }
-  }, [messages.length, isInitialLoad]);
-
-  // Subsequent updates - smooth scroll only for new messages
-  useEffect(() => {
-    if (!isInitialLoad && isAutoScroll && messagesEndRef.current) {
-      const isNewMessage = messages.length > previousMessagesLength.current;
-      
-      if (isNewMessage) {
-        requestAnimationFrame(() => {
-          messagesEndRef.current?.scrollIntoView({
-            behavior: 'smooth',
-            block: 'end'
-          });
+    if (isAutoScroll && messagesEndRef.current) {
+      // Use requestAnimationFrame for smoother scrolling
+      requestAnimationFrame(() => {
+        messagesEndRef.current?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'end'
         });
-      }
-      
-      previousMessagesLength.current = messages.length;
+      });
     }
-  }, [messages, isAutoScroll, isInitialLoad]);
+  }, [messages, isAutoScroll]);
 
-  // Reset initial load state when messages are cleared
-  useEffect(() => {
-    if (messages.length === 0) {
-      setIsInitialLoad(true);
-      previousMessagesLength.current = 0;
-    }
-  }, [messages.length]);
-
+  // Ensure all timestamps are Date objects before rendering
   const messagesWithProperTimestamps = messages.map(msg => ({
     ...msg,
     timestamp: msg.timestamp instanceof Date ? msg.timestamp : new Date(msg.timestamp),
@@ -113,20 +90,6 @@ export const MessageList = ({ messages, isLoading = false }: MessageListProps) =
             ) : (
               <AgentMessage key={message.id} message={message} />
             )
-          )}
-          {isLoading && (
-            <div className="flex justify-start">
-              <div className="max-w-[80%] bg-muted rounded-2xl rounded-tl-sm px-4 py-3">
-                <div className="flex items-center gap-2">
-                  <div className="flex gap-1">
-                    <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                    <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                    <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                  </div>
-                  <span className="text-sm text-muted-foreground">Agents are thinking...</span>
-                </div>
-              </div>
-            </div>
           )}
           <div ref={messagesEndRef} />
         </>

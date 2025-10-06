@@ -211,124 +211,122 @@ export const ChatInterface = ({ agents, activeConversationId, onConversationChan
     }
   }, []);
 
-  // In ChatInterface.tsx, replace the handleSubmit function:
-
-const handleSubmit = async () => {
-  if (!input.trim()) return;
-  if (selectedAgents.length === 0) {
-    toast({
-      title: 'No agents selected',
-      description: 'Please select at least one agent before sending a message',
-      variant: 'destructive',
-    });
-    return;
-  }
-
-  setHasStarted(true);
-  const userMessage: ChatMessage = {
-    id: `msg-${Date.now()}`,
-    type: 'user',
-    content: input,
-    timestamp: new Date(),
-  };
-  
-  const newMessages = [...messages, userMessage];
-  setMessages(newMessages);
-
-  const messageContent = input;
-  setInput('');
-  setIsLoading(true); // Show loading state
-
-  try {
-    const { apiClient } = await import('@/lib/api');
-    let convId = conversationId;
-
-    // If we're saving to conversation but don't have one, create it now
-    if (saveToConversation && !convId) {
-      const response = await apiClient.createConversation({
-        agent_id: selectedAgents.length > 0 ? selectedAgents[0].id : null,
-        title: messageContent.slice(0, 50) + (messageContent.length > 50 ? '...' : ''),
+  const handleSubmit = async () => {
+    if (!input.trim()) return;
+    if (selectedAgents.length === 0) {
+      toast({
+        title: 'No agents selected',
+        description: 'Please select at least one agent before sending a message',
+        variant: 'destructive',
       });
-
-      if (response.success && response.data?.id) {
-        convId = response.data.id;
-        setConversationId(convId);
-        onConversationChange?.(convId);
-        localStorage.setItem('currentConversationId', convId);
-        
-        // CRITICAL FIX: Notify parent to refresh conversation list
-        // You'll need to pass this as a prop or use a context
-        window.dispatchEvent(new CustomEvent('conversationCreated', { detail: { conversationId: convId } }));
-      } else {
-        throw new Error('Failed to create conversation');
-      }
+      return;
     }
 
-    const payload: any = {
-      agent_ids: selectedAgents.map(a => a.id),
-      message: messageContent,
-      mode: executionMode,
-      save_to_conversation: saveToConversation,
+    setHasStarted(true);
+    const userMessage: ChatMessage = {
+      id: `msg-${Date.now()}`,
+      type: 'user',
+      content: input,
+      timestamp: new Date(),
     };
+    
+    const newMessages = [...messages, userMessage];
+    setMessages(newMessages);
 
-    if (saveToConversation && convId) {
-      payload.conversation_id = convId;
-    }
+    const messageContent = input;
+    setInput('');
+    setIsLoading(true);
 
-    console.log('Sending orchestration payload:', payload);
-    const response = await apiClient.executeOrchestration(payload);
+    try {
+      const { apiClient } = await import('@/lib/api');
+      let convId = conversationId;
 
-    if (response.success && response.data) {
-      console.log('Orchestration response:', response.data);
-      
-      const agentResponses: AgentResponse[] = response.data.results.map((result: any) => ({
-        agentId: result.agent_id,
-        agentName: result.agent_name,
-        content: result.response,
-        timestamp: new Date(),
-        status: 'success',
-        metadata: {
-          usage: result.usage,
-          domain: result.agent_domain,
-          model_used: result.model_used,
-          order: result.order,
-          fallback_used: result.fallback_used,
-        },
-      }));
+      // If we're saving to conversation but don't have one, create it now
+      if (saveToConversation && !convId) {
+        const response = await apiClient.createConversation({
+          agent_id: selectedAgents.length > 0 ? selectedAgents[0].id : null,
+          title: messageContent.slice(0, 50) + (messageContent.length > 50 ? '...' : ''),
+        });
 
-      const agentMessage: ChatMessage = {
-        id: `msg-${Date.now()}-agents`,
-        type: 'agent',
-        content: response.data.markdown_output || response.data.final_output || '',
-        timestamp: new Date(),
-        agentResponses,
-        executionMode,
-        markdownOutput: response.data.markdown_output,
-        finalOutput: executionMode === 'sequential'
-          ? response.data.final_output
-          : response.data.aggregated_output,
+        if (response.success && response.data?.id) {
+          convId = response.data.id;
+          setConversationId(convId);
+          onConversationChange?.(convId);
+          localStorage.setItem('currentConversationId', convId);
+        } else {
+          throw new Error('Failed to create conversation');
+        }
+      }
+
+      const payload: any = {
+        agent_ids: selectedAgents.map(a => a.id),
+        message: messageContent,
+        mode: executionMode,
+        save_to_conversation: saveToConversation,
       };
 
-      const updatedMessages = [...newMessages, agentMessage];
-      setMessages(updatedMessages);
-
-      if (convId) {
-        localStorage.setItem(`messages_${convId}`, JSON.stringify(updatedMessages));
+      // Always include conversation_id when save_to_conversation is true
+      if (saveToConversation && convId) {
+        payload.conversation_id = convId;
       }
+
+      console.log('Sending orchestration payload:', payload);
+      const response = await apiClient.executeOrchestration(payload);
+
+      if (response.success && response.data) {
+        console.log('Orchestration response:', response.data);
+        
+        // Transform agent responses to match our format
+        const agentResponses: AgentResponse[] = response.data.results.map((result: any) => ({
+          agentId: result.agent_id,
+          agentName: result.agent_name,
+          content: result.response,
+          timestamp: new Date(),
+          status: 'success',
+          metadata: {
+            usage: result.usage,
+            domain: result.agent_domain,
+            model_used: result.model_used,
+            order: result.order,
+            fallback_used: result.fallback_used,
+          },
+        }));
+
+        const agentMessage: ChatMessage = {
+          id: `msg-${Date.now()}-agents`,
+          type: 'agent',
+          content: response.data.markdown_output || response.data.final_output || '',
+          timestamp: new Date(),
+          agentResponses,
+          executionMode,
+          markdownOutput: response.data.markdown_output,
+          finalOutput: executionMode === 'sequential'
+            ? response.data.final_output
+            : response.data.aggregated_output,
+        };
+
+        const updatedMessages = [...newMessages, agentMessage];
+        setMessages(updatedMessages);
+
+        // Update conversation cache
+        if (convId) {
+          localStorage.setItem(`messages_${convId}`, JSON.stringify(updatedMessages));
+        }
+      }
+    } catch (error: any) {
+      console.error('Orchestration error:', error);
+      toast({
+        title: 'Orchestration failed',
+        description: error.message || 'Failed to execute agents',
+        variant: 'destructive',
+      });
+      
+      // Remove the user message on error
+      setMessages(messages);
+    } finally {
+      setIsLoading(false);
     }
-  } catch (error: any) {
-    console.error('Orchestration error:', error);
-    toast({
-      title: 'Orchestration failed',
-      description: error.message || 'Failed to execute agents',
-      variant: 'destructive',
-    });
-    
-    setMessages(messages);
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
 
   const handleWorkflowConfirm = (orderedAgents: Agent[]) => {
     setSelectedAgents(orderedAgents);
@@ -456,7 +454,7 @@ const handleSubmit = async () => {
         </div>
       ) : (
         <>
-          <MessageList messages={messages} isLoading={isLoading} />
+          <MessageList messages={messages} />
           
           <div className="sticky bottom-0 bg-background p-6 space-y-4">
             <div className="flex items-center justify-center gap-3 flex-wrap mb-3">
