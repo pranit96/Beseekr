@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Send, Workflow } from 'lucide-react';
+import { Send, Workflow, MessageSquare, MessageSquareOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { AgentSelector } from './AgentSelector';
@@ -20,6 +20,7 @@ export const ChatInterface = ({ agents }: ChatInterfaceProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [workflowDialogOpen, setWorkflowDialogOpen] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
+  const [saveToConversation, setSaveToConversation] = useState(true);
   const { toast } = useToast();
 
   const handleSubmit = async () => {
@@ -54,7 +55,7 @@ export const ChatInterface = ({ agents }: ChatInterfaceProps) => {
         agent_ids: selectedAgents.map(a => a.id),
         message: messageContent,
         mode: executionMode,
-        save_to_conversation: true,
+        save_to_conversation: saveToConversation,
       });
 
       if (response.success && response.data) {
@@ -102,6 +103,30 @@ export const ChatInterface = ({ agents }: ChatInterfaceProps) => {
 
   return (
     <div className="flex flex-col h-full max-w-4xl mx-auto w-full">
+      <div className="absolute top-4 right-4 z-10">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setSaveToConversation(!saveToConversation)}
+          className={`gap-2 transition-all ${
+            saveToConversation ? 'bg-primary/10 border-primary/50' : ''
+          }`}
+          title={saveToConversation ? 'Save to conversation history' : 'Temporary chat (not saved)'}
+        >
+          {saveToConversation ? (
+            <>
+              <MessageSquare className="w-4 h-4" />
+              <span className="text-xs">Save Chat</span>
+            </>
+          ) : (
+            <>
+              <MessageSquareOff className="w-4 h-4" />
+              <span className="text-xs">Temporary</span>
+            </>
+          )}
+        </Button>
+      </div>
+
       {!hasStarted ? (
         <div className="flex-1 flex flex-col items-center justify-center p-6 space-y-8">
           <div className="text-center space-y-3 max-w-2xl">
@@ -114,28 +139,31 @@ export const ChatInterface = ({ agents }: ChatInterfaceProps) => {
           </div>
 
           <div className="flex flex-col items-center gap-4 w-full max-w-2xl">
-            <div className="w-full relative">
-              <Textarea
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSubmit();
-                  }
-                }}
-                placeholder="Type your message here..."
-                className="min-h-[100px] resize-none rounded-2xl bg-muted/50 border-border/50 focus:border-primary transition-smooth px-5 py-4 pr-16"
-                disabled={isLoading}
-              />
-              <Button
-                onClick={handleSubmit}
-                disabled={!input.trim() || isLoading}
-                size="icon"
-                className="absolute bottom-3 right-3 h-10 w-10 rounded-xl bg-primary hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/50 transition-all duration-300 shrink-0 disabled:opacity-50"
-              >
-                <Send className="h-4 w-4" />
-              </Button>
+            <div className="w-full">
+              <div className="relative flex items-center gap-2 rounded-full bg-muted/50 border border-border/50 focus-within:border-primary transition-smooth px-5 py-3">
+                <Textarea
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSubmit();
+                    }
+                  }}
+                  placeholder="Type your message here..."
+                  className="flex-1 resize-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 min-h-[40px] max-h-[120px] p-0"
+                  disabled={isLoading}
+                  rows={1}
+                />
+                <Button
+                  onClick={handleSubmit}
+                  disabled={!input.trim() || isLoading}
+                  size="icon"
+                  className="h-10 w-10 rounded-full bg-primary hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/50 transition-all duration-300 shrink-0 disabled:opacity-50"
+                >
+                  <Send className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
 
             <div className="flex items-center justify-center gap-3 flex-wrap">
@@ -227,28 +255,31 @@ export const ChatInterface = ({ agents }: ChatInterfaceProps) => {
               </div>
             </div>
 
-            <div className="w-full relative">
-              <Textarea
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSubmit();
-                  }
-                }}
-                placeholder="Message AgentFlow..."
-                className="min-h-[56px] max-h-[200px] resize-none rounded-2xl bg-muted/50 border-border/50 focus:border-primary transition-smooth px-5 py-4 pr-16"
-                disabled={isLoading}
-              />
-              <Button
-                onClick={handleSubmit}
-                disabled={!input.trim() || isLoading}
-                size="icon"
-                className="absolute bottom-3 right-3 h-10 w-10 rounded-xl bg-primary hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/50 transition-all duration-300 shrink-0 disabled:opacity-50"
-              >
-                <Send className="h-4 w-4" />
-              </Button>
+            <div className="w-full">
+              <div className="relative flex items-center gap-2 rounded-full bg-muted/50 border border-border/50 focus-within:border-primary transition-smooth px-5 py-3">
+                <Textarea
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSubmit();
+                    }
+                  }}
+                  placeholder="Message AgentFlow..."
+                  className="flex-1 resize-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 min-h-[40px] max-h-[120px] p-0"
+                  disabled={isLoading}
+                  rows={1}
+                />
+                <Button
+                  onClick={handleSubmit}
+                  disabled={!input.trim() || isLoading}
+                  size="icon"
+                  className="h-10 w-10 rounded-full bg-primary hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/50 transition-all duration-300 shrink-0 disabled:opacity-50"
+                >
+                  <Send className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </div>
         </>
