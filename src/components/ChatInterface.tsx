@@ -44,7 +44,7 @@ export const ChatInterface = ({ agents }: ChatInterfaceProps) => {
         agent_ids: selectedAgents.map(a => a.id),
         message: messageContent,
         mode: executionMode,
-        save_to_conversation: false,
+        save_to_conversation: true,
       });
 
       if (response.success && response.data) {
