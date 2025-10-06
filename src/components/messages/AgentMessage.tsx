@@ -40,25 +40,7 @@ export const AgentMessage = ({ message }: AgentMessageProps) => {
 
   return (
     <div className="space-y-4 animate-fade-in">
-      {/* Main message content */}
-      {(message.content || message.markdownOutput) && (
-        <div className="flex justify-start">
-          <div className="max-w-[80%] bg-muted rounded-2xl rounded-tl-sm px-4 py-3">
-            <div className="prose prose-sm max-w-none">
-              {message.markdownOutput ? (
-                <div 
-                  className="whitespace-pre-wrap"
-                  dangerouslySetInnerHTML={{ 
-                    __html: message.markdownOutput.replace(/\n/g, '<br />') 
-                  }} 
-                />
-              ) : (
-                <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      {/* We removed the main message content here */}
 
       {/* Agent Responses Section */}
       <div className="space-y-3">
