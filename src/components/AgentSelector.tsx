@@ -29,6 +29,16 @@ export const AgentSelector = ({
       agent.description.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // Sort agents to show selected ones first
+  const sortedAgents = [...filteredAgents].sort((a, b) => {
+    const aSelected = selectedAgents.some((agent) => agent.id === a.id);
+    const bSelected = selectedAgents.some((agent) => agent.id === b.id);
+    
+    if (aSelected && !bSelected) return -1;
+    if (!aSelected && bSelected) return 1;
+    return 0;
+  });
+
   const toggleAgent = (agent: Agent) => {
     const isSelected = selectedAgents.some((a) => a.id === agent.id);
     if (isSelected) {
@@ -69,35 +79,38 @@ export const AgentSelector = ({
             </div>
           </div>
           <div className="space-y-1 max-h-[300px] overflow-y-auto">
-            {filteredAgents.length === 0 ? (
+            {sortedAgents.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-4">
                 No agents found
               </p>
             ) : (
-              filteredAgents.map((agent, index) => {
-            const isSelected = selectedAgents.some((a) => a.id === agent.id);
-            return (
-              <button
-                key={agent.id}
-                onClick={() => toggleAgent(agent)}
-                className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-smooth text-left group"
-              >
-                <div
-                  className="w-3 h-3 rounded-full shrink-0"
-                  style={{ backgroundColor: `hsl(var(--agent-${(index % 5) + 1}))` }}
-                />
-                <div className="flex-1 min-w-0">
-                  <div className="font-medium text-sm">{agent.name}</div>
-                  <div className="text-xs text-muted-foreground truncate">
-                    {agent.description}
-                  </div>
-                </div>
-                {isSelected && (
-                  <Check className="w-4 h-4 text-primary shrink-0" />
-                )}
-              </button>
-              );
-            })
+              sortedAgents.map((agent, index) => {
+                const isSelected = selectedAgents.some((a) => a.id === agent.id);
+                const originalIndex = agents.findIndex(a => a.id === agent.id);
+                return (
+                  <button
+                    key={agent.id}
+                    onClick={() => toggleAgent(agent)}
+                    className={`w-full flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-smooth text-left group ${
+                      isSelected ? 'bg-primary/5 border border-primary/20' : ''
+                    }`}
+                  >
+                    <div
+                      className="w-3 h-3 rounded-full shrink-0"
+                      style={{ backgroundColor: `hsl(var(--agent-${(originalIndex % 5) + 1}))` }}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-sm">{agent.name}</div>
+                      <div className="text-xs text-muted-foreground truncate">
+                        {agent.description}
+                      </div>
+                    </div>
+                    {isSelected && (
+                      <Check className="w-4 h-4 text-primary shrink-0" />
+                    )}
+                  </button>
+                );
+              })
             )}
           </div>
         </div>
