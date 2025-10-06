@@ -22,7 +22,18 @@ export const ChatInterface = ({ agents }: ChatInterfaceProps) => {
   const [hasStarted, setHasStarted] = useState(false);
 
   const handleSubmit = async () => {
-    if (!input.trim() || selectedAgents.length === 0) return;
+    if (!input.trim()) return;
+    
+    if (selectedAgents.length === 0) {
+      const { useToast } = await import('@/hooks/use-toast');
+      const { toast } = useToast();
+      toast({
+        title: 'No agents selected',
+        description: 'Please select at least one agent before sending a message',
+        variant: 'destructive',
+      });
+      return;
+    }
 
     setHasStarted(true);
 
@@ -122,9 +133,9 @@ export const ChatInterface = ({ agents }: ChatInterfaceProps) => {
               />
               <Button
                 onClick={handleSubmit}
-                disabled={!input.trim() || selectedAgents.length === 0 || isLoading}
+                disabled={!input.trim() || isLoading}
                 size="icon"
-                className="absolute bottom-3 right-3 h-10 w-10 rounded-xl bg-primary hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/50 transition-all duration-300 shrink-0"
+                className="absolute bottom-3 right-3 h-10 w-10 rounded-xl bg-primary hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/50 transition-all duration-300 shrink-0 disabled:opacity-50"
               >
                 <Send className="h-4 w-4" />
               </Button>
@@ -235,9 +246,9 @@ export const ChatInterface = ({ agents }: ChatInterfaceProps) => {
               />
               <Button
                 onClick={handleSubmit}
-                disabled={!input.trim() || selectedAgents.length === 0 || isLoading}
+                disabled={!input.trim() || isLoading}
                 size="icon"
-                className="absolute bottom-3 right-3 h-10 w-10 rounded-xl bg-primary hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/50 transition-all duration-300 shrink-0"
+                className="absolute bottom-3 right-3 h-10 w-10 rounded-xl bg-primary hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/50 transition-all duration-300 shrink-0 disabled:opacity-50"
               >
                 <Send className="h-4 w-4" />
               </Button>
