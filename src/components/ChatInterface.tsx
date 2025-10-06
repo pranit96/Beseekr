@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Send, Workflow, MessageSquare, MessageSquareOff } from 'lucide-react';
+import { Send, Workflow, Lock, LockOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { AgentSelector } from './AgentSelector';
@@ -127,56 +127,21 @@ export const ChatInterface = ({ agents, activeConversationId, onConversationChan
     setSelectedAgents(orderedAgents);
   };
 
+  const togglePrivateChat = () => {
+    const newSaveToConversation = !saveToConversation;
+    setSaveToConversation(newSaveToConversation);
+    
+    if (newSaveToConversation) {
+      // Turning OFF private mode (enabling saving) - no need to reset conversation
+    } else {
+      // Turning ON private mode (disabling saving) => reset conversation
+      setConversationId(null);
+      onConversationChange?.(null);
+    }
+  };
+
   return (
-    <div className="flex flex-col h-full max-w-4xl mx-auto w-full relative">
-      {/* --- TEMPORARY CHAT TOGGLE --- */}
-      <div className="absolute top-4 right-4 z-10">
-        <button
-          onClick={() => {
-            setSaveToConversation(!saveToConversation);
-            if (saveToConversation) {
-              // Turning OFF saving => reset conversation
-              setConversationId(null);
-              onConversationChange?.(null);
-            }
-          }}
-          className={`
-            relative flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all duration-300
-            ${saveToConversation
-              ? 'bg-background/80 border-border hover:bg-background'
-              : 'bg-primary text-primary-foreground border-primary shadow-sm hover:bg-primary/90'}
-          `}
-          title={saveToConversation ? 'Currently saving to conversation history' : 'Temporary chat mode enabled (not saved)'}
-        >
-          <div
-            className={`
-              flex items-center justify-center w-5 h-5 rounded-full transition-all duration-300
-              ${saveToConversation ? 'bg-primary/10' : 'bg-white/20'}
-            `}
-          >
-            {saveToConversation ? (
-              <MessageSquare className="w-3.5 h-3.5 text-primary" />
-            ) : (
-              <MessageSquareOff className="w-3.5 h-3.5 text-primary-foreground" />
-            )}
-          </div>
-          <span
-            className={`text-xs font-medium transition-colors duration-300 ${
-              saveToConversation ? 'text-muted-foreground' : 'text-primary-foreground'
-            }`}
-          >
-            {saveToConversation ? 'Normal Chat' : 'Temporary Chat'}
-          </span>
-
-          <span
-            className={`
-              absolute inset-0 rounded-full transition-all duration-500 ease-in-out
-              ${saveToConversation ? 'bg-transparent' : 'bg-primary/30'}
-            `}
-          />
-        </button>
-      </div>
-
+    <div className="flex flex-col h-full max-w-4xl mx-auto w-full">
       {!hasStarted ? (
         <div className="flex-1 flex flex-col items-center justify-center p-6 space-y-8">
           <div className="text-center space-y-3 max-w-2xl">
@@ -190,7 +155,7 @@ export const ChatInterface = ({ agents, activeConversationId, onConversationChan
 
           <div className="flex flex-col items-center gap-4 w-full max-w-2xl">
             <div className="w-full">
-              <div className="relative flex items-center gap-2 rounded-full bg-muted/50 border border-border/50 focus-within:border-primary transition-smooth px-5 py-3">
+              <div className="relative flex items-center gap-2 rounded-lg bg-muted/50 border border-border/50 focus-within:border-primary transition-smooth px-4 py-3">
                 <Textarea
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
@@ -201,7 +166,7 @@ export const ChatInterface = ({ agents, activeConversationId, onConversationChan
                     }
                   }}
                   placeholder="Type your message here..."
-                  className="flex-1 resize-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 min-h-[40px] max-h-[120px] p-0"
+                  className="flex-1 resize-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 min-h-[40px] max-h-[120px] p-0 pl-2"
                   disabled={isLoading}
                   rows={1}
                 />
@@ -209,7 +174,7 @@ export const ChatInterface = ({ agents, activeConversationId, onConversationChan
                   onClick={handleSubmit}
                   disabled={!input.trim() || isLoading}
                   size="icon"
-                  className="h-10 w-10 rounded-full bg-primary hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/50 transition-all duration-300 shrink-0 disabled:opacity-50"
+                  className="h-10 w-10 rounded-lg bg-primary hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/50 transition-all duration-300 shrink-0 disabled:opacity-50"
                 >
                   <Send className="h-4 w-4" />
                 </Button>
@@ -233,26 +198,46 @@ export const ChatInterface = ({ agents, activeConversationId, onConversationChan
                 Design Flow
               </Button>
 
-              <div className="flex items-center gap-2 px-3 py-1 rounded-lg border bg-muted/30">
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 px-3 py-1 rounded-lg border bg-muted/30">
+                  <button
+                    onClick={() => setExecutionMode('sequential')}
+                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                      executionMode === 'sequential'
+                        ? 'bg-primary text-primary-foreground shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    Sequential
+                  </button>
+                  <button
+                    onClick={() => setExecutionMode('parallel')}
+                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                      executionMode === 'parallel'
+                        ? 'bg-primary text-primary-foreground shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    Parallel
+                  </button>
+                </div>
+
                 <button
-                  onClick={() => setExecutionMode('sequential')}
-                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-                    executionMode === 'sequential'
-                      ? 'bg-primary text-primary-foreground shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}
+                  onClick={togglePrivateChat}
+                  className={`
+                    flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all duration-300 text-sm font-medium
+                    ${saveToConversation
+                      ? 'bg-background border-border hover:bg-muted/50 text-muted-foreground'
+                      : 'bg-primary text-primary-foreground border-primary shadow-sm hover:bg-primary/90'}
+                  `}
+                  title={saveToConversation ? 'Click to enable private chat' : 'Private chat enabled - not saved to history'}
                 >
-                  Sequential
-                </button>
-                <button
-                  onClick={() => setExecutionMode('parallel')}
-                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-                    executionMode === 'parallel'
-                      ? 'bg-primary text-primary-foreground shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  Parallel
+                  {saveToConversation ? (
+                    <LockOpen className="w-4 h-4" />
+                  ) : (
+                    <Lock className="w-4 h-4" />
+                  )}
+                  <span>Private</span>
                 </button>
               </div>
             </div>
@@ -281,32 +266,52 @@ export const ChatInterface = ({ agents, activeConversationId, onConversationChan
                 Design Flow
               </Button>
 
-              <div className="flex items-center gap-2 px-3 py-1 rounded-lg border bg-muted/30">
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 px-3 py-1 rounded-lg border bg-muted/30">
+                  <button
+                    onClick={() => setExecutionMode('sequential')}
+                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                      executionMode === 'sequential'
+                        ? 'bg-primary text-primary-foreground shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    Sequential
+                  </button>
+                  <button
+                    onClick={() => setExecutionMode('parallel')}
+                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                      executionMode === 'parallel'
+                        ? 'bg-primary text-primary-foreground shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    Parallel
+                  </button>
+                </div>
+
                 <button
-                  onClick={() => setExecutionMode('sequential')}
-                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-                    executionMode === 'sequential'
-                      ? 'bg-primary text-primary-foreground shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}
+                  onClick={togglePrivateChat}
+                  className={`
+                    flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all duration-300 text-sm font-medium
+                    ${saveToConversation
+                      ? 'bg-background border-border hover:bg-muted/50 text-muted-foreground'
+                      : 'bg-primary text-primary-foreground border-primary shadow-sm hover:bg-primary/90'}
+                  `}
+                  title={saveToConversation ? 'Click to enable private chat' : 'Private chat enabled - not saved to history'}
                 >
-                  Sequential
-                </button>
-                <button
-                  onClick={() => setExecutionMode('parallel')}
-                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-                    executionMode === 'parallel'
-                      ? 'bg-primary text-primary-foreground shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  Parallel
+                  {saveToConversation ? (
+                    <LockOpen className="w-4 h-4" />
+                  ) : (
+                    <Lock className="w-4 h-4" />
+                  )}
+                  <span>Private</span>
                 </button>
               </div>
             </div>
 
             <div className="w-full">
-              <div className="relative flex items-center gap-2 rounded-full bg-muted/50 border border-border/50 focus-within:border-primary transition-smooth px-5 py-3">
+              <div className="relative flex items-center gap-2 rounded-lg bg-muted/50 border border-border/50 focus-within:border-primary transition-smooth px-4 py-3">
                 <Textarea
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
@@ -317,7 +322,7 @@ export const ChatInterface = ({ agents, activeConversationId, onConversationChan
                     }
                   }}
                   placeholder="Message AgentFlow..."
-                  className="flex-1 resize-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 min-h-[40px] max-h-[120px] p-0"
+                  className="flex-1 resize-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 min-h-[40px] max-h-[120px] p-0 pl-2"
                   disabled={isLoading}
                   rows={1}
                 />
@@ -325,7 +330,7 @@ export const ChatInterface = ({ agents, activeConversationId, onConversationChan
                   onClick={handleSubmit}
                   disabled={!input.trim() || isLoading}
                   size="icon"
-                  className="h-10 w-10 rounded-full bg-primary hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/50 transition-all duration-300 shrink-0 disabled:opacity-50"
+                  className="h-10 w-10 rounded-lg bg-primary hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/50 transition-all duration-300 shrink-0 disabled:opacity-50"
                 >
                   <Send className="h-4 w-4" />
                 </Button>
