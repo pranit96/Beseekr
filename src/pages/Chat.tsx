@@ -16,6 +16,11 @@ const Chat = () => {
 
   useEffect(() => {
     fetchAgents();
+    // Load last active conversation from localStorage
+    const lastConversationId = localStorage.getItem('lastActiveConversation');
+    if (lastConversationId) {
+      setCurrentConversationId(lastConversationId);
+    }
   }, []);
 
   const fetchAgents = async () => {
@@ -37,12 +42,45 @@ const Chat = () => {
 
   const handleSelectConversation = (conversationId: string) => {
     setCurrentConversationId(conversationId);
-    // TODO: Load conversation messages
+    localStorage.setItem('lastActiveConversation', conversationId);
   };
 
-  const handleNewSession = () => {
-    setCurrentConversationId(undefined);
-    setKey(prev => prev + 1);
+  const handleNewSession = async () => {
+    try {
+      // Create new conversation immediately when new session is clicked
+      const response = await apiClient.createConversation({
+        agent_id: null, // No agent selected initially
+        title: 'New Conversation'
+      });
+
+      if (response.success && response.data?.id) {
+        const newConversationId = response.data.id;
+        setCurrentConversationId(newConversationId);
+        localStorage.setItem('lastActiveConversation', newConversationId);
+        setKey(prev => prev + 1);
+        
+        toast({
+          title: 'New session created',
+          description: 'Ready to start chatting',
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Failed to create new session',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleConversationChange = (conversationId: string | null) => {
+    if (conversationId) {
+      setCurrentConversationId(conversationId);
+      localStorage.setItem('lastActiveConversation', conversationId);
+    } else {
+      setCurrentConversationId(undefined);
+      localStorage.removeItem('lastActiveConversation');
+    }
   };
 
   if (loading) {
@@ -76,7 +114,12 @@ const Chat = () => {
           <Menu className="w-5 h-5" />
         </button>
 
-        <ChatInterface key={key} agents={agents} />
+        <ChatInterface 
+          key={key} 
+          agents={agents} 
+          activeConversationId={currentConversationId}
+          onConversationChange={handleConversationChange}
+        />
       </div>
     </div>
   );

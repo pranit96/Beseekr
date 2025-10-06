@@ -489,37 +489,6 @@ class ApiClient {
     });
   }
 
-  // Conversation endpoints
-  async getConversations(params?: { status?: string; page?: number; limit?: number }) {
-    const query = new URLSearchParams(params as any).toString();
-    return this.request<any>(`/api/conversations?${query}`);
-  }
-
-  async getConversationHistory(conversationId: string) {
-    return this.request<any>(`/api/conversations/${conversationId}/history`);
-  }
-
-  async createConversation(conversation: { agent_id: string; title?: string }) {
-    return this.request<any>('/api/conversations', {
-      method: 'POST',
-      body: JSON.stringify(conversation),
-    });
-  }
-
-  // Message endpoints
-  async sendMessage(conversation_id: string, content: string) {
-    return this.request<any>('/api/messages', {
-      method: 'POST',
-      body: JSON.stringify({ conversation_id, content }),
-    });
-  }
-
-  async getMessages(conversation_id: string, page?: number, limit?: number) {
-    return this.request<any>(
-      `/api/messages/conversation/${conversation_id}?page=${page || 1}&limit=${limit || 50}`
-    );
-  }
-
   // Usage endpoints
   async getUsageLogs(params?: { start_date?: string; end_date?: string; page?: number }) {
     const query = new URLSearchParams(params as any).toString();
@@ -540,6 +509,47 @@ class ApiClient {
         };
       };
     }>(`/api/usage/stats?${query}`);
+  }
+
+    // Conversation endpoints - matching your exact API
+  async getConversations(params?: { status?: 'active' | 'archived'; page?: number; limit?: number }) {
+    const queryParams = new URLSearchParams();
+    if (params?.status) queryParams.append('status', params.status);
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    
+    const query = queryParams.toString();
+    return this.request<any>(`/api/conversations${query ? `?${query}` : ''}`);
+  }
+
+  async createConversation(conversation: { agent_id?: string | null; title?: string }) {
+    return this.request<any>('/api/conversations', {
+      method: 'POST',
+      body: JSON.stringify(conversation),
+    });
+  }
+
+  async deleteConversation(conversationId: string) {
+    return this.request<any>(`/api/conversations/${conversationId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async updateConversationStatus(conversationId: string, status: 'active' | 'archived') {
+    return this.request<any>(`/api/conversations/${conversationId}/status?status=${status}`, {
+      method: 'PATCH',
+    });
+  }
+
+  // Message endpoints
+  async getMessages(conversation_id: string, page?: number, limit?: number) {
+    const queryParams = new URLSearchParams();
+    queryParams.append('page', (page || 1).toString());
+    queryParams.append('limit', (limit || 50).toString());
+    
+    return this.request<any>(
+      `/api/messages/conversation/${conversation_id}?${queryParams.toString()}`
+    );
   }
 }
 

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Download, Trash2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Download, Trash2, Archive, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import {
@@ -14,15 +14,54 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { apiClient } from '@/lib/api';
+
+interface ArchivedConversation {
+  id: string;
+  title: string;
+  last_message_at: string;
+  archived_at: string;
+}
 
 const Profile = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [confirmEmail, setConfirmEmail] = useState('');
   const [isExporting, setIsExporting] = useState(false);
+  const [archivedConversations, setArchivedConversations] = useState<ArchivedConversation[]>([]);
+  const [loadingArchived, setLoadingArchived] = useState(true);
   const { user, exportData, deleteAccount } = useAuth();
   const { toast } = useToast();
+
+  useEffect(() => {
+    fetchArchivedConversations();
+  }, []);
+
+  const fetchArchivedConversations = async () => {
+    try {
+      const response = await apiClient.getConversations({ 
+        status: 'archived',
+        page: 1,
+        limit: 50 
+      });
+      
+      if (response.success && response.data) {
+        setArchivedConversations(response.data);
+      } else {
+        throw new Error(response.message || 'Failed to load archived conversations');
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Failed to load archived conversations',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setLoadingArchived(false);
+    }
+  };
 
   const handleExportData = async () => {
     setIsExporting(true);
@@ -66,6 +105,52 @@ const Profile = () => {
     }
   };
 
+  const handleRestoreConversation = async (conversationId: string) => {
+    try {
+      const response = await apiClient.updateConversationStatus(conversationId, 'active');
+      if (response.success) {
+        setArchivedConversations(prev => 
+          prev.filter(conv => conv.id !== conversationId)
+        );
+        toast({
+          title: 'Conversation restored',
+          description: 'The conversation has been restored to active list.',
+        });
+      } else {
+        throw new Error(response.message || 'Failed to restore conversation');
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Failed to restore conversation',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleDeleteArchivedConversation = async (conversationId: string) => {
+    try {
+      const response = await apiClient.deleteConversation(conversationId);
+      if (response.success) {
+        setArchivedConversations(prev => 
+          prev.filter(conv => conv.id !== conversationId)
+        );
+        toast({
+          title: 'Conversation deleted',
+          description: 'The archived conversation has been permanently deleted.',
+        });
+      } else {
+        throw new Error(response.message || 'Failed to delete conversation');
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Failed to delete conversation',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  };
+
   return (
     <div className="container mx-auto p-8 max-w-3xl">
       <div className="mb-8">
@@ -90,6 +175,59 @@ const Profile = () => {
               <div className="font-medium">{user?.email}</div>
             </div>
           </div>
+        </Card>
+
+        <Card className="p-6 glass">
+          <h2 className="text-xl font-semibold mb-4">Archived Conversations</h2>
+          <ScrollArea className="h-64">
+            {loadingArchived ? (
+              <div className="text-center py-8 text-muted-foreground">
+                Loading archived conversations...
+              </div>
+            ) : archivedConversations.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                No archived conversations
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {archivedConversations.map((conversation) => (
+                  <div
+                    key={conversation.id}
+                    className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-muted/30 transition-colors"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">
+                        {conversation.title || 'Untitled Conversation'}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Last active: {new Date(conversation.last_message_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 ml-4">
+                      <Button
+                        onClick={() => handleRestoreConversation(conversation.id)}
+                        variant="outline"
+                        size="sm"
+                        className="h-8 gap-2"
+                      >
+                        <RotateCcw className="w-3 h-3" />
+                        Restore
+                      </Button>
+                      <Button
+                        onClick={() => handleDeleteArchivedConversation(conversation.id)}
+                        variant="destructive"
+                        size="sm"
+                        className="h-8 gap-2"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                        Delete
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </ScrollArea>
         </Card>
 
         <Card className="p-6 glass">
@@ -135,17 +273,6 @@ const Profile = () => {
               </Button>
             </div>
           </div>
-        </Card>
-
-        <Card className="p-6 glass bg-muted/20">
-          <h2 className="text-xl font-semibold mb-4">Accessibility Features</h2>
-          <ul className="space-y-2 text-sm text-muted-foreground">
-            <li>• Keyboard navigation support (Tab, Enter, Escape)</li>
-            <li>• Screen reader optimized</li>
-            <li>• High contrast mode compatible</li>
-            <li>• Reduced motion respect</li>
-            <li>• ARIA labels throughout</li>
-          </ul>
         </Card>
       </div>
 

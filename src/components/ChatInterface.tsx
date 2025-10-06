@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Send, Workflow, Lock, LockOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -26,10 +26,96 @@ export const ChatInterface = ({ agents, activeConversationId, onConversationChan
   const [conversationId, setConversationId] = useState<string | null>(activeConversationId || null);
   const { toast } = useToast();
 
-  // Sync local conversation with parent
+  // Load cached messages and conversation state from localStorage
+  useEffect(() => {
+    const savedMessages = localStorage.getItem('cachedMessages');
+    const savedConversationId = localStorage.getItem('currentConversationId');
+    const savedSelectedAgents = localStorage.getItem('selectedAgents');
+    const savedExecutionMode = localStorage.getItem('executionMode');
+    const savedHasStarted = localStorage.getItem('hasStarted');
+
+    if (savedMessages) {
+      try {
+        const parsedMessages = JSON.parse(savedMessages);
+        setMessages(parsedMessages);
+      } catch (error) {
+        console.error('Failed to parse cached messages:', error);
+      }
+    }
+
+    if (savedSelectedAgents) {
+      try {
+        const parsedAgents = JSON.parse(savedSelectedAgents);
+        setSelectedAgents(parsedAgents);
+      } catch (error) {
+        console.error('Failed to parse selected agents:', error);
+      }
+    }
+
+    if (savedExecutionMode) {
+      setExecutionMode(savedExecutionMode as ExecutionMode);
+    }
+
+    if (savedHasStarted === 'true') {
+      setHasStarted(true);
+    }
+  }, []);
+
+  // Sync conversation ID with parent and cache
   useEffect(() => {
     setConversationId(activeConversationId || null);
+    if (activeConversationId) {
+      localStorage.setItem('currentConversationId', activeConversationId);
+      loadConversationMessages(activeConversationId);
+    } else {
+      localStorage.removeItem('currentConversationId');
+    }
   }, [activeConversationId]);
+
+  // Cache messages and state whenever they change
+  useEffect(() => {
+    localStorage.setItem('cachedMessages', JSON.stringify(messages));
+    localStorage.setItem('selectedAgents', JSON.stringify(selectedAgents));
+    localStorage.setItem('executionMode', executionMode);
+    localStorage.setItem('hasStarted', hasStarted.toString());
+  }, [messages, selectedAgents, executionMode, hasStarted]);
+
+  // Fast cached message loading with API fallback
+  const loadConversationMessages = useCallback(async (convId: string) => {
+    try {
+      // First try to load from cache
+      const cachedMessages = localStorage.getItem(`messages_${convId}`);
+      if (cachedMessages) {
+        const parsedMessages = JSON.parse(cachedMessages);
+        setMessages(parsedMessages);
+        setHasStarted(parsedMessages.length > 0);
+      }
+
+      // Always refresh from API in background
+      const { apiClient } = await import('@/lib/api');
+      const response = await apiClient.getMessages(convId, 1, 50);
+      
+      if (response.success && response.data) {
+        const apiMessages = response.data.map((msg: any) => ({
+          id: msg.id,
+          type: msg.type,
+          content: msg.content,
+          timestamp: new Date(msg.created_at),
+          ...(msg.agent_responses && { agentResponses: msg.agent_responses }),
+          ...(msg.execution_mode && { executionMode: msg.execution_mode }),
+        }));
+
+        setMessages(apiMessages);
+        setHasStarted(apiMessages.length > 0);
+        
+        // Update cache
+        localStorage.setItem(`messages_${convId}`, JSON.stringify(apiMessages));
+      }
+    } catch (error: any) {
+      console.error('Failed to load conversation messages:', error);
+      // Don't show error toast as we might have cached messages
+    }
+  }, []);
 
   const handleSubmit = async () => {
     if (!input.trim()) return;
@@ -49,7 +135,9 @@ export const ChatInterface = ({ agents, activeConversationId, onConversationChan
       content: input,
       timestamp: new Date(),
     };
-    setMessages((prev) => [...prev, userMessage]);
+    
+    const newMessages = [...messages, userMessage];
+    setMessages(newMessages);
 
     const messageContent = input;
     setInput('');
@@ -59,24 +147,23 @@ export const ChatInterface = ({ agents, activeConversationId, onConversationChan
       const { apiClient } = await import('@/lib/api');
       let convId = conversationId;
 
-      // Create session only if saving is ON and no session exists
+      // If we're saving to conversation but don't have one, create it now
       if (saveToConversation && !convId) {
-        const sessionResponse = await apiClient.createOrchestrationSession({
-          agent_ids: selectedAgents.map(a => a.id),
-          mode: executionMode,
-          title: 'Agent Orchestration Chat',
+        const response = await apiClient.createConversation({
+          agent_id: selectedAgents.length > 0 ? selectedAgents[0].id : null,
+          title: messageContent.slice(0, 50) + (messageContent.length > 50 ? '...' : ''),
         });
 
-        if (sessionResponse.success && sessionResponse.data?.conversation?.id) {
-          convId = sessionResponse.data.conversation.id;
+        if (response.success && response.data?.id) {
+          convId = response.data.id;
           setConversationId(convId);
           onConversationChange?.(convId);
+          localStorage.setItem('currentConversationId', convId);
         } else {
-          throw new Error('Failed to create conversation session');
+          throw new Error('Failed to create conversation');
         }
       }
 
-      // Prepare payload - only include conversation_id when saveToConversation is true
       const payload: any = {
         agent_ids: selectedAgents.map(a => a.id),
         message: messageContent,
@@ -84,7 +171,7 @@ export const ChatInterface = ({ agents, activeConversationId, onConversationChan
         save_to_conversation: saveToConversation,
       };
 
-      // Only include conversation_id if we're saving to conversation
+      // Always include conversation_id when save_to_conversation is true
       if (saveToConversation && convId) {
         payload.conversation_id = convId;
       }
@@ -117,7 +204,13 @@ export const ChatInterface = ({ agents, activeConversationId, onConversationChan
             : response.data.aggregated_output,
         };
 
-        setMessages((prev) => [...prev, agentMessage]);
+        const updatedMessages = [...newMessages, agentMessage];
+        setMessages(updatedMessages);
+
+        // Update conversation cache
+        if (convId) {
+          localStorage.setItem(`messages_${convId}`, JSON.stringify(updatedMessages));
+        }
       }
     } catch (error: any) {
       toast({
@@ -125,6 +218,9 @@ export const ChatInterface = ({ agents, activeConversationId, onConversationChan
         description: error.message || 'Failed to execute agents',
         variant: 'destructive',
       });
+      
+      // Remove the user message on error
+      setMessages(messages);
     } finally {
       setIsLoading(false);
     }
@@ -139,11 +235,16 @@ export const ChatInterface = ({ agents, activeConversationId, onConversationChan
     setSaveToConversation(newSaveToConversation);
     
     if (newSaveToConversation) {
-      // Turning OFF private mode (enabling saving) - no need to reset conversation
+      // Turning ON saving - if we have messages but no conversation, create one
+      if (messages.length > 0 && !conversationId) {
+        // Optionally create a conversation for existing messages
+        // This ensures future messages get saved
+      }
     } else {
-      // Turning ON private mode (disabling saving) => reset conversation
+      // Turning OFF saving => reset conversation but keep messages in cache
       setConversationId(null);
       onConversationChange?.(null);
+      localStorage.removeItem('currentConversationId');
     }
   };
 
