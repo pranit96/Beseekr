@@ -33,51 +33,26 @@ interface Conversation {
 }
 
 interface ConversationHistoryProps {
+  conversations: Conversation[];
   onSelectConversation: (conversationId: string) => void;
   onNewSession: () => void;
+  onConversationDeleted: () => void;
+  onConversationArchived: () => void;
   currentConversationId?: string;
 }
 
 export const ConversationHistory = ({
+  conversations,
   onSelectConversation,
   onNewSession,
+  onConversationDeleted,
+  onConversationArchived,
   currentConversationId,
 }: ConversationHistoryProps) => {
-  const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [loading, setLoading] = useState(true);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const { toast } = useToast();
-
-  useEffect(() => {
-    fetchConversations();
-  }, []);
-
-  const fetchConversations = async () => {
-    try {
-      // Using your exact API structure
-      const response = await apiClient.getConversations({ 
-        status: 'active',
-        page: 1,
-        limit: 20 
-      });
-      
-      if (response.success && response.data) {
-        setConversations(response.data);
-      } else {
-        throw new Error(response.message || 'Failed to load conversations');
-      }
-    } catch (error: any) {
-      toast({
-        title: 'Failed to load conversations',
-        description: error.message,
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleDeleteConversation = async () => {
     if (!selectedConversation) return;
@@ -85,11 +60,11 @@ export const ConversationHistory = ({
     try {
       const response = await apiClient.deleteConversation(selectedConversation.id);
       if (response.success) {
-        setConversations(prev => prev.filter(conv => conv.id !== selectedConversation.id));
         toast({
           title: 'Conversation deleted',
           description: 'The conversation has been permanently deleted.',
         });
+        onConversationDeleted();
       } else {
         throw new Error(response.message || 'Failed to delete conversation');
       }
@@ -111,11 +86,11 @@ export const ConversationHistory = ({
     try {
       const response = await apiClient.updateConversationStatus(selectedConversation.id, 'archived');
       if (response.success) {
-        setConversations(prev => prev.filter(conv => conv.id !== selectedConversation.id));
         toast({
           title: 'Conversation archived',
           description: 'The conversation has been moved to archives.',
         });
+        onConversationArchived();
       } else {
         throw new Error(response.message || 'Failed to archive conversation');
       }
@@ -146,11 +121,7 @@ export const ConversationHistory = ({
       
       <ScrollArea className="flex-1">
         <div className="p-2 space-y-1">
-          {loading ? (
-            <div className="p-4 text-center text-sm text-muted-foreground">
-              Loading...
-            </div>
-          ) : conversations.length === 0 ? (
+          {conversations.length === 0 ? (
             <div className="p-4 text-center text-sm text-muted-foreground">
               No conversations yet
             </div>

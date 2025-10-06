@@ -6,8 +6,16 @@ import { Agent } from '@/types/agent';
 import { useToast } from '@/hooks/use-toast';
 import { Menu } from 'lucide-react';
 
+interface Conversation {
+  id: string;
+  title: string;
+  last_message_at: string;
+  status: 'active' | 'archived';
+}
+
 const Chat = () => {
   const [agents, setAgents] = useState<Agent[]>([]);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentConversationId, setCurrentConversationId] = useState<string>();
   const [key, setKey] = useState(0);
@@ -16,6 +24,7 @@ const Chat = () => {
 
   useEffect(() => {
     fetchAgents();
+    fetchConversations();
     // Load last active conversation from localStorage
     const lastConversationId = localStorage.getItem('lastActiveConversation');
     if (lastConversationId) {
@@ -35,6 +44,26 @@ const Chat = () => {
         description: error.message,
         variant: 'destructive',
       });
+    }
+  };
+
+  const fetchConversations = async () => {
+    try {
+      const response = await apiClient.getConversations({ 
+        status: 'active',
+        page: 1,
+        limit: 20 
+      });
+      
+      if (response.success && response.data) {
+        setConversations(response.data);
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Failed to load conversations',
+        description: error.message,
+        variant: 'destructive',
+      });
     } finally {
       setLoading(false);
     }
@@ -49,7 +78,7 @@ const Chat = () => {
     try {
       // Create new conversation immediately when new session is clicked
       const response = await apiClient.createConversation({
-        agent_id: null, // No agent selected initially
+        agent_id: null,
         title: 'New Conversation'
       });
 
@@ -57,6 +86,9 @@ const Chat = () => {
         const newConversationId = response.data.id;
         setCurrentConversationId(newConversationId);
         localStorage.setItem('lastActiveConversation', newConversationId);
+        
+        // Refresh conversations list to include the new one
+        await fetchConversations();
         setKey(prev => prev + 1);
         
         toast({
@@ -83,6 +115,20 @@ const Chat = () => {
     }
   };
 
+  const handleConversationDeleted = () => {
+    // Refresh conversations list when one is deleted
+    fetchConversations();
+    setCurrentConversationId(undefined);
+    localStorage.removeItem('lastActiveConversation');
+  };
+
+  const handleConversationArchived = () => {
+    // Refresh conversations list when one is archived
+    fetchConversations();
+    setCurrentConversationId(undefined);
+    localStorage.removeItem('lastActiveConversation');
+  };
+
   if (loading) {
     return (
       <div className="h-full flex items-center justify-center">
@@ -99,8 +145,11 @@ const Chat = () => {
         } overflow-hidden`}
       >
         <ConversationHistory
+          conversations={conversations}
           onSelectConversation={handleSelectConversation}
           onNewSession={handleNewSession}
+          onConversationDeleted={handleConversationDeleted}
+          onConversationArchived={handleConversationArchived}
           currentConversationId={currentConversationId}
         />
       </div>
