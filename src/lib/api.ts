@@ -14,13 +14,52 @@ interface ApiResponse<T> {
   };
 }
 
+interface SessionData {
+  access_token: string;
+  refresh_token: string;
+  expires_at?: number;
+}
+
 class ApiClient {
   private baseUrl: string;
   private token: string | null = null;
+  private refreshToken: string | null = null;
+  private isRefreshing = false;
+  private refreshSubscribers: ((token: string) => void)[] = [];
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
+    this.loadTokensFromStorage();
+  }
+
+  private loadTokensFromStorage() {
     this.token = localStorage.getItem('access_token');
+    this.refreshToken = localStorage.getItem('refresh_token');
+  }
+
+  private saveTokensToStorage() {
+    if (this.token) {
+      localStorage.setItem('access_token', this.token);
+    } else {
+      localStorage.removeItem('access_token');
+    }
+    
+    if (this.refreshToken) {
+      localStorage.setItem('refresh_token', this.refreshToken);
+    } else {
+      localStorage.removeItem('refresh_token');
+    }
+  }
+
+  setTokens(tokens: { access_token: string; refresh_token: string } | null) {
+    if (tokens) {
+      this.token = tokens.access_token;
+      this.refreshToken = tokens.refresh_token;
+    } else {
+      this.token = null;
+      this.refreshToken = null;
+    }
+    this.saveTokensToStorage();
   }
 
   setToken(token: string | null) {
@@ -32,9 +71,51 @@ class ApiClient {
     }
   }
 
+  private async refreshAuthToken(): Promise<string> {
+    if (!this.refreshToken) {
+      throw new Error('No refresh token available');
+    }
+
+    try {
+      const response = await fetch(`${this.baseUrl}/api/auth/refresh`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ refresh_token: this.refreshToken }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Token refresh failed');
+      }
+
+      if (data.data?.session) {
+        const { access_token, refresh_token } = data.data.session;
+        this.setTokens({ access_token, refresh_token });
+        return access_token;
+      }
+
+      throw new Error('Invalid response format from token refresh');
+    } catch (error) {
+      this.setTokens(null);
+      if (this.onUnauthorized) {
+        this.onUnauthorized();
+      }
+      throw error;
+    }
+  }
+
+  private onRefresh(token: string) {
+    this.refreshSubscribers.forEach(callback => callback(token));
+    this.refreshSubscribers = [];
+  }
+
   private async request<T>(
     endpoint: string,
-    options: RequestInit = {}
+    options: RequestInit = {},
+    retry = true
   ): Promise<ApiResponse<T>> {
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
@@ -50,6 +131,37 @@ class ApiClient {
         ...options,
         headers,
       });
+
+      // If token is expired, try to refresh and retry the request
+      if (response.status === 401 && retry && this.refreshToken && !this.isRefreshing) {
+        this.isRefreshing = true;
+
+        try {
+          const newToken = await this.refreshAuthToken();
+          this.isRefreshing = false;
+          this.onRefresh(newToken);
+          
+          // Retry the original request with new token
+          headers['Authorization'] = `Bearer ${newToken}`;
+          return this.request<T>(endpoint, { ...options, headers }, false);
+        } catch (refreshError) {
+          this.isRefreshing = false;
+          if (this.onUnauthorized) {
+            this.onUnauthorized();
+          }
+          throw refreshError;
+        }
+      }
+
+      // If we're already refreshing, wait for the refresh to complete and retry
+      if (response.status === 401 && retry && this.isRefreshing) {
+        return new Promise((resolve) => {
+          this.refreshSubscribers.push((token: string) => {
+            headers['Authorization'] = `Bearer ${token}`;
+            resolve(this.request<T>(endpoint, { ...options, headers }, false));
+          });
+        });
+      }
 
       const data = await response.json();
 
@@ -75,17 +187,35 @@ class ApiClient {
 
   // Auth endpoints
   async signup(email: string, password: string, full_name: string) {
-    return this.request<any>('/api/auth/signup', {
+    const response = await this.request<any>('/api/auth/signup', {
       method: 'POST',
       body: JSON.stringify({ email, password, full_name }),
     });
+
+    if (response.success && response.data?.session) {
+      this.setTokens({
+        access_token: response.data.session.access_token,
+        refresh_token: response.data.session.refresh_token,
+      });
+    }
+
+    return response;
   }
 
   async login(email: string, password: string) {
-    return this.request<any>('/api/auth/login', {
+    const response = await this.request<any>('/api/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
+
+    if (response.success && response.data?.session) {
+      this.setTokens({
+        access_token: response.data.session.access_token,
+        refresh_token: response.data.session.refresh_token,
+      });
+    }
+
+    return response;
   }
 
   async getCurrentUser() {

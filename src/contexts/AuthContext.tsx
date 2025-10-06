@@ -29,8 +29,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const token = localStorage.getItem('access_token');
-    if (token) {
-      apiClient.setToken(token);
+    const refreshToken = localStorage.getItem('refresh_token');
+    
+    if (token && refreshToken) {
+      apiClient.setTokens({ access_token: token, refresh_token: refreshToken });
       fetchCurrentUser();
     } else {
       setLoading(false);
@@ -55,7 +57,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     } catch (error) {
       console.error('Failed to fetch user:', error);
-      apiClient.setToken(null);
+      apiClient.setTokens(null);
     } finally {
       setLoading(false);
     }
@@ -65,7 +67,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const response = await apiClient.login(email, password);
       if (response.success && response.data) {
-        apiClient.setToken(response.data.session.access_token);
         setUser(response.data.user);
         toast({
           title: 'Welcome back!',
@@ -87,7 +88,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const response = await apiClient.signup(email, password, full_name);
       if (response.success && response.data) {
-        apiClient.setToken(response.data.session.access_token);
         setUser(response.data.user);
         toast({
           title: 'Account created!',
@@ -106,7 +106,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const logout = () => {
-    apiClient.setToken(null);
+    apiClient.setTokens(null);
     setUser(null);
     navigate('/auth');
     toast({
@@ -135,7 +135,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const response = await apiClient.deleteProfile(email);
       if (response.success) {
-        apiClient.setToken(null);
+        apiClient.setTokens(null);
         setUser(null);
         navigate('/auth');
         toast({
