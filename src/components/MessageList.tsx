@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ChatMessage } from '@/types/agent';
 import { UserMessage } from './messages/UserMessage';
 import { AgentMessage } from './messages/AgentMessage';
@@ -9,10 +9,37 @@ interface MessageListProps {
 
 export const MessageList = ({ messages }: MessageListProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const [isAutoScroll, setIsAutoScroll] = useState(true);
 
+  // Handle scroll behavior
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    const container = messagesContainerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      // If user scrolls up, disable auto-scroll
+      const { scrollTop, scrollHeight, clientHeight } = container;
+      const isAtBottom = scrollHeight - scrollTop - clientHeight < 100;
+      setIsAutoScroll(isAtBottom);
+    };
+
+    container.addEventListener('scroll', handleScroll);
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Smooth scroll to bottom when new messages arrive and auto-scroll is enabled
+  useEffect(() => {
+    if (isAutoScroll && messagesEndRef.current) {
+      // Use requestAnimationFrame for smoother scrolling
+      requestAnimationFrame(() => {
+        messagesEndRef.current?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'end'
+        });
+      });
+    }
+  }, [messages, isAutoScroll]);
 
   // Ensure all timestamps are Date objects before rendering
   const messagesWithProperTimestamps = messages.map(msg => ({
@@ -27,7 +54,10 @@ export const MessageList = ({ messages }: MessageListProps) => {
   }));
 
   return (
-    <div className="flex-1 overflow-y-auto p-4 space-y-4">
+    <div 
+      ref={messagesContainerRef}
+      className="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth"
+    >
       {messagesWithProperTimestamps.length === 0 ? (
         <div className="flex items-center justify-center h-full">
           <div className="text-center space-y-3 max-w-md">
