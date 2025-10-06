@@ -122,7 +122,7 @@ class ApiClient {
 
   async updateAgent(id: string, agent: any) {
     return this.request<any>(`/api/agents/${id}`, {
-      method: 'PUT',
+      method: 'PATCH',
       body: JSON.stringify(agent),
     });
   }
