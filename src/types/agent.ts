@@ -3,7 +3,7 @@ export interface Agent {
   name: string;
   description: string;
   color?: string;
-  isCustom?: boolean;
+  is_default?: boolean;
   domain?: string;
   system_prompt?: string;
   model?: string;

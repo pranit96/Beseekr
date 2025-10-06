@@ -52,13 +52,13 @@ export const AgentDialog = ({
       domain,
       system_prompt: systemPrompt,
       color: agent?.color || 'hsl(var(--primary))',
-      isCustom: true,
+      is_default: false,
     });
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl glass max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-2xl glass max-h-[90vh] overflow-y-auto rounded-2xl">
         <DialogHeader>
           <DialogTitle>{agent ? 'Edit Agent' : 'Create New Agent'}</DialogTitle>
         </DialogHeader>
@@ -77,12 +77,15 @@ export const AgentDialog = ({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="domain">Domain</Label>
+            <Label htmlFor="domain">
+              Domain <span className="text-destructive">*</span>
+            </Label>
             <Input
               id="domain"
               value={domain}
               onChange={(e) => setDomain(e.target.value)}
               placeholder="e.g., legal, medical, technical, marketing"
+              required
             />
             <p className="text-xs text-muted-foreground">
               Specify the area of expertise for this agent
@@ -90,31 +93,31 @@ export const AgentDialog = ({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">
-              Description <span className="text-destructive">*</span>
+            <Label htmlFor="system_prompt">
+              Role <span className="text-destructive">*</span>
             </Label>
-            <Textarea
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Describe what this agent does..."
-              rows={3}
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="system_prompt">System Prompt</Label>
             <Textarea
               id="system_prompt"
               value={systemPrompt}
               onChange={(e) => setSystemPrompt(e.target.value)}
               placeholder="Define the agent's behavior, expertise, and how it should respond to users..."
               rows={6}
+              required
             />
             <p className="text-xs text-muted-foreground">
-              This prompt defines how the agent will behave and respond to queries
+              This defines how the agent will behave and respond to queries
             </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Describe what this agent does..."
+              rows={3}
+            />
           </div>
 
           <div className="flex gap-2 pt-4">
