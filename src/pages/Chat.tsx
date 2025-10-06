@@ -22,15 +22,18 @@ const Chat = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchAgents();
+useEffect(() => {
+  const handleConversationCreated = () => {
+    // Refresh conversations when a new one is created
     fetchConversations();
-    // Load last active conversation from localStorage
-    const lastConversationId = localStorage.getItem('lastActiveConversation');
-    if (lastConversationId) {
-      setCurrentConversationId(lastConversationId);
-    }
-  }, []);
+  };
+
+  window.addEventListener('conversationCreated', handleConversationCreated as any);
+  
+  return () => {
+    window.removeEventListener('conversationCreated', handleConversationCreated as any);
+  };
+}, []);
 
   const fetchAgents = async () => {
     try {
