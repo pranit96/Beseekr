@@ -13,6 +13,11 @@ export const AgentResponseCard = ({
   index,
   isSequential,
 }: AgentResponseCardProps) => {
+  // Ensure timestamp is a Date object - FIX for the timestamp error
+  const timestamp = response.timestamp instanceof Date 
+    ? response.timestamp 
+    : new Date(response.timestamp);
+
   return (
     <div
       className="glass rounded-xl p-4 shadow-soft hover:shadow-medium transition-smooth"
@@ -36,7 +41,8 @@ export const AgentResponseCard = ({
         <MarkdownRenderer content={response.content} />
       </div>
       <span className="text-xs text-muted-foreground mt-2 block">
-        {response.timestamp.toLocaleTimeString([], {
+        {/* Use the properly converted timestamp */}
+        {timestamp.toLocaleTimeString([], {
           hour: '2-digit',
           minute: '2-digit',
         })}

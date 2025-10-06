@@ -37,7 +37,18 @@ export const ChatInterface = ({ agents, activeConversationId, onConversationChan
     if (savedMessages) {
       try {
         const parsedMessages = JSON.parse(savedMessages);
-        setMessages(parsedMessages);
+        // Ensure timestamps are Date objects
+        const messagesWithProperDates = parsedMessages.map((msg: any) => ({
+          ...msg,
+          timestamp: new Date(msg.timestamp),
+          ...(msg.agentResponses && {
+            agentResponses: msg.agentResponses.map((ar: any) => ({
+              ...ar,
+              timestamp: new Date(ar.timestamp),
+            })),
+          }),
+        }));
+        setMessages(messagesWithProperDates);
       } catch (error) {
         console.error('Failed to parse cached messages:', error);
       }
@@ -61,7 +72,7 @@ export const ChatInterface = ({ agents, activeConversationId, onConversationChan
     }
   }, []);
 
-  // Sync conversation ID with parent and cache - FIXED: Proper dependency
+  // Sync conversation ID with parent and cache
   useEffect(() => {
     console.log('Active conversation changed:', activeConversationId);
     setConversationId(activeConversationId || null);
@@ -83,7 +94,7 @@ export const ChatInterface = ({ agents, activeConversationId, onConversationChan
     localStorage.setItem('hasStarted', hasStarted.toString());
   }, [messages, selectedAgents, executionMode, hasStarted]);
 
-  // Fast cached message loading with API fallback - FIXED: Proper message parsing
+  // Fixed message loading with proper API response parsing
   const loadConversationMessages = useCallback(async (convId: string) => {
     if (!convId) {
       setMessages([]);
@@ -99,9 +110,20 @@ export const ChatInterface = ({ agents, activeConversationId, onConversationChan
       if (cachedMessages) {
         try {
           const parsedMessages = JSON.parse(cachedMessages);
-          setMessages(parsedMessages);
-          setHasStarted(parsedMessages.length > 0);
-          console.log('Loaded cached messages:', parsedMessages.length);
+          // Ensure timestamps are Date objects
+          const messagesWithProperDates = parsedMessages.map((msg: any) => ({
+            ...msg,
+            timestamp: new Date(msg.timestamp),
+            ...(msg.agentResponses && {
+              agentResponses: msg.agentResponses.map((ar: any) => ({
+                ...ar,
+                timestamp: new Date(ar.timestamp),
+              })),
+            }),
+          }));
+          setMessages(messagesWithProperDates);
+          setHasStarted(messagesWithProperDates.length > 0);
+          console.log('Loaded cached messages:', messagesWithProperDates.length);
         } catch (cacheError) {
           console.error('Failed to parse cached messages:', cacheError);
         }
@@ -114,28 +136,55 @@ export const ChatInterface = ({ agents, activeConversationId, onConversationChan
       if (response.success && response.data) {
         console.log('API response data:', response.data);
         
-        // Transform API response to ChatMessage format
+        // Transform API response to ChatMessage format - FIXED for actual API structure
         const apiMessages: ChatMessage[] = response.data.map((msg: any) => {
+          const baseMessage = {
+            id: msg.id,
+            content: msg.content,
+            timestamp: new Date(msg.created_at), // Convert string to Date object
+          };
+
           // Handle user messages
-          if (msg.type === 'user' || msg.role === 'user') {
+          if (msg.role === 'user') {
             return {
-              id: msg.id || `msg-${Date.now()}`,
+              ...baseMessage,
               type: 'user' as const,
-              content: msg.content || msg.message || '',
-              timestamp: new Date(msg.created_at || msg.timestamp),
             };
           }
           
-          // Handle agent messages
+          // Handle assistant messages
+          if (msg.role === 'assistant') {
+            // Extract agent responses from metadata
+            const agentResponses: AgentResponse[] = (msg.metadata?.agent_results || []).map((result: any) => ({
+              agentId: result.agent_id,
+              agentName: result.agent_name,
+              content: result.response,
+              timestamp: new Date(msg.created_at), // Use message timestamp for agent responses
+              status: result.error ? 'error' : 'success',
+              metadata: {
+                usage: result.usage,
+                domain: result.agent_domain,
+                model_used: result.model_used,
+                order: result.order,
+                fallback_used: result.fallback_used,
+              },
+            }));
+
+            return {
+              ...baseMessage,
+              type: 'agent' as const,
+              agentResponses,
+              executionMode: msg.metadata?.orchestration_mode || 'sequential',
+              markdownOutput: msg.content, // Use the content as markdown output
+              finalOutput: msg.content, // Use the content as final output
+            };
+          }
+
+          // Fallback for unknown message types
+          console.warn('Unknown message role:', msg.role);
           return {
-            id: msg.id || `msg-${Date.now()}-agent`,
-            type: 'agent' as const,
-            content: msg.content || msg.message || '',
-            timestamp: new Date(msg.created_at || msg.timestamp),
-            agentResponses: msg.agent_responses || [],
-            executionMode: msg.execution_mode || 'sequential',
-            markdownOutput: msg.markdown_output || '',
-            finalOutput: msg.final_output || '',
+            ...baseMessage,
+            type: 'user' as const,
           };
         });
 
@@ -143,7 +192,7 @@ export const ChatInterface = ({ agents, activeConversationId, onConversationChan
         setMessages(apiMessages);
         setHasStarted(apiMessages.length > 0);
         
-        // Update cache
+        // Update cache with properly formatted messages
         localStorage.setItem(`messages_${convId}`, JSON.stringify(apiMessages));
       } else {
         console.log('No messages found in API response');
@@ -237,6 +286,8 @@ export const ChatInterface = ({ agents, activeConversationId, onConversationChan
             usage: result.usage,
             domain: result.agent_domain,
             model_used: result.model_used,
+            order: result.order,
+            fallback_used: result.fallback_used,
           },
         }));
 

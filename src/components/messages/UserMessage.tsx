@@ -1,3 +1,4 @@
+// In UserMessage.tsx - Add timestamp validation
 import { ChatMessage } from '@/types/agent';
 
 interface UserMessageProps {
@@ -5,16 +6,18 @@ interface UserMessageProps {
 }
 
 export const UserMessage = ({ message }: UserMessageProps) => {
+  // Ensure timestamp is a Date object
+  const timestamp = message.timestamp instanceof Date 
+    ? message.timestamp 
+    : new Date(message.timestamp);
+
   return (
-    <div className="flex justify-end animate-fade-in">
-      <div className="max-w-[80%] glass rounded-2xl rounded-tr-md p-4 shadow-medium">
-        <p className="text-foreground whitespace-pre-wrap">{message.content}</p>
-        <span className="text-xs text-muted-foreground mt-2 block">
-          {message.timestamp.toLocaleTimeString([], {
-            hour: '2-digit',
-            minute: '2-digit',
-          })}
-        </span>
+    <div className="flex justify-end">
+      <div className="max-w-[80%] bg-primary text-primary-foreground rounded-2xl rounded-tr-sm px-4 py-3">
+        <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+        <p className="text-xs opacity-70 mt-2 text-right">
+          {timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+        </p>
       </div>
     </div>
   );
