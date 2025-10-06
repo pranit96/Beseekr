@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
-import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Plus, Pencil, Trash2, Search, ArrowUpDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { AgentDialog } from '@/components/AgentDialog';
 import { Agent } from '@/types/agent';
 import { apiClient } from '@/lib/api';
@@ -17,6 +18,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+
+type SortOption = 'name-asc' | 'name-desc' | 'domain-asc' | 'domain-desc' | 'newest' | 'oldest';
 
 const Agents = () => {
   const [agents, setAgents] = useState<Agent[]>([]);
@@ -24,6 +33,8 @@ const Agents = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingAgent, setEditingAgent] = useState<Agent | undefined>();
   const [deleteAgentId, setDeleteAgentId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortOption, setSortOption] = useState<SortOption>('newest');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -47,13 +58,43 @@ const Agents = () => {
     }
   };
 
+  const filteredAndSortedAgents = useMemo(() => {
+    let filtered = agents.filter((agent) => {
+      const searchLower = searchQuery.toLowerCase();
+      return (
+        agent.name.toLowerCase().includes(searchLower) ||
+        (agent.domain && agent.domain.toLowerCase().includes(searchLower)) ||
+        agent.description.toLowerCase().includes(searchLower)
+      );
+    });
+
+    const sorted = [...filtered].sort((a, b) => {
+      switch (sortOption) {
+        case 'name-asc':
+          return a.name.localeCompare(b.name);
+        case 'name-desc':
+          return b.name.localeCompare(a.name);
+        case 'domain-asc':
+          return (a.domain || '').localeCompare(b.domain || '');
+        case 'domain-desc':
+          return (b.domain || '').localeCompare(a.domain || '');
+        case 'newest':
+          return (b.id || '').localeCompare(a.id || '');
+        case 'oldest':
+          return (a.id || '').localeCompare(b.id || '');
+        default:
+          return 0;
+      }
+    });
+
+    return sorted;
+  }, [agents, searchQuery, sortOption]);
+
   const handleSaveAgent = async (agent: Agent) => {
     try {
       if (agent.id && editingAgent) {
-        // Update existing agent
         const response = await apiClient.updateAgent(agent.id, agent);
         if (response.success && response.data) {
-          // Use the response data instead of local agent object
           setAgents(agents.map((a) => (a.id === agent.id ? response.data : a)));
           toast({
             title: 'Agent updated',
@@ -61,7 +102,6 @@ const Agents = () => {
           });
         }
       } else {
-        // Create new agent
         const response = await apiClient.createAgent(agent);
         if (response.success && response.data) {
           setAgents([...agents, response.data]);
@@ -110,6 +150,18 @@ const Agents = () => {
     setIsDialogOpen(true);
   };
 
+  const getSortLabel = (option: SortOption) => {
+    const labels = {
+      'name-asc': 'Name (A-Z)',
+      'name-desc': 'Name (Z-A)',
+      'domain-asc': 'Domain (A-Z)',
+      'domain-desc': 'Domain (Z-A)',
+      'newest': 'Newest First',
+      'oldest': 'Oldest First',
+    };
+    return labels[option];
+  };
+
   if (loading) {
     return (
       <div className="h-full flex items-center justify-center">
@@ -141,8 +193,51 @@ const Agents = () => {
         </Button>
       </div>
 
+      {agents.length > 0 && (
+        <div className="flex gap-3 mb-6">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search by name or domain..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <ArrowUpDown className="w-4 h-4" />
+                {getSortLabel(sortOption)}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem onClick={() => setSortOption('newest')}>
+                Newest First
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortOption('oldest')}>
+                Oldest First
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortOption('name-asc')}>
+                Name (A-Z)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortOption('name-desc')}>
+                Name (Z-A)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortOption('domain-asc')}>
+                Domain (A-Z)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortOption('domain-desc')}>
+                Domain (Z-A)
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {agents.map((agent, index) => (
+        {filteredAndSortedAgents.map((agent, index) => (
           <Card
             key={agent.id}
             className="p-6 glass hover:shadow-glow transition-smooth group relative"
@@ -173,7 +268,7 @@ const Agents = () => {
 
             {agent.system_prompt && (
               <div className="mb-4 p-3 bg-muted/50 rounded-md">
-                <p className="text-xs font-medium text-muted-foreground mb-1">System Prompt:</p>
+                <p className="text-xs font-medium text-muted-foreground mb-1">Role:</p>
                 <p className="text-xs text-muted-foreground line-clamp-2">
                   {agent.system_prompt}
                 </p>
@@ -203,6 +298,20 @@ const Agents = () => {
           </Card>
         ))}
       </div>
+
+      {filteredAndSortedAgents.length === 0 && searchQuery && (
+        <div className="text-center py-16">
+          <p className="text-muted-foreground mb-4">
+            No agents found matching "{searchQuery}"
+          </p>
+          <Button
+            onClick={() => setSearchQuery('')}
+            variant="outline"
+          >
+            Clear Search
+          </Button>
+        </div>
+      )}
 
       {agents.length === 0 && (
         <div className="text-center py-16">
