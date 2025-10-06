@@ -35,6 +35,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } else {
       setLoading(false);
     }
+
+    // Set up unauthorized handler for token expiration
+    apiClient.setUnauthorizedHandler(() => {
+      toast({
+        title: 'Session expired',
+        description: 'Please log in again.',
+        variant: 'destructive',
+      });
+      logout();
+    });
   }, []);
 
   const fetchCurrentUser = async () => {

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ChatInterface } from '@/components/ChatInterface';
+import { ConversationHistory } from '@/components/ConversationHistory';
 import { apiClient } from '@/lib/api';
 import { Agent } from '@/types/agent';
 import { useToast } from '@/hooks/use-toast';
@@ -7,6 +8,8 @@ import { useToast } from '@/hooks/use-toast';
 const Chat = () => {
   const [agents, setAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentConversationId, setCurrentConversationId] = useState<string>();
+  const [key, setKey] = useState(0);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -30,6 +33,16 @@ const Chat = () => {
     }
   };
 
+  const handleSelectConversation = (conversationId: string) => {
+    setCurrentConversationId(conversationId);
+    // TODO: Load conversation messages
+  };
+
+  const handleNewSession = () => {
+    setCurrentConversationId(undefined);
+    setKey(prev => prev + 1); // Force re-render of ChatInterface
+  };
+
   if (loading) {
     return (
       <div className="h-full flex items-center justify-center">
@@ -39,8 +52,15 @@ const Chat = () => {
   }
 
   return (
-    <div className="h-full flex flex-col">
-      <ChatInterface agents={agents} />
+    <div className="h-full flex">
+      <ConversationHistory
+        onSelectConversation={handleSelectConversation}
+        onNewSession={handleNewSession}
+        currentConversationId={currentConversationId}
+      />
+      <div className="flex-1 flex flex-col">
+        <ChatInterface key={key} agents={agents} />
+      </div>
     </div>
   );
 };

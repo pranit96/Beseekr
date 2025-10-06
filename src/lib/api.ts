@@ -54,6 +54,9 @@ class ApiClient {
       const data = await response.json();
 
       if (!response.ok) {
+        if (response.status === 401 && this.onUnauthorized) {
+          this.onUnauthorized();
+        }
         throw new Error(data.error || 'Request failed');
       }
 
@@ -62,6 +65,12 @@ class ApiClient {
       console.error('API Error:', error);
       throw error;
     }
+  }
+
+  private onUnauthorized?: () => void;
+
+  setUnauthorizedHandler(handler: () => void) {
+    this.onUnauthorized = handler;
   }
 
   // Auth endpoints
@@ -164,6 +173,18 @@ class ApiClient {
 
   async getMessages(conversation_id: string, page?: number, limit?: number) {
     return this.request<any>(`/api/messages/conversation/${conversation_id}?page=${page || 1}&limit=${limit || 50}`);
+  }
+
+  // Orchestration Session endpoints
+  async createOrchestrationSession(payload: {
+    agent_ids: string[];
+    mode: 'sequential' | 'parallel';
+    title?: string;
+  }) {
+    return this.request<any>('/api/orchestration/session', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
   }
 
   // Usage endpoints
