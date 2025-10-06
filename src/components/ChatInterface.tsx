@@ -106,7 +106,7 @@ export const ChatInterface = ({ agents }: ChatInterfaceProps) => {
           </div>
 
           <div className="flex flex-col items-center gap-4 w-full max-w-2xl">
-            <div className="w-full flex gap-3 items-end">
+            <div className="w-full relative">
               <Textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
@@ -117,16 +117,16 @@ export const ChatInterface = ({ agents }: ChatInterfaceProps) => {
                   }
                 }}
                 placeholder="Type your message here..."
-                className="min-h-[120px] resize-none rounded-2xl bg-muted/50 border-border/50 focus:border-primary transition-smooth px-5 py-4"
+                className="min-h-[100px] resize-none rounded-2xl bg-muted/50 border-border/50 focus:border-primary transition-smooth px-5 py-4 pr-16"
                 disabled={isLoading}
               />
               <Button
                 onClick={handleSubmit}
                 disabled={!input.trim() || selectedAgents.length === 0 || isLoading}
                 size="icon"
-                className="h-[56px] w-[56px] rounded-full shadow-medium hover:shadow-glow transition-smooth shrink-0"
+                className="absolute bottom-3 right-3 h-10 w-10 rounded-xl bg-primary hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/50 transition-all duration-300 shrink-0"
               >
-                <Send className="h-5 w-5" />
+                <Send className="h-4 w-4" />
               </Button>
             </div>
 
@@ -147,7 +147,28 @@ export const ChatInterface = ({ agents }: ChatInterfaceProps) => {
                 Design Flow
               </Button>
 
-              <ExecutionModeToggle mode={executionMode} onModeChange={setExecutionMode} />
+              <div className="flex items-center gap-2 px-3 py-1 rounded-lg border bg-muted/30">
+                <button
+                  onClick={() => setExecutionMode('sequential')}
+                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                    executionMode === 'sequential'
+                      ? 'bg-primary text-primary-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  Sequential
+                </button>
+                <button
+                  onClick={() => setExecutionMode('parallel')}
+                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                    executionMode === 'parallel'
+                      ? 'bg-primary text-primary-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  Parallel
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -174,10 +195,31 @@ export const ChatInterface = ({ agents }: ChatInterfaceProps) => {
                 Design Flow
               </Button>
 
-              <ExecutionModeToggle mode={executionMode} onModeChange={setExecutionMode} />
+              <div className="flex items-center gap-2 px-3 py-1 rounded-lg border bg-muted/30">
+                <button
+                  onClick={() => setExecutionMode('sequential')}
+                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                    executionMode === 'sequential'
+                      ? 'bg-primary text-primary-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  Sequential
+                </button>
+                <button
+                  onClick={() => setExecutionMode('parallel')}
+                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                    executionMode === 'parallel'
+                      ? 'bg-primary text-primary-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  Parallel
+                </button>
+              </div>
             </div>
 
-            <div className="flex gap-3 items-end">
+            <div className="w-full relative">
               <Textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
@@ -188,16 +230,16 @@ export const ChatInterface = ({ agents }: ChatInterfaceProps) => {
                   }
                 }}
                 placeholder="Message AgentFlow..."
-                className="min-h-[56px] max-h-[200px] resize-none rounded-3xl bg-muted/50 border-border/50 focus:border-primary transition-smooth px-5 py-4"
+                className="min-h-[56px] max-h-[200px] resize-none rounded-2xl bg-muted/50 border-border/50 focus:border-primary transition-smooth px-5 py-4 pr-16"
                 disabled={isLoading}
               />
               <Button
                 onClick={handleSubmit}
                 disabled={!input.trim() || selectedAgents.length === 0 || isLoading}
                 size="icon"
-                className="h-[56px] w-[56px] rounded-full shadow-medium hover:shadow-glow transition-smooth shrink-0"
+                className="absolute bottom-3 right-3 h-10 w-10 rounded-xl bg-primary hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/50 transition-all duration-300 shrink-0"
               >
-                <Send className="h-5 w-5" />
+                <Send className="h-4 w-4" />
               </Button>
             </div>
           </div>
