@@ -106,26 +106,6 @@ export const ChatInterface = ({ agents }: ChatInterfaceProps) => {
           </div>
 
           <div className="flex flex-col items-center gap-4 w-full max-w-2xl">
-            <div className="flex items-center justify-center gap-3 flex-wrap">
-              <AgentSelector
-                agents={agents}
-                selectedAgents={selectedAgents}
-                onAgentsChange={setSelectedAgents}
-              />
-              
-              <Button
-                onClick={() => setWorkflowDialogOpen(true)}
-                disabled={selectedAgents.length === 0}
-                variant="outline"
-                className="gap-2"
-              >
-                <Workflow className="w-4 h-4" />
-                Design Flow
-              </Button>
-
-              <ExecutionModeToggle mode={executionMode} onModeChange={setExecutionMode} />
-            </div>
-
             <div className="w-full flex gap-3 items-end">
               <Textarea
                 value={input}
@@ -148,6 +128,26 @@ export const ChatInterface = ({ agents }: ChatInterfaceProps) => {
               >
                 <Send className="h-5 w-5" />
               </Button>
+            </div>
+
+            <div className="flex items-center justify-center gap-3 flex-wrap">
+              <AgentSelector
+                agents={agents}
+                selectedAgents={selectedAgents}
+                onAgentsChange={setSelectedAgents}
+              />
+              
+              <Button
+                onClick={() => setWorkflowDialogOpen(true)}
+                disabled={selectedAgents.length === 0}
+                variant="outline"
+                className="gap-2"
+              >
+                <Workflow className="w-4 h-4" />
+                Design Flow
+              </Button>
+
+              <ExecutionModeToggle mode={executionMode} onModeChange={setExecutionMode} />
             </div>
           </div>
         </div>

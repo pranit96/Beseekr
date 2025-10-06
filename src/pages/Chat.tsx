@@ -4,12 +4,14 @@ import { ConversationHistory } from '@/components/ConversationHistory';
 import { apiClient } from '@/lib/api';
 import { Agent } from '@/types/agent';
 import { useToast } from '@/hooks/use-toast';
+import { Menu } from 'lucide-react';
 
 const Chat = () => {
   const [agents, setAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentConversationId, setCurrentConversationId] = useState<string>();
   const [key, setKey] = useState(0);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -40,10 +42,8 @@ const Chat = () => {
 
   const handleNewSession = () => {
     setCurrentConversationId(undefined);
-    setKey(prev => prev + 1); // Force re-render of ChatInterface
+    setKey(prev => prev + 1);
   };
-
-  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   if (loading) {
     return (
@@ -66,16 +66,16 @@ const Chat = () => {
           currentConversationId={currentConversationId}
         />
       </div>
-      
-      <button
-        onClick={() => setSidebarOpen(!sidebarOpen)}
-        className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-primary text-primary-foreground p-2 rounded-r-lg shadow-medium hover:shadow-glow transition-smooth"
-        style={{ left: sidebarOpen ? '320px' : '0' }}
-      >
-        {sidebarOpen ? '←' : '→'}
-      </button>
 
       <div className="flex-1 flex flex-col">
+        <button
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          className="absolute left-4 top-4 z-10 bg-primary text-primary-foreground p-2 rounded-lg shadow-medium hover:shadow-glow transition-smooth"
+          aria-label="Toggle sidebar"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+
         <ChatInterface key={key} agents={agents} />
       </div>
     </div>
