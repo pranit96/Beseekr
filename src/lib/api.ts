@@ -1,6 +1,6 @@
 // src/lib/api.ts
-// 🔧 FIX: Properly configure API base URL - use backend URL directly, not proxy
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://agent-backend-275v.onrender.com';
+// 🔧 FIX: Use empty string for same-origin requests through Netlify proxy
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
 interface ApiResponse<T> {
   success: boolean;

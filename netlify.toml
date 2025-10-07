@@ -4,7 +4,21 @@
 
 [build.environment]
   NODE_ENV = "production"
-  SECRETS_SCAN_OMIT_KEYS = "VITE_API_BASE_URL"
+  SECRETS_SCAN_OMIT_KEYS="VITE_API_BASE_URL"
+
+# ✅ ENABLE PROXY - This makes cookies work!
+[[redirects]]
+  from = "/api/*"
+  to = "https://agent-backend-275v.onrender.com/api/:splat"
+  status = 200
+  force = true
+  headers = {X-From = "Netlify"}
+
+[[redirects]]
+  from = "/health/*"
+  to = "https://agent-backend-275v.onrender.com/health/:splat"
+  status = 200
+  force = true
 
 [[redirects]]
   from = "/*"
