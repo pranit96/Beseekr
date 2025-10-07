@@ -1,3 +1,4 @@
+// src/pages/Auth.tsx (only the handlers need updating)
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,8 +21,10 @@ const Auth = () => {
     setIsLoading(true);
     try {
       await login(loginEmail, loginPassword);
+      // 🆕 No need to clear form - navigation happens on success
     } catch (error) {
       // Error handled in context
+      setLoginPassword(''); // Clear password on error
     } finally {
       setIsLoading(false);
     }
@@ -32,13 +35,16 @@ const Auth = () => {
     setIsLoading(true);
     try {
       await signup(signupEmail, signupPassword, signupName);
+      // 🆕 No need to clear form - navigation happens on success
     } catch (error) {
       // Error handled in context
+      setSignupPassword(''); // Clear password on error
     } finally {
       setIsLoading(false);
     }
   };
 
+  // ... rest of the component remains the same
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-muted/20 to-background p-4">
       <Card className="w-full max-w-md p-8 glass shadow-strong">
@@ -102,9 +108,6 @@ const Auth = () => {
                 disabled={isLoading}
               >
                 {isLoading ? 'Logging in...' : 'Login'}
-              </Button>
-              <Button variant="ghost" type="button" className="w-full text-sm">
-                Forgot password?
               </Button>
             </form>
           </TabsContent>
