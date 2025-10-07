@@ -1,5 +1,6 @@
 // src/lib/api.ts
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://wizme.netlify.app';
+// Use empty string for relative URLs which Netlify will proxy to backend
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
 interface ApiResponse<T> {
   success: boolean;

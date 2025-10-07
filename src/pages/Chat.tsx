@@ -105,6 +105,13 @@ const Chat = () => {
     }
   };
 
+  const handleConversationCreated = async (conversationId: string) => {
+    // Refresh conversations list when a new one is created from ChatInterface
+    await fetchConversations();
+    setCurrentConversationId(conversationId);
+    localStorage.setItem('lastActiveConversation', conversationId);
+  };
+
   const handleConversationChange = (conversationId: string | null) => {
     if (conversationId) {
       setCurrentConversationId(conversationId);
@@ -118,8 +125,11 @@ const Chat = () => {
   const handleConversationDeleted = () => {
     // Refresh conversations list when one is deleted
     fetchConversations();
-    setCurrentConversationId(undefined);
+    
+    // Clear localStorage
     localStorage.removeItem('lastActiveConversation');
+    
+    setCurrentConversationId(undefined);
   };
 
   const handleConversationArchived = () => {
@@ -168,6 +178,7 @@ const Chat = () => {
           agents={agents} 
           activeConversationId={currentConversationId}
           onConversationChange={handleConversationChange}
+          onConversationCreated={handleConversationCreated}
         />
       </div>
     </div>

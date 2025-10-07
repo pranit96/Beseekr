@@ -166,6 +166,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.error('❌ Logout error:', error);
       // Continue with logout even if API call fails
     } finally {
+      // Clear all localStorage data
+      localStorage.clear();
       setUser(null);
       navigate('/auth');
       toast({
@@ -203,6 +205,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.log('🗑️ Deleting account...');
       const response = await apiClient.deleteProfile(email);
       if (response.success) {
+        // Clear all localStorage data when account is deleted
+        localStorage.clear();
         setUser(null);
         navigate('/auth');
         toast({

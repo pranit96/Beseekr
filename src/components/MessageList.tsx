@@ -28,15 +28,13 @@ export const MessageList = ({ messages }: MessageListProps) => {
     return () => container.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Smooth scroll to bottom when new messages arrive and auto-scroll is enabled
+  // Scroll to bottom - instant on first load, smooth thereafter
   useEffect(() => {
     if (isAutoScroll && messagesEndRef.current) {
-      // Use requestAnimationFrame for smoother scrolling
-      requestAnimationFrame(() => {
-        messagesEndRef.current?.scrollIntoView({
-          behavior: 'smooth',
-          block: 'end'
-        });
+      const isFirstLoad = messages.length <= 1;
+      messagesEndRef.current.scrollIntoView({
+        behavior: isFirstLoad ? 'instant' : 'smooth',
+        block: 'end'
       });
     }
   }, [messages, isAutoScroll]);

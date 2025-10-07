@@ -12,9 +12,10 @@ interface ChatInterfaceProps {
   agents: Agent[];
   activeConversationId?: string;
   onConversationChange?: (conversationId: string | null) => void;
+  onConversationCreated?: (conversationId: string) => void;
 }
 
-export const ChatInterface = ({ agents, activeConversationId, onConversationChange }: ChatInterfaceProps) => {
+export const ChatInterface = ({ agents, activeConversationId, onConversationChange, onConversationCreated }: ChatInterfaceProps) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [selectedAgents, setSelectedAgents] = useState<Agent[]>([]);
@@ -252,6 +253,7 @@ export const ChatInterface = ({ agents, activeConversationId, onConversationChan
           convId = response.data.id;
           setConversationId(convId);
           onConversationChange?.(convId);
+          onConversationCreated?.(convId);
           localStorage.setItem('currentConversationId', convId);
         } else {
           throw new Error('Failed to create conversation');
@@ -455,6 +457,15 @@ export const ChatInterface = ({ agents, activeConversationId, onConversationChan
       ) : (
         <>
           <MessageList messages={messages} />
+          
+          {isLoading && (
+            <div className="flex items-center justify-center py-4 space-x-2">
+              <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+              <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+              <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+              <span className="ml-2 text-sm text-muted-foreground">Processing your request...</span>
+            </div>
+          )}
           
           <div className="sticky bottom-0 bg-background p-6 space-y-4">
             <div className="flex items-center justify-center gap-3 flex-wrap mb-3">
