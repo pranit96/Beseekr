@@ -1,7 +1,6 @@
 // src/lib/api.ts
-// For production with Netlify redirects, use empty string to make relative API calls
-// Netlify will proxy /api/* to the backend automatically
-const API_BASE_URL = '';
+// 🔧 FIX: Properly configure API base URL - use backend URL directly, not proxy
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://agent-backend-275v.onrender.com';
 
 interface ApiResponse<T> {
   success: boolean;
@@ -24,11 +23,15 @@ class ApiClient {
   private onUnauthorized?: () => void;
 
   constructor(baseUrl: string) {
-    // 🆕 FIX: Ensure baseUrl doesn't have trailing slash and is properly formatted
-    this.baseUrl = baseUrl.replace(/\/$/, ''); // Remove trailing slash
+    // Remove trailing slash
+    this.baseUrl = baseUrl.replace(/\/$/, '');
     console.log('🔧 API Client initialized with base URL:', this.baseUrl);
     
-    // Set up unauthorized handler
+    if (!this.baseUrl || this.baseUrl === '') {
+      console.error('❌ CRITICAL: API_BASE_URL is empty! Using fallback.');
+      this.baseUrl = 'https://agent-backend-275v.onrender.com';
+    }
+    
     this.setUnauthorizedHandler(() => {
       console.warn('🚨 User unauthorized, redirecting to login');
       this.cleanup();
@@ -36,25 +39,13 @@ class ApiClient {
     });
   }
 
-  // 🆕 FIX: Proper URL construction
   private buildUrl(endpoint: string): string {
-    // If baseUrl is empty, return endpoint as-is
-    if (!this.baseUrl) {
-      console.log('🔗 Building URL:', { baseUrl: this.baseUrl, endpoint, fullUrl: endpoint });
-      return endpoint;
-    }
-    
-    // Remove leading slash from endpoint if present
-    const normalizedEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
-    
-    // Construct the full URL
-    const fullUrl = `${this.baseUrl}/${normalizedEndpoint}`;
-    
+    const normalizedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    const fullUrl = `${this.baseUrl}${normalizedEndpoint}`;
     console.log('🔗 Building URL:', { baseUrl: this.baseUrl, endpoint, fullUrl });
     return fullUrl;
   }
 
-  // 🆕 Get CSRF token from cookie
   private getCSRFToken(): string {
     try {
       const name = 'csrf_token=';
@@ -73,7 +64,6 @@ class ApiClient {
     }
   }
 
-  // 🆕 Set CSRF token in cookie
   private setCSRFToken(token: string): void {
     try {
       const isProduction = import.meta.env.PROD;
@@ -85,6 +75,7 @@ class ApiClient {
       ].join('; ');
       
       document.cookie = cookieOptions;
+      console.log('✅ CSRF token set in cookie');
     } catch (error) {
       console.error('Error setting CSRF token:', error);
     }
@@ -101,7 +92,6 @@ class ApiClient {
       try {
         console.log('🔄 Refreshing auth token...');
         
-        // 🆕 FIX: Use buildUrl method
         const response = await fetch(this.buildUrl('/api/auth/refresh'), {
           method: 'POST',
           credentials: 'include',
@@ -118,6 +108,7 @@ class ApiClient {
         const data = await response.json();
 
         if (!response.ok || !data.success) {
+          console.error('❌ Refresh failed:', data);
           throw new Error(data.error || 'Token refresh failed');
         }
 
@@ -154,7 +145,6 @@ class ApiClient {
       ...options.headers,
     };
 
-    // Add CSRF token for state-changing methods
     const method = options.method?.toUpperCase() || 'GET';
     const stateChangingMethods = ['POST', 'PUT', 'PATCH', 'DELETE'];
     
@@ -162,15 +152,15 @@ class ApiClient {
       const csrfToken = this.getCSRFToken();
       if (csrfToken) {
         headers['X-CSRF-Token'] = csrfToken;
+        console.log('🔐 Added CSRF token to request');
       } else {
         console.warn('⚠️ CSRF token not found for state-changing request:', method, endpoint);
       }
     }
 
     try {
-      // 🆕 FIX: Use buildUrl method instead of string concatenation
       const url = this.buildUrl(endpoint);
-      console.log('🚀 Making request to:', url);
+      console.log(`🚀 Making ${method} request to:`, url);
       
       const response = await fetch(url, {
         ...options,
@@ -179,20 +169,19 @@ class ApiClient {
         cache: 'no-store',
       });
 
-      // Extract CSRF token from response headers
       const csrfToken = response.headers.get('X-CSRF-Token');
       if (csrfToken) {
         this.setCSRFToken(csrfToken);
       }
 
       // If token is expired, try to refresh and retry the request
-      if (response.status === 401 && retry && !endpoint.includes('/auth/refresh')) {
+      if (response.status === 401 && retry && !endpoint.includes('/auth/refresh') && !endpoint.includes('/auth/login') && !endpoint.includes('/auth/signup')) {
         console.log('🔄 Received 401, attempting token refresh...');
         
         try {
           await this.refreshAuthToken();
           
-          // Retry with updated CSRF token if needed
+          // Update CSRF token for retry
           if (stateChangingMethods.includes(method)) {
             const newCsrfToken = this.getCSRFToken();
             if (newCsrfToken) {
@@ -202,7 +191,7 @@ class ApiClient {
 
           return this.request<T>(endpoint, { ...options, headers }, false);
         } catch (refreshError) {
-          console.error('❌ Token refresh failed after 401:', refreshError);
+          console.error('❌ Token refresh failed:', refreshError);
           throw refreshError;
         }
       }
@@ -267,7 +256,6 @@ class ApiClient {
     });
   }
 
-  // 🆕 Get CSRF token explicitly
   async getCSRFTokenFromServer(): Promise<string> {
     const response = await this.request<{ csrf_token: string }>('/api/auth/csrf-token');
     if (response.success && response.data?.csrf_token) {
@@ -318,13 +306,7 @@ class ApiClient {
     mode: 'sequential' | 'parallel';
     conversation_id: string;
     save_to_conversation?: boolean;
-  }): Promise<ApiResponse<{
-    markdown_output: string;
-    results: any[];
-    final_output?: string;
-    aggregated_output?: string;
-    total_usage: { total_tokens: number };
-  }>> {
+  }): Promise<ApiResponse<any>> {
     return this.request<any>('/api/orchestration/execute', {
       method: 'POST',
       body: JSON.stringify(payload),
@@ -356,18 +338,7 @@ class ApiClient {
     return this.request<any>(`/api/usage?${query.toString()}`);
   }
 
-  async getUsageStats(params?: { start_date?: string; end_date?: string }): Promise<ApiResponse<{
-    totalTokens: number;
-    totalCost: number;
-    totalRequests: number;
-    actionBreakdown: {
-      [key: string]: {
-        count: number;
-        tokens: number;
-        cost: number;
-      };
-    };
-  }>> {
+  async getUsageStats(params?: { start_date?: string; end_date?: string }): Promise<ApiResponse<any>> {
     const query = new URLSearchParams();
     if (params?.start_date) query.append('start_date', params.start_date);
     if (params?.end_date) query.append('end_date', params.end_date);
@@ -416,7 +387,6 @@ class ApiClient {
     );
   }
 
-  // 🆕 Health check
   async healthCheck(): Promise<ApiResponse<any>> {
     return this.request<any>('/health');
   }
