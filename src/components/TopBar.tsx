@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Moon, Sun, User, LogOut, Settings } from 'lucide-react';
+import { Moon, Sun, User, LogOut, Settings, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -18,7 +18,13 @@ const navigation = [
   { name: 'Analytics', href: '/analytics' },
 ];
 
-export const TopBar = () => {
+interface TopBarProps {
+  sidebarOpen?: boolean;
+  onToggleSidebar?: () => void;
+  showSidebarToggle?: boolean;
+}
+
+export const TopBar = ({ sidebarOpen, onToggleSidebar, showSidebarToggle }: TopBarProps) => {
   const location = useLocation();
   const { theme, setTheme } = useTheme();
   const { user, logout } = useAuth();
@@ -26,7 +32,24 @@ export const TopBar = () => {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-xl">
       <div className="container flex h-16 items-center justify-between px-6">
-        <div className="flex items-center gap-8">
+        <div className="flex items-center gap-4">
+          {/* Sidebar Toggle - Only show on chat page */}
+          {showSidebarToggle && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onToggleSidebar}
+              className="rounded-lg hover:bg-muted transition-all duration-300"
+              aria-label="Toggle conversation history"
+            >
+              {sidebarOpen ? (
+                <X className="h-5 w-5" />
+              ) : (
+                <Menu className="h-5 w-5" />
+              )}
+            </Button>
+          )}
+
           <Link to="/" className="flex items-center gap-2">
             <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-accent" />
             <span className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
@@ -34,7 +57,7 @@ export const TopBar = () => {
             </span>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-1">
+          <nav className="hidden md:flex items-center gap-1 ml-4">
             {navigation.map((item) => {
               const isActive = location.pathname === item.href;
               return (

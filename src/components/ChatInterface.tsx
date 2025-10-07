@@ -1,3 +1,4 @@
+// Updated ChatInterface with improved message handling and no localStorage
 import { useState, useEffect, useCallback } from 'react';
 import { Send, Workflow, Lock, LockOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -15,7 +16,12 @@ interface ChatInterfaceProps {
   onConversationCreated?: (conversationId: string) => void;
 }
 
-export const ChatInterface = ({ agents, activeConversationId, onConversationChange, onConversationCreated }: ChatInterfaceProps) => {
+export const ChatInterface = ({ 
+  agents, 
+  activeConversationId, 
+  onConversationChange, 
+  onConversationCreated 
+}: ChatInterfaceProps) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [selectedAgents, setSelectedAgents] = useState<Agent[]>([]);
@@ -25,77 +31,41 @@ export const ChatInterface = ({ agents, activeConversationId, onConversationChan
   const [hasStarted, setHasStarted] = useState(false);
   const [saveToConversation, setSaveToConversation] = useState(true);
   const [conversationId, setConversationId] = useState<string | null>(activeConversationId || null);
+  const [messageCache, setMessageCache] = useState<Map<string, ChatMessage[]>>(new Map());
   const { toast } = useToast();
 
-  // Load cached messages and conversation state from localStorage
-  useEffect(() => {
-    const savedMessages = localStorage.getItem('cachedMessages');
-    const savedConversationId = localStorage.getItem('currentConversationId');
-    const savedSelectedAgents = localStorage.getItem('selectedAgents');
-    const savedExecutionMode = localStorage.getItem('executionMode');
-    const savedHasStarted = localStorage.getItem('hasStarted');
-
-    if (savedMessages) {
-      try {
-        const parsedMessages = JSON.parse(savedMessages);
-        // Ensure timestamps are Date objects
-        const messagesWithProperDates = parsedMessages.map((msg: any) => ({
-          ...msg,
-          timestamp: new Date(msg.timestamp),
-          ...(msg.agentResponses && {
-            agentResponses: msg.agentResponses.map((ar: any) => ({
-              ...ar,
-              timestamp: new Date(ar.timestamp),
-            })),
-          }),
-        }));
-        setMessages(messagesWithProperDates);
-      } catch (error) {
-        console.error('Failed to parse cached messages:', error);
-      }
-    }
-
-    if (savedSelectedAgents) {
-      try {
-        const parsedAgents = JSON.parse(savedSelectedAgents);
-        setSelectedAgents(parsedAgents);
-      } catch (error) {
-        console.error('Failed to parse selected agents:', error);
-      }
-    }
-
-    if (savedExecutionMode) {
-      setExecutionMode(savedExecutionMode as ExecutionMode);
-    }
-
-    if (savedHasStarted === 'true') {
-      setHasStarted(true);
-    }
-  }, []);
-
-  // Sync conversation ID with parent and cache
+  // Load cached messages from memory when conversation changes
   useEffect(() => {
     console.log('Active conversation changed:', activeConversationId);
     setConversationId(activeConversationId || null);
+    
     if (activeConversationId) {
-      localStorage.setItem('currentConversationId', activeConversationId);
-      loadConversationMessages(activeConversationId);
+      // Check if we have cached messages in memory
+      const cached = messageCache.get(activeConversationId);
+      if (cached) {
+        setMessages(cached);
+        setHasStarted(cached.length > 0);
+      } else {
+        // Load from API
+        loadConversationMessages(activeConversationId);
+      }
     } else {
-      localStorage.removeItem('currentConversationId');
       setMessages([]);
       setHasStarted(false);
     }
   }, [activeConversationId]);
 
-  // Cache messages and state whenever they change
+  // Cache messages in memory whenever they change
   useEffect(() => {
-    localStorage.setItem('cachedMessages', JSON.stringify(messages));
-    localStorage.setItem('selectedAgents', JSON.stringify(selectedAgents));
-    localStorage.setItem('executionMode', executionMode);
-    localStorage.setItem('hasStarted', hasStarted.toString());
-  }, [messages, selectedAgents, executionMode, hasStarted]);
+    if (conversationId && messages.length > 0) {
+      setMessageCache(prev => {
+        const newCache = new Map(prev);
+        newCache.set(conversationId, messages);
+        return newCache;
+      });
+    }
+  }, [messages, conversationId]);
 
-  // Fixed message loading with proper API response parsing
   const loadConversationMessages = useCallback(async (convId: string) => {
     if (!convId) {
       setMessages([]);
@@ -106,46 +76,19 @@ export const ChatInterface = ({ agents, activeConversationId, onConversationChan
     try {
       console.log('Loading messages for conversation:', convId);
       
-      // First try to load from cache
-      const cachedMessages = localStorage.getItem(`messages_${convId}`);
-      if (cachedMessages) {
-        try {
-          const parsedMessages = JSON.parse(cachedMessages);
-          // Ensure timestamps are Date objects
-          const messagesWithProperDates = parsedMessages.map((msg: any) => ({
-            ...msg,
-            timestamp: new Date(msg.timestamp),
-            ...(msg.agentResponses && {
-              agentResponses: msg.agentResponses.map((ar: any) => ({
-                ...ar,
-                timestamp: new Date(ar.timestamp),
-              })),
-            }),
-          }));
-          setMessages(messagesWithProperDates);
-          setHasStarted(messagesWithProperDates.length > 0);
-          console.log('Loaded cached messages:', messagesWithProperDates.length);
-        } catch (cacheError) {
-          console.error('Failed to parse cached messages:', cacheError);
-        }
-      }
-
-      // Always refresh from API in background
       const { apiClient } = await import('@/lib/api');
       const response = await apiClient.getMessages(convId, 1, 50);
       
       if (response.success && response.data) {
         console.log('API response data:', response.data);
         
-        // Transform API response to ChatMessage format - FIXED for actual API structure
         const apiMessages: ChatMessage[] = response.data.map((msg: any) => {
           const baseMessage = {
             id: msg.id,
             content: msg.content,
-            timestamp: new Date(msg.created_at), // Convert string to Date object
+            timestamp: new Date(msg.created_at),
           };
 
-          // Handle user messages
           if (msg.role === 'user') {
             return {
               ...baseMessage,
@@ -153,14 +96,12 @@ export const ChatInterface = ({ agents, activeConversationId, onConversationChan
             };
           }
           
-          // Handle assistant messages
           if (msg.role === 'assistant') {
-            // Extract agent responses from metadata
             const agentResponses: AgentResponse[] = (msg.metadata?.agent_results || []).map((result: any) => ({
               agentId: result.agent_id,
               agentName: result.agent_name,
               content: result.response,
-              timestamp: new Date(msg.created_at), // Use message timestamp for agent responses
+              timestamp: new Date(msg.created_at),
               status: result.error ? 'error' : 'success',
               metadata: {
                 usage: result.usage,
@@ -176,13 +117,9 @@ export const ChatInterface = ({ agents, activeConversationId, onConversationChan
               type: 'agent' as const,
               agentResponses,
               executionMode: msg.metadata?.orchestration_mode || 'sequential',
-              // Remove these to prevent duplication:
-              // markdownOutput: msg.content,
-              // finalOutput: msg.content,
             };
           }
 
-          // Fallback for unknown message types
           console.warn('Unknown message role:', msg.role);
           return {
             ...baseMessage,
@@ -193,9 +130,6 @@ export const ChatInterface = ({ agents, activeConversationId, onConversationChan
         console.log('Transformed messages:', apiMessages);
         setMessages(apiMessages);
         setHasStarted(apiMessages.length > 0);
-        
-        // Update cache with properly formatted messages
-        localStorage.setItem(`messages_${convId}`, JSON.stringify(apiMessages));
       } else {
         console.log('No messages found in API response');
         setMessages([]);
@@ -203,12 +137,8 @@ export const ChatInterface = ({ agents, activeConversationId, onConversationChan
       }
     } catch (error: any) {
       console.error('Failed to load conversation messages:', error);
-      // Don't show error toast as we might have cached messages
-      // If no cached messages, set empty state
-      if (!localStorage.getItem(`messages_${convId}`)) {
-        setMessages([]);
-        setHasStarted(false);
-      }
+      setMessages([]);
+      setHasStarted(false);
     }
   }, []);
 
@@ -242,7 +172,6 @@ export const ChatInterface = ({ agents, activeConversationId, onConversationChan
       const { apiClient } = await import('@/lib/api');
       let convId = conversationId;
 
-      // If we're saving to conversation but don't have one, create it now
       if (saveToConversation && !convId) {
         const response = await apiClient.createConversation({
           agent_id: selectedAgents.length > 0 ? selectedAgents[0].id : null,
@@ -254,7 +183,6 @@ export const ChatInterface = ({ agents, activeConversationId, onConversationChan
           setConversationId(convId);
           onConversationChange?.(convId);
           onConversationCreated?.(convId);
-          localStorage.setItem('currentConversationId', convId);
         } else {
           throw new Error('Failed to create conversation');
         }
@@ -267,7 +195,6 @@ export const ChatInterface = ({ agents, activeConversationId, onConversationChan
         save_to_conversation: saveToConversation,
       };
 
-      // Always include conversation_id when save_to_conversation is true
       if (saveToConversation && convId) {
         payload.conversation_id = convId;
       }
@@ -278,7 +205,6 @@ export const ChatInterface = ({ agents, activeConversationId, onConversationChan
       if (response.success && response.data) {
         console.log('Orchestration response:', response.data);
         
-        // Transform agent responses to match our format
         const agentResponses: AgentResponse[] = response.data.results.map((result: any) => ({
           agentId: result.agent_id,
           agentName: result.agent_name,
@@ -309,11 +235,6 @@ export const ChatInterface = ({ agents, activeConversationId, onConversationChan
 
         const updatedMessages = [...newMessages, agentMessage];
         setMessages(updatedMessages);
-
-        // Update conversation cache
-        if (convId) {
-          localStorage.setItem(`messages_${convId}`, JSON.stringify(updatedMessages));
-        }
       }
     } catch (error: any) {
       console.error('Orchestration error:', error);
@@ -323,7 +244,6 @@ export const ChatInterface = ({ agents, activeConversationId, onConversationChan
         variant: 'destructive',
       });
       
-      // Remove the user message on error
       setMessages(messages);
     } finally {
       setIsLoading(false);
@@ -338,16 +258,9 @@ export const ChatInterface = ({ agents, activeConversationId, onConversationChan
     const newSaveToConversation = !saveToConversation;
     setSaveToConversation(newSaveToConversation);
     
-    if (newSaveToConversation) {
-      // Turning ON saving - if we have messages but no conversation, create one
-      if (messages.length > 0 && !conversationId) {
-        // Optionally create a conversation for existing messages
-      }
-    } else {
-      // Turning OFF saving => reset conversation but keep messages in cache
+    if (!newSaveToConversation) {
       setConversationId(null);
       onConversationChange?.(null);
-      localStorage.removeItem('currentConversationId');
     }
   };
 
@@ -467,7 +380,7 @@ export const ChatInterface = ({ agents, activeConversationId, onConversationChan
             </div>
           )}
           
-          <div className="sticky bottom-0 bg-background p-6 space-y-4">
+          <div className="sticky bottom-0 bg-background/95 backdrop-blur-sm p-6 space-y-4 border-t border-border/50">
             <div className="flex items-center justify-center gap-3 flex-wrap mb-3">
               <AgentSelector
                 agents={agents}

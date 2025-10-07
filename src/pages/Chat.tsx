@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { ChatInterface } from '@/components/ChatInterface';
 import { ConversationHistory } from '@/components/ConversationHistory';
+import { TopBar } from '@/components/TopBar';
 import { apiClient } from '@/lib/api';
 import { Agent } from '@/types/agent';
 import { useToast } from '@/hooks/use-toast';
-import { Menu } from 'lucide-react';
 
 interface Conversation {
   id: string;
@@ -19,18 +19,30 @@ const Chat = () => {
   const [loading, setLoading] = useState(true);
   const [currentConversationId, setCurrentConversationId] = useState<string>();
   const [key, setKey] = useState(0);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
     fetchAgents();
     fetchConversations();
-    // Load last active conversation from localStorage
-    const lastConversationId = localStorage.getItem('lastActiveConversation');
+    
+    // Load sidebar state from memory
+    const savedSidebarState = sessionStorage.getItem('sidebarOpen');
+    if (savedSidebarState !== null) {
+      setSidebarOpen(savedSidebarState === 'true');
+    }
+    
+    // Load last active conversation
+    const lastConversationId = sessionStorage.getItem('lastActiveConversation');
     if (lastConversationId) {
       setCurrentConversationId(lastConversationId);
     }
   }, []);
+
+  // Save sidebar state to session storage
+  useEffect(() => {
+    sessionStorage.setItem('sidebarOpen', sidebarOpen.toString());
+  }, [sidebarOpen]);
 
   const fetchAgents = async () => {
     try {
@@ -71,12 +83,11 @@ const Chat = () => {
 
   const handleSelectConversation = (conversationId: string) => {
     setCurrentConversationId(conversationId);
-    localStorage.setItem('lastActiveConversation', conversationId);
+    sessionStorage.setItem('lastActiveConversation', conversationId);
   };
 
   const handleNewSession = async () => {
     try {
-      // Create new conversation immediately when new session is clicked
       const response = await apiClient.createConversation({
         agent_id: null,
         title: 'New Conversation'
@@ -85,9 +96,8 @@ const Chat = () => {
       if (response.success && response.data?.id) {
         const newConversationId = response.data.id;
         setCurrentConversationId(newConversationId);
-        localStorage.setItem('lastActiveConversation', newConversationId);
+        sessionStorage.setItem('lastActiveConversation', newConversationId);
         
-        // Refresh conversations list to include the new one
         await fetchConversations();
         setKey(prev => prev + 1);
         
@@ -106,80 +116,76 @@ const Chat = () => {
   };
 
   const handleConversationCreated = async (conversationId: string) => {
-    // Refresh conversations list when a new one is created from ChatInterface
     await fetchConversations();
     setCurrentConversationId(conversationId);
-    localStorage.setItem('lastActiveConversation', conversationId);
+    sessionStorage.setItem('lastActiveConversation', conversationId);
   };
 
   const handleConversationChange = (conversationId: string | null) => {
     if (conversationId) {
       setCurrentConversationId(conversationId);
-      localStorage.setItem('lastActiveConversation', conversationId);
+      sessionStorage.setItem('lastActiveConversation', conversationId);
     } else {
       setCurrentConversationId(undefined);
-      localStorage.removeItem('lastActiveConversation');
+      sessionStorage.removeItem('lastActiveConversation');
     }
   };
 
   const handleConversationDeleted = () => {
-    // Refresh conversations list when one is deleted
     fetchConversations();
-    
-    // Clear localStorage
-    localStorage.removeItem('lastActiveConversation');
-    
+    sessionStorage.removeItem('lastActiveConversation');
     setCurrentConversationId(undefined);
   };
 
   const handleConversationArchived = () => {
-    // Refresh conversations list when one is archived
     fetchConversations();
     setCurrentConversationId(undefined);
-    localStorage.removeItem('lastActiveConversation');
+    sessionStorage.removeItem('lastActiveConversation');
   };
 
   if (loading) {
     return (
-      <div className="h-full flex items-center justify-center">
+      <div className="h-screen flex items-center justify-center">
         <div className="animate-pulse text-muted-foreground">Loading agents...</div>
       </div>
     );
   }
 
   return (
-    <div className="h-full flex relative">
-      <div
-        className={`transition-all duration-300 ${
-          sidebarOpen ? 'w-80' : 'w-0'
-        } overflow-hidden`}
-      >
-        <ConversationHistory
-          conversations={conversations}
-          onSelectConversation={handleSelectConversation}
-          onNewSession={handleNewSession}
-          onConversationDeleted={handleConversationDeleted}
-          onConversationArchived={handleConversationArchived}
-          currentConversationId={currentConversationId}
-        />
-      </div>
-
-      <div className="flex-1 flex flex-col">
-        <button
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="absolute left-4 top-4 z-10 bg-primary text-primary-foreground p-2 rounded-lg shadow-medium hover:shadow-glow transition-smooth"
-          aria-label="Toggle sidebar"
+    <div className="h-screen flex flex-col overflow-hidden">
+      <TopBar 
+        sidebarOpen={sidebarOpen}
+        onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+        showSidebarToggle={true}
+      />
+      
+      <div className="flex-1 flex overflow-hidden">
+        {/* Sidebar with smooth transition */}
+        <div
+          className={`transition-all duration-300 ease-in-out border-r border-border bg-muted/30 ${
+            sidebarOpen ? 'w-80 opacity-100' : 'w-0 opacity-0'
+          } overflow-hidden`}
         >
-          <Menu className="w-5 h-5" />
-        </button>
+          <ConversationHistory
+            conversations={conversations}
+            onSelectConversation={handleSelectConversation}
+            onNewSession={handleNewSession}
+            onConversationDeleted={handleConversationDeleted}
+            onConversationArchived={handleConversationArchived}
+            currentConversationId={currentConversationId}
+          />
+        </div>
 
-        <ChatInterface 
-          key={key} 
-          agents={agents} 
-          activeConversationId={currentConversationId}
-          onConversationChange={handleConversationChange}
-          onConversationCreated={handleConversationCreated}
-        />
+        {/* Main chat area */}
+        <div className="flex-1 overflow-hidden">
+          <ChatInterface 
+            key={key} 
+            agents={agents} 
+            activeConversationId={currentConversationId}
+            onConversationChange={handleConversationChange}
+            onConversationCreated={handleConversationCreated}
+          />
+        </div>
       </div>
     </div>
   );

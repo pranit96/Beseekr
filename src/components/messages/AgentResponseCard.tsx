@@ -1,22 +1,45 @@
 import { AgentResponse } from '@/types/agent';
 import { CheckCircle2, AlertCircle } from 'lucide-react';
 import { MarkdownRenderer } from './MarkdownRenderer';
+import { TypewriterText } from './TypewriterText';
+import { useState, useEffect } from 'react';
 
 interface AgentResponseCardProps {
   response: AgentResponse;
   index: number;
   isSequential: boolean;
+  enableTypewriter?: boolean;
+  typewriterDelay?: number; // delay before starting typewriter
 }
 
 export const AgentResponseCard = ({
   response,
   index,
   isSequential,
+  enableTypewriter = true,
+  typewriterDelay = 0,
 }: AgentResponseCardProps) => {
-  // Ensure timestamp is a Date object - FIX for the timestamp error
+  const [shouldStartTyping, setShouldStartTyping] = useState(!enableTypewriter);
+  const [isTypingComplete, setIsTypingComplete] = useState(!enableTypewriter);
+  
+  // Ensure timestamp is a Date object
   const timestamp = response.timestamp instanceof Date 
     ? response.timestamp 
     : new Date(response.timestamp);
+
+  useEffect(() => {
+    if (enableTypewriter) {
+      const timer = setTimeout(() => {
+        setShouldStartTyping(true);
+      }, typewriterDelay);
+
+      return () => clearTimeout(timer);
+    }
+  }, [enableTypewriter, typewriterDelay]);
+
+  const handleTypewriterComplete = () => {
+    setIsTypingComplete(true);
+  };
 
   return (
     <div
@@ -37,11 +60,23 @@ export const AgentResponseCard = ({
           <AlertCircle className="w-4 h-4 text-destructive ml-auto" />
         )}
       </div>
+      
       <div className="text-sm">
-        <MarkdownRenderer content={response.content} />
+        {enableTypewriter && shouldStartTyping && !isTypingComplete ? (
+          <div className="whitespace-pre-wrap">
+            <TypewriterText 
+              text={response.content} 
+              speed={80} 
+              onComplete={handleTypewriterComplete}
+            />
+            <span className="inline-block w-1 h-4 bg-primary animate-pulse ml-0.5" />
+          </div>
+        ) : (
+          <MarkdownRenderer content={response.content} />
+        )}
       </div>
+      
       <span className="text-xs text-muted-foreground mt-2 block">
-        {/* Use the properly converted timestamp */}
         {timestamp.toLocaleTimeString([], {
           hour: '2-digit',
           minute: '2-digit',
