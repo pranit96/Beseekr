@@ -1,5 +1,5 @@
 // src/lib/api.ts
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://xyz.netlify.app';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://wizme.netlify.app';
 
 interface ApiResponse<T> {
   success: boolean;
@@ -17,13 +17,14 @@ interface ApiResponse<T> {
 class ApiClient {
   private baseUrl: string;
   private isRefreshing = false;
-  private refreshSubscribers: (() => void)[] = []; // 🆕 Changed to no arguments
+  private refreshSubscribers: (() => void)[] = [];
   private refreshPromise: Promise<void> | null = null;
   private onUnauthorized?: () => void;
 
   constructor(baseUrl: string) {
-    this.baseUrl = baseUrl;
-    console.log('🔧 API Client initialized with base URL:', baseUrl);
+    // 🆕 FIX: Ensure baseUrl doesn't have trailing slash and is properly formatted
+    this.baseUrl = baseUrl.replace(/\/$/, ''); // Remove trailing slash
+    console.log('🔧 API Client initialized with base URL:', this.baseUrl);
     
     // Set up unauthorized handler
     this.setUnauthorizedHandler(() => {
@@ -31,6 +32,18 @@ class ApiClient {
       this.cleanup();
       window.location.href = '/auth';
     });
+  }
+
+  // 🆕 FIX: Proper URL construction
+  private buildUrl(endpoint: string): string {
+    // Ensure endpoint starts with a slash
+    const normalizedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    
+    // Construct the full URL
+    const fullUrl = `${this.baseUrl}${normalizedEndpoint}`;
+    
+    console.log('🔗 Building URL:', { baseUrl: this.baseUrl, endpoint, fullUrl });
+    return fullUrl;
   }
 
   // 🆕 Get CSRF token from cookie
@@ -52,15 +65,14 @@ class ApiClient {
     }
   }
 
-  // 🆕 Set CSRF token in cookie (for immediate use after receiving from header)
+  // 🆕 Set CSRF token in cookie
   private setCSRFToken(token: string): void {
     try {
-      // Set cookie that matches backend configuration
       const isProduction = import.meta.env.PROD;
       const cookieOptions = [
         `csrf_token=${token}`,
         'path=/',
-        `max-age=${24 * 60 * 60}`, // 24 hours
+        `max-age=${24 * 60 * 60}`,
         isProduction ? 'samesite=none; secure' : 'samesite=lax'
       ].join('; ');
       
@@ -80,15 +92,16 @@ class ApiClient {
     this.refreshPromise = (async () => {
       try {
         console.log('🔄 Refreshing auth token...');
-        const response = await fetch(`${this.baseUrl}/api/auth/refresh`, {
+        
+        // 🆕 FIX: Use buildUrl method
+        const response = await fetch(this.buildUrl('/api/auth/refresh'), {
           method: 'POST',
-          credentials: 'include', // Include cookies for refresh token
+          credentials: 'include',
           headers: {
             'Content-Type': 'application/json',
           },
         });
 
-        // Extract CSRF token from response headers before parsing JSON
         const csrfToken = response.headers.get('X-CSRF-Token');
         if (csrfToken) {
           this.setCSRFToken(csrfToken);
@@ -101,8 +114,6 @@ class ApiClient {
         }
 
         console.log('✅ Token refresh successful');
-        
-        // 🆕 FIX: Call onRefresh without arguments
         this.onRefresh();
       } catch (error) {
         console.error('❌ Token refresh error:', error);
@@ -120,7 +131,6 @@ class ApiClient {
     return this.refreshPromise;
   }
 
-  // 🆕 FIX: Updated onRefresh to not expect arguments
   private onRefresh(): void {
     this.refreshSubscribers.forEach(callback => callback());
     this.refreshSubscribers = [];
@@ -136,7 +146,7 @@ class ApiClient {
       ...options.headers,
     };
 
-    // 🆕 Add CSRF token for state-changing methods
+    // Add CSRF token for state-changing methods
     const method = options.method?.toUpperCase() || 'GET';
     const stateChangingMethods = ['POST', 'PUT', 'PATCH', 'DELETE'];
     
@@ -150,14 +160,18 @@ class ApiClient {
     }
 
     try {
-      const response = await fetch(`${this.baseUrl}${endpoint}`, {
+      // 🆕 FIX: Use buildUrl method instead of string concatenation
+      const url = this.buildUrl(endpoint);
+      console.log('🚀 Making request to:', url);
+      
+      const response = await fetch(url, {
         ...options,
         headers,
-        credentials: 'include', // 🎯 CRITICAL: Include cookies for authentication
+        credentials: 'include',
         cache: 'no-store',
       });
 
-      // 🆕 Extract CSRF token from response headers
+      // Extract CSRF token from response headers
       const csrfToken = response.headers.get('X-CSRF-Token');
       if (csrfToken) {
         this.setCSRFToken(csrfToken);
@@ -170,7 +184,7 @@ class ApiClient {
         try {
           await this.refreshAuthToken();
           
-          // 🆕 Retry with updated CSRF token if needed
+          // Retry with updated CSRF token if needed
           if (stateChangingMethods.includes(method)) {
             const newCsrfToken = this.getCSRFToken();
             if (newCsrfToken) {
@@ -205,39 +219,29 @@ class ApiClient {
     this.onUnauthorized = handler;
   }
 
-  // 🆕 Clean up method
   cleanup() {
-    // Clear any in-memory state
-    // Cookies are cleared by backend on logout
     console.log('🧹 API client cleanup completed');
   }
 
-  // Auth endpoints - UPDATED for cookie-based auth
+  // Auth endpoints
   async signup(email: string, password: string, full_name: string): Promise<ApiResponse<any>> {
-    const response = await this.request<any>('/api/auth/signup', {
+    return this.request<any>('/api/auth/signup', {
       method: 'POST',
       body: JSON.stringify({ email, password, full_name }),
     });
-
-    return response;
   }
 
   async login(email: string, password: string): Promise<ApiResponse<any>> {
-    const response = await this.request<any>('/api/auth/login', {
+    return this.request<any>('/api/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
-
-    return response;
   }
 
   async logout(): Promise<ApiResponse<any>> {
-    const response = await this.request<any>('/api/auth/logout', {
+    return this.request<any>('/api/auth/logout', {
       method: 'POST',
     });
-
-    this.cleanup();
-    return response;
   }
 
   async getCurrentUser(): Promise<ApiResponse<any>> {
