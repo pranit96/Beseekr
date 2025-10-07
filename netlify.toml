@@ -1,7 +1,65 @@
 [build]
-     command = "npm install && npm run build"
-     publish = "dist"
+  command = "npm install && npm run build"
+  publish = "dist"
 
-   [build.environment]
-     NODE_ENV = "production"
-     SECRETS_SCAN_OMIT_KEYS = "VITE_API_BASE_URL"
+[build.environment]
+  NODE_ENV = "production"
+  SECRETS_SCAN_OMIT_KEYS = "VITE_API_BASE_URL"
+
+# 🎯 CRITICAL: Proxy API requests to backend
+[[redirects]]
+  from = "/api/*"
+  to = "https://agent-backend-275v.onrender.com/api/:splat"
+  status = 200
+  force = true
+  conditions = {Role = "all"}
+
+# 🎯 Handle preflight OPTIONS requests
+[[redirects]]
+  from = "/api/*"
+  to = "https://agent-backend-275v.onrender.com/api/:splat"
+  status = 200
+  force = true
+  conditions = {Method = "OPTIONS"}
+
+# 🎯 Headers for API routes
+[[headers]]
+  for = "/api/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "wizme.netlify.app"
+    Access-Control-Allow-Methods = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+    Access-Control-Allow-Headers = "Content-Type, Authorization, X-CSRF-Token, X-Requested-With, Accept, Origin"
+    Access-Control-Allow-Credentials = "true"
+    Access-Control-Max-Age = "86400"
+
+# 🎯 Security headers for all routes
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+# 🎯 Cache settings for static assets
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*.js"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*.css"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# 🎯 Single Page App (SPA) configuration
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+  conditions = {Role = "all"}
