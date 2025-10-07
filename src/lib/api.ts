@@ -1,6 +1,7 @@
 // src/lib/api.ts
-// Use empty string for relative URLs which Netlify will proxy to backend
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+// For production with Netlify redirects, use empty string to make relative API calls
+// Netlify will proxy /api/* to the backend automatically
+const API_BASE_URL = '';
 
 interface ApiResponse<T> {
   success: boolean;
@@ -37,11 +38,17 @@ class ApiClient {
 
   // 🆕 FIX: Proper URL construction
   private buildUrl(endpoint: string): string {
-    // Ensure endpoint starts with a slash
-    const normalizedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    // If baseUrl is empty, return endpoint as-is
+    if (!this.baseUrl) {
+      console.log('🔗 Building URL:', { baseUrl: this.baseUrl, endpoint, fullUrl: endpoint });
+      return endpoint;
+    }
+    
+    // Remove leading slash from endpoint if present
+    const normalizedEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
     
     // Construct the full URL
-    const fullUrl = `${this.baseUrl}${normalizedEndpoint}`;
+    const fullUrl = `${this.baseUrl}/${normalizedEndpoint}`;
     
     console.log('🔗 Building URL:', { baseUrl: this.baseUrl, endpoint, fullUrl });
     return fullUrl;
