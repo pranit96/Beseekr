@@ -12,7 +12,6 @@
   to = "https://agent-backend-275v.onrender.com/api/:splat"
   status = 200
   force = true
-  conditions = {Role = "all"}
 
 # 🎯 Security headers for all routes
 [[headers]]
