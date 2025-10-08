@@ -31,12 +31,8 @@ export const AgentResponseCard = ({
 
   useEffect(() => {
     if (enableTypewriter) {
-      if (typewriterDelay > 0) {
-        const timer = setTimeout(() => setShouldStartTyping(true), typewriterDelay);
-        return () => clearTimeout(timer);
-      } else {
-        setShouldStartTyping(true);
-      }
+      const timer = setTimeout(() => setShouldStartTyping(true), typewriterDelay);
+      return () => clearTimeout(timer);
     } else {
       setShouldStartTyping(true);
       setIsTypingComplete(true);
@@ -64,39 +60,26 @@ export const AgentResponseCard = ({
         )}
       </div>
 
-      {/* Response Body */}
+      {/* Body */}
       <div className="text-sm prose prose-sm dark:prose-invert max-w-none">
-        {enableTypewriter && shouldStartTyping ? (
-          <>
-            {/* Step 1: Show full rendered response content first */}
-            <div
-              dangerouslySetInnerHTML={{ __html: response.content }}
-            />
+        {/* Step 1 — Show parsed Markdown immediately */}
+        <MarkdownRenderer content={response.content} />
 
-            {/* Step 2: Then render Markdown interpretation */}
-            <MarkdownRenderer content={response.content} />
-
-            {/* Step 3: Finally, start Typewriter animation (types plain text only) */}
-            <div className="relative mt-3">
-              <TypewriterText
-                text={response.content}
-                speed={30}
-                onComplete={handleTypewriterComplete}
-              >
-                {(typedText) => (
-                  <MarkdownRenderer content={typedText} />
-                )}
-              </TypewriterText>
-            </div>
-          </>
-        ) : (
-          <div
-            dangerouslySetInnerHTML={{ __html: response.content }}
-          />
+        {/* Step 2 — Then play Typewriter animation if enabled */}
+        {enableTypewriter && shouldStartTyping && (
+          <div className="relative mt-4">
+            <TypewriterText
+              text={response.content}
+              speed={30}
+              onComplete={handleTypewriterComplete}
+            >
+              {(typedText) => <MarkdownRenderer content={typedText} />}
+            </TypewriterText>
+          </div>
         )}
       </div>
 
-      {/* Timestamp */}
+      {/* Footer */}
       <span className="text-xs text-muted-foreground mt-2 block">
         {timestamp.toLocaleTimeString([], {
           hour: '2-digit',
