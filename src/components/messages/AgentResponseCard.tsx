@@ -21,8 +21,8 @@ export const AgentResponseCard = ({
   typewriterDelay = 0,
   onTypingComplete,
 }: AgentResponseCardProps) => {
-  const [shouldStartTyping, setShouldStartTyping] = useState(!enableTypewriter);
-  const [isTypingComplete, setIsTypingComplete] = useState(!enableTypewriter);
+  // FIX: Simplified state. We only need to know when to start typing.
+  const [shouldStartTyping, setShouldStartTyping] = useState(!enableTypewriter || typewriterDelay === 0);
 
   const timestamp =
     response.timestamp instanceof Date
@@ -30,17 +30,14 @@ export const AgentResponseCard = ({
       : new Date(response.timestamp);
 
   useEffect(() => {
-    if (enableTypewriter) {
+    if (enableTypewriter && typewriterDelay > 0) {
       const timer = setTimeout(() => setShouldStartTyping(true), typewriterDelay);
       return () => clearTimeout(timer);
-    } else {
-      setShouldStartTyping(true);
-      setIsTypingComplete(true);
     }
   }, [enableTypewriter, typewriterDelay]);
 
   const handleTypewriterComplete = () => {
-    setIsTypingComplete(true);
+    // onTypingComplete is now called directly from the TypewriterText component's onComplete prop
     onTypingComplete?.(index);
   };
 
@@ -62,20 +59,23 @@ export const AgentResponseCard = ({
 
       {/* Body */}
       <div className="text-sm prose prose-sm dark:prose-invert max-w-none">
-        {/* Step 1 — Show parsed Markdown immediately */}
-        <MarkdownRenderer content={response.content} />
-
-        {/* Step 2 — Then play Typewriter animation if enabled */}
-        {enableTypewriter && shouldStartTyping && (
-          <div className="relative mt-4">
+        {/* FIX: Use conditional rendering to avoid duplication. */}
+        {/* We choose one path: either typewriter or immediate display. */}
+        {enableTypewriter ? (
+          // Path 1: Typewriter is enabled.
+          // We wait for the delay to finish before rendering the component.
+          shouldStartTyping && (
             <TypewriterText
               text={response.content}
-              speed={300}
+              speed={30} // Note: 300 was very slow, changed to 30ms for a better feel.
               onComplete={handleTypewriterComplete}
             >
               {(typedText) => <MarkdownRenderer content={typedText} />}
             </TypewriterText>
-          </div>
+          )
+        ) : (
+          // Path 2: Typewriter is disabled. Render markdown directly.
+          <MarkdownRenderer content={response.content} />
         )}
       </div>
 
