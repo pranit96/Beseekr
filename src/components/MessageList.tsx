@@ -5,9 +5,10 @@ import { AgentMessage } from './messages/AgentMessage';
 
 interface MessageListProps {
   messages: ChatMessage[];
+  isLoading?: boolean;
 }
 
-export const MessageList = ({ messages }: MessageListProps) => {
+export const MessageList = ({ messages, isLoading = false }: MessageListProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [isAutoScroll, setIsAutoScroll] = useState(true);
@@ -74,7 +75,7 @@ export const MessageList = ({ messages }: MessageListProps) => {
     }
 
     // Also scroll immediately for new messages
-    if (isNewMessage) {
+    if (isNewMessage || isLoading) {
       messagesEndRef.current?.scrollIntoView({
         behavior: isFirstLoad ? 'instant' : 'smooth',
         block: 'end',
@@ -82,7 +83,7 @@ export const MessageList = ({ messages }: MessageListProps) => {
     }
 
     return () => observer.disconnect();
-  }, [messages, isAutoScroll]);
+  }, [messages, isAutoScroll, isLoading]);
 
   // Ensure all timestamps are Date objects before rendering
   const messagesWithProperTimestamps = messages.map(msg => ({
@@ -138,6 +139,24 @@ export const MessageList = ({ messages }: MessageListProps) => {
               <AgentMessage key={message.id} message={message} />
             )
           )}
+          
+          {isLoading && (
+            <div className="flex justify-start mb-6 animate-fade-in">
+              <div className="max-w-[90%] sm:max-w-[85%] md:max-w-[80%]">
+                <div className="glass rounded-xl p-4 shadow-soft">
+                  <div className="flex items-center gap-3">
+                    <div className="flex space-x-2">
+                      <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                      <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                      <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                    </div>
+                    <span className="text-sm text-muted-foreground">Processing your request...</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          
           <div ref={messagesEndRef} className="h-4" />
         </>
       )}

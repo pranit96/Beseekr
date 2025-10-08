@@ -86,6 +86,7 @@ export const ChatInterface = ({
             id: msg.id,
             content: msg.content,
             timestamp: new Date(msg.created_at),
+            isFromCache: true,
           };
 
           if (msg.role === 'user') {
@@ -158,10 +159,11 @@ export const ChatInterface = ({
       type: 'user',
       content: input,
       timestamp: new Date(),
+      isFromCache: false,
     };
     
-    const newMessages = [...messages, userMessage];
-    setMessages(newMessages);
+    // Add user message immediately
+    setMessages(prev => [...prev, userMessage]);
 
     const messageContent = input;
     setInput('');
@@ -230,22 +232,21 @@ export const ChatInterface = ({
           finalOutput: executionMode === 'sequential'
             ? response.data.final_output
             : response.data.aggregated_output,
+          isFromCache: false,
         };
 
-        const updatedMessages = [...newMessages, agentMessage];
-        setMessages(updatedMessages);
+        // Add agent message after loading is done
+        setIsLoading(false);
+        setMessages(prev => [...prev, agentMessage]);
       }
     } catch (error: any) {
       console.error('Orchestration error:', error);
+      setIsLoading(false);
       toast({
         title: 'Orchestration failed',
         description: error.message || 'Failed to execute agents',
         variant: 'destructive',
       });
-      
-      setMessages(messages);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -369,17 +370,8 @@ export const ChatInterface = ({
       ) : (
         <>
           <div className="flex-1 overflow-y-auto">
-            <MessageList messages={messages} />
+            <MessageList messages={messages} isLoading={isLoading} />
           </div>
-          
-          {isLoading && (
-            <div className="flex items-center justify-center py-4 space-x-2">
-              <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-              <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-              <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-              <span className="ml-2 text-sm text-muted-foreground">Processing your request...</span>
-            </div>
-          )}
           
           <div className="sticky bottom-0 bg-background/95 backdrop-blur-sm p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4 border-t border-border/50 shrink-0">
             <div className="flex items-center justify-center gap-2 sm:gap-3 flex-wrap mb-2 sm:mb-3">

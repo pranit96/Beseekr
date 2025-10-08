@@ -2,25 +2,22 @@ import { useState, useEffect, useRef } from 'react';
 
 interface TypewriterTextProps {
   text: string;
-  speed?: number; // characters per second
+  speed?: number;
   onComplete?: () => void;
+  onUpdate?: (currentText: string) => void;
 }
 
-export const TypewriterText = ({ text, speed = 50, onComplete }: TypewriterTextProps) => {
+export const TypewriterText = ({ text, speed = 100, onComplete, onUpdate }: TypewriterTextProps) => {
   const [displayedText, setDisplayedText] = useState('');
-  const [isComplete, setIsComplete] = useState(false);
   const animationRef = useRef<number>();
   const startTimeRef = useRef<number>();
   const textRef = useRef(text);
 
   useEffect(() => {
-    // Reset if text changes
     textRef.current = text;
     setDisplayedText('');
-    setIsComplete(false);
     
     if (!text) {
-      setIsComplete(true);
       onComplete?.();
       return;
     }
@@ -35,12 +32,12 @@ export const TypewriterText = ({ text, speed = 50, onComplete }: TypewriterTextP
       
       if (charactersToShow >= textRef.current.length) {
         setDisplayedText(textRef.current);
-        setIsComplete(true);
+        onUpdate?.(textRef.current);
         onComplete?.();
         return;
-      }
-
-      setDisplayedText(textRef.current.slice(0, charactersToShow));
+      }const currentText = textRef.current.slice(0, charactersToShow);
+      setDisplayedText(currentText);
+      onUpdate?.(currentText);
       animationRef.current = requestAnimationFrame(animate);
     };
 
@@ -51,13 +48,13 @@ export const TypewriterText = ({ text, speed = 50, onComplete }: TypewriterTextP
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [text, speed, onComplete]);
+  }, [text, speed, onComplete, onUpdate]);
 
-  return <>{displayedText}</>;
+  return <span>{displayedText}</span>;
 };
 
 // Hook for managing typewriter state
-export const useTypewriter = (initialText: string = '', speed: number = 50) => {
+export const useTypewriter = (initialText: string = '', speed: number = 100) => {
   const [text, setText] = useState(initialText);
   const [isTyping, setIsTyping] = useState(false);
 

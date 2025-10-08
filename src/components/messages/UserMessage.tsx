@@ -1,4 +1,3 @@
-// In UserMessage.tsx - Add timestamp validation
 import { ChatMessage } from '@/types/agent';
 
 interface UserMessageProps {
@@ -6,7 +5,6 @@ interface UserMessageProps {
 }
 
 export const UserMessage = ({ message }: UserMessageProps) => {
-  // Ensure timestamp is a Date object
   const timestamp = message.timestamp instanceof Date 
     ? message.timestamp 
     : new Date(message.timestamp);

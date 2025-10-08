@@ -9,7 +9,7 @@ interface AgentResponseCardProps {
   index: number;
   isSequential: boolean;
   enableTypewriter?: boolean;
-  typewriterDelay?: number; // delay before starting typewriter
+  typewriterDelay?: number;
   onTypingComplete?: (index: number) => void;
 }
 
@@ -17,14 +17,14 @@ export const AgentResponseCard = ({
   response,
   index,
   isSequential,
-  enableTypewriter = true,
+  enableTypewriter = false,
   typewriterDelay = 0,
   onTypingComplete,
 }: AgentResponseCardProps) => {
   const [shouldStartTyping, setShouldStartTyping] = useState(!enableTypewriter);
+  const [displayText, setDisplayText] = useState('');
   const [isTypingComplete, setIsTypingComplete] = useState(!enableTypewriter);
   
-  // Ensure timestamp is a Date object
   const timestamp = response.timestamp instanceof Date 
     ? response.timestamp 
     : new Date(response.timestamp);
@@ -36,22 +36,31 @@ export const AgentResponseCard = ({
       }, typewriterDelay);
 
       return () => clearTimeout(timer);
+    } else {
+      setShouldStartTyping(true);
+      setIsTypingComplete(true);
+      setDisplayText(response.content);
     }
-  }, [enableTypewriter, typewriterDelay]);
+  }, [enableTypewriter, typewriterDelay, response.content]);
 
   const handleTypewriterComplete = () => {
     setIsTypingComplete(true);
+    setDisplayText(response.content);
     onTypingComplete?.(index);
+  };
+
+  const handleTypewriterUpdate = (text: string) => {
+    setDisplayText(text);
   };
 
   return (
     <div
-      className="glass rounded-xl p-4 shadow-soft hover:shadow-medium transition-smooth"
+      className="glass rounded-xl p-4 shadow-soft hover:shadow-medium transition-smooth animate-fade-in"
       style={{
         animationDelay: isSequential ? `${index * 0.15}s` : `${index * 0.05}s`,
       }}
     >
-      <div className="flex items-center gap-2 mb-2">
+      <div className="flex items-center gap-2 mb-3">
         <div
           className="w-2 h-2 rounded-full"
           style={{ backgroundColor: `hsl(var(--agent-${(index % 5) + 1}))` }}
@@ -66,16 +75,21 @@ export const AgentResponseCard = ({
       
       <div className="text-sm">
         {enableTypewriter && shouldStartTyping && !isTypingComplete ? (
-          <div className="whitespace-pre-wrap">
-            <TypewriterText 
-              text={response.content} 
-              speed={80} 
-              onComplete={handleTypewriterComplete}
-            />
-            <span className="inline-block w-1 h-4 bg-primary animate-pulse ml-0.5" />
+          <div className="relative">
+            <div className="whitespace-pre-wrap break-words">
+              <TypewriterText 
+                text={response.content} 
+                speed={100}
+                onComplete={handleTypewriterComplete}
+                onUpdate={handleTypewriterUpdate}
+              />
+              <span className="inline-block w-0.5 h-4 bg-primary animate-pulse ml-1 align-middle" />
+            </div>
           </div>
         ) : (
-          <MarkdownRenderer content={response.content} />
+          <div className="prose prose-sm dark:prose-invert max-w-none">
+            <MarkdownRenderer content={response.content} />
+          </div>
         )}
       </div>
       
