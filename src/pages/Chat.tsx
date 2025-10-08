@@ -160,11 +160,11 @@ const Chat = () => {
       />
       
       <div className="flex-1 flex overflow-hidden">
-        {/* Sidebar with smooth transition */}
+        {/* Sidebar with smooth transition - hidden on mobile by default */}
         <div
           className={`transition-all duration-300 ease-in-out border-r border-border bg-muted/30 ${
             sidebarOpen ? 'w-80 opacity-100' : 'w-0 opacity-0'
-          } overflow-hidden`}
+          } overflow-hidden md:block`}
         >
           <ConversationHistory
             conversations={conversations}

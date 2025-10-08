@@ -10,6 +10,7 @@ interface AgentResponseCardProps {
   isSequential: boolean;
   enableTypewriter?: boolean;
   typewriterDelay?: number; // delay before starting typewriter
+  onTypingComplete?: (index: number) => void;
 }
 
 export const AgentResponseCard = ({
@@ -18,6 +19,7 @@ export const AgentResponseCard = ({
   isSequential,
   enableTypewriter = true,
   typewriterDelay = 0,
+  onTypingComplete,
 }: AgentResponseCardProps) => {
   const [shouldStartTyping, setShouldStartTyping] = useState(!enableTypewriter);
   const [isTypingComplete, setIsTypingComplete] = useState(!enableTypewriter);
@@ -39,6 +41,7 @@ export const AgentResponseCard = ({
 
   const handleTypewriterComplete = () => {
     setIsTypingComplete(true);
+    onTypingComplete?.(index);
   };
 
   return (

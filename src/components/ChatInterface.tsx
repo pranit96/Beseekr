@@ -265,21 +265,21 @@ export const ChatInterface = ({
   };
 
   return (
-    <div className="flex flex-col h-full max-w-4xl mx-auto w-full">
+    <div className="flex flex-col h-full max-w-5xl mx-auto w-full">
       {!hasStarted && messages.length === 0 ? (
-        <div className="flex-1 flex flex-col items-center justify-center p-6 space-y-8">
-          <div className="text-center space-y-3 max-w-2xl">
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+        <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 md:p-8 space-y-6 sm:space-y-8">
+          <div className="text-center space-y-3 max-w-2xl px-4">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
               How can I help you today?
             </h1>
-            <p className="text-muted-foreground text-lg">
+            <p className="text-muted-foreground text-base sm:text-lg">
               Select your agents, design the workflow, and let's get started
             </p>
           </div>
 
-          <div className="flex flex-col items-center gap-4 w-full max-w-2xl">
+          <div className="flex flex-col items-center gap-4 w-full max-w-3xl px-4">
             <div className="w-full">
-              <div className="relative flex items-center gap-2 rounded-lg bg-muted/50 border border-border/50 focus-within:border-primary transition-smooth px-4 py-3">
+              <div className="relative flex items-center gap-2 sm:gap-3 rounded-xl bg-muted/50 border border-border/50 focus-within:border-primary transition-smooth px-3 sm:px-4 py-2.5 sm:py-3">
                 <Textarea
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
@@ -290,7 +290,7 @@ export const ChatInterface = ({
                     }
                   }}
                   placeholder="Type your message here..."
-                  className="flex-1 resize-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 min-h-[40px] max-h-[120px] p-0 pl-2"
+                  className="flex-1 resize-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 min-h-[40px] max-h-[120px] p-0 pl-2 text-sm sm:text-base"
                   disabled={isLoading}
                   rows={1}
                 />
@@ -298,14 +298,14 @@ export const ChatInterface = ({
                   onClick={handleSubmit}
                   disabled={!input.trim() || isLoading}
                   size="icon"
-                  className="h-10 w-10 rounded-lg bg-primary hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/50 transition-all duration-300 shrink-0 disabled:opacity-50"
+                  className="h-9 w-9 sm:h-10 sm:w-10 rounded-lg bg-primary hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/50 transition-all duration-300 shrink-0 disabled:opacity-50"
                 >
-                  <Send className="h-4 w-4" />
+                  <Send className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 </Button>
               </div>
             </div>
 
-            <div className="flex items-center justify-center gap-3 flex-wrap">
+            <div className="flex items-center justify-center gap-2 sm:gap-3 flex-wrap">
               <AgentSelector
                 agents={agents}
                 selectedAgents={selectedAgents}
@@ -380,8 +380,8 @@ export const ChatInterface = ({
             </div>
           )}
           
-          <div className="sticky bottom-0 bg-background/95 backdrop-blur-sm p-6 space-y-4 border-t border-border/50">
-            <div className="flex items-center justify-center gap-3 flex-wrap mb-3">
+          <div className="sticky bottom-0 bg-background/95 backdrop-blur-sm p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4 border-t border-border/50">
+            <div className="flex items-center justify-center gap-2 sm:gap-3 flex-wrap mb-2 sm:mb-3">
               <AgentSelector
                 agents={agents}
                 selectedAgents={selectedAgents}
@@ -443,8 +443,8 @@ export const ChatInterface = ({
               </div>
             </div>
 
-            <div className="w-full">
-              <div className="relative flex items-center gap-2 rounded-lg bg-muted/50 border border-border/50 focus-within:border-primary transition-smooth px-4 py-3">
+            <div className="w-full max-w-4xl mx-auto">
+              <div className="relative flex items-center gap-2 sm:gap-3 rounded-xl bg-muted/50 border border-border/50 focus-within:border-primary transition-smooth px-3 sm:px-4 py-2.5 sm:py-3">
                 <Textarea
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
@@ -455,7 +455,7 @@ export const ChatInterface = ({
                     }
                   }}
                   placeholder="Message AgentFlow..."
-                  className="flex-1 resize-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 min-h-[40px] max-h-[120px] p-0 pl-2"
+                  className="flex-1 resize-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 min-h-[40px] max-h-[120px] p-0 pl-2 text-sm sm:text-base"
                   disabled={isLoading}
                   rows={1}
                 />

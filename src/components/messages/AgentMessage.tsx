@@ -45,11 +45,11 @@ export const AgentMessage = ({ message }: AgentMessageProps) => {
     : message.agentResponses || [];
 
   return (
-    <div className="flex justify-start">
-      <div className="max-w-[85%] space-y-3">
+    <div className="flex justify-start mb-6 animate-fade-in">
+      <div className="max-w-[90%] sm:max-w-[85%] md:max-w-[80%] space-y-4">
         {/* Agent responses */}
         {agentsToShow.length > 0 && (
-          <div className="space-y-3">
+          <div className="space-y-4">
             {agentsToShow.map((response, index) => (
               <AgentResponseCard
                 key={response.agentId}
@@ -58,6 +58,7 @@ export const AgentMessage = ({ message }: AgentMessageProps) => {
                 isSequential={isSequential}
                 enableTypewriter={index === currentAgentIndex}
                 typewriterDelay={isSequential ? 200 : index * 100}
+                onTypingComplete={() => handleAgentTypingComplete(index)}
               />
             ))}
           </div>
@@ -65,14 +66,14 @@ export const AgentMessage = ({ message }: AgentMessageProps) => {
 
         {/* Final output/markdown - only show after all agents complete */}
         {allTypingComplete && (message.markdownOutput || message.finalOutput) && (
-          <div className="glass rounded-xl p-4 shadow-soft border border-primary/20 mt-2">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-2 h-2 rounded-full bg-primary" />
-              <span className="font-medium text-sm text-primary">
+          <div className="glass rounded-xl p-5 shadow-soft border border-primary/20">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+              <span className="font-semibold text-sm text-primary">
                 {isSequential ? 'Final Output' : 'Summary'}
               </span>
             </div>
-            <div className="text-sm prose prose-sm dark:prose-invert max-w-none">
+            <div className="prose prose-sm dark:prose-invert max-w-none [&>*]:mb-3 [&>*:last-child]:mb-0">
               <MarkdownRenderer 
                 content={message.markdownOutput || message.finalOutput || ''} 
               />
@@ -81,7 +82,7 @@ export const AgentMessage = ({ message }: AgentMessageProps) => {
         )}
 
         {/* Timestamp */}
-        <span className="text-xs text-muted-foreground block">
+        <span className="text-xs text-muted-foreground block px-1">
           {(message.timestamp instanceof Date ? message.timestamp : new Date(message.timestamp))
             .toLocaleTimeString([], {
               hour: '2-digit',
