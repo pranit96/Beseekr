@@ -70,7 +70,7 @@ export const AgentResponseCard = ({
           <div className="relative mt-4">
             <TypewriterText
               text={response.content}
-              speed={30}
+              speed={300}
               onComplete={handleTypewriterComplete}
             >
               {(typedText) => <MarkdownRenderer content={typedText} />}
