@@ -52,7 +52,7 @@ export const AgentWorkflowDialog = ({
 
   const handleDrop = (e: React.DragEvent, dropIndex: number) => {
     e.preventDefault();
-    
+
     if (draggedIndex === null || draggedIndex === dropIndex) {
       setDraggedIndex(null);
       setDragOverIndex(null);
@@ -61,12 +61,12 @@ export const AgentWorkflowDialog = ({
 
     const newOrder = [...orderedAgents];
     const draggedAgent = newOrder[draggedIndex];
-    
+
     // Remove from old position
     newOrder.splice(draggedIndex, 1);
     // Insert at new position
     newOrder.splice(dropIndex, 0, draggedAgent);
-    
+
     setOrderedAgents(newOrder);
     setDraggedIndex(null);
     setDragOverIndex(null);
@@ -80,7 +80,7 @@ export const AgentWorkflowDialog = ({
   const moveAgent = (index: number, direction: 'up' | 'down') => {
     const newOrder = [...orderedAgents];
     const targetIndex = direction === 'up' ? index - 1 : index + 1;
-    
+
     if (targetIndex >= 0 && targetIndex < newOrder.length) {
       [newOrder[index], newOrder[targetIndex]] = [newOrder[targetIndex], newOrder[index]];
       setOrderedAgents(newOrder);
@@ -98,14 +98,14 @@ export const AgentWorkflowDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[80vh] flex flex-col">
+      <DialogContent className="sm:max-w-3xl w-full max-h-[85vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Design Agent Workflow</DialogTitle>
           <DialogDescription>
             Drag and drop to arrange the order in which agents will be executed
           </DialogDescription>
         </DialogHeader>
-        
+
         <div className="space-y-2 py-4 overflow-y-auto flex-1">
           {orderedAgents.length === 0 ? (
             <p className="text-center text-sm text-muted-foreground py-8">
@@ -123,7 +123,7 @@ export const AgentWorkflowDialog = ({
                 onDragEnd={handleDragEnd}
                 className={`flex items-center gap-3 p-4 rounded-lg border bg-card transition-all cursor-move
                   ${draggedIndex === index ? 'opacity-50 border-primary' : 'border-border'}
-                  ${dragOverIndex === index ? 'border-primary border-2 scale-[1.02]' : ''}
+                  ${dragOverIndex === index ? 'ring-2 ring-primary/30 scale-[1.01]' : ''}
                   hover:border-primary/50 hover:shadow-sm`}
               >
                 <div className="flex items-center gap-2">
@@ -132,7 +132,7 @@ export const AgentWorkflowDialog = ({
                     {index + 1}
                   </div>
                 </div>
-                
+
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-foreground mb-1 truncate">
                     {agent.name}
@@ -141,7 +141,7 @@ export const AgentWorkflowDialog = ({
                     {agent.description || 'No description available'}
                   </p>
                 </div>
-                
+
                 <div className="flex items-center gap-1">
                   <Button
                     variant="ghost"
@@ -177,7 +177,7 @@ export const AgentWorkflowDialog = ({
             ))
           )}
         </div>
-        
+
         <div className="flex justify-between items-center pt-4 border-t">
           <p className="text-sm text-muted-foreground">
             {orderedAgents.length} {orderedAgents.length === 1 ? 'agent' : 'agents'} in workflow

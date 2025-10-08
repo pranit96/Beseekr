@@ -1,8 +1,7 @@
 import { AgentResponse } from '@/types/agent';
 import { CheckCircle2, AlertCircle } from 'lucide-react';
 import { MarkdownRenderer } from './MarkdownRenderer';
-import { TypewriterText } from './TypewriterText';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import DOMPurify from 'dompurify';
 
 interface AgentResponseCardProps {
@@ -23,6 +22,8 @@ export const AgentResponseCard = ({
   onTypingComplete,
 }: AgentResponseCardProps) => {
   const [shouldStartTyping, setShouldStartTyping] = useState(!enableTypewriter || typewriterDelay === 0);
+  const [revealProgress, setRevealProgress] = useState(0);
+  const revealRef = useRef<HTMLDivElement | null>(null);
 
   // ✅ Sanitize Markdown + safe inline HTML
   const sanitizedContent = useMemo(() => {
@@ -61,9 +62,42 @@ export const AgentResponseCard = ({
     }
   }, [enableTypewriter, typewriterDelay]);
 
-  const handleTypewriterComplete = () => {
-    onTypingComplete?.(index);
-  };
+  // New: Stream-like reveal (mask) — smoother and less "typewriter-y"
+  useEffect(() => {
+    if (!enableTypewriter || !shouldStartTyping || !revealRef.current) {
+      if (!enableTypewriter) {
+        setRevealProgress(100);
+      }
+      return;
+    }
+
+    let raf = 0;
+    const el = revealRef.current;
+    const textLength = sanitizedContent.length || 100;
+    // duration proportional to content length but clamped
+    const duration = Math.min(3500, Math.max(600, textLength * 18));
+    const start = performance.now();
+
+    const step = (now: number) => {
+      const elapsed = now - start;
+      const progress = Math.min(1, elapsed / duration);
+      setRevealProgress(Math.round(progress * 100));
+      if (progress < 1) {
+        raf = requestAnimationFrame(step);
+      } else {
+        onTypingComplete?.(index);
+      }
+    };
+
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [enableTypewriter, shouldStartTyping, sanitizedContent, index, onTypingComplete]);
+
+  const clipStyle = {
+    clipPath: `polygon(0 0, ${revealProgress}% 0, ${revealProgress}% 100%, 0% 100%)`,
+    WebkitClipPath: `polygon(0 0, ${revealProgress}% 0, ${revealProgress}% 100%, 0% 100%)`,
+    transition: 'clip-path 120ms linear',
+  } as React.CSSProperties;
 
   return (
     <div className="glass rounded-xl p-4 shadow-soft hover:shadow-medium transition-smooth animate-fade-in">
@@ -83,19 +117,10 @@ export const AgentResponseCard = ({
 
       {/* Body */}
       <div className="text-sm prose prose-sm dark:prose-invert max-w-none">
-        {enableTypewriter ? (
-          shouldStartTyping && (
-            <TypewriterText
-              text={sanitizedContent}
-              speed={1}
-              onComplete={handleTypewriterComplete}
-            >
-              {(typedText) => <MarkdownRenderer content={typedText} />}
-            </TypewriterText>
-          )
-        ) : (
+        {/* We render the full sanitized HTML but reveal it using a clip-path mask for a smooth streaming feel */}
+        <div ref={revealRef} style={enableTypewriter ? clipStyle : undefined}>
           <MarkdownRenderer content={sanitizedContent} />
-        )}
+        </div>
       </div>
 
       {/* Footer */}

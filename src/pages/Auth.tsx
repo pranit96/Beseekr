@@ -118,11 +118,11 @@ const Auth = () => {
         ))}
 
         {/* Floating Text */}
-        <div className="absolute z-20 text-center px-6 animate-fade-in">
-          <h1 className="text-5xl font-extrabold text-white drop-shadow-glow mb-4 transition-all duration-700">
+        <div className="absolute z-20 text-center px-6 animate-fade-in max-w-4xl">
+          <h1 className="text-5xl md:text-6xl font-extrabold text-white drop-shadow-glow mb-4 transition-all duration-700">
             {messages[currentMsg]}
           </h1>
-          <p className="text-lg text-white/80 max-w-lg mx-auto">
+          <p className="text-lg text-white/80 max-w-2xl mx-auto">
             Step into a world where every AI collaborates like a friend. Your ideas, shared and evolved.
           </p>
         </div>
@@ -144,7 +144,6 @@ const Auth = () => {
               </h1>
             </div>
             <h2 className="text-2xl font-semibold mb-2 text-foreground">Let’s continue your creative AI journey </h2>
-            {/* <p className="text-muted-foreground">Let’s continue your creative AI journey</p> */}
           </div>
 
           <Tabs defaultValue="login" className="w-full">

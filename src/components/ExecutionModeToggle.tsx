@@ -17,7 +17,7 @@ export const ExecutionModeToggle = ({
         variant={mode === 'sequential' ? 'default' : 'ghost'}
         size="sm"
         onClick={() => onModeChange('sequential')}
-        className="gap-2 transition-smooth rounded-full"
+        className="gap-2 transition-smooth rounded-full px-3"
       >
         <ArrowRight className="w-4 h-4" />
         <span className="hidden sm:inline">Sequential</span>
@@ -26,7 +26,7 @@ export const ExecutionModeToggle = ({
         variant={mode === 'parallel' ? 'default' : 'ghost'}
         size="sm"
         onClick={() => onModeChange('parallel')}
-        className="gap-2 transition-smooth rounded-full"
+        className="gap-2 transition-smooth rounded-full px-3"
       >
         <Grid2X2 className="w-4 h-4" />
         <span className="hidden sm:inline">Parallel</span>

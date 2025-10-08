@@ -58,38 +58,42 @@ export const AgentDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl glass max-h-[90vh] overflow-y-auto rounded-2xl">
+      <DialogContent className="sm:max-w-3xl w-full glass max-h-[90vh] overflow-y-auto rounded-2xl">
         <DialogHeader>
-          <DialogTitle>{agent ? 'Edit Agent' : 'Create New Agent'}</DialogTitle>
+          <DialogTitle className="text-lg md:text-xl">
+            {agent ? 'Edit Agent' : 'Create New Agent'}
+          </DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">
-              Agent Name <span className="text-destructive">*</span>
-            </Label>
-            <Input
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="e.g., Research Agent"
-              required
-            />
-          </div>
+        <form onSubmit={handleSubmit} className="space-y-4 mt-4 px-4 md:px-6 pb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">
+                Agent Name <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="e.g., Research Agent"
+                required
+              />
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="domain">
-              Domain <span className="text-destructive">*</span>
-            </Label>
-            <Input
-              id="domain"
-              value={domain}
-              onChange={(e) => setDomain(e.target.value)}
-              placeholder="e.g., legal, medical, technical, marketing"
-              required
-            />
-            <p className="text-xs text-muted-foreground">
-              Specify the area of expertise for this agent
-            </p>
+            <div className="space-y-2">
+              <Label htmlFor="domain">
+                Domain <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="domain"
+                value={domain}
+                onChange={(e) => setDomain(e.target.value)}
+                placeholder="e.g., legal, medical, technical, marketing"
+                required
+              />
+              <p className="text-xs text-muted-foreground">
+                Specify the area of expertise for this agent
+              </p>
+            </div>
           </div>
 
           <div className="space-y-2">
@@ -136,5 +140,5 @@ export const AgentDialog = ({
         </form>
       </DialogContent>
     </Dialog>
-  );
+  ); 
 };

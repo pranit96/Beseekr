@@ -34,11 +34,20 @@ export const MessageList = ({ messages, isLoading = false }: MessageListProps) =
       }, 100);
     };
 
+    // Improve touch/scroll stability on large screens: prevent overscroll "shaky" feel
+    container.style.overscrollBehavior = 'contain';
+    container.style.touchAction = 'pan-y';
+
     container.addEventListener('scroll', handleScroll);
     return () => {
       container.removeEventListener('scroll', handleScroll);
       if (scrollTimeoutRef.current) {
         clearTimeout(scrollTimeoutRef.current);
+      }
+      // reset styles on unmount
+      if (container) {
+        container.style.overscrollBehavior = '';
+        container.style.touchAction = '';
       }
     };
   }, []);
@@ -49,7 +58,7 @@ export const MessageList = ({ messages, isLoading = false }: MessageListProps) =
 
     const isNewMessage = messages.length > previousMessageCountRef.current;
     const isFirstLoad = previousMessageCountRef.current === 0;
-    
+
     previousMessageCountRef.current = messages.length;
 
     // Use IntersectionObserver for smoother scrolling
@@ -104,6 +113,8 @@ export const MessageList = ({ messages, isLoading = false }: MessageListProps) =
       style={{
         scrollBehavior: 'smooth',
         overscrollBehavior: 'contain',
+        WebkitOverflowScrolling: 'touch',
+        touchAction: 'pan-y',
       }}
     >
       {messagesWithProperTimestamps.length === 0 ? (
@@ -139,16 +150,16 @@ export const MessageList = ({ messages, isLoading = false }: MessageListProps) =
               <AgentMessage key={message.id} message={message} />
             )
           )}
-          
+
           {isLoading && (
             <div className="flex justify-start mb-6 animate-fade-in">
               <div className="max-w-[90%] sm:max-w-[85%] md:max-w-[80%]">
                 <div className="glass rounded-xl p-4 shadow-soft">
                   <div className="flex items-center gap-3">
                     <div className="flex space-x-2">
-                      <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                      <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                      <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                      <div className="w-2 h-2 bg-primary rounded-full animate-pulse" style={{ animationDelay: '0ms' }}></div>
+                      <div className="w-2 h-2 bg-primary rounded-full animate-pulse" style={{ animationDelay: '150ms' }}></div>
+                      <div className="w-2 h-2 bg-primary rounded-full animate-pulse" style={{ animationDelay: '300ms' }}></div>
                     </div>
                     <span className="text-sm text-muted-foreground">Processing your request...</span>
                   </div>
@@ -156,7 +167,7 @@ export const MessageList = ({ messages, isLoading = false }: MessageListProps) =
               </div>
             </div>
           )}
-          
+
           <div ref={messagesEndRef} className="h-4" />
         </>
       )}

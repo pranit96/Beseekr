@@ -19,7 +19,7 @@ const Analytics = () => {
       const start = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
         .toISOString()
         .split('T')[0];
-      
+
       const response = await apiClient.getUsageStats({
         start_date: start,
       });
@@ -79,7 +79,7 @@ const Analytics = () => {
   return (
     <>
       <TopBar />
-      <div className="container mx-auto p-4 sm:p-6 md:p-8 max-w-[1800px]">
+      <div className="mx-auto p-4 sm:p-6 md:p-8 max-w-[2200px]">
         <div className="mb-6 sm:mb-8">
           <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
             Analytics

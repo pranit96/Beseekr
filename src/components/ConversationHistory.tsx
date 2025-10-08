@@ -52,11 +52,8 @@ interface ConversationHistoryProps {
 
 /**
  * ConversationHistory
- * - Improved accessibility & keyboard navigation
- * - Optimistic UI for archive/delete with rollback on error
- * - Search + filter
- * - Skeletons for loading states
- * - Clear visual focus states and aria attributes
+ * - Uses a slightly wider layout for large screens to make use of 4K space
+ * - Preserves keyboard navigation and accessibility
  */
 export const ConversationHistory = ({
   conversations = [],
@@ -291,7 +288,7 @@ export const ConversationHistory = ({
   };
 
   return (
-    <div className="w-80 border-r border-border bg-muted/30 flex flex-col h-full">
+    <div className="w-full max-w-[480px] 2xl:max-w-[520px] border-r border-border bg-muted/30 flex flex-col h-full">
       <div className="p-3 border-b border-border flex items-center gap-2">
         <div className="flex-1 flex items-center gap-2">
           <div className="relative flex items-center w-full">
@@ -370,5 +367,5 @@ export const ConversationHistory = ({
         </AlertDialogContent>
       </AlertDialog>
     </div>
-  );
+  ); 
 };

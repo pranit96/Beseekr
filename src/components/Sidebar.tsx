@@ -20,7 +20,7 @@ export const Sidebar = () => {
   const location = useLocation();
 
   return (
-    <aside className="w-64 border-r border-border bg-sidebar h-screen sticky top-0 flex flex-col">
+    <aside className="w-72 2xl:w-96 border-r border-border bg-sidebar h-screen sticky top-0 flex flex-col">
       <div className="p-6 border-b border-border">
         <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
           Multi-Agent AI

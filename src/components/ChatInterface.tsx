@@ -225,7 +225,7 @@ export const ChatInterface = ({
   };
 
   return (
-    <div className="flex flex-col h-full max-w-5xl mx-auto w-full overflow-hidden">
+    <div className="flex flex-col h-full max-w-[1800px] 2xl:max-w-[2200px] mx-auto w-full overflow-hidden">
       {!hasStarted && messages.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center p-6 space-y-6">
           <div className="text-center space-y-3 max-w-2xl px-4">

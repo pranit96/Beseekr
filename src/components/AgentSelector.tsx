@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Agent } from '@/types/agent';
 import { Button } from '@/components/ui/button';
 import {
@@ -9,6 +9,13 @@ import {
 import { Users, Check, Search } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+
+/**
+ * AgentSelector
+ * - Shows user-custom agents pinned at the top (keeps them out of domain grouping)
+ * - Uses a responsive grid (1 → 4 columns) to make use of large screen space
+ * - Selected agents are sorted to the top
+ */
 
 interface AgentSelectorProps {
   agents: Agent[];
@@ -23,21 +30,27 @@ export const AgentSelector = ({
 }: AgentSelectorProps) => {
   const [searchQuery, setSearchQuery] = useState('');
 
-  const filteredAgents = agents.filter(
-    (agent) =>
-      agent.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      agent.description.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const customAgents = useMemo(() => agents.filter(a => !a.is_default), [agents]);
+  const defaultAgents = useMemo(() => agents.filter(a => a.is_default), [agents]);
 
-  // Sort agents to show selected ones first
-  const sortedAgents = [...filteredAgents].sort((a, b) => {
-    const aSelected = selectedAgents.some((agent) => agent.id === a.id);
-    const bSelected = selectedAgents.some((agent) => agent.id === b.id);
-    
-    if (aSelected && !bSelected) return -1;
-    if (!aSelected && bSelected) return 1;
-    return 0;
-  });
+  const filteredDefaultAgents = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    return defaultAgents.filter(
+      (agent) =>
+        agent.name.toLowerCase().includes(q) ||
+        (agent.description || '').toLowerCase().includes(q) ||
+        (agent.domain || '').toLowerCase().includes(q)
+    );
+  }, [defaultAgents, searchQuery]);
+
+  const filteredCustomAgents = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    return customAgents.filter(
+      (agent) =>
+        agent.name.toLowerCase().includes(q) ||
+        (agent.description || '').toLowerCase().includes(q)
+    );
+  }, [customAgents, searchQuery]);
 
   const toggleAgent = (agent: Agent) => {
     const isSelected = selectedAgents.some((a) => a.id === agent.id);
@@ -48,6 +61,8 @@ export const AgentSelector = ({
     }
   };
 
+  const selectedCount = selectedAgents.length;
+
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -57,60 +72,97 @@ export const AgentSelector = ({
         >
           <Users className="w-4 h-4" />
           <span>Agents</span>
-          {selectedAgents.length > 0 && (
+          {selectedCount > 0 && (
             <Badge variant="secondary" className="ml-1 h-5 px-2">
-              {selectedAgents.length}
+              {selectedCount}
             </Badge>
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-96 p-4 glass" align="start">
+
+      <PopoverContent className="w-[680px] max-w-[95vw] p-4 glass" align="start">
         <div className="space-y-3">
-          <div className="space-y-2">
-            <h4 className="font-medium text-sm">Select Agents</h4>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search agents..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 h-9"
-              />
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex-1">
+              <h4 className="font-medium text-sm">Select Agents</h4>
+              <p className="text-xs text-muted-foreground">Pin your custom agents and then pick defaults.</p>
+            </div>
+            <div className="w-72">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search agents..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9 h-9"
+                />
+              </div>
             </div>
           </div>
-          <div className="space-y-1 max-h-[300px] overflow-y-auto">
-            {sortedAgents.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-4">
-                No agents found
-              </p>
-            ) : (
-              sortedAgents.map((agent, index) => {
-                const isSelected = selectedAgents.some((a) => a.id === agent.id);
-                const originalIndex = agents.findIndex(a => a.id === agent.id);
-                return (
-                  <button
-                    key={agent.id}
-                    onClick={() => toggleAgent(agent)}
-                    className={`w-full flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-smooth text-left group ${
-                      isSelected ? 'bg-primary/5 border border-primary/20' : ''
-                    }`}
-                  >
-                    <div
-                      className="w-3 h-3 rounded-full shrink-0"
-                      style={{ backgroundColor: `hsl(var(--agent-${(originalIndex % 5) + 1}))` }}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-sm">{agent.name}</div>
-                      <div className="text-xs text-muted-foreground truncate">
-                        {agent.description}
+
+          {/* Custom agents pinned to top */}
+          {filteredCustomAgents.length > 0 && (
+            <div>
+              <h5 className="text-xs font-semibold text-muted-foreground mb-2">Your agents</h5>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                {filteredCustomAgents.map((agent) => {
+                  const isSelected = selectedAgents.some((a) => a.id === agent.id);
+                  return (
+                    <button
+                      key={agent.id}
+                      onClick={() => toggleAgent(agent)}
+                      className={`p-3 rounded-lg text-left border transition-smooth flex flex-col justify-between h-26 ${
+                        isSelected ? 'bg-primary/5 border-primary/20' : 'hover:bg-muted/40'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-3 h-3 rounded-full shrink-0"
+                          style={{ backgroundColor: `hsl(var(--agent-${(agents.findIndex(a => a.id === agent.id) % 5) + 1}))` }}
+                        />
+                        <div className="min-w-0">
+                          <div className="text-sm font-medium truncate">{agent.name}</div>
+                          <div className="text-xs text-muted-foreground truncate">{agent.description}</div>
+                        </div>
                       </div>
-                    </div>
-                    {isSelected && (
-                      <Check className="w-4 h-4 text-primary shrink-0" />
-                    )}
-                  </button>
-                );
-              })
+                      {isSelected && <Check className="w-4 h-4 text-primary self-end mt-2" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Default agents (grouped visually in a responsive grid) */}
+          <div>
+            <h5 className="text-xs font-semibold text-muted-foreground mb-2">Default agents</h5>
+            {filteredDefaultAgents.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No agents found</p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                {filteredDefaultAgents.map((agent) => {
+                  const isSelected = selectedAgents.some((a) => a.id === agent.id);
+                  return (
+                    <button
+                      key={agent.id}
+                      onClick={() => toggleAgent(agent)}
+                      className={`p-3 rounded-lg text-left border transition-smooth flex items-center gap-3 ${
+                        isSelected ? 'bg-primary/5 border-primary/20' : 'hover:bg-muted/40'
+                      }`}
+                    >
+                      <div
+                        className="w-3 h-3 rounded-full shrink-0"
+                        style={{ backgroundColor: `hsl(var(--agent-${(agents.findIndex(a => a.id === agent.id) % 5) + 1}))` }}
+                      />
+                      <div className="min-w-0">
+                        <div className="text-sm font-medium truncate">{agent.name}</div>
+                        <div className="text-xs text-muted-foreground truncate">{agent.description}</div>
+                      </div>
+                      {isSelected && <Check className="w-4 h-4 text-primary ml-auto" />}
+                    </button>
+                  );
+                })}
+              </div>
             )}
           </div>
         </div>

@@ -102,7 +102,7 @@ const Agents = () => {
     try {
       if (agent.id && editingAgent) {
         setAgents(agents.map((a) => (a.id === agent.id ? { ...agent } : a)));
-        
+
         const response = await apiClient.updateAgent(agent.id, agent);
         if (response.success && response.data) {
           setAgents(agents.map((a) => (a.id === agent.id ? response.data : a)));
@@ -240,7 +240,7 @@ const Agents = () => {
   return (
     <>
       <TopBar />
-      <div className="container mx-auto p-4 sm:p-6 md:p-8 max-w-7xl">
+      <div className="mx-auto p-4 sm:p-6 md:p-8 max-w-[2200px]">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 sm:mb-8">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
@@ -279,57 +279,38 @@ const Agents = () => {
         <div className="space-y-6">
           {/* Custom Agents Section */}
           {categorizedAgents.custom.length > 0 && (
-            <Collapsible
-              open={openCategories.has('My Agents')}
-              onOpenChange={() => toggleCategory('My Agents')}
-            >
-              <CollapsibleTrigger className="w-full group">
-                <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
-                  <User className="w-5 h-5 text-primary" />
-                  <h2 className="text-lg font-semibold flex-1 text-left">
-                    My Custom Agents
-                  </h2>
-                  <Badge variant="secondary">{categorizedAgents.custom.length}</Badge>
-                  <div className={`transition-transform ${openCategories.has('My Agents') ? 'rotate-180' : ''}`}>
-                    ▼
-                  </div>
-                </div>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="pt-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {categorizedAgents.custom.map((agent, index) => (
-                    <AgentCard key={agent.id} agent={agent} index={index} />
-                  ))}
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
+            <div>
+              <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
+                <User className="w-5 h-5 text-primary" />
+                <h2 className="text-lg font-semibold flex-1 text-left">
+                  My Custom Agents
+                </h2>
+                <Badge variant="secondary">{categorizedAgents.custom.length}</Badge>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pt-4">
+                {categorizedAgents.custom.map((agent, index) => (
+                  <AgentCard key={agent.id} agent={agent} index={index} />
+                ))}
+              </div>
+            </div>
           )}
 
           {/* Domain-based Agent Categories */}
           {Object.entries(categorizedAgents.domains).map(([domain, domainAgents]) => (
-            <Collapsible
-              key={domain}
-              open={openCategories.has(domain)}
-              onOpenChange={() => toggleCategory(domain)}
-            >
-              <CollapsibleTrigger className="w-full group">
-                <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
-                  <Folder className="w-5 h-5 text-accent" />
-                  <h2 className="text-lg font-semibold flex-1 text-left">{domain}</h2>
-                  <Badge variant="secondary">{domainAgents.length}</Badge>
-                  <div className={`transition-transform ${openCategories.has(domain) ? 'rotate-180' : ''}`}>
-                    ▼
-                  </div>
-                </div>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="pt-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {domainAgents.map((agent, index) => (
-                    <AgentCard key={agent.id} agent={agent} index={index} />
-                  ))}
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
+            <div key={domain}>
+              <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
+                <Folder className="w-5 h-5 text-accent" />
+                <h2 className="text-lg font-semibold flex-1 text-left">{domain}</h2>
+                <Badge variant="secondary">{domainAgents.length}</Badge>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pt-4">
+                {domainAgents.map((agent, index) => (
+                  <AgentCard key={agent.id} agent={agent} index={index} />
+                ))}
+              </div>
+            </div>
           ))}
         </div>
 

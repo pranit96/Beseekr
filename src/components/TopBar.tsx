@@ -36,9 +36,9 @@ export const TopBar = ({ sidebarOpen, onToggleSidebar, showSidebarToggle }: TopB
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-xl">
-      <div className="container flex h-16 items-center justify-between px-4 md:px-6">
+      <div className="mx-auto w-full max-w-[2200px] flex h-16 items-center justify-between px-4 md:px-6">
         {/* Left Section */}
-        <div className="flex items-center gap-3 min-w-[150px]">
+        <div className="flex items-center gap-3 min-w-[220px]">
           {showSidebarToggle && (
             <Button
               variant="ghost"
@@ -81,7 +81,7 @@ export const TopBar = ({ sidebarOpen, onToggleSidebar, showSidebarToggle }: TopB
         </nav>
 
         {/* Right Section */}
-        <div className="flex items-center justify-end gap-2 min-w-[150px]">
+        <div className="flex items-center justify-end gap-2 min-w-[220px]">
           {/* Mobile Nav Toggle */}
           <div className="md:hidden">
             <Button
