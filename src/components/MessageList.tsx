@@ -1,167 +1,68 @@
-import { useEffect, useRef, useState } from 'react';
-import { ChatMessage } from '@/types/agent';
-import { UserMessage } from './messages/UserMessage';
-import { AgentMessage } from './messages/AgentMessage';
+import React, { useEffect, useRef } from "react";
+import AgentMessage from "./messages/AgentMessage";
+import { ChatMessage } from "@/types/agent";
+import { cn } from "@/lib/utils";
+import { Loader2 } from "lucide-react";
 
 interface MessageListProps {
   messages: ChatMessage[];
   isLoading?: boolean;
-  awaitingReveal?: boolean;
 }
 
-export const MessageList = ({ messages, isLoading = false, awaitingReveal = false }: MessageListProps) => {
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const messagesContainerRef = useRef<HTMLDivElement>(null);
-  const [isAutoScroll, setIsAutoScroll] = useState(true);
-  const previousMessageCountRef = useRef(0);
-  const scrollTimeoutRef = useRef<NodeJS.Timeout>();
+export const MessageList: React.FC<MessageListProps> = ({
+  messages,
+  isLoading,
+}) => {
+  const endRef = useRef<HTMLDivElement>(null);
 
-  // Handle scroll behavior
+  // Auto-scroll to bottom when messages update
   useEffect(() => {
-    const container = messagesContainerRef.current;
-    if (!container) return;
-
-    const handleScroll = () => {
-      if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
-
-      scrollTimeoutRef.current = setTimeout(() => {
-        const { scrollTop, scrollHeight, clientHeight } = container;
-        const isNearBottom = scrollHeight - scrollTop - clientHeight < 200;
-        setIsAutoScroll(isNearBottom);
-      }, 100);
-    };
-
-    // Improve touch/scroll stability on large screens: prevent overscroll "shaky" feel
-    container.style.overscrollBehavior = 'contain';
-    container.style.touchAction = 'pan-y';
-
-    container.addEventListener('scroll', handleScroll);
-    return () => {
-      container.removeEventListener('scroll', handleScroll);
-      if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
-      if (container) {
-        container.style.overscrollBehavior = '';
-        container.style.touchAction = '';
-      }
-    };
-  }, []);
-
-  // Smooth scroll to bottom with IntersectionObserver for better performance
-  useEffect(() => {
-    if (!isAutoScroll || !messagesEndRef.current) return;
-
-    const isNewMessage = messages.length > previousMessageCountRef.current;
-    const isFirstLoad = previousMessageCountRef.current === 0;
-
-    previousMessageCountRef.current = messages.length;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (!entry.isIntersecting && isAutoScroll) {
-            messagesEndRef.current?.scrollIntoView({
-              behavior: isFirstLoad ? 'instant' : 'smooth',
-              block: 'end',
-            });
-          }
-        });
-      },
-      {
-        root: messagesContainerRef.current,
-        threshold: 0.1,
-      }
-    );
-
-    if (messagesEndRef.current) observer.observe(messagesEndRef.current);
-
-    // Also scroll immediately for new messages (if auto-scroll allowed)
-    if (isNewMessage) {
-      messagesEndRef.current?.scrollIntoView({
-        behavior: isFirstLoad ? 'instant' : 'smooth',
-        block: 'end',
-      });
+    if (endRef.current) {
+      endRef.current.scrollIntoView({ behavior: "smooth" });
     }
-
-    return () => observer.disconnect();
-  }, [messages, isAutoScroll, isLoading, awaitingReveal]);
-
-  // Ensure all timestamps are Date objects before rendering
-  const messagesWithProperTimestamps = messages.map(msg => ({
-    ...msg,
-    timestamp: msg.timestamp instanceof Date ? msg.timestamp : new Date(msg.timestamp),
-    ...(msg.agentResponses && {
-      agentResponses: msg.agentResponses.map(ar => ({
-        ...ar,
-        timestamp: ar.timestamp instanceof Date ? ar.timestamp : new Date(ar.timestamp),
-      })),
-    }),
-  }));
+  }, [messages, isLoading]);
 
   return (
-    <div 
-      ref={messagesContainerRef}
-      className="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth"
-      style={{
-        scrollBehavior: 'smooth',
-        overscrollBehavior: 'contain',
-        WebkitOverflowScrolling: 'touch',
-        touchAction: 'pan-y',
-      }}
-      aria-live="polite"
-    >
-      {messagesWithProperTimestamps.length === 0 ? (
-        <div className="flex items-center justify-center h-full">
-          <div className="text-center space-y-3 max-w-md">
-            <div className="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
-              <svg
-                className="w-10 h-10 text-primary"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
-                />
-              </svg>
-            </div>
-            <h3 className="text-xl font-semibold">Start a Conversation</h3>
-            <p className="text-muted-foreground">
-              Select agents and choose an execution mode to begin
-            </p>
-          </div>
-        </div>
-      ) : (
-        <>
-          {messagesWithProperTimestamps.map((message) =>
-            message.type === 'user' ? (
-              <UserMessage key={message.id} message={message} />
-            ) : (
-              <AgentMessage key={message.id} message={message} />
-            )
-          )}
-
-          {/* Thinking indicator: show until reveal completes */}
-          {(isLoading || awaitingReveal) && (
-            <div className="flex justify-start mb-6">
-              <div className="max-w-[90%] sm:max-w-[85%] md:max-w-[80%]">
-                <div className="glass rounded-xl p-4 shadow-soft flex items-center gap-3">
-                  <div className="flex items-center space-x-2">
-                    <span className="w-2 h-2 rounded-full bg-primary animate-pulse" style={{ animationDelay: '0ms' }} />
-                    <span className="w-2 h-2 rounded-full bg-primary animate-pulse" style={{ animationDelay: '120ms' }} />
-                    <span className="w-2 h-2 rounded-full bg-primary animate-pulse" style={{ animationDelay: '240ms' }} />
-                  </div>
-                  <div className="text-sm text-muted-foreground">Thinking…</div>
-                </div>
+    <div className="flex flex-col gap-6 px-6 py-4 overflow-y-auto">
+      {messages.map((msg, idx) => {
+        if (msg.type === "user") {
+          return (
+            <div key={`user-${idx}`} className="flex justify-end">
+              <div className="max-w-[70%] rounded-xl bg-primary text-primary-foreground px-4 py-2 shadow-sm">
+                {msg.content}
               </div>
             </div>
-          )}
+          );
+        }
 
-          <div ref={messagesEndRef} className="h-4" />
-        </>
+        if (msg.type === "agent" && msg.agentResponses) {
+          return (
+            <div
+              key={`agent-${idx}`}
+              className="flex flex-col items-start gap-2 w-full"
+            >
+              <AgentMessage
+                key={`agent-message-${idx}`}
+                responses={msg.agentResponses}
+              />
+            </div>
+          );
+        }
+
+        return null;
+      })}
+
+      {/* Thinking indicator */}
+      {isLoading && (
+        <div className="flex items-center justify-start gap-2 text-muted-foreground pl-2">
+          <Loader2 className="w-4 h-4 animate-spin" />
+          <span className="text-sm animate-pulse">Thinking...</span>
+        </div>
       )}
+
+      <div ref={endRef} />
     </div>
   );
 };
+
+export default MessageList;

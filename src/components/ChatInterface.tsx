@@ -24,7 +24,6 @@ export const ChatInterface = ({
   const [selectedAgents, setSelectedAgents] = useState<Agent[]>([]);
   const [executionMode, setExecutionMode] = useState<ExecutionMode>('sequential');
   const [isLoading, setIsLoading] = useState(false);
-  const [awaitingReveal, setAwaitingReveal] = useState(false);
   const [workflowDialogOpen, setWorkflowDialogOpen] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
   const [saveToConversation, setSaveToConversation] = useState(true);
@@ -38,6 +37,7 @@ export const ChatInterface = ({
       const prompt = e.detail?.prompt;
       if (prompt) {
         setInput(prompt);
+        // focus textarea
         const ta = document.querySelector<HTMLTextAreaElement>('textarea[placeholder="Message CreatuAI..."], textarea[placeholder="Type your message here..."]');
         ta?.focus();
       }
@@ -58,25 +58,6 @@ export const ChatInterface = ({
     };
     window.addEventListener('regenerate-from-response', handler);
     return () => window.removeEventListener('regenerate-from-response', handler);
-  }, []);
-
-  // Listen for reveal lifecycle events to sync loading UI
-  useEffect(() => {
-    const onRevealStart = (e: any) => {
-      // when any agent starts revealing, ensure the waiting indicator remains until complete
-      setAwaitingReveal(true);
-    };
-    const onRevealComplete = (e: any) => {
-      // When reveal completes, hide waiting indicator and clear loading state
-      setAwaitingReveal(false);
-      setIsLoading(false);
-    };
-    window.addEventListener('agent-reveal-start', onRevealStart);
-    window.addEventListener('agent-reveal-complete', onRevealComplete);
-    return () => {
-      window.removeEventListener('agent-reveal-start', onRevealStart);
-      window.removeEventListener('agent-reveal-complete', onRevealComplete);
-    };
   }, []);
 
   // Load cached or historical messages
@@ -190,7 +171,6 @@ export const ChatInterface = ({
     };
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
-    setAwaitingReveal(false); // will be set to true when first agent starts revealing
 
     try {
       const { apiClient } = await import('@/lib/api');
@@ -252,9 +232,8 @@ export const ChatInterface = ({
           isFromCache: false,
         };
 
-        // Append agent message — reveal process will be handled by AgentResponseCard
-        setMessages(prev => [...prev, agentMessage]);
-        // awaitingReveal will flip true when first 'agent-reveal-start' event fires (listener above)
+        setIsLoading(false);
+        setTimeout(() => setMessages(prev => [...prev, agentMessage]), 0);
       } else {
         throw new Error('No orchestration data returned');
       }
@@ -266,7 +245,6 @@ export const ChatInterface = ({
         variant: 'destructive',
       });
       setIsLoading(false);
-      setAwaitingReveal(false);
     }
   };
 
@@ -372,7 +350,7 @@ export const ChatInterface = ({
       ) : (
         <>
           <div className="flex-1 overflow-y-auto">
-            <MessageList messages={messages} isLoading={isLoading} awaitingReveal={awaitingReveal} />
+            <MessageList messages={messages} isLoading={isLoading} />
           </div>
           <div className="sticky bottom-0 bg-background/95 backdrop-blur-sm p-4 border-t border-border/50 space-y-3">
             <div className="flex items-center justify-center gap-3 flex-wrap">
