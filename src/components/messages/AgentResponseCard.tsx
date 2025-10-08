@@ -2,7 +2,8 @@ import { AgentResponse } from '@/types/agent';
 import { CheckCircle2, AlertCircle } from 'lucide-react';
 import { MarkdownRenderer } from './MarkdownRenderer';
 import { TypewriterText } from './TypewriterText';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import DOMPurify from 'dompurify';
 
 interface AgentResponseCardProps {
   response: AgentResponse;
@@ -21,8 +22,32 @@ export const AgentResponseCard = ({
   typewriterDelay = 0,
   onTypingComplete,
 }: AgentResponseCardProps) => {
-  // FIX: Simplified state. We only need to know when to start typing.
   const [shouldStartTyping, setShouldStartTyping] = useState(!enableTypewriter || typewriterDelay === 0);
+
+  // ✅ Sanitize Markdown + safe inline HTML
+  const sanitizedContent = useMemo(() => {
+    if (typeof window !== 'undefined') {
+      return DOMPurify.sanitize(response.content, {
+        ALLOWED_TAGS: [
+          'b',
+          'i',
+          'em',
+          'strong',
+          'a',
+          'code',
+          'pre',
+          'br',
+          'p',
+          'ul',
+          'ol',
+          'li',
+          'blockquote',
+        ],
+        ALLOWED_ATTR: ['href', 'title'],
+      });
+    }
+    return response.content;
+  }, [response.content]);
 
   const timestamp =
     response.timestamp instanceof Date
@@ -37,7 +62,6 @@ export const AgentResponseCard = ({
   }, [enableTypewriter, typewriterDelay]);
 
   const handleTypewriterComplete = () => {
-    // onTypingComplete is now called directly from the TypewriterText component's onComplete prop
     onTypingComplete?.(index);
   };
 
@@ -59,23 +83,18 @@ export const AgentResponseCard = ({
 
       {/* Body */}
       <div className="text-sm prose prose-sm dark:prose-invert max-w-none">
-        {/* FIX: Use conditional rendering to avoid duplication. */}
-        {/* We choose one path: either typewriter or immediate display. */}
         {enableTypewriter ? (
-          // Path 1: Typewriter is enabled.
-          // We wait for the delay to finish before rendering the component.
           shouldStartTyping && (
             <TypewriterText
-              text={response.content}
-              speed={30} // Note: 300 was very slow, changed to 30ms for a better feel.
+              text={sanitizedContent}
+              speed={30}
               onComplete={handleTypewriterComplete}
             >
               {(typedText) => <MarkdownRenderer content={typedText} />}
             </TypewriterText>
           )
         ) : (
-          // Path 2: Typewriter is disabled. Render markdown directly.
-          <MarkdownRenderer content={response.content} />
+          <MarkdownRenderer content={sanitizedContent} />
         )}
       </div>
 

@@ -1,4 +1,5 @@
 import ReactMarkdown from 'react-markdown';
+import rehypeRaw from 'rehype-raw';
 
 interface MarkdownRendererProps {
   content: string;
@@ -8,6 +9,8 @@ export const MarkdownRenderer = ({ content }: MarkdownRendererProps) => {
   return (
     <div className="prose prose-sm dark:prose-invert max-w-none">
       <ReactMarkdown
+        skipHtml={false} // ✅ allow inline HTML
+        rehypePlugins={[rehypeRaw]} // ✅ parse HTML inside markdown safely
         components={{
           h1: ({ children }) => (
             <h1 className="text-2xl font-bold mb-4 text-foreground">{children}</h1>
