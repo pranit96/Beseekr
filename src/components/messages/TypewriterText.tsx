@@ -4,9 +4,15 @@ interface TypewriterTextProps {
   text: string;
   speed?: number;
   onComplete?: () => void;
+  children?: (typedText: string, isComplete: boolean) => React.ReactNode;
 }
 
-export const TypewriterText = ({ text, speed = 300, onComplete }: TypewriterTextProps) => {
+export const TypewriterText = ({
+  text,
+  speed = 300,
+  onComplete,
+  children,
+}: TypewriterTextProps) => {
   const [displayedText, setDisplayedText] = useState('');
   const [isComplete, setIsComplete] = useState(false);
   const animationRef = useRef<number>();
@@ -18,7 +24,7 @@ export const TypewriterText = ({ text, speed = 300, onComplete }: TypewriterText
     setDisplayedText('');
     setIsComplete(false);
     startTimeRef.current = undefined;
-    
+
     if (!text) {
       setIsComplete(true);
       onComplete?.();
@@ -32,7 +38,7 @@ export const TypewriterText = ({ text, speed = 300, onComplete }: TypewriterText
 
       const elapsed = timestamp - startTimeRef.current;
       const charactersToShow = Math.floor((elapsed / 1000) * speed);
-      
+
       if (charactersToShow >= textRef.current.length) {
         setDisplayedText(textRef.current);
         setIsComplete(true);
@@ -53,14 +59,18 @@ export const TypewriterText = ({ text, speed = 300, onComplete }: TypewriterText
     };
   }, [text, speed, onComplete]);
 
-  if (isComplete) {
-    return <span>{text}</span>;
+  // If there's a render function, use it
+  if (children) {
+    return <>{children(displayedText, isComplete)}</>;
   }
 
+  // Default fallback (text only)
   return (
     <>
       <span>{displayedText}</span>
-      <span className="inline-block w-0.5 h-4 bg-primary animate-pulse ml-1 align-middle" />
+      {!isComplete && (
+        <span className="inline-block w-0.5 h-4 bg-primary animate-pulse ml-1 align-middle" />
+      )}
     </>
   );
 };

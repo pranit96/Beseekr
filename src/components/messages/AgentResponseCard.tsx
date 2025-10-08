@@ -67,18 +67,15 @@ export const AgentResponseCard = ({
       </div>
       
       <div className="text-sm prose prose-sm dark:prose-invert max-w-none">
-        {enableTypewriter && shouldStartTyping && !isTypingComplete ? (
-          <div className="relative">
-            <TypewriterText 
-              text={response.content} 
-              speed={500}
-              onComplete={handleTypewriterComplete}
-            />
-          </div>
+        {enableTypewriter && shouldStartTyping ? (
+          <TypewriterText text={response.content} speed={30} onComplete={handleTypewriterComplete}>
+            {(typedText) => <MarkdownRenderer content={typedText} />}
+          </TypewriterText>
         ) : (
           <MarkdownRenderer content={response.content} />
         )}
       </div>
+
       
       <span className="text-xs text-muted-foreground mt-2 block">
         {timestamp.toLocaleTimeString([], {
