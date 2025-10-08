@@ -6,9 +6,10 @@ import { AgentMessage } from './messages/AgentMessage';
 interface MessageListProps {
   messages: ChatMessage[];
   isLoading?: boolean;
+  awaitingReveal?: boolean;
 }
 
-export const MessageList = ({ messages, isLoading = false }: MessageListProps) => {
+export const MessageList = ({ messages, isLoading = false, awaitingReveal = false }: MessageListProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [isAutoScroll, setIsAutoScroll] = useState(true);
@@ -21,15 +22,11 @@ export const MessageList = ({ messages, isLoading = false }: MessageListProps) =
     if (!container) return;
 
     const handleScroll = () => {
-      // Clear any pending scroll timeout
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current);
-      }
+      if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
 
-      // Set timeout to determine if user has stopped scrolling
       scrollTimeoutRef.current = setTimeout(() => {
         const { scrollTop, scrollHeight, clientHeight } = container;
-        const isNearBottom = scrollHeight - scrollTop - clientHeight < 150;
+        const isNearBottom = scrollHeight - scrollTop - clientHeight < 200;
         setIsAutoScroll(isNearBottom);
       }, 100);
     };
@@ -41,10 +38,7 @@ export const MessageList = ({ messages, isLoading = false }: MessageListProps) =
     container.addEventListener('scroll', handleScroll);
     return () => {
       container.removeEventListener('scroll', handleScroll);
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current);
-      }
-      // reset styles on unmount
+      if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
       if (container) {
         container.style.overscrollBehavior = '';
         container.style.touchAction = '';
@@ -61,7 +55,6 @@ export const MessageList = ({ messages, isLoading = false }: MessageListProps) =
 
     previousMessageCountRef.current = messages.length;
 
-    // Use IntersectionObserver for smoother scrolling
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -79,12 +72,10 @@ export const MessageList = ({ messages, isLoading = false }: MessageListProps) =
       }
     );
 
-    if (messagesEndRef.current) {
-      observer.observe(messagesEndRef.current);
-    }
+    if (messagesEndRef.current) observer.observe(messagesEndRef.current);
 
-    // Also scroll immediately for new messages
-    if (isNewMessage || isLoading) {
+    // Also scroll immediately for new messages (if auto-scroll allowed)
+    if (isNewMessage) {
       messagesEndRef.current?.scrollIntoView({
         behavior: isFirstLoad ? 'instant' : 'smooth',
         block: 'end',
@@ -92,7 +83,7 @@ export const MessageList = ({ messages, isLoading = false }: MessageListProps) =
     }
 
     return () => observer.disconnect();
-  }, [messages, isAutoScroll, isLoading]);
+  }, [messages, isAutoScroll, isLoading, awaitingReveal]);
 
   // Ensure all timestamps are Date objects before rendering
   const messagesWithProperTimestamps = messages.map(msg => ({
@@ -116,6 +107,7 @@ export const MessageList = ({ messages, isLoading = false }: MessageListProps) =
         WebkitOverflowScrolling: 'touch',
         touchAction: 'pan-y',
       }}
+      aria-live="polite"
     >
       {messagesWithProperTimestamps.length === 0 ? (
         <div className="flex items-center justify-center h-full">
@@ -151,18 +143,17 @@ export const MessageList = ({ messages, isLoading = false }: MessageListProps) =
             )
           )}
 
-          {isLoading && (
-            <div className="flex justify-start mb-6 animate-fade-in">
+          {/* Thinking indicator: show until reveal completes */}
+          {(isLoading || awaitingReveal) && (
+            <div className="flex justify-start mb-6">
               <div className="max-w-[90%] sm:max-w-[85%] md:max-w-[80%]">
-                <div className="glass rounded-xl p-4 shadow-soft">
-                  <div className="flex items-center gap-3">
-                    <div className="flex space-x-2">
-                      <div className="w-2 h-2 bg-primary rounded-full animate-pulse" style={{ animationDelay: '0ms' }}></div>
-                      <div className="w-2 h-2 bg-primary rounded-full animate-pulse" style={{ animationDelay: '150ms' }}></div>
-                      <div className="w-2 h-2 bg-primary rounded-full animate-pulse" style={{ animationDelay: '300ms' }}></div>
-                    </div>
-                    <span className="text-sm text-muted-foreground">Processing your request...</span>
+                <div className="glass rounded-xl p-4 shadow-soft flex items-center gap-3">
+                  <div className="flex items-center space-x-2">
+                    <span className="w-2 h-2 rounded-full bg-primary animate-pulse" style={{ animationDelay: '0ms' }} />
+                    <span className="w-2 h-2 rounded-full bg-primary animate-pulse" style={{ animationDelay: '120ms' }} />
+                    <span className="w-2 h-2 rounded-full bg-primary animate-pulse" style={{ animationDelay: '240ms' }} />
                   </div>
+                  <div className="text-sm text-muted-foreground">Thinking…</div>
                 </div>
               </div>
             </div>

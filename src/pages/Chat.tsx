@@ -6,6 +6,7 @@ import { apiClient } from '@/lib/api';
 import { Agent } from '@/types/agent';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 interface Conversation {
   id: string;
@@ -24,6 +25,8 @@ const Chat = () => {
   const [key, setKey] = useState(0);
 
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     const savedSidebarState = sessionStorage.getItem('sidebarOpen');
@@ -147,6 +150,44 @@ const Chat = () => {
 
   const isLoading = loadingAgents || loadingConversations;
 
+  // Global keyboard shortcuts
+  useEffect(() => {
+    let sequenceKey: string | null = null;
+    const handler = (e: KeyboardEvent) => {
+      const activeTag = (document.activeElement?.tagName || '').toLowerCase();
+      if (activeTag === 'input' || activeTag === 'textarea') return;
+      // Focus search with '/'
+      if (e.key === '/') {
+        e.preventDefault();
+        const el = document.querySelector<HTMLInputElement>('input[aria-label="Search conversations"]');
+        el?.focus();
+        return;
+      }
+      // New conversation 'n'
+      if (e.key === 'n') {
+        e.preventDefault();
+        handleNewSession();
+        return;
+      }
+      // Go-to sequences 'g' + 'a' or 'g' + 'c'
+      if (!sequenceKey && e.key === 'g') {
+        sequenceKey = 'g';
+        setTimeout(() => (sequenceKey = null), 800);
+        return;
+      }
+      if (sequenceKey === 'g') {
+        if (e.key === 'a') {
+          navigate('/agents');
+        } else if (e.key === 'c') {
+          navigate('/');
+        }
+        sequenceKey = null;
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [handleNewSession, navigate]);
+
   if (isLoading) {
     return (
       <div className="h-screen flex flex-col items-center justify-center gap-4">
@@ -187,7 +228,7 @@ const Chat = () => {
 
         {/* Main Chat Interface - Constrained max width for better readability on 4K */}
         <main className="flex-1 flex justify-center overflow-hidden">
-          <div className="w-full max-w-[1400px] 2xl:max-w-[1800px]">
+          <div className="w-full max-w-[1800px] 2xl:max-w-[2200px]">
             <ChatInterface
               key={key}
               agents={agents}

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Moon, Sun, User, LogOut, Settings, Menu, X } from 'lucide-react';
+import { Moon, Sun, User, LogOut, Settings, Menu, X, HelpCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import {
@@ -38,7 +38,7 @@ export const TopBar = ({ sidebarOpen, onToggleSidebar, showSidebarToggle }: TopB
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-xl">
       <div className="mx-auto w-full max-w-[2200px] flex h-16 items-center justify-between px-4 md:px-6">
         {/* Left Section */}
-        <div className="flex items-center gap-3 min-w-[220px]">
+        <div className="flex items-center gap-3 min-w-[240px]">
           {showSidebarToggle && (
             <Button
               variant="ghost"
@@ -81,7 +81,7 @@ export const TopBar = ({ sidebarOpen, onToggleSidebar, showSidebarToggle }: TopB
         </nav>
 
         {/* Right Section */}
-        <div className="flex items-center justify-end gap-2 min-w-[220px]">
+        <div className="flex items-center justify-end gap-2 min-w-[240px]">
           {/* Mobile Nav Toggle */}
           <div className="md:hidden">
             <Button
@@ -94,6 +94,17 @@ export const TopBar = ({ sidebarOpen, onToggleSidebar, showSidebarToggle }: TopB
               {mobileNavOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </Button>
           </div>
+
+          {/* Help / Shortcuts */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => window.dispatchEvent(new CustomEvent('open-help'))}
+            title="Keyboard shortcuts & help"
+            className="rounded-lg"
+          >
+            <HelpCircle className="h-5 w-5" />
+          </Button>
 
           {/* Theme Toggle */}
           <Button
