@@ -1,50 +1,45 @@
-import React, { useEffect, useRef } from "react";
-import AgentMessage from "./messages/AgentMessage";
+import React from "react";
+import AgentResponseCard from "./messages/AgentResponseCard";
 import { ChatMessage } from "@/types/agent";
-import { cn } from "@/lib/utils";
-import { Loader2 } from "lucide-react";
 
 interface MessageListProps {
   messages: ChatMessage[];
-  isLoading?: boolean;
+  isLoading: boolean;
 }
 
 export const MessageList: React.FC<MessageListProps> = ({
   messages,
   isLoading,
 }) => {
-  const endRef = useRef<HTMLDivElement>(null);
-
-  // Auto-scroll to bottom when messages update
-  useEffect(() => {
-    if (endRef.current) {
-      endRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [messages, isLoading]);
-
   return (
-    <div className="flex flex-col gap-6 px-6 py-4 overflow-y-auto">
-      {messages.map((msg, idx) => {
+    <div className="flex flex-col space-y-8 px-4 md:px-10 max-w-5xl mx-auto w-full py-6">
+      {messages.map((msg) => {
         if (msg.type === "user") {
           return (
-            <div key={`user-${idx}`} className="flex justify-end">
-              <div className="max-w-[70%] rounded-xl bg-primary text-primary-foreground px-4 py-2 shadow-sm">
+            <div key={msg.id} className="flex justify-end w-full">
+              <div className="max-w-[80%] bg-primary text-primary-foreground px-4 py-3 rounded-2xl rounded-br-none shadow-sm whitespace-pre-wrap">
                 {msg.content}
               </div>
             </div>
           );
         }
 
-        if (msg.type === "agent" && msg.agentResponses) {
+        if (msg.type === "agent") {
           return (
-            <div
-              key={`agent-${idx}`}
-              className="flex flex-col items-start gap-2 w-full"
-            >
-              <AgentMessage
-                key={`agent-message-${idx}`}
-                responses={msg.agentResponses}
-              />
+            <div key={msg.id} className="flex justify-start w-full">
+              <div className="flex flex-col space-y-4 w-full">
+                {msg.executionMode === "parallel" ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {msg.agentResponses.map((res, i) => (
+                      <AgentResponseCard key={i} response={res} index={i} />
+                    ))}
+                  </div>
+                ) : (
+                  msg.agentResponses.map((res, i) => (
+                    <AgentResponseCard key={i} response={res} index={i} />
+                  ))
+                )}
+              </div>
             </div>
           );
         }
@@ -52,17 +47,11 @@ export const MessageList: React.FC<MessageListProps> = ({
         return null;
       })}
 
-      {/* Thinking indicator */}
       {isLoading && (
-        <div className="flex items-center justify-start gap-2 text-muted-foreground pl-2">
-          <Loader2 className="w-4 h-4 animate-spin" />
-          <span className="text-sm animate-pulse">Thinking...</span>
+        <div className="flex justify-center text-sm text-muted-foreground animate-pulse py-4">
+          Thinking…
         </div>
       )}
-
-      <div ref={endRef} />
     </div>
   );
 };
-
-export default MessageList;
