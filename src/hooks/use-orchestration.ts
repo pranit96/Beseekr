@@ -1,4 +1,4 @@
-// src/hooks/useOrchestration.ts
+// src/hooks/use-orchestration.ts
 import { useState } from 'react';
 import { apiClient } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
@@ -19,19 +19,8 @@ export function useOrchestration() {
   const execute = async (payload: ExecutePayload) => {
     setIsExecuting(true);
     try {
-      // apiClient.executeOrchestration currently expects conversation_id: string (required).
-      // To avoid TypeScript mismatch (and keep the hook flexible), create an explicit payload
-      // for the API call that sets conversation_id to a safe default when not provided.
-      const apiPayload: any = {
-        agent_ids: payload.agent_ids,
-        message: payload.message,
-        mode: payload.mode,
-        // ensure property exists (API client expects a string). Use empty string if not provided.
-        conversation_id: payload.conversation_id ?? '',
-        save_to_conversation: payload.save_to_conversation,
-      };
-
-      const res = await apiClient.executeOrchestration(apiPayload);
+      // Pass payload as-is to apiClient — conversation_id is optional and will be omitted when undefined
+      const res = await apiClient.executeOrchestration(payload as any);
 
       if (!res.success || !res.data) {
         throw new Error(res.message || 'Orchestration failed');
@@ -55,11 +44,7 @@ export function useOrchestration() {
         aggregated: res.data.aggregated_output,
       };
     } catch (err: any) {
-      toast({
-        title: 'Execution error',
-        description: err?.message || String(err),
-        variant: 'destructive',
-      });
+      toast({ title: 'Execution error', description: err?.message || String(err), variant: 'destructive' });
       return { ok: false, error: err };
     } finally {
       setIsExecuting(false);

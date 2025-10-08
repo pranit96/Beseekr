@@ -1,5 +1,5 @@
 // src/components/ChatInterface.tsx
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { Send, Workflow, Lock, LockOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -22,16 +22,15 @@ export const ChatInterface = ({
   onConversationChange?: (conversationId: string | null) => void;
   onConversationCreated?: (conversationId: string) => void;
 }) => {
-  // Local UI state kept exactly as before
   const [input, setInput] = useState('');
   const [selectedAgents, setSelectedAgents] = useState<Agent[]>([]);
   const [executionMode, setExecutionMode] = useState<ExecutionMode>('sequential');
   const [workflowDialogOpen, setWorkflowDialogOpen] = useState(false);
   const [saveToConversation, setSaveToConversation] = useState(true);
-  const [isLoadingLocal, setIsLoadingLocal] = useState(false); // to match original isLoading naming
+  const [isLoadingLocal, setIsLoadingLocal] = useState(false);
   const { toast } = useToast();
 
-  // Use hook for conversation message state + caching
+  // conversation hook (handles caching/loading)
   const {
     messages,
     setMessages,
@@ -43,34 +42,13 @@ export const ChatInterface = ({
     setHasStarted,
   } = useConversation(activeConversationId);
 
-  // Orchestration helper
+  // orchestration helper
   const { execute, isExecuting } = useOrchestration();
 
-  // Prefill/regenerate events listener
+  // sync prop -> internal conversationId
   useEffect(() => {
-    const handler = (e: any) => {
-      const prompt = e.detail?.prompt;
-      if (prompt) {
-        setInput(prompt);
-        const ta = document.querySelector<HTMLTextAreaElement>('textarea[placeholder="Message CreatuAI..."], textarea[placeholder="Type your message here..."]');
-        ta?.focus();
-      }
-    };
-    window.addEventListener('prefill-prompt', handler);
-    window.addEventListener('regenerate-from-response', handler);
-    return () => {
-      window.removeEventListener('prefill-prompt', handler);
-      window.removeEventListener('regenerate-from-response', handler);
-    };
-  }, []);
-
-  // Keep conversationId in sync with prop (like original)
-  useEffect(() => {
-    setConversationId(activeConversationId || null);
-    if (activeConversationId) {
-      const cached = null; // useConversation handles caching internally
-      if (!cached) loadConversationMessages(activeConversationId);
-    }
+    setConversationId(activeConversationId ?? null);
+    if (activeConversationId) loadConversationMessages(activeConversationId);
   }, [activeConversationId, loadConversationMessages, setConversationId]);
 
   const handleSubmit = async () => {
@@ -91,15 +69,13 @@ export const ChatInterface = ({
       timestamp: new Date(),
       isFromCache: false,
     };
-
     setMessages(prev => [...prev, userMessage]);
-
-    // maintain the local isLoading flag (original used isLoading)
     setIsLoadingLocal(true);
 
     try {
-      // Create conversation if needed (preserve your original creation flow)
       let convId = conversationId;
+
+      // create conversation only when saving to conversation (not private)
       if (saveToConversation && !convId) {
         const { apiClient } = await import('@/lib/api');
         const createRes = await apiClient.createConversation({
@@ -116,19 +92,23 @@ export const ChatInterface = ({
         }
       }
 
-      const payload = {
+      // Build payload: OMIT conversation_id entirely when private (saveToConversation === false)
+      const payload: any = {
         agent_ids: selectedAgents.map(a => a.id),
         message: messageText,
         mode: executionMode,
         save_to_conversation: saveToConversation,
-        ...(convId ? { conversation_id: convId } : {}),
       };
 
-      // Use hook execute (which wraps apiClient.executeOrchestration)
-      const result = await execute(payload as any);
+      if (saveToConversation && convId) {
+        // only include conversation_id when saving AND we have an id
+        payload.conversation_id = convId;
+      }
+      // If saveToConversation === false, we DO NOT add conversation_id at all.
+
+      const result = await execute(payload);
       if (!result.ok) throw new Error('Execution failed');
 
-      // Build agentResponses exactly like your original mapping
       const agentResponses: AgentResponse[] = (result.agentResponses || []).map((r: any) => ({
         agentId: r.agentId,
         agentName: r.agentName,
@@ -150,7 +130,7 @@ export const ChatInterface = ({
         isFromCache: false,
       };
 
-      // Add to messages (keeps original timing semantics)
+      // append response
       setTimeout(() => setMessages(prev => [...prev, agentMessage]), 0);
     } catch (err: any) {
       toast({ title: 'Error', description: err.message || 'Failed to execute agents.', variant: 'destructive' });
@@ -162,15 +142,22 @@ export const ChatInterface = ({
   const handleWorkflowConfirm = (ordered: Agent[]) => setSelectedAgents(ordered);
 
   const togglePrivateChat = () => {
-    const newState = !saveToConversation;
-    setSaveToConversation(newState);
-    if (!newState) {
-      setConversationId(null);
+    const newSave = !saveToConversation;
+    setSaveToConversation(newSave);
+
+    if (!newSave) {
+      // entering private mode: start a clean UI session
+      setConversationId(null); // internal can be null/undefined
+      setMessages([]);
+      setHasStarted(false);
+      // inform parent there's no active conversation
       onConversationChange?.(null);
+    } else {
+      // leaving private mode: nothing forced, parent can set active conversation if needed
+      setConversationId(null);
     }
   };
 
-  // Render — preserves all your UI pieces (AgentSelector, input, workflow dialog, private toggle)
   return (
     <div className="flex flex-col h-full max-w-[1800px] 2xl:max-w-[2200px] mx-auto w-full overflow-hidden">
       {!hasStarted && messages.length === 0 ? (
