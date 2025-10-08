@@ -25,7 +25,6 @@ const Chat = () => {
 
   const { toast } = useToast();
 
-  // === Load saved UI state on mount ===
   useEffect(() => {
     const savedSidebarState = sessionStorage.getItem('sidebarOpen');
     setSidebarOpen(savedSidebarState !== 'false');
@@ -39,12 +38,10 @@ const Chat = () => {
     fetchConversations();
   }, []);
 
-  // === Persist sidebar toggle ===
   useEffect(() => {
     sessionStorage.setItem('sidebarOpen', sidebarOpen.toString());
   }, [sidebarOpen]);
 
-  // === API: Fetch Agents ===
   const fetchAgents = useCallback(async () => {
     try {
       const response = await apiClient.getMyAgents();
@@ -64,7 +61,6 @@ const Chat = () => {
     }
   }, [toast]);
 
-  // === API: Fetch Conversations ===
   const fetchConversations = useCallback(async () => {
     try {
       const response = await apiClient.getConversations({
@@ -86,7 +82,6 @@ const Chat = () => {
     }
   }, [toast]);
 
-  // === Handlers ===
   const handleSelectConversation = useCallback((conversationId: string) => {
     setCurrentConversationId(conversationId);
     sessionStorage.setItem('lastActiveConversation', conversationId);
@@ -150,10 +145,8 @@ const Chat = () => {
     sessionStorage.removeItem('lastActiveConversation');
   }, [fetchConversations]);
 
-  // === Derived state ===
   const isLoading = loadingAgents || loadingConversations;
 
-  // === Skeleton Loading State ===
   if (isLoading) {
     return (
       <div className="h-screen flex flex-col items-center justify-center gap-4">
@@ -176,10 +169,10 @@ const Chat = () => {
       />
 
       <div className="flex-1 flex overflow-hidden bg-background">
-        {/* Sidebar */}
+        {/* Sidebar - Fixed width for better 4K display support */}
         <aside
-          className={`transition-all duration-300 ease-in-out border-r border-border bg-muted/30 ${
-            sidebarOpen ? 'w-80 opacity-100' : 'w-0 opacity-0'
+          className={`transition-all duration-300 ease-in-out border-r border-border bg-muted/30 flex-shrink-0 ${
+            sidebarOpen ? 'w-80 2xl:w-96 opacity-100' : 'w-0 opacity-0'
           } overflow-hidden md:block`}
         >
           <ConversationHistory
@@ -192,15 +185,17 @@ const Chat = () => {
           />
         </aside>
 
-        {/* Main Chat Interface */}
-        <main className="flex-1 overflow-hidden">
-          <ChatInterface
-            key={key}
-            agents={agents}
-            activeConversationId={currentConversationId}
-            onConversationChange={handleConversationChange}
-            onConversationCreated={handleConversationCreated}
-          />
+        {/* Main Chat Interface - Constrained max width for better readability on 4K */}
+        <main className="flex-1 flex justify-center overflow-hidden">
+          <div className="w-full max-w-[1400px] 2xl:max-w-[1800px]">
+            <ChatInterface
+              key={key}
+              agents={agents}
+              activeConversationId={currentConversationId}
+              onConversationChange={handleConversationChange}
+              onConversationCreated={handleConversationCreated}
+            />
+          </div>
         </main>
       </div>
     </div>
