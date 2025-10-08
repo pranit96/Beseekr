@@ -60,17 +60,7 @@ const Auth = () => {
     return () => window.removeEventListener("mousemove", handleMouseMove);
   }, []);
 
-  // Smart email domain suggestion
-  const [suggestions, setSuggestions] = useState<string[]>([]);
-  const domains = ["gmail.com", "outlook.com", "yahoo.com", "protonmail.com"];
-
   const handleEmailInput = (val: string, type: "login" | "signup") => {
-    if (val.includes("@")) {
-      const prefix = val.split("@")[0];
-      setSuggestions(domains.map((d) => `${prefix}@${d}`));
-    } else {
-      setSuggestions([]);
-    }
     if (type === "login") setLoginEmail(val);
     else setSignupEmail(val);
   };
@@ -150,11 +140,11 @@ const Auth = () => {
                 <Sparkles className="w-8 h-8 text-white animate-pulse" />
               </div>
               <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                AgentFlow
+                CreatuAI
               </h1>
             </div>
-            <h2 className="text-2xl font-semibold mb-2 text-foreground">Welcome Back 👋</h2>
-            <p className="text-muted-foreground">Let’s continue your creative AI journey</p>
+            <h2 className="text-2xl font-semibold mb-2 text-foreground">Let’s continue your creative AI journey </h2>
+            {/* <p className="text-muted-foreground">Let’s continue your creative AI journey</p> */}
           </div>
 
           <Tabs defaultValue="login" className="w-full">
@@ -178,22 +168,6 @@ const Auth = () => {
                       value={loginEmail}
                       onChange={(e) => handleEmailInput(e.target.value, "login")}
                     />
-                    {suggestions.length > 0 && (
-                      <ul className="absolute bg-background border border-border mt-1 rounded-md w-full shadow-soft z-10">
-                        {suggestions.map((s, i) => (
-                          <li
-                            key={i}
-                            className="px-3 py-2 text-sm hover:bg-primary/10 cursor-pointer"
-                            onClick={() => {
-                              setLoginEmail(s);
-                              setSuggestions([]);
-                            }}
-                          >
-                            {s}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
                   </div>
                 </div>
                 <div className="space-y-2">
@@ -241,22 +215,6 @@ const Auth = () => {
                       value={signupEmail}
                       onChange={(e) => handleEmailInput(e.target.value, "signup")}
                     />
-                    {suggestions.length > 0 && (
-                      <ul className="absolute bg-background border border-border mt-1 rounded-md w-full shadow-soft z-10">
-                        {suggestions.map((s, i) => (
-                          <li
-                            key={i}
-                            className="px-3 py-2 text-sm hover:bg-primary/10 cursor-pointer"
-                            onClick={() => {
-                              setSignupEmail(s);
-                              setSuggestions([]);
-                            }}
-                          >
-                            {s}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
                   </div>
                 </div>
                 <div className="space-y-2">

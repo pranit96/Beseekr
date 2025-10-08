@@ -86,7 +86,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(response.data.user);
         toast({
           title: 'Account created!',
-          description: 'Welcome to AgentFlow.',
+          description: 'Welcome to CreatuAI.',
         });
         navigate('/');
       }

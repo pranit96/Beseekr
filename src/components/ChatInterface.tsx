@@ -376,7 +376,7 @@ export const ChatInterface = ({
                     handleSubmit();
                   }
                 }}
-                placeholder="Message AgentFlow..."
+                placeholder="Message CreatuAI..."
                 className="flex-1 resize-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
                 disabled={isLoading}
                 rows={1}
