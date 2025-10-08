@@ -71,7 +71,7 @@ export const AgentResponseCard = ({
           <div className="relative">
             <TypewriterText 
               text={response.content} 
-              speed={300}
+              speed={500}
               onComplete={handleTypewriterComplete}
             />
           </div>
