@@ -31,24 +31,36 @@ export const ChatInterface = ({
   const [messageCache, setMessageCache] = useState<Map<string, ChatMessage[]>>(new Map());
   const { toast } = useToast();
 
-  // Prefill events
+  // Listen for 'prefill-prompt' events from AgentResponseCard follow-ups
   useEffect(() => {
-    const prefill = (e: any) => {
+    const handler = (e: any) => {
       const prompt = e.detail?.prompt;
       if (prompt) {
         setInput(prompt);
-        document.querySelector<HTMLTextAreaElement>('textarea[placeholder*="Message"]')?.focus();
+        // focus textarea
+        const ta = document.querySelector<HTMLTextAreaElement>('textarea[placeholder="Message CreatuAI..."], textarea[placeholder="Type your message here..."]');
+        ta?.focus();
       }
     };
-    window.addEventListener('prefill-prompt', prefill);
-    window.addEventListener('regenerate-from-response', prefill);
-    return () => {
-      window.removeEventListener('prefill-prompt', prefill);
-      window.removeEventListener('regenerate-from-response', prefill);
-    };
+    window.addEventListener('prefill-prompt', handler);
+    return () => window.removeEventListener('prefill-prompt', handler);
   }, []);
 
-  // Load cached or previous conversation
+  // Listen for regenerate events
+  useEffect(() => {
+    const handler = (e: any) => {
+      const prompt = e.detail?.prompt;
+      if (prompt) {
+        setInput(prompt);
+        const ta = document.querySelector<HTMLTextAreaElement>('textarea[placeholder="Message CreatuAI..."], textarea[placeholder="Type your message here..."]');
+        ta?.focus();
+      }
+    };
+    window.addEventListener('regenerate-from-response', handler);
+    return () => window.removeEventListener('regenerate-from-response', handler);
+  }, []);
+
+  // Load cached or historical messages
   useEffect(() => {
     setConversationId(activeConversationId || null);
     if (activeConversationId) {
@@ -65,23 +77,25 @@ export const ChatInterface = ({
     }
   }, [activeConversationId]);
 
-  // Cache messages per conversation
+  // Cache conversation messages in memory
   useEffect(() => {
     if (conversationId && messages.length > 0) {
       setMessageCache(prev => {
-        const copy = new Map(prev);
-        copy.set(conversationId, messages);
-        return copy;
+        const newCache = new Map(prev);
+        newCache.set(conversationId, messages);
+        return newCache;
       });
     }
   }, [messages, conversationId]);
 
+  // Load conversation messages from API
   const loadConversationMessages = useCallback(async (convId: string) => {
     try {
       const { apiClient } = await import('@/lib/api');
-      const res = await apiClient.getMessages(convId, 1, 50);
-      if (res.success && res.data) {
-        const parsed: ChatMessage[] = res.data.map((msg: any) => {
+      const response = await apiClient.getMessages(convId, 1, 50);
+
+      if (response.success && response.data) {
+        const apiMessages: ChatMessage[] = response.data.map((msg: any) => {
           const base = {
             id: msg.id,
             content: msg.content,
@@ -89,16 +103,26 @@ export const ChatInterface = ({
             isFromCache: true,
           };
           if (msg.role === 'user') return { ...base, type: 'user' as const };
+
           if (msg.role === 'assistant') {
-            const agentResponses: AgentResponse[] =
-              (msg.metadata?.agent_results || []).map((r: any) => ({
-                agentId: r.agent_id,
-                agentName: r.agent_name,
-                content: r.response,
-                timestamp: new Date(msg.created_at),
-                status: r.error ? 'error' : 'success',
-                metadata: r,
-              }));
+            const agentResponses: AgentResponse[] = (msg.metadata?.agent_results || []).map((r: any) => ({
+              agentId: r.agent_id,
+              agentName: r.agent_name,
+              content: r.response,
+              timestamp: new Date(msg.created_at),
+              status: r.error ? 'error' : 'success',
+              metadata: {
+                usage: r.usage,
+                domain: r.agent_domain,
+                model_used: r.model_used,
+                order: r.order,
+                fallback_used: r.fallback_used,
+                token_count: r.token_count,
+                confidence: r.confidence,
+                chain_of_thought: r.chain_of_thought,
+              },
+            }));
+
             return {
               ...base,
               type: 'agent' as const,
@@ -108,17 +132,21 @@ export const ChatInterface = ({
           }
           return { ...base, type: 'user' as const };
         });
-        setMessages(parsed);
-        setHasStarted(parsed.length > 0);
+
+        setMessages(apiMessages);
+        setHasStarted(apiMessages.length > 0);
+      } else {
+        setMessages([]);
+        setHasStarted(false);
       }
     } catch (err) {
-      console.error(err);
+      console.error('Failed to load conversation messages:', err);
       setMessages([]);
       setHasStarted(false);
     }
   }, []);
 
-  // Submit message
+  // Handle message send
   const handleSubmit = async () => {
     if (!input.trim()) return;
     if (selectedAgents.length === 0) {
@@ -130,13 +158,14 @@ export const ChatInterface = ({
       return;
     }
 
-    const msgText = input;
-    setInput('');
     setHasStarted(true);
+    const messageText = input;
+    setInput('');
+
     const userMessage: ChatMessage = {
       id: `msg-${Date.now()}`,
       type: 'user',
-      content: msgText,
+      content: messageText,
       timestamp: new Date(),
       isFromCache: false,
     };
@@ -146,26 +175,27 @@ export const ChatInterface = ({
     try {
       const { apiClient } = await import('@/lib/api');
       let convId = conversationId;
+
       if (saveToConversation && !convId) {
         const createRes = await apiClient.createConversation({
           agent_id: selectedAgents[0]?.id || null,
-          title: msgText.slice(0, 50),
+          title: messageText.slice(0, 50) + (messageText.length > 50 ? '...' : ''),
         });
         if (createRes.success && createRes.data?.id) {
           convId = createRes.data.id;
           setConversationId(convId);
           onConversationChange?.(convId);
           onConversationCreated?.(convId);
-        }
+        } else throw new Error('Failed to create conversation');
       }
 
-      const payload = {
+      const payload: any = {
         agent_ids: selectedAgents.map(a => a.id),
-        message: msgText,
+        message: messageText,
         mode: executionMode,
         save_to_conversation: saveToConversation,
-        conversation_id: convId,
       };
+      if (saveToConversation && convId) payload.conversation_id = convId;
 
       const res = await apiClient.executeOrchestration(payload);
       if (res.success && res.data) {
@@ -175,7 +205,16 @@ export const ChatInterface = ({
           content: r.response,
           timestamp: new Date(),
           status: r.error ? 'error' : 'success',
-          metadata: r,
+          metadata: {
+            usage: r.usage,
+            domain: r.agent_domain,
+            model_used: r.model_used,
+            order: r.order,
+            fallback_used: r.fallback_used,
+            token_count: r.token_count,
+            confidence: r.confidence,
+            chain_of_thought: r.chain_of_thought,
+          },
         }));
 
         const agentMessage: ChatMessage = {
@@ -193,21 +232,24 @@ export const ChatInterface = ({
           isFromCache: false,
         };
 
+        setIsLoading(false);
         setTimeout(() => setMessages(prev => [...prev, agentMessage]), 0);
+      } else {
+        throw new Error('No orchestration data returned');
       }
     } catch (err: any) {
-      console.error(err);
+      console.error('Orchestration failed:', err);
       toast({
         title: 'Error',
         description: err.message || 'Failed to execute agents.',
         variant: 'destructive',
       });
-    } finally {
       setIsLoading(false);
     }
   };
 
   const handleWorkflowConfirm = (ordered: Agent[]) => setSelectedAgents(ordered);
+
   const togglePrivateChat = () => {
     const newState = !saveToConversation;
     setSaveToConversation(newState);
