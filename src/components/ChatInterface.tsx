@@ -8,19 +8,17 @@ import { AgentWorkflowDialog } from './AgentWorkflowDialog';
 import { ChatMessage, ExecutionMode, Agent, AgentResponse } from '@/types/agent';
 import { useToast } from '@/hooks/use-toast';
 
-interface ChatInterfaceProps {
+export const ChatInterface = ({
+  agents,
+  activeConversationId,
+  onConversationChange,
+  onConversationCreated,
+}: {
   agents: Agent[];
   activeConversationId?: string;
   onConversationChange?: (conversationId: string | null) => void;
   onConversationCreated?: (conversationId: string) => void;
-}
-
-export const ChatInterface = ({ 
-  agents, 
-  activeConversationId, 
-  onConversationChange, 
-  onConversationCreated 
-}: ChatInterfaceProps) => {
+}) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [selectedAgents, setSelectedAgents] = useState<Agent[]>([]);
@@ -33,19 +31,15 @@ export const ChatInterface = ({
   const [messageCache, setMessageCache] = useState<Map<string, ChatMessage[]>>(new Map());
   const { toast } = useToast();
 
-  // Load cached messages from memory when conversation changes
+  // Load cached or historical messages
   useEffect(() => {
-    console.log('Active conversation changed:', activeConversationId);
     setConversationId(activeConversationId || null);
-    
     if (activeConversationId) {
-      // Check if we have cached messages in memory
       const cached = messageCache.get(activeConversationId);
       if (cached) {
         setMessages(cached);
         setHasStarted(cached.length > 0);
       } else {
-        // Load from API
         loadConversationMessages(activeConversationId);
       }
     } else {
@@ -54,7 +48,7 @@ export const ChatInterface = ({
     }
   }, [activeConversationId]);
 
-  // Cache messages in memory whenever they change
+  // Cache conversation messages in memory
   useEffect(() => {
     if (conversationId && messages.length > 0) {
       setMessageCache(prev => {
@@ -65,204 +59,166 @@ export const ChatInterface = ({
     }
   }, [messages, conversationId]);
 
+  // Load conversation messages from API
   const loadConversationMessages = useCallback(async (convId: string) => {
-    if (!convId) {
-      setMessages([]);
-      setHasStarted(false);
-      return;
-    }
-
     try {
-      console.log('Loading messages for conversation:', convId);
-      
       const { apiClient } = await import('@/lib/api');
       const response = await apiClient.getMessages(convId, 1, 50);
-      
+
       if (response.success && response.data) {
-        console.log('API response data:', response.data);
-        
         const apiMessages: ChatMessage[] = response.data.map((msg: any) => {
-          const baseMessage = {
+          const base = {
             id: msg.id,
             content: msg.content,
             timestamp: new Date(msg.created_at),
             isFromCache: true,
           };
+          if (msg.role === 'user') return { ...base, type: 'user' as const };
 
-          if (msg.role === 'user') {
-            return {
-              ...baseMessage,
-              type: 'user' as const,
-            };
-          }
-          
           if (msg.role === 'assistant') {
-            const agentResponses: AgentResponse[] = (msg.metadata?.agent_results || []).map((result: any) => ({
-              agentId: result.agent_id,
-              agentName: result.agent_name,
-              content: result.response,
+            const agentResponses: AgentResponse[] = (msg.metadata?.agent_results || []).map((r: any) => ({
+              agentId: r.agent_id,
+              agentName: r.agent_name,
+              content: r.response,
               timestamp: new Date(msg.created_at),
-              status: result.error ? 'error' : 'success',
+              status: r.error ? 'error' : 'success',
               metadata: {
-                usage: result.usage,
-                domain: result.agent_domain,
-                model_used: result.model_used,
-                order: result.order,
-                fallback_used: result.fallback_used,
+                usage: r.usage,
+                domain: r.agent_domain,
+                model_used: r.model_used,
+                order: r.order,
+                fallback_used: r.fallback_used,
               },
             }));
 
             return {
-              ...baseMessage,
+              ...base,
               type: 'agent' as const,
               agentResponses,
               executionMode: msg.metadata?.orchestration_mode || 'sequential',
             };
           }
-
-          console.warn('Unknown message role:', msg.role);
-          return {
-            ...baseMessage,
-            type: 'user' as const,
-          };
+          return { ...base, type: 'user' as const };
         });
 
-        console.log('Transformed messages:', apiMessages);
         setMessages(apiMessages);
         setHasStarted(apiMessages.length > 0);
       } else {
-        console.log('No messages found in API response');
         setMessages([]);
         setHasStarted(false);
       }
-    } catch (error: any) {
-      console.error('Failed to load conversation messages:', error);
+    } catch (err) {
+      console.error('Failed to load conversation messages:', err);
       setMessages([]);
       setHasStarted(false);
     }
   }, []);
 
-const handleSubmit = async () => {
-  if (!input.trim()) return;
-  if (selectedAgents.length === 0) {
-    toast({
-      title: 'No agents selected',
-      description: 'Please select at least one agent before sending a message',
-      variant: 'destructive',
-    });
-    return;
-  }
-
-  setHasStarted(true);
-  
-  const messageContent = input;
-  setInput('');
-  
-  const userMessage: ChatMessage = {
-    id: `msg-${Date.now()}`,
-    type: 'user',
-    content: messageContent,
-    timestamp: new Date(),
-    isFromCache: false,
-  };
-  
-  // Add user message immediately
-  setMessages(prev => [...prev, userMessage]);
-  setIsLoading(true);
-
-  try {
-    const { apiClient } = await import('@/lib/api');
-    let convId = conversationId;
-
-    if (saveToConversation && !convId) {
-      const response = await apiClient.createConversation({
-        agent_id: selectedAgents.length > 0 ? selectedAgents[0].id : null,
-        title: messageContent.slice(0, 50) + (messageContent.length > 50 ? '...' : ''),
+  // Handle message send
+  const handleSubmit = async () => {
+    if (!input.trim()) return;
+    if (selectedAgents.length === 0) {
+      toast({
+        title: 'No agents selected',
+        description: 'Please select at least one agent before sending a message.',
+        variant: 'destructive',
       });
-
-      if (response.success && response.data?.id) {
-        convId = response.data.id;
-        setConversationId(convId);
-        onConversationChange?.(convId);
-        onConversationCreated?.(convId);
-      } else {
-        throw new Error('Failed to create conversation');
-      }
+      return;
     }
 
-    const payload: any = {
-      agent_ids: selectedAgents.map(a => a.id),
-      message: messageContent,
-      mode: executionMode,
-      save_to_conversation: saveToConversation,
+    setHasStarted(true);
+    const messageText = input;
+    setInput('');
+
+    const userMessage: ChatMessage = {
+      id: `msg-${Date.now()}`,
+      type: 'user',
+      content: messageText,
+      timestamp: new Date(),
+      isFromCache: false,
     };
+    setMessages(prev => [...prev, userMessage]);
+    setIsLoading(true);
 
-    if (saveToConversation && convId) {
-      payload.conversation_id = convId;
-    }
+    try {
+      const { apiClient } = await import('@/lib/api');
+      let convId = conversationId;
 
-    console.log('Sending orchestration payload:', payload);
-    const response = await apiClient.executeOrchestration(payload);
+      if (saveToConversation && !convId) {
+        const createRes = await apiClient.createConversation({
+          agent_id: selectedAgents[0]?.id || null,
+          title: messageText.slice(0, 50) + (messageText.length > 50 ? '...' : ''),
+        });
+        if (createRes.success && createRes.data?.id) {
+          convId = createRes.data.id;
+          setConversationId(convId);
+          onConversationChange?.(convId);
+          onConversationCreated?.(convId);
+        } else throw new Error('Failed to create conversation');
+      }
 
-    if (response.success && response.data) {
-      console.log('Orchestration response:', response.data);
-      
-      const agentResponses: AgentResponse[] = response.data.results.map((result: any) => ({
-        agentId: result.agent_id,
-        agentName: result.agent_name,
-        content: result.response,
-        timestamp: new Date(),
-        status: 'success',
-        metadata: {
-          usage: result.usage,
-          domain: result.agent_domain,
-          model_used: result.model_used,
-          order: result.order,
-          fallback_used: result.fallback_used,
-        },
-      }));
-
-      const agentMessage: ChatMessage = {
-        id: `msg-${Date.now()}-agents`,
-        type: 'agent',
-        content: response.data.markdown_output || response.data.final_output || '',
-        timestamp: new Date(),
-        agentResponses,
-        executionMode,
-        markdownOutput: response.data.markdown_output,
-        finalOutput: executionMode === 'sequential'
-          ? response.data.final_output
-          : response.data.aggregated_output,
-        isFromCache: false,
+      const payload: any = {
+        agent_ids: selectedAgents.map(a => a.id),
+        message: messageText,
+        mode: executionMode,
+        save_to_conversation: saveToConversation,
       };
+      if (saveToConversation && convId) payload.conversation_id = convId;
 
-      // Turn off loading first, then add message
+      const res = await apiClient.executeOrchestration(payload);
+      if (res.success && res.data) {
+        const agentResponses: AgentResponse[] = res.data.results.map((r: any) => ({
+          agentId: r.agent_id,
+          agentName: r.agent_name,
+          content: r.response,
+          timestamp: new Date(),
+          status: 'success',
+          metadata: {
+            usage: r.usage,
+            domain: r.agent_domain,
+            model_used: r.model_used,
+            order: r.order,
+            fallback_used: r.fallback_used,
+          },
+        }));
+
+        const agentMessage: ChatMessage = {
+          id: `msg-${Date.now()}-agents`,
+          type: 'agent',
+          content: res.data.markdown_output || res.data.final_output || '',
+          timestamp: new Date(),
+          agentResponses,
+          executionMode,
+          markdownOutput: res.data.markdown_output,
+          finalOutput:
+            executionMode === 'sequential'
+              ? res.data.final_output
+              : res.data.aggregated_output,
+          isFromCache: false,
+        };
+
+        setIsLoading(false);
+        setTimeout(() => setMessages(prev => [...prev, agentMessage]), 0);
+      } else {
+        throw new Error('No orchestration data returned');
+      }
+    } catch (err: any) {
+      console.error('Orchestration failed:', err);
+      toast({
+        title: 'Error',
+        description: err.message || 'Failed to execute agents.',
+        variant: 'destructive',
+      });
       setIsLoading(false);
-      // Use setTimeout to ensure state update happens after loading is false
-      setTimeout(() => {
-        setMessages(prev => [...prev, agentMessage]);
-      }, 0);
     }
-  } catch (error: any) {
-    console.error('Orchestration error:', error);
-    setIsLoading(false);
-    toast({
-      title: 'Orchestration failed',
-      description: error.message || 'Failed to execute agents',
-      variant: 'destructive',
-    });
-  }
-};
-
-  const handleWorkflowConfirm = (orderedAgents: Agent[]) => {
-    setSelectedAgents(orderedAgents);
   };
+
+  const handleWorkflowConfirm = (ordered: Agent[]) => setSelectedAgents(ordered);
 
   const togglePrivateChat = () => {
-    const newSaveToConversation = !saveToConversation;
-    setSaveToConversation(newSaveToConversation);
-    
-    if (!newSaveToConversation) {
+    const newState = !saveToConversation;
+    setSaveToConversation(newState);
+    if (!newState) {
       setConversationId(null);
       onConversationChange?.(null);
     }
@@ -271,30 +227,29 @@ const handleSubmit = async () => {
   return (
     <div className="flex flex-col h-full max-w-5xl mx-auto w-full overflow-hidden">
       {!hasStarted && messages.length === 0 ? (
-        <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 md:p-8 space-y-6 sm:space-y-8">
+        <div className="flex-1 flex flex-col items-center justify-center p-6 space-y-6">
           <div className="text-center space-y-3 max-w-2xl px-4">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
               How can I help you today?
             </h1>
-            <p className="text-muted-foreground text-base sm:text-lg">
-              Select your agents, design the workflow, and let's get started
+            <p className="text-muted-foreground text-lg">
+              Select your agents, design the workflow, and let's get started.
             </p>
           </div>
-
           <div className="flex flex-col items-center gap-4 w-full max-w-3xl px-4">
             <div className="w-full">
-              <div className="relative flex items-center gap-2 sm:gap-3 rounded-xl bg-muted/50 border border-border/50 focus-within:border-primary transition-smooth px-3 sm:px-4 py-2.5 sm:py-3">
+              <div className="relative flex items-center gap-3 rounded-xl bg-muted/50 border border-border/50 focus-within:border-primary transition px-4 py-3">
                 <Textarea
                   value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => {
+                  onChange={e => setInput(e.target.value)}
+                  onKeyDown={e => {
                     if (e.key === 'Enter' && !e.shiftKey) {
                       e.preventDefault();
                       handleSubmit();
                     }
                   }}
                   placeholder="Type your message here..."
-                  className="flex-1 resize-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 min-h-[40px] max-h-[120px] p-0 pl-2 text-sm sm:text-base"
+                  className="flex-1 resize-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
                   disabled={isLoading}
                   rows={1}
                 />
@@ -302,20 +257,19 @@ const handleSubmit = async () => {
                   onClick={handleSubmit}
                   disabled={!input.trim() || isLoading}
                   size="icon"
-                  className="h-9 w-9 sm:h-10 sm:w-10 rounded-lg bg-primary hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/50 transition-all duration-300 shrink-0 disabled:opacity-50"
+                  className="h-10 w-10 rounded-lg bg-primary hover:bg-primary/90 transition"
                 >
-                  <Send className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  <Send className="h-4 w-4" />
                 </Button>
               </div>
             </div>
 
-            <div className="flex items-center justify-center gap-2 sm:gap-3 flex-wrap">
+            <div className="flex items-center justify-center gap-3 flex-wrap">
               <AgentSelector
                 agents={agents}
                 selectedAgents={selectedAgents}
                 onAgentsChange={setSelectedAgents}
               />
-
               <Button
                 onClick={() => setWorkflowDialogOpen(true)}
                 disabled={selectedAgents.length === 0}
@@ -328,43 +282,30 @@ const handleSubmit = async () => {
 
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-2 px-3 py-1 rounded-lg border bg-muted/30">
-                  <button
-                    onClick={() => setExecutionMode('sequential')}
-                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-                      executionMode === 'sequential'
-                        ? 'bg-primary text-primary-foreground shadow-sm'
-                        : 'text-muted-foreground hover:text-foreground'
-                    }`}
-                  >
-                    Sequential
-                  </button>
-                  <button
-                    onClick={() => setExecutionMode('parallel')}
-                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-                      executionMode === 'parallel'
-                        ? 'bg-primary text-primary-foreground shadow-sm'
-                        : 'text-muted-foreground hover:text-foreground'
-                    }`}
-                  >
-                    Parallel
-                  </button>
+                  {(['sequential', 'parallel'] as const).map(mode => (
+                    <button
+                      key={mode}
+                      onClick={() => setExecutionMode(mode)}
+                      className={`px-3 py-1.5 rounded-md text-sm font-medium transition ${
+                        executionMode === mode
+                          ? 'bg-primary text-primary-foreground shadow-sm'
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      {mode.charAt(0).toUpperCase() + mode.slice(1)}
+                    </button>
+                  ))}
                 </div>
 
                 <button
                   onClick={togglePrivateChat}
-                  className={`
-                    flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all duration-300 text-sm font-medium
-                    ${saveToConversation
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm font-medium transition ${
+                    saveToConversation
                       ? 'bg-background border-border hover:bg-muted/50 text-muted-foreground'
-                      : 'bg-primary text-primary-foreground border-primary shadow-sm hover:bg-primary/90'}
-                  `}
-                  title={saveToConversation ? 'Click to enable private chat' : 'Private chat enabled - not saved to history'}
+                      : 'bg-primary text-primary-foreground border-primary shadow-sm hover:bg-primary/90'
+                  }`}
                 >
-                  {saveToConversation ? (
-                    <LockOpen className="w-4 h-4" />
-                  ) : (
-                    <Lock className="w-4 h-4" />
-                  )}
+                  {saveToConversation ? <LockOpen className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
                   <span>Private</span>
                 </button>
               </div>
@@ -376,15 +317,13 @@ const handleSubmit = async () => {
           <div className="flex-1 overflow-y-auto">
             <MessageList messages={messages} isLoading={isLoading} />
           </div>
-          
-          <div className="sticky bottom-0 bg-background/95 backdrop-blur-sm p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4 border-t border-border/50 shrink-0">
-            <div className="flex items-center justify-center gap-2 sm:gap-3 flex-wrap mb-2 sm:mb-3">
+          <div className="sticky bottom-0 bg-background/95 backdrop-blur-sm p-4 border-t border-border/50 space-y-3">
+            <div className="flex items-center justify-center gap-3 flex-wrap">
               <AgentSelector
                 agents={agents}
                 selectedAgents={selectedAgents}
                 onAgentsChange={setSelectedAgents}
               />
-
               <Button
                 onClick={() => setWorkflowDialogOpen(true)}
                 disabled={selectedAgents.length === 0}
@@ -398,73 +337,58 @@ const handleSubmit = async () => {
 
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-2 px-3 py-1 rounded-lg border bg-muted/30">
-                  <button
-                    onClick={() => setExecutionMode('sequential')}
-                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-                      executionMode === 'sequential'
-                        ? 'bg-primary text-primary-foreground shadow-sm'
-                        : 'text-muted-foreground hover:text-foreground'
-                    }`}
-                  >
-                    Sequential
-                  </button>
-                  <button
-                    onClick={() => setExecutionMode('parallel')}
-                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-                      executionMode === 'parallel'
-                        ? 'bg-primary text-primary-foreground shadow-sm'
-                        : 'text-muted-foreground hover:text-foreground'
-                    }`}
-                  >
-                    Parallel
-                  </button>
+                  {(['sequential', 'parallel'] as const).map(mode => (
+                    <button
+                      key={mode}
+                      onClick={() => setExecutionMode(mode)}
+                      className={`px-3 py-1.5 rounded-md text-sm font-medium transition ${
+                        executionMode === mode
+                          ? 'bg-primary text-primary-foreground shadow-sm'
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      {mode.charAt(0).toUpperCase() + mode.slice(1)}
+                    </button>
+                  ))}
                 </div>
 
                 <button
                   onClick={togglePrivateChat}
-                  className={`
-                    flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all duration-300 text-sm font-medium
-                    ${saveToConversation
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm font-medium transition ${
+                    saveToConversation
                       ? 'bg-background border-border hover:bg-muted/50 text-muted-foreground'
-                      : 'bg-primary text-primary-foreground border-primary shadow-sm hover:bg-primary/90'}
-                  `}
-                  title={saveToConversation ? 'Click to enable private chat' : 'Private chat enabled - not saved to history'}
+                      : 'bg-primary text-primary-foreground border-primary shadow-sm hover:bg-primary/90'
+                  }`}
                 >
-                  {saveToConversation ? (
-                    <LockOpen className="w-4 h-4" />
-                  ) : (
-                    <Lock className="w-4 h-4" />
-                  )}
+                  {saveToConversation ? <LockOpen className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
                   <span>Private</span>
                 </button>
               </div>
             </div>
 
-            <div className="w-full max-w-4xl mx-auto">
-              <div className="relative flex items-center gap-2 sm:gap-3 rounded-xl bg-muted/50 border border-border/50 focus-within:border-primary transition-smooth px-3 sm:px-4 py-2.5 sm:py-3">
-                <Textarea
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSubmit();
-                    }
-                  }}
-                  placeholder="Message AgentFlow..."
-                  className="flex-1 resize-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 min-h-[40px] max-h-[120px] p-0 pl-2 text-sm sm:text-base"
-                  disabled={isLoading}
-                  rows={1}
-                />
-                <Button
-                  onClick={handleSubmit}
-                  disabled={!input.trim() || isLoading}
-                  size="icon"
-                  className="h-10 w-10 rounded-lg bg-primary hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/50 transition-all duration-300 shrink-0 disabled:opacity-50"
-                >
-                  <Send className="h-4 w-4" />
-                </Button>
-              </div>
+            <div className="relative flex items-center gap-3 rounded-xl bg-muted/50 border border-border/50 focus-within:border-primary transition px-4 py-3">
+              <Textarea
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSubmit();
+                  }
+                }}
+                placeholder="Message AgentFlow..."
+                className="flex-1 resize-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
+                disabled={isLoading}
+                rows={1}
+              />
+              <Button
+                onClick={handleSubmit}
+                disabled={!input.trim() || isLoading}
+                size="icon"
+                className="h-10 w-10 rounded-lg bg-primary hover:bg-primary/90 transition"
+              >
+                <Send className="h-4 w-4" />
+              </Button>
             </div>
           </div>
         </>
