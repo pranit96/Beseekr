@@ -1,4 +1,3 @@
-// Updated ChatInterface with improved message handling and no localStorage
 import { useState, useEffect, useCallback } from 'react';
 import { Send, Workflow, Lock, LockOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -265,7 +264,7 @@ export const ChatInterface = ({
   };
 
   return (
-    <div className="flex flex-col h-full max-w-5xl mx-auto w-full">
+    <div className="flex flex-col h-full max-w-5xl mx-auto w-full overflow-hidden">
       {!hasStarted && messages.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 md:p-8 space-y-6 sm:space-y-8">
           <div className="text-center space-y-3 max-w-2xl px-4">
@@ -369,7 +368,9 @@ export const ChatInterface = ({
         </div>
       ) : (
         <>
-          <MessageList messages={messages} />
+          <div className="flex-1 overflow-y-auto">
+            <MessageList messages={messages} />
+          </div>
           
           {isLoading && (
             <div className="flex items-center justify-center py-4 space-x-2">
@@ -380,7 +381,7 @@ export const ChatInterface = ({
             </div>
           )}
           
-          <div className="sticky bottom-0 bg-background/95 backdrop-blur-sm p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4 border-t border-border/50">
+          <div className="sticky bottom-0 bg-background/95 backdrop-blur-sm p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4 border-t border-border/50 shrink-0">
             <div className="flex items-center justify-center gap-2 sm:gap-3 flex-wrap mb-2 sm:mb-3">
               <AgentSelector
                 agents={agents}
