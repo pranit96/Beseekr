@@ -2,75 +2,78 @@ import { useState, useEffect, useRef } from 'react';
 
 interface TypewriterTextProps {
   text: string;
-  speed?: number;
+  speed?: number; // milliseconds per character
   onComplete?: () => void;
   children?: (typedText: string, isComplete: boolean) => React.ReactNode;
 }
 
 export const TypewriterText = ({
   text,
-  speed = 300,
+  speed = 30,
   onComplete,
   children,
 }: TypewriterTextProps) => {
   const [displayedText, setDisplayedText] = useState('');
   const [isComplete, setIsComplete] = useState(false);
-  const animationRef = useRef<number>();
-  const startTimeRef = useRef<number>();
-  const textRef = useRef(text);
+  const indexRef = useRef(0);
+  const rafRef = useRef<number>();
+  const lastTimestampRef = useRef<number>(0);
 
   useEffect(() => {
-    textRef.current = text;
-    setDisplayedText('');
-    setIsComplete(false);
-    startTimeRef.current = undefined;
-
     if (!text) {
+      setDisplayedText('');
       setIsComplete(true);
       onComplete?.();
       return;
     }
 
-    const animate = (timestamp: number) => {
-      if (!startTimeRef.current) {
-        startTimeRef.current = timestamp;
+    // Reset state when text changes
+    setDisplayedText('');
+    setIsComplete(false);
+    indexRef.current = 0;
+    lastTimestampRef.current = 0;
+
+    const step = (timestamp: number) => {
+      if (!lastTimestampRef.current) {
+        lastTimestampRef.current = timestamp;
       }
 
-      const elapsed = timestamp - startTimeRef.current;
-      const charactersToShow = Math.floor((elapsed / 1000) * speed);
+      const elapsed = timestamp - lastTimestampRef.current;
 
-      if (charactersToShow >= textRef.current.length) {
-        setDisplayedText(textRef.current);
+      // Advance only when elapsed time exceeds the speed per character
+      if (elapsed >= speed) {
+        lastTimestampRef.current = timestamp;
+        indexRef.current += 1;
+        setDisplayedText(text.slice(0, indexRef.current));
+      }
+
+      if (indexRef.current < text.length) {
+        rafRef.current = requestAnimationFrame(step);
+      } else {
         setIsComplete(true);
         onComplete?.();
-        return;
       }
-
-      setDisplayedText(textRef.current.slice(0, charactersToShow));
-      animationRef.current = requestAnimationFrame(animate);
     };
 
-    animationRef.current = requestAnimationFrame(animate);
+    rafRef.current = requestAnimationFrame(step);
 
     return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
   }, [text, speed, onComplete]);
 
-  // If there's a render function, use it
+  // Render with provided render prop (for MarkdownRenderer integration)
   if (children) {
     return <>{children(displayedText, isComplete)}</>;
   }
 
-  // Default fallback (text only)
+  // Default display (plain text typewriter)
   return (
-    <>
-      <span>{displayedText}</span>
+    <span>
+      {displayedText}
       {!isComplete && (
         <span className="inline-block w-0.5 h-4 bg-primary animate-pulse ml-1 align-middle" />
       )}
-    </>
+    </span>
   );
 };
