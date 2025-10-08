@@ -4,11 +4,11 @@ interface TypewriterTextProps {
   text: string;
   speed?: number;
   onComplete?: () => void;
-  onUpdate?: (currentText: string) => void;
 }
 
-export const TypewriterText = ({ text, speed = 100, onComplete, onUpdate }: TypewriterTextProps) => {
+export const TypewriterText = ({ text, speed = 300, onComplete }: TypewriterTextProps) => {
   const [displayedText, setDisplayedText] = useState('');
+  const [isComplete, setIsComplete] = useState(false);
   const animationRef = useRef<number>();
   const startTimeRef = useRef<number>();
   const textRef = useRef(text);
@@ -16,8 +16,11 @@ export const TypewriterText = ({ text, speed = 100, onComplete, onUpdate }: Type
   useEffect(() => {
     textRef.current = text;
     setDisplayedText('');
+    setIsComplete(false);
+    startTimeRef.current = undefined;
     
     if (!text) {
+      setIsComplete(true);
       onComplete?.();
       return;
     }
@@ -32,12 +35,12 @@ export const TypewriterText = ({ text, speed = 100, onComplete, onUpdate }: Type
       
       if (charactersToShow >= textRef.current.length) {
         setDisplayedText(textRef.current);
-        onUpdate?.(textRef.current);
+        setIsComplete(true);
         onComplete?.();
         return;
-      }const currentText = textRef.current.slice(0, charactersToShow);
-      setDisplayedText(currentText);
-      onUpdate?.(currentText);
+      }
+
+      setDisplayedText(textRef.current.slice(0, charactersToShow));
       animationRef.current = requestAnimationFrame(animate);
     };
 
@@ -48,32 +51,16 @@ export const TypewriterText = ({ text, speed = 100, onComplete, onUpdate }: Type
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [text, speed, onComplete, onUpdate]);
+  }, [text, speed, onComplete]);
 
-  return <span>{displayedText}</span>;
-};
+  if (isComplete) {
+    return <span>{text}</span>;
+  }
 
-// Hook for managing typewriter state
-export const useTypewriter = (initialText: string = '', speed: number = 100) => {
-  const [text, setText] = useState(initialText);
-  const [isTyping, setIsTyping] = useState(false);
-
-  const startTyping = (newText: string) => {
-    setText(newText);
-    setIsTyping(true);
-  };
-
-  const handleComplete = () => {
-    setIsTyping(false);
-  };
-
-  return {
-    text,
-    isTyping,
-    startTyping,
-    handleComplete,
-    TypewriterComponent: () => (
-      <TypewriterText text={text} speed={speed} onComplete={handleComplete} />
-    ),
-  };
+  return (
+    <>
+      <span>{displayedText}</span>
+      <span className="inline-block w-0.5 h-4 bg-primary animate-pulse ml-1 align-middle" />
+    </>
+  );
 };

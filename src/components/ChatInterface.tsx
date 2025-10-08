@@ -142,113 +142,117 @@ export const ChatInterface = ({
     }
   }, []);
 
-  const handleSubmit = async () => {
-    if (!input.trim()) return;
-    if (selectedAgents.length === 0) {
-      toast({
-        title: 'No agents selected',
-        description: 'Please select at least one agent before sending a message',
-        variant: 'destructive',
+const handleSubmit = async () => {
+  if (!input.trim()) return;
+  if (selectedAgents.length === 0) {
+    toast({
+      title: 'No agents selected',
+      description: 'Please select at least one agent before sending a message',
+      variant: 'destructive',
+    });
+    return;
+  }
+
+  setHasStarted(true);
+  
+  const messageContent = input;
+  setInput('');
+  
+  const userMessage: ChatMessage = {
+    id: `msg-${Date.now()}`,
+    type: 'user',
+    content: messageContent,
+    timestamp: new Date(),
+    isFromCache: false,
+  };
+  
+  // Add user message immediately
+  setMessages(prev => [...prev, userMessage]);
+  setIsLoading(true);
+
+  try {
+    const { apiClient } = await import('@/lib/api');
+    let convId = conversationId;
+
+    if (saveToConversation && !convId) {
+      const response = await apiClient.createConversation({
+        agent_id: selectedAgents.length > 0 ? selectedAgents[0].id : null,
+        title: messageContent.slice(0, 50) + (messageContent.length > 50 ? '...' : ''),
       });
-      return;
+
+      if (response.success && response.data?.id) {
+        convId = response.data.id;
+        setConversationId(convId);
+        onConversationChange?.(convId);
+        onConversationCreated?.(convId);
+      } else {
+        throw new Error('Failed to create conversation');
+      }
     }
 
-    setHasStarted(true);
-    const userMessage: ChatMessage = {
-      id: `msg-${Date.now()}`,
-      type: 'user',
-      content: input,
-      timestamp: new Date(),
-      isFromCache: false,
+    const payload: any = {
+      agent_ids: selectedAgents.map(a => a.id),
+      message: messageContent,
+      mode: executionMode,
+      save_to_conversation: saveToConversation,
     };
-    
-    // Add user message immediately
-    setMessages(prev => [...prev, userMessage]);
 
-    const messageContent = input;
-    setInput('');
-    setIsLoading(true);
+    if (saveToConversation && convId) {
+      payload.conversation_id = convId;
+    }
 
-    try {
-      const { apiClient } = await import('@/lib/api');
-      let convId = conversationId;
+    console.log('Sending orchestration payload:', payload);
+    const response = await apiClient.executeOrchestration(payload);
 
-      if (saveToConversation && !convId) {
-        const response = await apiClient.createConversation({
-          agent_id: selectedAgents.length > 0 ? selectedAgents[0].id : null,
-          title: messageContent.slice(0, 50) + (messageContent.length > 50 ? '...' : ''),
-        });
+    if (response.success && response.data) {
+      console.log('Orchestration response:', response.data);
+      
+      const agentResponses: AgentResponse[] = response.data.results.map((result: any) => ({
+        agentId: result.agent_id,
+        agentName: result.agent_name,
+        content: result.response,
+        timestamp: new Date(),
+        status: 'success',
+        metadata: {
+          usage: result.usage,
+          domain: result.agent_domain,
+          model_used: result.model_used,
+          order: result.order,
+          fallback_used: result.fallback_used,
+        },
+      }));
 
-        if (response.success && response.data?.id) {
-          convId = response.data.id;
-          setConversationId(convId);
-          onConversationChange?.(convId);
-          onConversationCreated?.(convId);
-        } else {
-          throw new Error('Failed to create conversation');
-        }
-      }
-
-      const payload: any = {
-        agent_ids: selectedAgents.map(a => a.id),
-        message: messageContent,
-        mode: executionMode,
-        save_to_conversation: saveToConversation,
+      const agentMessage: ChatMessage = {
+        id: `msg-${Date.now()}-agents`,
+        type: 'agent',
+        content: response.data.markdown_output || response.data.final_output || '',
+        timestamp: new Date(),
+        agentResponses,
+        executionMode,
+        markdownOutput: response.data.markdown_output,
+        finalOutput: executionMode === 'sequential'
+          ? response.data.final_output
+          : response.data.aggregated_output,
+        isFromCache: false,
       };
 
-      if (saveToConversation && convId) {
-        payload.conversation_id = convId;
-      }
-
-      console.log('Sending orchestration payload:', payload);
-      const response = await apiClient.executeOrchestration(payload);
-
-      if (response.success && response.data) {
-        console.log('Orchestration response:', response.data);
-        
-        const agentResponses: AgentResponse[] = response.data.results.map((result: any) => ({
-          agentId: result.agent_id,
-          agentName: result.agent_name,
-          content: result.response,
-          timestamp: new Date(),
-          status: 'success',
-          metadata: {
-            usage: result.usage,
-            domain: result.agent_domain,
-            model_used: result.model_used,
-            order: result.order,
-            fallback_used: result.fallback_used,
-          },
-        }));
-
-        const agentMessage: ChatMessage = {
-          id: `msg-${Date.now()}-agents`,
-          type: 'agent',
-          content: response.data.markdown_output || response.data.final_output || '',
-          timestamp: new Date(),
-          agentResponses,
-          executionMode,
-          markdownOutput: response.data.markdown_output,
-          finalOutput: executionMode === 'sequential'
-            ? response.data.final_output
-            : response.data.aggregated_output,
-          isFromCache: false,
-        };
-
-        // Add agent message after loading is done
-        setIsLoading(false);
-        setMessages(prev => [...prev, agentMessage]);
-      }
-    } catch (error: any) {
-      console.error('Orchestration error:', error);
+      // Turn off loading first, then add message
       setIsLoading(false);
-      toast({
-        title: 'Orchestration failed',
-        description: error.message || 'Failed to execute agents',
-        variant: 'destructive',
-      });
+      // Use setTimeout to ensure state update happens after loading is false
+      setTimeout(() => {
+        setMessages(prev => [...prev, agentMessage]);
+      }, 0);
     }
-  };
+  } catch (error: any) {
+    console.error('Orchestration error:', error);
+    setIsLoading(false);
+    toast({
+      title: 'Orchestration failed',
+      description: error.message || 'Failed to execute agents',
+      variant: 'destructive',
+    });
+  }
+};
 
   const handleWorkflowConfirm = (orderedAgents: Agent[]) => {
     setSelectedAgents(orderedAgents);

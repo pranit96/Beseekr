@@ -22,7 +22,6 @@ export const AgentResponseCard = ({
   onTypingComplete,
 }: AgentResponseCardProps) => {
   const [shouldStartTyping, setShouldStartTyping] = useState(!enableTypewriter);
-  const [displayText, setDisplayText] = useState('');
   const [isTypingComplete, setIsTypingComplete] = useState(!enableTypewriter);
   
   const timestamp = response.timestamp instanceof Date 
@@ -31,34 +30,28 @@ export const AgentResponseCard = ({
 
   useEffect(() => {
     if (enableTypewriter) {
-      const timer = setTimeout(() => {
+      if (typewriterDelay > 0) {
+        const timer = setTimeout(() => {
+          setShouldStartTyping(true);
+        }, typewriterDelay);
+        return () => clearTimeout(timer);
+      } else {
         setShouldStartTyping(true);
-      }, typewriterDelay);
-
-      return () => clearTimeout(timer);
+      }
     } else {
       setShouldStartTyping(true);
       setIsTypingComplete(true);
-      setDisplayText(response.content);
     }
-  }, [enableTypewriter, typewriterDelay, response.content]);
+  }, [enableTypewriter, typewriterDelay]);
 
   const handleTypewriterComplete = () => {
     setIsTypingComplete(true);
-    setDisplayText(response.content);
     onTypingComplete?.(index);
-  };
-
-  const handleTypewriterUpdate = (text: string) => {
-    setDisplayText(text);
   };
 
   return (
     <div
       className="glass rounded-xl p-4 shadow-soft hover:shadow-medium transition-smooth animate-fade-in"
-      style={{
-        animationDelay: isSequential ? `${index * 0.15}s` : `${index * 0.05}s`,
-      }}
     >
       <div className="flex items-center gap-2 mb-3">
         <div
@@ -73,23 +66,17 @@ export const AgentResponseCard = ({
         )}
       </div>
       
-      <div className="text-sm">
+      <div className="text-sm prose prose-sm dark:prose-invert max-w-none">
         {enableTypewriter && shouldStartTyping && !isTypingComplete ? (
           <div className="relative">
-            <div className="whitespace-pre-wrap break-words">
-              <TypewriterText 
-                text={response.content} 
-                speed={100}
-                onComplete={handleTypewriterComplete}
-                onUpdate={handleTypewriterUpdate}
-              />
-              <span className="inline-block w-0.5 h-4 bg-primary animate-pulse ml-1 align-middle" />
-            </div>
+            <TypewriterText 
+              text={response.content} 
+              speed={300}
+              onComplete={handleTypewriterComplete}
+            />
           </div>
         ) : (
-          <div className="prose prose-sm dark:prose-invert max-w-none">
-            <MarkdownRenderer content={response.content} />
-          </div>
+          <MarkdownRenderer content={response.content} />
         )}
       </div>
       

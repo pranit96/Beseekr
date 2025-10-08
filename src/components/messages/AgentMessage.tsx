@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ChatMessage } from '@/types/agent';
 import { AgentResponseCard } from './AgentResponseCard';
-import { MarkdownRenderer } from './MarkdownRenderer';
 
 interface AgentMessageProps {
   message: ChatMessage;
@@ -11,7 +10,6 @@ export const AgentMessage = ({ message }: AgentMessageProps) => {
   const [currentAgentIndex, setCurrentAgentIndex] = useState(0);
   const [allTypingComplete, setAllTypingComplete] = useState(false);
   const isSequential = message.executionMode === 'sequential';
-  const hasMultipleAgents = message.agentResponses && message.agentResponses.length > 1;
   const isFromCache = message.isFromCache === true;
 
   // For cached messages, show everything immediately
@@ -31,10 +29,8 @@ export const AgentMessage = ({ message }: AgentMessageProps) => {
   const handleAgentTypingComplete = (index: number) => {
     if (isSequential && message.agentResponses && !isFromCache) {
       if (index < message.agentResponses.length - 1) {
-        // Move to next agent after a brief pause
-        setTimeout(() => {
-          setCurrentAgentIndex(index + 1);
-        }, 300);
+        // Move to next agent immediately
+        setCurrentAgentIndex(index + 1);
       } else {
         setAllTypingComplete(true);
       }
@@ -59,27 +55,10 @@ export const AgentMessage = ({ message }: AgentMessageProps) => {
                 index={index}
                 isSequential={isSequential}
                 enableTypewriter={!isFromCache && index === currentAgentIndex}
-                typewriterDelay={isSequential ? 200 : index * 100}
+                typewriterDelay={0}
                 onTypingComplete={() => handleAgentTypingComplete(index)}
               />
             ))}
-          </div>
-        )}
-
-        {/* Final output/markdown - only show after all agents complete */}
-        {allTypingComplete && (message.markdownOutput || message.finalOutput) && (
-          <div className="glass rounded-xl p-5 shadow-soft border border-primary/20 animate-fade-in">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-              <span className="font-semibold text-sm text-primary">
-                {isSequential ? 'Final Output' : 'Summary'}
-              </span>
-            </div>
-            <div className="prose prose-sm dark:prose-invert max-w-none">
-              <MarkdownRenderer 
-                content={message.markdownOutput || message.finalOutput || ''} 
-              />
-            </div>
           </div>
         )}
 
