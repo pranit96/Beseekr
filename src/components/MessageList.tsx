@@ -1,30 +1,26 @@
+// src/components/MessageList.tsx
 import React, { useEffect, useRef } from 'react';
 import AgentResponseCard from './messages/AgentResponseCard';
-import { ChatMessage } from '@/types/agent';
+import type { ChatMessage } from '@/types/agent';
 
-interface MessageListProps {
+interface Props {
   messages: ChatMessage[];
   isLoading?: boolean;
 }
 
-export const MessageList: React.FC<MessageListProps> = ({ messages, isLoading }) => {
-  const endRef = useRef<HTMLDivElement | null>(null);
+export const MessageList: React.FC<Props> = ({ messages, isLoading }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const prevLengthRef = useRef<number>(messages.length);
+  const prevLen = useRef<number>(messages.length);
 
-  // Smooth autoscroll when new messages arrive, avoid jumping during streaming
   useEffect(() => {
-    const container = containerRef.current;
-    // If increasing length, scroll to bottom smoothly
-    if (!container) return;
-    const prevLength = prevLengthRef.current;
-    if (messages.length > prevLength) {
-      // use a small timeout to let layout settle
-      setTimeout(() => {
-        container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
-      }, 60);
+    const el = containerRef.current;
+    if (!el) return;
+    const prev = prevLen.current;
+    if (messages.length > prev) {
+      // let layout settle, then smooth scroll
+      setTimeout(() => el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' }), 60);
     }
-    prevLengthRef.current = messages.length;
+    prevLen.current = messages.length;
   }, [messages]);
 
   return (
@@ -69,8 +65,6 @@ export const MessageList: React.FC<MessageListProps> = ({ messages, isLoading })
           Thinking...
         </div>
       )}
-
-      <div ref={endRef} />
     </div>
   );
 };
