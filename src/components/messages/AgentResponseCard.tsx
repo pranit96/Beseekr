@@ -87,7 +87,7 @@ export const AgentResponseCard = ({
           shouldStartTyping && (
             <TypewriterText
               text={sanitizedContent}
-              speed={30}
+              speed={1}
               onComplete={handleTypewriterComplete}
             >
               {(typedText) => <MarkdownRenderer content={typedText} />}
