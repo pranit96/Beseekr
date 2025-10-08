@@ -27,14 +27,7 @@ const ProtectedRoute = () => {
     return <Navigate to="/auth" replace />;
   }
   
-  return (
-    <div className="flex flex-col h-screen">
-      <TopBar />
-      <main className="flex-1 overflow-auto">
-        <Outlet />
-      </main>
-    </div>
-  );
+  return <Outlet />;
 };
 
 // Public Route wrapper (redirects to home if already logged in)

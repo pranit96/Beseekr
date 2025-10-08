@@ -18,6 +18,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { apiClient } from '@/lib/api';
+import { TopBar } from '@/components/TopBar';
 
 interface ArchivedConversation {
   id: string;
@@ -71,7 +72,7 @@ const Profile = () => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `agentflow-data-export-${new Date().toISOString()}.json`;
+      a.download = `CreatuAI-data-export-${new Date().toISOString()}.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -152,15 +153,17 @@ const Profile = () => {
   };
 
   return (
-    <div className="container mx-auto p-8 max-w-3xl">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-          Profile Settings
-        </h1>
-        <p className="text-muted-foreground mt-2">
-          Manage your account and data
-        </p>
-      </div>
+    <>
+      <TopBar />
+      <div className="container mx-auto p-4 sm:p-6 md:p-8 max-w-3xl">
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+            Profile Settings
+          </h1>
+          <p className="text-muted-foreground mt-1 sm:mt-2 text-sm sm:text-base">
+            Manage your account and data
+          </p>
+        </div>
 
       <div className="space-y-6">
         <Card className="p-6 glass">
@@ -306,7 +309,8 @@ const Profile = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+      </div>
+    </>
   );
 };
 

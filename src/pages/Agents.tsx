@@ -1,6 +1,5 @@
-// pages/Agents.tsx - With smart caching and immediate UI updates
 import { useState, useEffect, useMemo } from 'react';
-import { Plus, Pencil, Trash2, Search, ArrowUpDown } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, Folder, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +8,7 @@ import { AgentDialog } from '@/components/AgentDialog';
 import { Agent } from '@/types/agent';
 import { apiClient } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
+import { TopBar } from '@/components/TopBar';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,13 +20,10 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-
-type SortOption = 'name-asc' | 'name-desc' | 'domain-asc' | 'domain-desc' | 'newest' | 'oldest';
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 
 const Agents = () => {
   const [agents, setAgents] = useState<Agent[]>([]);
@@ -35,7 +32,7 @@ const Agents = () => {
   const [editingAgent, setEditingAgent] = useState<Agent | undefined>();
   const [deleteAgentId, setDeleteAgentId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortOption, setSortOption] = useState<SortOption>('newest');
+  const [openCategories, setOpenCategories] = useState<Set<string>>(new Set(['My Agents']));
   const { toast } = useToast();
 
   useEffect(() => {
@@ -59,8 +56,8 @@ const Agents = () => {
     }
   };
 
-  const filteredAndSortedAgents = useMemo(() => {
-    let filtered = agents.filter((agent) => {
+  const categorizedAgents = useMemo(() => {
+    const filtered = agents.filter((agent) => {
       const searchLower = searchQuery.toLowerCase();
       return (
         agent.name.toLowerCase().includes(searchLower) ||
@@ -69,37 +66,45 @@ const Agents = () => {
       );
     });
 
-    const sorted = [...filtered].sort((a, b) => {
-      switch (sortOption) {
-        case 'name-asc':
-          return a.name.localeCompare(b.name);
-        case 'name-desc':
-          return b.name.localeCompare(a.name);
-        case 'domain-asc':
-          return (a.domain || '').localeCompare(b.domain || '');
-        case 'domain-desc':
-          return (b.domain || '').localeCompare(a.domain || '');
-        case 'newest':
-          return (b.id || '').localeCompare(a.id || '');
-        case 'oldest':
-          return (a.id || '').localeCompare(b.id || '');
-        default:
-          return 0;
+    // Separate custom agents from default agents
+    const customAgents = filtered.filter(agent => !agent.is_default);
+    const defaultAgents = filtered.filter(agent => agent.is_default);
+
+    // Group default agents by domain
+    const domainGroups: Record<string, Agent[]> = {};
+    defaultAgents.forEach(agent => {
+      const domain = agent.domain || 'General';
+      if (!domainGroups[domain]) {
+        domainGroups[domain] = [];
       }
+      domainGroups[domain].push(agent);
     });
 
-    return sorted;
-  }, [agents, searchQuery, sortOption]);
+    return {
+      custom: customAgents,
+      domains: domainGroups,
+    };
+  }, [agents, searchQuery]);
+
+  const toggleCategory = (category: string) => {
+    setOpenCategories(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(category)) {
+        newSet.delete(category);
+      } else {
+        newSet.add(category);
+      }
+      return newSet;
+    });
+  };
 
   const handleSaveAgent = async (agent: Agent) => {
     try {
       if (agent.id && editingAgent) {
-        // Optimistic update
         setAgents(agents.map((a) => (a.id === agent.id ? { ...agent } : a)));
         
         const response = await apiClient.updateAgent(agent.id, agent);
         if (response.success && response.data) {
-          // Update with server response
           setAgents(agents.map((a) => (a.id === agent.id ? response.data : a)));
           toast({
             title: 'Agent updated',
@@ -109,7 +114,6 @@ const Agents = () => {
       } else {
         const response = await apiClient.createAgent(agent);
         if (response.success && response.data) {
-          // Add new agent immediately
           setAgents([...agents, response.data]);
           toast({
             title: 'Agent created',
@@ -120,7 +124,6 @@ const Agents = () => {
       setIsDialogOpen(false);
       setEditingAgent(undefined);
     } catch (error: any) {
-      // Revert optimistic update on error
       if (editingAgent) {
         setAgents(agents.map((a) => (a.id === editingAgent.id ? editingAgent : a)));
       }
@@ -135,7 +138,6 @@ const Agents = () => {
   const handleDeleteAgent = async () => {
     if (!deleteAgentId) return;
 
-    // Optimistic update
     const deletedAgent = agents.find(a => a.id === deleteAgentId);
     setAgents(agents.filter((a) => a.id !== deleteAgentId));
 
@@ -148,7 +150,6 @@ const Agents = () => {
         });
       }
     } catch (error: any) {
-      // Revert on error
       if (deletedAgent) {
         setAgents([...agents, deletedAgent]);
       }
@@ -167,210 +168,227 @@ const Agents = () => {
     setIsDialogOpen(true);
   };
 
-  const getSortLabel = (option: SortOption) => {
-    const labels = {
-      'name-asc': 'Name (A-Z)',
-      'name-desc': 'Name (Z-A)',
-      'domain-asc': 'Domain (A-Z)',
-      'domain-desc': 'Domain (Z-A)',
-      'newest': 'Newest First',
-      'oldest': 'Oldest First',
-    };
-    return labels[option];
-  };
+  const AgentCard = ({ agent, index }: { agent: Agent; index: number }) => (
+    <Card className="p-5 glass hover:shadow-glow transition-smooth group relative">
+      <div className="flex items-start gap-3 mb-3">
+        <div
+          className="w-10 h-10 rounded-xl shrink-0 flex items-center justify-center"
+          style={{
+            backgroundColor: `hsl(var(--agent-${(index % 5) + 1}) / 0.2)`,
+          }}
+        >
+          <div
+            className="w-4 h-4 rounded-full"
+            style={{ backgroundColor: `hsl(var(--agent-${(index % 5) + 1}))` }}
+          />
+        </div>
+        <div className="flex-1 min-w-0">
+          <h3 className="font-semibold text-base truncate">{agent.name}</h3>
+          <Badge variant="secondary" className="mt-1 text-xs">
+            {agent.domain || 'General'}
+          </Badge>
+        </div>
+      </div>
+
+      <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+        {agent.description}
+      </p>
+
+      {agent.system_prompt && (
+        <div className="mb-3 p-2.5 bg-muted/50 rounded-md">
+          <p className="text-xs font-medium text-muted-foreground mb-1">Role:</p>
+          <p className="text-xs text-muted-foreground line-clamp-2">
+            {agent.system_prompt}
+          </p>
+        </div>
+      )}
+
+      <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-smooth">
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => handleEditAgent(agent)}
+          className="flex-1 text-xs"
+        >
+          <Pencil className="w-3 h-3 mr-1" />
+          Edit
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => setDeleteAgentId(agent.id)}
+          className="flex-1 text-xs text-destructive hover:bg-destructive hover:text-destructive-foreground"
+        >
+          <Trash2 className="w-3 h-3 mr-1" />
+          Delete
+        </Button>
+      </div>
+    </Card>
+  );
 
   if (loading) {
     return (
-      <div className="h-full flex items-center justify-center">
-        <div className="animate-pulse text-muted-foreground">Loading agents...</div>
-      </div>
+      <>
+        <TopBar />
+        <div className="h-full flex items-center justify-center">
+          <div className="animate-pulse text-muted-foreground">Loading agents...</div>
+        </div>
+      </>
     );
   }
 
   return (
-    <div className="container mx-auto p-8 max-w-7xl">
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-            My Agents
-          </h1>
-          <p className="text-muted-foreground mt-2">
-            Create and manage your AI agents
-          </p>
-        </div>
-        <Button
-          onClick={() => {
-            setEditingAgent(undefined);
-            setIsDialogOpen(true);
-          }}
-          className="gap-2 shadow-medium hover:shadow-glow transition-smooth"
-        >
-          <Plus className="w-4 h-4" />
-          Create Agent
-        </Button>
-      </div>
-
-      {agents.length > 0 && (
-        <div className="flex gap-3 mb-6">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search by name or domain..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-          
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="gap-2">
-                <ArrowUpDown className="w-4 h-4" />
-                {getSortLabel(sortOption)}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem onClick={() => setSortOption('newest')}>
-                Newest First
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setSortOption('oldest')}>
-                Oldest First
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setSortOption('name-asc')}>
-                Name (A-Z)
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setSortOption('name-desc')}>
-                Name (Z-A)
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setSortOption('domain-asc')}>
-                Domain (A-Z)
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setSortOption('domain-desc')}>
-                Domain (Z-A)
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredAndSortedAgents.map((agent, index) => (
-          <Card
-            key={agent.id}
-            className="p-6 glass hover:shadow-glow transition-smooth group relative"
-          >
-            <div className="flex items-start gap-3 mb-4">
-              <div
-                className="w-10 h-10 rounded-xl shrink-0 flex items-center justify-center"
-                style={{
-                  backgroundColor: `hsl(var(--agent-${(index % 5) + 1}) / 0.2)`,
-                }}
-              >
-                <div
-                  className="w-4 h-4 rounded-full"
-                  style={{ backgroundColor: `hsl(var(--agent-${(index % 5) + 1}))` }}
-                />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-lg truncate">{agent.name}</h3>
-                <Badge variant="secondary" className="mt-1">
-                  {agent.domain || 'General'}
-                </Badge>
-              </div>
-            </div>
-
-            <p className="text-sm text-muted-foreground line-clamp-3 mb-4">
-              {agent.description}
+    <>
+      <TopBar />
+      <div className="container mx-auto p-4 sm:p-6 md:p-8 max-w-7xl">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 sm:mb-8">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+              My Agents
+            </h1>
+            <p className="text-muted-foreground mt-1 sm:mt-2 text-sm sm:text-base">
+              Create and manage your AI agents
             </p>
-
-            {agent.system_prompt && (
-              <div className="mb-4 p-3 bg-muted/50 rounded-md">
-                <p className="text-xs font-medium text-muted-foreground mb-1">Role:</p>
-                <p className="text-xs text-muted-foreground line-clamp-2">
-                  {agent.system_prompt}
-                </p>
-              </div>
-            )}
-
-            <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-smooth">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => handleEditAgent(agent)}
-                className="flex-1"
-              >
-                <Pencil className="w-3 h-3 mr-1" />
-                Edit
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setDeleteAgentId(agent.id)}
-                className="flex-1 text-destructive hover:bg-destructive hover:text-destructive-foreground"
-              >
-                <Trash2 className="w-3 h-3 mr-1" />
-                Delete
-              </Button>
-            </div>
-          </Card>
-        ))}
-      </div>
-
-      {filteredAndSortedAgents.length === 0 && searchQuery && (
-        <div className="text-center py-16">
-          <p className="text-muted-foreground mb-4">
-            No agents found matching "{searchQuery}"
-          </p>
+          </div>
           <Button
-            onClick={() => setSearchQuery('')}
-            variant="outline"
-          >
-            Clear Search
-          </Button>
-        </div>
-      )}
-
-      {agents.length === 0 && (
-        <div className="text-center py-16">
-          <p className="text-muted-foreground mb-4">No agents yet. Create your first agent to get started!</p>
-          <Button
-            onClick={() => setIsDialogOpen(true)}
-            variant="outline"
-            className="gap-2"
+            onClick={() => {
+              setEditingAgent(undefined);
+              setIsDialogOpen(true);
+            }}
+            className="gap-2 shadow-medium hover:shadow-glow transition-smooth w-full sm:w-auto"
           >
             <Plus className="w-4 h-4" />
-            Create Your First Agent
+            Create Agent
           </Button>
         </div>
-      )}
 
-      <AgentDialog
-        open={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
-        agent={editingAgent}
-        onSave={handleSaveAgent}
-      />
+        {agents.length > 0 && (
+          <div className="mb-6">
+            <div className="relative max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search agents..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </div>
+        )}
 
-      <AlertDialog open={!!deleteAgentId} onOpenChange={() => setDeleteAgentId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Agent</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete this agent? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteAgent}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+        <div className="space-y-6">
+          {/* Custom Agents Section */}
+          {categorizedAgents.custom.length > 0 && (
+            <Collapsible
+              open={openCategories.has('My Agents')}
+              onOpenChange={() => toggleCategory('My Agents')}
             >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>
+              <CollapsibleTrigger className="w-full group">
+                <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
+                  <User className="w-5 h-5 text-primary" />
+                  <h2 className="text-lg font-semibold flex-1 text-left">
+                    My Custom Agents
+                  </h2>
+                  <Badge variant="secondary">{categorizedAgents.custom.length}</Badge>
+                  <div className={`transition-transform ${openCategories.has('My Agents') ? 'rotate-180' : ''}`}>
+                    ▼
+                  </div>
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="pt-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {categorizedAgents.custom.map((agent, index) => (
+                    <AgentCard key={agent.id} agent={agent} index={index} />
+                  ))}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          )}
+
+          {/* Domain-based Agent Categories */}
+          {Object.entries(categorizedAgents.domains).map(([domain, domainAgents]) => (
+            <Collapsible
+              key={domain}
+              open={openCategories.has(domain)}
+              onOpenChange={() => toggleCategory(domain)}
+            >
+              <CollapsibleTrigger className="w-full group">
+                <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
+                  <Folder className="w-5 h-5 text-accent" />
+                  <h2 className="text-lg font-semibold flex-1 text-left">{domain}</h2>
+                  <Badge variant="secondary">{domainAgents.length}</Badge>
+                  <div className={`transition-transform ${openCategories.has(domain) ? 'rotate-180' : ''}`}>
+                    ▼
+                  </div>
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="pt-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {domainAgents.map((agent, index) => (
+                    <AgentCard key={agent.id} agent={agent} index={index} />
+                  ))}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          ))}
+        </div>
+
+        {agents.length === 0 && (
+          <div className="text-center py-16">
+            <p className="text-muted-foreground mb-4">No agents yet. Create your first agent to get started!</p>
+            <Button
+              onClick={() => setIsDialogOpen(true)}
+              variant="outline"
+              className="gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Create Your First Agent
+            </Button>
+          </div>
+        )}
+
+        {agents.length > 0 && categorizedAgents.custom.length === 0 && Object.keys(categorizedAgents.domains).length === 0 && searchQuery && (
+          <div className="text-center py-16">
+            <p className="text-muted-foreground mb-4">
+              No agents found matching "{searchQuery}"
+            </p>
+            <Button
+              onClick={() => setSearchQuery('')}
+              variant="outline"
+            >
+              Clear Search
+            </Button>
+          </div>
+        )}
+
+        <AgentDialog
+          open={isDialogOpen}
+          onOpenChange={setIsDialogOpen}
+          agent={editingAgent}
+          onSave={handleSaveAgent}
+        />
+
+        <AlertDialog open={!!deleteAgentId} onOpenChange={() => setDeleteAgentId(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Agent</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete this agent? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeleteAgent}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    </>
   );
 };
 

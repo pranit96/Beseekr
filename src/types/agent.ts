@@ -43,4 +43,5 @@ export interface ChatMessage {
   executionMode?: ExecutionMode;
   markdownOutput?: string;
   finalOutput?: string;
+  isFromCache?:boolean;
 }

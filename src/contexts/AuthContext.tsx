@@ -14,7 +14,7 @@ interface AuthContextType {
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string, full_name: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   exportData: () => Promise<any>;
   deleteAccount: (email: string) => Promise<void>;
 }
@@ -28,30 +28,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const token = localStorage.getItem('access_token');
-    const refreshToken = localStorage.getItem('refresh_token');
-    
-    if (token && refreshToken) {
-      apiClient.setTokens({ access_token: token, refresh_token: refreshToken });
-      fetchCurrentUser();
-    } else {
-      setLoading(false);
-    }
+    // On mount, try to fetch current user (cookies will be sent automatically)
+    fetchCurrentUser();
 
     // Set up unauthorized handler for token expiration
     apiClient.setUnauthorizedHandler(() => {
+      setUser(null);
       toast({
         title: 'Session expired',
         description: 'Please log in again.',
         variant: 'destructive',
       });
-      logout();
+      navigate('/auth');
     });
-
-    // Cleanup on unmount
-    return () => {
-      // Don't cleanup here as we want background refresh to continue
-    };
   }, []);
 
   const fetchCurrentUser = async () => {
@@ -62,7 +51,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     } catch (error) {
       console.error('Failed to fetch user:', error);
-      apiClient.setTokens(null);
+      // Don't show error toast on initial load - user might just not be logged in
+      setUser(null);
     } finally {
       setLoading(false);
     }
@@ -96,7 +86,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(response.data.user);
         toast({
           title: 'Account created!',
-          description: 'Welcome to AgentFlow.',
+          description: 'Welcome to CreatuAI.',
         });
         navigate('/');
       }
@@ -110,14 +100,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const logout = () => {
-    apiClient.cleanup(); // This stops background refresh and clears tokens
-    setUser(null);
-    navigate('/auth');
-    toast({
-      title: 'Logged out',
-      description: 'You have been successfully logged out.',
-    });
+  const logout = async () => {
+    try {
+      // Call backend logout to clear cookies
+      await apiClient.logout();
+      setUser(null);
+      navigate('/auth');
+      toast({
+        title: 'Logged out',
+        description: 'You have been successfully logged out.',
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Still clear local user state even if API call fails
+      setUser(null);
+      navigate('/auth');
+    }
   };
 
   const exportData = async () => {
@@ -140,7 +138,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const response = await apiClient.deleteProfile(email);
       if (response.success) {
-        apiClient.cleanup();
         setUser(null);
         navigate('/auth');
         toast({

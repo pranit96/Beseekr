@@ -14,337 +14,29 @@ interface ApiResponse<T> {
   };
 }
 
-interface SessionData {
-  access_token: string;
-  refresh_token: string;
-  expires_in?: number;
-  expires_at?: number;
-}
-
 class ApiClient {
   private baseUrl: string;
-  private token: string | null = null;
-  private refreshToken: string | null = null;
-  private isRefreshing = false;
-  private refreshSubscribers: ((token: string) => void)[] = [];
-  private refreshPromise: Promise<string> | null = null;
-  private refreshInterval: NodeJS.Timeout | null = null;
-  private lastActivity: number = Date.now();
-  private tokenExpiresAt: number | null = null;
+  private onUnauthorized?: () => void;
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
-    this.loadTokensFromStorage();
-    this.setupActivityListeners();
-    this.setupVisibilityListener();
-    this.startBackgroundRefresh();
-  }
-
-  private loadTokensFromStorage() {
-    this.token = localStorage.getItem('access_token');
-    this.refreshToken = localStorage.getItem('refresh_token');
-    const expiresAt = localStorage.getItem('token_expires_at');
-    if (expiresAt) {
-      this.tokenExpiresAt = parseInt(expiresAt);
-    }
-    this.lastActivity = Date.now();
-  }
-
-  private saveTokensToStorage() {
-    if (this.token) {
-      localStorage.setItem('access_token', this.token);
-    } else {
-      localStorage.removeItem('access_token');
-    }
-    
-    if (this.refreshToken) {
-      localStorage.setItem('refresh_token', this.refreshToken);
-    } else {
-      localStorage.removeItem('refresh_token');
-    }
-
-    if (this.tokenExpiresAt) {
-      localStorage.setItem('token_expires_at', this.tokenExpiresAt.toString());
-    } else {
-      localStorage.removeItem('token_expires_at');
-    }
-  }
-
-  setTokens(tokens: SessionData | null) {
-    if (tokens) {
-      this.token = tokens.access_token;
-      this.refreshToken = tokens.refresh_token;
-      
-      // Supabase tokens typically expire in 1 hour (3600 seconds)
-      const expiresIn = tokens.expires_in || 3600;
-      this.tokenExpiresAt = Date.now() + (expiresIn * 1000);
-    } else {
-      this.token = null;
-      this.refreshToken = null;
-      this.tokenExpiresAt = null;
-    }
-    this.saveTokensToStorage();
-    this.lastActivity = Date.now();
-    
-    // Restart background refresh when tokens are updated
-    this.startBackgroundRefresh();
-  }
-
-  setToken(token: string | null) {
-    this.token = token;
-    if (token) {
-      localStorage.setItem('access_token', token);
-    } else {
-      localStorage.removeItem('access_token');
-    }
-    this.lastActivity = Date.now();
-  }
-
-  // Setup activity listeners to track user activity
-  private setupActivityListeners() {
-    // Use debouncing to prevent excessive checks
-    let activityCheckTimeout: NodeJS.Timeout | null = null;
-    
-    const debouncedCheck = () => {
-      this.lastActivity = Date.now();
-      
-      if (activityCheckTimeout) {
-        clearTimeout(activityCheckTimeout);
-      }
-      
-      activityCheckTimeout = setTimeout(() => {
-        this.checkAndRefreshToken();
-      }, 1000); // Only check once per second max
-    };
-    
-    // Removed mousemove and scroll to reduce frequency
-    const activityEvents = ['mousedown', 'keypress', 'touchstart', 'click'];
-    
-    activityEvents.forEach(event => {
-      document.addEventListener(event, debouncedCheck, { passive: true });
-    });
-  }
-
-  // Setup visibility change listener to refresh token when user returns to tab
-  private setupVisibilityListener() {
-    let lastVisibilityCheck = 0;
-    
-    const handleVisibilityChange = async () => {
-      if (!document.hidden) {
-        // Prevent duplicate checks within 5 seconds
-        const now = Date.now();
-        if (now - lastVisibilityCheck < 5000) {
-          return;
-        }
-        lastVisibilityCheck = now;
-        
-        console.log('Tab became visible, checking token status...');
-        await this.checkAndRefreshToken();
-      }
-    };
-    
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    
-    // Focus event is redundant with visibilitychange, removed for performance
-  }
-
-  // Check if token needs refresh and do it
-  private async checkAndRefreshToken(): Promise<void> {
-    if (!this.refreshToken || this.isRefreshing) {
-      return;
-    }
-
-    if (this.isTokenExpired() || this.isTokenExpiringSoon()) {
-      try {
-        console.log('Token expired or expiring soon, refreshing...');
-        await this.refreshAuthToken();
-      } catch (error) {
-        console.error('Failed to refresh token on check:', error);
-      }
-    }
-  }
-
-  // Check if token is completely expired
-  private isTokenExpired(): boolean {
-    if (!this.tokenExpiresAt) {
-      return false;
-    }
-    return Date.now() >= this.tokenExpiresAt;
-  }
-
-  // Check if token will expire soon (within 5 minutes)
-  private isTokenExpiringSoon(): boolean {
-    if (!this.tokenExpiresAt) {
-      return true; // If we don't know expiry, assume it needs refresh
-    }
-    const fiveMinutesFromNow = Date.now() + (5 * 60 * 1000);
-    return this.tokenExpiresAt < fiveMinutesFromNow;
-  }
-
-  // Start background token refresh
-  private startBackgroundRefresh() {
-    // Clear existing interval
-    if (this.refreshInterval) {
-      clearInterval(this.refreshInterval);
-    }
-
-    // Only start if we have a refresh token
-    if (!this.refreshToken) {
-      return;
-    }
-
-    // Check every 2 minutes (balanced approach)
-    this.refreshInterval = setInterval(async () => {
-      if (this.refreshToken && !this.isRefreshing) {
-        if (this.isTokenExpiringSoon()) {
-          try {
-            await this.refreshAuthToken();
-            console.log('Background token refresh successful');
-          } catch (error) {
-            console.warn('Background token refresh failed:', error);
-          }
-        }
-      }
-    }, 2 * 60 * 1000); // 2 minutes - good balance
-  }
-
-  // Stop background refresh
-  private stopBackgroundRefresh() {
-    if (this.refreshInterval) {
-      clearInterval(this.refreshInterval);
-      this.refreshInterval = null;
-    }
-  }
-
-  private async refreshAuthToken(): Promise<string> {
-    if (!this.refreshToken) {
-      throw new Error('No refresh token available');
-    }
-
-    // If already refreshing, return the existing promise
-    if (this.isRefreshing && this.refreshPromise) {
-      return this.refreshPromise;
-    }
-
-    this.isRefreshing = true;
-
-    this.refreshPromise = (async () => {
-      try {
-        console.log('Refreshing auth token...');
-        const response = await fetch(`${this.baseUrl}/api/auth/refresh`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ refresh_token: this.refreshToken }),
-        });
-
-        const data = await response.json();
-
-        if (!response.ok || !data.success) {
-          throw new Error(data.error || 'Token refresh failed');
-        }
-
-        if (data.data?.session) {
-          const { access_token, refresh_token, expires_in } = data.data.session;
-          this.setTokens({ access_token, refresh_token, expires_in });
-          this.onRefresh(access_token);
-          console.log('Token refresh successful, new expiry:', new Date(this.tokenExpiresAt!).toLocaleString());
-          return access_token;
-        }
-
-        throw new Error('Invalid response format from token refresh');
-      } catch (error) {
-        console.error('Token refresh error:', error);
-        this.setTokens(null);
-        this.stopBackgroundRefresh();
-        if (this.onUnauthorized) {
-          this.onUnauthorized();
-        }
-        throw error;
-      } finally {
-        this.isRefreshing = false;
-        this.refreshPromise = null;
-      }
-    })();
-
-    return this.refreshPromise;
-  }
-
-  private onRefresh(token: string) {
-    this.refreshSubscribers.forEach(callback => callback(token));
-    this.refreshSubscribers = [];
-  }
-
-  private async ensureValidToken(): Promise<void> {
-    if (!this.token || !this.refreshToken) {
-      return;
-    }
-
-    // If token is expired or expiring soon, refresh it before making the request
-    if (this.isTokenExpired() || this.isTokenExpiringSoon()) {
-      if (this.isRefreshing) {
-        // Wait for ongoing refresh
-        await this.refreshPromise;
-      } else {
-        // Start refresh
-        try {
-          await this.refreshAuthToken();
-        } catch (error) {
-          console.error('Failed to ensure valid token:', error);
-          throw error;
-        }
-      }
-    }
   }
 
   private async request<T>(
     endpoint: string,
-    options: RequestInit = {},
-    retry = true
+    options: RequestInit = {}
   ): Promise<ApiResponse<T>> {
-    // CRITICAL: Ensure token is valid before making ANY request
-    try {
-      await this.ensureValidToken();
-    } catch (error) {
-      console.error('Token validation failed before request:', error);
-      throw error;
-    }
-
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
       ...options.headers,
     };
 
-    if (this.token) {
-      headers['Authorization'] = `Bearer ${this.token}`;
-    }
-
     try {
       const response = await fetch(`${this.baseUrl}${endpoint}`, {
         ...options,
         headers,
-        cache: 'no-store', // CRITICAL: Disable caching to prevent stale 401 responses
+        credentials: 'include', // CRITICAL: Send cookies with every request
       });
-
-      // Update activity timestamp on API call
-      this.lastActivity = Date.now();
-
-      // If token is expired, try to refresh and retry the request
-      if (response.status === 401 && retry && this.refreshToken) {
-        console.log('Received 401, attempting token refresh...');
-        
-        try {
-          await this.refreshAuthToken();
-          
-          // Retry the original request with new token
-          headers['Authorization'] = `Bearer ${this.token}`;
-          return this.request<T>(endpoint, { ...options, headers }, false);
-        } catch (refreshError) {
-          console.error('Token refresh failed after 401:', refreshError);
-          throw refreshError;
-        }
-      }
 
       const data = await response.json();
 
@@ -362,51 +54,29 @@ class ApiClient {
     }
   }
 
-  private onUnauthorized?: () => void;
-
   setUnauthorizedHandler(handler: () => void) {
     this.onUnauthorized = handler;
   }
 
-  // Clean up method to call when logging out
-  cleanup() {
-    this.stopBackgroundRefresh();
-    this.setTokens(null);
-  }
-
   // Auth endpoints
   async signup(email: string, password: string, full_name: string) {
-    const response = await this.request<any>('/api/auth/signup', {
+    return this.request<any>('/api/auth/signup', {
       method: 'POST',
       body: JSON.stringify({ email, password, full_name }),
     });
-
-    if (response.success && response.data?.session) {
-      this.setTokens({
-        access_token: response.data.session.access_token,
-        refresh_token: response.data.session.refresh_token,
-        expires_in: response.data.session.expires_in,
-      });
-    }
-
-    return response;
   }
 
   async login(email: string, password: string) {
-    const response = await this.request<any>('/api/auth/login', {
+    return this.request<any>('/api/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
+  }
 
-    if (response.success && response.data?.session) {
-      this.setTokens({
-        access_token: response.data.session.access_token,
-        refresh_token: response.data.session.refresh_token,
-        expires_in: response.data.session.expires_in,
-      });
-    }
-
-    return response;
+  async logout() {
+    return this.request<any>('/api/auth/logout', {
+      method: 'POST',
+    });
   }
 
   async getCurrentUser() {
@@ -511,7 +181,7 @@ class ApiClient {
     }>(`/api/usage/stats?${query}`);
   }
 
-    // Conversation endpoints - matching your exact API
+  // Conversation endpoints
   async getConversations(params?: { status?: 'active' | 'archived'; page?: number; limit?: number }) {
     const queryParams = new URLSearchParams();
     if (params?.status) queryParams.append('status', params.status);

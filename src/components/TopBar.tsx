@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Moon, Sun, User, LogOut, Settings } from 'lucide-react';
+import { Moon, Sun, User, LogOut, Settings, Menu, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -18,57 +20,92 @@ const navigation = [
   { name: 'Analytics', href: '/analytics' },
 ];
 
-export const TopBar = () => {
+interface TopBarProps {
+  sidebarOpen?: boolean;
+  onToggleSidebar?: () => void;
+  showSidebarToggle?: boolean;
+}
+
+export const TopBar = ({ sidebarOpen, onToggleSidebar, showSidebarToggle }: TopBarProps) => {
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const location = useLocation();
   const { theme, setTheme } = useTheme();
   const { user, logout } = useAuth();
 
+  const toggleMobileNav = () => setMobileNavOpen((prev) => !prev);
+
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-xl">
-      <div className="container flex h-16 items-center justify-between px-6">
-        <div className="flex items-center gap-8">
+      <div className="container flex h-16 items-center justify-between px-4 md:px-6">
+        {/* Left Section */}
+        <div className="flex items-center gap-3 min-w-[150px]">
+          {showSidebarToggle && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onToggleSidebar}
+              className="rounded-lg hover:bg-muted transition-all duration-300"
+              aria-label="Toggle conversation history"
+            >
+              {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </Button>
+          )}
+
           <Link to="/" className="flex items-center gap-2">
             <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-accent" />
             <span className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              AgentFlow
+              CreatuAI
             </span>
           </Link>
-
-          <nav className="hidden md:flex items-center gap-1">
-            {navigation.map((item) => {
-              const isActive = location.pathname === item.href;
-              return (
-                <Link
-                  key={item.href}
-                  to={item.href}
-                  className={cn(
-                    'px-4 py-2 rounded-lg text-sm font-medium transition-smooth',
-                    isActive
-                      ? 'bg-secondary text-secondary-foreground'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-                  )}
-                >
-                  {item.name}
-                </Link>
-              );
-            })}
-          </nav>
         </div>
 
-        <div className="flex items-center gap-2">
+        {/* Center Section - Desktop Navigation */}
+        <nav className="hidden md:flex items-center justify-center gap-2 flex-1">
+          {navigation.map((item) => {
+            const isActive = location.pathname === item.href;
+            return (
+              <Link
+                key={item.href}
+                to={item.href}
+                className={cn(
+                  'px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300',
+                  isActive
+                    ? 'bg-secondary text-secondary-foreground'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                )}
+              >
+                {item.name}
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* Right Section */}
+        <div className="flex items-center justify-end gap-2 min-w-[150px]">
+          {/* Mobile Nav Toggle */}
+          <div className="md:hidden">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleMobileNav}
+              className="rounded-lg hover:bg-muted transition-all duration-300"
+              aria-label="Toggle navigation"
+            >
+              {mobileNavOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </Button>
+          </div>
+
+          {/* Theme Toggle */}
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
             className="rounded-lg"
           >
-            {theme === 'dark' ? (
-              <Sun className="h-5 w-5" />
-            ) : (
-              <Moon className="h-5 w-5" />
-            )}
+            {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           </Button>
 
+          {/* Profile Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="rounded-lg">
@@ -98,6 +135,41 @@ export const TopBar = () => {
           </DropdownMenu>
         </div>
       </div>
+
+      {/* Animated Mobile Navigation */}
+      <AnimatePresence>
+        {mobileNavOpen && (
+          <motion.div
+            key="mobile-nav"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2, ease: 'easeInOut' }}
+            className="md:hidden border-t border-border/40 bg-background/95 backdrop-blur-xl px-4 py-2 shadow-sm"
+          >
+            <nav className="flex flex-col gap-2">
+              {navigation.map((item) => {
+                const isActive = location.pathname === item.href;
+                return (
+                  <Link
+                    key={item.href}
+                    to={item.href}
+                    onClick={() => setMobileNavOpen(false)}
+                    className={cn(
+                      'px-3 py-2 rounded-md text-sm font-medium transition-all duration-200',
+                      isActive
+                        ? 'bg-secondary text-secondary-foreground'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                    )}
+                  >
+                    {item.name}
+                  </Link>
+                );
+              })}
+            </nav>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </header>
   );
 };
