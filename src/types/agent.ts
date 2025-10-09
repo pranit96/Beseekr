@@ -20,7 +20,7 @@ export interface AgentResponse {
   agentId: string;
   agentName: string;
   content: string;
-  timestamp: Date;
+  timestamp: string | Date;
   status: 'pending' | 'success' | 'error';
   metadata?: {
     usage?: {

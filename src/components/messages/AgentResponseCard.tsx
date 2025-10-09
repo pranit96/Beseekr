@@ -1,7 +1,7 @@
 // src/components/messages/AgentResponseCard.tsx
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Loader2, Copy, Check, RefreshCw } from 'lucide-react';
+import { Loader2, Copy, Check, RefreshCw, X } from 'lucide-react';
 import MarkdownRenderer from './MarkdownRenderer';
 import { cn } from '@/lib/utils';
 
@@ -9,7 +9,7 @@ export interface AgentResponse {
   agentId: string;
   agentName: string;
   content: string;
-  timestamp: Date;
+  timestamp: Date | string;
   status: 'pending' | 'success' | 'error';
   metadata?: any;
 }
@@ -19,9 +19,10 @@ interface Props {
   index?: number;
   onForkAgent?: (agentId: string) => void;
   onRegenerate?: (response: AgentResponse) => void;
+  onCancel?: (agentId: string) => void; // optional cancel callback for UI
 }
 
-const AgentResponseCard: React.FC<Props> = ({ response, index, onForkAgent, onRegenerate }) => {
+const AgentResponseCard: React.FC<Props> = ({ response, index, onForkAgent, onRegenerate, onCancel }) => {
   const [copied, setCopied] = useState(false);
   const modelUsed = response.metadata?.model_used;
   const tokenCount = response.metadata?.token_count;
@@ -50,6 +51,8 @@ const AgentResponseCard: React.FC<Props> = ({ response, index, onForkAgent, onRe
 
   const handleFork = () => onForkAgent?.(response.agentId);
 
+  const handleCancel = () => onCancel?.(response.agentId);
+
   return (
     <div className={cn('w-full rounded-xl p-4 border bg-background/80 shadow-sm transition-all', response.status === 'error' ? 'border-destructive/40 bg-destructive/10' : 'border-border/60')}>
       <div className="flex items-start justify-between gap-3 mb-3">
@@ -71,30 +74,26 @@ const AgentResponseCard: React.FC<Props> = ({ response, index, onForkAgent, onRe
           <Button variant="ghost" size="icon" onClick={handleRegenerate} className="h-8 w-8">
             <RefreshCw className="w-4 h-4" />
           </Button>
+          {/* Cancel button: visible when pending */}
+          {response.status === 'pending' && (
+            <Button variant="ghost" size="icon" onClick={handleCancel} className="h-8 w-8">
+              <X className="w-4 h-4" />
+            </Button>
+          )}
         </div>
       </div>
 
       <div className="prose prose-sm dark:prose-invert max-w-none leading-relaxed">
         {response.status === 'pending' ? (
-          <div className="space-y-3">
-            <div className="text-sm text-muted-foreground">Generating response…</div>
-            <div className="space-y-2">
-              <div className="h-3 rounded-md bg-muted/30 shimmer" />
-              <div className="h-3 rounded-md bg-muted/30 shimmer" />
-              <div className="h-3 rounded-md bg-muted/30 shimmer w-3/4" />
-            </div>
-            <div className="flex gap-2 mt-2">
-              <div className="w-3 h-3 rounded-full bg-muted/40 animate-pulse" />
-              <div className="w-3 h-3 rounded-full bg-muted/40 animate-pulse delay-75" />
-              <div className="w-3 h-3 rounded-full bg-muted/40 animate-pulse delay-150" />
-            </div>
+          // STREAMING: show plain-text tokens as they arrive (DOM-only, no innerHTML)
+          <div className="whitespace-pre-wrap text-sm text-foreground">
+            {response.content || <span className="text-muted-foreground">Generating response…</span>}
           </div>
         ) : response.status === 'error' ? (
-          <div className="text-destructive">Error generating response.</div>
+          <div className="text-destructive">{response.content || 'Error generating response.'}</div>
         ) : (
-          <div className="animate-fade-in">
-            <MarkdownRenderer content={response.content || ''} />
-          </div>
+          // FINAL: sanitized markdown -> HTML (safe)
+          <MarkdownRenderer content={response.content || ''} />
         )}
       </div>
 

@@ -1,6 +1,6 @@
 // src/components/ChatInterface.tsx
-import { useState, useEffect } from 'react';
-import { Send, Workflow, Lock, LockOpen } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Send, Workflow, Lock, LockOpen, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { AgentSelector } from './AgentSelector';
@@ -9,25 +9,28 @@ import { AgentWorkflowDialog } from './AgentWorkflowDialog';
 import type { ChatMessage, ExecutionMode, Agent, AgentResponse } from '@/types/agent';
 import { useToast } from '@/hooks/use-toast';
 import { useConversation } from '@/hooks/use-conversation';
-import { useOrchestration } from '@/hooks/use-orchestration';
+import useOrchestration from '@/hooks/use-orchestration';
 
-export const ChatInterface = ({
-  agents,
-  activeConversationId,
-  onConversationChange,
-  onConversationCreated,
-}: {
+export const ChatInterface: React.FC<{
   agents: Agent[];
   activeConversationId?: string;
   onConversationChange?: (conversationId: string | null) => void;
   onConversationCreated?: (conversationId: string) => void;
-}) => {
+}> = ({ agents, activeConversationId, onConversationChange, onConversationCreated }) => {
   const [input, setInput] = useState('');
   const [selectedAgents, setSelectedAgents] = useState<Agent[]>([]);
   const [executionMode, setExecutionMode] = useState<ExecutionMode>('sequential');
   const [workflowDialogOpen, setWorkflowDialogOpen] = useState(false);
   const [saveToConversation, setSaveToConversation] = useState(true);
   const [isLoadingLocal, setIsLoadingLocal] = useState(false);
+
+  const [isExecuting, setIsExecuting] = useState(false);
+  const cancelRef = useRef<null | (() => void)>(null);
+
+  // rate-limit UI
+  const [rateLimitedUntil, setRateLimitedUntil] = useState<number | null>(null);
+  const rateLimitTimerRef = useRef<number | null>(null);
+
   const { toast } = useToast();
 
   // conversation hook (handles caching/loading)
@@ -42,8 +45,18 @@ export const ChatInterface = ({
     setHasStarted,
   } = useConversation(activeConversationId);
 
-  // orchestration helper
-  const { execute, isExecuting } = useOrchestration();
+  // orchestration helper (socket-based)
+  const { execute, ensureConnected } = useOrchestration();
+
+  // cleanup rate-limit timer on unmount
+  useEffect(() => {
+    return () => {
+      if (rateLimitTimerRef.current) {
+        window.clearInterval(rateLimitTimerRef.current);
+        rateLimitTimerRef.current = null;
+      }
+    };
+  }, []);
 
   // sync prop -> internal conversationId
   useEffect(() => {
@@ -51,10 +64,33 @@ export const ChatInterface = ({
     if (activeConversationId) loadConversationMessages(activeConversationId);
   }, [activeConversationId, loadConversationMessages, setConversationId]);
 
+  const startRateLimitCountdown = (retryAfterSeconds: number) => {
+    const until = Date.now() + retryAfterSeconds * 1000;
+    setRateLimitedUntil(until);
+    if (rateLimitTimerRef.current) {
+      window.clearInterval(rateLimitTimerRef.current);
+      rateLimitTimerRef.current = null;
+    }
+    rateLimitTimerRef.current = window.setInterval(() => {
+      if (Date.now() >= until) {
+        setRateLimitedUntil(null);
+        if (rateLimitTimerRef.current) {
+          window.clearInterval(rateLimitTimerRef.current);
+          rateLimitTimerRef.current = null;
+        }
+      }
+    }, 500);
+  };
+
   const handleSubmit = async () => {
     if (!input.trim()) return;
     if (selectedAgents.length === 0) {
       toast({ title: 'No agents selected', description: 'Please select at least one agent before sending a message.', variant: 'destructive' });
+      return;
+    }
+
+    if (rateLimitedUntil && Date.now() < rateLimitedUntil) {
+      toast({ title: 'Rate limited', description: 'Please wait before sending another orchestration.', variant: 'destructive' });
       return;
     }
 
@@ -92,7 +128,7 @@ export const ChatInterface = ({
         }
       }
 
-      // Build payload: OMIT conversation_id entirely when private (saveToConversation === false)
+      // Build payload (omit conversation_id when private)
       const payload: any = {
         agent_ids: selectedAgents.map(a => a.id),
         message: messageText,
@@ -100,42 +136,133 @@ export const ChatInterface = ({
         save_to_conversation: saveToConversation,
       };
 
-      if (saveToConversation && convId) {
-        // only include conversation_id when saving AND we have an id
-        payload.conversation_id = convId;
-      }
-      // If saveToConversation === false, we DO NOT add conversation_id at all.
+      if (saveToConversation && convId) payload.conversation_id = convId;
 
-      const result = await execute(payload);
-      if (!result.ok) throw new Error('Execution failed');
-
-      const agentResponses: AgentResponse[] = (result.agentResponses || []).map((r: any) => ({
-        agentId: r.agentId,
-        agentName: r.agentName,
-        content: r.content,
-        timestamp: r.timestamp,
-        status: r.status,
-        metadata: r.metadata ?? r.metadata,
+      // placeholders
+      const agentResponsesInitial: AgentResponse[] = selectedAgents.map(a => ({
+        agentId: a.id,
+        agentName: a.name,
+        content: '',
+        timestamp: new Date(),
+        status: 'pending',
+        metadata: {}
       }));
 
+      const agentMessageId = `msg-${Date.now()}-agents`;
       const agentMessage: ChatMessage = {
-        id: `msg-${Date.now()}-agents`,
+        id: agentMessageId,
         type: 'agent',
-        content: result.markdown || result.final || '',
+        content: '',
         timestamp: new Date(),
-        agentResponses,
+        agentResponses: agentResponsesInitial,
         executionMode,
-        markdownOutput: result.markdown,
-        finalOutput: executionMode === 'sequential' ? result.final : result.aggregated,
+        markdownOutput: '',
+        finalOutput: '',
         isFromCache: false,
       };
 
-      // append response
-      setTimeout(() => setMessages(prev => [...prev, agentMessage]), 0);
-    } catch (err: any) {
-      toast({ title: 'Error', description: err.message || 'Failed to execute agents.', variant: 'destructive' });
-    } finally {
+      // append placeholder
+      setMessages(prev => [...prev, agentMessage]);
+
+      // connect socket if needed
+      ensureConnected();
+
+      setIsExecuting(true);
+      cancelRef.current = null;
+
+      // Execute orch and get a promise back. We ensure execute returns a Promise (see use-orchestration)
+      const orchestrationPromise: Promise<any> = execute(payload, {
+        onAck: (d: any) => { /* optional ack UI */ },
+        onToken: (agentId: string, token: string) => {
+          setMessages(prev => prev.map(m => {
+            if (m.id !== agentMessageId) return m;
+            return {
+              ...m,
+              agentResponses: m.agentResponses.map(ar => {
+                if (ar.agentId !== agentId) return ar;
+                return { ...ar, content: (ar.content || '') + token };
+              })
+            } as ChatMessage;
+          }));
+        },
+        onAgentDone: (agentId: string, usage: any) => {
+          setMessages(prev => prev.map(m => {
+            if (m.id !== agentMessageId) return m;
+            return {
+              ...m,
+              agentResponses: m.agentResponses.map(ar => (ar.agentId === agentId ? { ...ar, status: 'success', metadata: { ...ar.metadata, usage } } : ar))
+            } as ChatMessage;
+          }));
+        },
+        onAgentError: (agentId: string, errorMsg: any) => {
+          setMessages(prev => prev.map(m => {
+            if (m.id !== agentMessageId) return m;
+            return {
+              ...m,
+              agentResponses: m.agentResponses.map(ar => (ar.agentId === agentId ? { ...ar, status: 'error', content: String(errorMsg || 'Error') } : ar))
+            } as ChatMessage;
+          }));
+        },
+        onWarning: (warn: any) => {
+          toast({ title: 'Warning', description: warn?.detail || warn?.warning || 'Warning from server', variant: 'default' });
+        },
+        onRateLimit: (rl: any) => {
+          // rl may contain { remaining, limit, retryAfter }
+          const retry = Number(rl?.retryAfter ?? rl?.retry_after ?? rl?.retry ?? 10);
+          startRateLimitCountdown(retry);
+          toast({ title: 'Rate limit', description: `Too many requests. Retry in ${retry} seconds.`, variant: 'default' });
+        },
+        onCancelReady: (cancelFn: () => void) => {
+          cancelRef.current = cancelFn;
+        },
+        onDone: (doneData: any) => {
+          setMessages(prev => prev.map(m => {
+            if (m.id !== agentMessageId) return m;
+            const updatedResponses = m.agentResponses.map(ar => (ar.status === 'pending' ? { ...ar, status: 'success' } : ar));
+            return {
+              ...m,
+              agentResponses: updatedResponses,
+              markdownOutput: doneData.final_markdown || m.markdownOutput,
+              finalOutput: doneData.final_markdown || m.finalOutput,
+              content: doneData.final_markdown || m.content
+            } as ChatMessage;
+          }));
+        },
+        onError: (err: any) => {
+          setMessages(prev => prev.map(m => {
+            if (m.id !== agentMessageId) return m;
+            return {
+              ...m,
+              agentResponses: m.agentResponses.map(ar => (ar.status === 'pending' ? { ...ar, status: 'error', content: err?.error || 'Orchestration failed' } : ar))
+            } as ChatMessage;
+          }));
+          toast({ title: 'Execution failed', description: err?.error || 'Orchestration failed', variant: 'destructive' });
+        }
+      });
+
+      // wait for orchestration to finish (final result)
+      const finalResult: any = await orchestrationPromise;
+      if (!finalResult?.ok) {
+        // finalResult.error might already be handled in callbacks
+      }
       setIsLoadingLocal(false);
+    } catch (err: any) {
+      toast({ title: 'Error', description: err?.message || 'Failed to execute agents.', variant: 'destructive' });
+      setIsLoadingLocal(false);
+    } finally {
+      setIsExecuting(false);
+      cancelRef.current = null;
+    }
+  };
+
+  const handleCancelExecution = () => {
+    if (cancelRef.current) {
+      try {
+        cancelRef.current();
+      } catch (e) { /* ignore */ }
+      cancelRef.current = null;
+      setIsExecuting(false);
+      toast({ title: 'Cancelled', description: 'Orchestration cancelled by user', variant: 'default' });
     }
   };
 
@@ -150,13 +277,14 @@ export const ChatInterface = ({
       setConversationId(null); // internal can be null/undefined
       setMessages([]);
       setHasStarted(false);
-      // inform parent there's no active conversation
       onConversationChange?.(null);
     } else {
-      // leaving private mode: nothing forced, parent can set active conversation if needed
+      // leaving private mode: nothing forced
       setConversationId(null);
     }
   };
+
+  const sendDisabled = isLoadingLocal || isExecuting || (!!rateLimitedUntil && Date.now() < rateLimitedUntil);
 
   return (
     <div className="flex flex-col h-full max-w-[1800px] 2xl:max-w-[2200px] mx-auto w-full overflow-hidden">
@@ -183,20 +311,24 @@ export const ChatInterface = ({
                   }}
                   placeholder="Type your message here..."
                   className="flex-1 resize-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
-                  disabled={isLoadingLocal || isExecuting}
+                  disabled={sendDisabled}
                   rows={1}
                 />
-                <Button onClick={handleSubmit} disabled={!input.trim() || isLoadingLocal || isExecuting} size="icon" className="h-10 w-10 rounded-lg bg-primary hover:bg-primary/90 transition">
+                <Button onClick={handleSubmit} disabled={!input.trim() || sendDisabled} size="icon" className="h-10 w-10 rounded-lg bg-primary hover:bg-primary/90 transition">
                   <Send className="h-4 w-4" />
                 </Button>
               </div>
             </div>
 
             <div className="flex items-center justify-center gap-3 flex-wrap">
-              <AgentSelector agents={agents} selectedAgents={selectedAgents} onAgentsChange={setSelectedAgents} />
-              <Button onClick={() => setWorkflowDialogOpen(true)} disabled={selectedAgents.length === 0} variant="outline" className="gap-2">
-                <Workflow className="w-4 h-4" /> Design Flow
-              </Button>
+              <div className="w-full max-w-3xl">
+                <div className="flex items-center gap-3">
+                  <AgentSelector agents={agents} selectedAgents={selectedAgents} onAgentsChange={setSelectedAgents} />
+                  <Button onClick={() => setWorkflowDialogOpen(true)} disabled={selectedAgents.length === 0} variant="outline" className="gap-2">
+                    <Workflow className="w-4 h-4" /> Design Flow
+                  </Button>
+                </div>
+              </div>
 
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-2 px-3 py-1 rounded-lg border bg-muted/30">
@@ -247,11 +379,27 @@ export const ChatInterface = ({
             </div>
 
             <div className="relative flex items-center gap-3 rounded-xl bg-muted/50 border border-border/50 focus-within:border-primary transition px-4 py-3">
-              <Textarea value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit(); } }} placeholder="Message CreatuAI..." className="flex-1 resize-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0" disabled={isLoadingLocal || isExecuting} rows={1} />
-              <Button onClick={handleSubmit} disabled={!input.trim() || isLoadingLocal || isExecuting} size="icon" className="h-10 w-10 rounded-lg bg-primary hover:bg-primary/90 transition">
-                <Send className="h-4 w-4" />
-              </Button>
+              <Textarea value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit(); } }} placeholder="Message CreatuAI..." className="flex-1 resize-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0" disabled={sendDisabled} rows={1} />
+              <div className="flex items-center gap-2">
+                {/* Cancel button (visible when executing) */}
+                {isExecuting ? (
+                  <Button variant="destructive" onClick={handleCancelExecution} size="icon" className="h-10 w-10 rounded-lg">
+                    <X className="h-4 w-4" />
+                  </Button>
+                ) : (
+                  <Button onClick={handleSubmit} disabled={!input.trim() || sendDisabled} size="icon" className="h-10 w-10 rounded-lg bg-primary hover:bg-primary/90 transition">
+                    <Send className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
             </div>
+
+            {/* Rate limit indicator */}
+            {rateLimitedUntil && Date.now() < rateLimitedUntil && (
+              <div className="text-xs text-destructive mt-2 text-center">
+                Rate limit active — please wait {Math.ceil((rateLimitedUntil - Date.now()) / 1000)}s
+              </div>
+            )}
           </div>
         </>
       )}
@@ -260,3 +408,5 @@ export const ChatInterface = ({
     </div>
   );
 };
+
+export default ChatInterface;
