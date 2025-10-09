@@ -30,11 +30,14 @@ export const AgentSelector = ({
 }: AgentSelectorProps) => {
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Fixed: Use the agents array directly without relying on findIndex for colors
   const customAgents = useMemo(() => agents.filter(a => !a.is_default), [agents]);
   const defaultAgents = useMemo(() => agents.filter(a => a.is_default), [agents]);
 
   const filteredDefaultAgents = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
+    if (!q) return defaultAgents;
+    
     return defaultAgents.filter(
       (agent) =>
         agent.name.toLowerCase().includes(q) ||
@@ -45,12 +48,28 @@ export const AgentSelector = ({
 
   const filteredCustomAgents = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
+    if (!q) return customAgents;
+    
     return customAgents.filter(
       (agent) =>
         agent.name.toLowerCase().includes(q) ||
         (agent.description || '').toLowerCase().includes(q)
     );
   }, [customAgents, searchQuery]);
+
+  // Fixed: Simple color assignment that doesn't rely on findIndex
+  const getAgentColor = (agentId: string) => {
+    const colors = [
+      'hsl(var(--agent-1))',
+      'hsl(var(--agent-2))',
+      'hsl(var(--agent-3))',
+      'hsl(var(--agent-4))',
+      'hsl(var(--agent-5))'
+    ];
+    // Simple hash-based color assignment that works consistently
+    const hash = agentId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return colors[hash % colors.length];
+  };
 
   const toggleAgent = (agent: Agent) => {
     const isSelected = selectedAgents.some((a) => a.id === agent.id);
@@ -118,7 +137,7 @@ export const AgentSelector = ({
                       <div className="flex items-center gap-2">
                         <div
                           className="w-3 h-3 rounded-full shrink-0"
-                          style={{ backgroundColor: `hsl(var(--agent-${(agents.findIndex(a => a.id === agent.id) % 5) + 1}))` }}
+                          style={{ backgroundColor: getAgentColor(agent.id) }}
                         />
                         <div className="min-w-0">
                           <div className="text-sm font-medium truncate">{agent.name}</div>
@@ -136,8 +155,13 @@ export const AgentSelector = ({
           {/* Default agents (grouped visually in a responsive grid) */}
           <div>
             <h5 className="text-xs font-semibold text-muted-foreground mb-2">Default agents</h5>
-            {filteredDefaultAgents.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No agents found</p>
+            {filteredDefaultAgents.length === 0 && defaultAgents.length > 0 ? (
+              <div className="text-center py-4">
+                <p className="text-sm text-muted-foreground">No agents match your search</p>
+                <p className="text-xs text-muted-foreground mt-1">Try a different search term</p>
+              </div>
+            ) : filteredDefaultAgents.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No agents available</p>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
                 {filteredDefaultAgents.map((agent) => {
@@ -152,7 +176,7 @@ export const AgentSelector = ({
                     >
                       <div
                         className="w-3 h-3 rounded-full shrink-0"
-                        style={{ backgroundColor: `hsl(var(--agent-${(agents.findIndex(a => a.id === agent.id) % 5) + 1}))` }}
+                        style={{ backgroundColor: getAgentColor(agent.id) }}
                       />
                       <div className="min-w-0">
                         <div className="text-sm font-medium truncate">{agent.name}</div>
