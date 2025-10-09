@@ -1,6 +1,6 @@
 // src/components/ChatInterface.tsx
-import React, { useState, useEffect, useRef } from 'react';
-import { Send, Workflow, Lock, LockOpen, X } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Send, Workflow, Lock, LockOpen, X, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { AgentSelector } from './AgentSelector';
@@ -23,9 +23,13 @@ export const ChatInterface: React.FC<{
   const [workflowDialogOpen, setWorkflowDialogOpen] = useState(false);
   const [saveToConversation, setSaveToConversation] = useState(true);
   const [isLoadingLocal, setIsLoadingLocal] = useState(false);
-
   const [isExecuting, setIsExecuting] = useState(false);
+  const [showQuickActions, setShowQuickActions] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'connecting'>('connecting');
+  
   const cancelRef = useRef<null | (() => void)>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const retryMessageRef = useRef<string>('');
 
   // rate-limit UI
   const [rateLimitedUntil, setRateLimitedUntil] = useState<number | null>(null);
@@ -33,7 +37,7 @@ export const ChatInterface: React.FC<{
 
   const { toast } = useToast();
 
-  // conversation hook (handles caching/loading)
+  // conversation hook
   const {
     messages,
     setMessages,
@@ -45,10 +49,27 @@ export const ChatInterface: React.FC<{
     setHasStarted,
   } = useConversation(activeConversationId);
 
-  // orchestration helper (socket-based)
-  const { execute, ensureConnected } = useOrchestration();
+  // orchestration helper
+  const { execute, ensureConnected, getStatus } = useOrchestration();
 
-  // cleanup rate-limit timer on unmount
+  // Monitor connection status
+  useEffect(() => {
+    const checkConnection = setInterval(() => {
+      const status = getStatus();
+      setConnectionStatus(status.connected ? 'connected' : 'disconnected');
+    }, 2000);
+
+    return () => clearInterval(checkConnection);
+  }, [getStatus]);
+
+  // Auto-focus textarea
+  useEffect(() => {
+    if (!isExecuting && textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  }, [isExecuting, hasStarted]);
+
+  // cleanup rate-limit timer
   useEffect(() => {
     return () => {
       if (rateLimitTimerRef.current) {
@@ -85,18 +106,28 @@ export const ChatInterface: React.FC<{
   const handleSubmit = async () => {
     if (!input.trim()) return;
     if (selectedAgents.length === 0) {
-      toast({ title: 'No agents selected', description: 'Please select at least one agent before sending a message.', variant: 'destructive' });
+      toast({ 
+        title: 'No agents selected', 
+        description: 'Please select at least one agent before sending a message.', 
+        variant: 'destructive' 
+      });
       return;
     }
 
     if (rateLimitedUntil && Date.now() < rateLimitedUntil) {
-      toast({ title: 'Rate limited', description: 'Please wait before sending another orchestration.', variant: 'destructive' });
+      toast({ 
+        title: 'Rate limited', 
+        description: 'Please wait before sending another orchestration.', 
+        variant: 'destructive' 
+      });
       return;
     }
 
     setHasStarted(true);
     const messageText = input;
     setInput('');
+    setShowQuickActions(false);
+    retryMessageRef.current = messageText;
 
     const userMessage: ChatMessage = {
       id: `msg-${Date.now()}`,
@@ -111,7 +142,6 @@ export const ChatInterface: React.FC<{
     try {
       let convId = conversationId;
 
-      // create conversation only when saving to conversation (not private)
       if (saveToConversation && !convId) {
         const { apiClient } = await import('@/lib/api');
         const createRes = await apiClient.createConversation({
@@ -128,7 +158,6 @@ export const ChatInterface: React.FC<{
         }
       }
 
-      // Build payload (omit conversation_id when private)
       const payload: any = {
         agent_ids: selectedAgents.map(a => a.id),
         message: messageText,
@@ -138,7 +167,6 @@ export const ChatInterface: React.FC<{
 
       if (saveToConversation && convId) payload.conversation_id = convId;
 
-      // placeholders
       const agentResponsesInitial: AgentResponse[] = selectedAgents.map(a => ({
         agentId: a.id,
         agentName: a.name,
@@ -161,16 +189,11 @@ export const ChatInterface: React.FC<{
         isFromCache: false,
       };
 
-      // append placeholder
       setMessages(prev => [...prev, agentMessage]);
-
-      // connect socket if needed
       ensureConnected();
-
       setIsExecuting(true);
       cancelRef.current = null;
 
-      // Execute orch and get a promise back. We ensure execute returns a Promise (see use-orchestration)
       const orchestrationPromise: Promise<any> = execute(payload, {
         onAck: (d: any) => { /* optional ack UI */ },
         onToken: (agentId: string, token: string) => {
@@ -190,7 +213,11 @@ export const ChatInterface: React.FC<{
             if (m.id !== agentMessageId) return m;
             return {
               ...m,
-              agentResponses: m.agentResponses.map(ar => (ar.agentId === agentId ? { ...ar, status: 'success', metadata: { ...ar.metadata, usage } } : ar))
+              agentResponses: m.agentResponses.map(ar => 
+                ar.agentId === agentId 
+                  ? { ...ar, status: 'success', metadata: { ...ar.metadata, usage } } 
+                  : ar
+              )
             } as ChatMessage;
           }));
         },
@@ -199,18 +226,29 @@ export const ChatInterface: React.FC<{
             if (m.id !== agentMessageId) return m;
             return {
               ...m,
-              agentResponses: m.agentResponses.map(ar => (ar.agentId === agentId ? { ...ar, status: 'error', content: String(errorMsg || 'Error') } : ar))
+              agentResponses: m.agentResponses.map(ar => 
+                ar.agentId === agentId 
+                  ? { ...ar, status: 'error', content: String(errorMsg || 'Error') } 
+                  : ar
+              )
             } as ChatMessage;
           }));
         },
         onWarning: (warn: any) => {
-          toast({ title: 'Warning', description: warn?.detail || warn?.warning || 'Warning from server', variant: 'default' });
+          toast({ 
+            title: 'Warning', 
+            description: warn?.detail || warn?.warning || 'Warning from server', 
+            variant: 'default' 
+          });
         },
         onRateLimit: (rl: any) => {
-          // rl may contain { remaining, limit, retryAfter }
           const retry = Number(rl?.retryAfter ?? rl?.retry_after ?? rl?.retry ?? 10);
           startRateLimitCountdown(retry);
-          toast({ title: 'Rate limit', description: `Too many requests. Retry in ${retry} seconds.`, variant: 'default' });
+          toast({ 
+            title: 'Rate limit', 
+            description: `Too many requests. Retry in ${retry} seconds.`, 
+            variant: 'default' 
+          });
         },
         onCancelReady: (cancelFn: () => void) => {
           cancelRef.current = cancelFn;
@@ -218,7 +256,9 @@ export const ChatInterface: React.FC<{
         onDone: (doneData: any) => {
           setMessages(prev => prev.map(m => {
             if (m.id !== agentMessageId) return m;
-            const updatedResponses = m.agentResponses.map(ar => (ar.status === 'pending' ? { ...ar, status: 'success' } : ar));
+            const updatedResponses = m.agentResponses.map(ar => 
+              ar.status === 'pending' ? { ...ar, status: 'success' } : ar
+            );
             return {
               ...m,
               agentResponses: updatedResponses,
@@ -233,21 +273,29 @@ export const ChatInterface: React.FC<{
             if (m.id !== agentMessageId) return m;
             return {
               ...m,
-              agentResponses: m.agentResponses.map(ar => (ar.status === 'pending' ? { ...ar, status: 'error', content: err?.error || 'Orchestration failed' } : ar))
+              agentResponses: m.agentResponses.map(ar => 
+                ar.status === 'pending' 
+                  ? { ...ar, status: 'error', content: err?.error || 'Orchestration failed' } 
+                  : ar
+              )
             } as ChatMessage;
           }));
-          toast({ title: 'Execution failed', description: err?.error || 'Orchestration failed', variant: 'destructive' });
+          toast({ 
+            title: 'Execution failed', 
+            description: err?.error || 'Orchestration failed', 
+            variant: 'destructive' 
+          });
         }
       });
 
-      // wait for orchestration to finish (final result)
-      const finalResult: any = await orchestrationPromise;
-      if (!finalResult?.ok) {
-        // finalResult.error might already be handled in callbacks
-      }
+      await orchestrationPromise;
       setIsLoadingLocal(false);
     } catch (err: any) {
-      toast({ title: 'Error', description: err?.message || 'Failed to execute agents.', variant: 'destructive' });
+      toast({ 
+        title: 'Error', 
+        description: err?.message || 'Failed to execute agents.', 
+        variant: 'destructive' 
+      });
       setIsLoadingLocal(false);
     } finally {
       setIsExecuting(false);
@@ -259,48 +307,104 @@ export const ChatInterface: React.FC<{
     if (cancelRef.current) {
       try {
         cancelRef.current();
+        toast({ 
+          title: 'Cancelled', 
+          description: 'Orchestration cancelled by user', 
+          variant: 'default' 
+        });
       } catch (e) { /* ignore */ }
       cancelRef.current = null;
       setIsExecuting(false);
-      toast({ title: 'Cancelled', description: 'Orchestration cancelled by user', variant: 'default' });
     }
   };
 
   const handleWorkflowConfirm = (ordered: Agent[]) => setSelectedAgents(ordered);
+
+  const handleRetryMessage = useCallback(async (messageId: string) => {
+    const messageToRetry = messages.find(m => m.id === messageId);
+    if (!messageToRetry) return;
+
+    // Find the user message before this agent message
+    const messageIndex = messages.findIndex(m => m.id === messageId);
+    if (messageIndex > 0) {
+      const previousMessage = messages[messageIndex - 1];
+      if (previousMessage.type === 'user') {
+        setInput(previousMessage.content);
+        toast({
+          title: 'Message loaded',
+          description: 'You can edit and resend the message',
+        });
+      }
+    }
+  }, [messages, toast]);
 
   const togglePrivateChat = () => {
     const newSave = !saveToConversation;
     setSaveToConversation(newSave);
 
     if (!newSave) {
-      // entering private mode: start a clean UI session
-      setConversationId(null); // internal can be null/undefined
+      setConversationId(null);
       setMessages([]);
       setHasStarted(false);
       onConversationChange?.(null);
+      toast({
+        title: 'Private mode enabled',
+        description: 'Your messages will not be saved to conversation history.',
+      });
     } else {
-      // leaving private mode: nothing forced
       setConversationId(null);
+      toast({
+        title: 'Private mode disabled',
+        description: 'Messages will now be saved to your conversation history.',
+      });
     }
   };
 
   const sendDisabled = isLoadingLocal || isExecuting || (!!rateLimitedUntil && Date.now() < rateLimitedUntil);
+
+  // Quick action prompts
+  const quickPrompts = [
+    "Explain this concept simply",
+    "Write a creative story",
+    "Help me debug this code",
+    "Analyze this data"
+  ];
 
   return (
     <div className="flex flex-col h-full max-w-[1800px] 2xl:max-w-[2200px] mx-auto w-full overflow-hidden">
       {!hasStarted && messages.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center p-6 space-y-6">
           <div className="text-center space-y-3 max-w-2xl px-4">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
+              <Sparkles className="w-4 h-4" />
+              Multi-Agent Orchestration
+            </div>
             <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
               How can I help you today?
             </h1>
-            <p className="text-muted-foreground text-lg">Select your agents, design the workflow, and let's get started.</p>
+            <p className="text-muted-foreground text-lg">
+              Select your agents, design the workflow, and let's get started.
+            </p>
+          </div>
+
+          {/* Quick prompts */}
+          <div className="flex flex-wrap gap-2 justify-center max-w-2xl px-4">
+            {quickPrompts.map((prompt, idx) => (
+              <button
+                key={idx}
+                onClick={() => setInput(prompt)}
+                className="px-4 py-2 rounded-lg border border-border/50 bg-muted/30 hover:bg-muted/50 hover:border-primary/50 text-sm text-muted-foreground hover:text-foreground transition-all"
+              >
+                {prompt}
+              </button>
+            ))}
           </div>
 
           <div className="flex flex-col items-center gap-4 w-full max-w-3xl px-4">
             <div className="w-full">
               <div className="relative flex items-center gap-3 rounded-xl bg-muted/50 border border-border/50 focus-within:border-primary transition px-4 py-3">
                 <Textarea
+                  ref={textareaRef}
                   value={input}
                   onChange={e => setInput(e.target.value)}
                   onKeyDown={e => {
@@ -310,36 +414,66 @@ export const ChatInterface: React.FC<{
                     }
                   }}
                   placeholder="Type your message here..."
-                  className="flex-1 resize-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
+                  className="flex-1 resize-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 min-h-[40px] max-h-[200px]"
                   disabled={sendDisabled}
                   rows={1}
                 />
-                <Button onClick={handleSubmit} disabled={!input.trim() || sendDisabled} size="icon" className="h-10 w-10 rounded-lg bg-primary hover:bg-primary/90 transition">
+                <Button 
+                  onClick={handleSubmit} 
+                  disabled={!input.trim() || sendDisabled} 
+                  size="icon" 
+                  className="h-10 w-10 rounded-lg bg-primary hover:bg-primary/90 transition flex-shrink-0"
+                >
                   <Send className="h-4 w-4" />
                 </Button>
               </div>
             </div>
 
-            <div className="flex items-center justify-center gap-3 flex-wrap">
-              <div className="w-full max-w-3xl">
-                <div className="flex items-center gap-3">
-                  <AgentSelector agents={agents} selectedAgents={selectedAgents} onAgentsChange={setSelectedAgents} />
-                  <Button onClick={() => setWorkflowDialogOpen(true)} disabled={selectedAgents.length === 0} variant="outline" className="gap-2">
-                    <Workflow className="w-4 h-4" /> Design Flow
-                  </Button>
+            {/* Controls - Fixed layout */}
+            <div className="w-full max-w-3xl space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="flex-1">
+                  <AgentSelector 
+                    agents={agents} 
+                    selectedAgents={selectedAgents} 
+                    onAgentsChange={setSelectedAgents} 
+                  />
                 </div>
+                <Button 
+                  onClick={() => setWorkflowDialogOpen(true)} 
+                  disabled={selectedAgents.length === 0} 
+                  variant="outline" 
+                  className="gap-2 flex-shrink-0"
+                >
+                  <Workflow className="w-4 h-4" /> Design Flow
+                </Button>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2 px-3 py-1 rounded-lg border bg-muted/30">
                   {(['sequential', 'parallel'] as const).map(mode => (
-                    <button key={mode} onClick={() => setExecutionMode(mode)} className={`px-3 py-1.5 rounded-md text-sm font-medium transition ${executionMode === mode ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}>
+                    <button 
+                      key={mode} 
+                      onClick={() => setExecutionMode(mode)} 
+                      className={`px-3 py-1.5 rounded-md text-sm font-medium transition ${
+                        executionMode === mode 
+                          ? 'bg-primary text-primary-foreground shadow-sm' 
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
                       {mode.charAt(0).toUpperCase() + mode.slice(1)}
                     </button>
                   ))}
                 </div>
 
-                <button onClick={togglePrivateChat} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm font-medium transition ${saveToConversation ? 'bg-background border-border hover:bg-muted/50 text-muted-foreground' : 'bg-primary text-primary-foreground border-primary shadow-sm hover:bg-primary/90'}`}>
+                <button 
+                  onClick={togglePrivateChat} 
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm font-medium transition ${
+                    saveToConversation 
+                      ? 'bg-background border-border hover:bg-muted/50 text-muted-foreground' 
+                      : 'bg-primary text-primary-foreground border-primary shadow-sm hover:bg-primary/90'
+                  }`}
+                >
                   {saveToConversation ? <LockOpen className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
                   <span>Private</span>
                 </button>
@@ -351,60 +485,151 @@ export const ChatInterface: React.FC<{
         <>
           <div className="flex-1 overflow-y-auto px-2 md:px-6 py-4">
             <div className="max-w-5xl 2xl:max-w-6xl mx-auto w-full">
-              <MessageList messages={messages} isLoading={isLoadingLocal || isExecuting} />
+              {/* Connection status banner */}
+              {connectionStatus === 'disconnected' && (
+                <div className="mb-4 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-destructive animate-pulse" />
+                  <span>Disconnected from server. Attempting to reconnect...</span>
+                </div>
+              )}
+              
+              <MessageList 
+                messages={messages} 
+                isLoading={isLoadingLocal || isExecuting}
+                onRetryMessage={handleRetryMessage}
+              />
             </div>
           </div>
 
           <div className="sticky bottom-0 bg-background/95 backdrop-blur-sm p-4 border-t border-border/50 space-y-3">
-            <div className="flex items-center justify-center gap-3 flex-wrap">
-              <AgentSelector agents={agents} selectedAgents={selectedAgents} onAgentsChange={setSelectedAgents} />
-              <Button onClick={() => setWorkflowDialogOpen(true)} disabled={selectedAgents.length === 0} variant="outline" size="sm" className="gap-2">
-                <Workflow className="w-4 h-4" /> Design Flow
-              </Button>
+            {/* Controls - Fixed layout */}
+            <div className="max-w-5xl 2xl:max-w-6xl mx-auto w-full space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="flex-1">
+                  <AgentSelector 
+                    agents={agents} 
+                    selectedAgents={selectedAgents} 
+                    onAgentsChange={setSelectedAgents} 
+                  />
+                </div>
+                <Button 
+                  onClick={() => setWorkflowDialogOpen(true)} 
+                  disabled={selectedAgents.length === 0} 
+                  variant="outline" 
+                  size="sm" 
+                  className="gap-2 flex-shrink-0"
+                >
+                  <Workflow className="w-4 h-4" /> Design Flow
+                </Button>
+              </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2 px-3 py-1 rounded-lg border bg-muted/30">
                   {(['sequential', 'parallel'] as const).map(mode => (
-                    <button key={mode} onClick={() => setExecutionMode(mode)} className={`px-3 py-1.5 rounded-md text-sm font-medium transition ${executionMode === mode ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}>
+                    <button 
+                      key={mode} 
+                      onClick={() => setExecutionMode(mode)} 
+                      className={`px-3 py-1.5 rounded-md text-sm font-medium transition ${
+                        executionMode === mode 
+                          ? 'bg-primary text-primary-foreground shadow-sm' 
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
                       {mode.charAt(0).toUpperCase() + mode.slice(1)}
                     </button>
                   ))}
                 </div>
 
-                <button onClick={togglePrivateChat} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm font-medium transition ${saveToConversation ? 'bg-background border-border hover:bg-muted/50 text-muted-foreground' : 'bg-primary text-primary-foreground border-primary shadow-sm hover:bg-primary/90'}`}>
+                <button 
+                  onClick={togglePrivateChat} 
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm font-medium transition ${
+                    saveToConversation 
+                      ? 'bg-background border-border hover:bg-muted/50 text-muted-foreground' 
+                      : 'bg-primary text-primary-foreground border-primary shadow-sm hover:bg-primary/90'
+                  }`}
+                >
                   {saveToConversation ? <LockOpen className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
                   <span>Private</span>
                 </button>
               </div>
             </div>
 
-            <div className="relative flex items-center gap-3 rounded-xl bg-muted/50 border border-border/50 focus-within:border-primary transition px-4 py-3">
-              <Textarea value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit(); } }} placeholder="Message CreatuAI..." className="flex-1 resize-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0" disabled={sendDisabled} rows={1} />
-              <div className="flex items-center gap-2">
-                {/* Cancel button (visible when executing) */}
-                {isExecuting ? (
-                  <Button variant="destructive" onClick={handleCancelExecution} size="icon" className="h-10 w-10 rounded-lg">
-                    <X className="h-4 w-4" />
-                  </Button>
-                ) : (
-                  <Button onClick={handleSubmit} disabled={!input.trim() || sendDisabled} size="icon" className="h-10 w-10 rounded-lg bg-primary hover:bg-primary/90 transition">
-                    <Send className="h-4 w-4" />
-                  </Button>
-                )}
+            {/* Input area */}
+            <div className="max-w-5xl 2xl:max-w-6xl mx-auto w-full">
+              <div className="relative flex items-center gap-3 rounded-xl bg-muted/50 border border-border/50 focus-within:border-primary transition px-4 py-3">
+                <Textarea 
+                  ref={textareaRef}
+                  value={input} 
+                  onChange={e => setInput(e.target.value)} 
+                  onKeyDown={e => { 
+                    if (e.key === 'Enter' && !e.shiftKey) { 
+                      e.preventDefault(); 
+                      handleSubmit(); 
+                    } 
+                  }} 
+                  placeholder="Message CreatuAI..." 
+                  className="flex-1 resize-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 min-h-[40px] max-h-[200px]" 
+                  disabled={sendDisabled} 
+                  rows={1} 
+                />
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  {isExecuting ? (
+                    <Button 
+                      variant="destructive" 
+                      onClick={handleCancelExecution} 
+                      size="icon" 
+                      className="h-10 w-10 rounded-lg"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  ) : (
+                    <Button 
+                      onClick={handleSubmit} 
+                      disabled={!input.trim() || sendDisabled} 
+                      size="icon" 
+                      className="h-10 w-10 rounded-lg bg-primary hover:bg-primary/90 transition"
+                    >
+                      <Send className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
               </div>
-            </div>
 
-            {/* Rate limit indicator */}
-            {rateLimitedUntil && Date.now() < rateLimitedUntil && (
-              <div className="text-xs text-destructive mt-2 text-center">
-                Rate limit active — please wait {Math.ceil((rateLimitedUntil - Date.now()) / 1000)}s
-              </div>
-            )}
+              {/* Status indicators */}
+              {rateLimitedUntil && Date.now() < rateLimitedUntil && (
+                <div className="text-xs text-destructive mt-2 text-center">
+                  Rate limit active — please wait {Math.ceil((rateLimitedUntil - Date.now()) / 1000)}s
+                </div>
+              )}
+              
+              {isExecuting && (
+                <div className="text-xs text-muted-foreground mt-2 text-center flex items-center justify-center gap-2">
+                  <div className="animate-pulse">●</div>
+                  Processing your request...
+                  <span className="text-primary">
+                    {selectedAgents.map(a => a.name).join(', ')}
+                  </span>
+                </div>
+              )}
+
+              {connectionStatus === 'connected' && !isExecuting && (
+                <div className="text-xs text-green-500 mt-2 text-center flex items-center justify-center gap-1">
+                  <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                  Connected
+                </div>
+              )}
+            </div>
           </div>
         </>
       )}
 
-      <AgentWorkflowDialog open={workflowDialogOpen} onOpenChange={setWorkflowDialogOpen} agents={agents} selectedAgents={selectedAgents} onConfirm={handleWorkflowConfirm} />
+      <AgentWorkflowDialog 
+        open={workflowDialogOpen} 
+        onOpenChange={setWorkflowDialogOpen} 
+        agents={agents} 
+        selectedAgents={selectedAgents} 
+        onConfirm={handleWorkflowConfirm} 
+      />
     </div>
   );
 };

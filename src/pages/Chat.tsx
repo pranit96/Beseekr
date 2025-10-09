@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { ChatInterface } from '@/components/ChatInterface';
 import { ConversationHistory } from '@/components/ConversationHistory';
@@ -7,6 +6,7 @@ import { apiClient } from '@/lib/api';
 import { useAgents } from '@/hooks/use-agents';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
+import { AlertCircle, Wifi, WifiOff } from 'lucide-react';
 import { Agent } from '@/types/agent';
 
 interface Conversation {
@@ -22,9 +22,41 @@ const Chat = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [loadingConversations, setLoadingConversations] = useState(true);
   const [key, setKey] = useState(0);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [showOfflineBanner, setShowOfflineBanner] = useState(false);
 
   const { agents, loading: loadingAgents, reload } = useAgents();
   const { toast } = useToast();
+
+  // Monitor online/offline status
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+      setShowOfflineBanner(false);
+      toast({
+        title: 'Back online',
+        description: 'Connection restored',
+      });
+    };
+
+    const handleOffline = () => {
+      setIsOnline(false);
+      setShowOfflineBanner(true);
+      toast({
+        title: 'No internet connection',
+        description: 'You are currently offline',
+        variant: 'destructive',
+      });
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [toast]);
 
   // Load sidebar and conversation preferences
   useEffect(() => {
@@ -41,8 +73,33 @@ const Chat = () => {
     sessionStorage.setItem('sidebarOpen', sidebarOpen.toString());
   }, [sidebarOpen]);
 
-  // Fetch conversation history
+  // Auto-save scroll position
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      const scrollPos = window.scrollY;
+      sessionStorage.setItem('chatScrollPosition', scrollPos.toString());
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, []);
+
+  // Restore scroll position
+  useEffect(() => {
+    const savedScrollPos = sessionStorage.getItem('chatScrollPosition');
+    if (savedScrollPos) {
+      window.scrollTo(0, parseInt(savedScrollPos));
+      sessionStorage.removeItem('chatScrollPosition');
+    }
+  }, []);
+
+  // Fetch conversation history with error handling
   const fetchConversations = useCallback(async () => {
+    if (!isOnline) {
+      setLoadingConversations(false);
+      return;
+    }
+
     try {
       const response = await apiClient.getConversations({
         status: 'active',
@@ -51,6 +108,7 @@ const Chat = () => {
       });
       if (response.success && response.data) setConversations(response.data);
     } catch (error: any) {
+      console.error('Failed to fetch conversations:', error);
       toast({
         title: 'Failed to load conversations',
         description: error.message || 'Could not fetch history.',
@@ -59,7 +117,7 @@ const Chat = () => {
     } finally {
       setLoadingConversations(false);
     }
-  }, [toast]);
+  }, [toast, isOnline]);
 
   // Handlers
   const handleSelectConversation = useCallback((conversationId: string) => {
@@ -68,6 +126,15 @@ const Chat = () => {
   }, []);
 
   const handleNewSession = useCallback(async () => {
+    if (!isOnline) {
+      toast({
+        title: 'Offline',
+        description: 'Cannot create new session while offline',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     try {
       const response = await apiClient.createConversation({
         agent_id: null,
@@ -93,7 +160,7 @@ const Chat = () => {
         variant: 'destructive',
       });
     }
-  }, [fetchConversations, toast]);
+  }, [fetchConversations, toast, isOnline]);
 
   const handleConversationCreated = useCallback(
     async (conversationId: string) => {
@@ -118,23 +185,53 @@ const Chat = () => {
     fetchConversations();
     setCurrentConversationId(undefined);
     sessionStorage.removeItem('lastActiveConversation');
-  }, [fetchConversations]);
+    toast({
+      title: 'Conversation deleted',
+      description: 'The conversation has been removed.',
+    });
+  }, [fetchConversations, toast]);
 
   const handleConversationArchived = useCallback(() => {
     fetchConversations();
     setCurrentConversationId(undefined);
     sessionStorage.removeItem('lastActiveConversation');
-  }, [fetchConversations]);
+    toast({
+      title: 'Conversation archived',
+      description: 'The conversation has been archived.',
+    });
+  }, [fetchConversations, toast]);
 
   const isLoading = loadingAgents || loadingConversations;
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyboard = (e: KeyboardEvent) => {
+      // Ctrl/Cmd + B to toggle sidebar
+      if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+        e.preventDefault();
+        setSidebarOpen(prev => !prev);
+      }
+      
+      // Ctrl/Cmd + N for new chat
+      if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+        e.preventDefault();
+        handleNewSession();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyboard);
+    return () => window.removeEventListener('keydown', handleKeyboard);
+  }, [handleNewSession]);
 
   // Loading skeleton
   if (isLoading) {
     return (
-      <div className="h-screen flex flex-col items-center justify-center gap-4">
+      <div className="h-screen flex flex-col items-center justify-center gap-4 bg-background">
+        <div className="relative">
+          <div className="w-16 h-16 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
+        </div>
         <Skeleton className="h-8 w-48" />
         <Skeleton className="h-4 w-72" />
-        <Skeleton className="h-4 w-64" />
         <div className="animate-pulse text-muted-foreground mt-4">
           Loading chat environment...
         </div>
@@ -142,20 +239,55 @@ const Chat = () => {
     );
   }
 
+  // Error state
+  if (!isOnline && conversations.length === 0) {
+    return (
+      <div className="h-screen flex flex-col items-center justify-center gap-4 bg-background p-6">
+        <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center">
+          <WifiOff className="w-8 h-8 text-destructive" />
+        </div>
+        <h2 className="text-2xl font-bold">You're offline</h2>
+        <p className="text-muted-foreground text-center max-w-md">
+          Please check your internet connection and try again.
+        </p>
+        <button
+          onClick={() => window.location.reload()}
+          className="mt-4 px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
   return (
-    <div className="h-screen flex flex-col overflow-hidden">
+    <div className="h-screen flex flex-col overflow-hidden bg-background">
       <TopBar
         sidebarOpen={sidebarOpen}
         onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
         showSidebarToggle
       />
 
-      <div className="flex-1 flex overflow-hidden bg-background">
-        {/* Sidebar - Fixed width for consistency */}
+      {/* Offline banner */}
+      {showOfflineBanner && (
+        <div className="bg-destructive text-destructive-foreground px-4 py-2 text-sm flex items-center justify-center gap-2">
+          <AlertCircle className="w-4 h-4" />
+          <span>You are currently offline. Some features may be limited.</span>
+          <button
+            onClick={() => setShowOfflineBanner(false)}
+            className="ml-4 underline hover:no-underline"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
+      <div className="flex-1 flex overflow-hidden">
+        {/* Sidebar */}
         <aside
           className={`transition-all duration-300 ease-in-out border-r border-border bg-muted/30 flex-shrink-0 ${
             sidebarOpen ? 'w-80 2xl:w-96 opacity-100' : 'w-0 opacity-0'
-          } overflow-hidden md:block`}
+          } overflow-hidden`}
         >
           <ConversationHistory
             conversations={conversations}
@@ -168,8 +300,16 @@ const Chat = () => {
         </aside>
 
         {/* Chat Interface */}
-        <main className="flex-1 flex justify-center overflow-hidden">
-          <div className="w-full max-w-[1400px] 2xl:max-w-[1800px]">
+        <main className="flex-1 flex justify-center overflow-hidden relative">
+          {/* Subtle background pattern */}
+          <div className="absolute inset-0 opacity-[0.02] pointer-events-none">
+            <div className="absolute inset-0" style={{
+              backgroundImage: 'radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)',
+              backgroundSize: '40px 40px'
+            }} />
+          </div>
+
+          <div className="w-full max-w-[1400px] 2xl:max-w-[1800px] relative z-10">
             <ChatInterface
               key={key}
               agents={agents}
@@ -179,6 +319,14 @@ const Chat = () => {
             />
           </div>
         </main>
+      </div>
+
+      {/* Keyboard shortcuts hint */}
+      <div className="fixed bottom-4 right-4 text-xs text-muted-foreground bg-background/80 backdrop-blur-sm border rounded-lg px-3 py-2 hidden lg:block">
+        <div className="space-y-1">
+          <div><kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">Ctrl+B</kbd> Toggle sidebar</div>
+          <div><kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">Ctrl+N</kbd> New chat</div>
+        </div>
       </div>
     </div>
   );
