@@ -42,6 +42,8 @@ class SocketService {
   private activeRequests: Map<string, OrchestrationControl> = new Map();
   private heartbeatInterval: number | null = null;
   private connectionTimeout: number | null = null;
+  private autoConnect : false;
+  withCredentials: true;
   private onTokensRefreshed: ((tokens: { access_token: string; refresh_token: string }) => void) | null = null;
 
   /**
@@ -54,45 +56,36 @@ class SocketService {
   /**
    * Connect to socket server with enhanced security
    */
-  connect(token: string | null = null): Socket {
-    if (this.socket?.connected) return this.socket;
+connect(): Socket {
+  if (this.socket?.connected) return this.socket;
 
-    const SOCKET_URL = import.meta.env.VITE_API_BASE_URL;
+  const SOCKET_URL = import.meta.env.VITE_API_BASE_URL;
 
-    // Validate socket URL
-    if (!SOCKET_URL || !this.isValidUrl(SOCKET_URL)) {
-      throw new Error('Invalid socket URL configuration');
-    }
-
-    const opts: any = {
-      withCredentials: true,
-      transports: ['websocket', 'polling'],
-      reconnection: true,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
-      reconnectionAttempts: this.maxReconnectAttempts,
-      timeout: 10000,
-      upgrade: true,
-      rememberUpgrade: true,
-      secure: SOCKET_URL.startsWith('https'),
-      rejectUnauthorized: true,
-    };
-
-    if (token) {
-      // Validate token format before sending
-      if (!this.isValidToken(token)) {
-        throw new Error('Invalid authentication token format');
-      }
-      opts.auth = { token };
-    }
-
-    this.socket = io(SOCKET_URL, opts);
-
-    this.setupEventHandlers();
-    this.startHeartbeat();
-
-    return this.socket;
+  if (!SOCKET_URL || !this.isValidUrl(SOCKET_URL)) {
+    throw new Error('Invalid socket URL configuration');
   }
+
+  const opts: any = {
+    withCredentials: true, // ✅ this sends HttpOnly cookies automatically
+    transports: ['websocket', 'polling'],
+    reconnection: true,
+    reconnectionDelay: 1000,
+    reconnectionDelayMax: 5000,
+    reconnectionAttempts: this.maxReconnectAttempts,
+    timeout: 10000,
+    upgrade: true,
+    rememberUpgrade: true,
+    secure: SOCKET_URL.startsWith('https'),
+    rejectUnauthorized: true,
+  };
+
+  this.socket = io(SOCKET_URL, opts);
+  this.setupEventHandlers();
+  this.startHeartbeat();
+
+  return this.socket;
+}
+
 
   /**
    * Setup all socket event handlers

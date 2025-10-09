@@ -71,12 +71,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // User is logged in, initialize socket
     const initializeSocket = async () => {
       try {
-        const token = getAccessToken();
-        
-        if (!token) {
-          console.warn('[Auth] No access token found, cannot connect socket');
-          return;
-        }
+            // Tokens are handled by HttpOnly cookies, so no need to read them
+            socketService.connect();
+            console.log('[Auth] Socket connection initiated (using HttpOnly cookies)');
+
 
         // Setup token refresh callback BEFORE connecting
         socketService.setTokenRefreshCallback(handleTokensRefreshed);
@@ -140,7 +138,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         });
 
         // Connect to socket
-        socketService.connect(token);
+        socketService.connect();
         console.log('[Auth] Socket connection initiated');
 
       } catch (error) {
