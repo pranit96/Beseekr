@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useConversation } from '@/hooks/use-conversation';
 import useOrchestration from '@/hooks/use-orchestration';
 import { useAuth } from '@/contexts/AuthContext';
+import { Badge } from '@/components/ui/badge';
 
 export const ChatInterface: React.FC<{
   agents: Agent[];
@@ -385,7 +386,7 @@ export const ChatInterface: React.FC<{
     }
   };
 
-  const sendDisabled = isLoadingLocal || isExecuting || (!!rateLimitedUntil && Date.now() < rateLimitedUntil);
+  const sendDisabled = isLoadingLocal || isExecuting || (!!rateLimitedUntil && Date.now() < rateLimitedUntil) || !socketConnected;
 
   const quickPrompts = [
     "Explain this concept simply",
@@ -418,6 +419,29 @@ export const ChatInterface: React.FC<{
             </div>
           </>
         )}
+      </div>
+    );
+  };
+
+  // Selected Agents Display Component
+  const SelectedAgentsDisplay = () => {
+    if (selectedAgents.length === 0) return null;
+
+    return (
+      <div className="flex items-center gap-2 px-3 py-2 bg-primary/5 rounded-lg border border-primary/20">
+        <span className="text-xs font-medium text-primary whitespace-nowrap">Selected:</span>
+        <div className="flex flex-wrap gap-1">
+          {selectedAgents.map((agent, index) => (
+            <Badge 
+              key={agent.id} 
+              variant="secondary"
+              className="text-xs font-medium bg-primary/10 text-primary border-primary/20 hover:bg-primary/20"
+            >
+              {agent.name}
+              {selectedAgents.length > 1 && index < selectedAgents.length - 1 && ','}
+            </Badge>
+          ))}
+        </div>
       </div>
     );
   };
@@ -455,6 +479,9 @@ export const ChatInterface: React.FC<{
           </div>
 
           <div className="flex flex-col items-center gap-4 w-full max-w-4xl px-4">
+            {/* Selected Agents Display */}
+            <SelectedAgentsDisplay />
+
             {/* Input area */}
             <div className="w-full">
               <div className="relative flex items-center gap-3 rounded-xl bg-muted/50 border border-border/50 focus-within:border-primary transition px-4 py-3">
@@ -485,9 +512,9 @@ export const ChatInterface: React.FC<{
             </div>
 
             {/* Controls - All in one line with proper spacing */}
-            <div className="w-full flex items-center justify-between gap-3">
-              {/* Left side - Agent selector */}
-              <div className="flex-1 min-w-0">
+            <div className="w-full flex items-center gap-3">
+              {/* Agent selector */}
+              <div className="flex-1">
                 <AgentSelector 
                   agents={agents} 
                   selectedAgents={selectedAgents} 
@@ -495,26 +522,26 @@ export const ChatInterface: React.FC<{
                 />
               </div>
 
-              {/* Right side - Other controls */}
+              {/* Control buttons group */}
               <div className="flex items-center gap-2 flex-shrink-0">
                 <Button 
                   onClick={() => setWorkflowDialogOpen(true)} 
                   disabled={selectedAgents.length === 0} 
                   variant="outline" 
                   size="sm"
-                  className="gap-2 whitespace-nowrap min-w-[100px]"
+                  className="gap-2 whitespace-nowrap"
                 >
                   <Workflow className="w-4 h-4" /> 
                   <span className="hidden sm:inline">Design Flow</span>
                   <span className="sm:hidden">Flow</span>
                 </Button>
 
-                <div className="flex items-center gap-1 px-2 py-1 rounded-lg border bg-muted/30 min-w-[120px] justify-center">
+                <div className="flex items-center gap-1 px-2 py-1 rounded-lg border bg-muted/30">
                   {(['sequential', 'parallel'] as const).map(mode => (
                     <button 
                       key={mode} 
                       onClick={() => setExecutionMode(mode)} 
-                      className={`px-2 py-1.5 rounded-md text-xs font-medium transition whitespace-nowrap flex-1 text-center ${
+                      className={`px-2 py-1.5 rounded-md text-xs font-medium transition whitespace-nowrap ${
                         executionMode === mode 
                           ? 'bg-primary text-primary-foreground shadow-sm' 
                           : 'text-muted-foreground hover:text-foreground'
@@ -527,7 +554,7 @@ export const ChatInterface: React.FC<{
 
                 <button 
                   onClick={togglePrivateChat} 
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-xs font-medium transition whitespace-nowrap min-w-[80px] justify-center ${
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-xs font-medium transition whitespace-nowrap ${
                     saveToConversation 
                       ? 'bg-background border-border hover:bg-muted/50 text-muted-foreground' 
                       : 'bg-primary text-primary-foreground border-primary shadow-sm hover:bg-primary/90'
@@ -556,6 +583,9 @@ export const ChatInterface: React.FC<{
 
           <div className="sticky bottom-0 bg-background/95 backdrop-blur-sm p-3 sm:p-4 border-t border-border/50 space-y-3">
             <div className="max-w-5xl 2xl:max-w-6xl mx-auto w-full space-y-3">
+              {/* Selected Agents Display */}
+              <SelectedAgentsDisplay />
+
               {/* Text input */}
               <div className="relative flex items-center gap-2 sm:gap-3 rounded-xl bg-muted/50 border border-border/50 focus-within:border-primary transition px-3 sm:px-4 py-2 sm:py-3">
                 <Textarea 
@@ -598,9 +628,9 @@ export const ChatInterface: React.FC<{
               </div>
 
               {/* Controls - All in one line with proper spacing */}
-              <div className="flex items-center justify-between gap-3">
-                {/* Left side - Agent selector */}
-                <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-3">
+                {/* Agent selector */}
+                <div className="flex-1">
                   <AgentSelector 
                     agents={agents} 
                     selectedAgents={selectedAgents} 
@@ -608,26 +638,26 @@ export const ChatInterface: React.FC<{
                   />
                 </div>
 
-                {/* Right side - Other controls */}
+                {/* Control buttons group */}
                 <div className="flex items-center gap-2 flex-shrink-0">
                   <Button 
                     onClick={() => setWorkflowDialogOpen(true)} 
                     disabled={selectedAgents.length === 0} 
                     variant="outline" 
                     size="sm" 
-                    className="gap-2 whitespace-nowrap min-w-[100px]"
+                    className="gap-2 whitespace-nowrap"
                   >
                     <Workflow className="w-4 h-4" />
                     <span className="hidden sm:inline">Design Flow</span>
                     <span className="sm:hidden">Flow</span>
                   </Button>
 
-                  <div className="flex items-center gap-1 px-2 py-1 rounded-lg border bg-muted/30 min-w-[120px] justify-center">
+                  <div className="flex items-center gap-1 px-2 py-1 rounded-lg border bg-muted/30">
                     {(['sequential', 'parallel'] as const).map(mode => (
                       <button 
                         key={mode} 
                         onClick={() => setExecutionMode(mode)} 
-                        className={`px-2 py-1.5 rounded-md text-xs font-medium transition whitespace-nowrap flex-1 text-center ${
+                        className={`px-2 py-1.5 rounded-md text-xs font-medium transition whitespace-nowrap ${
                           executionMode === mode 
                             ? 'bg-primary text-primary-foreground shadow-sm' 
                             : 'text-muted-foreground hover:text-foreground'
@@ -640,7 +670,7 @@ export const ChatInterface: React.FC<{
 
                   <button 
                     onClick={togglePrivateChat} 
-                    className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-xs font-medium transition whitespace-nowrap min-w-[80px] justify-center ${
+                    className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-xs font-medium transition whitespace-nowrap ${
                       saveToConversation 
                         ? 'bg-background border-border hover:bg-muted/50 text-muted-foreground' 
                         : 'bg-primary text-primary-foreground border-primary shadow-sm hover:bg-primary/90'
