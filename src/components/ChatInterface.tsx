@@ -484,59 +484,60 @@ export const ChatInterface: React.FC<{
               </div>
             </div>
 
-            {/* Controls - Single row with wrapping on mobile */}
-            <div className="w-full flex flex-wrap items-center gap-2">
-              {/* Agent selector */}
-              <div className="flex-1 min-w-[200px]">
+            {/* Controls - Split into two groups */}
+            <div className="w-full flex items-center justify-between gap-3">
+              {/* Left side - Agent selector */}
+              <div className="flex-1 min-w-0">
                 <AgentSelector 
                   agents={agents} 
                   selectedAgents={selectedAgents} 
                   onAgentsChange={setSelectedAgents} 
                 />
               </div>
-              
-              {/* Workflow button */}
-              <Button 
-                onClick={() => setWorkflowDialogOpen(true)} 
-                disabled={selectedAgents.length === 0} 
-                variant="outline" 
-                size="sm"
-                className="gap-2 whitespace-nowrap"
-              >
-                <Workflow className="w-4 h-4" /> 
-                <span className="hidden sm:inline">Design Flow</span>
-                <span className="sm:hidden">Flow</span>
-              </Button>
 
-              {/* Mode toggle */}
-              <div className="flex items-center gap-1 px-2 py-1 rounded-lg border bg-muted/30">
-                {(['sequential', 'parallel'] as const).map(mode => (
-                  <button 
-                    key={mode} 
-                    onClick={() => setExecutionMode(mode)} 
-                    className={`px-2.5 py-1.5 rounded-md text-xs font-medium transition ${
-                      executionMode === mode 
-                        ? 'bg-primary text-primary-foreground shadow-sm' 
-                        : 'text-muted-foreground hover:text-foreground'
-                    }`}
-                  >
-                    {mode === 'sequential' ? 'Seq' : 'Par'}
-                  </button>
-                ))}
+              {/* Right side - Other controls */}
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <Button 
+                  onClick={() => setWorkflowDialogOpen(true)} 
+                  disabled={selectedAgents.length === 0} 
+                  variant="outline" 
+                  size="sm"
+                  className="gap-2 whitespace-nowrap"
+                >
+                  <Workflow className="w-4 h-4" /> 
+                  <span className="hidden sm:inline">Design Flow</span>
+                  <span className="sm:hidden">Flow</span>
+                </Button>
+
+                <div className="flex items-center gap-1 px-2 py-1 rounded-lg border bg-muted/30">
+                  {(['sequential', 'parallel'] as const).map(mode => (
+                    <button 
+                      key={mode} 
+                      onClick={() => setExecutionMode(mode)} 
+                      className={`px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium transition whitespace-nowrap ${
+                        executionMode === mode 
+                          ? 'bg-primary text-primary-foreground shadow-sm' 
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      <span className="hidden sm:inline">{mode.charAt(0).toUpperCase() + mode.slice(1)}</span>
+                      <span className="sm:hidden">{mode === 'sequential' ? 'Seq' : 'Par'}</span>
+                    </button>
+                  ))}
+                </div>
+
+                <button 
+                  onClick={togglePrivateChat} 
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs sm:text-sm font-medium transition whitespace-nowrap ${
+                    saveToConversation 
+                      ? 'bg-background border-border hover:bg-muted/50 text-muted-foreground' 
+                      : 'bg-primary text-primary-foreground border-primary shadow-sm hover:bg-primary/90'
+                  }`}
+                >
+                  {saveToConversation ? <LockOpen className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+                  <span>Private</span>
+                </button>
               </div>
-
-              {/* Private toggle */}
-              <button 
-                onClick={togglePrivateChat} 
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition whitespace-nowrap ${
-                  saveToConversation 
-                    ? 'bg-background border-border hover:bg-muted/50 text-muted-foreground' 
-                    : 'bg-primary text-primary-foreground border-primary shadow-sm hover:bg-primary/90'
-                }`}
-              >
-                {saveToConversation ? <LockOpen className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
-                <span>Private</span>
-              </button>
             </div>
           </div>
         </div>
@@ -555,63 +556,9 @@ export const ChatInterface: React.FC<{
           </div>
 
           <div className="sticky bottom-0 bg-background/95 backdrop-blur-sm p-3 sm:p-4 border-t border-border/50 space-y-3">
-            {/* Controls */}
-            <div className="max-w-5xl 2xl:max-w-6xl mx-auto w-full space-y-3">
-              {/* Agent selector and workflow button */}
-              <div className="flex items-center gap-2">
-                <div className="flex-1 min-w-0">
-                  <AgentSelector 
-                    agents={agents} 
-                    selectedAgents={selectedAgents} 
-                    onAgentsChange={setSelectedAgents} 
-                  />
-                </div>
-                <Button 
-                  onClick={() => setWorkflowDialogOpen(true)} 
-                  disabled={selectedAgents.length === 0} 
-                  variant="outline" 
-                  size="sm" 
-                  className="gap-2 whitespace-nowrap flex-shrink-0"
-                >
-                  <Workflow className="w-4 h-4" />
-                  <span className="hidden sm:inline">Design Flow</span>
-                </Button>
-              </div>
-
-              {/* Mode and private toggle */}
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2 px-2 py-1 rounded-lg border bg-muted/30 flex-shrink-0">
-                  {(['sequential', 'parallel'] as const).map(mode => (
-                    <button 
-                      key={mode} 
-                      onClick={() => setExecutionMode(mode)} 
-                      className={`px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium transition ${
-                        executionMode === mode 
-                          ? 'bg-primary text-primary-foreground shadow-sm' 
-                          : 'text-muted-foreground hover:text-foreground'
-                      }`}
-                    >
-                      {mode.charAt(0).toUpperCase() + mode.slice(1)}
-                    </button>
-                  ))}
-                </div>
-
-                <button 
-                  onClick={togglePrivateChat} 
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs sm:text-sm font-medium transition flex-shrink-0 ${
-                    saveToConversation 
-                      ? 'bg-background border-border hover:bg-muted/50 text-muted-foreground' 
-                      : 'bg-primary text-primary-foreground border-primary shadow-sm hover:bg-primary/90'
-                  }`}
-                >
-                  {saveToConversation ? <LockOpen className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
-                  <span>Private</span>
-                </button>
-              </div>
-            </div>
-
             {/* Input area */}
-            <div className="max-w-5xl 2xl:max-w-6xl mx-auto w-full">
+            <div className="max-w-5xl 2xl:max-w-6xl mx-auto w-full space-y-3">
+              {/* Text input */}
               <div className="relative flex items-center gap-2 sm:gap-3 rounded-xl bg-muted/50 border border-border/50 focus-within:border-primary transition px-3 sm:px-4 py-2 sm:py-3">
                 <Textarea 
                   ref={textareaRef}
@@ -652,8 +599,64 @@ export const ChatInterface: React.FC<{
                 </div>
               </div>
 
+              {/* Controls - Split into two groups */}
+              <div className="flex items-center justify-between gap-3">
+                {/* Left side - Agent selector */}
+                <div className="flex-1 min-w-0">
+                  <AgentSelector 
+                    agents={agents} 
+                    selectedAgents={selectedAgents} 
+                    onAgentsChange={setSelectedAgents} 
+                  />
+                </div>
+
+                {/* Right side - Other controls */}
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <Button 
+                    onClick={() => setWorkflowDialogOpen(true)} 
+                    disabled={selectedAgents.length === 0} 
+                    variant="outline" 
+                    size="sm" 
+                    className="gap-2 whitespace-nowrap"
+                  >
+                    <Workflow className="w-4 h-4" />
+                    <span className="hidden sm:inline">Design Flow</span>
+                    <span className="sm:hidden">Flow</span>
+                  </Button>
+
+                  <div className="flex items-center gap-1 px-2 py-1 rounded-lg border bg-muted/30">
+                    {(['sequential', 'parallel'] as const).map(mode => (
+                      <button 
+                        key={mode} 
+                        onClick={() => setExecutionMode(mode)} 
+                        className={`px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium transition whitespace-nowrap ${
+                          executionMode === mode 
+                            ? 'bg-primary text-primary-foreground shadow-sm' 
+                            : 'text-muted-foreground hover:text-foreground'
+                        }`}
+                      >
+                        <span className="hidden sm:inline">{mode.charAt(0).toUpperCase() + mode.slice(1)}</span>
+                        <span className="sm:hidden">{mode === 'sequential' ? 'Seq' : 'Par'}</span>
+                      </button>
+                    ))}
+                  </div>
+
+                  <button 
+                    onClick={togglePrivateChat} 
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs sm:text-sm font-medium transition whitespace-nowrap ${
+                      saveToConversation 
+                        ? 'bg-background border-border hover:bg-muted/50 text-muted-foreground' 
+                        : 'bg-primary text-primary-foreground border-primary shadow-sm hover:bg-primary/90'
+                    }`}
+                  >
+                    {saveToConversation ? <LockOpen className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+                    <span>Private</span>
+                  </button>
+                </div>
+              </div>
+
               {/* Status indicators */}
-              <div className="mt-2 min-h-[20px]">
+              <div className="min-h-[20px]">
                 {rateLimitedUntil && Date.now() < rateLimitedUntil ? (
                   <div className="text-xs text-destructive text-center animate-pulse">
                     Rate limit active — please wait {Math.ceil((rateLimitedUntil - Date.now()) / 1000)}s
