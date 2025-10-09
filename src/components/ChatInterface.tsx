@@ -385,7 +385,7 @@ export const ChatInterface: React.FC<{
     }
   };
 
-  const sendDisabled = isLoadingLocal || isExecuting || (!!rateLimitedUntil && Date.now() < rateLimitedUntil) || !socketConnected;
+  const sendDisabled = isLoadingLocal || isExecuting || (!!rateLimitedUntil && Date.now() < rateLimitedUntil);
 
   const quickPrompts = [
     "Explain this concept simply",
