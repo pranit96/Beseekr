@@ -1,19 +1,6 @@
 // src/hooks/use-orchestration.ts
-import { useEffect, useRef, useCallback } from 'react';
+import { useCallback } from 'react';
 import socketService from '@/services/socketService';
-import { useToast } from '@/hooks/use-toast';
-
-interface OrchestrationCallbacks {
-  onAck?: (data: any) => void;
-  onToken?: (agentId: string, token: string, raw?: any) => void;
-  onAgentDone?: (agentId: string, usage: any, raw?: any) => void;
-  onAgentError?: (agentId: string, error: any, raw?: any) => void;
-  onDone?: (data: any) => void;
-  onError?: (data: any) => void;
-  onWarning?: (data: any) => void;
-  onRateLimit?: (data: any) => void;
-  onCancelReady?: (cancelFn: () => void) => void;
-}
 
 interface OrchestrationPayload {
   agent_ids: string[];
@@ -24,165 +11,105 @@ interface OrchestrationPayload {
   [key: string]: any;
 }
 
+interface OrchestrationCallbacks {
+  onAck?: (data: any) => void;
+  onToken?: (agentId: string, token: string) => void;
+  onAgentDone?: (agentId: string, usage: any) => void;
+  onAgentError?: (agentId: string, error: any) => void;
+  onDone?: (data: any) => void;
+  onError?: (error: any) => void;
+  onWarning?: (data: any) => void;
+  onRateLimit?: (data: any) => void;
+  onCancelReady?: (cancelFn: () => void) => void;
+}
+
 const useOrchestration = () => {
-  const { toast } = useToast();
-  const isConnectedRef = useRef(false);
-  const reconnectTimeoutRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    // Setup connection status listeners
-    const handleConnectionStatus = (status: any) => {
-      isConnectedRef.current = status.connected;
+  /**
+   * Ensure socket is connected
+   */
+  const ensureConnected = useCallback(() => {
+    if (!socketService.isConnected()) {
+      console.warn('[useOrchestration] Socket not connected, attempting to reconnect...');
       
-      if (status.connected) {
-        console.log('[useOrchestration] Socket connected:', status.socketId);
+      // Try to get token from cookies
+      const getAccessToken = (): string | null => {
+        const cookies = document.cookie.split(';');
+        for (const cookie of cookies) {
+          const [name, value] = cookie.trim().split('=');
+          if (name === 'access_token') {
+            return decodeURIComponent(value);
+          }
+        }
+        return null;
+      };
+
+      const token = getAccessToken();
+      if (token) {
+        try {
+          socketService.connect(token);
+        } catch (error) {
+          console.error('[useOrchestration] Failed to reconnect socket:', error);
+          throw new Error('Failed to establish connection. Please refresh the page.');
+        }
       } else {
-        console.warn('[useOrchestration] Socket disconnected:', status.reason);
+        throw new Error('Authentication required. Please log in again.');
       }
-    };
-
-    const handleConnectionError = (error: any) => {
-      console.error('[useOrchestration] Connection error:', error);
-      toast({
-        title: 'Connection issue',
-        description: 'Having trouble connecting to the server. Retrying...',
-        variant: 'default',
-      });
-    };
-
-    const handleForcedDisconnect = (data: any) => {
-      toast({
-        title: 'Disconnected',
-        description: data.message || 'You have been disconnected from the server.',
-        variant: 'destructive',
-      });
-    };
-
-    const handleMaxReconnectAttempts = (data: any) => {
-      toast({
-        title: 'Connection failed',
-        description: data.message || 'Could not establish connection after multiple attempts.',
-        variant: 'destructive',
-      });
-    };
-
-    socketService.on('connection_status', handleConnectionStatus);
-    socketService.on('connection_error', handleConnectionError);
-    socketService.on('forced_disconnect', handleForcedDisconnect);
-    socketService.on('max_reconnect_attempts', handleMaxReconnectAttempts);
-
-    return () => {
-      socketService.off('connection_status', handleConnectionStatus);
-      socketService.off('connection_error', handleConnectionError);
-      socketService.off('forced_disconnect', handleForcedDisconnect);
-      socketService.off('max_reconnect_attempts', handleMaxReconnectAttempts);
-      
-      if (reconnectTimeoutRef.current) {
-        window.clearTimeout(reconnectTimeoutRef.current);
-      }
-    };
-  }, [toast]);
+    }
+  }, []);
 
   /**
-   * Ensure socket is connected before executing
+   * Execute orchestration
    */
-  const ensureConnected = useCallback((): Promise<boolean> => {
-    return new Promise((resolve) => {
-      if (socketService.isConnected()) {
-        resolve(true);
-        return;
-      }
-
+  const execute = useCallback((
+    payload: OrchestrationPayload,
+    callbacks: OrchestrationCallbacks = {}
+  ): Promise<any> => {
+    return new Promise((resolve, reject) => {
       try {
-        // Try to get token from storage for authentication
-        const token = sessionStorage.getItem('auth_token') || localStorage.getItem('auth_token');
-        socketService.connect(token);
+        // Ensure connection before execution
+        ensureConnected();
 
-        // Wait for connection with timeout
-        const timeout = setTimeout(() => {
-          resolve(false);
-        }, 5000);
+        const control = socketService.executeOrchestration(payload, {
+          onAck: (data) => {
+            callbacks.onAck?.(data);
+          },
+          onToken: (agentId, token, raw) => {
+            callbacks.onToken?.(agentId, token);
+          },
+          onAgentDone: (agentId, usage, raw) => {
+            callbacks.onAgentDone?.(agentId, usage);
+          },
+          onAgentError: (agentId, error, raw) => {
+            callbacks.onAgentError?.(agentId, error);
+          },
+          onWarning: (data) => {
+            callbacks.onWarning?.(data);
+          },
+          onRateLimit: (data) => {
+            callbacks.onRateLimit?.(data);
+          },
+          onDone: (data) => {
+            callbacks.onDone?.(data);
+            resolve(data);
+          },
+          onError: (error) => {
+            callbacks.onError?.(error);
+            reject(error);
+          },
+        });
 
-        const checkConnection = setInterval(() => {
-          if (socketService.isConnected()) {
-            clearInterval(checkConnection);
-            clearTimeout(timeout);
-            resolve(true);
-          }
-        }, 100);
-      } catch (error) {
-        console.error('[useOrchestration] Failed to connect:', error);
-        resolve(false);
+        // Provide cancel function to callback
+        if (callbacks.onCancelReady) {
+          callbacks.onCancelReady(control.cancel);
+        }
+
+      } catch (error: any) {
+        console.error('[useOrchestration] Execute error:', error);
+        callbacks.onError?.(error);
+        reject(error);
       }
     });
-  }, []);
-
-  /**
-   * Execute orchestration with promise-based API
-   */
-  const execute = useCallback(
-    (
-      payload: OrchestrationPayload,
-      callbacks: OrchestrationCallbacks = {}
-    ): Promise<{ ok: boolean; data?: any; error?: string }> => {
-      return new Promise((resolve, reject) => {
-        if (!socketService.isConnected()) {
-          const error = 'Socket not connected';
-          reject(new Error(error));
-          return;
-        }
-
-        try {
-          const control = socketService.executeOrchestration(payload, {
-            onAck: (data) => {
-              callbacks.onAck?.(data);
-            },
-            onToken: (agentId, token, raw) => {
-              callbacks.onToken?.(agentId, token, raw);
-            },
-            onAgentDone: (agentId, usage, raw) => {
-              callbacks.onAgentDone?.(agentId, usage, raw);
-            },
-            onAgentError: (agentId, error, raw) => {
-              callbacks.onAgentError?.(agentId, error, raw);
-            },
-            onWarning: (data) => {
-              callbacks.onWarning?.(data);
-            },
-            onRateLimit: (data) => {
-              callbacks.onRateLimit?.(data);
-            },
-            onDone: (data) => {
-              callbacks.onDone?.(data);
-              resolve({ ok: true, data });
-            },
-            onError: (data) => {
-              callbacks.onError?.(data);
-              resolve({ ok: false, error: data?.error || 'Orchestration failed' });
-            },
-          });
-
-          // Provide cancel function to caller
-          if (callbacks.onCancelReady) {
-            callbacks.onCancelReady(control.cancel);
-          }
-        } catch (error: any) {
-          console.error('[useOrchestration] Execute error:', error);
-          reject(error);
-        }
-      });
-    },
-    []
-  );
-
-  /**
-   * Cancel all active orchestrations
-   */
-  const cancelAll = useCallback(() => {
-    // The socket service will handle cancellation of all active requests
-    socketService.disconnect();
-    socketService.connect();
-  }, []);
+  }, [ensureConnected]);
 
   /**
    * Get connection status
@@ -194,17 +121,23 @@ const useOrchestration = () => {
   /**
    * Get active request count
    */
-  const getActiveCount = useCallback(() => {
+  const getActiveRequestCount = useCallback(() => {
     return socketService.getActiveRequestCount();
+  }, []);
+
+  /**
+   * Check if connected
+   */
+  const isConnected = useCallback(() => {
+    return socketService.isConnected();
   }, []);
 
   return {
     execute,
     ensureConnected,
-    cancelAll,
     getStatus,
-    getActiveCount,
-    isConnected: isConnectedRef.current,
+    getActiveRequestCount,
+    isConnected,
   };
 };
 

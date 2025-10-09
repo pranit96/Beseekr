@@ -1,4 +1,4 @@
-// src/services/socketService.ts
+// frontend src/services/socketService.ts
 import { io, Socket } from 'socket.io-client';
 
 interface ConnectionStatusData {
@@ -42,6 +42,14 @@ class SocketService {
   private activeRequests: Map<string, OrchestrationControl> = new Map();
   private heartbeatInterval: number | null = null;
   private connectionTimeout: number | null = null;
+  private onTokensRefreshed: ((tokens: { access_token: string; refresh_token: string }) => void) | null = null;
+
+  /**
+   * Set callback for when tokens are refreshed
+   */
+  setTokenRefreshCallback(callback: (tokens: { access_token: string; refresh_token: string }) => void): void {
+    this.onTokensRefreshed = callback;
+  }
 
   /**
    * Connect to socket server with enhanced security
@@ -64,7 +72,6 @@ class SocketService {
       reconnectionDelayMax: 5000,
       reconnectionAttempts: this.maxReconnectAttempts,
       timeout: 10000,
-      // Enhanced security options
       upgrade: true,
       rememberUpgrade: true,
       secure: SOCKET_URL.startsWith('https'),
@@ -104,6 +111,19 @@ class SocketService {
       });
     });
 
+    // Handle token refresh from server
+    this.socket.on('auth:tokens_refreshed', (data: { access_token: string; refresh_token: string }) => {
+      console.log('[SocketService] Received refreshed tokens from server');
+      
+      // Update cookies via callback (e.g., auth context)
+      if (this.onTokensRefreshed) {
+        this.onTokensRefreshed(data);
+      }
+      
+      // Emit event for other listeners
+      this._emitLocal('tokens_refreshed', data);
+    });
+
     this.socket.on('disconnect', (reason: string) => {
       this.connected = false;
       this.stopHeartbeat();
@@ -112,13 +132,22 @@ class SocketService {
       
       // Handle abnormal disconnects
       if (reason === 'io server disconnect') {
-        // Server forcefully disconnected, may need re-auth
         this.handleForcedDisconnect();
       }
     });
 
     this.socket.on('connect_error', (error: Error) => {
       this.reconnectAttempts++;
+      
+      // Check if it's an auth error
+      if (error.message === 'Unauthorized' || error.message.includes('token')) {
+        console.error('[SocketService] Authentication error:', error.message);
+        this._emitLocal('auth_error', { error: error.message });
+        
+        // Stop reconnecting on auth errors
+        this.disconnect();
+        return;
+      }
       
       if (this.reconnectAttempts >= this.maxReconnectAttempts) {
         this.handleMaxReconnectAttempts();
@@ -161,9 +190,7 @@ class SocketService {
    * Validate token format (basic check)
    */
   private isValidToken(token: string): boolean {
-    // Basic validation: not empty, reasonable length, no obvious injection
     if (!token || token.length < 10 || token.length > 1000) return false;
-    // Check for suspicious patterns
     if (/<script|javascript:|on\w+=/i.test(token)) return false;
     return true;
   }
@@ -179,7 +206,7 @@ class SocketService {
         this.socket.emit('ping');
         this.setConnectionTimeout();
       }
-    }, 25000); // Every 25 seconds
+    }, 25000);
   }
 
   /**
@@ -204,7 +231,7 @@ class SocketService {
         this.socket.disconnect();
         this.socket.connect();
       }
-    }, 10000); // 10 second timeout
+    }, 10000);
   }
 
   /**
@@ -290,24 +317,19 @@ class SocketService {
         continue;
       }
       
-      // Sanitize strings
       if (typeof value === 'string') {
-        // Remove potential script injections
         sanitized[key] = value.replace(/<script[^>]*>.*?<\/script>/gi, '')
                               .replace(/javascript:/gi, '')
                               .replace(/on\w+\s*=/gi, '');
       } 
-      // Sanitize arrays
       else if (Array.isArray(value)) {
         sanitized[key] = value.map(item => 
           typeof item === 'string' ? this.sanitizePayload({ item }).item : item
         );
       }
-      // Keep safe types
       else if (typeof value === 'number' || typeof value === 'boolean') {
         sanitized[key] = value;
       }
-      // Recursively sanitize objects
       else if (typeof value === 'object') {
         sanitized[key] = this.sanitizePayload(value);
       }
@@ -331,13 +353,11 @@ class SocketService {
       throw new Error('Socket is not in connected state. Please wait for connection.');
     }
 
-    // Sanitize payload
     const sanitizedPayload = this.sanitizePayload(payload);
     
     const requestId = sanitizedPayload.requestId || `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const fullPayload = { ...sanitizedPayload, requestId };
 
-    // Validate required fields
     if (!fullPayload.agent_ids || fullPayload.agent_ids.length === 0) {
       throw new Error('At least one agent_id is required');
     }
@@ -346,7 +366,7 @@ class SocketService {
       throw new Error('Message cannot be empty');
     }
 
-    // Setup per-request listeners with validation
+    // Setup per-request listeners
     const onAck = (data: any) => { 
       if (data.requestId === requestId) {
         callbacks.onAck?.(data); 
@@ -355,7 +375,6 @@ class SocketService {
     
     const onToken = (data: any) => { 
       if (data.requestId === requestId) {
-        // Validate token data
         if (data.agent_id && typeof data.token === 'string') {
           callbacks.onToken?.(data.agent_id, data.token, data);
         }
