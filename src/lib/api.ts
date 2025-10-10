@@ -22,6 +22,15 @@ class ApiClient {
     this.baseUrl = baseUrl;
   }
 
+  private async safeJson(response: Response) {
+    const ct = response.headers.get('content-type') || '';
+    if (ct.includes('application/json')) {
+      return response.json();
+    }
+    // empty or non-json responses -> return a minimal object
+    return {};
+  }
+
   private async request<T>(
     endpoint: string,
     options: RequestInit = {}
@@ -38,13 +47,18 @@ class ApiClient {
         credentials: 'include', // CRITICAL: Send cookies with every request
       });
 
-      const data = await response.json();
+      const data = await this.safeJson(response);
 
       if (!response.ok) {
         if (response.status === 401 && this.onUnauthorized) {
-          this.onUnauthorized();
+          try {
+            // call handler but don't await anything here — handler decides revalidation
+            this.onUnauthorized();
+          } catch (e) {
+            console.warn('[ApiClient] onUnauthorized handler threw', e);
+          }
         }
-        throw new Error(data.error || 'Request failed');
+        throw new Error((data && (data.error || data.message)) || 'Request failed');
       }
 
       return data;
@@ -87,11 +101,18 @@ class ApiClient {
     return this.request<any>('/api/auth/export');
   }
 
+  // Preserve existing deleteProfile API
   async deleteProfile(confirm_email: string) {
     return this.request<any>('/api/auth/profile', {
       method: 'DELETE',
       body: JSON.stringify({ confirm_email }),
     });
+  }
+
+  // Backwards-compatible alias required by AuthContext
+  async deleteAccount(confirm_email: string) {
+    // delegate to deleteProfile to avoid duplicating endpoints
+    return this.deleteProfile(confirm_email);
   }
 
   // Agent endpoints

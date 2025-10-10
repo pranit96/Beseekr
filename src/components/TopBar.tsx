@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Moon, Sun, User, LogOut, Settings, Menu, X, HelpCircle } from 'lucide-react';
+import { Moon, Sun, User, LogOut, Settings, Menu, X, HelpCircle, Circle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import {
@@ -22,17 +22,59 @@ const navigation = [
 
 interface TopBarProps {
   sidebarOpen?: boolean;
+  /**
+   * Preferred handler name used in the codebase: function to toggle sidebar visibility.
+   */
   onToggleSidebar?: () => void;
+  /**
+   * Backwards-compatible prop — some callers pass a setter directly.
+   * If provided, TopBar will call setSidebarOpen(!sidebarOpen) when toggling.
+   */
+  setSidebarOpen?: (open: boolean) => void;
   showSidebarToggle?: boolean;
+
+  /**
+   * NEW optional prop — indicates whether the user has any agents configured.
+   * Non-breaking: if not provided, no indicator will be displayed.
+   */
+  userHasAgents?: boolean;
 }
 
-export const TopBar = ({ sidebarOpen, onToggleSidebar, showSidebarToggle }: TopBarProps) => {
+export const TopBar = ({
+  sidebarOpen,
+  onToggleSidebar,
+  setSidebarOpen,
+  showSidebarToggle,
+  userHasAgents,
+}: TopBarProps) => {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const location = useLocation();
   const { theme, setTheme } = useTheme();
   const { user, logout } = useAuth();
 
   const toggleMobileNav = () => setMobileNavOpen((prev) => !prev);
+
+  const handleToggleSidebar = () => {
+    if (typeof onToggleSidebar === 'function') {
+      try {
+        onToggleSidebar();
+        return;
+      } catch (err) {
+        // swallow and fallback
+        // eslint-disable-next-line no-console
+        console.warn('[TopBar] onToggleSidebar threw', err);
+      }
+    }
+
+    if (typeof setSidebarOpen === 'function') {
+      try {
+        setSidebarOpen(!sidebarOpen);
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.warn('[TopBar] setSidebarOpen threw', err);
+      }
+    }
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-xl">
@@ -43,7 +85,7 @@ export const TopBar = ({ sidebarOpen, onToggleSidebar, showSidebarToggle }: TopB
             <Button
               variant="ghost"
               size="icon"
-              onClick={onToggleSidebar}
+              onClick={handleToggleSidebar}
               className="rounded-lg hover:bg-muted transition-all duration-300"
               aria-label="Toggle conversation history"
             >
@@ -116,6 +158,16 @@ export const TopBar = ({ sidebarOpen, onToggleSidebar, showSidebarToggle }: TopB
             {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           </Button>
 
+          {/* Agents indicator — only show when prop provided */}
+          {typeof userHasAgents !== 'undefined' && (
+            <div className="hidden sm:flex items-center gap-2 px-2 py-1 rounded-full border border-border bg-muted/10">
+              <Circle className={`w-3 h-3 ${userHasAgents ? 'text-green-500' : 'text-muted-foreground'}`} />
+              <span className="text-xs font-medium">
+                {userHasAgents ? 'Agents ready' : 'No agents'}
+              </span>
+            </div>
+          )}
+
           {/* Profile Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -184,3 +236,5 @@ export const TopBar = ({ sidebarOpen, onToggleSidebar, showSidebarToggle }: TopB
     </header>
   );
 };
+
+export default TopBar;
