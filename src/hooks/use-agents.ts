@@ -8,7 +8,7 @@ export const useAgents = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  const { user, isSessionValid } = useAuth();
+  const { user } = useAuth();
   const fetchingRef = useRef(false);
   const retryCountRef = useRef(0);
   const maxRetries = 3;
@@ -24,14 +24,6 @@ export const useAgents = () => {
     if (!user) {
       console.log('[useAgents] No user, skipping fetch');
       setAgents([]);
-      setLoading(false);
-      return;
-    }
-
-    // Check session validity
-    if (!isSessionValid()) {
-      console.warn('[useAgents] Session invalid, skipping fetch');
-      setError('Session expired');
       setLoading(false);
       return;
     }
@@ -86,7 +78,7 @@ export const useAgents = () => {
         fetchingRef.current = false;
       }
     }
-  }, [user, isSessionValid]);
+  }, [user]);
 
   // Manual reload function
   const reload = useCallback(async () => {
@@ -122,10 +114,7 @@ export const useAgents = () => {
   // Listen for focus events to refresh stale data
   useEffect(() => {
     const handleFocus = () => {
-      // Only refresh if user has been away for more than 5 minutes
-      const lastFetch = Date.now();
-      
-      if (user && isSessionValid()) {
+      if (user) {
         console.log('[useAgents] Window focused, checking if refresh needed');
         
         // Check if agents array is empty but should have data
@@ -138,7 +127,7 @@ export const useAgents = () => {
 
     window.addEventListener('focus', handleFocus);
     return () => window.removeEventListener('focus', handleFocus);
-  }, [user, isSessionValid, agents.length, loading, error, reload]);
+  }, [user, agents.length, loading, error, reload]);
 
   return { 
     agents, 

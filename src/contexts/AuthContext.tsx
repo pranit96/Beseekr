@@ -65,15 +65,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Check if session is still valid
   const isSessionValid = useCallback((): boolean => {
     // Check if user exists
-    if (!user) return false;
-
-    // Check if cookies exist
-    const hasAccessToken = document.cookie.includes('access_token');
-    if (!hasAccessToken) {
-      console.warn('[Auth] Access token cookie missing');
+    if (!user) {
       return false;
     }
 
+    // If using HttpOnly cookies, we can't access them via document.cookie
+    // So we trust that if user exists, session is valid
+    // The backend will return 401 if token is actually invalid
     return true;
   }, [user]);
 
@@ -130,16 +128,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    // Session health check interval
+    // Session health check interval - less aggressive
     sessionCheckIntervalRef.current = setInterval(() => {
       console.log('[Auth] Running periodic session check...');
       
-      if (!isSessionValid()) {
-        console.warn('[Auth] Session validation failed');
-        handleAuthError();
-        return;
-      }
-
       // If user has been inactive for 30 minutes, do a silent refresh
       const inactiveTime = Date.now() - lastActivityRef.current;
       if (inactiveTime > 30 * 60 * 1000) {
@@ -162,7 +154,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         clearInterval(tokenRefreshIntervalRef.current);
       }
     };
-  }, [user, isSessionValid, refreshAuth]);
+  }, [user, refreshAuth]);
 
   // Socket token refresh callback
   const handleTokensRefreshed = useCallback((tokens: { access_token: string; refresh_token: string }) => {

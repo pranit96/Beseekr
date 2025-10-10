@@ -30,7 +30,7 @@ const Chat = () => {
   const [retrying, setRetrying] = useState(false);
 
   const { agents, loading: loadingAgents, reload } = useAgents();
-  const { user, socketConnected, refreshAuth, isSessionValid } = useAuth();
+  const { user, socketConnected, refreshAuth } = useAuth();
   const { toast } = useToast();
 
   const fetchAttemptRef = useRef(0);
@@ -73,19 +73,15 @@ const Chat = () => {
     };
   }, [toast, user]);
 
-  // Monitor user session validity
+  // Monitor user session validity - less aggressive
   useEffect(() => {
     if (!user) return;
 
-    const checkSession = setInterval(() => {
-      if (!isSessionValid()) {
-        console.warn('[Chat] Session invalid, showing auth error');
-        setAuthError(true);
-      }
-    }, 10000); // Check every 10 seconds
-
-    return () => clearInterval(checkSession);
-  }, [user, isSessionValid]);
+    // Only check when making actual API calls, not on interval
+    // The API client will catch 401 errors
+    
+    return () => {};
+  }, [user]);
 
   // Load sidebar and conversation preferences
   useEffect(() => {
@@ -233,8 +229,12 @@ const Chat = () => {
       return;
     }
 
-    if (!isSessionValid()) {
-      await handleRetryAuth();
+    if (!user) {
+      toast({
+        title: 'Not authenticated',
+        description: 'Please log in to create a new session',
+        variant: 'destructive',
+      });
       return;
     }
 
@@ -257,17 +257,22 @@ const Chat = () => {
         });
       } else throw new Error('Could not create a new session');
     } catch (error: any) {
-      if (error.message?.includes('Session expired')) {
+      if (error.message?.includes('Session expired') || error.message?.includes('401')) {
         setAuthError(true);
+        toast({
+          title: 'Session expired',
+          description: 'Please refresh to continue',
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Failed to create new session',
+          description: error.message,
+          variant: 'destructive',
+        });
       }
-      
-      toast({
-        title: 'Failed to create new session',
-        description: error.message,
-        variant: 'destructive',
-      });
     }
-  }, [fetchConversations, toast, isOnline, isSessionValid, handleRetryAuth]);
+  }, [fetchConversations, toast, isOnline, user]);
 
   const handleConversationCreated = useCallback(
     async (conversationId: string) => {
