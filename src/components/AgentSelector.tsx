@@ -62,7 +62,6 @@ export const AgentSelector = ({
     return colors[hash % colors.length];
   };
 
-  // FIXED: Get selection order number (1-based)
   const getSelectionOrder = (agentId: string): number | null => {
     const index = selectedAgents.findIndex(a => a.id === agentId);
     return index >= 0 ? index + 1 : null;
@@ -78,6 +77,12 @@ export const AgentSelector = ({
   };
 
   const selectedCount = selectedAgents.length;
+
+  // Debug: Check if agents are actually being passed
+  console.log('AgentSelector - Total agents:', agents.length);
+  console.log('AgentSelector - Custom agents:', customAgents.length);
+  console.log('AgentSelector - Default agents:', defaultAgents.length);
+  console.log('AgentSelector - Selected agents:', selectedAgents.length);
 
   return (
     <Popover>
@@ -97,7 +102,7 @@ export const AgentSelector = ({
       </PopoverTrigger>
 
       <PopoverContent className="w-[680px] max-w-[95vw] p-4 glass" align="start">
-        <div className="space-y-3">
+        <div className="space-y-4">
           <div className="flex items-center justify-between gap-3">
             <div className="flex-1">
               <h4 className="font-medium text-sm">Select Agents</h4>
@@ -120,7 +125,7 @@ export const AgentSelector = ({
           {filteredCustomAgents.length > 0 && (
             <div>
               <h5 className="text-xs font-semibold text-muted-foreground mb-2">Your agents</h5>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
                 {filteredCustomAgents.map((agent) => {
                   const selectionOrder = getSelectionOrder(agent.id);
                   const isSelected = selectionOrder !== null;
@@ -129,30 +134,28 @@ export const AgentSelector = ({
                     <button
                       key={agent.id}
                       onClick={() => toggleAgent(agent)}
-                      className={`relative p-3 rounded-lg text-left border transition-smooth flex flex-col justify-between h-26 ${
+                      className={`relative p-3 rounded-lg border transition-smooth flex items-start gap-2 min-h-[80px] w-full ${
                         isSelected 
                           ? 'bg-primary/10 border-primary/30 shadow-sm ring-2 ring-primary/20' 
                           : 'hover:bg-muted/40 border-border'
                       }`}
                     >
-                      {/* FIXED: Selection order badge */}
                       {isSelected && (
                         <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center shadow-md border-2 border-background z-10">
                           {selectionOrder}
                         </div>
                       )}
                       
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="w-3 h-3 rounded-full shrink-0"
-                          style={{ backgroundColor: getAgentColor(agent.id) }}
-                        />
-                        <div className="min-w-0">
-                          <div className="text-sm font-medium truncate">{agent.name}</div>
-                          <div className="text-xs text-muted-foreground truncate">{agent.description}</div>
+                      <div
+                        className="w-3 h-3 rounded-full shrink-0 mt-1"
+                        style={{ backgroundColor: getAgentColor(agent.id) }}
+                      />
+                      <div className="flex-1 min-w-0 text-left">
+                        <div className="text-sm font-medium truncate">{agent.name}</div>
+                        <div className="text-xs text-muted-foreground line-clamp-2">
+                          {agent.description}
                         </div>
                       </div>
-                      {isSelected && <Check className="w-4 h-4 text-primary self-end mt-2" />}
                     </button>
                   );
                 })}
@@ -160,18 +163,18 @@ export const AgentSelector = ({
             </div>
           )}
 
-          {/* Default agents (grouped visually in a responsive grid) */}
+          {/* Default agents */}
           <div>
             <h5 className="text-xs font-semibold text-muted-foreground mb-2">Default agents</h5>
-            {filteredDefaultAgents.length === 0 && defaultAgents.length > 0 ? (
+            {filteredDefaultAgents.length === 0 && searchQuery ? (
               <div className="text-center py-4">
                 <p className="text-sm text-muted-foreground">No agents match your search</p>
                 <p className="text-xs text-muted-foreground mt-1">Try a different search term</p>
               </div>
-            ) : filteredDefaultAgents.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No agents available</p>
+            ) : filteredDefaultAgents.length === 0 && !searchQuery ? (
+              <p className="text-sm text-muted-foreground">No default agents available</p>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
                 {filteredDefaultAgents.map((agent) => {
                   const selectionOrder = getSelectionOrder(agent.id);
                   const isSelected = selectionOrder !== null;
@@ -180,13 +183,12 @@ export const AgentSelector = ({
                     <button
                       key={agent.id}
                       onClick={() => toggleAgent(agent)}
-                      className={`relative p-3 rounded-lg text-left border transition-smooth flex items-center gap-3 ${
+                      className={`relative p-3 rounded-lg border transition-smooth flex items-start gap-2 min-h-[80px] w-full ${
                         isSelected 
                           ? 'bg-primary/10 border-primary/30 shadow-sm ring-2 ring-primary/20' 
                           : 'hover:bg-muted/40 border-border'
                       }`}
                     >
-                      {/* FIXED: Selection order badge */}
                       {isSelected && (
                         <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center shadow-md border-2 border-background z-10">
                           {selectionOrder}
@@ -194,20 +196,28 @@ export const AgentSelector = ({
                       )}
                       
                       <div
-                        className="w-3 h-3 rounded-full shrink-0"
+                        className="w-3 h-3 rounded-full shrink-0 mt-1"
                         style={{ backgroundColor: getAgentColor(agent.id) }}
                       />
-                      <div className="min-w-0">
+                      <div className="flex-1 min-w-0 text-left">
                         <div className="text-sm font-medium truncate">{agent.name}</div>
-                        <div className="text-xs text-muted-foreground truncate">{agent.description}</div>
+                        <div className="text-xs text-muted-foreground line-clamp-2">
+                          {agent.description}
+                        </div>
                       </div>
-                      {isSelected && <Check className="w-4 h-4 text-primary ml-auto" />}
                     </button>
                   );
                 })}
               </div>
             )}
           </div>
+
+          {/* Debug info - remove in production */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="text-xs text-muted-foreground border-t pt-2 mt-2">
+              Debug: {agents.length} total agents, {selectedAgents.length} selected
+            </div>
+          )}
         </div>
       </PopoverContent>
     </Popover>
