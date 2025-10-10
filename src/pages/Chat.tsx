@@ -320,14 +320,6 @@ const Chat = () => {
           </div>
         </main>
       </div>
-
-      {/* Keyboard shortcuts hint */}
-      <div className="fixed bottom-4 right-4 text-xs text-muted-foreground bg-background/80 backdrop-blur-sm border rounded-lg px-3 py-2 hidden lg:block">
-        <div className="space-y-1">
-          <div><kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">Ctrl+B</kbd> Toggle sidebar</div>
-          <div><kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">Ctrl+N</kbd> New chat</div>
-        </div>
-      </div>
     </div>
   );
 };
