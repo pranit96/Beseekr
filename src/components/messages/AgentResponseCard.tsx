@@ -201,10 +201,14 @@ const AgentResponseCard: React.FC<Props> = ({ response, index, onForkAgent, onRe
           </div>
         ) : (
           // Success - render markdown
-          <div className="text-sm">
-            <MarkdownRenderer 
-              content={response.content || ''} 
+          // Success - render markdown
+          <div className="bg-muted/10 rounded-lg p-4 text-sm">
+            <MarkdownRenderer
+              content={response.content || ''}
               className="leading-relaxed"
+              showToc={false}     // disable ToC for chat (optional)
+              enableCopy={true}   // keep copy buttons for code
+              maxHeight="none"    // allow full scroll-free render
             />
           </div>
         )}
