@@ -1,3 +1,4 @@
+// src/components/AgentSelector.tsx
 import { useState, useMemo } from 'react';
 import { Agent } from '@/types/agent';
 import { Button } from '@/components/ui/button';
@@ -9,13 +10,6 @@ import {
 import { Users, Check, Search } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-
-/**
- * AgentSelector
- * - Shows user-custom agents pinned at the top (keeps them out of domain grouping)
- * - Uses a responsive grid (1 → 4 columns) to make use of large screen space
- * - Selected agents are sorted to the top
- */
 
 interface AgentSelectorProps {
   agents: Agent[];
@@ -30,7 +24,6 @@ export const AgentSelector = ({
 }: AgentSelectorProps) => {
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Fixed: Use the agents array directly without relying on findIndex for colors
   const customAgents = useMemo(() => agents.filter(a => !a.is_default), [agents]);
   const defaultAgents = useMemo(() => agents.filter(a => a.is_default), [agents]);
 
@@ -57,7 +50,6 @@ export const AgentSelector = ({
     );
   }, [customAgents, searchQuery]);
 
-  // Fixed: Simple color assignment that doesn't rely on findIndex
   const getAgentColor = (agentId: string) => {
     const colors = [
       'hsl(var(--agent-1))',
@@ -66,9 +58,14 @@ export const AgentSelector = ({
       'hsl(var(--agent-4))',
       'hsl(var(--agent-5))'
     ];
-    // Simple hash-based color assignment that works consistently
     const hash = agentId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
     return colors[hash % colors.length];
+  };
+
+  // FIXED: Get selection order number (1-based)
+  const getSelectionOrder = (agentId: string): number | null => {
+    const index = selectedAgents.findIndex(a => a.id === agentId);
+    return index >= 0 ? index + 1 : null;
   };
 
   const toggleAgent = (agent: Agent) => {
@@ -104,7 +101,7 @@ export const AgentSelector = ({
           <div className="flex items-center justify-between gap-3">
             <div className="flex-1">
               <h4 className="font-medium text-sm">Select Agents</h4>
-              <p className="text-xs text-muted-foreground">Pin your custom agents and then pick defaults.</p>
+              <p className="text-xs text-muted-foreground">Choose agents and see their execution order</p>
             </div>
             <div className="w-72">
               <div className="relative">
@@ -125,15 +122,26 @@ export const AgentSelector = ({
               <h5 className="text-xs font-semibold text-muted-foreground mb-2">Your agents</h5>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
                 {filteredCustomAgents.map((agent) => {
-                  const isSelected = selectedAgents.some((a) => a.id === agent.id);
+                  const selectionOrder = getSelectionOrder(agent.id);
+                  const isSelected = selectionOrder !== null;
+                  
                   return (
                     <button
                       key={agent.id}
                       onClick={() => toggleAgent(agent)}
-                      className={`p-3 rounded-lg text-left border transition-smooth flex flex-col justify-between h-26 ${
-                        isSelected ? 'bg-primary/5 border-primary/20' : 'hover:bg-muted/40'
+                      className={`relative p-3 rounded-lg text-left border transition-smooth flex flex-col justify-between h-26 ${
+                        isSelected 
+                          ? 'bg-primary/10 border-primary/30 shadow-sm ring-2 ring-primary/20' 
+                          : 'hover:bg-muted/40 border-border'
                       }`}
                     >
+                      {/* FIXED: Selection order badge */}
+                      {isSelected && (
+                        <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center shadow-md border-2 border-background z-10">
+                          {selectionOrder}
+                        </div>
+                      )}
+                      
                       <div className="flex items-center gap-2">
                         <div
                           className="w-3 h-3 rounded-full shrink-0"
@@ -165,15 +173,26 @@ export const AgentSelector = ({
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
                 {filteredDefaultAgents.map((agent) => {
-                  const isSelected = selectedAgents.some((a) => a.id === agent.id);
+                  const selectionOrder = getSelectionOrder(agent.id);
+                  const isSelected = selectionOrder !== null;
+                  
                   return (
                     <button
                       key={agent.id}
                       onClick={() => toggleAgent(agent)}
-                      className={`p-3 rounded-lg text-left border transition-smooth flex items-center gap-3 ${
-                        isSelected ? 'bg-primary/5 border-primary/20' : 'hover:bg-muted/40'
+                      className={`relative p-3 rounded-lg text-left border transition-smooth flex items-center gap-3 ${
+                        isSelected 
+                          ? 'bg-primary/10 border-primary/30 shadow-sm ring-2 ring-primary/20' 
+                          : 'hover:bg-muted/40 border-border'
                       }`}
                     >
+                      {/* FIXED: Selection order badge */}
+                      {isSelected && (
+                        <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center shadow-md border-2 border-background z-10">
+                          {selectionOrder}
+                        </div>
+                      )}
+                      
                       <div
                         className="w-3 h-3 rounded-full shrink-0"
                         style={{ backgroundColor: getAgentColor(agent.id) }}

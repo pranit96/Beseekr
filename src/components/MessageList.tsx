@@ -51,7 +51,7 @@ const MessageList: React.FC<MessageListProps> = ({
     }
   };
 
-  const formatTimestamp = (date: Date) => {
+  const formatTimestamp = (date: Date | string) => {
     return new Intl.DateTimeFormat('en-US', {
       hour: '2-digit',
       minute: '2-digit',
@@ -108,24 +108,25 @@ const MessageList: React.FC<MessageListProps> = ({
                 </p>
               ) : (
                 <div className="space-y-4">
-                  {/* Agent responses */}
-                  {message.agentResponses?.map((response, idx) => (
-                    <div key={idx} className="space-y-2">
-                      <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                        <span className="font-semibold text-foreground">
-                          {response.agentName}
-                        </span>
-                        {getStatusIcon(response.status)}
-                        {response.metadata?.usage && (
-                          <span className="text-xs">
-                            ({response.metadata.usage.total_tokens || 0} tokens)
+                  {/* FIXED: Only show agent responses, avoid duplication */}
+                  {message.agentResponses && message.agentResponses.length > 0 ? (
+                    message.agentResponses.map((response, idx) => (
+                      <div key={idx} className="space-y-2">
+                        <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                          <span className="font-semibold text-foreground">
+                            {response.agentName}
                           </span>
-                        )}
-                      </div>
+                          {getStatusIcon(response.status)}
+                          {response.metadata?.usage && (
+                            <span className="text-xs">
+                              ({response.metadata.usage.total_tokens || 0} tokens)
+                            </span>
+                          )}
+                        </div>
 
-                      {response.content && (
-                        <div className="prose prose-sm dark:prose-invert max-w-none">
-                          <ReactMarkdown
+                        {response.content && (
+                          <div className="prose prose-sm dark:prose-invert max-w-none">
+                            <ReactMarkdown
                               remarkPlugins={[remarkGfm]}
                               components={{
                                 code({
@@ -161,23 +162,27 @@ const MessageList: React.FC<MessageListProps> = ({
                             >
                               {response.content}
                             </ReactMarkdown>
+                          </div>
+                        )}
 
-                        </div>
-                      )}
+                        {response.status === 'pending' && !response.content && (
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                            <span>Processing...</span>
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  ) : null}
 
-                      {response.status === 'pending' && !response.content && (
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <Loader2 className="w-3 h-3 animate-spin" />
-                          <span>Processing...</span>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-
-                  {/* Final output if available */}
-                  {message.finalOutput && (
+                  {/* FIXED: Only show finalOutput if it exists and is different from agent responses */}
+                  {message.finalOutput && 
+                   (!message.agentResponses || 
+                    message.agentResponses.length === 0 || 
+                    !message.agentResponses.some(r => r.content === message.finalOutput)) && (
                     <div className="prose prose-sm dark:prose-invert max-w-none pt-2 border-t">
-                     <ReactMarkdown
+                      <div className="text-xs font-semibold text-muted-foreground mb-2">Final Summary</div>
+                      <ReactMarkdown
                         remarkPlugins={[remarkGfm]}
                         components={{
                           code({
@@ -213,7 +218,6 @@ const MessageList: React.FC<MessageListProps> = ({
                       >
                         {message.finalOutput}
                       </ReactMarkdown>
-
                     </div>
                   )}
                 </div>
@@ -234,7 +238,7 @@ const MessageList: React.FC<MessageListProps> = ({
 
               {/* Action buttons */}
               <div className="flex items-center gap-1">
-                {message.type === 'agent' && message.content && (
+                {message.type === 'agent' && (message.content || message.agentResponses) && (
                   <Button
                     variant="ghost"
                     size="sm"

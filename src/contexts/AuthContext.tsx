@@ -45,10 +45,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Helper to update cookies when tokens are refreshed
   const handleTokensRefreshed = (tokens: { access_token: string; refresh_token: string }) => {
     console.log('[Auth] Socket tokens refreshed successfully');
-    
-    // Tokens are already updated as httpOnly cookies by the server
-    // Just show a silent success or update any client-side state if needed
-    
     // Optionally show a subtle notification
     toast({
       title: 'Session refreshed',
@@ -73,9 +69,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       try {
             // Tokens are handled by HttpOnly cookies, so no need to read them
             socketService.connect();
-            console.log('[Auth] Socket connection initiated (using HttpOnly cookies)');
-
-
+          
         // Setup token refresh callback BEFORE connecting
         socketService.setTokenRefreshCallback(handleTokensRefreshed);
 
