@@ -12,6 +12,7 @@ import { useConversation } from '@/hooks/use-conversation';
 import useOrchestration from '@/hooks/use-orchestration';
 import { useAuth } from '@/contexts/AuthContext';
 import { Badge } from '@/components/ui/badge';
+import { useLogging } from '@/hooks/use-logging';
 
 export const ChatInterface: React.FC<{
   agents: Agent[];
@@ -39,6 +40,7 @@ export const ChatInterface: React.FC<{
 
   const { toast } = useToast();
   const { socketConnected } = useAuth();
+  const { debug, info, warn, error: logError } = useLogging('ChatInterface');
 
   // conversation hook
   const {
@@ -57,11 +59,14 @@ export const ChatInterface: React.FC<{
 
   // Monitor connection status from auth context
   useEffect(() => {
+    debug('Connection status changed', { socketConnected });
     setConnectionStatus(socketConnected ? 'connected' : 'disconnected');
-  }, [socketConnected]);
+  }, [socketConnected, debug]);
 
   // Also monitor from orchestration hook
   useEffect(() => {
+    debug('Starting connection status monitoring');
+    
     const checkConnection = setInterval(() => {
       const status = getStatus();
       if (!socketConnected) {
@@ -71,33 +76,43 @@ export const ChatInterface: React.FC<{
       }
     }, 2000);
 
-    return () => clearInterval(checkConnection);
-  }, [getStatus, socketConnected]);
+    return () => {
+      debug('Cleaning up connection monitoring');
+      clearInterval(checkConnection);
+    };
+  }, [getStatus, socketConnected, debug]);
 
   // Auto-focus textarea
   useEffect(() => {
     if (!isExecuting && textareaRef.current) {
       textareaRef.current.focus();
+      debug('Textarea auto-focused', { isExecuting, hasStarted });
     }
-  }, [isExecuting, hasStarted]);
+  }, [isExecuting, hasStarted, debug]);
 
   // cleanup rate-limit timer
   useEffect(() => {
     return () => {
       if (rateLimitTimerRef.current) {
+        debug('Cleaning up rate limit timer');
         window.clearInterval(rateLimitTimerRef.current);
         rateLimitTimerRef.current = null;
       }
     };
-  }, []);
+  }, [debug]);
 
   // sync prop -> internal conversationId
   useEffect(() => {
+    debug('Syncing conversation ID', { activeConversationId });
     setConversationId(activeConversationId ?? null);
-    if (activeConversationId) loadConversationMessages(activeConversationId);
-  }, [activeConversationId, loadConversationMessages, setConversationId]);
+    if (activeConversationId) {
+      debug('Loading conversation messages', { conversationId: activeConversationId });
+      loadConversationMessages(activeConversationId);
+    }
+  }, [activeConversationId, loadConversationMessages, setConversationId, debug]);
 
   const startRateLimitCountdown = (retryAfterSeconds: number) => {
+    debug('Starting rate limit countdown', { retryAfterSeconds });
     const until = Date.now() + retryAfterSeconds * 1000;
     setRateLimitedUntil(until);
     if (rateLimitTimerRef.current) {
@@ -106,6 +121,7 @@ export const ChatInterface: React.FC<{
     }
     rateLimitTimerRef.current = window.setInterval(() => {
       if (Date.now() >= until) {
+        debug('Rate limit expired');
         setRateLimitedUntil(null);
         if (rateLimitTimerRef.current) {
           window.clearInterval(rateLimitTimerRef.current);
@@ -116,9 +132,13 @@ export const ChatInterface: React.FC<{
   };
 
   const handleSubmit = async () => {
-    if (!input.trim()) return;
+    if (!input.trim()) {
+      debug('Submit attempted with empty input');
+      return;
+    }
     
     if (selectedAgents.length === 0) {
+      warn('No agents selected for message submission');
       toast({ 
         title: 'No agents selected', 
         description: 'Please select at least one agent before sending a message.', 
@@ -128,6 +148,7 @@ export const ChatInterface: React.FC<{
     }
 
     if (!socketConnected) {
+      warn('Message submission attempted without socket connection');
       toast({
         title: 'Not connected',
         description: 'Please wait for connection to establish.',
@@ -137,6 +158,7 @@ export const ChatInterface: React.FC<{
     }
 
     if (rateLimitedUntil && Date.now() < rateLimitedUntil) {
+      warn('Rate limited submission attempted', { rateLimitedUntil });
       toast({ 
         title: 'Rate limited', 
         description: 'Please wait before sending another orchestration.', 
@@ -146,6 +168,12 @@ export const ChatInterface: React.FC<{
     }
 
     // Start execution immediately
+    debug('Starting message execution', { 
+      messageLength: input.length, 
+      selectedAgents: selectedAgents.map(a => a.name),
+      executionMode 
+    });
+    
     setIsExecuting(true);
     setHasStarted(true);
     
@@ -188,6 +216,11 @@ export const ChatInterface: React.FC<{
     };
 
     // Add both messages immediately to show UI
+    debug('Adding user and agent messages to UI', { 
+      userMessageId: userMessage.id, 
+      agentMessageId 
+    });
+    
     setMessages(prev => [...prev, userMessage, agentMessage]);
     setIsLoadingLocal(true);
 
@@ -196,6 +229,7 @@ export const ChatInterface: React.FC<{
 
       // Create conversation if needed (only once)
       if (saveToConversation && !convId && !isCreatingConversationRef.current) {
+        debug('Creating new conversation for message');
         isCreatingConversationRef.current = true;
         
         try {
@@ -209,6 +243,7 @@ export const ChatInterface: React.FC<{
             title = title.substring(0, 47) + '...';
           }
           
+          debug('Calling API to create conversation', { title });
           const createRes = await apiClient.createConversation({
             agent_id: selectedAgents[0]?.id || null,
             title: title, 
@@ -216,12 +251,15 @@ export const ChatInterface: React.FC<{
 
           if (createRes.success && createRes.data?.id) {
             convId = createRes.data.id;
+            debug('Conversation created successfully', { conversationId: convId });
             setConversationId(convId);
             onConversationChange?.(convId);
             onConversationCreated?.(convId);
+          } else {
+            warn('Failed to create conversation', { response: createRes });
           }
         } catch (err) {
-          console.error('[Chat] Failed to create conversation:', err);
+          logError('Failed to create conversation', err as Error);
           // Continue without conversation saving
         } finally {
           isCreatingConversationRef.current = false;
@@ -235,17 +273,27 @@ export const ChatInterface: React.FC<{
         save_to_conversation: saveToConversation,
       };
 
-      if (saveToConversation && convId) payload.conversation_id = convId;
+      if (saveToConversation && convId) {
+        payload.conversation_id = convId;
+        debug('Including conversation ID in payload', { conversationId: convId });
+      }
 
       ensureConnected();
       cancelRef.current = null;
 
+      debug('Executing orchestration with payload', { 
+        agentCount: selectedAgents.length,
+        executionMode,
+        saveToConversation 
+      });
+
       // Execute orchestration
       await execute(payload, {
         onAck: (d: any) => { 
-          console.log('[Chat] Orchestration acknowledged', d);
+          info('Orchestration acknowledged', d);
         },
         onToken: (agentId: string, token: string) => {
+          debug('Received token for agent', { agentId, tokenLength: token.length });
           // Update immediately for smooth streaming
           setMessages(prev => prev.map(m => {
             if (m.id !== agentMessageId) return m;
@@ -263,6 +311,7 @@ export const ChatInterface: React.FC<{
           }));
         },
         onAgentDone: (agentId: string, usage: any) => {
+          info('Agent execution completed', { agentId, usage });
           setMessages(prev => prev.map(m => {
             if (m.id !== agentMessageId) return m;
             return {
@@ -276,7 +325,7 @@ export const ChatInterface: React.FC<{
           }));
         },
         onAgentError: (agentId: string, errorMsg: any) => {
-          console.error('[Chat] Agent error:', agentId, errorMsg);
+          logError('Agent execution failed', new Error(`Agent ${agentId}: ${errorMsg}`));
           setMessages(prev => prev.map(m => {
             if (m.id !== agentMessageId) return m;
             return {
@@ -290,10 +339,11 @@ export const ChatInterface: React.FC<{
           }));
         },
         onWarning: (warn: any) => {
-          console.warn('[Chat] Warning:', warn);
+          warn('Orchestration warning received', warn);
         },
         onRateLimit: (rl: any) => {
           const retry = Number(rl?.retryAfter ?? rl?.retry_after ?? rl?.retry ?? 10);
+          warn('Rate limit encountered', { retryAfter: retry, details: rl });
           startRateLimitCountdown(retry);
           toast({ 
             title: 'Rate limit', 
@@ -302,10 +352,14 @@ export const ChatInterface: React.FC<{
           });
         },
         onCancelReady: (cancelFn: () => void) => {
+          debug('Cancel function ready');
           cancelRef.current = cancelFn;
         },
         onDone: (doneData: any) => {
-          console.log('[Chat] Orchestration completed', doneData);
+          info('Orchestration completed successfully', { 
+            agentCount: selectedAgents.length,
+            hasFinalOutput: !!doneData.final_markdown 
+          });
           setMessages(prev => prev.map(m => {
             if (m.id !== agentMessageId) return m;
             const updatedResponses = m.agentResponses?.map(ar => 
@@ -321,13 +375,13 @@ export const ChatInterface: React.FC<{
           }));
         },
         onError: (err: any) => {
-          console.error('[Chat] Orchestration error:', err);
-          
           // Don't show rate limit errors as execution failures
           if (err?.error?.includes('rate') || err?.error?.includes('Too many')) {
+            debug('Rate limit error in orchestration', { error: err.error });
             return;
           }
           
+          logError('Orchestration execution failed', err);
           setMessages(prev => prev.map(m => {
             if (m.id !== agentMessageId) return m;
             return {
@@ -349,7 +403,7 @@ export const ChatInterface: React.FC<{
       });
 
     } catch (err: any) {
-      console.error('[Chat] Submit error:', err);
+      logError('Message submission failed', err);
       
       // Don't show rate limit errors
       if (!err?.message?.includes('rate') && !err?.message?.includes('Too many')) {
@@ -360,6 +414,7 @@ export const ChatInterface: React.FC<{
         });
       }
     } finally {
+      debug('Message execution completed', { isExecuting: false });
       setIsExecuting(false);
       setIsLoadingLocal(false);
       cancelRef.current = null;
@@ -368,39 +423,53 @@ export const ChatInterface: React.FC<{
 
   const handleCancelExecution = () => {
     if (cancelRef.current) {
+      debug('User requested execution cancellation');
       try {
         cancelRef.current();
+        info('Orchestration cancelled by user');
         toast({ 
           title: 'Cancelled', 
           description: 'Orchestration cancelled by user', 
           variant: 'default' 
         });
       } catch (e) { 
-        console.error('[Chat] Cancel error:', e);
+        logError('Failed to cancel execution', e as Error);
       }
       cancelRef.current = null;
       setIsExecuting(false);
+    } else {
+      debug('Cancel requested but no cancel function available');
     }
   };
 
-  const handleWorkflowConfirm = (ordered: Agent[]) => setSelectedAgents(ordered);
+  const handleWorkflowConfirm = (ordered: Agent[]) => {
+    debug('Workflow confirmed', { agents: ordered.map(a => a.name) });
+    setSelectedAgents(ordered);
+  };
 
   const handleRetryMessage = useCallback(async (messageId: string) => {
+    debug('Retrying message', { messageId });
     const messageIndex = messages.findIndex(m => m.id === messageId);
     if (messageIndex > 0) {
       const previousMessage = messages[messageIndex - 1];
       if (previousMessage.type === 'user') {
         setInput(previousMessage.content);
+        info('Previous message loaded for retry', { messageId });
         toast({
           title: 'Message loaded',
           description: 'You can edit and resend the message',
         });
+      } else {
+        debug('No user message found before the specified message');
       }
+    } else {
+      debug('Message not found or no previous message available', { messageIndex });
     }
-  }, [messages, toast]);
+  }, [messages, toast, debug, info]);
 
   const togglePrivateChat = () => {
     const newSave = !saveToConversation;
+    debug('Toggling private chat mode', { newSave });
     setSaveToConversation(newSave);
 
     if (!newSave) {
@@ -408,12 +477,14 @@ export const ChatInterface: React.FC<{
       setMessages([]);
       setHasStarted(false);
       onConversationChange?.(null);
+      info('Private mode enabled');
       toast({
         title: 'Private mode enabled',
         description: 'Your messages will not be saved to conversation history.',
       });
     } else {
       setConversationId(null);
+      info('Private mode disabled');
       toast({
         title: 'Private mode disabled',
         description: 'Messages will now be saved to your conversation history.',
@@ -433,6 +504,8 @@ export const ChatInterface: React.FC<{
   // Connection Status Banner Component
   const ConnectionBanner = () => {
     if (connectionStatus === 'connected') return null;
+
+    debug('Rendering connection banner', { connectionStatus });
 
     return (
       <div className={`mb-4 p-3 rounded-lg border flex items-center gap-3 ${
@@ -460,7 +533,12 @@ export const ChatInterface: React.FC<{
 
   // Selected Agents Display Component
   const SelectedAgentsDisplay = () => {
-    if (selectedAgents.length === 0) return null;
+    if (selectedAgents.length === 0) {
+      debug('No selected agents to display');
+      return null;
+    }
+
+    debug('Rendering selected agents display', { agentCount: selectedAgents.length });
 
     return (
       <div className="flex items-center gap-2 px-3 py-2 bg-primary/5 rounded-lg border border-primary/20">
@@ -480,6 +558,13 @@ export const ChatInterface: React.FC<{
       </div>
     );
   };
+
+  debug('Rendering ChatInterface', { 
+    messageCount: messages.length, 
+    selectedAgentCount: selectedAgents.length,
+    isExecuting,
+    connectionStatus 
+  });
 
   return (
     <div className="flex flex-col h-full max-w-[1800px] 2xl:max-w-[2200px] mx-auto w-full overflow-hidden">
@@ -504,7 +589,10 @@ export const ChatInterface: React.FC<{
             {quickPrompts.map((prompt, idx) => (
               <button
                 key={idx}
-                onClick={() => setInput(prompt)}
+                onClick={() => {
+                  debug('Quick prompt selected', { prompt, index: idx });
+                  setInput(prompt);
+                }}
                 disabled={sendDisabled}
                 className="px-4 py-2 rounded-lg border border-border/50 bg-muted/30 hover:bg-muted/50 hover:border-primary/50 text-sm text-muted-foreground hover:text-foreground transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -525,6 +613,7 @@ export const ChatInterface: React.FC<{
                   onKeyDown={e => {
                     if (e.key === 'Enter' && !e.shiftKey) {
                       e.preventDefault();
+                      debug('Enter key pressed for message submission');
                       handleSubmit();
                     }
                   }}
@@ -534,7 +623,10 @@ export const ChatInterface: React.FC<{
                   rows={1}
                 />
                 <Button 
-                  onClick={handleSubmit} 
+                  onClick={() => {
+                    debug('Send button clicked');
+                    handleSubmit();
+                  }}
                   disabled={!input.trim() || sendDisabled} 
                   size="icon" 
                   className="h-10 w-10 rounded-lg bg-primary hover:bg-primary/90 transition flex-shrink-0"
@@ -549,13 +641,22 @@ export const ChatInterface: React.FC<{
                 <AgentSelector 
                   agents={agents} 
                   selectedAgents={selectedAgents} 
-                  onAgentsChange={setSelectedAgents} 
+                  onAgentsChange={(newAgents) => {
+                    debug('Agents selection changed', { 
+                      previousCount: selectedAgents.length, 
+                      newCount: newAgents.length 
+                    });
+                    setSelectedAgents(newAgents);
+                  }} 
                 />
               </div>
 
               <div className="flex items-center gap-2 flex-shrink-0">
                 <Button 
-                  onClick={() => setWorkflowDialogOpen(true)} 
+                  onClick={() => {
+                    debug('Opening workflow dialog');
+                    setWorkflowDialogOpen(true);
+                  }}
                   disabled={selectedAgents.length === 0} 
                   variant="outline" 
                   size="sm"
@@ -570,7 +671,10 @@ export const ChatInterface: React.FC<{
                   {(['sequential', 'parallel'] as const).map(mode => (
                     <button 
                       key={mode} 
-                      onClick={() => setExecutionMode(mode)} 
+                      onClick={() => {
+                        debug('Execution mode changed', { mode });
+                        setExecutionMode(mode);
+                      }}
                       className={`px-2 py-1.5 rounded-md text-xs font-medium transition whitespace-nowrap ${
                         executionMode === mode 
                           ? 'bg-primary text-primary-foreground shadow-sm' 
@@ -583,7 +687,7 @@ export const ChatInterface: React.FC<{
                 </div>
 
                 <button 
-                  onClick={togglePrivateChat} 
+                  onClick={togglePrivateChat}
                   className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-xs font-medium transition whitespace-nowrap ${
                     saveToConversation 
                       ? 'bg-background border-border hover:bg-muted/50 text-muted-foreground' 
@@ -622,7 +726,8 @@ export const ChatInterface: React.FC<{
                   onChange={e => setInput(e.target.value)} 
                   onKeyDown={e => { 
                     if (e.key === 'Enter' && !e.shiftKey) { 
-                      e.preventDefault(); 
+                      e.preventDefault();
+                      debug('Enter key pressed in chat input');
                       handleSubmit(); 
                     } 
                   }} 
@@ -643,7 +748,10 @@ export const ChatInterface: React.FC<{
                     </Button>
                   ) : (
                     <Button 
-                      onClick={handleSubmit} 
+                      onClick={() => {
+                        debug('Send button clicked in chat view');
+                        handleSubmit();
+                      }}
                       disabled={!input.trim() || sendDisabled} 
                       size="icon" 
                       className="h-9 w-9 sm:h-10 sm:w-10 rounded-lg bg-primary hover:bg-primary/90 transition"
@@ -660,13 +768,22 @@ export const ChatInterface: React.FC<{
                   <AgentSelector 
                     agents={agents} 
                     selectedAgents={selectedAgents} 
-                    onAgentsChange={setSelectedAgents} 
+                    onAgentsChange={(newAgents) => {
+                      debug('Agents selection changed in chat view', { 
+                        previousCount: selectedAgents.length, 
+                        newCount: newAgents.length 
+                      });
+                      setSelectedAgents(newAgents);
+                    }} 
                   />
                 </div>
 
                 <div className="flex items-center gap-2 flex-shrink-0">
                   <Button 
-                    onClick={() => setWorkflowDialogOpen(true)} 
+                    onClick={() => {
+                      debug('Opening workflow dialog from chat view');
+                      setWorkflowDialogOpen(true);
+                    }}
                     disabled={selectedAgents.length === 0} 
                     variant="outline" 
                     size="sm" 
@@ -681,7 +798,10 @@ export const ChatInterface: React.FC<{
                     {(['sequential', 'parallel'] as const).map(mode => (
                       <button 
                         key={mode} 
-                        onClick={() => setExecutionMode(mode)} 
+                        onClick={() => {
+                          debug('Execution mode changed in chat view', { mode });
+                          setExecutionMode(mode);
+                        }}
                         className={`px-2 py-1.5 rounded-md text-xs font-medium transition whitespace-nowrap ${
                           executionMode === mode 
                             ? 'bg-primary text-primary-foreground shadow-sm' 
@@ -694,7 +814,7 @@ export const ChatInterface: React.FC<{
                   </div>
 
                   <button 
-                    onClick={togglePrivateChat} 
+                    onClick={togglePrivateChat}
                     className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-xs font-medium transition whitespace-nowrap ${
                       saveToConversation 
                         ? 'bg-background border-border hover:bg-muted/50 text-muted-foreground' 
@@ -744,7 +864,10 @@ export const ChatInterface: React.FC<{
 
       <AgentWorkflowDialog 
         open={workflowDialogOpen} 
-        onOpenChange={setWorkflowDialogOpen} 
+        onOpenChange={(open) => {
+          debug('Workflow dialog open state changed', { open });
+          setWorkflowDialogOpen(open);
+        }} 
         agents={agents} 
         selectedAgents={selectedAgents} 
         onConfirm={handleWorkflowConfirm} 

@@ -78,12 +78,6 @@ export const AgentSelector = ({
 
   const selectedCount = selectedAgents.length;
 
-  // Debug: Check if agents are actually being passed
-  console.log('AgentSelector - Total agents:', agents.length);
-  console.log('AgentSelector - Custom agents:', customAgents.length);
-  console.log('AgentSelector - Default agents:', defaultAgents.length);
-  console.log('AgentSelector - Selected agents:', selectedAgents.length);
-
   return (
     <Popover>
       <PopoverTrigger asChild>

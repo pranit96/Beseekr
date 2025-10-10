@@ -130,8 +130,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     // Session health check interval - less aggressive
     sessionCheckIntervalRef.current = setInterval(() => {
-      console.log('[Auth] Running periodic session check...');
-      
+  
       // If user has been inactive for 30 minutes, do a silent refresh
       const inactiveTime = Date.now() - lastActivityRef.current;
       if (inactiveTime > 30 * 60 * 1000) {

@@ -115,11 +115,8 @@ export const useAgents = () => {
   useEffect(() => {
     const handleFocus = () => {
       if (user) {
-        console.log('[useAgents] Window focused, checking if refresh needed');
-        
         // Check if agents array is empty but should have data
         if (agents.length === 0 && !loading && !error) {
-          console.log('[useAgents] No agents but should have data, refreshing');
           reload();
         }
       }
