@@ -6,10 +6,8 @@ import { apiClient } from '@/lib/api';
 import { useAgents } from '@/hooks/use-agents';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
-import { WifiOff } from 'lucide-react';
+import { AlertCircle, Wifi, WifiOff } from 'lucide-react';
 import { Agent } from '@/types/agent';
-import React from 'react';
-import { Bell } from 'lucide-react';
 
 interface Conversation {
   id: string;
@@ -69,7 +67,6 @@ const Chat = () => {
     if (lastConversationId) setCurrentConversationId(lastConversationId);
 
     fetchConversations();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -214,7 +211,7 @@ const Chat = () => {
         e.preventDefault();
         setSidebarOpen(prev => !prev);
       }
-
+      
       // Ctrl/Cmd + N for new chat
       if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
         e.preventDefault();
@@ -225,45 +222,6 @@ const Chat = () => {
     window.addEventListener('keydown', handleKeyboard);
     return () => window.removeEventListener('keydown', handleKeyboard);
   }, [handleNewSession]);
-
-  // --- NEW: listen for token refreshes so we can reload agents promptly ---
-  useEffect(() => {
-    const onTokensRefreshed = () => {
-      console.log('[Chat] tokens_refreshed -> reloading agents & conversations');
-      try {
-        // reload agents list
-        reload();
-      } catch (err) {
-        console.warn('[Chat] reload() failed on tokens_refreshed', err);
-      }
-
-      // Also refresh conversations list to ensure UI consistency
-      fetchConversations();
-    };
-
-    const onVisibility = () => {
-      if (document.visibilityState === 'visible') {
-        console.log('[Chat] visibilitychange visible -> reloading agents');
-        reload();
-      }
-    };
-
-    const onOnline = () => {
-      console.log('[Chat] online -> reloading agents');
-      reload();
-      fetchConversations();
-    };
-
-    window.addEventListener('tokens_refreshed', onTokensRefreshed as EventListener);
-    document.addEventListener('visibilitychange', onVisibility);
-    window.addEventListener('online', onOnline);
-
-    return () => {
-      window.removeEventListener('tokens_refreshed', onTokensRefreshed as EventListener);
-      document.removeEventListener('visibilitychange', onVisibility);
-      window.removeEventListener('online', onOnline);
-    };
-  }, [reload, fetchConversations]);
 
   // Loading skeleton
   if (isLoading) {
@@ -304,29 +262,62 @@ const Chat = () => {
 
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-background">
-      {/* NOTE: removed setSidebarOpen prop — TopBar type doesn't include it */}
       <TopBar
         sidebarOpen={sidebarOpen}
-        userHasAgents={agents && agents.length > 0}
+        onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+        showSidebarToggle
       />
-      <div className="flex flex-1 overflow-hidden">
-        <ConversationHistory
-          conversations={conversations}
-          onSelectConversation={handleSelectConversation}
-          onNewSession={handleNewSession}
-          onConversationDeleted={handleConversationDeleted}
-          onConversationArchived={handleConversationArchived}
-          currentConversationId={currentConversationId}
-        />
 
-        <main className="flex-1 flex flex-col">
-          <ChatInterface
-            key={key}
-            agents={agents as Agent[]}
-            activeConversationId={currentConversationId}
-            onConversationChange={handleConversationChange}
-            onConversationCreated={handleConversationCreated}
+      {/* Offline banner */}
+      {showOfflineBanner && (
+        <div className="bg-destructive text-destructive-foreground px-4 py-2 text-sm flex items-center justify-center gap-2">
+          <AlertCircle className="w-4 h-4" />
+          <span>You are currently offline. Some features may be limited.</span>
+          <button
+            onClick={() => setShowOfflineBanner(false)}
+            className="ml-4 underline hover:no-underline"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
+      <div className="flex-1 flex overflow-hidden">
+        {/* Sidebar */}
+        <aside
+          className={`transition-all duration-300 ease-in-out border-r border-border bg-muted/30 flex-shrink-0 ${
+            sidebarOpen ? 'w-80 2xl:w-96 opacity-100' : 'w-0 opacity-0'
+          } overflow-hidden`}
+        >
+          <ConversationHistory
+            conversations={conversations}
+            onSelectConversation={handleSelectConversation}
+            onNewSession={handleNewSession}
+            onConversationDeleted={handleConversationDeleted}
+            onConversationArchived={handleConversationArchived}
+            currentConversationId={currentConversationId}
           />
+        </aside>
+
+        {/* Chat Interface */}
+        <main className="flex-1 flex justify-center overflow-hidden relative">
+          {/* Subtle background pattern */}
+          <div className="absolute inset-0 opacity-[0.02] pointer-events-none">
+            <div className="absolute inset-0" style={{
+              backgroundImage: 'radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)',
+              backgroundSize: '40px 40px'
+            }} />
+          </div>
+
+          <div className="w-full max-w-[1400px] 2xl:max-w-[1800px] relative z-10">
+            <ChatInterface
+              key={key}
+              agents={agents}
+              activeConversationId={currentConversationId}
+              onConversationChange={handleConversationChange}
+              onConversationCreated={handleConversationCreated}
+            />
+          </div>
         </main>
       </div>
     </div>
