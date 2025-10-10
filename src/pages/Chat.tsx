@@ -1,12 +1,14 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { ChatInterface } from '@/components/ChatInterface';
 import { ConversationHistory } from '@/components/ConversationHistory';
 import { TopBar } from '@/components/TopBar';
 import { apiClient } from '@/lib/api';
 import { useAgents } from '@/hooks/use-agents';
+import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
-import { AlertCircle, Wifi, WifiOff } from 'lucide-react';
+import { AlertCircle, Wifi, WifiOff, RefreshCw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { Agent } from '@/types/agent';
 
 interface Conversation {
@@ -24,15 +26,28 @@ const Chat = () => {
   const [key, setKey] = useState(0);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [showOfflineBanner, setShowOfflineBanner] = useState(false);
+  const [authError, setAuthError] = useState(false);
+  const [retrying, setRetrying] = useState(false);
 
   const { agents, loading: loadingAgents, reload } = useAgents();
+  const { user, socketConnected, refreshAuth, isSessionValid } = useAuth();
   const { toast } = useToast();
+
+  const fetchAttemptRef = useRef(0);
+  const maxRetries = 3;
 
   // Monitor online/offline status
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
       setShowOfflineBanner(false);
+      setAuthError(false);
+      
+      // Retry fetching data when back online
+      if (user) {
+        handleRetryAuth();
+      }
+      
       toast({
         title: 'Back online',
         description: 'Connection restored',
@@ -56,7 +71,21 @@ const Chat = () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, [toast]);
+  }, [toast, user]);
+
+  // Monitor user session validity
+  useEffect(() => {
+    if (!user) return;
+
+    const checkSession = setInterval(() => {
+      if (!isSessionValid()) {
+        console.warn('[Chat] Session invalid, showing auth error');
+        setAuthError(true);
+      }
+    }, 10000); // Check every 10 seconds
+
+    return () => clearInterval(checkSession);
+  }, [user, isSessionValid]);
 
   // Load sidebar and conversation preferences
   useEffect(() => {
@@ -66,8 +95,10 @@ const Chat = () => {
     const lastConversationId = sessionStorage.getItem('lastActiveConversation');
     if (lastConversationId) setCurrentConversationId(lastConversationId);
 
-    fetchConversations();
-  }, []);
+    if (user && isOnline) {
+      fetchConversations();
+    }
+  }, [user, isOnline]);
 
   useEffect(() => {
     sessionStorage.setItem('sidebarOpen', sidebarOpen.toString());
@@ -93,31 +124,98 @@ const Chat = () => {
     }
   }, []);
 
-  // Fetch conversation history with error handling
-  const fetchConversations = useCallback(async () => {
-    if (!isOnline) {
+  // Fetch conversation history with retry logic
+  const fetchConversations = useCallback(async (isRetry: boolean = false) => {
+    if (!isOnline || !user) {
       setLoadingConversations(false);
       return;
     }
 
+    if (!isRetry) {
+      fetchAttemptRef.current = 0;
+    }
+
     try {
+      console.log('[Chat] Fetching conversations, attempt:', fetchAttemptRef.current + 1);
+      
       const response = await apiClient.getConversations({
         status: 'active',
         page: 1,
         limit: 30,
       });
-      if (response.success && response.data) setConversations(response.data);
+      
+      if (response.success && response.data) {
+        setConversations(response.data);
+        setAuthError(false);
+        fetchAttemptRef.current = 0;
+      } else {
+        throw new Error(response.error || 'Failed to fetch conversations');
+      }
     } catch (error: any) {
-      console.error('Failed to fetch conversations:', error);
-      toast({
-        title: 'Failed to load conversations',
-        description: error.message || 'Could not fetch history.',
-        variant: 'destructive',
-      });
+      console.error('[Chat] Failed to fetch conversations:', error);
+      
+      fetchAttemptRef.current++;
+      
+      // Check if it's an auth error
+      if (error.message?.includes('Session expired') || error.message?.includes('401')) {
+        setAuthError(true);
+        toast({
+          title: 'Session expired',
+          description: 'Please refresh to continue',
+          variant: 'destructive',
+        });
+      } else if (fetchAttemptRef.current < maxRetries) {
+        // Retry with exponential backoff
+        const delay = Math.min(1000 * Math.pow(2, fetchAttemptRef.current), 10000);
+        console.log(`[Chat] Retrying in ${delay}ms...`);
+        
+        setTimeout(() => fetchConversations(true), delay);
+      } else {
+        toast({
+          title: 'Failed to load conversations',
+          description: 'Please try refreshing the page',
+          variant: 'destructive',
+        });
+      }
     } finally {
       setLoadingConversations(false);
     }
-  }, [toast, isOnline]);
+  }, [toast, isOnline, user]);
+
+  // Handle auth recovery
+  const handleRetryAuth = useCallback(async () => {
+    setRetrying(true);
+    setAuthError(false);
+    
+    try {
+      console.log('[Chat] Attempting to refresh auth...');
+      await refreshAuth();
+      
+      // Refresh agents
+      await reload();
+      
+      // Refresh conversations
+      await fetchConversations();
+      
+      // Invalidate API cache
+      apiClient.invalidateCache();
+      
+      toast({
+        title: 'Session refreshed',
+        description: 'You can continue using the app',
+      });
+    } catch (error: any) {
+      console.error('[Chat] Auth refresh failed:', error);
+      toast({
+        title: 'Refresh failed',
+        description: 'Please try logging in again',
+        variant: 'destructive',
+      });
+      setAuthError(true);
+    } finally {
+      setRetrying(false);
+    }
+  }, [refreshAuth, reload, fetchConversations, toast]);
 
   // Handlers
   const handleSelectConversation = useCallback((conversationId: string) => {
@@ -132,6 +230,11 @@ const Chat = () => {
         description: 'Cannot create new session while offline',
         variant: 'destructive',
       });
+      return;
+    }
+
+    if (!isSessionValid()) {
+      await handleRetryAuth();
       return;
     }
 
@@ -154,13 +257,17 @@ const Chat = () => {
         });
       } else throw new Error('Could not create a new session');
     } catch (error: any) {
+      if (error.message?.includes('Session expired')) {
+        setAuthError(true);
+      }
+      
       toast({
         title: 'Failed to create new session',
         description: error.message,
         variant: 'destructive',
       });
     }
-  }, [fetchConversations, toast, isOnline]);
+  }, [fetchConversations, toast, isOnline, isSessionValid, handleRetryAuth]);
 
   const handleConversationCreated = useCallback(
     async (conversationId: string) => {
@@ -217,14 +324,20 @@ const Chat = () => {
         e.preventDefault();
         handleNewSession();
       }
+
+      // Ctrl/Cmd + R to refresh auth
+      if ((e.ctrlKey || e.metaKey) && e.key === 'r' && authError) {
+        e.preventDefault();
+        handleRetryAuth();
+      }
     };
 
     window.addEventListener('keydown', handleKeyboard);
     return () => window.removeEventListener('keydown', handleKeyboard);
-  }, [handleNewSession]);
+  }, [handleNewSession, authError, handleRetryAuth]);
 
   // Loading skeleton
-  if (isLoading) {
+  if (isLoading && !authError) {
     return (
       <div className="h-screen flex flex-col items-center justify-center gap-4 bg-background">
         <div className="relative">
@@ -239,7 +352,47 @@ const Chat = () => {
     );
   }
 
-  // Error state
+  // Auth error state
+  if (authError) {
+    return (
+      <div className="h-screen flex flex-col items-center justify-center gap-4 bg-background p-6">
+        <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center">
+          <AlertCircle className="w-8 h-8 text-destructive" />
+        </div>
+        <h2 className="text-2xl font-bold">Session Expired</h2>
+        <p className="text-muted-foreground text-center max-w-md">
+          Your session has expired or become invalid. Please refresh to continue.
+        </p>
+        <div className="flex gap-3 mt-4">
+          <Button
+            onClick={handleRetryAuth}
+            disabled={retrying}
+            className="gap-2"
+          >
+            {retrying ? (
+              <>
+                <RefreshCw className="w-4 h-4 animate-spin" />
+                Refreshing...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="w-4 h-4" />
+                Refresh Session
+              </>
+            )}
+          </Button>
+          <Button
+            onClick={() => window.location.reload()}
+            variant="outline"
+          >
+            Reload Page
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Offline state
   if (!isOnline && conversations.length === 0) {
     return (
       <div className="h-screen flex flex-col items-center justify-center gap-4 bg-background p-6">
@@ -279,6 +432,22 @@ const Chat = () => {
           >
             Dismiss
           </button>
+        </div>
+      )}
+
+      {/* Session warning banner */}
+      {!socketConnected && isOnline && user && (
+        <div className="bg-yellow-500/10 border-b border-yellow-500/20 text-yellow-700 dark:text-yellow-400 px-4 py-2 text-sm flex items-center justify-center gap-2">
+          <AlertCircle className="w-4 h-4" />
+          <span>Real-time features disconnected. Reconnecting...</span>
+          <Button
+            onClick={handleRetryAuth}
+            variant="ghost"
+            size="sm"
+            className="ml-2 h-6 text-xs"
+          >
+            Retry
+          </Button>
         </div>
       )}
 
