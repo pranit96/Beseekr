@@ -161,13 +161,24 @@ export const ChatInterface: React.FC<{
 
     try {
       let convId = conversationId;
-
-      if (saveToConversation && !convId) {
+//here title is updated when response is saved.
+       if (saveToConversation && !convId) {
         const { apiClient } = await import('@/lib/api');
+
+        // Ensure title is never empty
+        let title = messageText.trim();
+        if (!title) {
+          title = `Chat with ${selectedAgents.map(a => a.name).join(', ')}`;
+        }
+        if (title.length > 50) {
+          title = title.substring(0, 47) + '...';
+        }
+        
         const createRes = await apiClient.createConversation({
           agent_id: selectedAgents[0]?.id || null,
-          title: messageText.slice(0, 50) + (messageText.length > 50 ? '...' : ''),
+          title: title, 
         });
+
         if (createRes.success && createRes.data?.id) {
           convId = createRes.data.id;
           setConversationId(convId);
