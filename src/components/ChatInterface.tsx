@@ -292,15 +292,16 @@ export const ChatInterface: React.FC<{
         onWarning: (warn: any) => {
           console.warn('[Chat] Warning:', warn);
         },
-        onRateLimit: (rl: any) => {
-          const retry = Number(rl?.retryAfter ?? rl?.retry_after ?? rl?.retry ?? 10);
-          startRateLimitCountdown(retry);
-          toast({ 
-            title: 'Rate limit', 
-            description: `Too many requests. Retry in ${retry} seconds.`, 
-            variant: 'default' 
+        onRateLimit: (rl) => {
+          const retry = Number(rl?.retryAfter ?? 30);
+          toast({
+            title: 'Rate Limit',
+            description: `Too many requests. Retry in ${retry} seconds.`,
+            variant: 'default',
           });
+          startRateLimitCountdown(retry);
         },
+
         onCancelReady: (cancelFn: () => void) => {
           cancelRef.current = cancelFn;
         },

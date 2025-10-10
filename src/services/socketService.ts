@@ -406,9 +406,13 @@ connect(): Socket {
       }
     };
     
-    const onRateLimit = (data: any) => { 
-      if (!data.requestId || data.requestId === requestId) {
-        callbacks.onRateLimit?.(data); 
+    const onRateLimit = (data: any) => {
+      // Only trigger when server explicitly says you're blocked
+      if (
+        (!data.requestId || data.requestId === requestId) &&
+        (data.reason === 'rate_limit_exceeded' || data.reason === 'temporarily_blocked')
+      ) {
+        callbacks.onRateLimit?.(data);
       }
     };
 
