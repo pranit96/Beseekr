@@ -46,7 +46,7 @@ const useOrchestration = () => {
       const token = getAccessToken();
       if (token) {
         try {
-          socketService.connect(token);
+          socketService.connect();
         } catch (error) {
           console.error('[useOrchestration] Failed to reconnect socket:', error);
           throw new Error('Failed to establish connection. Please refresh the page.');

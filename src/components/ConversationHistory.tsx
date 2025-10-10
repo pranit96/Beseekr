@@ -50,11 +50,6 @@ interface ConversationHistoryProps {
   currentConversationId?: string;
 }
 
-/**
- * ConversationHistory
- * - Uses a slightly wider layout for large screens to make use of 4K space
- * - Preserves keyboard navigation and accessibility
- */
 export const ConversationHistory = ({
   conversations = [],
   onSelectConversation,
@@ -73,19 +68,16 @@ export const ConversationHistory = ({
   const listRef = useRef<HTMLDivElement | null>(null);
   const { toast } = useToast();
 
-  // Keep local copy in sync with parent prop (but allow optimistic updates)
   useEffect(() => {
     setLocalConversations(conversations);
   }, [conversations]);
 
-  // Derived: filtered conversations by search query (case-insensitive)
   const filtered = useMemo(() => {
     if (!query.trim()) return localConversations;
     const q = query.trim().toLowerCase();
     return localConversations.filter((c) => (c.title || 'untitled').toLowerCase().includes(q));
   }, [localConversations, query]);
 
-  // Keyboard navigation: Arrow keys and Enter to select
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (!filtered.length) return;
@@ -108,7 +100,6 @@ export const ConversationHistory = ({
     return () => window.removeEventListener('keydown', handleKey);
   }, [filtered, focusedIndex]);
 
-  // Scroll focused item into view
   useEffect(() => {
     if (focusedIndex === null || !listRef.current) return;
     const el = listRef.current.querySelectorAll('[data-conversation-item]')[focusedIndex] as HTMLElement | undefined;
@@ -118,20 +109,17 @@ export const ConversationHistory = ({
   const handleSelectConversation = useCallback(
     (id: string) => {
       onSelectConversation(id);
-      // keep keyboard focus visible
       const idx = filtered.findIndex((c) => c.id === id);
       setFocusedIndex(idx >= 0 ? idx : null);
     },
     [onSelectConversation, filtered]
   );
 
-  // Optimistic delete: remove locally immediately, rollback on failure
   const handleDeleteConversation = async () => {
     if (!selectedConversation) return;
     setDeleteDialogOpen(false);
     setLoading(true);
 
-    // Optimistic UI
     const original = localConversations;
     setLocalConversations((prev) => prev.filter((c) => c.id !== selectedConversation.id));
     try {
@@ -146,7 +134,6 @@ export const ConversationHistory = ({
         throw new Error(response.message || 'Failed to delete conversation');
       }
     } catch (error: any) {
-      // Rollback
       setLocalConversations(original);
       toast({
         title: 'Failed to delete conversation',
@@ -159,7 +146,6 @@ export const ConversationHistory = ({
     }
   };
 
-  // Optimistic archive: update locally and rollback on failure
   const handleArchiveConversation = async () => {
     if (!selectedConversation) return;
     setArchiveDialogOpen(false);
@@ -179,7 +165,6 @@ export const ConversationHistory = ({
         throw new Error(response.message || 'Failed to archive conversation');
       }
     } catch (error: any) {
-      // Rollback
       setLocalConversations(original);
       toast({
         title: 'Failed to archive conversation',
@@ -192,7 +177,6 @@ export const ConversationHistory = ({
     }
   };
 
-  // Render helpers
   const renderConversationRow = (conversation: Conversation, idx: number) => {
     const isActive = currentConversationId === conversation.id;
     const lastAt = conversation.last_message_at ? new Date(conversation.last_message_at) : null;
@@ -217,23 +201,26 @@ export const ConversationHistory = ({
           isActive ? 'bg-muted border border-border' : 'hover:bg-muted/50'
         } ${focusedIndex === idx ? 'ring-2 ring-primary/30' : ''}`}
       >
-        <div className="flex-1 flex items-start gap-2">
-          <div className="rounded-md p-1 bg-muted/20 flex items-center justify-center shrink-0">
-            <MessageSquare className="w-4 h-4 text-muted-foreground" />
-          </div>
+        {/* left icon */}
+        <div className="rounded-md p-1 bg-muted/20 flex items-center justify-center shrink-0 mr-3">
+          <MessageSquare className="w-4 h-4 text-muted-foreground" />
+        </div>
 
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <p className="text-sm font-medium truncate">{conversation.title || 'Untitled'}</p>
+        {/* middle: title + subtitle (can shrink) */}
+        <div className="flex-1 min-w-0 overflow-hidden">
+          <div className="flex items-center gap-2 min-w-0">
+            <p className="text-sm font-medium truncate flex-1 min-w-0">
+              {conversation.title || 'Untitled'}
+            </p>
             {conversation.status === 'archived' && (
-              <span className="text-xs text-muted-foreground">Archived</span>
+              <span className="text-xs text-muted-foreground shrink-0 ml-1">Archived</span>
             )}
           </div>
           <p className="text-xs text-muted-foreground truncate">{subtitle}</p>
         </div>
-        </div>
 
-        <div className="flex items-center gap-1 ml-2">
+        {/* right: actions (never shrink) */}
+        <div className="flex items-center gap-1 ml-2 shrink-0">
           <button
             aria-label={`Open conversation ${conversation.title || 'Untitled'}`}
             onClick={(e) => {
@@ -312,7 +299,6 @@ export const ConversationHistory = ({
       <ScrollArea className="flex-1" ref={listRef}>
         <div className="p-2 space-y-1">
           {loading ? (
-            // Show a few skeleton rows while performing actions
             <>
               <Skeleton className="h-12 w-full rounded-md" />
               <Skeleton className="h-12 w-full rounded-md" />
@@ -367,5 +353,5 @@ export const ConversationHistory = ({
         </AlertDialogContent>
       </AlertDialog>
     </div>
-  ); 
+  );
 };
