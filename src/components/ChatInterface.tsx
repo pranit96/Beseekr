@@ -31,6 +31,7 @@ export const ChatInterface: React.FC<{
   const cancelRef = useRef<null | (() => void)>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const retryMessageRef = useRef<string>('');
+  const isCreatingConversationRef = useRef(false);
 
   // rate-limit UI
   const [rateLimitedUntil, setRateLimitedUntil] = useState<number | null>(null);
@@ -144,11 +145,15 @@ export const ChatInterface: React.FC<{
       return;
     }
 
+    // Start execution immediately
+    setIsExecuting(true);
     setHasStarted(true);
+    
     const messageText = input;
     setInput('');
     retryMessageRef.current = messageText;
 
+    // Create user message immediately
     const userMessage: ChatMessage = {
       id: `msg-${Date.now()}`,
       type: 'user',
@@ -156,36 +161,70 @@ export const ChatInterface: React.FC<{
       timestamp: new Date(),
       isFromCache: false,
     };
-    setMessages(prev => [...prev, userMessage]);
+    
+    // Create agent message with pending responses immediately
+    const agentResponsesInitial: AgentResponse[] = selectedAgents.map(a => ({
+      agentId: a.id,
+      agentName: a.name,
+      content: '', // corresponds to 'response' in your previous code
+      timestamp: new Date(),
+      status: 'pending',
+      metadata: {
+        domain: a.domain // maps 'agent_domain' correctly
+      }
+    }));
+
+    const agentMessageId = `msg-${Date.now()}-agents`;
+    const agentMessage: ChatMessage = {
+      id: agentMessageId,
+      type: 'agent',
+      content: '',
+      timestamp: new Date(),
+      agentResponses: agentResponsesInitial,
+      executionMode,
+      markdownOutput: '',
+      finalOutput: '',
+      isFromCache: false,
+    };
+
+    // Add both messages immediately to show UI
+    setMessages(prev => [...prev, userMessage, agentMessage]);
     setIsLoadingLocal(true);
 
     try {
       let convId = conversationId;
-//here title is updated when response is saved.
-       if (saveToConversation && !convId) {
-        const { apiClient } = await import('@/lib/api');
 
-        // Ensure title is never empty
-        let title = messageText.trim();
-        if (!title) {
-          title = `Chat with ${selectedAgents.map(a => a.name).join(', ')}`;
-        }
-        if (title.length > 50) {
-          title = title.substring(0, 47) + '...';
-        }
+      // Create conversation if needed (only once)
+      if (saveToConversation && !convId && !isCreatingConversationRef.current) {
+        isCreatingConversationRef.current = true;
         
-        const createRes = await apiClient.createConversation({
-          agent_id: selectedAgents[0]?.id || null,
-          title: title, 
-        });
+        try {
+          const { apiClient } = await import('@/lib/api');
 
-        if (createRes.success && createRes.data?.id) {
-          convId = createRes.data.id;
-          setConversationId(convId);
-          onConversationChange?.(convId);
-          onConversationCreated?.(convId);
-        } else {
-          throw new Error('Failed to create conversation');
+          let title = messageText.trim();
+          if (!title) {
+            title = `Chat with ${selectedAgents.map(a => a.name).join(', ')}`;
+          }
+          if (title.length > 50) {
+            title = title.substring(0, 47) + '...';
+          }
+          
+          const createRes = await apiClient.createConversation({
+            agent_id: selectedAgents[0]?.id || null,
+            title: title, 
+          });
+
+          if (createRes.success && createRes.data?.id) {
+            convId = createRes.data.id;
+            setConversationId(convId);
+            onConversationChange?.(convId);
+            onConversationCreated?.(convId);
+          }
+        } catch (err) {
+          console.error('[Chat] Failed to create conversation:', err);
+          // Continue without conversation saving
+        } finally {
+          isCreatingConversationRef.current = false;
         }
       }
 
@@ -198,46 +237,28 @@ export const ChatInterface: React.FC<{
 
       if (saveToConversation && convId) payload.conversation_id = convId;
 
-      const agentResponsesInitial: AgentResponse[] = selectedAgents.map(a => ({
-        agentId: a.id,
-        agentName: a.name,
-        content: '',
-        timestamp: new Date(),
-        status: 'pending',
-        metadata: {}
-      }));
-
-      const agentMessageId = `msg-${Date.now()}-agents`;
-      const agentMessage: ChatMessage = {
-        id: agentMessageId,
-        type: 'agent',
-        content: '',
-        timestamp: new Date(),
-        agentResponses: agentResponsesInitial,
-        executionMode,
-        markdownOutput: '',
-        finalOutput: '',
-        isFromCache: false,
-      };
-
-      setMessages(prev => [...prev, agentMessage]);
       ensureConnected();
-      setIsExecuting(true);
       cancelRef.current = null;
 
-      const orchestrationPromise: Promise<any> = execute(payload, {
+      // Execute orchestration
+      await execute(payload, {
         onAck: (d: any) => { 
           console.log('[Chat] Orchestration acknowledged', d);
         },
         onToken: (agentId: string, token: string) => {
+          // Update immediately for smooth streaming
           setMessages(prev => prev.map(m => {
             if (m.id !== agentMessageId) return m;
             return {
               ...m,
-              agentResponses: m.agentResponses.map(ar => {
+              agentResponses: m.agentResponses?.map(ar => {
                 if (ar.agentId !== agentId) return ar;
-                return { ...ar, content: (ar.content || '') + token };
-              })
+                return { 
+                  ...ar, 
+                  content: (ar.content || '') + token,
+                  status: 'pending' // Keep pending while streaming
+                };
+              }) || []
             } as ChatMessage;
           }));
         },
@@ -246,11 +267,11 @@ export const ChatInterface: React.FC<{
             if (m.id !== agentMessageId) return m;
             return {
               ...m,
-              agentResponses: m.agentResponses.map(ar => 
+              agentResponses: m.agentResponses?.map(ar => 
                 ar.agentId === agentId 
                   ? { ...ar, status: 'success', metadata: { ...ar.metadata, usage } } 
                   : ar
-              )
+              ) || []
             } as ChatMessage;
           }));
         },
@@ -260,21 +281,16 @@ export const ChatInterface: React.FC<{
             if (m.id !== agentMessageId) return m;
             return {
               ...m,
-              agentResponses: m.agentResponses.map(ar => 
+              agentResponses: m.agentResponses?.map(ar => 
                 ar.agentId === agentId 
-                  ? { ...ar, status: 'error', content: String(errorMsg || 'Error') } 
+                  ? { ...ar, status: 'error', content: String(errorMsg || 'Error generating response') } 
                   : ar
-              )
+              ) || []
             } as ChatMessage;
           }));
         },
         onWarning: (warn: any) => {
           console.warn('[Chat] Warning:', warn);
-          toast({ 
-            title: 'Warning', 
-            description: warn?.detail || warn?.warning || 'Warning from server', 
-            variant: 'default' 
-          });
         },
         onRateLimit: (rl: any) => {
           const retry = Number(rl?.retryAfter ?? rl?.retry_after ?? rl?.retry ?? 10);
@@ -292,9 +308,9 @@ export const ChatInterface: React.FC<{
           console.log('[Chat] Orchestration completed', doneData);
           setMessages(prev => prev.map(m => {
             if (m.id !== agentMessageId) return m;
-            const updatedResponses = m.agentResponses.map(ar => 
+            const updatedResponses = m.agentResponses?.map(ar => 
               ar.status === 'pending' ? { ...ar, status: 'success' } : ar
-            );
+            ) || [];
             return {
               ...m,
               agentResponses: updatedResponses,
@@ -306,15 +322,21 @@ export const ChatInterface: React.FC<{
         },
         onError: (err: any) => {
           console.error('[Chat] Orchestration error:', err);
+          
+          // Don't show rate limit errors as execution failures
+          if (err?.error?.includes('rate') || err?.error?.includes('Too many')) {
+            return;
+          }
+          
           setMessages(prev => prev.map(m => {
             if (m.id !== agentMessageId) return m;
             return {
               ...m,
-              agentResponses: m.agentResponses.map(ar => 
+              agentResponses: m.agentResponses?.map(ar => 
                 ar.status === 'pending' 
                   ? { ...ar, status: 'error', content: err?.error || 'Orchestration failed' } 
                   : ar
-              )
+              ) || []
             } as ChatMessage;
           }));
           
@@ -326,18 +348,20 @@ export const ChatInterface: React.FC<{
         }
       });
 
-      await orchestrationPromise;
-      setIsLoadingLocal(false);
     } catch (err: any) {
       console.error('[Chat] Submit error:', err);
-      toast({ 
-        title: 'Error', 
-        description: err?.message || 'Failed to execute agents. Please check your connection.', 
-        variant: 'destructive' 
-      });
-      setIsLoadingLocal(false);
+      
+      // Don't show rate limit errors
+      if (!err?.message?.includes('rate') && !err?.message?.includes('Too many')) {
+        toast({ 
+          title: 'Error', 
+          description: err?.message || 'Failed to execute agents. Please check your connection.', 
+          variant: 'destructive' 
+        });
+      }
     } finally {
       setIsExecuting(false);
+      setIsLoadingLocal(false);
       cancelRef.current = null;
     }
   };
@@ -490,10 +514,8 @@ export const ChatInterface: React.FC<{
           </div>
 
           <div className="flex flex-col items-center gap-4 w-full max-w-4xl px-4">
-            {/* Selected Agents Display */}
             <SelectedAgentsDisplay />
 
-            {/* Input area */}
             <div className="w-full">
               <div className="relative flex items-center gap-3 rounded-xl bg-muted/50 border border-border/50 focus-within:border-primary transition px-4 py-3">
                 <Textarea
@@ -522,9 +544,7 @@ export const ChatInterface: React.FC<{
               </div>
             </div>
 
-            {/* Controls - All in one line with proper spacing */}
             <div className="w-full flex items-center gap-3">
-              {/* Agent selector */}
               <div className="flex-1">
                 <AgentSelector 
                   agents={agents} 
@@ -533,7 +553,6 @@ export const ChatInterface: React.FC<{
                 />
               </div>
 
-              {/* Control buttons group */}
               <div className="flex items-center gap-2 flex-shrink-0">
                 <Button 
                   onClick={() => setWorkflowDialogOpen(true)} 
@@ -594,10 +613,8 @@ export const ChatInterface: React.FC<{
 
           <div className="sticky bottom-0 bg-background/95 backdrop-blur-sm p-3 sm:p-4 border-t border-border/50 space-y-3">
             <div className="max-w-5xl 2xl:max-w-6xl mx-auto w-full space-y-3">
-              {/* Selected Agents Display */}
               <SelectedAgentsDisplay />
 
-              {/* Text input */}
               <div className="relative flex items-center gap-2 sm:gap-3 rounded-xl bg-muted/50 border border-border/50 focus-within:border-primary transition px-3 sm:px-4 py-2 sm:py-3">
                 <Textarea 
                   ref={textareaRef}
@@ -638,9 +655,7 @@ export const ChatInterface: React.FC<{
                 </div>
               </div>
 
-              {/* Controls - All in one line with proper spacing */}
               <div className="flex items-center gap-3">
-                {/* Agent selector */}
                 <div className="flex-1">
                   <AgentSelector 
                     agents={agents} 
@@ -649,7 +664,6 @@ export const ChatInterface: React.FC<{
                   />
                 </div>
 
-                {/* Control buttons group */}
                 <div className="flex items-center gap-2 flex-shrink-0">
                   <Button 
                     onClick={() => setWorkflowDialogOpen(true)} 
@@ -693,7 +707,6 @@ export const ChatInterface: React.FC<{
                 </div>
               </div>
 
-              {/* Status indicators */}
               <div className="min-h-[20px]">
                 {rateLimitedUntil && Date.now() < rateLimitedUntil ? (
                   <div className="text-xs text-destructive text-center animate-pulse">
