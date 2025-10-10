@@ -211,13 +211,6 @@ export const AgentSelector = ({
               </div>
             )}
           </div>
-
-          {/* Debug info - remove in production */}
-          {process.env.NODE_ENV === 'development' && (
-            <div className="text-xs text-muted-foreground border-t pt-2 mt-2">
-              Debug: {agents.length} total agents, {selectedAgents.length} selected
-            </div>
-          )}
         </div>
       </PopoverContent>
     </Popover>
