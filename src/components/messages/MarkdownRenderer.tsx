@@ -21,7 +21,7 @@ interface MarkdownRendererProps {
   className?: string;
   showToc?: boolean;
   enableCopy?: boolean;
-  maxHeight?: string;
+  maxHeight?: string; // e.g. '60vh' or '400px' or 'none'
 }
 
 export default function MarkdownRenderer({
@@ -87,6 +87,13 @@ export default function MarkdownRenderer({
         level: parseInt(heading.tagName.charAt(1)),
         element: heading as HTMLElement
       }));
+
+      tocItems.forEach((item, i) => {
+        if (item.element && !item.element.id) {
+          item.element.id = `heading-${i}`;
+        }
+      });
+
       setToc(tocItems);
     }
   }, [content, showToc]);
@@ -156,13 +163,16 @@ export default function MarkdownRenderer({
         {children}
       </blockquote>
     ),
-    code: ({ children, className, ...props }: any) => {
+
+    // Code renderer: handles both fenced code blocks (with language) and inline code
+    code: ({ children, className, inline, ...props }: any) => {
       const match = /language-(\w+)/.exec(className || '');
       const language = match ? match[1] : '';
       const code = String(children).replace(/\n$/, '');
       const codeId = Math.random().toString(36).substring(7);
 
-      if (language) {
+      // Fenced code block with language => render with SyntaxHighlighter and an internal scroller
+      if (!inline && language) {
         return (
           <div className="relative my-4 rounded-lg overflow-hidden border border-border/40">
             <div className="flex justify-between items-center px-3 py-2 bg-muted/40 border-b border-border/30">
@@ -171,24 +181,60 @@ export default function MarkdownRenderer({
                 <button
                   onClick={() => copyToClipboard(code, codeId)}
                   className="text-xs text-foreground/60 hover:text-foreground/80"
+                  aria-label={`Copy ${language} code`}
                 >
                   {copiedCode === codeId ? '✓ Copied' : 'Copy'}
                 </button>
               )}
             </div>
-            <SyntaxHighlighter style={oneDark} language={language} PreTag="div" className="!m-0 !bg-transparent" customStyle={{ padding: '1rem', fontSize: '0.9rem' }}>
-              {code}
-            </SyntaxHighlighter>
+
+            {/* Internal scroller so long code blocks don't expand the outer container. */}
+            <div style={{ maxHeight: '60vh', overflow: 'auto' }}>
+              <SyntaxHighlighter
+                style={oneDark}
+                language={language}
+                PreTag="div"
+                // Removed bg-transparent override to preserve crisp color rendering
+                // Provide explicit custom styles for crisp text rendering and monospace font
+                customStyle={{
+                  padding: '1rem',
+                  fontSize: '0.9rem',
+                  whiteSpace: 'pre',
+                  // oneDark default bg = '#011627' — set explicitly for consistency
+                  backgroundColor: '#011627',
+                  // choose a high-quality monospace stack for crisp glyphs
+                  fontFamily:
+                    'ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Segoe UI Mono", "Courier New", monospace',
+                  lineHeight: 1.6,
+                  // improve font rendering on macOS / other platforms
+                  WebkitFontSmoothing: 'antialiased',
+                  MozOsxFontSmoothing: 'grayscale',
+                }}
+              >
+                {code}
+              </SyntaxHighlighter>
+            </div>
           </div>
         );
       }
 
-      return (
-        <code className="font-mono bg-muted/60 rounded px-1.5 py-0.5 text-sm text-foreground/90 border border-border/30" {...props}>
-          {children}
-        </code>
-      );
+      // Inline code or fenced code without language => render as inline <code>
+      if (inline || !language) {
+        return (
+          <code
+            className="font-mono bg-muted/60 rounded px-1.5 py-0.5 text-sm text-foreground/90 border border-border/30"
+            // inline style to nudge font-smoothing for inline code too
+            style={{ WebkitFontSmoothing: 'antialiased', MozOsxFontSmoothing: 'grayscale' }}
+            {...props}
+          >
+            {children}
+          </code>
+        );
+      }
+
+      return null;
     },
+
     img: ({ src, alt, ...props }: any) => (
       <div className="my-6 flex justify-center">
         <img src={src} alt={alt} className="max-w-full h-auto rounded-lg shadow-md border border-border/30" loading="lazy" {...props} />
@@ -199,6 +245,10 @@ export default function MarkdownRenderer({
   // preprocess content
   const processed = normalizeContent(content || '');
 
+  // Outer wrapper style only applied when maxHeight is not 'none'
+  const outerStyle = maxHeight && maxHeight !== 'none' ? { maxHeight } as React.CSSProperties : undefined;
+  const outerOverflowClass = maxHeight && maxHeight !== 'none' ? 'overflow-y-auto' : '';
+
   return (
     <div className="flex gap-6">
       {/* optional ToC */}
@@ -208,7 +258,12 @@ export default function MarkdownRenderer({
             <h3 className="text-sm font-semibold text-foreground/80 mb-3 uppercase">Contents</h3>
             <nav className="space-y-2">
               {toc.map((item, i) => (
-                <button key={i} onClick={() => scrollToHeading(item.element)} className="block text-left text-sm truncate text-foreground/80 hover:text-primary">
+                <button
+                  key={i}
+                  onClick={() => scrollToHeading(item.element)}
+                  className="block text-left text-sm truncate text-foreground/80 hover:text-primary"
+                  aria-label={`Go to ${item.text}`}
+                >
                   {item.text}
                 </button>
               ))}
@@ -217,7 +272,11 @@ export default function MarkdownRenderer({
         </div>
       )}
 
-      <div ref={contentRef} className={`flex-1 prose prose-lg dark:prose-invert max-w-none font-sans leading-relaxed tracking-[0.01em] ${maxHeight !== 'none' ? 'overflow-y-auto' : ''} ${className}`} style={{ maxHeight }}>
+      <div
+        ref={contentRef}
+        className={`flex-1 prose prose-lg dark:prose-invert max-w-none font-sans leading-relaxed tracking-[0.01em] ${outerOverflowClass} ${className}`}
+        style={outerStyle}
+      >
         <ReactMarkdown
           remarkPlugins={[remarkGfm, remarkBreaks, [remarkToc, { tight: true }]]}
           rehypePlugins={[rehypeRaw]}
