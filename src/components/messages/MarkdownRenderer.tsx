@@ -3,12 +3,11 @@ import React, { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkBreaks from 'remark-breaks';
-import rehypeHighlight from 'rehype-highlight';
 import rehypeRaw from 'rehype-raw';
 import remarkToc from 'remark-toc';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import 'highlight.js/styles/github-dark.css';
+// NOTE: removed `rehype-highlight` and the highlight.js css import to avoid Vite/Rollup resolution issues
 
 interface TocItem {
   id: string;
@@ -39,7 +38,6 @@ export default function MarkdownRenderer({
   // Preprocess: convert plain text headings into markdown headings (heuristic)
   const normalizeContent = (text: string) => {
     if (!text) return '';
-    // split lines and trim
     const lines = text.replace(/\r/g, '').split('\n');
     const out: string[] = [];
 
@@ -48,18 +46,16 @@ export default function MarkdownRenderer({
       const nextLine = (lines[i + 1] || '').trim();
 
       if (!line) {
-        out.push(''); // keep blank line
+        out.push('');
         continue;
       }
 
-      // If line ends with ':' — treat as heading (remove colon)
       if (/:$/.test(line)) {
         out.push(`### ${line.replace(/:$/, '')}`);
-        out.push(''); // blank line after heading
+        out.push('');
         continue;
       }
 
-      // Heuristic: short single-line title (no punctuation) followed by a paragraph (next line starts with uppercase)
       const looksLikeTitle =
         line.length > 2 &&
         line.length <= 60 &&
@@ -75,12 +71,9 @@ export default function MarkdownRenderer({
         continue;
       }
 
-      // Otherwise keep the line as-is
       out.push(line);
     }
 
-    // Join using double newlines so Markdown treats paragraphs separately
-    // Also, collapse sequences of >2 blank lines into 2
     return out.join('\n\n').replace(/\n{3,}/g, '\n\n');
   };
 
@@ -227,7 +220,7 @@ export default function MarkdownRenderer({
       <div ref={contentRef} className={`flex-1 prose prose-lg dark:prose-invert max-w-none font-sans leading-relaxed tracking-[0.01em] ${maxHeight !== 'none' ? 'overflow-y-auto' : ''} ${className}`} style={{ maxHeight }}>
         <ReactMarkdown
           remarkPlugins={[remarkGfm, remarkBreaks, [remarkToc, { tight: true }]]}
-          rehypePlugins={[rehypeHighlight, rehypeRaw]}
+          rehypePlugins={[rehypeRaw]}
           components={components}
         >
           {processed}
