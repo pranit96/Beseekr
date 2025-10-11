@@ -190,29 +190,25 @@ export default function MarkdownRenderer({
 
             {/* Internal scroller so long code blocks don't expand the outer container. */}
             <div style={{ maxHeight: '60vh', overflow: 'auto' }}>
-              <SyntaxHighlighter
-                style={oneDark}
-                language={language}
-                PreTag="div"
-                // Removed bg-transparent override to preserve crisp color rendering
-                // Provide explicit custom styles for crisp text rendering and monospace font
-                customStyle={{
-                  padding: '1rem',
-                  fontSize: '0.9rem',
-                  whiteSpace: 'pre',
-                  // oneDark default bg = '#011627' — set explicitly for consistency
-                  backgroundColor: '#011627',
-                  // choose a high-quality monospace stack for crisp glyphs
-                  fontFamily:
-                    'ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Segoe UI Mono", "Courier New", monospace',
-                  lineHeight: 1.6,
-                  // improve font rendering on macOS / other platforms
-                  WebkitFontSmoothing: 'antialiased',
-                  MozOsxFontSmoothing: 'grayscale',
-                }}
-              >
-                {code}
-              </SyntaxHighlighter>
+                <SyntaxHighlighter
+                  style={oneDark}
+                  language={language}
+                  PreTag="div"
+                  customStyle={{
+                    padding: '1rem',
+                    fontSize: '0.9rem',
+                    whiteSpace: 'pre',
+                    backgroundColor: '#000000', // pure black background
+                    fontFamily:
+                      'ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Segoe UI Mono", "Courier New", monospace',
+                    lineHeight: 1.6,
+                    WebkitFontSmoothing: 'antialiased',
+                    MozOsxFontSmoothing: 'grayscale',
+                  }}
+                >
+                  {code}
+                </SyntaxHighlighter>
+
             </div>
           </div>
         );
