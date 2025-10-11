@@ -1,15 +1,40 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" role="img" aria-labelledby="fTitle fDesc">
-  <title id="fTitle">PW</title>
-  <desc id="fDesc">Prompt Weaver compact icon — connected node</desc>
-  <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6">
-    <circle cx="12" cy="12" r="2.2" fill="currentColor"/>
-    <path d="M12 8.2 L12 5.4"/>
-    <path d="M12 15.8 L12 18.6"/>
-    <path d="M15.8 12 L18.6 12"/>
-    <path d="M8.2 12 L5.4 12"/>
-    <circle cx="12" cy="5.2" r="1.1" fill="currentColor"/>
-    <circle cx="12" cy="18.8" r="1.1" fill="currentColor"/>
-    <circle cx="18.8" cy="12" r="1.1" fill="currentColor"/>
-    <circle cx="5.2" cy="12" r="1.1" fill="currentColor"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-labelledby="logoTitle logoDesc">
+  <title id="logoTitle">Prompt Weaver — Multi-Agent Logo</title>
+  <desc id="logoDesc">Stylized network of connected nodes representing multi-agent orchestration.</desc>
+
+  <defs>
+    <linearGradient id="grad" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#7c3aed"/>
+      <stop offset="1" stop-color="#06b6d4"/>
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- soft backdrop circle -->
+  <circle cx="32" cy="32" r="28" fill="rgba(124,58,237,0.06)"/>
+
+  <!-- connecting lines -->
+  <g stroke="url(#grad)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <path d="M32 24 L32 12" />
+    <path d="M32 40 L32 52" />
+    <path d="M44 32 L54 32" />
+    <path d="M20 32 L10 32" />
+  </g>
+
+  <!-- outer nodes -->
+  <g stroke="url(#grad)" stroke-width="1.8" fill="#fff">
+    <circle cx="32" cy="12" r="4.6"/>
+    <circle cx="32" cy="52" r="4.6"/>
+    <circle cx="54" cy="32" r="4.6"/>
+    <circle cx="10" cy="32" r="4.6"/>
+  </g>
+
+  <!-- central node with gradient and glow -->
+  <g filter="url(#glow)">
+    <circle cx="32" cy="32" r="9.2" fill="url(#grad)"/>
+    <circle cx="32" cy="32" r="4.2" fill="#fff" opacity="0.12"/>
   </g>
 </svg>
