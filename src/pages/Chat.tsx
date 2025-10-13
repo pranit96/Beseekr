@@ -443,8 +443,6 @@ const Chat = () => {
       {/* Session warning banner */}
       {!socketConnected && isOnline && user && (
         <div className="bg-yellow-500/10 border-b border-yellow-500/20 text-yellow-700 dark:text-yellow-400 px-4 py-2 text-sm flex items-center justify-center gap-2">
-          <AlertCircle className="w-4 h-4" />
-          <span>Real-time features disconnected. Reconnecting...</span>
           <Button
             onClick={handleRetryAuth}
             variant="ghost"

@@ -197,11 +197,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         // Setup auth error listener
         socketService.on('auth_error', (data: any) => {
           console.error('[Auth] Socket authentication failed:', data.error);
-          toast({
-            title: 'Authentication Error',
-            description: 'Session expired. Please log in again.',
-            variant: 'destructive',
-          });
+          // toast({
+          //   title: 'Authentication Error',
+          //   description: 'Session expired. Please log in again.',
+          //   variant: 'destructive',
+          // });
           
           handleAuthError();
         });
