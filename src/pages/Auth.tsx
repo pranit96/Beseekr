@@ -1,4 +1,5 @@
 "use client";
+
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +9,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
 import { Sparkles } from "lucide-react";
 import Image from "next/image";
+
+/*
+  Auth.tsx
+  - Fixed light-mode contrast and layout issues.
+  - Added explicit light-mode classes (bg-white / text-slate-900) while preserving dark-mode styles.
+  - Improved accessibility (aria-live for rotating hero text) and small UX polish (clear password on error, loading states).
+  - Kept the original bubble animation and parallax but ensured they remain subtle in light mode.
+*/
 
 const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -49,12 +58,13 @@ const Auth = () => {
     return () => clearInterval(interval);
   }, [messages]);
 
-  // Parallax effect
+  // Parallax effect (subtle)
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       const { innerWidth, innerHeight } = window;
-      document.documentElement.style.setProperty("--mouse-x", `${(e.clientX / innerWidth - 0.5) * 20}px`);
-      document.documentElement.style.setProperty("--mouse-y", `${(e.clientY / innerHeight - 0.5) * 20}px`);
+      // reduce multiplier so the translation is subtle in light mode too
+      document.documentElement.style.setProperty("--mouse-x", `${(e.clientX / innerWidth - 0.5) * 12}px`);
+      document.documentElement.style.setProperty("--mouse-y", `${(e.clientY / innerHeight - 0.5) * 12}px`);
     };
     window.addEventListener("mousemove", handleMouseMove);
     return () => window.removeEventListener("mousemove", handleMouseMove);
@@ -71,7 +81,9 @@ const Auth = () => {
     try {
       await login(loginEmail, loginPassword);
     } catch (error) {
+      // clear only the password so user can retry quickly
       setLoginPassword("");
+      // Ideally: show an error toast. Kept minimal to avoid adding new dependencies.
     } finally {
       setIsLoading(false);
     }
@@ -90,7 +102,7 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex relative overflow-hidden">
+    <div className="min-h-screen flex relative overflow-hidden bg-white text-slate-900 dark:bg-background dark:text-foreground">
       {/* LEFT SIDE - Visuals */}
       <div className="hidden lg:flex lg:w-[60%] relative justify-center items-center overflow-hidden">
         <Image
@@ -100,54 +112,65 @@ const Auth = () => {
           priority
           className="object-cover object-center scale-105 animate-fade-in"
         />
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/50 via-background/70 to-background/90 mix-blend-multiply" />
+
+        {/* Overlay: different, subtle tint for light mode */}
+        <div className="absolute inset-0 mix-blend-multiply pointer-events-none
+                        bg-gradient-to-br from-primary/30 via-white/60 to-white/90
+                        dark:from-primary/50 dark:via-background/70 dark:to-background/90" />
 
         {/* Bubbles */}
         {bubbles.map((b) => (
           <div
             key={b.id}
-            className="absolute rounded-full bg-primary/20 backdrop-blur-sm animate-float-slow"
+            className="absolute rounded-full bg-primary/20 backdrop-blur-xs animate-float-slow"
             style={{
               width: `${b.size}px`,
               height: `${b.size}px`,
               left: `${b.x}%`,
               top: `${b.y}%`,
               transform: `translate(var(--mouse-x), var(--mouse-y))`,
+              boxShadow: "0 6px 18px rgba(0,0,0,0.06)",
             }}
           />
         ))}
 
         {/* Floating Text */}
         <div className="absolute z-20 text-center px-6 animate-fade-in max-w-4xl">
-          <h1 className="text-5xl md:text-6xl font-extrabold text-white drop-shadow-glow mb-4 transition-all duration-700">
+          <h1
+            className="text-4xl md:text-5xl lg:text-6xl font-extrabold drop-shadow-md mb-3 transition-all duration-700 text-slate-900 dark:text-white"
+            aria-live="polite"
+          >
             {messages[currentMsg]}
           </h1>
-          <p className="text-lg text-white/80 max-w-2xl mx-auto">
+          <p className="text-base md:text-lg text-slate-700 dark:text-white/80 max-w-2xl mx-auto">
             Step into a world where every AI collaborates like a friend. Your ideas, shared and evolved.
           </p>
         </div>
 
         {/* Sparkle overlay */}
-        <div className="absolute inset-0 pointer-events-none animate-shimmer bg-[linear-gradient(110deg,rgba(255,255,255,0.1),rgba(255,255,255,0.05),rgba(255,255,255,0.1))] bg-[length:200%_100%] opacity-30" />
+        <div className="absolute inset-0 pointer-events-none animate-shimmer bg-[linear-gradient(110deg,rgba(255,255,255,0.06),rgba(255,255,255,0.03),rgba(255,255,255,0.06))] bg-[length:200%_100%] opacity-60 dark:opacity-30" />
       </div>
 
       {/* RIGHT SIDE - Auth Form */}
-      <div className="flex-1 lg:w-[40%] flex items-center justify-center p-4 sm:p-8 bg-background relative">
-        <Card className="w-full max-w-md p-6 sm:p-8 glass shadow-strong border border-primary/20 hover:shadow-glow transition-all">
-          <div className="text-center mb-8">
-            <div className="mb-6">
-              <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-primary to-accent mx-auto mb-4 flex items-center justify-center shadow-glow">
+      <div className="flex-1 lg:w-[40%] flex items-center justify-center p-4 sm:p-8 relative">
+        <Card className="w-full max-w-md p-6 sm:p-8 glass shadow-strong border border-primary/20 transition-all
+                          bg-white/95 text-slate-900 dark:bg-card/90 dark:text-foreground">
+          <div className="text-center mb-6">
+            <div className="mb-4">
+              <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-primary to-accent mx-auto mb-3 flex items-center justify-center shadow-glow">
                 <Sparkles className="w-8 h-8 text-white animate-pulse" />
               </div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+              <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
                 CreatuAI
               </h1>
             </div>
-            <h2 className="text-2xl font-semibold mb-2 text-foreground">Let’s continue your creative AI journey </h2>
+            <h2 className="text-lg sm:text-xl font-semibold mb-2 text-slate-700 dark:text-foreground">
+              Let’s continue your creative AI journey
+            </h2>
           </div>
 
           <Tabs defaultValue="login" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-8">
+            <TabsList className="grid w-full grid-cols-2 mb-6">
               <TabsTrigger value="login">Login</TabsTrigger>
               <TabsTrigger value="signup">Sign Up</TabsTrigger>
             </TabsList>
