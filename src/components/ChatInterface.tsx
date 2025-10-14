@@ -26,6 +26,7 @@ export const ChatInterface: React.FC<{
   const [saveToConversation, setSaveToConversation] = useState(true);
   const [isLoadingLocal, setIsLoadingLocal] = useState(false);
   const [isExecuting, setIsExecuting] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'connecting'>('connecting');
   const [preparingMessage, setPreparingMessage] = useState(false);
   
@@ -431,18 +432,55 @@ export const ChatInterface: React.FC<{
 
   const handleCancelExecution = () => {
     if (cancelRef.current) {
+      // Show cancelling state
+      setIsCancelling(true);
+      
       try {
         cancelRef.current();
+        
+        // Update all pending agent responses to show cancelled status
+        setMessages(prev => prev.map(m => {
+          if (m.type === 'agent' && m.agentResponses) {
+            return {
+              ...m,
+              agentResponses: m.agentResponses.map(ar => 
+                ar.status === 'pending' 
+                  ? { 
+                      ...ar, 
+                      status: 'error', 
+                      content: ar.content 
+                        ? `${ar.content}\n\n*[Cancelled by user]*`
+                        : 'Cancelled by user'
+                    } 
+                  : ar
+              )
+            } as ChatMessage;
+          }
+          return m;
+        }));
+        
         toast({ 
           title: 'Cancelled', 
-          description: 'Orchestration cancelled by user', 
+          description: 'Request cancelled successfully', 
           variant: 'default' 
         });
       } catch (e) { 
         console.error('[Chat] Cancel error:', e);
       }
-      cancelRef.current = null;
-      setIsExecuting(false);
+      
+      // Clean up states with a slight delay for visual feedback
+      setTimeout(() => {
+        cancelRef.current = null;
+        setIsExecuting(false);
+        setIsLoadingLocal(false);
+        setPreparingMessage(false);
+        setIsCancelling(false);
+        
+        // Mark orchestration as complete
+        if (isActiveOrchestrationRef) {
+          isActiveOrchestrationRef.current = false;
+        }
+      }, 300);
     }
   };
 
@@ -484,7 +522,7 @@ export const ChatInterface: React.FC<{
     }
   };
 
-  const sendDisabled = isLoadingLocal || isExecuting || preparingMessage || (!!rateLimitedUntil && Date.now() < rateLimitedUntil) || !socketConnected;
+  const sendDisabled = isLoadingLocal || isExecuting || isCancelling || preparingMessage || (!!rateLimitedUntil && Date.now() < rateLimitedUntil) || !socketConnected;
 
   const quickPrompts = [
     "Explain this concept simply",
@@ -531,6 +569,21 @@ export const ChatInterface: React.FC<{
         <div className="flex-1">
           <p className="text-sm font-medium text-primary">Preparing your message...</p>
           <p className="text-xs text-primary/80">Setting up conversation and initializing agents</p>
+        </div>
+      </div>
+    );
+  };
+
+  // Cancelling Banner
+  const CancellingBanner = () => {
+    if (!isCancelling) return null;
+
+    return (
+      <div className="mb-4 p-3 rounded-lg border bg-orange-500/10 border-orange-500/20 flex items-center gap-3 animate-pulse">
+        <Loader2 className="w-4 h-4 animate-spin text-orange-600 dark:text-orange-400" />
+        <div className="flex-1">
+          <p className="text-sm font-medium text-orange-600 dark:text-orange-400">Cancelling request...</p>
+          <p className="text-xs text-orange-600/80 dark:text-orange-400/80">Stopping all agent operations</p>
         </div>
       </div>
     );
@@ -716,12 +769,21 @@ export const ChatInterface: React.FC<{
                   rows={1} 
                 />
                 <div className="flex items-center gap-2 flex-shrink-0">
-                  {isExecuting ? (
+                  {isCancelling ? (
+                    <Button 
+                      variant="destructive" 
+                      size="icon" 
+                      className="h-9 w-9 sm:h-10 sm:w-10 rounded-lg"
+                      disabled
+                    >
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    </Button>
+                  ) : isExecuting ? (
                     <Button 
                       variant="destructive" 
                       onClick={handleCancelExecution} 
                       size="icon" 
-                      className="h-9 w-9 sm:h-10 sm:w-10 rounded-lg"
+                      className="h-9 w-9 sm:h-10 sm:w-10 rounded-lg hover:bg-destructive/90 transition"
                     >
                       <X className="h-4 w-4" />
                     </Button>
@@ -799,6 +861,11 @@ export const ChatInterface: React.FC<{
                 {rateLimitedUntil && Date.now() < rateLimitedUntil ? (
                   <div className="text-xs text-destructive text-center animate-pulse">
                     Rate limit active — please wait {Math.ceil((rateLimitedUntil - Date.now()) / 1000)}s
+                  </div>
+                ) : isCancelling ? (
+                  <div className="text-xs text-orange-600 dark:text-orange-400 text-center flex items-center justify-center gap-2">
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    <span>Cancelling request...</span>
                   </div>
                 ) : preparingMessage ? (
                   <div className="text-xs text-primary text-center flex items-center justify-center gap-2">
