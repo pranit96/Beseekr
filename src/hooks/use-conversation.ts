@@ -1,5 +1,5 @@
-// src/hooks/useConversation.ts
-import { useCallback, useEffect, useState } from 'react';
+// src/hooks/use-conversation.ts
+import { useCallback, useEffect, useState, useRef } from 'react';
 import { apiClient } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import type { ChatMessage, AgentResponse } from '@/types/agent';
@@ -11,10 +11,22 @@ export function useConversation(initialConversationId?: string) {
   const [isLoading, setIsLoading] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
   const { toast } = useToast();
+  
+  // Track if we're currently in an active orchestration
+  const isActiveOrchestrationRef = useRef(false);
 
-  const loadConversationMessages = useCallback(async (convId: string) => {
+  const loadConversationMessages = useCallback(async (convId: string, force: boolean = false) => {
+    // Don't load messages if we're in the middle of an orchestration
+    // This prevents clearing messages that were just added
+    if (isActiveOrchestrationRef.current && !force) {
+      console.log('[useConversation] Skipping load - active orchestration in progress');
+      return;
+    }
+
     try {
       setIsLoading(true);
+      console.log('[useConversation] Loading messages for conversation:', convId);
+      
       const res = await apiClient.getMessages(convId, 1, 50);
       if (res.success && res.data) {
         const apiMessages: ChatMessage[] = res.data.map((msg: any) => {
@@ -47,21 +59,27 @@ export function useConversation(initialConversationId?: string) {
           return { ...base, type: 'user' } as ChatMessage;
         });
 
-        setMessages(apiMessages);
-        setHasStarted(apiMessages.length > 0);
-        messageCache.set(convId, apiMessages);
+        // Only set messages if we got actual data OR if forced
+        if (apiMessages.length > 0 || force) {
+          console.log('[useConversation] Loaded', apiMessages.length, 'messages');
+          setMessages(apiMessages);
+          setHasStarted(apiMessages.length > 0);
+          messageCache.set(convId, apiMessages);
+        } else {
+          console.log('[useConversation] No messages loaded, keeping current state');
+        }
       } else {
-        setMessages([]);
-        setHasStarted(false);
+        // Don't clear messages on load failure
+        console.log('[useConversation] Load failed or no data, keeping current messages');
       }
     } catch (err: any) {
+      console.error('[useConversation] Error loading messages:', err);
       toast({
         title: 'Failed to load conversation messages',
         description: err?.message || String(err),
         variant: 'destructive',
       });
-      setMessages([]);
-      setHasStarted(false);
+      // Don't clear messages on error
     } finally {
       setIsLoading(false);
     }
@@ -69,14 +87,18 @@ export function useConversation(initialConversationId?: string) {
 
   useEffect(() => {
     if (!conversationId) return;
+    
     const cached = messageCache.get(conversationId);
-    if (cached) {
+    if (cached && cached.length > 0) {
+      console.log('[useConversation] Using cached messages:', cached.length);
       setMessages(cached);
       setHasStarted(cached.length > 0);
-    } else {
+    } else if (messages.length === 0) {
+      // Only load if we don't have messages
+      console.log('[useConversation] No cached messages, loading...');
       loadConversationMessages(conversationId);
     }
-  }, [conversationId, loadConversationMessages, messageCache]);
+  }, [conversationId]);
 
   return {
     messages,
@@ -87,5 +109,6 @@ export function useConversation(initialConversationId?: string) {
     isLoading,
     hasStarted,
     setHasStarted,
+    isActiveOrchestrationRef, // Export this so ChatInterface can set it
   };
 }

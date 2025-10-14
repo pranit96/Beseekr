@@ -51,6 +51,7 @@ export const ChatInterface: React.FC<{
     isLoading: convLoading,
     hasStarted,
     setHasStarted,
+    isActiveOrchestrationRef, // Get the ref to prevent message clearing
   } = useConversation(activeConversationId);
 
   // orchestration helper
@@ -105,9 +106,18 @@ export const ChatInterface: React.FC<{
 
   // sync prop -> internal conversationId
   useEffect(() => {
-    setConversationId(activeConversationId ?? null);
-    if (activeConversationId) loadConversationMessages(activeConversationId);
-  }, [activeConversationId, loadConversationMessages, setConversationId]);
+    // Only load messages if switching to a different conversation
+    // Don't load if we just created this conversation
+    if (activeConversationId && activeConversationId !== conversationId) {
+      console.log('[Chat] Switching to conversation:', activeConversationId);
+      setConversationId(activeConversationId);
+      loadConversationMessages(activeConversationId);
+    } else if (activeConversationId === conversationId && messages.length === 0) {
+      // Only load if we have no messages yet
+      console.log('[Chat] Loading messages for current conversation');
+      loadConversationMessages(activeConversationId);
+    }
+  }, [activeConversationId]);
 
   const startRateLimitCountdown = (retryAfterSeconds: number) => {
     const until = Date.now() + retryAfterSeconds * 1000;
@@ -161,6 +171,11 @@ export const ChatInterface: React.FC<{
     setInput('');
     retryMessageRef.current = messageText;
 
+    // Mark that we're starting an orchestration
+    if (isActiveOrchestrationRef) {
+      isActiveOrchestrationRef.current = true;
+    }
+
     // Show preparing state
     setPreparingMessage(true);
     setHasStarted(true);
@@ -192,8 +207,14 @@ export const ChatInterface: React.FC<{
           if (createRes.success && createRes.data?.id) {
             convId = createRes.data.id;
             setConversationId(convId);
-            onConversationChange?.(convId);
-            onConversationCreated?.(convId);
+            
+            // Important: Call these callbacks AFTER we've added messages to UI
+            // to prevent race conditions with message loading
+            setTimeout(() => {
+              onConversationChange?.(convId);
+              onConversationCreated?.(convId);
+            }, 200);
+            
             console.log('[Chat] Conversation created:', convId);
           }
         } catch (err) {
@@ -399,6 +420,11 @@ export const ChatInterface: React.FC<{
       setIsLoadingLocal(false);
       setPreparingMessage(false);
       cancelRef.current = null;
+      
+      // Mark orchestration as complete
+      if (isActiveOrchestrationRef) {
+        isActiveOrchestrationRef.current = false;
+      }
     }
   };
 
