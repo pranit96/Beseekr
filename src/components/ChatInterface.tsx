@@ -1,6 +1,6 @@
 // src/components/ChatInterface.tsx
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Send, Workflow, Lock, LockOpen, X, Sparkles, Wifi, WifiOff } from 'lucide-react';
+import { Send, Workflow, Lock, LockOpen, X, Sparkles, Wifi, WifiOff, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { AgentSelector } from './AgentSelector';
@@ -27,6 +27,7 @@ export const ChatInterface: React.FC<{
   const [isLoadingLocal, setIsLoadingLocal] = useState(false);
   const [isExecuting, setIsExecuting] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'connecting'>('connecting');
+  const [preparingMessage, setPreparingMessage] = useState(false);
   
   const cancelRef = useRef<null | (() => void)>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -76,10 +77,10 @@ export const ChatInterface: React.FC<{
 
   // Auto-focus textarea
   useEffect(() => {
-    if (!isExecuting && textareaRef.current) {
+    if (!isExecuting && !preparingMessage && textareaRef.current) {
       textareaRef.current.focus();
     }
-  }, [isExecuting, hasStarted]);
+  }, [isExecuting, hasStarted, preparingMessage]);
 
   // cleanup rate-limit timer
   useEffect(() => {
@@ -145,56 +146,18 @@ export const ChatInterface: React.FC<{
       return;
     }
 
-    // Start execution immediately
-    setIsExecuting(true);
-    setHasStarted(true);
-    
     const messageText = input;
     setInput('');
     retryMessageRef.current = messageText;
 
-    // Create user message immediately
-    const userMessage: ChatMessage = {
-      id: `msg-${Date.now()}`,
-      type: 'user',
-      content: messageText,
-      timestamp: new Date(),
-      isFromCache: false,
-    };
-    
-    // Create agent message with pending responses immediately
-    const agentResponsesInitial: AgentResponse[] = selectedAgents.map(a => ({
-      agentId: a.id,
-      agentName: a.name,
-      content: '', // corresponds to 'response' in your previous code
-      timestamp: new Date(),
-      status: 'pending',
-      metadata: {
-        domain: a.domain // maps 'agent_domain' correctly
-      }
-    }));
-
-    const agentMessageId = `msg-${Date.now()}-agents`;
-    const agentMessage: ChatMessage = {
-      id: agentMessageId,
-      type: 'agent',
-      content: '',
-      timestamp: new Date(),
-      agentResponses: agentResponsesInitial,
-      executionMode,
-      markdownOutput: '',
-      finalOutput: '',
-      isFromCache: false,
-    };
-
-    // Add both messages immediately to show UI
-    setMessages(prev => [...prev, userMessage, agentMessage]);
-    setIsLoadingLocal(true);
+    // Show preparing state
+    setPreparingMessage(true);
+    setHasStarted(true);
 
     try {
       let convId = conversationId;
 
-      // Create conversation if needed (only once)
+      // STEP 1: Create conversation FIRST (if needed) - BEFORE any UI updates
       if (saveToConversation && !convId && !isCreatingConversationRef.current) {
         isCreatingConversationRef.current = true;
         
@@ -209,6 +172,7 @@ export const ChatInterface: React.FC<{
             title = title.substring(0, 47) + '...';
           }
           
+          console.log('[Chat] Creating new conversation...');
           const createRes = await apiClient.createConversation({
             agent_id: selectedAgents[0]?.id || null,
             title: title, 
@@ -219,6 +183,7 @@ export const ChatInterface: React.FC<{
             setConversationId(convId);
             onConversationChange?.(convId);
             onConversationCreated?.(convId);
+            console.log('[Chat] Conversation created:', convId);
           }
         } catch (err) {
           console.error('[Chat] Failed to create conversation:', err);
@@ -228,6 +193,51 @@ export const ChatInterface: React.FC<{
         }
       }
 
+      // Small delay to ensure state is fully updated
+      await new Promise(resolve => setTimeout(resolve, 50));
+
+      // STEP 2: NOW create UI messages with proper conversation context
+      const userMessage: ChatMessage = {
+        id: `msg-${Date.now()}`,
+        type: 'user',
+        content: messageText,
+        timestamp: new Date(),
+        isFromCache: false,
+      };
+      
+      const agentResponsesInitial: AgentResponse[] = selectedAgents.map(a => ({
+        agentId: a.id,
+        agentName: a.name,
+        content: '',
+        timestamp: new Date(),
+        status: 'pending',
+        metadata: {
+          domain: a.domain
+        }
+      }));
+
+      const agentMessageId = `msg-${Date.now()}-agents`;
+      const agentMessage: ChatMessage = {
+        id: agentMessageId,
+        type: 'agent',
+        content: '',
+        timestamp: new Date(),
+        agentResponses: agentResponsesInitial,
+        executionMode,
+        markdownOutput: '',
+        finalOutput: '',
+        isFromCache: false,
+      };
+
+      // Add messages to UI
+      setMessages(prev => [...prev, userMessage, agentMessage]);
+      setPreparingMessage(false);
+      setIsExecuting(true);
+      setIsLoadingLocal(true);
+
+      console.log('[Chat] Messages initialized, starting orchestration...');
+
+      // STEP 3: Execute orchestration with fully initialized state
       const payload: any = {
         agent_ids: selectedAgents.map(a => a.id),
         message: messageText,
@@ -240,13 +250,13 @@ export const ChatInterface: React.FC<{
       ensureConnected();
       cancelRef.current = null;
 
-      // Execute orchestration
       await execute(payload, {
         onAck: (d: any) => { 
           console.log('[Chat] Orchestration acknowledged', d);
         },
         onToken: (agentId: string, token: string) => {
           // Update immediately for smooth streaming
+          console.log('[Chat] Token received for agent:', agentId, 'Token length:', token.length);
           setMessages(prev => prev.map(m => {
             if (m.id !== agentMessageId) return m;
             return {
@@ -256,13 +266,14 @@ export const ChatInterface: React.FC<{
                 return { 
                   ...ar, 
                   content: (ar.content || '') + token,
-                  status: 'pending' // Keep pending while streaming
+                  status: 'pending'
                 };
               }) || []
             } as ChatMessage;
           }));
         },
         onAgentDone: (agentId: string, usage: any) => {
+          console.log('[Chat] Agent done:', agentId);
           setMessages(prev => prev.map(m => {
             if (m.id !== agentMessageId) return m;
             return {
@@ -324,7 +335,6 @@ export const ChatInterface: React.FC<{
         onError: (err: any) => {
           console.error('[Chat] Orchestration error:', err);
           
-          // Don't show rate limit errors as execution failures
           if (err?.error?.includes('rate') || err?.error?.includes('Too many')) {
             return;
           }
@@ -351,8 +361,8 @@ export const ChatInterface: React.FC<{
 
     } catch (err: any) {
       console.error('[Chat] Submit error:', err);
+      setPreparingMessage(false);
       
-      // Don't show rate limit errors
       if (!err?.message?.includes('rate') && !err?.message?.includes('Too many')) {
         toast({ 
           title: 'Error', 
@@ -363,6 +373,7 @@ export const ChatInterface: React.FC<{
     } finally {
       setIsExecuting(false);
       setIsLoadingLocal(false);
+      setPreparingMessage(false);
       cancelRef.current = null;
     }
   };
@@ -422,7 +433,7 @@ export const ChatInterface: React.FC<{
     }
   };
 
-  const sendDisabled = isLoadingLocal || isExecuting || (!!rateLimitedUntil && Date.now() < rateLimitedUntil) || !socketConnected;
+  const sendDisabled = isLoadingLocal || isExecuting || preparingMessage || (!!rateLimitedUntil && Date.now() < rateLimitedUntil) || !socketConnected;
 
   const quickPrompts = [
     "Explain this concept simply",
@@ -459,6 +470,21 @@ export const ChatInterface: React.FC<{
     );
   };
 
+  // Preparing Message Banner
+  const PreparingBanner = () => {
+    if (!preparingMessage) return null;
+
+    return (
+      <div className="mb-4 p-3 rounded-lg border bg-primary/10 border-primary/20 flex items-center gap-3">
+        <Loader2 className="w-4 h-4 animate-spin text-primary" />
+        <div className="flex-1">
+          <p className="text-sm font-medium text-primary">Preparing your message...</p>
+          <p className="text-xs text-primary/80">Setting up conversation and initializing agents</p>
+        </div>
+      </div>
+    );
+  };
+
   // Selected Agents Display Component
   const SelectedAgentsDisplay = () => {
     if (selectedAgents.length === 0) return null;
@@ -487,6 +513,7 @@ export const ChatInterface: React.FC<{
       {!hasStarted && messages.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center p-6 space-y-6">
           <ConnectionBanner />
+          <PreparingBanner />
           
           <div className="text-center space-y-3 max-w-2xl px-4">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
@@ -540,7 +567,11 @@ export const ChatInterface: React.FC<{
                   size="icon" 
                   className="h-10 w-10 rounded-lg bg-primary hover:bg-primary/90 transition flex-shrink-0"
                 >
-                  <Send className="h-4 w-4" />
+                  {preparingMessage ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Send className="h-4 w-4" />
+                  )}
                 </Button>
               </div>
             </div>
@@ -603,6 +634,7 @@ export const ChatInterface: React.FC<{
           <div className="flex-1 overflow-y-auto px-2 md:px-6 py-4">
             <div className="max-w-5xl 2xl:max-w-6xl mx-auto w-full">
               <ConnectionBanner />
+              <PreparingBanner />
               
               <MessageList 
                 messages={messages} 
@@ -648,9 +680,13 @@ export const ChatInterface: React.FC<{
                       disabled={!input.trim() || sendDisabled} 
                       size="icon" 
                       className="h-9 w-9 sm:h-10 sm:w-10 rounded-lg bg-primary hover:bg-primary/90 transition"
-                      title={!socketConnected ? 'Waiting for connection...' : undefined}
+                      title={!socketConnected ? 'Waiting for connection...' : preparingMessage ? 'Preparing message...' : undefined}
                     >
-                      <Send className="h-4 w-4" />
+                      {preparingMessage ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Send className="h-4 w-4" />
+                      )}
                     </Button>
                   )}
                 </div>
@@ -712,6 +748,11 @@ export const ChatInterface: React.FC<{
                 {rateLimitedUntil && Date.now() < rateLimitedUntil ? (
                   <div className="text-xs text-destructive text-center animate-pulse">
                     Rate limit active — please wait {Math.ceil((rateLimitedUntil - Date.now()) / 1000)}s
+                  </div>
+                ) : preparingMessage ? (
+                  <div className="text-xs text-primary text-center flex items-center justify-center gap-2">
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    <span>Preparing your message...</span>
                   </div>
                 ) : isExecuting ? (
                   <div className="text-xs text-muted-foreground text-center flex items-center justify-center gap-2">
