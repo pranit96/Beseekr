@@ -92,6 +92,17 @@ export const ChatInterface: React.FC<{
     };
   }, []);
 
+  // Debug: Monitor render state
+  useEffect(() => {
+    console.log('[Chat] Render state changed:', {
+      messagesCount: messages.length,
+      isExecuting,
+      preparingMessage,
+      hasStarted,
+      shouldShowWelcome: messages.length === 0 && !isExecuting && !preparingMessage
+    });
+  }, [messages.length, isExecuting, preparingMessage, hasStarted]);
+
   // sync prop -> internal conversationId
   useEffect(() => {
     setConversationId(activeConversationId ?? null);
@@ -229,11 +240,24 @@ export const ChatInterface: React.FC<{
         isFromCache: false,
       };
 
-      // Add messages to UI
-      setMessages(prev => [...prev, userMessage, agentMessage]);
+      // Add messages to UI - Force immediate state update
+      setMessages(prev => {
+        const newMessages = [...prev, userMessage, agentMessage];
+        console.log('[Chat] Messages added to state. Total:', newMessages.length);
+        console.log('[Chat] User message:', userMessage);
+        console.log('[Chat] Agent message:', agentMessage);
+        return newMessages;
+      });
+      
+      // Ensure UI updates before starting orchestration
       setPreparingMessage(false);
       setIsExecuting(true);
       setIsLoadingLocal(true);
+      
+      console.log('[Chat] State updated - isExecuting: true, preparingMessage: false');
+      
+      // Force React to process state updates
+      await new Promise(resolve => setTimeout(resolve, 100));
 
       console.log('[Chat] Messages initialized, starting orchestration...');
 
