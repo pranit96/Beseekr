@@ -364,7 +364,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           description: 'Successfully logged in.',
         });
         
-        navigate('/');
+        navigate('/chat');
       }
     } catch (error: any) {
       toast({
@@ -388,7 +388,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           description: 'Welcome to CreatuAI.',
         });
         
-        navigate('/');
+        navigate('/chat');
       }
     } catch (error: any) {
       toast({
