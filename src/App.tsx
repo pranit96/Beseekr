@@ -20,8 +20,6 @@ const queryClient = new QueryClient();
 const RootRedirect = () => {
   const { user, loading } = useAuth();
   
-  console.log('[RootRedirect] user:', user, 'loading:', loading);
-  
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -31,13 +29,7 @@ const RootRedirect = () => {
   }
   
   // If user is logged in, go to chat, otherwise show landing
-  if (user) {
-    console.log('[RootRedirect] User logged in, redirecting to /chat');
-    return <Navigate to="/chat" replace />;
-  }
-  
-  console.log('[RootRedirect] No user, showing Landing page');
-  return <Landing />;
+  return user ? <Navigate to="/chat" replace /> : <Landing />;
 };
 
 // Protected route wrapper

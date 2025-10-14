@@ -1,8 +1,8 @@
-// src/components/ConversationHistory.tsx
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
   MessageSquare,
   Plus,
+  MoreVertical,
   Archive,
   Trash2,
   Search,
@@ -10,6 +10,12 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,17 +30,10 @@ import { apiClient } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 
-type MessagePreview = {
-  role: 'user' | 'assistant' | 'system' | 'tool';
-  content: string;
-  created_at?: string;
-};
-
 interface Conversation {
   id: string;
   title: string;
-  last_message_at?: string;
-  last_message?: MessagePreview;
+  last_message_at: string;
   status: 'active' | 'archived';
   metadata?: {
     orchestration_mode?: string;
@@ -73,33 +72,16 @@ export const ConversationHistory = ({
     setLocalConversations(conversations);
   }, [conversations]);
 
-  // Search both title and last message content
   const filtered = useMemo(() => {
     if (!query.trim()) return localConversations;
     const q = query.trim().toLowerCase();
-    return localConversations.filter((c) => {
-      const title = (c.title || 'untitled').toLowerCase();
-      const lastContent = (c.last_message?.content || '').toLowerCase();
-      return title.includes(q) || lastContent.includes(q);
-    });
+    return localConversations.filter((c) => (c.title || 'untitled').toLowerCase().includes(q));
   }, [localConversations, query]);
 
-  // --- handleSelectConversation must be declared before the keydown effect ---
-  const handleSelectConversation = useCallback(
-    (id: string) => {
-      onSelectConversation(id);
-      const idx = filtered.findIndex((c) => c.id === id);
-      setFocusedIndex(idx >= 0 ? idx : null);
-    },
-    [onSelectConversation, filtered]
-  );
-
-  // Keyboard navigation: arrow up/down + enter to select
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (!filtered.length) return;
-      const activeTag = document.activeElement?.tagName;
-      if (activeTag && (activeTag === 'INPUT' || activeTag === 'TEXTAREA' || (document.activeElement as HTMLElement).isContentEditable)) return;
+      if (document.activeElement && (document.activeElement as HTMLElement).tagName === 'INPUT') return;
 
       if (e.key === 'ArrowDown') {
         e.preventDefault();
@@ -116,15 +98,22 @@ export const ConversationHistory = ({
 
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [filtered, focusedIndex, handleSelectConversation]);
+  }, [filtered, focusedIndex]);
 
-  // Scroll focused item into view
   useEffect(() => {
     if (focusedIndex === null || !listRef.current) return;
-    const items = listRef.current.querySelectorAll('[data-conversation-item]');
-    const el = items[focusedIndex] as HTMLElement | undefined;
+    const el = listRef.current.querySelectorAll('[data-conversation-item]')[focusedIndex] as HTMLElement | undefined;
     if (el) el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }, [focusedIndex, filtered]);
+
+  const handleSelectConversation = useCallback(
+    (id: string) => {
+      onSelectConversation(id);
+      const idx = filtered.findIndex((c) => c.id === id);
+      setFocusedIndex(idx >= 0 ? idx : null);
+    },
+    [onSelectConversation, filtered]
+  );
 
   const handleDeleteConversation = async () => {
     if (!selectedConversation) return;
@@ -142,13 +131,13 @@ export const ConversationHistory = ({
         });
         onConversationDeleted();
       } else {
-        throw new Error(response.error || response.message || 'Failed to delete conversation');
+        throw new Error(response.message || 'Failed to delete conversation');
       }
     } catch (error: any) {
       setLocalConversations(original);
       toast({
         title: 'Failed to delete conversation',
-        description: error.message || String(error),
+        description: error.message || 'Please try again.',
         variant: 'destructive',
       });
     } finally {
@@ -173,13 +162,13 @@ export const ConversationHistory = ({
         });
         onConversationArchived();
       } else {
-        throw new Error(response.error || response.message || 'Failed to archive conversation');
+        throw new Error(response.message || 'Failed to archive conversation');
       }
     } catch (error: any) {
       setLocalConversations(original);
       toast({
         title: 'Failed to archive conversation',
-        description: error.message || String(error),
+        description: error.message || 'Please try again.',
         variant: 'destructive',
       });
     } finally {
@@ -188,20 +177,10 @@ export const ConversationHistory = ({
     }
   };
 
-  const snippetFor = (conv: Conversation, max = 80) => {
-    const content = conv.last_message?.content?.trim() || '';
-    if (!content) return 'No messages yet';
-    const truncated = content.length > max ? content.slice(0, max - 1).trim() + '…' : content;
-    const role = conv.last_message?.role;
-    const prefix = role === 'user' ? 'You: ' : role === 'assistant' ? 'AI: ' : '';
-    return prefix + truncated;
-  };
-
   const renderConversationRow = (conversation: Conversation, idx: number) => {
     const isActive = currentConversationId === conversation.id;
-    const lastAt = conversation.last_message_at || conversation.last_message?.created_at;
-    const date = lastAt ? new Date(lastAt) : null;
-    const subtitle = snippetFor(conversation, 80);
+    const lastAt = conversation.last_message_at ? new Date(conversation.last_message_at) : null;
+    const subtitle = lastAt ? lastAt.toLocaleDateString() : '';
 
     return (
       <div
@@ -218,42 +197,29 @@ export const ConversationHistory = ({
           }
         }}
         onMouseEnter={() => setFocusedIndex(idx)}
-        className={`group relative flex items-start gap-3 rounded-lg px-3 py-3 transition-smooth cursor-pointer focus:outline-none ${
+        className={`group relative flex items-center rounded-lg px-2 py-2 transition-smooth cursor-pointer focus:outline-none ${
           isActive ? 'bg-muted border border-border' : 'hover:bg-muted/50'
         } ${focusedIndex === idx ? 'ring-2 ring-primary/30' : ''}`}
       >
         {/* left icon */}
-        <div className="rounded-md p-2 bg-muted/20 flex items-center justify-center shrink-0 mt-1">
-          <MessageSquare className="w-5 h-5 text-muted-foreground" />
+        <div className="rounded-md p-1 bg-muted/20 flex items-center justify-center shrink-0 mr-3">
+          <MessageSquare className="w-4 h-4 text-muted-foreground" />
         </div>
 
-        {/* middle: title + subtitle (constrain title height) */}
+        {/* middle: title + subtitle (can shrink) */}
         <div className="flex-1 min-w-0 overflow-hidden">
-          <div className="flex items-start justify-between gap-2 min-w-0">
-            {/* Title: clamp to 2 lines so row doesn't expand */}
-            <p
-              className="text-sm font-medium leading-tight flex-1 min-w-0"
-              style={{
-                display: '-webkit-box',
-                WebkitLineClamp: 2,
-                WebkitBoxOrient: 'vertical',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                wordBreak: 'break-word',
-              }}
-            >
+          <div className="flex items-center gap-2 min-w-0">
+            <p className="text-sm font-medium truncate flex-1 min-w-0">
               {conversation.title || 'Untitled'}
             </p>
-
-            <span className="text-xs text-muted-foreground shrink-0 ml-2 mt-0.5">
-              {date ? date.toLocaleDateString() : ''}
-            </span>
+            {conversation.status === 'archived' && (
+              <span className="text-xs text-muted-foreground shrink-0 ml-1">Archived</span>
+            )}
           </div>
-
-          <p className="text-xs text-muted-foreground truncate mt-1">{subtitle}</p>
+          <p className="text-xs text-muted-foreground truncate">{subtitle}</p>
         </div>
 
-        {/* right: actions (archive + delete + open) — small buttons that won't grow the row */}
+        {/* right: actions (never shrink) */}
         <div className="flex items-center gap-1 ml-2 shrink-0">
           <button
             aria-label={`Open conversation ${conversation.title || 'Untitled'}`}
@@ -266,33 +232,43 @@ export const ConversationHistory = ({
             <ChevronRight className="w-4 h-4" />
           </button>
 
-          {/* Archive button (visible) */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setSelectedConversation(conversation);
-              setArchiveDialogOpen(true);
-            }}
-            title="Archive conversation"
-            className="p-2 rounded-md hover:bg-muted/40"
-            aria-label="Archive conversation"
-          >
-            <Archive className="w-4 h-4" />
-          </button>
-
-          {/* Delete button (visible) */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setSelectedConversation(conversation);
-              setDeleteDialogOpen(true);
-            }}
-            title="Delete conversation"
-            className="p-2 rounded-md hover:bg-muted/40"
-            aria-label="Delete conversation"
-          >
-            <Trash2 className="w-4 h-4 text-destructive" />
-          </button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                aria-haspopup="menu"
+                className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0 mr-1"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <MoreVertical className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedConversation(conversation);
+                  setArchiveDialogOpen(true);
+                }}
+                className="flex items-center gap-2"
+              >
+                <Archive className="w-4 h-4" />
+                Archive
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedConversation(conversation);
+                  setDeleteDialogOpen(true);
+                }}
+                className="flex items-center gap-2 text-destructive"
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     );
