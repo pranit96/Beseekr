@@ -206,11 +206,11 @@ export const ConversationHistory = ({
           <MessageSquare className="w-4 h-4 text-muted-foreground" />
         </div>
 
-        {/* middle: title + subtitle (can shrink) */}
+        {/* middle: title + subtitle (wrapped, non-fading) */}
         <div className="flex-1 min-w-0 overflow-hidden pr-2">
           <div className="flex flex-col min-w-0">
             <p
-              className="text-sm font-medium break-words line-clamp-2 leading-snug"
+              className="text-sm font-medium break-words line-clamp-1 leading-snug"
               style={{ wordBreak: 'break-word' }}
             >
               {conversation.title || 'Untitled'}
@@ -219,10 +219,12 @@ export const ConversationHistory = ({
               <span className="text-xs text-muted-foreground mt-0.5">Archived</span>
             )}
           </div>
+
           {subtitle && (
             <p className="text-xs text-muted-foreground truncate">{subtitle}</p>
           )}
         </div>
+
 
 
         {/* right: actions (never shrink) */}
