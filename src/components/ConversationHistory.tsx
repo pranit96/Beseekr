@@ -207,17 +207,23 @@ export const ConversationHistory = ({
         </div>
 
         {/* middle: title + subtitle (can shrink) */}
-        <div className="flex-1 min-w-0 overflow-hidden">
-          <div className="flex items-center gap-2 min-w-0">
-            <p className="text-sm font-medium truncate flex-1 min-w-0">
+        <div className="flex-1 min-w-0 overflow-hidden pr-2">
+          <div className="flex flex-col min-w-0">
+            <p
+              className="text-sm font-medium break-words line-clamp-2 leading-snug"
+              style={{ wordBreak: 'break-word' }}
+            >
               {conversation.title || 'Untitled'}
             </p>
             {conversation.status === 'archived' && (
-              <span className="text-xs text-muted-foreground shrink-0 ml-1">Archived</span>
+              <span className="text-xs text-muted-foreground mt-0.5">Archived</span>
             )}
           </div>
-          <p className="text-xs text-muted-foreground truncate">{subtitle}</p>
+          {subtitle && (
+            <p className="text-xs text-muted-foreground truncate">{subtitle}</p>
+          )}
         </div>
+
 
         {/* right: actions (never shrink) */}
         <div className="flex items-center gap-1 ml-2 shrink-0">
