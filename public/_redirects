@@ -1,1 +1,5 @@
+# Single page app redirects - handle client-side routing
 /*    /index.html   200
+
+# Optional: Explicit root path handling
+/     /index.html   200
