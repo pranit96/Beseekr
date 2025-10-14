@@ -26,13 +26,13 @@ const ProtectedRoute = () => {
   }
   
   if (!user) {
-    return <Navigate to="/auth" replace />;
+    return <Navigate to="/" replace />; // Redirect to landing page if not authenticated
   }
   
   return <Outlet />;
 };
 
-// Public Route wrapper (redirects to home if already logged in)
+// Public Route wrapper (redirects to app if already logged in)
 const PublicRoute = () => {
   const { user, loading } = useAuth();
   
@@ -41,10 +41,10 @@ const PublicRoute = () => {
   }
   
   if (user) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/chat" replace />; // Redirect to chat if already authenticated
   }
   
-  return <Auth />;
+  return <Outlet />;
 };
 
 const App = () => (
@@ -56,13 +56,22 @@ const App = () => (
         <BrowserRouter>
           <AuthProvider>
             <Routes>
-              <Route path="/auth" element={<PublicRoute />} />
+              {/* Public routes - accessible without authentication */}
+              <Route element={<PublicRoute />}>
+                <Route path="/" element={<Landing />} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/privacy" element={<Privacy />} />
+              </Route>
+              
+              {/* Protected routes - require authentication */}
               <Route element={<ProtectedRoute />}>
-                <Route path="/" element={<Chat />} />
+                <Route path="/chat" element={<Chat />} />
                 <Route path="/agents" element={<Agents />} />
                 <Route path="/analytics" element={<Analytics />} />
                 <Route path="/profile" element={<Profile />} />
               </Route>
+              
+              {/* Catch all route */}
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AuthProvider>
