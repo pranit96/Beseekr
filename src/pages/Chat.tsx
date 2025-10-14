@@ -123,8 +123,7 @@ const Chat = () => {
     }
 
     try {
-      console.log('[Chat] Fetching conversations, attempt:', fetchAttemptRef.current + 1);
-      
+     
       const response = await apiClient.getConversations({
         status: 'active',
         page: 1,
@@ -303,8 +302,6 @@ const Chat = () => {
     const deletedConvId = deletedId || currentConversationId;
     
     if (deletedConvId) {
-      // Clear cache through the hook
-      console.log('[Chat] Clearing cache for deleted conversation:', deletedConvId);
       
       // If the deleted conversation is the current one, clear it
       if (currentConversationId === deletedConvId) {

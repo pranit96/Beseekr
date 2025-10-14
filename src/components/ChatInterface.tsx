@@ -95,17 +95,6 @@ export const ChatInterface: React.FC<{
     };
   }, []);
 
-  // Debug: Monitor render state
-  useEffect(() => {
-    console.log('[Chat] Render state changed:', {
-      messagesCount: messages.length,
-      isExecuting,
-      preparingMessage,
-      hasStarted,
-      shouldShowWelcome: messages.length === 0 && !isExecuting && !preparingMessage
-    });
-  }, [messages.length, isExecuting, preparingMessage, hasStarted]);
-
   // sync prop -> internal conversationId
   useEffect(() => {
     // Only load messages if switching to a different conversation

@@ -38,15 +38,13 @@ export const useAgents = () => {
     setError(null);
 
     try {
-      console.log('[useAgents] Fetching agents, attempt:', retryCountRef.current + 1);
-      
+     
       const res = await apiClient.getMyAgents();
       
       if (res.success && Array.isArray(res.data)) {
         setAgents(res.data);
         setError(null);
         retryCountRef.current = 0;
-        console.log('[useAgents] Successfully fetched', res.data.length, 'agents');
       } else {
         throw new Error(res.error || "Failed to fetch agents");
       }
@@ -95,7 +93,6 @@ export const useAgents = () => {
   // Initial fetch on mount or when user changes
   useEffect(() => {
     if (user) {
-      console.log('[useAgents] User detected, fetching agents');
       fetchAgents();
     } else {
       console.log('[useAgents] No user, clearing agents');

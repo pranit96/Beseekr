@@ -68,8 +68,6 @@ class ApiClient {
 
     const requestPromise = (async () => {
       try {
-        console.log('[API] Making request:', endpoint);
-        
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
 
@@ -144,7 +142,6 @@ class ApiClient {
   }
 
   private clearCache() {
-    console.log('[API] Clearing request cache');
     this.requestCache.clear();
   }
 
@@ -164,7 +161,6 @@ class ApiClient {
 
     keysToDelete.forEach(key => {
       this.requestCache.delete(key);
-      console.log('[API] Invalidated cache:', key);
     });
   }
 
