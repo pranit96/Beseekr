@@ -64,20 +64,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // Check if session is still valid
   const isSessionValid = useCallback((): boolean => {
-    // Check if user exists
     if (!user) {
       return false;
     }
-
-    // If using HttpOnly cookies, we can't access them via document.cookie
-    // So we trust that if user exists, session is valid
-    // The backend will return 401 if token is actually invalid
     return true;
   }, [user]);
 
   // Refresh authentication state
   const refreshAuth = useCallback(async (silent: boolean = false) => {
-    // Prevent duplicate refresh requests
     if (refreshingRef.current) {
       console.log('[Auth] Refresh already in progress, skipping');
       return;
@@ -106,7 +100,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch (error: any) {
       console.error('[Auth] Session refresh failed:', error);
       
-      // Only force logout if it's a clear auth error
       if (error.message?.includes('401') || error.message?.includes('Unauthorized')) {
         handleAuthError();
       }
@@ -118,7 +111,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Periodic session validation
   useEffect(() => {
     if (!user) {
-      // Clear intervals if user is logged out
       if (sessionCheckIntervalRef.current) {
         clearInterval(sessionCheckIntervalRef.current);
       }
@@ -128,10 +120,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    // Session health check interval - less aggressive
     sessionCheckIntervalRef.current = setInterval(() => {
-  
-      // If user has been inactive for 30 minutes, do a silent refresh
       const inactiveTime = Date.now() - lastActivityRef.current;
       if (inactiveTime > 30 * 60 * 1000) {
         console.log('[Auth] User inactive for 30min, refreshing session...');
@@ -139,7 +128,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     }, SESSION_CHECK_INTERVAL);
 
-    // Token refresh interval (proactive refresh)
     tokenRefreshIntervalRef.current = setInterval(() => {
       console.log('[Auth] Running proactive token refresh...');
       refreshAuth(true);
@@ -158,15 +146,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Socket token refresh callback
   const handleTokensRefreshed = useCallback((tokens: { access_token: string; refresh_token: string }) => {
     console.log('[Auth] Socket tokens refreshed, updating auth state...');
-    
-    // Refresh user data after token refresh
     refreshAuth(true);
   }, [refreshAuth]);
 
   // Initialize socket connection when user is logged in
   useEffect(() => {
     if (!user) {
-      // User not logged in, disconnect socket if connected
       if (socketService.isConnected()) {
         console.log('[Auth] User logged out, disconnecting socket');
         socketService.disconnect();
@@ -175,15 +160,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    // User is logged in, initialize socket
     const initializeSocket = async () => {
       try {
         console.log('[Auth] Initializing socket connection...');
         
-        // Setup token refresh callback BEFORE connecting
         socketService.setTokenRefreshCallback(handleTokensRefreshed);
 
-        // Setup connection status listener
         socketService.on('connection_status', (data: any) => {
           setSocketConnected(data.connected);
           
@@ -194,19 +176,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           }
         });
 
-        // Setup auth error listener
         socketService.on('auth_error', (data: any) => {
           console.error('[Auth] Socket authentication failed:', data.error);
-          // toast({
-          //   title: 'Authentication Error',
-          //   description: 'Session expired. Please log in again.',
-          //   variant: 'destructive',
-          // });
-          
           handleAuthError();
         });
 
-        // Setup forced disconnect listener
         socketService.on('forced_disconnect', (data: any) => {
           console.warn('[Auth] Socket force disconnected:', data.message);
           toast({
@@ -217,11 +191,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           handleAuthError();
         });
 
-        // Setup connection error listener
         socketService.on('connection_error', (data: any) => {
           console.error('[Auth] Socket connection error:', data.error);
           
-          // Only show toast if multiple attempts have failed
           if (data.attempts >= 3) {
             toast({
               title: 'Connection Issues',
@@ -231,7 +203,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           }
         });
 
-        // Setup max reconnect attempts listener
         socketService.on('max_reconnect_attempts', (data: any) => {
           toast({
             title: 'Connection Failed',
@@ -240,7 +211,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           });
         });
 
-        // Connect to socket
         socketService.connect();
         console.log('[Auth] Socket connection initiated');
 
@@ -256,7 +226,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     initializeSocket();
 
-    // Cleanup on unmount or user change
     return () => {
       if (socketService.isConnected()) {
         socketService.disconnect();
@@ -273,16 +242,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         await fetchCurrentUser();
       } catch (error) {
         console.error('[Auth] Initial auth check failed:', error);
+        // Don't redirect on initial load failure
       }
     };
 
     initAuth();
-
-    // Set up unauthorized handler for token expiration
-    apiClient.setUnauthorizedHandler(() => {
-      console.warn('[Auth] Unauthorized response received');
-      handleAuthError();
-    });
 
     // Listen for storage events (for multi-tab logout)
     const handleStorageChange = (e: StorageEvent) => {
@@ -319,12 +283,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const handleAuthError = useCallback(() => {
     console.log('[Auth] Handling auth error - clearing session');
     
-    // Disconnect socket
     if (socketService.isConnected()) {
       socketService.disconnect();
     }
     
-    // Clear intervals
     if (sessionCheckIntervalRef.current) {
       clearInterval(sessionCheckIntervalRef.current);
     }
@@ -332,24 +294,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       clearInterval(tokenRefreshIntervalRef.current);
     }
     
-    // Clear user state
     setUser(null);
     setSocketConnected(false);
     refreshingRef.current = false;
     
-    // Notify other tabs
     localStorage.setItem('auth_logout', Date.now().toString());
     setTimeout(() => localStorage.removeItem('auth_logout'), 1000);
     
-    // Navigate to auth page
-    navigate('/auth');
+    // Only redirect if on a protected route
+    const currentPath = window.location.pathname;
+    const publicPaths = ['/', '/auth', '/privacy'];
     
-    // Show notification
-    toast({
-      title: 'Session expired',
-      description: 'Please log in again.',
-      variant: 'destructive',
-    });
+    if (!publicPaths.includes(currentPath)) {
+      navigate('/auth');
+      
+      toast({
+        title: 'Session expired',
+        description: 'Please log in again.',
+        variant: 'destructive',
+      });
+    }
   }, [navigate, toast]);
 
   const login = async (email: string, password: string) => {
@@ -402,13 +366,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = async () => {
     try {
-      // Disconnect socket first
       if (socketService.isConnected()) {
         socketService.disconnect();
         setSocketConnected(false);
       }
       
-      // Clear intervals
       if (sessionCheckIntervalRef.current) {
         clearInterval(sessionCheckIntervalRef.current);
       }
@@ -416,17 +378,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         clearInterval(tokenRefreshIntervalRef.current);
       }
       
-      // Call backend logout to clear cookies
       await apiClient.logout();
       
       setUser(null);
       refreshingRef.current = false;
       
-      // Notify other tabs
       localStorage.setItem('auth_logout', Date.now().toString());
       setTimeout(() => localStorage.removeItem('auth_logout'), 1000);
       
-      navigate('/auth');
+      navigate('/');
       
       toast({
         title: 'Logged out',
@@ -435,11 +395,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       console.error('[Auth] Logout error:', error);
       
-      // Still clear local user state even if API call fails
       setUser(null);
       setSocketConnected(false);
       refreshingRef.current = false;
-      navigate('/auth');
+      navigate('/');
     }
   };
 
@@ -461,13 +420,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const deleteAccount = async (email: string) => {
     try {
-      // Disconnect socket
       if (socketService.isConnected()) {
         socketService.disconnect();
         setSocketConnected(false);
       }
       
-      // Clear intervals
       if (sessionCheckIntervalRef.current) {
         clearInterval(sessionCheckIntervalRef.current);
       }
@@ -481,11 +438,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(null);
         refreshingRef.current = false;
         
-        // Notify other tabs
         localStorage.setItem('auth_logout', Date.now().toString());
         setTimeout(() => localStorage.removeItem('auth_logout'), 1000);
         
-        navigate('/auth');
+        navigate('/');
         
         toast({
           title: 'Account deleted',
