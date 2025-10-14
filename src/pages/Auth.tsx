@@ -1,5 +1,3 @@
-"use client";
-
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,15 +6,6 @@ import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
 import { Sparkles } from "lucide-react";
-import Image from "next/image";
-
-/*
-  Auth.tsx
-  - Fixed light-mode contrast and layout issues.
-  - Added explicit light-mode classes (bg-white / text-slate-900) while preserving dark-mode styles.
-  - Improved accessibility (aria-live for rotating hero text) and small UX polish (clear password on error, loading states).
-  - Kept the original bubble animation and parallax but ensured they remain subtle in light mode.
-*/
 
 const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -62,7 +51,6 @@ const Auth = () => {
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       const { innerWidth, innerHeight } = window;
-      // reduce multiplier so the translation is subtle in light mode too
       document.documentElement.style.setProperty("--mouse-x", `${(e.clientX / innerWidth - 0.5) * 12}px`);
       document.documentElement.style.setProperty("--mouse-y", `${(e.clientY / innerHeight - 0.5) * 12}px`);
     };
@@ -81,9 +69,7 @@ const Auth = () => {
     try {
       await login(loginEmail, loginPassword);
     } catch (error) {
-      // clear only the password so user can retry quickly
       setLoginPassword("");
-      // Ideally: show an error toast. Kept minimal to avoid adding new dependencies.
     } finally {
       setIsLoading(false);
     }
@@ -105,15 +91,13 @@ const Auth = () => {
     <div className="min-h-screen flex relative overflow-hidden bg-white text-slate-900 dark:bg-background dark:text-foreground">
       {/* LEFT SIDE - Visuals */}
       <div className="hidden lg:flex lg:w-[60%] relative justify-center items-center overflow-hidden">
-        <Image
+        <img
           src="/images/kid-smiling-toy.jpg"
           alt="Creative AI experience"
-          fill
-          priority
-          className="object-cover object-center scale-105 animate-fade-in"
+          className="absolute inset-0 w-full h-full object-cover object-center scale-105 animate-fade-in"
         />
 
-        {/* Overlay: different, subtle tint for light mode */}
+        {/* Overlay */}
         <div className="absolute inset-0 mix-blend-multiply pointer-events-none
                         bg-gradient-to-br from-primary/30 via-white/60 to-white/90
                         dark:from-primary/50 dark:via-background/70 dark:to-background/90" />
@@ -165,7 +149,7 @@ const Auth = () => {
               </h1>
             </div>
             <h2 className="text-lg sm:text-xl font-semibold mb-2 text-slate-700 dark:text-foreground">
-              Let’s continue your creative AI journey
+              Let's continue your creative AI journey
             </h2>
           </div>
 

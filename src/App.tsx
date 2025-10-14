@@ -29,12 +29,7 @@ const ProtectedRoute = () => {
     return <Navigate to="/auth" replace />; // Redirect to auth page if not authenticated
   }
   
-  return (
-    <>
-      <TopBar />
-      <Outlet />
-    </>
-  );
+  return <Outlet />;
 };
 
 // Public Route wrapper (redirects to chat if already logged in)
