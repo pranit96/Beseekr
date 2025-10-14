@@ -268,7 +268,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const response = await apiClient.getCurrentUser();
       if (response.success && response.data) {
         setUser(response.data.user);
-        console.log('[Auth] User fetched successfully:', response.data.user.email);
       } else {
         setUser(null);
       }
