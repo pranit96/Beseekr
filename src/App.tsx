@@ -69,7 +69,7 @@ const App = () => (
               </Route>
 
               {/* Protected routes - TopBar will only render for these */}
-              <Route element={<ProtectedLayout />}> 
+               <Route element={<ProtectedLayout />}>
                 <Route path="/chat" element={<Chat />} />
                 <Route path="/agents" element={<Agents />} />
                 <Route path="/analytics" element={<Analytics />} />
