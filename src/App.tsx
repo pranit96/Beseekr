@@ -2,10 +2,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Outlet, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "./hooks/use-theme";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
-import { TopBar } from "./components/TopBar";
 import Chat from "./pages/Chat";
 import Agents from "./pages/Agents";
 import Analytics from "./pages/Analytics";
@@ -17,34 +16,59 @@ import Privacy from "./pages/Privacy";
 
 const queryClient = new QueryClient();
 
-// Protected Route wrapper
-const ProtectedRoute = () => {
+// Root redirect component
+const RootRedirect = () => {
   const { user, loading } = useAuth();
   
   if (loading) {
-    return <div className="flex items-center justify-center h-screen">Loading...</div>;
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-pulse text-muted-foreground">Loading...</div>
+      </div>
+    );
+  }
+  
+  // If user is logged in, go to chat, otherwise show landing
+  return user ? <Navigate to="/chat" replace /> : <Landing />;
+};
+
+// Protected route wrapper
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, loading } = useAuth();
+  
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-pulse text-muted-foreground">Loading...</div>
+      </div>
+    );
   }
   
   if (!user) {
-    return <Navigate to="/auth" replace />; // Redirect to auth page if not authenticated
+    return <Navigate to="/auth" replace />;
   }
   
-  return <Outlet />;
+  return <>{children}</>;
 };
 
-// Public Route wrapper (redirects to chat if already logged in)
-const PublicRoute = () => {
+// Public route wrapper (for auth page)
+const PublicOnlyRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   
   if (loading) {
-    return <div className="flex items-center justify-center h-screen">Loading...</div>;
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-pulse text-muted-foreground">Loading...</div>
+      </div>
+    );
   }
   
+  // If already logged in, redirect to chat
   if (user) {
-    return <Navigate to="/chat" replace />; // Redirect to chat if already authenticated
+    return <Navigate to="/chat" replace />;
   }
   
-  return <Outlet />;
+  return <>{children}</>;
 };
 
 const App = () => (
@@ -56,22 +80,55 @@ const App = () => (
         <BrowserRouter>
           <AuthProvider>
             <Routes>
-              {/* Public routes - accessible without authentication */}
-              <Route element={<PublicRoute />}>
-                <Route path="/" element={<Landing />} />
-                <Route path="/auth" element={<Auth />} />
-              </Route>
+              {/* Root - shows landing if not logged in, redirects to chat if logged in */}
+              <Route path="/" element={<RootRedirect />} />
+              
+              {/* Auth page - only accessible when not logged in */}
+              <Route 
+                path="/auth" 
+                element={
+                  <PublicOnlyRoute>
+                    <Auth />
+                  </PublicOnlyRoute>
+                } 
+              />
               
               {/* Privacy page - accessible to everyone */}
               <Route path="/privacy" element={<Privacy />} />
               
               {/* Protected routes - require authentication */}
-              <Route element={<ProtectedRoute />}>
-                <Route path="/chat" element={<Chat />} />
-                <Route path="/agents" element={<Agents />} />
-                <Route path="/analytics" element={<Analytics />} />
-                <Route path="/profile" element={<Profile />} />
-              </Route>
+              <Route 
+                path="/chat" 
+                element={
+                  <ProtectedRoute>
+                    <Chat />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/agents" 
+                element={
+                  <ProtectedRoute>
+                    <Agents />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/analytics" 
+                element={
+                  <ProtectedRoute>
+                    <Analytics />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/profile" 
+                element={
+                  <ProtectedRoute>
+                    <Profile />
+                  </ProtectedRoute>
+                } 
+              />
               
               {/* Catch all route */}
               <Route path="*" element={<NotFound />} />
