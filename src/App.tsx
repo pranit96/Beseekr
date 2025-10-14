@@ -26,13 +26,18 @@ const ProtectedRoute = () => {
   }
   
   if (!user) {
-    return <Navigate to="/" replace />; // Redirect to landing page if not authenticated
+    return <Navigate to="/auth" replace />; // Redirect to auth page if not authenticated
   }
   
-  return <Outlet />;
+  return (
+    <>
+      <TopBar />
+      <Outlet />
+    </>
+  );
 };
 
-// Public Route wrapper (redirects to app if already logged in)
+// Public Route wrapper (redirects to chat if already logged in)
 const PublicRoute = () => {
   const { user, loading } = useAuth();
   
@@ -60,8 +65,10 @@ const App = () => (
               <Route element={<PublicRoute />}>
                 <Route path="/" element={<Landing />} />
                 <Route path="/auth" element={<Auth />} />
-                <Route path="/privacy" element={<Privacy />} />
               </Route>
+              
+              {/* Privacy page - accessible to everyone */}
+              <Route path="/privacy" element={<Privacy />} />
               
               {/* Protected routes - require authentication */}
               <Route element={<ProtectedRoute />}>
