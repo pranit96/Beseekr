@@ -4,7 +4,20 @@ import { apiClient } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import type { ChatMessage, AgentResponse } from '@/types/agent';
 
-export function useConversation(initialConversationId?: string) {
+interface UseConversationReturn {
+  messages: ChatMessage[];
+  setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>;
+  conversationId: string | null;
+  setConversationId: React.Dispatch<React.SetStateAction<string | null>>;
+  loadConversationMessages: (convId: string, force?: boolean) => Promise<void>;
+  isLoading: boolean;
+  hasStarted: boolean;
+  setHasStarted: React.Dispatch<React.SetStateAction<boolean>>;
+  isActiveOrchestrationRef: React.MutableRefObject<boolean>;
+  messageCache: Map<string, ChatMessage[]>;
+}
+
+export function useConversation(initialConversationId?: string): UseConversationReturn {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [conversationId, setConversationId] = useState<string | null>(initialConversationId || null);
   const [messageCache] = useState<Map<string, ChatMessage[]>>(new Map());
@@ -110,5 +123,6 @@ export function useConversation(initialConversationId?: string) {
     hasStarted,
     setHasStarted,
     isActiveOrchestrationRef, // Export this so ChatInterface can set it
+    messageCache, // Export cache for deletion
   };
 }

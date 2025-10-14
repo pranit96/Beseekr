@@ -16,6 +16,7 @@ interface Conversation {
   title: string;
   last_message_at: string;
   status: 'active' | 'archived';
+  last_message?: string; // Add this for preview
 }
 
 const Chat = () => {
@@ -35,6 +36,7 @@ const Chat = () => {
 
   const fetchAttemptRef = useRef(0);
   const maxRetries = 3;
+  // Remove the chatInterfaceRef - not needed
 
   // Monitor online/offline status
   useEffect(() => {
@@ -43,7 +45,6 @@ const Chat = () => {
       setShowOfflineBanner(false);
       setAuthError(false);
       
-      // Retry fetching data when back online
       if (user) {
         handleRetryAuth();
       }
@@ -72,16 +73,6 @@ const Chat = () => {
       window.removeEventListener('offline', handleOffline);
     };
   }, [toast, user]);
-
-  // Monitor user session validity - less aggressive
-  useEffect(() => {
-    if (!user) return;
-
-    // Only check when making actual API calls, not on interval
-    // The API client will catch 401 errors
-    
-    return () => {};
-  }, [user]);
 
   // Load sidebar and conversation preferences
   useEffect(() => {
@@ -141,7 +132,27 @@ const Chat = () => {
       });
       
       if (response.success && response.data) {
-        setConversations(response.data);
+        // Fetch last message for each conversation
+        const conversationsWithMessages = await Promise.all(
+          response.data.map(async (conv: any) => {
+            try {
+              const messagesRes = await apiClient.getMessages(conv.id, 1, 1);
+              const lastMessage = messagesRes.data?.[0];
+              
+              return {
+                ...conv,
+                last_message: lastMessage?.content 
+                  ? lastMessage.content.substring(0, 100) 
+                  : undefined
+              };
+            } catch (err) {
+              console.error('[Chat] Failed to fetch last message for', conv.id, err);
+              return conv;
+            }
+          })
+        );
+        
+        setConversations(conversationsWithMessages);
         setAuthError(false);
         fetchAttemptRef.current = 0;
       } else {
@@ -152,7 +163,6 @@ const Chat = () => {
       
       fetchAttemptRef.current++;
       
-      // Check if it's an auth error
       if (error.message?.includes('Session expired') || error.message?.includes('401')) {
         setAuthError(true);
         toast({
@@ -161,7 +171,6 @@ const Chat = () => {
           variant: 'destructive',
         });
       } else if (fetchAttemptRef.current < maxRetries) {
-        // Retry with exponential backoff
         const delay = Math.min(1000 * Math.pow(2, fetchAttemptRef.current), 10000);
         console.log(`[Chat] Retrying in ${delay}ms...`);
         
@@ -187,13 +196,9 @@ const Chat = () => {
       console.log('[Chat] Attempting to refresh auth...');
       await refreshAuth();
       
-      // Refresh agents
       await reload();
-      
-      // Refresh conversations
       await fetchConversations();
       
-      // Invalidate API cache
       apiClient.invalidateCache();
       
       toast({
@@ -293,15 +298,29 @@ const Chat = () => {
     }
   }, []);
 
-  const handleConversationDeleted = useCallback(() => {
+  const handleConversationDeleted = useCallback((deletedId?: string) => {
+    // Clear from cache if ChatInterface has the messageCache
+    const deletedConvId = deletedId || currentConversationId;
+    
+    if (deletedConvId) {
+      // Clear cache through the hook
+      console.log('[Chat] Clearing cache for deleted conversation:', deletedConvId);
+      
+      // If the deleted conversation is the current one, clear it
+      if (currentConversationId === deletedConvId) {
+        setCurrentConversationId(undefined);
+        sessionStorage.removeItem('lastActiveConversation');
+        setKey(prev => prev + 1); // Force remount ChatInterface
+      }
+    }
+    
     fetchConversations();
-    setCurrentConversationId(undefined);
-    sessionStorage.removeItem('lastActiveConversation');
+    
     toast({
       title: 'Conversation deleted',
       description: 'The conversation has been removed.',
     });
-  }, [fetchConversations, toast]);
+  }, [fetchConversations, toast, currentConversationId]);
 
   const handleConversationArchived = useCallback(() => {
     fetchConversations();
@@ -318,19 +337,16 @@ const Chat = () => {
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyboard = (e: KeyboardEvent) => {
-      // Ctrl/Cmd + B to toggle sidebar
       if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
         e.preventDefault();
         setSidebarOpen(prev => !prev);
       }
       
-      // Ctrl/Cmd + N for new chat
       if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
         e.preventDefault();
         handleNewSession();
       }
 
-      // Ctrl/Cmd + R to refresh auth
       if ((e.ctrlKey || e.metaKey) && e.key === 'r' && authError) {
         e.preventDefault();
         handleRetryAuth();
@@ -473,7 +489,6 @@ const Chat = () => {
 
         {/* Chat Interface */}
         <main className="flex-1 flex justify-center overflow-hidden relative">
-          {/* Subtle background pattern */}
           <div className="absolute inset-0 opacity-[0.02] pointer-events-none">
             <div className="absolute inset-0" style={{
               backgroundImage: 'radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)',

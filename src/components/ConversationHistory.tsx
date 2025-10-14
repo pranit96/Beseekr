@@ -35,6 +35,7 @@ interface Conversation {
   title: string;
   last_message_at: string;
   status: 'active' | 'archived';
+  last_message?: string;
   metadata?: {
     orchestration_mode?: string;
     agent_ids?: string[];
@@ -45,7 +46,7 @@ interface ConversationHistoryProps {
   conversations: Conversation[];
   onSelectConversation: (conversationId: string) => void;
   onNewSession: () => void;
-  onConversationDeleted: () => void;
+  onConversationDeleted: (conversationId?: string) => void;
   onConversationArchived: () => void;
   currentConversationId?: string;
 }
@@ -75,7 +76,10 @@ export const ConversationHistory = ({
   const filtered = useMemo(() => {
     if (!query.trim()) return localConversations;
     const q = query.trim().toLowerCase();
-    return localConversations.filter((c) => (c.title || 'untitled').toLowerCase().includes(q));
+    return localConversations.filter((c) => 
+      (c.title || 'untitled').toLowerCase().includes(q) ||
+      (c.last_message || '').toLowerCase().includes(q)
+    );
   }, [localConversations, query]);
 
   useEffect(() => {
@@ -117,19 +121,22 @@ export const ConversationHistory = ({
 
   const handleDeleteConversation = async () => {
     if (!selectedConversation) return;
+    const conversationToDelete = selectedConversation;
     setDeleteDialogOpen(false);
     setLoading(true);
 
     const original = localConversations;
-    setLocalConversations((prev) => prev.filter((c) => c.id !== selectedConversation.id));
+    setLocalConversations((prev) => prev.filter((c) => c.id !== conversationToDelete.id));
+    
     try {
-      const response = await apiClient.deleteConversation(selectedConversation.id);
+      const response = await apiClient.deleteConversation(conversationToDelete.id);
       if (response.success) {
         toast({
           title: 'Conversation deleted',
           description: 'The conversation has been permanently deleted.',
         });
-        onConversationDeleted();
+        // Pass the deleted conversation ID to parent
+        onConversationDeleted(conversationToDelete.id);
       } else {
         throw new Error(response.message || 'Failed to delete conversation');
       }
@@ -180,7 +187,8 @@ export const ConversationHistory = ({
   const renderConversationRow = (conversation: Conversation, idx: number) => {
     const isActive = currentConversationId === conversation.id;
     const lastAt = conversation.last_message_at ? new Date(conversation.last_message_at) : null;
-    const subtitle = lastAt ? lastAt.toLocaleDateString() : '';
+    const dateStr = lastAt ? lastAt.toLocaleDateString() : '';
+    const timeStr = lastAt ? lastAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
 
     return (
       <div
@@ -197,18 +205,18 @@ export const ConversationHistory = ({
           }
         }}
         onMouseEnter={() => setFocusedIndex(idx)}
-        className={`group relative flex items-center rounded-lg px-2 py-2 transition-smooth cursor-pointer focus:outline-none ${
-          isActive ? 'bg-muted border border-border' : 'hover:bg-muted/50'
+        className={`group relative flex items-start gap-3 rounded-lg px-3 py-3 transition-all cursor-pointer focus:outline-none ${
+          isActive ? 'bg-primary/10 border border-primary/20' : 'hover:bg-muted/50'
         } ${focusedIndex === idx ? 'ring-2 ring-primary/30' : ''}`}
       >
-        {/* left icon */}
-        <div className="rounded-md p-1 bg-muted/20 flex items-center justify-center shrink-0 mr-3">
+        {/* Icon */}
+        <div className="rounded-md p-2 bg-muted/20 flex items-center justify-center shrink-0 mt-0.5">
           <MessageSquare className="w-4 h-4 text-muted-foreground" />
         </div>
 
-        {/* middle: title + subtitle (wrapped, non-fading) */}
-        <div className="flex-1 min-w-0 overflow-hidden pr-2">
-          <div className="flex flex-col min-w-0">
+        {/* Content */}
+        <div className="flex-1 min-w-0 overflow-hidden">
+          <div className="flex items-start justify-between gap-2 mb-1">
             <p
               className="text-sm font-medium break-words line-clamp-1 leading-snug"
               style={{ wordBreak: 'break-word' }}
@@ -216,26 +224,38 @@ export const ConversationHistory = ({
               {conversation.title || 'Untitled'}
             </p>
             {conversation.status === 'archived' && (
-              <span className="text-xs text-muted-foreground mt-0.5">Archived</span>
+              <span className="text-xs text-muted-foreground shrink-0">Archived</span>
             )}
           </div>
 
-          {subtitle && (
-            <p className="text-xs text-muted-foreground truncate">{subtitle}</p>
+          {/* Last message preview */}
+          {conversation.last_message && (
+            <p className="text-xs text-muted-foreground line-clamp-2 mb-1 leading-relaxed">
+              {conversation.last_message}
+            </p>
           )}
+
+          {/* Timestamp */}
+          <div className="flex items-center gap-2 text-xs text-muted-foreground/70">
+            <span>{dateStr}</span>
+            {timeStr && (
+              <>
+                <span>•</span>
+                <span>{timeStr}</span>
+              </>
+            )}
+          </div>
         </div>
 
-
-
-        {/* right: actions (never shrink) */}
-        <div className="flex items-center gap-1 ml-2 shrink-0">
+        {/* Actions */}
+        <div className="flex items-center gap-1 shrink-0">
           <button
             aria-label={`Open conversation ${conversation.title || 'Untitled'}`}
             onClick={(e) => {
               e.stopPropagation();
               handleSelectConversation(conversation.id);
             }}
-            className="p-2 rounded-md hover:bg-muted/40"
+            className="p-2 rounded-md hover:bg-muted/40 opacity-0 group-hover:opacity-100 transition-opacity"
           >
             <ChevronRight className="w-4 h-4" />
           </button>
@@ -246,7 +266,7 @@ export const ConversationHistory = ({
                 variant="ghost"
                 size="sm"
                 aria-haspopup="menu"
-                className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0 mr-1"
+                className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0"
                 onClick={(e) => e.stopPropagation()}
               >
                 <MoreVertical className="w-4 h-4" />
@@ -270,7 +290,7 @@ export const ConversationHistory = ({
                   setSelectedConversation(conversation);
                   setDeleteDialogOpen(true);
                 }}
-                className="flex items-center gap-2 text-destructive"
+                className="flex items-center gap-2 text-destructive focus:text-destructive"
               >
                 <Trash2 className="w-4 h-4" />
                 Delete
@@ -308,13 +328,13 @@ export const ConversationHistory = ({
         <div className="p-2 space-y-1">
           {loading ? (
             <>
-              <Skeleton className="h-12 w-full rounded-md" />
-              <Skeleton className="h-12 w-full rounded-md" />
-              <Skeleton className="h-12 w-full rounded-md" />
+              <Skeleton className="h-20 w-full rounded-md" />
+              <Skeleton className="h-20 w-full rounded-md" />
+              <Skeleton className="h-20 w-full rounded-md" />
             </>
           ) : filtered.length === 0 ? (
             <div className="p-4 text-center text-sm text-muted-foreground">
-              No conversations found
+              {query ? 'No matching conversations' : 'No conversations found'}
             </div>
           ) : (
             filtered.map((conversation, idx) => renderConversationRow(conversation, idx))

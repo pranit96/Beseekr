@@ -52,6 +52,7 @@ export const ChatInterface: React.FC<{
     hasStarted,
     setHasStarted,
     isActiveOrchestrationRef, // Get the ref to prevent message clearing
+    messageCache, // Get cache for deletion
   } = useConversation(activeConversationId);
 
   // orchestration helper
