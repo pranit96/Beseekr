@@ -95,6 +95,17 @@ export const ChatInterface: React.FC<{
     };
   }, []);
 
+  // Debug: Monitor render state
+  useEffect(() => {
+    console.log('[Chat] Render state changed:', {
+      messagesCount: messages.length,
+      isExecuting,
+      preparingMessage,
+      hasStarted,
+      shouldShowWelcome: messages.length === 0 && !isExecuting && !preparingMessage
+    });
+  }, [messages.length, isExecuting, preparingMessage, hasStarted]);
+
   // sync prop -> internal conversationId
   useEffect(() => {
     // Only load messages if switching to a different conversation
@@ -480,14 +491,42 @@ export const ChatInterface: React.FC<{
     if (messageIndex > 0) {
       const previousMessage = messages[messageIndex - 1];
       if (previousMessage.type === 'user') {
-        setInput(previousMessage.content);
+        // Get the failed agent message
+        const failedAgentMessage = messages[messageIndex];
+        
+        // Store the message text
+        const messageText = previousMessage.content;
+        
+        // Get agents that were used (or use currently selected agents)
+        const agentsToRetry = failedAgentMessage.agentResponses?.map(ar => 
+          selectedAgents.find(a => a.id === ar.agentId)
+        ).filter(Boolean) as Agent[] || selectedAgents;
+        
+        if (agentsToRetry.length === 0) {
+          toast({
+            title: 'Cannot retry',
+            description: 'No agents available for retry. Please select agents first.',
+            variant: 'destructive'
+          });
+          return;
+        }
+        
+        // Set up for retry
+        setInput(messageText);
+        setSelectedAgents(agentsToRetry);
+        
         toast({
-          title: 'Message loaded',
-          description: 'You can edit and resend the message',
+          title: 'Ready to retry',
+          description: 'Message loaded. Click Send to retry or edit first.',
         });
+        
+        // Auto-focus textarea
+        setTimeout(() => {
+          textareaRef.current?.focus();
+        }, 100);
       }
     }
-  }, [messages, toast]);
+  }, [messages, toast, selectedAgents, setInput]);
 
   const togglePrivateChat = () => {
     const newSave = !saveToConversation;
@@ -607,6 +646,7 @@ export const ChatInterface: React.FC<{
         <div className="flex-1 flex flex-col items-center justify-center p-6 space-y-6">
           <ConnectionBanner />
           <PreparingBanner />
+          <CancellingBanner />
           
           <div className="text-center space-y-3 max-w-2xl px-4">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
@@ -728,6 +768,7 @@ export const ChatInterface: React.FC<{
             <div className="max-w-5xl 2xl:max-w-6xl mx-auto w-full">
               <ConnectionBanner />
               <PreparingBanner />
+              <CancellingBanner />
               
               <MessageList 
                 messages={messages} 
