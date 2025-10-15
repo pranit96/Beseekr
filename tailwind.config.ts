@@ -20,7 +20,7 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['"Manrope Variable"', 'Manrope', 'ui-sans-serif', 'system-ui'],
+        sans: ['Manrope','Rubik','Funnel Sans', 'ui-sans-serif', 'system-ui'],
       },
       colors: {
         border: "hsl(var(--border))",
