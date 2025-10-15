@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+// src/components/ConversationHistory.tsx - OPTIMIZED VERSION
+import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react';
 import {
   MessageSquare,
   Plus,
@@ -51,7 +52,129 @@ interface ConversationHistoryProps {
   currentConversationId?: string;
 }
 
-export const ConversationHistory = ({
+// Memoized conversation row component
+const ConversationRow = memo(({ 
+  conversation, 
+  isActive, 
+  onClick, 
+  onArchive, 
+  onDelete,
+  onMouseEnter 
+}: {
+  conversation: Conversation;
+  isActive: boolean;
+  onClick: () => void;
+  onArchive: () => void;
+  onDelete: () => void;
+  onMouseEnter: () => void;
+}) => {
+  const lastAt = conversation.last_message_at ? new Date(conversation.last_message_at) : null;
+  const dateStr = lastAt ? lastAt.toLocaleDateString() : '';
+  const timeStr = lastAt ? lastAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      aria-selected={isActive}
+      onClick={onClick}
+      onMouseEnter={onMouseEnter}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onClick();
+        }
+      }}
+      className={`group relative flex items-start gap-3 rounded-lg px-3 py-3 transition-fast cursor-pointer focus:outline-none hover-scale-sm ${
+        isActive ? 'bg-primary/10 border border-primary/20 shadow-soft' : 'hover:bg-muted/50'
+      }`}
+    >
+      <div className="rounded-md p-2 bg-muted/20 flex items-center justify-center shrink-0 mt-0.5">
+        <MessageSquare className="w-4 h-4 text-muted-foreground" />
+      </div>
+
+      <div className="flex-1 min-w-0 overflow-hidden">
+        <div className="flex items-start justify-between gap-2 mb-1">
+          <p className="text-sm font-medium break-words line-clamp-1 leading-snug">
+            {conversation.title || 'Untitled'}
+          </p>
+          {conversation.status === 'archived' && (
+            <span className="text-xs text-muted-foreground shrink-0">Archived</span>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2 text-xs text-muted-foreground/70">
+          <span>{dateStr}</span>
+          {timeStr && (
+            <>
+              <span>•</span>
+              <span>{timeStr}</span>
+            </>
+          )}
+        </div>
+      </div>
+
+      <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-fast">
+        <button
+          aria-label={`Open conversation ${conversation.title || 'Untitled'}`}
+          onClick={(e) => {
+            e.stopPropagation();
+            onClick();
+          }}
+          className="p-2 rounded-md hover:bg-muted/40 transition-fast"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0 transition-fast"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <MoreVertical className="w-4 h-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem
+              onClick={(e) => {
+                e.stopPropagation();
+                onArchive();
+              }}
+              className="flex items-center gap-2"
+            >
+              <Archive className="w-4 h-4" />
+              Archive
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
+              className="flex items-center gap-2 text-destructive focus:text-destructive"
+            >
+              <Trash2 className="w-4 h-4" />
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </div>
+  );
+}, (prev, next) => {
+  return (
+    prev.conversation.id === next.conversation.id &&
+    prev.isActive === next.isActive &&
+    prev.conversation.last_message_at === next.conversation.last_message_at &&
+    prev.conversation.title === next.conversation.title
+  );
+});
+
+ConversationRow.displayName = 'ConversationRow';
+
+export const ConversationHistory = memo(({
   conversations = [],
   onSelectConversation,
   onNewSession,
@@ -82,6 +205,7 @@ export const ConversationHistory = ({
     );
   }, [localConversations, query]);
 
+  // Keyboard navigation
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (!filtered.length) return;
@@ -134,8 +258,8 @@ export const ConversationHistory = ({
         toast({
           title: 'Conversation deleted',
           description: 'The conversation has been permanently deleted.',
+          duration: 2000,
         });
-        // Pass the deleted conversation ID to parent
         onConversationDeleted(conversationToDelete.id);
       } else {
         throw new Error(response.message || 'Failed to delete conversation');
@@ -166,6 +290,7 @@ export const ConversationHistory = ({
         toast({
           title: 'Conversation archived',
           description: 'The conversation has been moved to archives.',
+          duration: 2000,
         });
         onConversationArchived();
       } else {
@@ -184,117 +309,6 @@ export const ConversationHistory = ({
     }
   };
 
-  const renderConversationRow = (conversation: Conversation, idx: number) => {
-    const isActive = currentConversationId === conversation.id;
-    const lastAt = conversation.last_message_at ? new Date(conversation.last_message_at) : null;
-    const dateStr = lastAt ? lastAt.toLocaleDateString() : '';
-    const timeStr = lastAt ? lastAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
-
-    return (
-      <div
-        key={conversation.id}
-        data-conversation-item
-        role="button"
-        tabIndex={0}
-        aria-selected={isActive}
-        onClick={() => handleSelectConversation(conversation.id)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            handleSelectConversation(conversation.id);
-          }
-        }}
-        onMouseEnter={() => setFocusedIndex(idx)}
-        className={`group relative flex items-start gap-3 rounded-lg px-3 py-3 transition-all cursor-pointer focus:outline-none ${
-          isActive ? 'bg-primary/10 border border-primary/20' : 'hover:bg-muted/50'
-        } ${focusedIndex === idx ? 'ring-2 ring-primary/30' : ''}`}
-      >
-        {/* Icon */}
-        <div className="rounded-md p-2 bg-muted/20 flex items-center justify-center shrink-0 mt-0.5">
-          <MessageSquare className="w-4 h-4 text-muted-foreground" />
-        </div>
-
-        {/* Content */}
-        <div className="flex-1 min-w-0 overflow-hidden">
-          <div className="flex items-start justify-between gap-2 mb-1">
-            <p
-              className="text-sm font-medium break-words line-clamp-1 leading-snug"
-              style={{ wordBreak: 'break-word' }}
-            >
-              {conversation.title || 'Untitled'}
-            </p>
-            {conversation.status === 'archived' && (
-              <span className="text-xs text-muted-foreground shrink-0">Archived</span>
-            )}
-          </div>
-
-          {/* Timestamp */}
-          <div className="flex items-center gap-2 text-xs text-muted-foreground/70">
-            <span>{dateStr}</span>
-            {timeStr && (
-              <>
-                <span>•</span>
-                <span>{timeStr}</span>
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* Actions */}
-        <div className="flex items-center gap-1 shrink-0">
-          <button
-            aria-label={`Open conversation ${conversation.title || 'Untitled'}`}
-            onClick={(e) => {
-              e.stopPropagation();
-              handleSelectConversation(conversation.id);
-            }}
-            className="p-2 rounded-md hover:bg-muted/40 opacity-0 group-hover:opacity-100 transition-opacity"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                aria-haspopup="menu"
-                className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <MoreVertical className="w-4 h-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSelectedConversation(conversation);
-                  setArchiveDialogOpen(true);
-                }}
-                className="flex items-center gap-2"
-              >
-                <Archive className="w-4 h-4" />
-                Archive
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSelectedConversation(conversation);
-                  setDeleteDialogOpen(true);
-                }}
-                className="flex items-center gap-2 text-destructive focus:text-destructive"
-              >
-                <Trash2 className="w-4 h-4" />
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </div>
-    );
-  };
-
   return (
     <div className="w-full max-w-[480px] 2xl:max-w-[520px] border-r border-border bg-muted/30 flex flex-col h-full">
       <div className="p-3 border-b border-border flex items-center gap-2">
@@ -306,12 +320,12 @@ export const ConversationHistory = ({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search conversations..."
-              className="w-full pl-10 pr-3 py-2 rounded-md bg-background/60 border border-border text-sm focus:ring-2 focus:ring-primary/30 outline-none"
+              className="w-full pl-10 pr-3 py-2 rounded-md bg-background/60 border border-border text-sm focus:ring-2 focus:ring-primary/30 outline-none transition-fast"
             />
           </div>
         </div>
 
-        <Button onClick={onNewSession} size="sm" className="ml-2 gap-2">
+        <Button onClick={onNewSession} size="sm" className="ml-2 gap-2 transition-fast hover-scale-sm">
           <Plus className="w-4 h-4" />
           New
         </Button>
@@ -330,12 +344,28 @@ export const ConversationHistory = ({
               {query ? 'No matching conversations' : 'No conversations found'}
             </div>
           ) : (
-            filtered.map((conversation, idx) => renderConversationRow(conversation, idx))
+            filtered.map((conversation, idx) => (
+              <div key={conversation.id} data-conversation-item>
+                <ConversationRow
+                  conversation={conversation}
+                  isActive={currentConversationId === conversation.id}
+                  onClick={() => handleSelectConversation(conversation.id)}
+                  onArchive={() => {
+                    setSelectedConversation(conversation);
+                    setArchiveDialogOpen(true);
+                  }}
+                  onDelete={() => {
+                    setSelectedConversation(conversation);
+                    setDeleteDialogOpen(true);
+                  }}
+                  onMouseEnter={() => setFocusedIndex(idx)}
+                />
+              </div>
+            ))
           )}
         </div>
       </ScrollArea>
 
-      {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -356,7 +386,6 @@ export const ConversationHistory = ({
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Archive Confirmation Dialog */}
       <AlertDialog open={archiveDialogOpen} onOpenChange={setArchiveDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -375,4 +404,6 @@ export const ConversationHistory = ({
       </AlertDialog>
     </div>
   );
-};
+});
+
+ConversationHistory.displayName = 'ConversationHistory';

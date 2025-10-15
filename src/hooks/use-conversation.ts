@@ -1,4 +1,4 @@
-// src/hooks/use-conversation.ts
+// src/hooks/use-conversation.ts - FIXED TO MATCH YOUR BACKEND
 import { useCallback, useEffect, useState, useRef } from 'react';
 import { apiClient } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
@@ -30,7 +30,6 @@ export function useConversation(initialConversationId?: string): UseConversation
 
   const loadConversationMessages = useCallback(async (convId: string, force: boolean = false) => {
     // Don't load messages if we're in the middle of an orchestration
-    // This prevents clearing messages that were just added
     if (isActiveOrchestrationRef.current && !force) {
       console.log('[useConversation] Skipping load - active orchestration in progress');
       return;
@@ -41,34 +40,87 @@ export function useConversation(initialConversationId?: string): UseConversation
       console.log('[useConversation] Loading messages for conversation:', convId);
       
       const res = await apiClient.getMessages(convId, 1, 50);
+      
       if (res.success && res.data) {
+        // BACKEND RETURNS: Array of message objects with role: 'user' | 'assistant'
         const apiMessages: ChatMessage[] = res.data.map((msg: any) => {
           const base = {
             id: msg.id,
-            content: msg.content,
+            content: msg.content || '', // Backend already decrypted this
             timestamp: new Date(msg.created_at),
             isFromCache: true,
           } as Partial<ChatMessage>;
 
-          if (msg.role === 'user') return { ...base, type: 'user' } as ChatMessage;
+          // USER MESSAGE
+          if (msg.role === 'user') {
+            return { 
+              ...base, 
+              type: 'user' 
+            } as ChatMessage;
+          }
 
+          // AGENT/ASSISTANT MESSAGE
           if (msg.role === 'assistant') {
-            const agentResponses: AgentResponse[] = (msg.metadata?.agent_results || []).map((r: any) => ({
-              agentId: r.agent_id,
-              agentName: r.agent_name,
-              content: r.response,
+            // Parse metadata if it's a string
+            let metadata = msg.metadata;
+            if (typeof metadata === 'string') {
+              try {
+                metadata = JSON.parse(metadata);
+              } catch (e) {
+                console.warn('[useConversation] Failed to parse metadata:', e);
+                metadata = {};
+              }
+            }
+
+            // Extract agent responses from metadata.agent_results
+            const agentResults = metadata?.agent_results || [];
+            const agentResponses: AgentResponse[] = agentResults.map((r: any) => ({
+              agentId: r.agent_id || r.agentId || 'unknown',
+              agentName: r.agent_name || r.agentName || 'Assistant',
+              content: r.response || r.content || '',
               timestamp: new Date(msg.created_at),
               status: r.error ? 'error' : 'success',
-              metadata: r,
+              metadata: {
+                usage: r.usage || {
+                  total_tokens: msg.tokens_used || 0,
+                  prompt_tokens: r.usage?.prompt_tokens || 0,
+                  completion_tokens: r.usage?.completion_tokens || 0
+                },
+                domain: r.agent_domain || r.domain,
+                model_used: metadata?.model || r.model,
+                execution_time_ms: r.execution_time_ms
+              },
             }));
+
+            // If no agent_results in metadata, create a single response from content
+            if (agentResponses.length === 0 && msg.content) {
+              agentResponses.push({
+                agentId: metadata?.agent_id || 'default',
+                agentName: metadata?.agent_name || 'Assistant',
+                content: msg.content,
+                timestamp: new Date(msg.created_at),
+                status: 'success',
+                metadata: {
+                  usage: {
+                    total_tokens: msg.tokens_used || 0,
+                    prompt_tokens: 0,
+                    completion_tokens: msg.tokens_used || 0
+                  }
+                }
+              });
+            }
+
             return {
               ...base,
               type: 'agent',
               agentResponses,
-              executionMode: msg.metadata?.orchestration_mode || 'sequential',
+              executionMode: metadata?.orchestration_mode || 'sequential',
+              markdownOutput: metadata?.markdown_output || msg.content,
+              finalOutput: metadata?.final_output || msg.content,
             } as ChatMessage;
           }
 
+          // Fallback to user message
           return { ...base, type: 'user' } as ChatMessage;
         });
 
@@ -82,7 +134,6 @@ export function useConversation(initialConversationId?: string): UseConversation
           console.log('[useConversation] No messages loaded, keeping current state');
         }
       } else {
-        // Don't clear messages on load failure
         console.log('[useConversation] Load failed or no data, keeping current messages');
       }
     } catch (err: any) {
@@ -122,7 +173,7 @@ export function useConversation(initialConversationId?: string): UseConversation
     isLoading,
     hasStarted,
     setHasStarted,
-    isActiveOrchestrationRef, // Export this so ChatInterface can set it
-    messageCache, // Export cache for deletion
+    isActiveOrchestrationRef,
+    messageCache,
   };
 }
