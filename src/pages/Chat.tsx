@@ -7,7 +7,7 @@ import { useAgents } from '@/hooks/use-agents';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
-import { AlertCircle, Wifi, WifiOff, RefreshCw } from 'lucide-react';
+import { AlertCircle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Agent } from '@/types/agent';
 
@@ -16,7 +16,7 @@ interface Conversation {
   title: string;
   last_message_at: string;
   status: 'active' | 'archived';
-  last_message?: string; // Add this for preview
+  last_message?: string;
 }
 
 const Chat = () => {
@@ -25,54 +25,15 @@ const Chat = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [loadingConversations, setLoadingConversations] = useState(true);
   const [key, setKey] = useState(0);
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const [showOfflineBanner, setShowOfflineBanner] = useState(false);
   const [authError, setAuthError] = useState(false);
   const [retrying, setRetrying] = useState(false);
 
   const { agents, loading: loadingAgents, reload } = useAgents();
-  const { user, socketConnected, refreshAuth } = useAuth();
+  const { user, refreshAuth } = useAuth();
   const { toast } = useToast();
 
   const fetchAttemptRef = useRef(0);
   const maxRetries = 3;
-  // Remove the chatInterfaceRef - not needed
-
-  // Monitor online/offline status
-  useEffect(() => {
-    const handleOnline = () => {
-      setIsOnline(true);
-      setShowOfflineBanner(false);
-      setAuthError(false);
-      
-      if (user) {
-        handleRetryAuth();
-      }
-      
-      toast({
-        title: 'Back online',
-        description: 'Connection restored',
-      });
-    };
-
-    const handleOffline = () => {
-      setIsOnline(false);
-      setShowOfflineBanner(true);
-      toast({
-        title: 'No internet connection',
-        description: 'You are currently offline',
-        variant: 'destructive',
-      });
-    };
-
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, [toast, user]);
 
   // Load sidebar and conversation preferences
   useEffect(() => {
@@ -82,38 +43,18 @@ const Chat = () => {
     const lastConversationId = sessionStorage.getItem('lastActiveConversation');
     if (lastConversationId) setCurrentConversationId(lastConversationId);
 
-    if (user && isOnline) {
+    if (user) {
       fetchConversations();
     }
-  }, [user, isOnline]);
+  }, [user]);
 
   useEffect(() => {
     sessionStorage.setItem('sidebarOpen', sidebarOpen.toString());
   }, [sidebarOpen]);
 
-  // Auto-save scroll position
-  useEffect(() => {
-    const handleBeforeUnload = () => {
-      const scrollPos = window.scrollY;
-      sessionStorage.setItem('chatScrollPosition', scrollPos.toString());
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, []);
-
-  // Restore scroll position
-  useEffect(() => {
-    const savedScrollPos = sessionStorage.getItem('chatScrollPosition');
-    if (savedScrollPos) {
-      window.scrollTo(0, parseInt(savedScrollPos));
-      sessionStorage.removeItem('chatScrollPosition');
-    }
-  }, []);
-
   // Fetch conversation history with retry logic
   const fetchConversations = useCallback(async (isRetry: boolean = false) => {
-    if (!isOnline || !user) {
+    if (!user) {
       setLoadingConversations(false);
       return;
     }
@@ -123,7 +64,8 @@ const Chat = () => {
     }
 
     try {
-     
+      console.log('[Chat] Fetching conversations, attempt:', fetchAttemptRef.current + 1);
+      
       const response = await apiClient.getConversations({
         status: 'active',
         page: 1,
@@ -131,21 +73,48 @@ const Chat = () => {
       });
       
       if (response.success && response.data) {
-        // Fetch last message for each conversation
+        // Fetch last messages for each conversation
         const conversationsWithMessages = await Promise.all(
           response.data.map(async (conv: any) => {
             try {
-              const messagesRes = await apiClient.getMessages(conv.id, 1, 1);
-              const lastMessage = messagesRes.data?.[0];
+              // Fetch more messages (up to 5) to ensure we get a user message
+              const messagesRes = await apiClient.getMessages(conv.id, 1, 5);
               
-              return {
-                ...conv,
-                last_message: lastMessage?.content 
-                  ? lastMessage.content.substring(0, 100) 
-                  : undefined
-              };
+              console.log(`[Chat] Messages for ${conv.title || conv.id}:`, messagesRes.data?.length || 0, 'messages');
+              
+              if (messagesRes.data && messagesRes.data.length > 0) {
+                // Sort messages by created_at (most recent first)
+                const sortedMessages = [...messagesRes.data].sort((a: any, b: any) => {
+                  const dateA = new Date(a.created_at).getTime();
+                  const dateB = new Date(b.created_at).getTime();
+                  return dateB - dateA;
+                });
+                
+                // Find the most recent user message
+                const lastUserMsg = sortedMessages.find((m: any) => m.role === 'user');
+                
+                if (lastUserMsg?.content) {
+                  return {
+                    ...conv,
+                    last_message: lastUserMsg.content.substring(0, 100)
+                  };
+                }
+                
+                // If no user message, try to find any message with content
+                const anyMessageWithContent = sortedMessages.find((m: any) => m.content && m.content.trim());
+                
+                if (anyMessageWithContent?.content) {
+                  const rolePrefix = anyMessageWithContent.role === 'assistant' ? '🤖 ' : '';
+                  return {
+                    ...conv,
+                    last_message: `${rolePrefix}${anyMessageWithContent.content.substring(0, 100)}`
+                  };
+                }
+              }
+              
+              return conv;
             } catch (err) {
-              console.error('[Chat] Failed to fetch last message for', conv.id, err);
+              console.error('[Chat] Failed to fetch messages for', conv.id, err);
               return conv;
             }
           })
@@ -164,27 +133,15 @@ const Chat = () => {
       
       if (error.message?.includes('Session expired') || error.message?.includes('401')) {
         setAuthError(true);
-        toast({
-          title: 'Session expired',
-          description: 'Please refresh to continue',
-          variant: 'destructive',
-        });
       } else if (fetchAttemptRef.current < maxRetries) {
         const delay = Math.min(1000 * Math.pow(2, fetchAttemptRef.current), 10000);
         console.log(`[Chat] Retrying in ${delay}ms...`);
-        
         setTimeout(() => fetchConversations(true), delay);
-      } else {
-        toast({
-          title: 'Failed to load conversations',
-          description: 'Please try refreshing the page',
-          variant: 'destructive',
-        });
       }
     } finally {
       setLoadingConversations(false);
     }
-  }, [toast, isOnline, user]);
+  }, [user]);
 
   // Handle auth recovery
   const handleRetryAuth = useCallback(async () => {
@@ -192,12 +149,9 @@ const Chat = () => {
     setAuthError(false);
     
     try {
-      console.log('[Chat] Attempting to refresh auth...');
       await refreshAuth();
-      
       await reload();
       await fetchConversations();
-      
       apiClient.invalidateCache();
       
       toast({
@@ -206,11 +160,6 @@ const Chat = () => {
       });
     } catch (error: any) {
       console.error('[Chat] Auth refresh failed:', error);
-      toast({
-        title: 'Refresh failed',
-        description: 'Please try logging in again',
-        variant: 'destructive',
-      });
       setAuthError(true);
     } finally {
       setRetrying(false);
@@ -224,23 +173,7 @@ const Chat = () => {
   }, []);
 
   const handleNewSession = useCallback(async () => {
-    if (!isOnline) {
-      toast({
-        title: 'Offline',
-        description: 'Cannot create new session while offline',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    if (!user) {
-      toast({
-        title: 'Not authenticated',
-        description: 'Please log in to create a new session',
-        variant: 'destructive',
-      });
-      return;
-    }
+    if (!user) return;
 
     try {
       const response = await apiClient.createConversation({
@@ -263,11 +196,6 @@ const Chat = () => {
     } catch (error: any) {
       if (error.message?.includes('Session expired') || error.message?.includes('401')) {
         setAuthError(true);
-        toast({
-          title: 'Session expired',
-          description: 'Please refresh to continue',
-          variant: 'destructive',
-        });
       } else {
         toast({
           title: 'Failed to create new session',
@@ -276,7 +204,7 @@ const Chat = () => {
         });
       }
     }
-  }, [fetchConversations, toast, isOnline, user]);
+  }, [fetchConversations, toast, user]);
 
   const handleConversationCreated = useCallback(
     async (conversationId: string) => {
@@ -298,16 +226,15 @@ const Chat = () => {
   }, []);
 
   const handleConversationDeleted = useCallback((deletedId?: string) => {
-    // Clear from cache if ChatInterface has the messageCache
     const deletedConvId = deletedId || currentConversationId;
     
     if (deletedConvId) {
+      console.log('[Chat] Clearing cache for deleted conversation:', deletedConvId);
       
-      // If the deleted conversation is the current one, clear it
       if (currentConversationId === deletedConvId) {
         setCurrentConversationId(undefined);
         sessionStorage.removeItem('lastActiveConversation');
-        setKey(prev => prev + 1); // Force remount ChatInterface
+        setKey(prev => prev + 1);
       }
     }
     
@@ -363,9 +290,6 @@ const Chat = () => {
         </div>
         <Skeleton className="h-8 w-48" />
         <Skeleton className="h-4 w-72" />
-        <div className="animate-pulse text-muted-foreground mt-4">
-          Loading chat environment...
-        </div>
       </div>
     );
   }
@@ -379,7 +303,7 @@ const Chat = () => {
         </div>
         <h2 className="text-2xl font-bold">Session Expired</h2>
         <p className="text-muted-foreground text-center max-w-md">
-          Your session has expired or become invalid. Please refresh to continue.
+          Your session has expired. Please refresh to continue.
         </p>
         <div className="flex gap-3 mt-4">
           <Button
@@ -410,27 +334,6 @@ const Chat = () => {
     );
   }
 
-  // Offline state
-  if (!isOnline && conversations.length === 0) {
-    return (
-      <div className="h-screen flex flex-col items-center justify-center gap-4 bg-background p-6">
-        <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center">
-          <WifiOff className="w-8 h-8 text-destructive" />
-        </div>
-        <h2 className="text-2xl font-bold">You're offline</h2>
-        <p className="text-muted-foreground text-center max-w-md">
-          Please check your internet connection and try again.
-        </p>
-        <button
-          onClick={() => window.location.reload()}
-          className="mt-4 px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition"
-        >
-          Retry
-        </button>
-      </div>
-    );
-  }
-
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-background">
       <TopBar
@@ -438,34 +341,6 @@ const Chat = () => {
         onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
         showSidebarToggle
       />
-
-      {/* Offline banner */}
-      {showOfflineBanner && (
-        <div className="bg-destructive text-destructive-foreground px-4 py-2 text-sm flex items-center justify-center gap-2">
-          <AlertCircle className="w-4 h-4" />
-          <span>You are currently offline. Some features may be limited.</span>
-          <button
-            onClick={() => setShowOfflineBanner(false)}
-            className="ml-4 underline hover:no-underline"
-          >
-            Dismiss
-          </button>
-        </div>
-      )}
-
-      {/* Session warning banner */}
-      {!socketConnected && isOnline && user && (
-        <div className="bg-yellow-500/10 border-b border-yellow-500/20 text-yellow-700 dark:text-yellow-400 px-4 py-2 text-sm flex items-center justify-center gap-2">
-          <Button
-            onClick={handleRetryAuth}
-            variant="ghost"
-            size="sm"
-            className="ml-2 h-6 text-xs"
-          >
-            Retry
-          </Button>
-        </div>
-      )}
 
       <div className="flex-1 flex overflow-hidden">
         {/* Sidebar */}
@@ -486,6 +361,7 @@ const Chat = () => {
 
         {/* Chat Interface */}
         <main className="flex-1 flex justify-center overflow-hidden relative">
+          {/* Subtle background pattern */}
           <div className="absolute inset-0 opacity-[0.02] pointer-events-none">
             <div className="absolute inset-0" style={{
               backgroundImage: 'radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)',

@@ -1,6 +1,6 @@
 // src/components/ChatInterface.tsx
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Send, Workflow, Lock, LockOpen, X, Sparkles, Wifi, WifiOff, Loader2 } from 'lucide-react';
+import { Send, Workflow, Lock, LockOpen, X, Sparkles, WifiOff, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { AgentSelector } from './AgentSelector';
@@ -52,8 +52,8 @@ export const ChatInterface: React.FC<{
     isLoading: convLoading,
     hasStarted,
     setHasStarted,
-    isActiveOrchestrationRef, // Get the ref to prevent message clearing
-    messageCache, // Get cache for deletion
+    isActiveOrchestrationRef,
+    messageCache,
   } = useConversation(activeConversationId);
 
   // orchestration helper
@@ -552,37 +552,17 @@ export const ChatInterface: React.FC<{
 
   const sendDisabled = isLoadingLocal || isExecuting || isCancelling || preparingMessage || (!!rateLimitedUntil && Date.now() < rateLimitedUntil) || !socketConnected;
 
-  const quickPrompts = [
-    "Explain this concept simply",
-    "Write a creative story",
-    "Help me debug this code",
-    "Analyze this data"
-  ];
-
-  // Connection Status Banner Component
+  // Connection Status Banner Component - Only show on error
   const ConnectionBanner = () => {
-    if (connectionStatus === 'connected') return null;
+    if (connectionStatus !== 'disconnected') return null;
 
     return (
-      <div className={`mb-4 p-3 rounded-lg border flex items-center gap-3 ${
-        connectionStatus === 'connecting' 
-          ? 'bg-yellow-500/10 border-yellow-500/20 text-yellow-600 dark:text-yellow-400'
-          : 'bg-destructive/10 border-destructive/20 text-destructive'
-      }`}>
-        {connectionStatus === 'connecting' ? (
-          <>
-            <Wifi className="w-4 h-4 animate-pulse" />
-            <span className="text-sm font-medium">Connecting to server...</span>
-          </>
-        ) : (
-          <>
-            <WifiOff className="w-4 h-4" />
-            <div className="flex-1">
-              <p className="text-sm font-medium">Disconnected from server</p>
-              <p className="text-xs opacity-80">Attempting to reconnect. Please wait...</p>
-            </div>
-          </>
-        )}
+      <div className="mb-4 p-3 rounded-lg border bg-destructive/10 border-destructive/20 text-destructive flex items-center gap-3">
+        <WifiOff className="w-4 h-4" />
+        <div className="flex-1">
+          <p className="text-sm font-medium">Connection lost</p>
+          <p className="text-xs opacity-80">Attempting to reconnect...</p>
+        </div>
       </div>
     );
   };
@@ -642,7 +622,7 @@ export const ChatInterface: React.FC<{
 
   return (
     <div className="flex flex-col h-full max-w-[1800px] 2xl:max-w-[2200px] mx-auto w-full overflow-hidden">
-      {!hasStarted && messages.length === 0 ? (
+      {messages.length === 0 && !isExecuting && !preparingMessage ? (
         <div className="flex-1 flex flex-col items-center justify-center p-6 space-y-6">
           <ConnectionBanner />
           <PreparingBanner />
@@ -657,21 +637,8 @@ export const ChatInterface: React.FC<{
               How can I help you today?
             </h1>
             <p className="text-muted-foreground text-lg">
-              Select your agents, design the workflow, and let's get started.
+              Select your agents and start a conversation
             </p>
-          </div>
-
-          <div className="flex flex-wrap gap-2 justify-center max-w-2xl px-4">
-            {quickPrompts.map((prompt, idx) => (
-              <button
-                key={idx}
-                onClick={() => setInput(prompt)}
-                disabled={sendDisabled}
-                className="px-4 py-2 rounded-lg border border-border/50 bg-muted/30 hover:bg-muted/50 hover:border-primary/50 text-sm text-muted-foreground hover:text-foreground transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {prompt}
-              </button>
-            ))}
           </div>
 
           <div className="flex flex-col items-center gap-4 w-full max-w-4xl px-4">
@@ -910,22 +877,7 @@ export const ChatInterface: React.FC<{
                       {selectedAgents.map(a => a.name).join(', ')}
                     </span>
                   </div>
-                ) : connectionStatus === 'connected' ? (
-                  <div className="text-xs text-green-600 dark:text-green-400 text-center flex items-center justify-center gap-1.5">
-                    <div className="w-1.5 h-1.5 rounded-full bg-green-600 dark:bg-green-400" />
-                    <span>Connected & Ready</span>
-                  </div>
-                ) : connectionStatus === 'connecting' ? (
-                  <div className="text-xs text-yellow-600 dark:text-yellow-400 text-center flex items-center justify-center gap-1.5">
-                    <div className="w-1.5 h-1.5 rounded-full bg-yellow-600 dark:bg-yellow-400 animate-pulse" />
-                    <span>Connecting...</span>
-                  </div>
-                ) : (
-                  <div className="text-xs text-destructive text-center flex items-center justify-center gap-1.5">
-                    <div className="w-1.5 h-1.5 rounded-full bg-destructive" />
-                    <span>Disconnected</span>
-                  </div>
-                )}
+                ) : null}
               </div>
             </div>
           </div>
