@@ -230,7 +230,10 @@ export const ConversationHistory = ({
 
           {/* Last message preview */}
           {conversation.last_message && (
-            <p className="text-xs text-muted-foreground line-clamp-2 mb-1 leading-relaxed">
+            <p
+              className="text-xs text-muted-foreground line-clamp-2 mb-1 leading-relaxed break-all"
+              style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}
+            >
               {conversation.last_message}
             </p>
           )}
