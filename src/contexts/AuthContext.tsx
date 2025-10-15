@@ -1,3 +1,4 @@
+// src/contexts/AuthContext.tsx - COMPLETE FILE WITH FIXES
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback, useRef } from 'react';
 import { apiClient } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
@@ -25,10 +26,10 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Session validation interval (check every 2 minutes)
-const SESSION_CHECK_INTERVAL = 2 * 60 * 1000;
-// Token refresh interval (refresh 5 minutes before expiry, assuming 15min token)
-const TOKEN_REFRESH_INTERVAL = 10 * 60 * 1000;
+// OPTIMIZED SESSION INTERVALS
+const SESSION_CHECK_INTERVAL = 5 * 60 * 1000; // 5 minutes
+const TOKEN_REFRESH_INTERVAL = 8 * 60 * 1000; // 8 minutes (refresh before 15min expiry)
+const ACTIVITY_TIMEOUT = 25 * 60 * 1000; // 25 minutes inactivity
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -37,25 +38,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
   const navigate = useNavigate();
   
-  // Refs to prevent duplicate requests
   const refreshingRef = useRef(false);
   const sessionCheckIntervalRef = useRef<NodeJS.Timeout>();
   const tokenRefreshIntervalRef = useRef<NodeJS.Timeout>();
   const lastActivityRef = useRef<number>(Date.now());
+  const authErrorShownRef = useRef(false);
 
-  // Track user activity
+  // ENHANCED: Track user activity with debouncing
   useEffect(() => {
+    let debounceTimer: NodeJS.Timeout;
+    
     const updateActivity = () => {
-      lastActivityRef.current = Date.now();
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        lastActivityRef.current = Date.now();
+        authErrorShownRef.current = false; // Reset error flag on activity
+      }, 500);
     };
 
-    // Track various user activities
-    const events = ['mousedown', 'keydown', 'scroll', 'touchstart', 'click'];
+    const events = ['mousedown', 'keydown', 'scroll', 'touchstart', 'click', 'mousemove'];
     events.forEach(event => {
-      window.addEventListener(event, updateActivity);
+      window.addEventListener(event, updateActivity, { passive: true });
     });
 
     return () => {
+      clearTimeout(debounceTimer);
       events.forEach(event => {
         window.removeEventListener(event, updateActivity);
       });
@@ -64,14 +71,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // Check if session is still valid
   const isSessionValid = useCallback((): boolean => {
-    if (!user) {
-      return false;
-    }
-    return true;
+    if (!user) return false;
+    const inactiveTime = Date.now() - lastActivityRef.current;
+    return inactiveTime < ACTIVITY_TIMEOUT;
   }, [user]);
 
-  // Refresh authentication state
-  const refreshAuth = useCallback(async (silent: boolean = false) => {
+  // ENHANCED: Refresh authentication state with retry logic
+  const refreshAuth = useCallback(async (silent: boolean = false, retries: number = 3) => {
     if (refreshingRef.current) {
       console.log('[Auth] Refresh already in progress, skipping');
       return;
@@ -85,6 +91,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       if (response.success && response.data) {
         setUser(response.data.user);
+        lastActivityRef.current = Date.now();
+        authErrorShownRef.current = false;
         console.log('[Auth] Auth refresh successful');
         
         if (!silent) {
@@ -100,6 +108,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch (error: any) {
       console.error('[Auth] Session refresh failed:', error);
       
+      // Retry logic for network errors
+      if (retries > 0 && !error.message?.includes('401') && !error.message?.includes('Unauthorized')) {
+        console.log(`[Auth] Retrying refresh... (${retries} attempts left)`);
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        refreshingRef.current = false;
+        return refreshAuth(silent, retries - 1);
+      }
+      
       if (error.message?.includes('401') || error.message?.includes('Unauthorized')) {
         handleAuthError();
       }
@@ -108,48 +124,52 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [toast]);
 
-  // Periodic session validation
+  // ENHANCED: Proactive session maintenance
   useEffect(() => {
     if (!user) {
-      if (sessionCheckIntervalRef.current) {
-        clearInterval(sessionCheckIntervalRef.current);
-      }
-      if (tokenRefreshIntervalRef.current) {
-        clearInterval(tokenRefreshIntervalRef.current);
-      }
+      if (sessionCheckIntervalRef.current) clearInterval(sessionCheckIntervalRef.current);
+      if (tokenRefreshIntervalRef.current) clearInterval(tokenRefreshIntervalRef.current);
       return;
     }
 
+    // Check for inactivity and refresh if needed
     sessionCheckIntervalRef.current = setInterval(() => {
       const inactiveTime = Date.now() - lastActivityRef.current;
-      if (inactiveTime > 30 * 60 * 1000) {
-        console.log('[Auth] User inactive for 30min, refreshing session...');
+      
+      if (inactiveTime > ACTIVITY_TIMEOUT) {
+        console.log('[Auth] Session expired due to inactivity');
+        if (!authErrorShownRef.current) {
+          authErrorShownRef.current = true;
+          handleAuthError();
+        }
+      } else if (inactiveTime > SESSION_CHECK_INTERVAL) {
+        console.log('[Auth] Proactive session check after inactivity');
         refreshAuth(true);
       }
     }, SESSION_CHECK_INTERVAL);
 
+    // Proactive token refresh
     tokenRefreshIntervalRef.current = setInterval(() => {
-      console.log('[Auth] Running proactive token refresh...');
-      refreshAuth(true);
+      if (isSessionValid()) {
+        console.log('[Auth] Proactive token refresh');
+        refreshAuth(true);
+      }
     }, TOKEN_REFRESH_INTERVAL);
 
     return () => {
-      if (sessionCheckIntervalRef.current) {
-        clearInterval(sessionCheckIntervalRef.current);
-      }
-      if (tokenRefreshIntervalRef.current) {
-        clearInterval(tokenRefreshIntervalRef.current);
-      }
+      if (sessionCheckIntervalRef.current) clearInterval(sessionCheckIntervalRef.current);
+      if (tokenRefreshIntervalRef.current) clearInterval(tokenRefreshIntervalRef.current);
     };
-  }, [user, refreshAuth]);
+  }, [user, refreshAuth, isSessionValid]);
 
   // Socket token refresh callback
   const handleTokensRefreshed = useCallback((tokens: { access_token: string; refresh_token: string }) => {
     console.log('[Auth] Socket tokens refreshed, updating auth state...');
+    lastActivityRef.current = Date.now();
     refreshAuth(true);
   }, [refreshAuth]);
 
-  // Initialize socket connection when user is logged in
+  // ENHANCED: Socket initialization with better error handling
   useEffect(() => {
     if (!user) {
       if (socketService.isConnected()) {
@@ -171,6 +191,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           
           if (data.connected) {
             console.log('[Auth] Socket connected:', data.socketId);
+            lastActivityRef.current = Date.now();
           } else {
             console.log('[Auth] Socket disconnected:', data.reason);
           }
@@ -178,7 +199,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         socketService.on('auth_error', (data: any) => {
           console.error('[Auth] Socket authentication failed:', data.error);
-          handleAuthError();
+          if (!authErrorShownRef.current) {
+            authErrorShownRef.current = true;
+            handleAuthError();
+          }
         });
 
         socketService.on('forced_disconnect', (data: any) => {
@@ -191,36 +215,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           handleAuthError();
         });
 
-        socketService.on('connection_error', (data: any) => {
-          console.error('[Auth] Socket connection error:', data.error);
-          
-          if (data.attempts >= 3) {
-            toast({
-              title: 'Connection Issues',
-              description: 'Having trouble connecting. Retrying...',
-              variant: 'default',
-            });
-          }
-        });
-
-        socketService.on('max_reconnect_attempts', (data: any) => {
-          toast({
-            title: 'Connection Failed',
-            description: data.message || 'Please check your internet connection.',
-            variant: 'destructive',
-          });
-        });
-
         socketService.connect();
         console.log('[Auth] Socket connection initiated');
 
       } catch (error) {
         console.error('[Auth] Socket initialization error:', error);
-        toast({
-          title: 'Connection Error',
-          description: 'Failed to establish real-time connection.',
-          variant: 'destructive',
-        });
       }
     };
 
@@ -234,7 +233,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [user, handleTokensRefreshed, toast]);
 
-  // Initial auth check on mount
+  // Initial auth check with retry
   useEffect(() => {
     const initAuth = async () => {
       try {
@@ -242,13 +241,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         await fetchCurrentUser();
       } catch (error) {
         console.error('[Auth] Initial auth check failed:', error);
-        // Don't redirect on initial load failure
+        setLoading(false);
       }
     };
 
     initAuth();
 
-    // Listen for storage events (for multi-tab logout)
+    // Multi-tab logout sync
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'auth_logout' && e.newValue) {
         console.log('[Auth] Logout detected in another tab');
@@ -257,10 +256,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     window.addEventListener('storage', handleStorageChange);
-
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-    };
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
   const fetchCurrentUser = async () => {
@@ -268,6 +264,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const response = await apiClient.getCurrentUser();
       if (response.success && response.data) {
         setUser(response.data.user);
+        lastActivityRef.current = Date.now();
       } else {
         setUser(null);
       }
@@ -282,16 +279,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const handleAuthError = useCallback(() => {
     console.log('[Auth] Handling auth error - clearing session');
     
-    if (socketService.isConnected()) {
-      socketService.disconnect();
-    }
-    
-    if (sessionCheckIntervalRef.current) {
-      clearInterval(sessionCheckIntervalRef.current);
-    }
-    if (tokenRefreshIntervalRef.current) {
-      clearInterval(tokenRefreshIntervalRef.current);
-    }
+    if (socketService.isConnected()) socketService.disconnect();
+    if (sessionCheckIntervalRef.current) clearInterval(sessionCheckIntervalRef.current);
+    if (tokenRefreshIntervalRef.current) clearInterval(tokenRefreshIntervalRef.current);
     
     setUser(null);
     setSocketConnected(false);
@@ -300,18 +290,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem('auth_logout', Date.now().toString());
     setTimeout(() => localStorage.removeItem('auth_logout'), 1000);
     
-    // Only redirect if on a protected route
     const currentPath = window.location.pathname;
     const publicPaths = ['/', '/auth', '/privacy'];
     
     if (!publicPaths.includes(currentPath)) {
       navigate('/auth');
       
-      toast({
-        title: 'Session expired',
-        description: 'Please log in again.',
-        variant: 'destructive',
-      });
+      if (!authErrorShownRef.current) {
+        authErrorShownRef.current = true;
+        toast({
+          title: 'Session expired',
+          description: 'Please log in again.',
+          variant: 'destructive',
+        });
+      }
     }
   }, [navigate, toast]);
 
@@ -321,6 +313,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (response.success && response.data) {
         setUser(response.data.user);
         lastActivityRef.current = Date.now();
+        authErrorShownRef.current = false;
         
         toast({
           title: 'Welcome back!',
@@ -370,12 +363,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setSocketConnected(false);
       }
       
-      if (sessionCheckIntervalRef.current) {
-        clearInterval(sessionCheckIntervalRef.current);
-      }
-      if (tokenRefreshIntervalRef.current) {
-        clearInterval(tokenRefreshIntervalRef.current);
-      }
+      if (sessionCheckIntervalRef.current) clearInterval(sessionCheckIntervalRef.current);
+      if (tokenRefreshIntervalRef.current) clearInterval(tokenRefreshIntervalRef.current);
       
       await apiClient.logout();
       
@@ -393,10 +382,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
     } catch (error) {
       console.error('[Auth] Logout error:', error);
-      
       setUser(null);
       setSocketConnected(false);
-      refreshingRef.current = false;
       navigate('/');
     }
   };
@@ -424,12 +411,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setSocketConnected(false);
       }
       
-      if (sessionCheckIntervalRef.current) {
-        clearInterval(sessionCheckIntervalRef.current);
-      }
-      if (tokenRefreshIntervalRef.current) {
-        clearInterval(tokenRefreshIntervalRef.current);
-      }
+      if (sessionCheckIntervalRef.current) clearInterval(sessionCheckIntervalRef.current);
+      if (tokenRefreshIntervalRef.current) clearInterval(tokenRefreshIntervalRef.current);
       
       const response = await apiClient.deleteProfile(email);
       

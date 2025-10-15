@@ -163,12 +163,8 @@ const Landing = () => {
               onClick={() => navigate('/auth')}
               className="group px-8 py-4 rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold text-lg shadow-glow hover:shadow-glow-strong transition-smooth hover:scale-105 flex items-center gap-3"
             >
-              Start Free Trial
+              Start here!
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-smooth" />
-            </button>
-            <button className="group px-8 py-4 rounded-xl bg-secondary text-secondary-foreground font-semibold text-lg border border-border hover:shadow-medium transition-smooth flex items-center gap-3">
-              <Play className="w-5 h-5" />
-              Watch Demo
             </button>
           </div>
 
