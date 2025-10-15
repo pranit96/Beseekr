@@ -228,16 +228,6 @@ export const ConversationHistory = ({
             )}
           </div>
 
-          {/* Last message preview */}
-          {conversation.last_message && (
-            <p
-              className="text-xs text-muted-foreground line-clamp-2 mb-1 leading-relaxed break-all"
-              style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}
-            >
-              {conversation.last_message}
-            </p>
-          )}
-
           {/* Timestamp */}
           <div className="flex items-center gap-2 text-xs text-muted-foreground/70">
             <span>{dateStr}</span>
