@@ -18,6 +18,7 @@ const navigation = [
   { name: 'Chat', href: '/' },
   { name: 'Agents', href: '/agents' },
   { name: 'Analytics', href: '/analytics' },
+ { name: 'MetaLayer', href: '/metaLayer' },
 ];
 
 interface TopBarProps {

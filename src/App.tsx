@@ -13,6 +13,7 @@ import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import Landing from "./pages/Landing";
 import Privacy from "./pages/Privacy";
+import DeepAnalytics from "./pages/DeepAnalytics";
 
 const queryClient = new QueryClient();
 
@@ -118,6 +119,14 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <Analytics />
+                  </ProtectedRoute>
+                } 
+              />
+               <Route 
+                path="/metaLayer" 
+                element={
+                  <ProtectedRoute>
+                    <DeepAnalytics />
                   </ProtectedRoute>
                 } 
               />
