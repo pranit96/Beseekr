@@ -203,7 +203,6 @@ const DeepAnalytics = () => {
   // === SESSION HISTORY HANDLING ===
   const handleSelectSession = async (sessionSummary: SessionSummary) => {
     try {
-      // Fetch full session details
       const response = await fetch(`${API_BASE_URL}/api/thinkers/sessions/${sessionSummary.id}`, {
         credentials: 'include'
       });
@@ -215,14 +214,11 @@ const DeepAnalytics = () => {
       setShowResult(true);
       setIsPreviewing(true);
       
-      // Update form fields
       setProblem(fullSession.problem || '');
       setContext(fullSession.context || '');
       
-      // Set files if available
       if (fullSession.files && Array.isArray(fullSession.files)) {
         setUploadedFileIds(fullSession.files);
-        // In a real app, you'd fetch file details separately to show names
       }
     } catch (error) {
       console.error('Error loading session:', error);
@@ -262,7 +258,6 @@ const DeepAnalytics = () => {
       );
     }
 
-    // Only render markdown content with proper renderer
     if (result.final_solution.format === 'markdown') {
       return <MarkdownRenderer 
         content={result.final_solution.content} 
@@ -271,7 +266,6 @@ const DeepAnalytics = () => {
       />;
     }
     
-    // For other formats, show as preformatted text
     return (
       <pre className="whitespace-pre-wrap font-sans text-sm p-4 bg-muted rounded-lg">
         {result.final_solution.content}
@@ -279,16 +273,14 @@ const DeepAnalytics = () => {
     );
   };
 
-  // === PROCESSING VIEW WITH ANIMATIONS ===
+  // === PROCESSING VIEW ===
   if (processing) {
     return (
       <div className="min-h-screen bg-background flex flex-col">
         <TopBar />
         <div className="flex-1 flex flex-col items-center justify-center px-4 pb-20">
           <div className="w-full max-w-md text-center relative">
-            {/* Animated Brain Container */}
             <div className="relative mb-8">
-              {/* Orbiting Particles - Pure CSS, Zero JS */}
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                 <div className="absolute w-64 h-64 animate-rotate-slow opacity-20">
                   <div className="absolute top-0 left-1/2 w-2 h-2 bg-primary rounded-full -translate-x-1/2 -translate-y-1/2"></div>
@@ -298,7 +290,6 @@ const DeepAnalytics = () => {
                 </div>
               </div>
               
-              {/* Floating Brain */}
               <div className="relative z-10 w-16 h-16 rounded-2xl bg-gradient-to-br from-muted to-background flex items-center justify-center mx-auto mb-6 shadow-sm animate-float-slow">
                 <Brain className="w-8 h-8 text-foreground" />
               </div>
@@ -314,7 +305,6 @@ const DeepAnalytics = () => {
                 : "Finalizing your comprehensive report"}
             </p>
 
-            {/* Progress Bar */}
             <div className="space-y-4 mb-8">
               <div className="h-1.5 bg-muted rounded-full overflow-hidden">
                 <div 
@@ -327,7 +317,6 @@ const DeepAnalytics = () => {
               </p>
             </div>
 
-            {/* Subtle Indicator */}
             <div className="flex justify-center items-center gap-2 text-xs text-muted-foreground/70 animate-fade-in">
               <div className="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-pulse"></div>
               <span>This typically takes 3–5 minutes</span>
@@ -338,12 +327,12 @@ const DeepAnalytics = () => {
     );
   }
 
-  // === RESULTS VIEW ===
+  // === RESULTS VIEW — REDESIGNED ===
   if (showResult) {
     return (
       <div className="min-h-screen bg-background flex flex-col">
         <TopBar />
-        <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full px-4 sm:px-6 py-6">
+        <div className="flex-1 flex flex-col max-w-7xl mx-auto w-full px-4 sm:px-6 py-6">
           {/* Header */}
           <div className="flex items-center justify-between mb-6 animate-fade-in">
             <div className="flex items-center gap-3">
@@ -452,12 +441,41 @@ const DeepAnalytics = () => {
             </div>
           </div>
 
-          {/* Report */}
-          <Card className="flex-1 border bg-card overflow-hidden rounded-xl animate-fade-in-up">
-            <div className="h-full overflow-auto p-6">
-              {renderResultContent()}
-            </div>
-          </Card>
+          {/* Two-Column Layout: ToC + Content */}
+          <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
+            {/* Table of Contents Card */}
+            <Card className="h-fit p-4 bg-card border rounded-xl overflow-hidden">
+              <h3 className="font-semibold mb-3 text-foreground">Report Outline</h3>
+              <div className="prose prose-sm max-w-none text-muted-foreground">
+                {result?.final_solution?.content ? (
+                  <div 
+                    className="markdown-toc text-sm space-y-1"
+                    dangerouslySetInnerHTML={{
+                      __html: result.final_solution.content
+                        .split('\n')
+                        .filter(line => line.startsWith('## ') || line.startsWith('### '))
+                        .map(line => {
+                          const depth = line.startsWith('###') ? 2 : 1;
+                          const text = line.replace(/^#{2,3}\s*/, '').trim();
+                          const id = text.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+                          return `<div class="pl-${depth * 2}"><a href="#${id}" class="hover:text-primary">${text}</a></div>`;
+                        })
+                        .join('')
+                    }}
+                  />
+                ) : (
+                  <p className="text-xs">No outline available</p>
+                )}
+              </div>
+            </Card>
+
+            {/* Main Content Card */}
+            <Card className="flex-1 border bg-card overflow-hidden rounded-xl">
+              <div className="h-full overflow-auto p-6">
+                {renderResultContent()}
+              </div>
+            </Card>
+          </div>
         </div>
       </div>
     );
@@ -467,7 +485,7 @@ const DeepAnalytics = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <TopBar />
-      <div className="flex-1 flex flex-col max-w-3xl mx-auto w-full px-4 sm:px-6 py-8">
+      <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full px-4 sm:px-6 py-8">
         <div className="text-center mb-10 animate-fade-in">
           <h1 className="text-3xl font-bold text-foreground mb-3">Deep Analytics</h1>
           <p className="text-muted-foreground max-w-md mx-auto">
