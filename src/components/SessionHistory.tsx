@@ -1,9 +1,12 @@
+// src/components/SessionHistory.tsx
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Clock, FileText, Brain } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 // Session summary from list endpoint (doesn't include full content)
 export interface SessionSummary {
@@ -17,6 +20,15 @@ export interface SessionSummary {
   };
 }
 
+// File metadata interface
+export interface SessionFile {
+  id: string;
+  filename: string;
+  content_type: string;
+  file_size: number;
+  created_at: string;
+}
+
 // Full session from detail endpoint
 export interface FullSession extends SessionSummary {
   final_solution: {
@@ -24,7 +36,13 @@ export interface FullSession extends SessionSummary {
     format: string;
   };
   context?: string;
-  files?: string[];
+  files?: SessionFile[];
+  thinking_ideations: Array<{
+    role: string;
+    domain: string;
+    content: string;
+    quality_score: number;
+  }>;
 }
 
 interface SessionHistoryProps {
@@ -47,13 +65,14 @@ export const SessionHistory = ({
   const fetchSessions = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/thinkers/sessions?limit=10', {
+      const response = await fetch(`${API_BASE_URL}/api/thinkers/sessions?limit=10`, {
         credentials: 'include'
       });
       
       if (!response.ok) throw new Error('Failed to fetch sessions');
       
       const data = await response.json();
+      // ✅ FIX: Handle the correct response structure
       setSessions(data.sessions || []);
     } catch (error) {
       console.error('Error fetching sessions:', error);
