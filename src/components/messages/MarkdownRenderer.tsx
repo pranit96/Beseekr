@@ -35,7 +35,7 @@ export default function MarkdownRenderer({
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
-  // Preprocess: strip code fences and convert plain text headings into markdown headings
+  // Preprocess: strip code fences, fix tables, and convert plain text headings into markdown headings
   const normalizeContent = (text: string) => {
     if (!text) return '';
     
@@ -52,31 +52,61 @@ export default function MarkdownRenderer({
     const out: string[] = [];
 
     for (let i = 0; i < lines.length; i++) {
-      const line = lines[i].trim();
+      let line = lines[i];
+      const trimmedLine = line.trim();
       const nextLine = (lines[i + 1] || '').trim();
 
-      if (!line) {
+      if (!trimmedLine) {
         out.push('');
         continue;
       }
 
-      if (/:$/.test(line)) {
-        out.push(`### ${line.replace(/:$/, '')}`);
+      // Fix table rows: ensure proper spacing around pipes
+      if (trimmedLine.includes('|')) {
+        // Check if this looks like a table row
+        const pipeCount = (trimmedLine.match(/\|/g) || []).length;
+        if (pipeCount >= 2) {
+          // This is likely a table row - ensure it starts and ends with |
+          let fixedLine = trimmedLine;
+          if (!fixedLine.startsWith('|')) fixedLine = '| ' + fixedLine;
+          if (!fixedLine.endsWith('|')) fixedLine = fixedLine + ' |';
+          
+          // Check if next line is a separator line (contains dashes)
+          const isHeaderRow = nextLine.includes('---') || nextLine.includes('|-');
+          
+          out.push(fixedLine);
+          
+          // If this is a header row and next line isn't a proper separator, add one
+          if (isHeaderRow && i + 1 < lines.length) {
+            const separatorLine = lines[i + 1].trim();
+            if (!separatorLine.match(/^\|?[\s\-:|]+\|?$/)) {
+              // Generate separator based on column count
+              const colCount = (fixedLine.match(/\|/g) || []).length - 1;
+              const separator = '| ' + Array(colCount).fill('---').join(' | ') + ' |';
+              out.push(separator);
+            }
+          }
+          continue;
+        }
+      }
+
+      if (/:$/.test(trimmedLine)) {
+        out.push(`### ${trimmedLine.replace(/:$/, '')}`);
         out.push('');
         continue;
       }
 
       const looksLikeTitle =
-        line.length > 2 &&
-        line.length <= 60 &&
-        /^[A-Z][A-Za-z0-9 ',-]+$/.test(line) &&
-        !/[.?!]$/.test(line) &&
+        trimmedLine.length > 2 &&
+        trimmedLine.length <= 60 &&
+        /^[A-Z][A-Za-z0-9 ',-]+$/.test(trimmedLine) &&
+        !/[.?!]$/.test(trimmedLine) &&
         nextLine &&
         /^[A-Z0-9"']/.test(nextLine) &&
         nextLine.length > 10;
 
       if (looksLikeTitle) {
-        out.push(`### ${line}`);
+        out.push(`### ${trimmedLine}`);
         out.push('');
         continue;
       }
@@ -84,7 +114,7 @@ export default function MarkdownRenderer({
       out.push(line);
     }
 
-    return out.join('\n\n').replace(/\n{3,}/g, '\n\n');
+    return out.join('\n').replace(/\n{3,}/g, '\n\n');
   };
 
   // Generate Table of Contents from headings after render (only if showToc=true)
@@ -211,7 +241,7 @@ export default function MarkdownRenderer({
       </th>
     ),
     td: ({ children, ...props }: any) => (
-      <td className="px-4 py-3 text-sm text-foreground/90 whitespace-nowrap" {...props}>
+      <td className="px-4 py-3 text-sm text-foreground/90" {...props}>
         {children}
       </td>
     ),
