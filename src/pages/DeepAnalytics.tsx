@@ -1,7 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { 
-  Upload, FileText, X, Brain, Check, 
+import {
+  Upload, FileText, X, Brain, Check,
   Loader2, FileDown, Target, Globe, Database, History, Eye
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -43,17 +42,46 @@ const DeepAnalytics = () => {
   const [showHistory, setShowHistory] = useState(false);
   const [isPreviewing, setIsPreviewing] = useState(false);
   const [fileContent, setFileContent] = useState<{ [fileId: string]: string }>({});
-  
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
   const { toast } = useToast();
   const { downloadFile, isConverting } = useDownload();
-  const navigate = useNavigate();
 
+
+  // Load persisted result on mount
   useEffect(() => {
+    const savedResult = localStorage.getItem('deepAnalytics_lastResult');
+    const savedProblem = localStorage.getItem('deepAnalytics_lastProblem');
+    const savedContext = localStorage.getItem('deepAnalytics_lastContext');
+    const savedFiles = localStorage.getItem('deepAnalytics_lastFiles');
+
+    if (savedResult) {
+      try {
+        const parsedResult = JSON.parse(savedResult);
+        setResult(parsedResult);
+        setShowResult(true);
+
+        if (savedProblem) setProblem(savedProblem);
+        if (savedContext) setContext(savedContext);
+        if (savedFiles) {
+          const parsedFiles = JSON.parse(savedFiles);
+          setFiles(parsedFiles.files || []);
+          setUploadedFileIds(parsedFiles.ids || []);
+        }
+      } catch (error) {
+        console.error('Failed to restore session:', error);
+        localStorage.removeItem('deepAnalytics_lastResult');
+      }
+    }
+
     return () => {
       if (progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);
+      }
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
       }
     };
   }, []);
@@ -95,15 +123,15 @@ const DeepAnalytics = () => {
 
       const data = await response.json();
       const uploadedFiles = data.data?.uploaded || [];
-      
+
       if (uploadedFiles.length > 0) {
         const frontendFiles = uploadedFiles.map((file: any, index: number) => ({
           id: file.id,
           name: file.filename || file.existing_filename || newFiles[index]?.name || 'unknown',
-          size: file.file_size || newFiles[index]?.size || 0, 
+          size: file.file_size || newFiles[index]?.size || 0,
           type: file.content_type || newFiles[index]?.type || 'unknown'
         }));
-        
+
         setFiles(prev => [...prev, ...frontendFiles]);
         setUploadedFileIds(prev => [...prev, ...uploadedFiles.map((f: any) => f.id)]);
         toast({
@@ -184,7 +212,13 @@ const DeepAnalytics = () => {
     setIsPreviewing(false);
     setFileContent({});
 
+    // Clear previous result from localStorage
+    localStorage.removeItem('deepAnalytics_lastResult');
+
     const cleanup = simulateProgress();
+
+    // Create new AbortController for this request
+    abortControllerRef.current = new AbortController();
 
     try {
       const res = await fetch(`${API_BASE_URL}/api/thinkers/execute`, {
@@ -197,6 +231,7 @@ const DeepAnalytics = () => {
           files: uploadedFileIds.length > 0 ? uploadedFileIds : undefined,
           output_format: 'markdown',
         }),
+        signal: abortControllerRef.current.signal,
       });
 
       if (!res.ok) {
@@ -207,6 +242,16 @@ const DeepAnalytics = () => {
       const data = await res.json();
       if (data.success) {
         setResult(data);
+
+        // Persist to localStorage
+        localStorage.setItem('deepAnalytics_lastResult', JSON.stringify(data));
+        localStorage.setItem('deepAnalytics_lastProblem', problem);
+        localStorage.setItem('deepAnalytics_lastContext', context);
+        localStorage.setItem('deepAnalytics_lastFiles', JSON.stringify({
+          files,
+          ids: uploadedFileIds
+        }));
+
         cleanup();
         setTimeout(accelerateToComplete, 300);
       } else {
@@ -219,8 +264,33 @@ const DeepAnalytics = () => {
         progressIntervalRef.current = null;
       }
       setProcessing(false);
-      toast({ title: 'Failed', description: error.message, variant: 'destructive' });
+
+      // Don't show error toast if request was aborted (user cancelled)
+      if (error.name !== 'AbortError') {
+        toast({ title: 'Failed', description: error.message, variant: 'destructive' });
+      }
     }
+  };
+
+  // === CANCEL EXECUTION ===
+  const handleCancel = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+
+    if (progressIntervalRef.current) {
+      clearInterval(progressIntervalRef.current);
+      progressIntervalRef.current = null;
+    }
+
+    setProcessing(false);
+    setProgress(0);
+
+    toast({
+      title: 'Cancelled',
+      description: 'Analysis has been cancelled',
+    });
   };
 
   // === FETCH FILE CONTENT ===
@@ -230,9 +300,9 @@ const DeepAnalytics = () => {
       const response = await fetch(`${API_BASE_URL}/api/thinkers/sessions/${sessionId}/files/${fileId}/content`, {
         credentials: 'include'
       });
-      
+
       if (!response.ok) throw new Error('Failed to fetch file');
-      
+
       const data = await response.json();
       if (data.success) {
         setFileContent(prev => ({
@@ -258,18 +328,18 @@ const DeepAnalytics = () => {
       const response = await fetch(`${API_BASE_URL}/api/thinkers/sessions/${sessionSummary.id}`, {
         credentials: 'include'
       });
-      
+
       if (!response.ok) throw new Error('Failed to fetch session');
-      
+
       const fullSession: FullSession = await response.json();
       setResult(fullSession);
       setShowResult(true);
       setIsPreviewing(true);
       setFileContent({});
-      
+
       setProblem(fullSession.problem || '');
       setContext(fullSession.context || '');
-      
+
       if (fullSession.files && Array.isArray(fullSession.files)) {
         // Map to UploadedFile format for UI
         const sessionFiles: UploadedFile[] = fullSession.files.map((f: SessionFile) => ({
@@ -304,84 +374,84 @@ const DeepAnalytics = () => {
     const content = result.final_solution.content;
     const originalFormat = result.final_solution.format || 'markdown';
     const filename = `deep-analysis-${new Date().toISOString().slice(0, 10)}`;
-    
-    downloadFile(content, originalFormat, { 
-      filename, 
-      format 
+
+    downloadFile(content, originalFormat, {
+      filename,
+      format
     });
   };
 
   // === RENDERING ===
 
   const renderResultContent = () => {
-  if (!result?.final_solution?.content) {
+    if (!result?.final_solution?.content) {
+      return (
+        <div className="text-center py-12 text-muted-foreground">
+          <FileText className="w-12 h-12 mx-auto mb-3 opacity-50" />
+          <p>No content was generated.</p>
+        </div>
+      );
+    }
+
     return (
-      <div className="text-center py-12 text-muted-foreground">
-        <FileText className="w-12 h-12 mx-auto mb-3 opacity-50" />
-        <p>No content was generated.</p>
+      <div className="space-y-8">
+        {/* Main Content - Constrained width for better readability */}
+        {result.final_solution.format === 'markdown' ? (
+          <div className="max-w-3xl mx-auto">
+            <MarkdownRenderer
+              content={result.final_solution.content}
+              showToc={false}
+              enableCopy={true}
+            />
+          </div>
+        ) : (
+          <pre className="whitespace-pre-wrap font-sans text-sm p-6 bg-muted rounded-lg max-w-3xl mx-auto">
+            {result.final_solution.content}
+          </pre>
+        )}
+
+        {/* Files Section */}
+        {result.files && result.files.length > 0 && (
+          <div className="max-w-3xl mx-auto border-t pt-8">
+            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <Database className="w-5 h-5" />
+              Supporting Files
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {result.files.map((file: SessionFile) => (
+                <Card key={file.id} className="p-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <FileText className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                      <span className="text-sm font-medium truncate">{file.filename}</span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => fetchFileContent(result.id, file.id)}
+                      disabled={!!fileContent[file.id]}
+                      className="h-8 w-8 p-0"
+                    >
+                      {fileContent[file.id] ? (
+                        <Check className="w-4 h-4 text-success" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
+                    </Button>
+                  </div>
+                  {fileContent[file.id] && (
+                    <div className="mt-2 p-2 bg-muted rounded text-xs max-h-32 overflow-auto font-mono">
+                      {fileContent[file.id].substring(0, 200)}...
+                    </div>
+                  )}
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     );
-  }
-
-  return (
-    <div className="space-y-6">
-      {/* Main Content - Wider, No TOC */}
-      {result.final_solution.format === 'markdown' ? (
-        <div className="prose prose-invert max-w-none">
-          <MarkdownRenderer 
-            content={result.final_solution.content} 
-            showToc={false} // 👈 REMOVED TOC
-            enableCopy={true} 
-          />
-        </div>
-      ) : (
-        <pre className="whitespace-pre-wrap font-sans text-sm p-4 bg-muted rounded-lg">
-          {result.final_solution.content}
-        </pre>
-      )}
-
-      {/* Files Section */}
-      {result.files && result.files.length > 0 && (
-        <div className="border-t pt-6">
-          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <Database className="w-5 h-5" />
-            Supporting Files
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {result.files.map((file: SessionFile) => (
-              <Card key={file.id} className="p-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <FileText className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                    <span className="text-sm font-medium truncate">{file.filename}</span>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => fetchFileContent(result.id, file.id)}
-                    disabled={!!fileContent[file.id]}
-                    className="h-8 w-8 p-0"
-                  >
-                    {fileContent[file.id] ? (
-                      <Check className="w-4 h-4 text-success" />
-                    ) : (
-                      <Eye className="w-4 h-4" />
-                    )}
-                  </Button>
-                </div>
-                {fileContent[file.id] && (
-                  <div className="mt-2 p-2 bg-muted rounded text-xs max-h-32 overflow-auto font-mono">
-                    {fileContent[file.id].substring(0, 200)}...
-                  </div>
-                )}
-              </Card>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
+  };
 
   // === PROCESSING VIEW ===
   if (processing) {
@@ -408,14 +478,14 @@ const DeepAnalytics = () => {
               Deep Analysis in Progress
             </h1>
             <p className="text-muted-foreground mb-8 transition-opacity duration-500 animate-fade-in">
-              {progress < 95 
-                ? "Our AI specialists are analyzing your request" 
+              {progress < 95
+                ? "Our AI specialists are analyzing your request"
                 : "Finalizing your comprehensive report"}
             </p>
 
             <div className="space-y-4 mb-8">
               <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                <div 
+                <div
                   className="h-full bg-primary rounded-full transition-all duration-300 ease-out"
                   style={{ width: `${progress}%` }}
                 />
@@ -425,9 +495,21 @@ const DeepAnalytics = () => {
               </p>
             </div>
 
-            <div className="flex justify-center items-center gap-2 text-xs text-muted-foreground/70 animate-fade-in">
-              <div className="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-pulse"></div>
-              <span>This typically takes 3–5 minutes</span>
+            <div className="flex flex-col items-center gap-4">
+              <div className="flex justify-center items-center gap-2 text-xs text-muted-foreground/70 animate-fade-in">
+                <div className="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-pulse"></div>
+                <span>This typically takes 3–5 minutes</span>
+              </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleCancel}
+                className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+              >
+                <X className="w-4 h-4" />
+                Cancel Analysis
+              </Button>
             </div>
           </div>
         </div>
@@ -440,95 +522,103 @@ const DeepAnalytics = () => {
     return (
       <div className="min-h-screen bg-background flex flex-col">
         <TopBar />
-        <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full px-4 sm:px-6 py-6">
-          <div className="flex items-center justify-between mb-6 animate-fade-in">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-success/10 flex items-center justify-center">
-                <Check className="w-5 h-5 text-success" />
-              </div>
-              <div>
-                <h1 className="text-xl font-semibold">
-                  {isPreviewing ? 'Session Preview' : 'Analysis Complete'}
-                </h1>
-                {result?.execution_metrics && (
-                  <p className="text-sm text-muted-foreground">
-                    Completed in {(result.execution_metrics.execution_time_ms / 1000).toFixed(1)}s
-                  </p>
-                )}
-                {isPreviewing && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Viewing historical session from {new Date(result?.created_at || '').toLocaleDateString()}
-                  </p>
-                )}
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <div className="relative">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => setShowHistory(!showHistory)}
-                  className="gap-1.5"
-                >
-                  <History className="w-4 h-4" />
-                  History
-                </Button>
-                {showHistory && (
-                  <div className="absolute right-0 mt-2 z-50 w-80">
-                    <SessionHistory 
-                      onSelectSession={handleSelectSession}
-                      currentSessionId={result?.id}
-                    />
-                  </div>
-                )}
-              </div>
-              <div className="relative group">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  disabled={isConverting}
-                  className="gap-1.5"
-                >
-                  <FileDown className="w-4 h-4" />
-                  {isConverting ? 'Converting...' : 'Export'}
-                </Button>
-                <div className="absolute right-0 mt-2 z-50 w-48 bg-background border rounded-lg shadow-lg p-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto">
-                  {(['markdown', 'pdf', 'html', 'json', 'text'] as const).map(fmt => (
-                    <Button 
-                      key={fmt}
-                      variant="ghost" 
-                      className="w-full justify-start"
-                      onClick={() => handleDownload(fmt)}
-                    >
-                      {fmt.charAt(0).toUpperCase() + fmt.slice(1)} ({fmt === 'text' ? '.txt' : `.${fmt}`})
-                    </Button>
-                  ))}
+        <div className="flex-1 flex flex-col w-full px-4 sm:px-6 py-6">
+          <div className="max-w-5xl mx-auto w-full">
+            <div className="flex items-center justify-between mb-6 animate-fade-in">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-success/10 flex items-center justify-center">
+                  <Check className="w-5 h-5 text-success" />
+                </div>
+                <div>
+                  <h1 className="text-xl font-semibold">
+                    {isPreviewing ? 'Session Preview' : 'Analysis Complete'}
+                  </h1>
+                  {result?.execution_metrics && (
+                    <p className="text-sm text-muted-foreground">
+                      Completed in {(result.execution_metrics.execution_time_ms / 1000).toFixed(1)}s
+                    </p>
+                  )}
+                  {isPreviewing && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Viewing historical session from {new Date(result?.created_at || '').toLocaleDateString()}
+                    </p>
+                  )}
                 </div>
               </div>
-              <Button 
-                size="sm"
-                onClick={() => {
-                  setShowResult(false);
-                  setResult(null);
-                  setProblem('');
-                  setContext('');
-                  setFiles([]);
-                  setUploadedFileIds([]);
-                  setShowHistory(false);
-                  setIsPreviewing(false);
-                  setFileContent({});
-                }}
-              >
-                New Analysis
-              </Button>
-            </div>
-          </div>
+              <div className="flex gap-2">
+                <div className="relative">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowHistory(!showHistory)}
+                    className="gap-1.5"
+                  >
+                    <History className="w-4 h-4" />
+                    History
+                  </Button>
+                  {showHistory && (
+                    <div className="absolute right-0 mt-2 z-50 w-80">
+                      <SessionHistory
+                        onSelectSession={handleSelectSession}
+                        currentSessionId={result?.id}
+                      />
+                    </div>
+                  )}
+                </div>
+                <div className="relative group">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={isConverting}
+                    className="gap-1.5"
+                  >
+                    <FileDown className="w-4 h-4" />
+                    {isConverting ? 'Converting...' : 'Export'}
+                  </Button>
+                  <div className="absolute right-0 mt-2 z-50 w-48 bg-background border rounded-lg shadow-lg p-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto">
+                    {(['markdown', 'pdf', 'html', 'json', 'text'] as const).map(fmt => (
+                      <Button
+                        key={fmt}
+                        variant="ghost"
+                        className="w-full justify-start"
+                        onClick={() => handleDownload(fmt)}
+                      >
+                        {fmt.charAt(0).toUpperCase() + fmt.slice(1)} ({fmt === 'text' ? '.txt' : `.${fmt}`})
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    setShowResult(false);
+                    setResult(null);
+                    setProblem('');
+                    setContext('');
+                    setFiles([]);
+                    setUploadedFileIds([]);
+                    setShowHistory(false);
+                    setIsPreviewing(false);
+                    setFileContent({});
 
-          <Card className="flex-1 border bg-card overflow-hidden rounded-xl animate-fade-in-up">
-            <div className="h-full overflow-auto p-6 sm:p-8"> {/* 👈 Increased padding on larger screens */}
-              {renderResultContent()}
+                    // Clear localStorage
+                    localStorage.removeItem('deepAnalytics_lastResult');
+                    localStorage.removeItem('deepAnalytics_lastProblem');
+                    localStorage.removeItem('deepAnalytics_lastContext');
+                    localStorage.removeItem('deepAnalytics_lastFiles');
+                  }}
+                >
+                  New Analysis
+                </Button>
+              </div>
             </div>
-          </Card>
+
+            <Card className="border bg-card overflow-hidden rounded-xl animate-fade-in-up">
+              <div className="overflow-auto p-8 sm:p-10 lg:p-12">
+                {renderResultContent()}
+              </div>
+            </Card>
+          </div>
         </div>
       </div>
     );
@@ -538,76 +628,76 @@ const DeepAnalytics = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <TopBar />
-      <div className="flex-1 flex flex-col max-w-3xl mx-auto w-full px-4 sm:px-6 py-8">
-        <div className="text-center mb-10 animate-fade-in">
-          <h1 className="text-3xl font-bold text-foreground mb-3">Deep Analytics</h1>
-          <p className="text-muted-foreground max-w-md mx-auto">
+      <div className="flex-1 flex flex-col max-w-3xl mx-auto w-full px-4 sm:px-6 py-6">
+        <div className="text-center mb-6 animate-fade-in">
+          <h1 className="text-2xl font-bold text-foreground mb-2">Deep Analytics</h1>
+          <p className="text-sm text-muted-foreground max-w-md mx-auto">
             Describe a complex challenge. Our AI will deliver a strategic, actionable report.
           </p>
         </div>
 
-        <div className="space-y-8 animate-fade-in-up">
+        <div className="space-y-5 animate-fade-in-up">
           {/* Problem */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2.5">
-              <Target className="w-5 h-5 text-primary flex-shrink-0" />
-              <h2 className="font-medium text-foreground">Your Challenge</h2>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Target className="w-4 h-4 text-primary flex-shrink-0" />
+              <h2 className="text-sm font-medium text-foreground">Your Challenge</h2>
             </div>
             <Textarea
               value={problem}
               onChange={(e) => setProblem(e.target.value)}
               placeholder="What strategic, operational, or analytical problem are you facing? Be specific about goals, constraints, and context..."
-              className="min-h-[140px] text-base resize-none"
+              className="min-h-[120px] text-sm resize-none"
               maxLength={10000}
             />
             <div className="flex justify-between text-xs text-muted-foreground">
               <span>{problem.length}/10,000 characters</span>
               {problem.length >= 20 ? (
                 <span className="text-success flex items-center gap-1">
-                  <Check className="w-3.5 h-3.5" /> Ready for analysis
+                  <Check className="w-3 h-3" /> Ready
                 </span>
               ) : (
-                <span className="text-amber-500">{20 - problem.length} more characters needed</span>
+                <span className="text-amber-500">{20 - problem.length} more needed</span>
               )}
             </div>
           </div>
 
           {/* Context */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2.5">
-              <Globe className="w-5 h-5 text-muted-foreground flex-shrink-0" />
-              <h2 className="font-medium text-foreground">Additional Context (Optional)</h2>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Globe className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+              <h2 className="text-sm font-medium text-foreground">Additional Context (Optional)</h2>
             </div>
             <Textarea
               value={context}
               onChange={(e) => setContext(e.target.value)}
               placeholder="Industry, timeline, success metrics, existing solutions, or other relevant details..."
-              className="min-h-[100px] text-base resize-none"
+              className="min-h-[80px] text-sm resize-none"
               maxLength={20000}
             />
             <p className="text-xs text-muted-foreground text-right">{context.length}/20,000</p>
           </div>
 
           {/* Files */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2.5">
-              <Database className="w-5 h-5 text-muted-foreground flex-shrink-0" />
-              <h2 className="font-medium text-foreground">Supporting Files (Optional)</h2>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Database className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+              <h2 className="text-sm font-medium text-foreground">Supporting Files (Optional)</h2>
             </div>
-            <div 
+            <div
               onClick={() => fileInputRef.current?.click()}
-              className="border border-dashed border-border rounded-xl p-6 text-center cursor-pointer hover:bg-muted/30 transition-colors"
+              className="border border-dashed border-border rounded-lg p-4 text-center cursor-pointer hover:bg-muted/30 transition-colors"
             >
               {uploading ? (
                 <div className="flex flex-col items-center">
-                  <Loader2 className="w-6 h-6 animate-spin text-primary mb-2" />
-                  <span className="text-sm font-medium">Uploading...</span>
+                  <Loader2 className="w-5 h-5 animate-spin text-primary mb-1.5" />
+                  <span className="text-xs font-medium">Uploading...</span>
                 </div>
               ) : (
                 <div>
-                  <Upload className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-sm font-medium text-foreground">Add files for deeper analysis</p>
-                  <p className="text-xs text-muted-foreground mt-1">PDF, DOCX, CSV, JSON • Max 5 files</p>
+                  <Upload className="w-5 h-5 text-muted-foreground mx-auto mb-1.5" />
+                  <p className="text-xs font-medium text-foreground">Add files for deeper analysis</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">PDF, DOCX, CSV, JSON • Max 5 files</p>
                 </div>
               )}
             </div>
@@ -619,23 +709,23 @@ const DeepAnalytics = () => {
               onChange={handleFileSelect}
               className="hidden"
             />
-            
+
             {files.length > 0 && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
                 {files.map(file => (
-                  <div key={file.id} className="flex items-center gap-2.5 p-3 bg-muted/30 rounded-lg">
-                    <FileText className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                  <div key={file.id} className="flex items-center gap-2 p-2.5 bg-muted/30 rounded-lg">
+                    <FileText className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium truncate">{file.name}</p>
+                      <p className="text-xs font-medium truncate">{file.name}</p>
                       <p className="text-xs text-muted-foreground">{formatFileSize(file.size)}</p>
                     </div>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
                       onClick={() => removeFile(file.id)}
                     >
-                      <X className="w-4 h-4" />
+                      <X className="w-3.5 h-3.5" />
                     </Button>
                   </div>
                 ))}
@@ -645,31 +735,31 @@ const DeepAnalytics = () => {
 
           {/* Session History Toggle */}
           <div className="flex justify-end">
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => setShowHistory(!showHistory)}
-              className="gap-1.5"
+              className="gap-1.5 h-8 text-xs"
             >
-              <History className="w-4 h-4" />
+              <History className="w-3.5 h-3.5" />
               {showHistory ? 'Hide History' : 'View History'}
             </Button>
           </div>
 
           {showHistory && (
             <div className="animate-fade-in">
-              <SessionHistory 
+              <SessionHistory
                 onSelectSession={handleSelectSession}
               />
             </div>
           )}
 
           {/* Execute */}
-          <div className="pt-4">
+          <div className="pt-2 sticky bottom-0 bg-background pb-4">
             <Button
               onClick={handleExecute}
               disabled={!problem.trim() || problem.length < 20 || processing}
-              className="w-full h-12 text-base font-medium"
+              className="w-full h-11 text-sm font-medium shadow-lg"
             >
               {processing ? (
                 <>
@@ -683,7 +773,7 @@ const DeepAnalytics = () => {
                 </>
               )}
             </Button>
-            <p className="text-xs text-muted-foreground text-center mt-3">
+            <p className="text-xs text-muted-foreground text-center mt-2">
               Your report will include actionable steps, risk analysis, and implementation roadmap
             </p>
           </div>
