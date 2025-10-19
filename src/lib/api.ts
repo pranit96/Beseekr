@@ -224,8 +224,6 @@ class ApiClient {
   }
 
   async getMyAgents() {
-    // Force fresh data for agents to avoid stale state
-    this.invalidateCache('/api/agents/my');
     return this.request<any>('/api/agents/my');
   }
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Plus, Pencil, Trash2, Search, Folder, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -6,7 +6,6 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { AgentDialog } from '@/components/AgentDialog';
 import { Agent } from '@/types/agent';
-import { apiClient } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import { TopBar } from '@/components/TopBar';
 import {
@@ -24,10 +23,9 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
+import { useMyAgents, useCreateAgent, useUpdateAgent, useDeleteAgent } from '@/hooks/use-api-queries';
 
 const Agents = () => {
-  const [agents, setAgents] = useState<Agent[]>([]);
-  const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingAgent, setEditingAgent] = useState<Agent | undefined>();
   const [deleteAgentId, setDeleteAgentId] = useState<string | null>(null);
@@ -35,26 +33,24 @@ const Agents = () => {
   const [openCategories, setOpenCategories] = useState<Set<string>>(new Set(['My Agents']));
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchAgents();
-  }, []);
+  // React Query hooks
+  const { data: agentsResponse, isLoading: loading, error } = useMyAgents();
+  const createAgentMutation = useCreateAgent();
+  const updateAgentMutation = useUpdateAgent();
+  const deleteAgentMutation = useDeleteAgent();
 
-  const fetchAgents = async () => {
-    try {
-      const response = await apiClient.getMyAgents();
-      if (response.success && response.data) {
-        setAgents(response.data);
-      }
-    } catch (error: any) {
+  const agents = agentsResponse?.data || [];
+
+  // Show error toast if query fails (only once)
+  useEffect(() => {
+    if (error) {
       toast({
         title: 'Failed to load agents',
-        description: error.message,
+        description: (error as any).message,
         variant: 'destructive',
       });
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [error, toast]);
 
   const categorizedAgents = useMemo(() => {
     const filtered = agents.filter((agent) => {
@@ -99,68 +95,19 @@ const Agents = () => {
   };
 
   const handleSaveAgent = async (agent: Agent) => {
-    try {
-      if (agent.id && editingAgent) {
-        setAgents(agents.map((a) => (a.id === agent.id ? { ...agent } : a)));
-
-        const response = await apiClient.updateAgent(agent.id, agent);
-        if (response.success && response.data) {
-          setAgents(agents.map((a) => (a.id === agent.id ? response.data : a)));
-          toast({
-            title: 'Agent updated',
-            description: `${agent.name} has been updated successfully.`,
-          });
-        }
-      } else {
-        const response = await apiClient.createAgent(agent);
-        if (response.success && response.data) {
-          setAgents([...agents, response.data]);
-          toast({
-            title: 'Agent created',
-            description: `${agent.name} has been created successfully.`,
-          });
-        }
-      }
-      setIsDialogOpen(false);
-      setEditingAgent(undefined);
-    } catch (error: any) {
-      if (editingAgent) {
-        setAgents(agents.map((a) => (a.id === editingAgent.id ? editingAgent : a)));
-      }
-      toast({
-        title: 'Failed to save agent',
-        description: error.message,
-        variant: 'destructive',
-      });
+    if (agent.id && editingAgent) {
+      await updateAgentMutation.mutateAsync({ id: agent.id, agent });
+    } else {
+      await createAgentMutation.mutateAsync(agent);
     }
+    setIsDialogOpen(false);
+    setEditingAgent(undefined);
   };
 
   const handleDeleteAgent = async () => {
     if (!deleteAgentId) return;
-
-    const deletedAgent = agents.find(a => a.id === deleteAgentId);
-    setAgents(agents.filter((a) => a.id !== deleteAgentId));
-
-    try {
-      const response = await apiClient.deleteAgent(deleteAgentId);
-      if (response.success) {
-        toast({
-          title: 'Agent deleted',
-          description: 'The agent has been permanently deleted.',
-        });
-      }
-    } catch (error: any) {
-      if (deletedAgent) {
-        setAgents([...agents, deletedAgent]);
-      }
-      toast({
-        title: 'Failed to delete agent',
-        description: error.message,
-        variant: 'destructive',
-      });
-    } finally {
-      setDeleteAgentId(null);
-    }
+    await deleteAgentMutation.mutateAsync(deleteAgentId);
+    setDeleteAgentId(null);
   };
 
   const handleEditAgent = (agent: Agent) => {

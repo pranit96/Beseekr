@@ -5,6 +5,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "./hooks/use-theme";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { KeyboardShortcutsDialog } from "./components/KeyboardShortcutsDialog";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import Chat from "./pages/Chat";
 import Agents from "./pages/Agents";
 import Analytics from "./pages/Analytics";
@@ -14,8 +16,19 @@ import NotFound from "./pages/NotFound";
 import Landing from "./pages/Landing";
 import Privacy from "./pages/Privacy";
 import DeepAnalytics from "./pages/DeepAnalytics";
+import { useEffect } from "react";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30 * 1000, // 30 seconds - data is fresh for 30s
+      gcTime: 5 * 60 * 1000, // 5 minutes - keep in cache for 5 min
+      refetchOnWindowFocus: false, // Don't refetch on window focus
+      refetchOnMount: true, // Refetch on mount if data is stale
+      retry: 1, // Only retry once on failure
+    },
+  },
+});
 
 // Root redirect component
 const RootRedirect = () => {
@@ -72,15 +85,28 @@ const PublicOnlyRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <ThemeProvider defaultTheme="dark">
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <AuthProvider>
-            <Routes>
+const App = () => {
+  // Report web vitals and check performance budget on mount
+  useEffect(() => {
+    import('./lib/performance').then(({ perf }) => {
+      perf.reportWebVitals();
+    });
+    import('./lib/performance-budget').then(({ performanceBudget }) => {
+      setTimeout(() => performanceBudget.check(), 3000);
+    });
+  }, []);
+
+  return (
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider defaultTheme="dark">
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <KeyboardShortcutsDialog />
+            <BrowserRouter>
+              <AuthProvider>
+                <Routes>
               {/* Root - shows landing if not logged in, redirects to chat if logged in */}
               <Route path="/" element={<RootRedirect />} />
               
@@ -141,12 +167,14 @@ const App = () => (
               
               {/* Catch all route */}
               <Route path="*" element={<NotFound />} />
-            </Routes>
-          </AuthProvider>
-        </BrowserRouter>
-      </TooltipProvider>
-    </ThemeProvider>
-  </QueryClientProvider>
-);
+              </Routes>
+            </AuthProvider>
+          </BrowserRouter>
+        </TooltipProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
+    </ErrorBoundary>
+  );
+};
 
 export default App;

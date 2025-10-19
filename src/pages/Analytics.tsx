@@ -1,42 +1,35 @@
-import { useEffect, useState } from 'react';
+import { useMemo, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
-import { apiClient } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import { Activity, MessageSquare, Zap, DollarSign } from 'lucide-react';
 import { TopBar } from '@/components/TopBar';
+import { useUsageStats } from '@/hooks/use-api-queries';
 
 const Analytics = () => {
-  const [stats, setStats] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchStats();
+  const startDate = useMemo(() => {
+    return new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split('T')[0];
   }, []);
 
-  const fetchStats = async () => {
-    try {
-      const start = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-        .toISOString()
-        .split('T')[0];
+  const { data: statsResponse, isLoading: loading, error } = useUsageStats({
+    start_date: startDate,
+  });
 
-      const response = await apiClient.getUsageStats({
-        start_date: start,
-      });
+  const stats = statsResponse?.data;
 
-      if (response.success && response.data) {
-        setStats(response.data);
-      }
-    } catch (error: any) {
+  // Show error toast if query fails (only once)
+  useEffect(() => {
+    if (error) {
       toast({
         title: 'Failed to load analytics',
-        description: error.message,
+        description: (error as any).message,
         variant: 'destructive',
       });
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [error, toast]);
 
   if (loading) {
     return (

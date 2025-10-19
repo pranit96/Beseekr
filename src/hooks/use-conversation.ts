@@ -141,11 +141,19 @@ export function useConversation(initialConversationId?: string): UseConversation
       }
     } catch (err: any) {
       logger.error('Error loading messages', { conversationId: convId, error: err.message });
-      toast({
-        title: 'Failed to load conversation messages',
-        description: err?.message || String(err),
-        variant: 'destructive',
-      });
+      
+      // If conversation not found (404), emit event to remove it from list
+      if (err.message?.includes('not found') || err.message?.includes('404') || err.message?.includes('unauthorized')) {
+        logger.warn('Conversation not found or unauthorized, emitting removal event', { conversationId: convId });
+        window.dispatchEvent(new CustomEvent('conversation-not-found', { detail: { conversationId: convId } }));
+      } else {
+        // Only show toast for non-404 errors
+        toast({
+          title: 'Failed to load conversation messages',
+          description: err?.message || String(err),
+          variant: 'destructive',
+        });
+      }
       // Don't clear messages on error
     } finally {
       setIsLoading(false);

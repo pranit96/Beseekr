@@ -1,14 +1,10 @@
 // src/components/SessionHistory.tsx
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
+import { useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Clock, FileText, Brain } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import { createLogger } from '@/services/logging';
-
-const logger = createLogger('SessionHistory');
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+import { useSessions } from '@/hooks/use-api-queries';
 
 // Session summary from list endpoint (doesn't include full content)
 export interface SessionSummary {
@@ -56,37 +52,22 @@ export const SessionHistory = ({
   onSelectSession,
   currentSessionId
 }: SessionHistoryProps) => {
-  const [sessions, setSessions] = useState<SessionSummary[]>([]);
-  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
+  // React Query hook
+  const { data: sessionsResponse, isLoading: loading, error } = useSessions({ limit: 10 });
+  const sessions = sessionsResponse?.data?.sessions || [];
+
+  // Show error toast if query fails (only once)
   useEffect(() => {
-    fetchSessions();
-  }, []);
-
-  const fetchSessions = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch(`${API_BASE_URL}/api/thinkers/sessions?limit=10`, {
-        credentials: 'include'
-      });
-
-      if (!response.ok) throw new Error('Failed to fetch sessions');
-
-      const data = await response.json();
-      const sessionList = data.data?.sessions || data.sessions || [];
-      setSessions(sessionList);
-    } catch (error) {
-      logger.error('Failed to fetch sessions', { error });
+    if (error) {
       toast({
         title: 'Error',
         description: 'Failed to load session history',
         variant: 'destructive'
       });
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [error, toast]);
 
   const handleSelect = (session: SessionSummary) => {
     if (session.status !== 'completed') {

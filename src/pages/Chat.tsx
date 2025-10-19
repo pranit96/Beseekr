@@ -26,7 +26,8 @@ const Chat = () => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [currentConversationId, setCurrentConversationId] = useState<string>();
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [loadingConversations, setLoadingConversations] = useState(true);
+  const [loadingConversations, setLoadingConversations] = useState(false); // Start as false to prevent flash
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
   const [key, setKey] = useState(0);
   const [authError, setAuthError] = useState(false);
   const [retrying, setRetrying] = useState(false);
@@ -37,6 +38,7 @@ const Chat = () => {
 
   const fetchAttemptRef = useRef(0);
   const maxRetries = 3;
+  const hasFetchedRef = useRef(false); // Track if we've already fetched
 
   // Load sidebar and conversation preferences
   useEffect(() => {
@@ -46,7 +48,13 @@ const Chat = () => {
     const lastConversationId = sessionStorage.getItem('lastActiveConversation');
     if (lastConversationId) setCurrentConversationId(lastConversationId);
 
-    if (user) {
+    // Only fetch if we haven't already and user is available
+    if (user && !hasFetchedRef.current) {
+      hasFetchedRef.current = true;
+      // Only show loading if this is truly the first load
+      if (!initialLoadComplete) {
+        setLoadingConversations(true);
+      }
       fetchConversations();
     }
   }, [user]);
@@ -59,6 +67,7 @@ const Chat = () => {
   const fetchConversations = useCallback(async (isRetry: boolean = false) => {
     if (!user) {
       setLoadingConversations(false);
+      setInitialLoadComplete(true);
       return;
     }
 
@@ -130,6 +139,7 @@ const Chat = () => {
         setConversations(conversationsWithMessages);
         setAuthError(false);
         fetchAttemptRef.current = 0;
+        setInitialLoadComplete(true);
       } else {
         throw new Error(response.error || 'Failed to fetch conversations');
       }
@@ -147,6 +157,7 @@ const Chat = () => {
       }
     } finally {
       setLoadingConversations(false);
+      setInitialLoadComplete(true);
     }
   }, [user]);
 
@@ -182,42 +193,148 @@ const Chat = () => {
   const handleNewSession = useCallback(async () => {
     if (!user) return;
 
-    try {
-      const response = await apiClient.createConversation({
-        agent_id: null,
-        title: 'New Conversation',
-      });
+    // Generate a temporary ID for optimistic UI
+    const tempId = `temp-${Date.now()}`;
+    const tempConversation: Conversation = {
+      id: tempId,
+      title: 'New Conversation',
+      last_message_at: new Date().toISOString(),
+      status: 'active',
+      last_message: undefined,
+    };
 
-      if (response.success && response.data?.id) {
-        const newId = response.data.id;
-        setCurrentConversationId(newId);
-        sessionStorage.setItem('lastActiveConversation', newId);
-        await fetchConversations();
-        setKey(prev => prev + 1);
+    // Optimistically update UI immediately
+    setConversations(prev => [tempConversation, ...prev]);
+    setCurrentConversationId(tempId);
+    sessionStorage.setItem('lastActiveConversation', tempId);
+    setKey(prev => prev + 1);
 
-        toast({
-          title: 'New chat started',
-          description: 'You can now start messaging your agents.',
+    // Show immediate feedback
+    toast({
+      title: 'New chat started',
+      description: 'You can now start messaging your agents.',
+    });
+
+    // Make API call in background with retry logic
+    let attempts = 0;
+    const maxAttempts = 3;
+    
+    const createWithRetry = async (): Promise<void> => {
+      attempts++;
+      
+      try {
+        logger.info('Creating new conversation', { attempt: attempts });
+        
+        const response = await apiClient.createConversation({
+          agent_id: null,
+          title: 'New Conversation',
         });
-      } else throw new Error('Could not create a new session');
-    } catch (error: any) {
-      if (error.message?.includes('Session expired') || error.message?.includes('401')) {
-        setAuthError(true);
-      } else {
-        toast({
-          title: 'Failed to create new session',
-          description: error.message,
-          variant: 'destructive',
+
+        if (response.success && response.data?.id) {
+          const realId = response.data.id;
+          
+          logger.info('Conversation created successfully', { 
+            tempId, 
+            realId,
+            attempt: attempts 
+          });
+          
+          // Replace temp conversation with real one
+          setConversations(prev => 
+            prev.map(conv => 
+              conv.id === tempId 
+                ? { ...conv, id: realId }
+                : conv
+            )
+          );
+          
+          // Update current conversation ID
+          if (currentConversationId === tempId) {
+            setCurrentConversationId(realId);
+            sessionStorage.setItem('lastActiveConversation', realId);
+          }
+          
+          // Refresh conversation list in background
+          fetchConversations();
+        } else {
+          throw new Error('Could not create a new session');
+        }
+      } catch (error: any) {
+        logger.error('Failed to create conversation', { 
+          attempt: attempts, 
+          error: error.message 
         });
+        
+        // Check for auth errors
+        if (error.message?.includes('Session expired') || error.message?.includes('401')) {
+          setAuthError(true);
+          // Remove temp conversation
+          setConversations(prev => prev.filter(conv => conv.id !== tempId));
+          if (currentConversationId === tempId) {
+            setCurrentConversationId(undefined);
+            sessionStorage.removeItem('lastActiveConversation');
+          }
+          return;
+        }
+        
+        // Retry logic
+        if (attempts < maxAttempts) {
+          const delay = Math.min(1000 * Math.pow(2, attempts), 5000);
+          logger.info('Retrying conversation creation', { 
+            delay, 
+            attempt: attempts,
+            nextAttempt: attempts + 1 
+          });
+          
+          setTimeout(() => createWithRetry(), delay);
+        } else {
+          // All retries failed - show error and remove temp conversation
+          logger.error('All retry attempts failed for conversation creation');
+          
+          toast({
+            title: 'Failed to create session',
+            description: 'Please try again or refresh the page.',
+            variant: 'destructive',
+          });
+          
+          // Remove temp conversation
+          setConversations(prev => prev.filter(conv => conv.id !== tempId));
+          
+          // Clear current conversation if it was the temp one
+          if (currentConversationId === tempId) {
+            setCurrentConversationId(undefined);
+            sessionStorage.removeItem('lastActiveConversation');
+            setKey(prev => prev + 1);
+          }
+        }
       }
-    }
-  }, [fetchConversations, toast, user]);
+    };
+
+    // Start the background creation process
+    createWithRetry();
+  }, [fetchConversations, toast, user, currentConversationId]);
 
   const handleConversationCreated = useCallback(
     async (conversationId: string) => {
-      await fetchConversations();
+      // Optimistically add to list if not already there
+      setConversations(prev => {
+        const exists = prev.some(conv => conv.id === conversationId);
+        if (exists) return prev;
+        
+        return [{
+          id: conversationId,
+          title: 'New Conversation',
+          last_message_at: new Date().toISOString(),
+          status: 'active',
+          last_message: undefined,
+        }, ...prev];
+      });
+      
       setCurrentConversationId(conversationId);
       sessionStorage.setItem('lastActiveConversation', conversationId);
+      
+      // Fetch full conversation list in background
+      fetchConversations();
     },
     [fetchConversations]
   );
@@ -263,7 +380,35 @@ const Chat = () => {
     });
   }, [fetchConversations, toast]);
 
-  const isLoading = loadingAgents || loadingConversations;
+  // Only show loading on initial load, not on subsequent navigations
+  const isLoading = (loadingAgents || loadingConversations) && !initialLoadComplete;
+
+  // Handle conversation not found errors
+  useEffect(() => {
+    const handleConversationNotFound = (event: CustomEvent) => {
+      const { conversationId: notFoundId } = event.detail;
+      logger.warn('Removing conversation that was not found', { conversationId: notFoundId });
+      
+      // Remove from conversation list
+      setConversations(prev => prev.filter(conv => conv.id !== notFoundId));
+      
+      // If it was the current conversation, clear it
+      if (currentConversationId === notFoundId) {
+        setCurrentConversationId(undefined);
+        sessionStorage.removeItem('lastActiveConversation');
+        setKey(prev => prev + 1);
+        
+        toast({
+          title: 'Conversation not found',
+          description: 'This conversation may have been deleted. Starting fresh.',
+          variant: 'default',
+        });
+      }
+    };
+
+    window.addEventListener('conversation-not-found', handleConversationNotFound as EventListener);
+    return () => window.removeEventListener('conversation-not-found', handleConversationNotFound as EventListener);
+  }, [currentConversationId, toast]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -288,7 +433,7 @@ const Chat = () => {
     return () => window.removeEventListener('keydown', handleKeyboard);
   }, [handleNewSession, authError, handleRetryAuth]);
 
-  // Loading skeleton
+  // Loading skeleton - only show on true initial load
   if (isLoading && !authError) {
     return (
       <div className="h-screen flex flex-col items-center justify-center gap-4 bg-background">

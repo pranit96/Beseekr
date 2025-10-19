@@ -1,4 +1,4 @@
-// src/components/AgentSelector.tsx
+// src/components/AgentSelector.tsx - OPTIMIZED WITH ACCESSIBILITY
 import { useState, useMemo } from 'react';
 import { Agent } from '@/types/agent';
 import { Button } from '@/components/ui/button';
@@ -7,7 +7,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { Users, Check, Search } from 'lucide-react';
+import { Users, Search } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 
@@ -84,32 +84,35 @@ export const AgentSelector = ({
         <Button
           variant="outline"
           className="gap-2 glass border-border/50 hover:border-primary transition-smooth"
+          aria-label={`Select agents. ${selectedCount} agent${selectedCount !== 1 ? 's' : ''} selected`}
+          aria-haspopup="dialog"
         >
-          <Users className="w-4 h-4" />
+          <Users className="w-4 h-4" aria-hidden="true" />
           <span>Agents</span>
           {selectedCount > 0 && (
-            <Badge variant="secondary" className="ml-1 h-5 px-2">
+            <Badge variant="secondary" className="ml-1 h-5 px-2 animate-scale-in" aria-label={`${selectedCount} selected`}>
               {selectedCount}
             </Badge>
           )}
         </Button>
       </PopoverTrigger>
 
-      <PopoverContent className="w-[680px] max-w-[95vw] p-4 glass" align="start">
+      <PopoverContent className="w-[680px] max-w-[95vw] p-4 glass" align="start" role="dialog" aria-label="Agent selection dialog">
         <div className="space-y-4">
           <div className="flex items-center justify-between gap-3">
             <div className="flex-1">
-              <h4 className="font-medium text-sm">Select Agents</h4>
-              <p className="text-xs text-muted-foreground">Choose agents and see their execution order</p>
+              <h4 className="font-medium text-sm" id="agent-selector-title">Select Agents</h4>
+              <p className="text-xs text-muted-foreground" id="agent-selector-description">Choose agents and see their execution order</p>
             </div>
             <div className="w-72">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" aria-hidden="true" />
                 <Input
                   placeholder="Search agents..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-9 h-9"
+                  aria-label="Search agents by name, description, or domain"
                 />
               </div>
             </div>
@@ -117,8 +120,8 @@ export const AgentSelector = ({
 
           {/* Custom agents pinned to top */}
           {filteredCustomAgents.length > 0 && (
-            <div>
-              <h5 className="text-xs font-semibold text-muted-foreground mb-2">Your agents</h5>
+            <div role="group" aria-labelledby="custom-agents-heading">
+              <h5 id="custom-agents-heading" className="text-xs font-semibold text-muted-foreground mb-2">Your agents</h5>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
                 {filteredCustomAgents.map((agent) => {
                   const selectionOrder = getSelectionOrder(agent.id);
@@ -128,14 +131,21 @@ export const AgentSelector = ({
                     <button
                       key={agent.id}
                       onClick={() => toggleAgent(agent)}
-                      className={`relative p-3 rounded-lg border transition-smooth flex items-start gap-2 min-h-[80px] w-full ${
+                      className={`relative p-3 rounded-lg border transition-all duration-200 flex items-start gap-2 min-h-[80px] w-full hover:scale-[1.02] ${
                         isSelected 
                           ? 'bg-primary/10 border-primary/30 shadow-sm ring-2 ring-primary/20' 
                           : 'hover:bg-muted/40 border-border'
                       }`}
+                      aria-label={`${isSelected ? 'Deselect' : 'Select'} ${agent.name}. ${agent.description}. ${isSelected ? `Position ${selectionOrder} in execution order` : ''}`}
+                      aria-pressed={isSelected}
+                      role="checkbox"
+                      aria-checked={isSelected}
                     >
                       {isSelected && (
-                        <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center shadow-md border-2 border-background z-10">
+                        <div 
+                          className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center shadow-md border-2 border-background z-10 animate-scale-in" 
+                          aria-label={`Execution order: ${selectionOrder}`}
+                        >
                           {selectionOrder}
                         </div>
                       )}
@@ -143,6 +153,7 @@ export const AgentSelector = ({
                       <div
                         className="w-3 h-3 rounded-full shrink-0 mt-1"
                         style={{ backgroundColor: getAgentColor(agent.id) }}
+                        aria-hidden="true"
                       />
                       <div className="flex-1 min-w-0 text-left">
                         <div className="text-sm font-medium truncate">{agent.name}</div>
@@ -158,15 +169,15 @@ export const AgentSelector = ({
           )}
 
           {/* Default agents */}
-          <div>
-            <h5 className="text-xs font-semibold text-muted-foreground mb-2">Default agents</h5>
+          <div role="group" aria-labelledby="default-agents-heading">
+            <h5 id="default-agents-heading" className="text-xs font-semibold text-muted-foreground mb-2">Default agents</h5>
             {filteredDefaultAgents.length === 0 && searchQuery ? (
-              <div className="text-center py-4">
+              <div className="text-center py-4" role="status">
                 <p className="text-sm text-muted-foreground">No agents match your search</p>
                 <p className="text-xs text-muted-foreground mt-1">Try a different search term</p>
               </div>
             ) : filteredDefaultAgents.length === 0 && !searchQuery ? (
-              <p className="text-sm text-muted-foreground">No default agents available</p>
+              <p className="text-sm text-muted-foreground" role="status">No default agents available</p>
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
                 {filteredDefaultAgents.map((agent) => {
@@ -177,14 +188,21 @@ export const AgentSelector = ({
                     <button
                       key={agent.id}
                       onClick={() => toggleAgent(agent)}
-                      className={`relative p-3 rounded-lg border transition-smooth flex items-start gap-2 min-h-[80px] w-full ${
+                      className={`relative p-3 rounded-lg border transition-all duration-200 flex items-start gap-2 min-h-[80px] w-full hover:scale-[1.02] ${
                         isSelected 
                           ? 'bg-primary/10 border-primary/30 shadow-sm ring-2 ring-primary/20' 
                           : 'hover:bg-muted/40 border-border'
                       }`}
+                      aria-label={`${isSelected ? 'Deselect' : 'Select'} ${agent.name}. ${agent.description}. ${isSelected ? `Position ${selectionOrder} in execution order` : ''}`}
+                      aria-pressed={isSelected}
+                      role="checkbox"
+                      aria-checked={isSelected}
                     >
                       {isSelected && (
-                        <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center shadow-md border-2 border-background z-10">
+                        <div 
+                          className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center shadow-md border-2 border-background z-10 animate-scale-in" 
+                          aria-label={`Execution order: ${selectionOrder}`}
+                        >
                           {selectionOrder}
                         </div>
                       )}
@@ -192,6 +210,7 @@ export const AgentSelector = ({
                       <div
                         className="w-3 h-3 rounded-full shrink-0 mt-1"
                         style={{ backgroundColor: getAgentColor(agent.id) }}
+                        aria-hidden="true"
                       />
                       <div className="flex-1 min-w-0 text-left">
                         <div className="text-sm font-medium truncate">{agent.name}</div>

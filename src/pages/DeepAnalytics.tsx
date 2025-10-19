@@ -334,7 +334,7 @@ const DeepAnalytics = () => {
       setResult(null);
       setShowResult(false);
       
-      // Use API client with caching
+      // Fetch session details using React Query (will use cache if available)
       const apiResponse = await apiClient.getSessionDetails(sessionSummary.id);
       
       // Handle the API response structure: { success: boolean, data: {...} }

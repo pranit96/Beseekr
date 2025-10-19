@@ -218,10 +218,12 @@ const MessageList: React.FC<MessageListProps> = ({
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="h-7 w-7 p-0 hover:bg-muted"
+                              className="h-7 w-7 p-0 hover:bg-muted transition-all"
                               onClick={() =>
                                 handleCopy(response.content, `${message.id}-${idx}`)
                               }
+                              aria-label={copiedId === `${message.id}-${idx}` ? "Copied to clipboard" : "Copy agent response to clipboard"}
+                              title={copiedId === `${message.id}-${idx}` ? "Copied!" : "Copy response"}
                             >
                               {copiedId === `${message.id}-${idx}` ? (
                                 <Check className="w-3.5 h-3.5 text-green-500" />
@@ -235,9 +237,11 @@ const MessageList: React.FC<MessageListProps> = ({
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="h-7 w-7 p-0 hover:bg-muted"
+                              className="h-7 w-7 p-0 hover:bg-muted transition-all"
                               onClick={() => handleRetry(message.id)}
                               disabled={isLoading}
+                              aria-label="Retry this message"
+                              title="Retry message"
                             >
                               <RotateCw className="w-3.5 h-3.5" />
                             </Button>
@@ -254,14 +258,14 @@ const MessageList: React.FC<MessageListProps> = ({
 
       {/* Global loading indicator */}
       {isLoading && (
-        <div className="flex gap-4 justify-start">
+        <div className="flex gap-4 justify-start" role="status" aria-live="polite" aria-label="Agents are processing your request">
           <div className="flex-shrink-0">
-            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center animate-pulse">
               <Bot className="w-5 h-5 text-primary" />
             </div>
           </div>
           <div className="flex flex-col gap-2">
-            <div className="rounded-2xl px-4 py-3 bg-muted border border-border shadow-sm">
+            <div className="rounded-2xl px-4 py-3 bg-muted border border-border shadow-sm animate-fade-in">
               <div className="flex items-center gap-2">
                 <Loader2 className="w-4 h-4 animate-spin text-primary" />
                 <span className="text-sm text-muted-foreground">

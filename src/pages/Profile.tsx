@@ -18,8 +18,8 @@ import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { apiClient } from '@/lib/api';
 import { TopBar } from '@/components/TopBar';
+import { useConversations, useUpdateConversationStatus, useDeleteConversation } from '@/hooks/use-api-queries';
 
 interface ArchivedConversation {
   id: string;
@@ -32,38 +32,30 @@ const Profile = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [confirmEmail, setConfirmEmail] = useState('');
   const [isExporting, setIsExporting] = useState(false);
-  const [archivedConversations, setArchivedConversations] = useState<ArchivedConversation[]>([]);
-  const [loadingArchived, setLoadingArchived] = useState(true);
   const { user, exportData, deleteAccount } = useAuth();
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchArchivedConversations();
-  }, []);
+  // React Query hooks
+  const { data: archivedResponse, isLoading: loadingArchived, error } = useConversations({
+    status: 'archived',
+    page: 1,
+    limit: 50,
+  });
+  const updateStatusMutation = useUpdateConversationStatus();
+  const deleteConversationMutation = useDeleteConversation();
 
-  const fetchArchivedConversations = async () => {
-    try {
-      const response = await apiClient.getConversations({ 
-        status: 'archived',
-        page: 1,
-        limit: 50 
-      });
-      
-      if (response.success && response.data) {
-        setArchivedConversations(response.data);
-      } else {
-        throw new Error(response.message || 'Failed to load archived conversations');
-      }
-    } catch (error: any) {
+  const archivedConversations = archivedResponse?.data || [];
+
+  // Show error toast if query fails (only once)
+  useEffect(() => {
+    if (error) {
       toast({
         title: 'Failed to load archived conversations',
-        description: error.message,
+        description: (error as any).message,
         variant: 'destructive',
       });
-    } finally {
-      setLoadingArchived(false);
     }
-  };
+  }, [error, toast]);
 
   const handleExportData = async () => {
     setIsExporting(true);
@@ -108,49 +100,11 @@ const Profile = () => {
   };
 
   const handleRestoreConversation = async (conversationId: string) => {
-    try {
-      const response = await apiClient.updateConversationStatus(conversationId, 'active');
-      if (response.success) {
-        setArchivedConversations(prev => 
-          prev.filter(conv => conv.id !== conversationId)
-        );
-        toast({
-          title: 'Conversation restored',
-          description: 'The conversation has been restored to active list.',
-        });
-      } else {
-        throw new Error(response.message || 'Failed to restore conversation');
-      }
-    } catch (error: any) {
-      toast({
-        title: 'Failed to restore conversation',
-        description: error.message,
-        variant: 'destructive',
-      });
-    }
+    await updateStatusMutation.mutateAsync({ conversationId, status: 'active' });
   };
 
   const handleDeleteArchivedConversation = async (conversationId: string) => {
-    try {
-      const response = await apiClient.deleteConversation(conversationId);
-      if (response.success) {
-        setArchivedConversations(prev => 
-          prev.filter(conv => conv.id !== conversationId)
-        );
-        toast({
-          title: 'Conversation deleted',
-          description: 'The archived conversation has been permanently deleted.',
-        });
-      } else {
-        throw new Error(response.message || 'Failed to delete conversation');
-      }
-    } catch (error: any) {
-      toast({
-        title: 'Failed to delete conversation',
-        description: error.message,
-        variant: 'destructive',
-      });
-    }
+    await deleteConversationMutation.mutateAsync(conversationId);
   };
 
   return (

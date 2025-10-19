@@ -669,17 +669,21 @@ export const ChatInterface: React.FC<{
                   className="flex-1 resize-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 min-h-[40px] max-h-[200px]"
                   disabled={sendDisabled}
                   rows={1}
+                  aria-label="Message input"
+                  aria-describedby="message-input-help"
                 />
                 <Button 
                   onClick={handleSubmit} 
                   disabled={!input.trim() || sendDisabled} 
                   size="icon" 
                   className="h-10 w-10 rounded-lg bg-primary hover:bg-primary/90 transition flex-shrink-0"
+                  aria-label={preparingMessage ? "Preparing message" : "Send message"}
+                  title={preparingMessage ? "Preparing..." : "Send message (Enter)"}
                 >
                   {preparingMessage ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
                   ) : (
-                    <Send className="h-4 w-4" />
+                    <Send className="h-4 w-4" aria-hidden="true" />
                   )}
                 </Button>
               </div>
@@ -701,8 +705,10 @@ export const ChatInterface: React.FC<{
                   variant="outline" 
                   size="sm"
                   className="gap-2 whitespace-nowrap"
+                  aria-label="Design agent workflow"
+                  title="Design custom agent execution workflow"
                 >
-                  <Workflow className="w-4 h-4" /> 
+                  <Workflow className="w-4 h-4" aria-hidden="true" /> 
                   <span className="hidden sm:inline">Design Flow</span>
                   <span className="sm:hidden">Flow</span>
                 </Button>
@@ -730,8 +736,13 @@ export const ChatInterface: React.FC<{
                       ? 'bg-background border-border hover:bg-muted/50 text-muted-foreground' 
                       : 'bg-primary text-primary-foreground border-primary shadow-sm hover:bg-primary/90'
                   }`}
+                  aria-label={saveToConversation ? "Private mode off - messages will be saved" : "Private mode on - messages will not be saved"}
+                  aria-pressed={!saveToConversation}
+                  role="switch"
+                  aria-checked={!saveToConversation}
+                  title={saveToConversation ? "Enable private mode" : "Disable private mode"}
                 >
-                  {saveToConversation ? <LockOpen className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
+                  {saveToConversation ? <LockOpen className="w-3 h-3" aria-hidden="true" /> : <Lock className="w-3 h-3" aria-hidden="true" />}
                   <span>Private</span>
                 </button>
               </div>

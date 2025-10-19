@@ -68,6 +68,12 @@ export const TopBar = ({ sidebarOpen, onToggleSidebar, showSidebarToggle }: TopB
               <Link
                 key={item.href}
                 to={item.href}
+                onClick={(e) => {
+                  // Prevent navigation if already on the same page
+                  if (isActive) {
+                    e.preventDefault();
+                  }
+                }}
                 className={cn(
                   'px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300',
                   isActive
@@ -166,7 +172,13 @@ export const TopBar = ({ sidebarOpen, onToggleSidebar, showSidebarToggle }: TopB
                   <Link
                     key={item.href}
                     to={item.href}
-                    onClick={() => setMobileNavOpen(false)}
+                    onClick={(e) => {
+                      // Prevent navigation if already on the same page
+                      if (isActive) {
+                        e.preventDefault();
+                      }
+                      setMobileNavOpen(false);
+                    }}
                     className={cn(
                       'px-3 py-2 rounded-md text-sm font-medium transition-all duration-200',
                       isActive
