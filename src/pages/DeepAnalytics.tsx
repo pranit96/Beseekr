@@ -13,6 +13,8 @@ import { useDownload } from '@/hooks/use-download';
 import { SessionHistory, SessionSummary, FullSession } from '@/components/SessionHistory';
 import { createLogger } from '@/services/logging';
 import { apiClient } from '@/lib/api';
+import { useSessionDetails } from '@/hooks/use-api-queries';
+import { useQueryClient } from '@tanstack/react-query';
 
 const logger = createLogger('DeepAnalytics');
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -40,8 +42,7 @@ const DeepAnalytics = () => {
   const [uploading, setUploading] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [result, setResult] = useState<FullSession | null>(null);
-  const [showResult, setShowResult] = useState(false);
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [isPreviewing, setIsPreviewing] = useState(false);
   const [fileContent, setFileContent] = useState<{ [fileId: string]: string }>({});
@@ -51,31 +52,59 @@ const DeepAnalytics = () => {
   const abortControllerRef = useRef<AbortController | null>(null);
   const { toast } = useToast();
   const { downloadFile, isConverting } = useDownload();
+  const queryClient = useQueryClient();
+
+  // Use React Query to fetch session details
+  const { data: sessionData, isLoading: isLoadingSession } = useSessionDetails(currentSessionId || '');
+  
+  // Transform API response to FullSession format
+  const result: FullSession | null = sessionData?.success && sessionData.data ? {
+    id: sessionData.data.id,
+    problem: sessionData.data.problem,
+    status: sessionData.data.status,
+    created_at: sessionData.data.created_at || new Date().toISOString(),
+    tier: sessionData.data.tier,
+    context: sessionData.data.context || undefined,
+    final_solution: {
+      content: sessionData.data.final_solution || '',
+      format: sessionData.data.output_format || 'markdown'
+    },
+    files: sessionData.data.files || [],
+    thinking_ideations: sessionData.data.thinking_ideations || [],
+    execution_metrics: sessionData.data.execution_metrics
+  } : null;
+  
+  const showResult = !!result && !processing;
 
 
-  // Load persisted result on mount
+  // Load persisted session on mount
   useEffect(() => {
-    const savedResult = localStorage.getItem('deepAnalytics_lastResult');
+    const savedSessionId = localStorage.getItem('deepAnalytics_lastSessionId');
     const savedProblem = localStorage.getItem('deepAnalytics_lastProblem');
     const savedContext = localStorage.getItem('deepAnalytics_lastContext');
     const savedFiles = localStorage.getItem('deepAnalytics_lastFiles');
+    const isProcessing = localStorage.getItem('deepAnalytics_processing') === 'true';
 
-    if (savedResult) {
+    if (savedSessionId) {
+      setCurrentSessionId(savedSessionId);
+      setIsPreviewing(false);
+    }
+
+    if (isProcessing) {
+      // Resume processing state if we were processing before
+      setProcessing(true);
+      simulateProgress();
+    }
+
+    if (savedProblem) setProblem(savedProblem);
+    if (savedContext) setContext(savedContext);
+    if (savedFiles) {
       try {
-        const parsedResult = JSON.parse(savedResult);
-        setResult(parsedResult);
-        setShowResult(true);
-
-        if (savedProblem) setProblem(savedProblem);
-        if (savedContext) setContext(savedContext);
-        if (savedFiles) {
-          const parsedFiles = JSON.parse(savedFiles);
-          setFiles(parsedFiles.files || []);
-          setUploadedFileIds(parsedFiles.ids || []);
-        }
+        const parsedFiles = JSON.parse(savedFiles);
+        setFiles(parsedFiles.files || []);
+        setUploadedFileIds(parsedFiles.ids || []);
       } catch (error) {
-        logger.error('Failed to restore session', { error });
-        localStorage.removeItem('deepAnalytics_lastResult');
+        logger.error('Failed to restore files', { error });
       }
     }
 
@@ -106,6 +135,24 @@ const DeepAnalytics = () => {
       });
     }
   }, [showResult, result]);
+
+  // Stop processing when session data arrives
+  useEffect(() => {
+    if (result && processing) {
+      const cleanup = () => {
+        if (progressIntervalRef.current) {
+          clearInterval(progressIntervalRef.current);
+          progressIntervalRef.current = null;
+        }
+      };
+      cleanup();
+      setTimeout(accelerateToComplete, 300);
+      
+      // Clear processing flag
+      localStorage.removeItem('deepAnalytics_processing');
+      localStorage.removeItem('deepAnalytics_processingStartTime');
+    }
+  }, [result, processing]);
 
   // === FILE HANDLING ===
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -212,7 +259,6 @@ const DeepAnalytics = () => {
       setProgress(newProgress);
       if (t < 1) requestAnimationFrame(animate);
       else {
-        setShowResult(true);
         setProcessing(false);
       }
     };
@@ -247,13 +293,9 @@ const DeepAnalytics = () => {
 
     setProcessing(true);
     setProgress(0);
-    setResult(null);
-    setShowResult(false);
+    setCurrentSessionId(null);
     setIsPreviewing(false);
     setFileContent({});
-
-    // Clear previous result from localStorage
-    localStorage.removeItem('deepAnalytics_lastResult');
     
     // Mark that we're processing
     localStorage.setItem('deepAnalytics_processing', 'true');
@@ -284,11 +326,12 @@ const DeepAnalytics = () => {
       }
 
       const data = await res.json();
-      if (data.success) {
-        setResult(data);
-
+      if (data.success && data.id) {
+        // Store session ID and let React Query handle the rest
+        setCurrentSessionId(data.id);
+        
         // Persist to localStorage
-        localStorage.setItem('deepAnalytics_lastResult', JSON.stringify(data));
+        localStorage.setItem('deepAnalytics_lastSessionId', data.id);
         localStorage.setItem('deepAnalytics_lastProblem', problem);
         localStorage.setItem('deepAnalytics_lastContext', context);
         localStorage.setItem('deepAnalytics_lastFiles', JSON.stringify({
@@ -296,12 +339,11 @@ const DeepAnalytics = () => {
           ids: uploadedFileIds
         }));
         
-        // Clear processing flag
-        localStorage.removeItem('deepAnalytics_processing');
-        localStorage.removeItem('deepAnalytics_processingStartTime');
-
+        // Invalidate sessions list to show new session
+        queryClient.invalidateQueries({ queryKey: ['sessions'] });
+        
         cleanup();
-        setTimeout(accelerateToComplete, 300);
+        // The useEffect watching 'result' will handle completion
       } else {
         throw new Error(data.message || 'Unknown error');
       }
@@ -380,91 +422,41 @@ const DeepAnalytics = () => {
 
   // === SESSION HISTORY HANDLING ===
   const handleSelectSession = async (sessionSummary: SessionSummary) => {
-    setShowHistory(false); // Close the dropdown
+    setShowHistory(false);
+    setCurrentSessionId(sessionSummary.id);
+    setIsPreviewing(true);
+    setFileContent({});
     
-    try {
-      // Show loading state
-      setResult(null);
-      setShowResult(false);
-      
-      // Fetch session details using React Query (will use cache if available)
-      const apiResponse = await apiClient.getSessionDetails(sessionSummary.id);
-      
-      // Handle the API response structure: { success: boolean, data: {...} }
-      if (!apiResponse.success || !apiResponse.data) {
-        throw new Error('Invalid response format');
-      }
+    // Store in localStorage
+    localStorage.setItem('deepAnalytics_lastSessionId', sessionSummary.id);
+    
+    toast({
+      title: 'Session loaded',
+      description: 'Historical session loaded successfully',
+    });
+  };
 
-      const sessionData = apiResponse.data;
-      
-      // Transform the API response to match FullSession format
-      const fullSession: FullSession = {
-        id: sessionData.id,
-        problem: sessionData.problem,
-        status: sessionData.status,
-        created_at: sessionData.created_at || new Date().toISOString(),
-        tier: sessionData.tier,
-        context: sessionData.context || undefined,
-        final_solution: {
-          content: sessionData.final_solution || '',
-          format: sessionData.output_format || 'markdown'
-        },
-        files: sessionData.files || [],
-        thinking_ideations: sessionData.thinking_ideations || [],
-        execution_metrics: sessionData.execution_metrics
-      };
+  // Update form fields when session data loads
+  useEffect(() => {
+    if (result && isPreviewing) {
+      setProblem(result.problem || '');
+      setContext(result.context || '');
 
-      setResult(fullSession);
-      setShowResult(true);
-      setIsPreviewing(true);
-      setFileContent({});
-
-      setProblem(fullSession.problem || '');
-      setContext(fullSession.context || '');
-
-      if (fullSession.files && Array.isArray(fullSession.files)) {
-        // Map to UploadedFile format for UI
-        const sessionFiles: UploadedFile[] = fullSession.files.map((f: SessionFile) => ({
+      if (result.files && Array.isArray(result.files)) {
+        const sessionFiles: UploadedFile[] = result.files.map((f: SessionFile) => ({
           id: f.id,
           name: f.filename,
           size: f.file_size,
           type: f.content_type
         }));
         setFiles(sessionFiles);
-        setUploadedFileIds(fullSession.files.map(f => f.id));
+        setUploadedFileIds(result.files.map(f => f.id));
       } else {
         setFiles([]);
         setUploadedFileIds([]);
       }
-
-      // Cache the session in localStorage
-      localStorage.setItem('deepAnalytics_lastResult', JSON.stringify(fullSession));
-      localStorage.setItem('deepAnalytics_lastProblem', fullSession.problem);
-      localStorage.setItem('deepAnalytics_lastContext', fullSession.context || '');
-      localStorage.setItem('deepAnalytics_lastFiles', JSON.stringify({
-        files: fullSession.files && fullSession.files.length > 0 ? fullSession.files.map((f: SessionFile) => ({
-          id: f.id,
-          name: f.filename,
-          size: f.file_size,
-          type: f.content_type
-        })) : [],
-        ids: fullSession.files?.map(f => f.id) || []
-      }));
-
-      toast({
-        title: 'Session loaded',
-        description: 'Historical session loaded successfully',
-      });
-
-    } catch (error: any) {
-      logger.error('Failed to load session', { sessionId: sessionSummary.id, error });
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to load session details',
-        variant: 'destructive'
-      });
     }
-  };
+  }, [result, isPreviewing]);
 
   // === DOWNLOAD HANDLING ===
   const handleDownload = (format?: 'markdown' | 'pdf' | 'html' | 'json' | 'text') => {
@@ -748,8 +740,7 @@ const DeepAnalytics = () => {
                 <Button
                   size="sm"
                   onClick={() => {
-                    setShowResult(false);
-                    setResult(null);
+                    setCurrentSessionId(null);
                     setProblem('');
                     setContext('');
                     setFiles([]);
@@ -759,7 +750,7 @@ const DeepAnalytics = () => {
                     setFileContent({});
 
                     // Clear localStorage
-                    localStorage.removeItem('deepAnalytics_lastResult');
+                    localStorage.removeItem('deepAnalytics_lastSessionId');
                     localStorage.removeItem('deepAnalytics_lastProblem');
                     localStorage.removeItem('deepAnalytics_lastContext');
                     localStorage.removeItem('deepAnalytics_lastFiles');

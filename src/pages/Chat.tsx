@@ -193,6 +193,30 @@ const Chat = () => {
   const handleNewSession = useCallback(async () => {
     if (!user) return;
 
+    // Check if current conversation is empty - if so, just focus on it instead of creating new
+    if (currentConversationId) {
+      const currentConv = conversations.find(c => c.id === currentConversationId);
+      const isCurrentEmpty = !currentConv?.last_message || currentConv.last_message.trim() === '';
+      
+      if (isCurrentEmpty) {
+        logger.info('Current conversation is empty, focusing on it instead of creating new', { 
+          conversationId: currentConversationId 
+        });
+        
+        // Just ensure it's selected and show a subtle message
+        setCurrentConversationId(currentConversationId);
+        sessionStorage.setItem('lastActiveConversation', currentConversationId);
+        setKey(prev => prev + 1);
+        
+        toast({
+          title: 'Ready to chat',
+          description: 'Start typing your message below.',
+        });
+        
+        return; // Don't create a new conversation
+      }
+    }
+
     // Generate a temporary ID for optimistic UI
     const tempId = `temp-${Date.now()}`;
     const tempConversation: Conversation = {
@@ -312,7 +336,7 @@ const Chat = () => {
 
     // Start the background creation process
     createWithRetry();
-  }, [fetchConversations, toast, user, currentConversationId]);
+  }, [fetchConversations, toast, user, currentConversationId, conversations]);
 
   const handleConversationCreated = useCallback(
     async (conversationId: string) => {
