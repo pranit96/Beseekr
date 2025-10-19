@@ -89,6 +89,24 @@ const DeepAnalytics = () => {
     };
   }, []);
 
+  // Request notification permission on mount
+  useEffect(() => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+  }, []);
+
+  // Send notification when analysis completes (if tab is hidden)
+  useEffect(() => {
+    if (showResult && result && document.hidden && 'Notification' in window && Notification.permission === 'granted') {
+      new Notification('Deep Analysis Complete', {
+        body: 'Your strategic report is ready to view',
+        icon: '/favicon.svg',
+        tag: 'deep-analytics-complete'
+      });
+    }
+  }, [showResult, result]);
+
   // === FILE HANDLING ===
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = Array.from(e.target.files || []);
@@ -201,6 +219,25 @@ const DeepAnalytics = () => {
     requestAnimationFrame(animate);
   }, [progress]);
 
+  // Handle tab visibility changes
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        // Tab is hidden - pause progress animation to save resources
+        if (progressIntervalRef.current) {
+          clearInterval(progressIntervalRef.current);
+          progressIntervalRef.current = null;
+        }
+      } else if (processing && !progressIntervalRef.current) {
+        // Tab is visible again and we're still processing - resume animation
+        simulateProgress();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [processing, simulateProgress]);
+
   // === EXECUTION ===
   const handleExecute = async () => {
     if (!problem.trim() || problem.length < 20) {
@@ -217,6 +254,10 @@ const DeepAnalytics = () => {
 
     // Clear previous result from localStorage
     localStorage.removeItem('deepAnalytics_lastResult');
+    
+    // Mark that we're processing
+    localStorage.setItem('deepAnalytics_processing', 'true');
+    localStorage.setItem('deepAnalytics_processingStartTime', Date.now().toString());
 
     const cleanup = simulateProgress();
 
@@ -254,6 +295,10 @@ const DeepAnalytics = () => {
           files,
           ids: uploadedFileIds
         }));
+        
+        // Clear processing flag
+        localStorage.removeItem('deepAnalytics_processing');
+        localStorage.removeItem('deepAnalytics_processingStartTime');
 
         cleanup();
         setTimeout(accelerateToComplete, 300);
@@ -267,6 +312,10 @@ const DeepAnalytics = () => {
         progressIntervalRef.current = null;
       }
       setProcessing(false);
+      
+      // Clear processing flag
+      localStorage.removeItem('deepAnalytics_processing');
+      localStorage.removeItem('deepAnalytics_processingStartTime');
 
       // Don't show error toast if request was aborted (user cancelled)
       if (error.name !== 'AbortError') {
@@ -289,6 +338,10 @@ const DeepAnalytics = () => {
 
     setProcessing(false);
     setProgress(0);
+    
+    // Clear processing flag
+    localStorage.removeItem('deepAnalytics_processing');
+    localStorage.removeItem('deepAnalytics_processingStartTime');
 
     toast({
       title: 'Cancelled',
@@ -442,22 +495,56 @@ const DeepAnalytics = () => {
       );
     }
 
-    return (
-      <div className="space-y-8">
-        {/* Main Content - Constrained width for better readability */}
-        {result.final_solution.format === 'markdown' ? (
+    const renderContent = () => {
+      const format = result.final_solution.format || 'markdown';
+      const content = result.final_solution.content;
+
+      // Handle markdown format
+      if (format === 'markdown') {
+        return (
           <div className="max-w-3xl mx-auto">
             <MarkdownRenderer
-              content={result.final_solution.content}
+              content={content}
               showToc={false}
               enableCopy={true}
             />
           </div>
-        ) : (
-          <pre className="whitespace-pre-wrap font-sans text-sm p-6 bg-muted rounded-lg max-w-3xl mx-auto">
-            {result.final_solution.content}
-          </pre>
-        )}
+        );
+      }
+
+      // Handle JSON format - pretty print it
+      if (format === 'json') {
+        try {
+          const parsed = typeof content === 'string' ? JSON.parse(content) : content;
+          return (
+            <div className="max-w-3xl mx-auto">
+              <pre className="whitespace-pre-wrap font-mono text-xs p-6 bg-muted rounded-lg overflow-auto">
+                {JSON.stringify(parsed, null, 2)}
+              </pre>
+            </div>
+          );
+        } catch {
+          // If parsing fails, show as plain text
+          return (
+            <pre className="whitespace-pre-wrap font-mono text-xs p-6 bg-muted rounded-lg max-w-3xl mx-auto overflow-auto">
+              {content}
+            </pre>
+          );
+        }
+      }
+
+      // Handle other formats (text, html, etc.)
+      return (
+        <pre className="whitespace-pre-wrap font-sans text-sm p-6 bg-muted rounded-lg max-w-3xl mx-auto overflow-auto">
+          {content}
+        </pre>
+      );
+    };
+
+    return (
+      <div className="space-y-8">
+        {/* Main Content - Constrained width for better readability */}
+        {renderContent()}
 
         {/* Files Section */}
         {result.files && result.files.length > 0 && (
@@ -531,6 +618,21 @@ const DeepAnalytics = () => {
                 ? "Our AI specialists are analyzing your request"
                 : "Finalizing your comprehensive report"}
             </p>
+            
+            {(() => {
+              const startTime = localStorage.getItem('deepAnalytics_processingStartTime');
+              if (startTime) {
+                const elapsed = Math.floor((Date.now() - parseInt(startTime)) / 1000);
+                const minutes = Math.floor(elapsed / 60);
+                const seconds = elapsed % 60;
+                return (
+                  <p className="text-xs text-muted-foreground/70 mb-4">
+                    Elapsed: {minutes}m {seconds}s
+                  </p>
+                );
+              }
+              return null;
+            })()}
 
             <div className="space-y-4 mb-8">
               <div className="h-1.5 bg-muted rounded-full overflow-hidden">
