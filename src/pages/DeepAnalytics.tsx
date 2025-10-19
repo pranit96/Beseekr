@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import {
-  Upload, FileText, X, Brain, Check,
-  Loader2, FileDown, Target, Globe, Database, History, Eye
+  Upload, FileText, X, Brain, Check, Loader2, FileDown, Target,
+  Globe, Database, History, Eye, Wifi, WifiOff, AlertCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -15,6 +15,9 @@ import { createLogger } from '@/services/logging';
 import { apiClient } from '@/lib/api';
 import { useSessionDetails } from '@/hooks/use-api-queries';
 import { useQueryClient } from '@tanstack/react-query';
+import { useDeepAnalyticsSocket } from '@/hooks/use-deep-analytics-socket';
+import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const logger = createLogger('DeepAnalytics');
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -26,7 +29,6 @@ interface UploadedFile {
   type: string;
 }
 
-// Extend FullSession files to include frontend-friendly fields
 interface SessionFile {
   id: string;
   filename: string;
@@ -35,29 +37,87 @@ interface SessionFile {
 }
 
 const DeepAnalytics = () => {
+  // Auth check
+  const { user, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
+
+  // Form state
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [uploadedFileIds, setUploadedFileIds] = useState<string[]>([]);
   const [problem, setProblem] = useState('');
   const [context, setContext] = useState('');
   const [uploading, setUploading] = useState(false);
-  const [processing, setProcessing] = useState(false);
-  const [progress, setProgress] = useState(0);
+
+  // UI state
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [isPreviewing, setIsPreviewing] = useState(false);
   const [fileContent, setFileContent] = useState<{ [fileId: string]: string }>({});
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const abortControllerRef = useRef<AbortController | null>(null);
   const { toast } = useToast();
   const { downloadFile, isConverting } = useDownload();
   const queryClient = useQueryClient();
 
-  // Use React Query to fetch session details
+  // Socket integration (don't auto-connect, only connect when needed)
+  const {
+    socketState,
+    isConnected,
+    sessionState,
+    isProcessing,
+    isCompleted,
+    progress,
+    stage,
+    stageLabel,
+    result: socketResult,
+    error: socketError,
+    subscribeToSession,
+    unsubscribeFromSession,
+    cancelSession,
+  } = useDeepAnalyticsSocket({ autoConnect: false });
+
+  // Fetch session details for preview
   const { data: sessionData, isLoading: isLoadingSession } = useSessionDetails(currentSessionId || '');
-  
-  // Transform API response to FullSession format
+
+  // Redirect to auth if not logged in
+  useEffect(() => {
+    if (!authLoading && !user) {
+      logger.warn('User not authenticated, redirecting to auth', {
+        hasCookies: document.cookie.length > 0,
+        cookieNames: document.cookie.split(';').map(c => c.split('=')[0].trim())
+      });
+      toast({
+        title: 'Authentication Required',
+        description: 'Please log in to use Deep Analytics',
+        variant: 'destructive',
+      });
+      navigate('/auth');
+    } else if (user) {
+      logger.info('User authenticated', {
+        userId: user.id,
+        email: user.email,
+        hasCookies: document.cookie.length > 0
+      });
+    }
+  }, [user, authLoading, navigate, toast]);
+
+  // Show loading while checking auth
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col">
+        <TopBar />
+        <div className="flex-1 flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render if not authenticated (will redirect)
+  if (!user) {
+    return null;
+  }
+
   const result: FullSession | null = sessionData?.success && sessionData.data ? {
     id: sessionData.data.id,
     problem: sessionData.data.problem,
@@ -73,9 +133,8 @@ const DeepAnalytics = () => {
     thinking_ideations: sessionData.data.thinking_ideations || [],
     execution_metrics: sessionData.data.execution_metrics
   } : null;
-  
-  const showResult = !!result && !processing;
 
+  const showResult = (!!result && !isProcessing) || (isCompleted && socketResult);
 
   // Load persisted session on mount
   useEffect(() => {
@@ -83,17 +142,12 @@ const DeepAnalytics = () => {
     const savedProblem = localStorage.getItem('deepAnalytics_lastProblem');
     const savedContext = localStorage.getItem('deepAnalytics_lastContext');
     const savedFiles = localStorage.getItem('deepAnalytics_lastFiles');
-    const isProcessing = localStorage.getItem('deepAnalytics_processing') === 'true';
 
     if (savedSessionId) {
+      // Load the session for preview, but don't try to reconnect to it
       setCurrentSessionId(savedSessionId);
-      setIsPreviewing(false);
-    }
-
-    if (isProcessing) {
-      // Resume processing state if we were processing before
-      setProcessing(true);
-      setProgress(50); // Start at 50% when resuming
+      setIsPreviewing(true); // Mark as preview so we don't try to process
+      logger.info('Restored previous session for preview', { sessionId: savedSessionId });
     }
 
     if (savedProblem) setProblem(savedProblem);
@@ -107,89 +161,63 @@ const DeepAnalytics = () => {
         logger.error('Failed to restore files', { error });
       }
     }
-
-    // Only cleanup progress interval, NOT the API call
-    return () => {
-      if (progressIntervalRef.current) {
-        clearInterval(progressIntervalRef.current);
-      }
-      // Don't abort API call on unmount - let it continue in background
-    };
   }, []);
 
-  // Request notification permission on mount
+  // Request notification permission
   useEffect(() => {
     if ('Notification' in window && Notification.permission === 'default') {
       Notification.requestPermission();
     }
   }, []);
 
-  // Send notification when analysis completes (if tab is hidden)
+  // Send notification when complete
   useEffect(() => {
-    if (showResult && result && document.hidden && 'Notification' in window && Notification.permission === 'granted') {
+    if (isCompleted && document.hidden && 'Notification' in window && Notification.permission === 'granted') {
       new Notification('Deep Analysis Complete', {
         body: 'Your strategic report is ready to view',
         icon: '/favicon.svg',
         tag: 'deep-analytics-complete'
       });
     }
-  }, [showResult, result]);
+  }, [isCompleted]);
 
-  // Stop processing when session data arrives
+  // Handle socket errors
   useEffect(() => {
-    if (result && processing) {
-      const cleanup = () => {
-        if (progressIntervalRef.current) {
-          clearInterval(progressIntervalRef.current);
-          progressIntervalRef.current = null;
-        }
-      };
-      cleanup();
-      
-      // Animate to completion
-      const start = progress;
-      const duration = 2500;
-      const startTime = Date.now();
-      const animate = () => {
-        const elapsed = Date.now() - startTime;
-        const t = Math.min(elapsed / duration, 1);
-        const easeOut = 1 - Math.pow(1 - t, 3);
-        const newProgress = start + (100 - start) * easeOut;
-        setProgress(newProgress);
-        if (t < 1) {
-          requestAnimationFrame(animate);
-        } else {
-          setProcessing(false);
-        }
-      };
-      requestAnimationFrame(animate);
-      
-      // Clear processing flag
-      localStorage.removeItem('deepAnalytics_processing');
-      localStorage.removeItem('deepAnalytics_processingStartTime');
-    }
-  }, [result, processing, progress]);
+    if (socketError) {
+      logger.error('Socket error received', { code: socketError.code, message: socketError.message });
 
-  // Poll for session completion when processing and session ID exists
-  useEffect(() => {
-    if (!processing || !currentSessionId) return;
+      // Handle authentication errors specially
+      if (socketError.code === 'AUTH_FAILED') {
+        toast({
+          title: 'Authentication Required',
+          description: 'Please log in to use Deep Analytics',
+          variant: 'destructive',
+        });
+        return;
+      }
 
-    // Check if session is complete every 2 seconds
-    const pollInterval = setInterval(() => {
-      queryClient.invalidateQueries({ 
-        queryKey: ['thinkers', 'sessions', currentSessionId] 
+      toast({
+        title: 'Analysis Error',
+        description: socketError.message,
+        variant: 'destructive',
       });
-    }, 2000);
 
-    return () => clearInterval(pollInterval);
-  }, [processing, currentSessionId, queryClient]);
+      // Handle specific error codes
+      if (socketError.code === 'RATE_LIMIT_EXCEEDED' && socketError.retryAfter) {
+        toast({
+          title: 'Rate Limit Exceeded',
+          description: `Please wait ${socketError.retryAfter} seconds before trying again`,
+          variant: 'destructive',
+        });
+      }
+    }
+  }, [socketError, toast]);
 
-  // === FILE HANDLING ===
+  // FILE HANDLING
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = Array.from(e.target.files || []);
     if (selectedFiles.length === 0) return;
 
-    // Prevent duplicates by name
     const existingNames = new Set(files.map(f => f.name));
     const newFiles = selectedFiles.filter(file => !existingNames.has(file.name));
 
@@ -259,168 +287,90 @@ const DeepAnalytics = () => {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
-  // === PROGRESS LOGIC ===
-  const simulateProgress = useCallback(() => {
-    if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
-    let current = 0;
-    progressIntervalRef.current = setInterval(() => {
-      const increment = 0.2 + Math.random() * 0.3;
-      current = Math.min(95, current + increment);
-      setProgress(current);
-    }, 100);
-    return () => {
-      if (progressIntervalRef.current) {
-        clearInterval(progressIntervalRef.current);
-        progressIntervalRef.current = null;
-      }
-    };
-  }, []);
-
-  const accelerateToComplete = useCallback(() => {
-    if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
-    const start = progress;
-    const duration = 2500;
-    const startTime = Date.now();
-    const animate = () => {
-      const elapsed = Date.now() - startTime;
-      const t = Math.min(elapsed / duration, 1);
-      const easeOut = 1 - Math.pow(1 - t, 3);
-      const newProgress = start + (100 - start) * easeOut;
-      setProgress(newProgress);
-      if (t < 1) requestAnimationFrame(animate);
-      else {
-        setProcessing(false);
-      }
-    };
-    requestAnimationFrame(animate);
-  }, [progress]);
-
-  // Resume progress animation when processing state is restored
-  useEffect(() => {
-    if (processing && !progressIntervalRef.current) {
-      simulateProgress();
-    }
-  }, [processing, simulateProgress]);
-
-  // Handle tab visibility changes
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.hidden) {
-        // Tab is hidden - pause progress animation to save resources
-        if (progressIntervalRef.current) {
-          clearInterval(progressIntervalRef.current);
-          progressIntervalRef.current = null;
-        }
-      } else if (processing && !progressIntervalRef.current) {
-        // Tab is visible again and we're still processing - resume animation
-        simulateProgress();
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [processing, simulateProgress]);
-
-  // === EXECUTION ===
+  // EXECUTION
   const handleExecute = async () => {
     if (!problem.trim() || problem.length < 20) {
       toast({ title: 'Add more detail', description: 'At least 20 characters required', variant: 'destructive' });
       return;
     }
 
-    setProcessing(true);
-    setProgress(0);
+    // No need to check isConnected - subscribeToSession will connect automatically
+
     setCurrentSessionId(null);
     setIsPreviewing(false);
     setFileContent({});
-    
-    // Mark that we're processing
-    localStorage.setItem('deepAnalytics_processing', 'true');
-    localStorage.setItem('deepAnalytics_processingStartTime', Date.now().toString());
-
-    const cleanup = simulateProgress();
-
-    // Create new AbortController for this request
-    abortControllerRef.current = new AbortController();
 
     try {
-      const res = await fetch(`${API_BASE_URL}/api/thinkers/execute`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          problem: problem.trim(),
-          context: context.trim() || undefined,
-          files: uploadedFileIds.length > 0 ? uploadedFileIds : undefined,
-          output_format: 'markdown',
-        }),
-        signal: abortControllerRef.current.signal,
+      logger.info('Queueing analysis', { problemLength: problem.length, filesCount: uploadedFileIds.length });
+
+      // Queue the analysis job
+      const response = await apiClient.queueAnalysis({
+        problem: problem.trim(),
+        context: context.trim() || undefined,
+        files: uploadedFileIds.length > 0 ? uploadedFileIds : undefined,
+        output_format: 'markdown',
       });
 
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.message || `Analysis failed (${res.status})`);
+      logger.info('Queue response received', {
+        success: response.success,
+        hasData: !!response.data,
+        hasJobId: !!(response as any).jobId,
+        fullResponse: response
+      });
+
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to queue analysis');
       }
 
-      const data = await res.json();
-      if (data.success && data.id) {
-        // Store session ID and let React Query handle the rest
-        setCurrentSessionId(data.id);
-        
-        // Persist to localStorage
-        localStorage.setItem('deepAnalytics_lastSessionId', data.id);
-        localStorage.setItem('deepAnalytics_lastProblem', problem);
-        localStorage.setItem('deepAnalytics_lastContext', context);
-        localStorage.setItem('deepAnalytics_lastFiles', JSON.stringify({
-          files,
-          ids: uploadedFileIds
-        }));
-        
-        // Invalidate sessions list to show new session
-        queryClient.invalidateQueries({ queryKey: ['sessions'] });
-        
-        cleanup();
-        // The useEffect watching 'result' will handle completion
-      } else {
-        throw new Error(data.message || 'Unknown error');
+      // Backend returns data at root level (not wrapped in data property)
+      // Handle both formats: { data: { jobId, sessionId } } or { jobId, sessionId }
+      const data = response.data || (response as any);
+      const jobId = data.jobId || data.id || data.sessionId;
+      const sessionId = data.sessionId || data.id;
+
+      if (!sessionId) {
+        logger.error('No sessionId in response', {
+          response,
+          data,
+          dataKeys: Object.keys(data)
+        });
+        throw new Error('Backend returned success but no sessionId. Please check backend response format.');
       }
+
+      logger.info('Analysis queued successfully', { jobId, sessionId });
+
+      setCurrentSessionId(sessionId);
+
+      // Persist to localStorage
+      localStorage.setItem('deepAnalytics_lastSessionId', sessionId);
+      localStorage.setItem('deepAnalytics_lastProblem', problem);
+      localStorage.setItem('deepAnalytics_lastContext', context);
+      localStorage.setItem('deepAnalytics_lastFiles', JSON.stringify({
+        files,
+        ids: uploadedFileIds
+      }));
+
+      // Subscribe to real-time updates via socket
+      subscribeToSession(sessionId, jobId);
+
+      // Invalidate sessions list
+      queryClient.invalidateQueries({ queryKey: ['sessions'] });
+
+      toast({
+        title: 'Analysis started',
+        description: 'Your analysis has been queued and will begin shortly',
+      });
     } catch (error: any) {
-      logger.error('Analysis execution failed', { error: error.message, errorName: error.name });
-      if (progressIntervalRef.current) {
-        clearInterval(progressIntervalRef.current);
-        progressIntervalRef.current = null;
-      }
-      setProcessing(false);
-      
-      // Clear processing flag
-      localStorage.removeItem('deepAnalytics_processing');
-      localStorage.removeItem('deepAnalytics_processingStartTime');
-
-      // Don't show error toast if request was aborted (user cancelled)
-      if (error.name !== 'AbortError') {
-        toast({ title: 'Failed', description: error.message, variant: 'destructive' });
-      }
+      logger.error('Failed to queue analysis', { error: error.message });
+      toast({ title: 'Failed', description: error.message, variant: 'destructive' });
     }
   };
 
-  // === CANCEL EXECUTION ===
+  // CANCEL EXECUTION
   const handleCancel = () => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-      abortControllerRef.current = null;
-    }
-
-    if (progressIntervalRef.current) {
-      clearInterval(progressIntervalRef.current);
-      progressIntervalRef.current = null;
-    }
-
-    setProcessing(false);
-    setProgress(0);
-    
-    // Clear processing flag
-    localStorage.removeItem('deepAnalytics_processing');
-    localStorage.removeItem('deepAnalytics_processingStartTime');
+    logger.info('Cancelling analysis');
+    cancelSession();
+    unsubscribeFromSession();
 
     toast({
       title: 'Cancelled',
@@ -428,9 +378,9 @@ const DeepAnalytics = () => {
     });
   };
 
-  // === FETCH FILE CONTENT ===
+  // FETCH FILE CONTENT
   const fetchFileContent = async (sessionId: string, fileId: string) => {
-    if (fileContent[fileId]) return; // Already loaded
+    if (fileContent[fileId]) return;
     try {
       const response = await fetch(`${API_BASE_URL}/api/thinkers/sessions/${sessionId}/files/${fileId}/content`, {
         credentials: 'include'
@@ -457,25 +407,32 @@ const DeepAnalytics = () => {
     }
   };
 
-  // === SESSION HISTORY HANDLING ===
+  // SESSION HISTORY HANDLING
   const handleSelectSession = async (sessionSummary: SessionSummary) => {
     setShowHistory(false);
     setCurrentSessionId(sessionSummary.id);
     setIsPreviewing(true);
     setFileContent({});
-    
-    // Store in localStorage
+
     localStorage.setItem('deepAnalytics_lastSessionId', sessionSummary.id);
-    
+
     toast({
       title: 'Session loaded',
       description: 'Historical session loaded successfully',
     });
   };
 
-  // Update form fields when session data loads
+  // Track if we've already loaded this session to prevent infinite loop
+  const loadedSessionRef = useRef<string | null>(null);
+
+  // Update form fields when session data loads (only for previewing)
   useEffect(() => {
-    if (result && isPreviewing) {
+    // Only load if we're previewing AND have a result AND haven't loaded this session yet
+    if (result && isPreviewing && currentSessionId && result.id !== loadedSessionRef.current) {
+      loadedSessionRef.current = result.id;
+      
+      logger.debug('Loading session data into form', { sessionId: result.id });
+
       setProblem(result.problem || '');
       setContext(result.context || '');
 
@@ -493,17 +450,23 @@ const DeepAnalytics = () => {
         setUploadedFileIds([]);
       }
     }
-  }, [result, isPreviewing]);
+    
+    // If not previewing, clear the loaded session ref
+    if (!isPreviewing) {
+      loadedSessionRef.current = null;
+    }
+  }, [result, isPreviewing, currentSessionId]);
 
-  // === DOWNLOAD HANDLING ===
+  // DOWNLOAD HANDLING
   const handleDownload = (format?: 'markdown' | 'pdf' | 'html' | 'json' | 'text') => {
-    if (!result?.final_solution?.content) {
+    const content = result?.final_solution?.content || socketResult?.final_solution?.content;
+
+    if (!content) {
       toast({ title: 'No content', description: 'Nothing to download', variant: 'destructive' });
       return;
     }
 
-    const content = result.final_solution.content;
-    const originalFormat = result.final_solution.format || 'markdown';
+    const originalFormat = result?.final_solution?.format || socketResult?.final_solution?.format || 'markdown';
     const filename = `deep-analysis-${new Date().toISOString().slice(0, 10)}`;
 
     downloadFile(content, originalFormat, {
@@ -512,10 +475,12 @@ const DeepAnalytics = () => {
     });
   };
 
-  // === RENDERING ===
-
+  // RENDERING
   const renderResultContent = () => {
-    if (!result?.final_solution?.content) {
+    const content = result?.final_solution?.content || socketResult?.final_solution?.content;
+    const format = result?.final_solution?.format || socketResult?.final_solution?.format || 'markdown';
+
+    if (!content) {
       return (
         <div className="text-center py-12 text-muted-foreground">
           <FileText className="w-12 h-12 mx-auto mb-3 opacity-50" />
@@ -525,10 +490,6 @@ const DeepAnalytics = () => {
     }
 
     const renderContent = () => {
-      const format = result.final_solution.format || 'markdown';
-      const content = result.final_solution.content;
-
-      // Handle markdown format
       if (format === 'markdown') {
         return (
           <div className="max-w-3xl mx-auto">
@@ -541,7 +502,6 @@ const DeepAnalytics = () => {
         );
       }
 
-      // Handle JSON format - pretty print it
       if (format === 'json') {
         try {
           const parsed = typeof content === 'string' ? JSON.parse(content) : content;
@@ -553,7 +513,6 @@ const DeepAnalytics = () => {
             </div>
           );
         } catch {
-          // If parsing fails, show as plain text
           return (
             <pre className="whitespace-pre-wrap font-mono text-xs p-6 bg-muted rounded-lg max-w-3xl mx-auto overflow-auto">
               {content}
@@ -562,7 +521,6 @@ const DeepAnalytics = () => {
         }
       }
 
-      // Handle other formats (text, html, etc.)
       return (
         <pre className="whitespace-pre-wrap font-sans text-sm p-6 bg-muted rounded-lg max-w-3xl mx-auto overflow-auto">
           {content}
@@ -572,11 +530,9 @@ const DeepAnalytics = () => {
 
     return (
       <div className="space-y-8">
-        {/* Main Content - Constrained width for better readability */}
         {renderContent()}
 
-        {/* Files Section */}
-        {result.files && result.files.length > 0 && (
+        {result?.files && result.files.length > 0 && (
           <div className="max-w-3xl mx-auto border-t pt-8">
             <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
               <Database className="w-5 h-5" />
@@ -618,22 +574,29 @@ const DeepAnalytics = () => {
     );
   };
 
-  // === PROCESSING VIEW ===
-  if (processing) {
+  // PROCESSING VIEW
+  if (isProcessing) {
     return (
       <div className="min-h-screen bg-background flex flex-col">
         <TopBar />
         <div className="flex-1 flex flex-col items-center justify-center px-4 pb-20">
           <div className="w-full max-w-md text-center relative">
+            {/* Connection indicator */}
+            <div className="absolute top-0 right-0 flex items-center gap-2 text-xs">
+              {isConnected ? (
+                <>
+                  <Wifi className="w-3 h-3 text-success" />
+                  <span className="text-success">Connected</span>
+                </>
+              ) : (
+                <>
+                  <WifiOff className="w-3 h-3 text-destructive" />
+                  <span className="text-destructive">Disconnected</span>
+                </>
+              )}
+            </div>
+
             <div className="relative mb-8">
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className="absolute w-64 h-64 animate-rotate-slow opacity-20">
-                  <div className="absolute top-0 left-1/2 w-2 h-2 bg-primary rounded-full -translate-x-1/2 -translate-y-1/2"></div>
-                </div>
-                <div className="absolute w-80 h-80 animate-rotate-slow opacity-10" style={{ animationDirection: 'reverse', animationDuration: '25s' }}>
-                  <div className="absolute top-0 left-1/2 w-1.5 h-1.5 bg-accent rounded-full -translate-x-1/2 -translate-y-1/2"></div>
-                </div>
-              </div>
               <div className="relative z-10 w-16 h-16 rounded-2xl bg-gradient-to-br from-muted to-background flex items-center justify-center mx-auto mb-6 shadow-sm animate-float-slow">
                 <Brain className="w-8 h-8 text-foreground" />
               </div>
@@ -642,26 +605,14 @@ const DeepAnalytics = () => {
             <h1 className="text-2xl font-medium text-foreground mb-2 animate-fade-in">
               Deep Analysis in Progress
             </h1>
-            <p className="text-muted-foreground mb-8 transition-opacity duration-500 animate-fade-in">
-              {progress < 95
-                ? "Our AI specialists are analyzing your request"
-                : "Finalizing your comprehensive report"}
+            <p className="text-muted-foreground mb-2 transition-opacity duration-500 animate-fade-in">
+              {stageLabel || "Processing your request"}
             </p>
-            
-            {(() => {
-              const startTime = localStorage.getItem('deepAnalytics_processingStartTime');
-              if (startTime) {
-                const elapsed = Math.floor((Date.now() - parseInt(startTime)) / 1000);
-                const minutes = Math.floor(elapsed / 60);
-                const seconds = elapsed % 60;
-                return (
-                  <p className="text-xs text-muted-foreground/70 mb-4">
-                    Elapsed: {minutes}m {seconds}s
-                  </p>
-                );
-              }
-              return null;
-            })()}
+            {stage && (
+              <p className="text-xs text-muted-foreground/70 mb-8">
+                Stage: {stage}
+              </p>
+            )}
 
             <div className="space-y-4 mb-8">
               <div className="h-1.5 bg-muted rounded-full overflow-hidden">
@@ -697,7 +648,7 @@ const DeepAnalytics = () => {
     );
   }
 
-  // === RESULTS VIEW ===
+  // RESULTS VIEW
   if (showResult) {
     return (
       <div className="min-h-screen bg-background flex flex-col">
@@ -738,8 +689,8 @@ const DeepAnalytics = () => {
                   </Button>
                   {showHistory && (
                     <>
-                      <div 
-                        className="fixed inset-0 z-40" 
+                      <div
+                        className="fixed inset-0 z-40"
                         onClick={() => setShowHistory(false)}
                       />
                       <div className="absolute right-0 mt-2 z-50 w-96">
@@ -777,6 +728,7 @@ const DeepAnalytics = () => {
                 <Button
                   size="sm"
                   onClick={() => {
+                    // Clear all state
                     setCurrentSessionId(null);
                     setProblem('');
                     setContext('');
@@ -785,6 +737,8 @@ const DeepAnalytics = () => {
                     setShowHistory(false);
                     setIsPreviewing(false);
                     setFileContent({});
+                    loadedSessionRef.current = null; // ✅ Clear the loaded session ref
+                    unsubscribeFromSession();
 
                     // Clear localStorage
                     localStorage.removeItem('deepAnalytics_lastSessionId');
@@ -809,16 +763,66 @@ const DeepAnalytics = () => {
     );
   }
 
-  // === INPUT VIEW ===
+  // INPUT VIEW
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <TopBar />
+
+      {/* Connection Status Bar - Only show if we're processing and not connected */}
+      {!isConnected && (isProcessing || currentSessionId) && (
+        <div className="bg-destructive/10 border-b border-destructive/20 px-4 py-2">
+          <div className="max-w-3xl mx-auto flex items-center gap-2 text-sm text-destructive">
+            <AlertCircle className="w-4 h-4" />
+            <span>Not connected to server. Reconnecting...</span>
+          </div>
+        </div>
+      )}
+
       <div className="flex-1 flex flex-col max-w-3xl mx-auto w-full px-4 sm:px-6 py-6">
         <div className="text-center mb-6 animate-fade-in">
-          <h1 className="text-2xl font-bold text-foreground mb-2">Deep Analytics</h1>
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <h1 className="text-2xl font-bold text-foreground">Deep Analytics</h1>
+            {isConnected && (
+              <div className="flex items-center gap-1 text-xs text-success">
+                <Wifi className="w-3 h-3" />
+                <span>Live</span>
+              </div>
+            )}
+          </div>
           <p className="text-sm text-muted-foreground max-w-md mx-auto">
             Describe a complex challenge. Our AI will deliver a strategic, actionable report.
           </p>
+          {isPreviewing && currentSessionId && (
+            <div className="mt-3 flex items-center justify-center gap-2">
+              <p className="text-xs text-amber-500">
+                Viewing previous session
+              </p>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  // Clear all state
+                  setCurrentSessionId(null);
+                  setProblem('');
+                  setContext('');
+                  setFiles([]);
+                  setUploadedFileIds([]);
+                  setIsPreviewing(false);
+                  loadedSessionRef.current = null; // ✅ Clear the loaded session ref
+                  
+                  // Clear localStorage
+                  localStorage.removeItem('deepAnalytics_lastSessionId');
+                  localStorage.removeItem('deepAnalytics_lastProblem');
+                  localStorage.removeItem('deepAnalytics_lastContext');
+                  localStorage.removeItem('deepAnalytics_lastFiles');
+                }}
+                className="h-6 text-xs"
+              >
+                <X className="w-3 h-3 mr-1" />
+                Clear & Start Fresh
+              </Button>
+            </div>
+          )}
         </div>
 
         <div className="space-y-5 animate-fade-in-up">
@@ -943,10 +947,10 @@ const DeepAnalytics = () => {
           <div className="pt-2 sticky bottom-0 bg-background pb-4">
             <Button
               onClick={handleExecute}
-              disabled={!problem.trim() || problem.length < 20 || processing}
+              disabled={!problem.trim() || problem.length < 20 || isProcessing}
               className="w-full h-11 text-sm font-medium shadow-lg"
             >
-              {processing ? (
+              {isProcessing ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin mr-2" />
                   Analyzing...

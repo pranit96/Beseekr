@@ -402,6 +402,42 @@ class ApiClient {
       };
     }>(`/api/thinkers/sessions${query ? `?${query}` : ''}`);
   }
+
+  async queueAnalysis(payload: {
+    problem: string;
+    context?: string;
+    files?: string[];
+    output_format: 'markdown' | 'json';
+  }) {
+    return this.request<{
+      jobId: string;
+      sessionId: string;
+      tier: string;
+      status: 'queued';
+    }>('/api/thinkers/queue', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async getJobStatus(jobId: string) {
+    return this.request<{
+      id: string;
+      state: 'queued' | 'active' | 'completed' | 'failed' | 'cancelled';
+      progress: number;
+      sessionId: string;
+      tier: string;
+    }>(`/api/thinkers/status/${jobId}`);
+  }
+
+  async cancelJob(jobId: string) {
+    return this.request<{
+      success: boolean;
+      message: string;
+    }>(`/api/thinkers/cancel/${jobId}`, {
+      method: 'POST',
+    });
+  }
 }
 
 export const apiClient = new ApiClient(API_BASE_URL);
