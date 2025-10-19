@@ -12,6 +12,9 @@ import { useConversation } from '@/hooks/use-conversation';
 import useOrchestration from '@/hooks/use-orchestration';
 import { useAuth } from '@/contexts/AuthContext';
 import { Badge } from '@/components/ui/badge';
+import { createLogger } from '@/services/logging';
+
+const logger = createLogger('ChatInterface');
 
 export const ChatInterface: React.FC<{
   agents: Agent[];
@@ -97,7 +100,7 @@ export const ChatInterface: React.FC<{
 
   // Debug: Monitor render state
   useEffect(() => {
-    console.log('[Chat] Render state changed:', {
+    logger.debug('Render state changed', {
       messagesCount: messages.length,
       isExecuting,
       preparingMessage,
@@ -111,12 +114,12 @@ export const ChatInterface: React.FC<{
     // Only load messages if switching to a different conversation
     // Don't load if we just created this conversation
     if (activeConversationId && activeConversationId !== conversationId) {
-      console.log('[Chat] Switching to conversation:', activeConversationId);
+      logger.info('Switching to conversation', { conversationId: activeConversationId });
       setConversationId(activeConversationId);
       loadConversationMessages(activeConversationId);
     } else if (activeConversationId === conversationId && messages.length === 0) {
       // Only load if we have no messages yet
-      console.log('[Chat] Loading messages for current conversation');
+      logger.debug('Loading messages for current conversation', { conversationId: activeConversationId });
       loadConversationMessages(activeConversationId);
     }
   }, [activeConversationId]);
@@ -200,7 +203,7 @@ export const ChatInterface: React.FC<{
             title = title.substring(0, 47) + '...';
           }
           
-          console.log('[Chat] Creating new conversation...');
+          logger.info('Creating new conversation', { title });
           const createRes = await apiClient.createConversation({
             agent_id: selectedAgents[0]?.id || null,
             title: title, 
@@ -217,10 +220,10 @@ export const ChatInterface: React.FC<{
               onConversationCreated?.(convId);
             }, 200);
             
-            console.log('[Chat] Conversation created:', convId);
+            logger.info('Conversation created successfully', { conversationId: convId });
           }
         } catch (err) {
-          console.error('[Chat] Failed to create conversation:', err);
+          logger.error('Failed to create conversation', { error: err });
           // Continue without conversation saving
         } finally {
           isCreatingConversationRef.current = false;
@@ -266,9 +269,11 @@ export const ChatInterface: React.FC<{
       // Add messages to UI - Force immediate state update
       setMessages(prev => {
         const newMessages = [...prev, userMessage, agentMessage];
-        console.log('[Chat] Messages added to state. Total:', newMessages.length);
-        console.log('[Chat] User message:', userMessage);
-        console.log('[Chat] Agent message:', agentMessage);
+        logger.debug('Messages added to state', { 
+          totalMessages: newMessages.length,
+          userMessageId: userMessage.id,
+          agentMessageId: agentMessage.id
+        });
         return newMessages;
       });
       
@@ -277,12 +282,16 @@ export const ChatInterface: React.FC<{
       setIsExecuting(true);
       setIsLoadingLocal(true);
       
-      console.log('[Chat] State updated - isExecuting: true, preparingMessage: false');
+      logger.debug('State updated for orchestration', { isExecuting: true, preparingMessage: false });
       
       // Force React to process state updates
       await new Promise(resolve => setTimeout(resolve, 100));
 
-      console.log('[Chat] Messages initialized, starting orchestration...');
+      logger.info('Starting orchestration', { 
+        agentCount: selectedAgents.length,
+        mode: executionMode,
+        conversationId: convId
+      });
 
       // STEP 3: Execute orchestration with fully initialized state
       const payload: any = {
@@ -299,11 +308,11 @@ export const ChatInterface: React.FC<{
 
       await execute(payload, {
         onAck: (d: any) => { 
-          console.log('[Chat] Orchestration acknowledged', d);
+          logger.debug('Orchestration acknowledged', { data: d });
         },
         onToken: (agentId: string, token: string) => {
           // Update immediately for smooth streaming
-          console.log('[Chat] Token received for agent:', agentId, 'Token length:', token.length);
+          logger.debug('Token received', { agentId, tokenLength: token.length });
           setMessages(prev => prev.map(m => {
             if (m.id !== agentMessageId) return m;
             return {
@@ -320,7 +329,7 @@ export const ChatInterface: React.FC<{
           }));
         },
         onAgentDone: (agentId: string, usage: any) => {
-          console.log('[Chat] Agent done:', agentId);
+          logger.info('Agent completed', { agentId, usage });
           setMessages(prev => prev.map(m => {
             if (m.id !== agentMessageId) return m;
             return {
@@ -334,7 +343,7 @@ export const ChatInterface: React.FC<{
           }));
         },
         onAgentError: (agentId: string, errorMsg: any) => {
-          console.error('[Chat] Agent error:', agentId, errorMsg);
+          logger.error('Agent error', { agentId, error: errorMsg });
           setMessages(prev => prev.map(m => {
             if (m.id !== agentMessageId) return m;
             return {
@@ -348,7 +357,7 @@ export const ChatInterface: React.FC<{
           }));
         },
         onWarning: (warn: any) => {
-          console.warn('[Chat] Warning:', warn);
+          logger.warn('Orchestration warning', { warning: warn });
         },
         onRateLimit: (rl) => {
           const retry = Number(rl?.retryAfter ?? 30);
@@ -364,7 +373,7 @@ export const ChatInterface: React.FC<{
           cancelRef.current = cancelFn;
         },
         onDone: (doneData: any) => {
-          console.log('[Chat] Orchestration completed', doneData);
+          logger.info('Orchestration completed', { data: doneData });
           setMessages(prev => prev.map(m => {
             if (m.id !== agentMessageId) return m;
             const updatedResponses = m.agentResponses?.map(ar => 
@@ -380,7 +389,7 @@ export const ChatInterface: React.FC<{
           }));
         },
         onError: (err: any) => {
-          console.error('[Chat] Orchestration error:', err);
+          logger.error('Orchestration error', { error: err });
           
           if (err?.error?.includes('rate') || err?.error?.includes('Too many')) {
             return;
@@ -407,7 +416,7 @@ export const ChatInterface: React.FC<{
       });
 
     } catch (err: any) {
-      console.error('[Chat] Submit error:', err);
+      logger.error('Submit error', { error: err.message });
       setPreparingMessage(false);
       
       if (!err?.message?.includes('rate') && !err?.message?.includes('Too many')) {
@@ -465,7 +474,7 @@ export const ChatInterface: React.FC<{
           variant: 'default' 
         });
       } catch (e) { 
-        console.error('[Chat] Cancel error:', e);
+        logger.error('Cancel error', { error: e });
       }
       
       // Clean up states with a slight delay for visual feedback

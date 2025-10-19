@@ -1,5 +1,8 @@
 // frontend src/services/socketService.ts
 import { io, Socket } from 'socket.io-client';
+import { createLogger } from '@/services/logging';
+
+const logger = createLogger('SocketService');
 
 interface ConnectionStatusData {
   connected: boolean;
@@ -106,7 +109,7 @@ connect(): Socket {
 
     // Handle token refresh from server
     this.socket.on('auth:tokens_refreshed', (data: { access_token: string; refresh_token: string }) => {
-      console.log('[SocketService] Received refreshed tokens from server');
+      logger.info('Received refreshed tokens from server');
       
       // Update cookies via callback (e.g., auth context)
       if (this.onTokensRefreshed) {
@@ -134,7 +137,7 @@ connect(): Socket {
       
       // Check if it's an auth error
       if (error.message === 'Unauthorized' || error.message.includes('token')) {
-        console.error('[SocketService] Authentication error:', error.message);
+        logger.error('Authentication error', { error: error.message });
         this._emitLocal('auth_error', { error: error.message });
         
         // Stop reconnecting on auth errors
@@ -153,7 +156,7 @@ connect(): Socket {
     });
 
     this.socket.on('error', (error: any) => {
-      console.error('[SocketService] Socket error:', error);
+      logger.error('Socket error', { error });
       this._emitLocal('socket_error', { error });
     });
 
@@ -220,7 +223,7 @@ connect(): Socket {
     this.clearConnectionTimeout();
     this.connectionTimeout = window.setTimeout(() => {
       if (this.socket?.connected) {
-        console.warn('[SocketService] Heartbeat timeout - reconnecting');
+        logger.warn('Heartbeat timeout - reconnecting');
         this.socket.disconnect();
         this.socket.connect();
       }
@@ -276,7 +279,7 @@ connect(): Socket {
         this.socket.removeAllListeners();
         this.socket.disconnect(); 
       } catch (e) {
-        console.error('[SocketService] Error during disconnect:', e);
+        logger.error('Error during disconnect', { error: e });
       }
       this.socket = null;
       this.connected = false;
@@ -292,7 +295,7 @@ connect(): Socket {
       try {
         control.cancel();
       } catch (e) {
-        console.error('[SocketService] Error cancelling request:', e);
+        logger.error('Error cancelling request', { error: e, requestId: control.requestId });
       }
     });
     this.activeRequests.clear();
@@ -462,7 +465,7 @@ connect(): Socket {
           this.socket?.emit('orchestration:cancel', { requestId });
           cleanup();
         } catch (e) {
-          console.error('[SocketService] Error cancelling orchestration:', e);
+          logger.error('Error cancelling orchestration', { error: e, requestId });
         }
       }
     };
@@ -507,7 +510,7 @@ connect(): Socket {
       try { 
         cb(data); 
       } catch (e) {
-        console.error(`[SocketService] Error in listener for ${event}:`, e);
+        logger.error('Error in event listener', { event, error: e });
       }
     });
   }

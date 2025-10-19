@@ -4,6 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Loader2, Copy, Check, RefreshCw, X } from 'lucide-react';
 import MarkdownRenderer from './MarkdownRenderer';
 import { cn } from '@/lib/utils';
+import { createLogger } from '@/services/logging';
+
+const logger = createLogger('AgentResponseCard');
 
 export interface AgentResponse {
   agentId: string;
@@ -50,8 +53,9 @@ const AgentResponseCard: React.FC<Props> = ({ response, index, onForkAgent, onRe
     try {
       await navigator.clipboard.writeText(response.content || '');
       setCopied(true);
+      logger.debug('Response copied to clipboard', { agentId: response.agentId });
     } catch (err) {
-      console.error('Failed to copy:', err);
+      logger.error('Failed to copy response', { error: err, agentId: response.agentId });
     }
   };
 
@@ -60,8 +64,9 @@ const AgentResponseCard: React.FC<Props> = ({ response, index, onForkAgent, onRe
       window.dispatchEvent(new CustomEvent('regenerate-from-response', { 
         detail: { prompt: response.content } 
       }));
+      logger.info('Regenerate triggered', { agentId: response.agentId });
     } catch (err) {
-      console.error('Failed to trigger regenerate:', err);
+      logger.error('Failed to trigger regenerate', { error: err, agentId: response.agentId });
     }
     onRegenerate?.(response);
   };

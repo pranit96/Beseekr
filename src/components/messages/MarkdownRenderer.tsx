@@ -4,9 +4,12 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkBreaks from 'remark-breaks';
 import rehypeRaw from 'rehype-raw';
+import { createLogger } from '@/services/logging';
 
 // Import remark-toc ONLY if you plan to use TOC
-import remarkToc from 'remark-toc'; 
+import remarkToc from 'remark-toc';
+
+const logger = createLogger('MarkdownRenderer'); 
 // NOTE: remark-toc is ONLY used when showToc=true
 
 interface TocItem {
@@ -144,7 +147,7 @@ export default function MarkdownRenderer({
       setCopiedCode(id);
       setTimeout(() => setCopiedCode(null), 2000);
     } catch (err) {
-      console.error('Failed to copy text: ', err);
+      logger.error('Failed to copy text', { error: err });
     }
   };
 

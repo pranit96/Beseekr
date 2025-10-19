@@ -10,6 +10,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Agent } from '@/types/agent';
+import { createLogger } from '@/services/logging';
+
+const logger = createLogger('Chat');
 
 interface Conversation {
   id: string;
@@ -64,7 +67,7 @@ const Chat = () => {
     }
 
     try {
-      console.log('[Chat] Fetching conversations, attempt:', fetchAttemptRef.current + 1);
+      logger.info('Fetching conversations', { attempt: fetchAttemptRef.current + 1 });
       
       const response = await apiClient.getConversations({
         status: 'active',
@@ -80,7 +83,11 @@ const Chat = () => {
               // Fetch more messages (up to 5) to ensure we get a user message
               const messagesRes = await apiClient.getMessages(conv.id, 1, 5);
               
-              console.log(`[Chat] Messages for ${conv.title || conv.id}:`, messagesRes.data?.length || 0, 'messages');
+              logger.debug('Messages fetched for conversation', { 
+                conversationId: conv.id, 
+                title: conv.title, 
+                messageCount: messagesRes.data?.length || 0 
+              });
               
               if (messagesRes.data && messagesRes.data.length > 0) {
                 // Sort messages by created_at (most recent first)
@@ -114,7 +121,7 @@ const Chat = () => {
               
               return conv;
             } catch (err) {
-              console.error('[Chat] Failed to fetch messages for', conv.id, err);
+              logger.error('Failed to fetch messages for conversation', { conversationId: conv.id, error: err });
               return conv;
             }
           })
@@ -127,7 +134,7 @@ const Chat = () => {
         throw new Error(response.error || 'Failed to fetch conversations');
       }
     } catch (error: any) {
-      console.error('[Chat] Failed to fetch conversations:', error);
+      logger.error('Failed to fetch conversations', { error: error.message, attempt: fetchAttemptRef.current });
       
       fetchAttemptRef.current++;
       
@@ -135,7 +142,7 @@ const Chat = () => {
         setAuthError(true);
       } else if (fetchAttemptRef.current < maxRetries) {
         const delay = Math.min(1000 * Math.pow(2, fetchAttemptRef.current), 10000);
-        console.log(`[Chat] Retrying in ${delay}ms...`);
+        logger.info('Retrying conversation fetch', { delay, attempt: fetchAttemptRef.current });
         setTimeout(() => fetchConversations(true), delay);
       }
     } finally {
@@ -159,7 +166,7 @@ const Chat = () => {
         description: 'You can continue using the app',
       });
     } catch (error: any) {
-      console.error('[Chat] Auth refresh failed:', error);
+      logger.error('Auth refresh failed', { error: error.message });
       setAuthError(true);
     } finally {
       setRetrying(false);
@@ -229,7 +236,7 @@ const Chat = () => {
     const deletedConvId = deletedId || currentConversationId;
     
     if (deletedConvId) {
-      console.log('[Chat] Clearing cache for deleted conversation:', deletedConvId);
+      logger.info('Clearing cache for deleted conversation', { conversationId: deletedConvId });
       
       if (currentConversationId === deletedConvId) {
         setCurrentConversationId(undefined);

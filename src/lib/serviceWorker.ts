@@ -1,7 +1,11 @@
 // src/lib/serviceWorker.ts - FIXED (Silent Updates in Background)
+import { createLogger } from '@/services/logging';
+
+const logger = createLogger('ServiceWorker');
+
 export function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) {
-    console.log('[SW] Service workers not supported');
+    logger.info('Service workers not supported');
     return;
   }
 
@@ -13,7 +17,7 @@ export function registerServiceWorker() {
         updateViaCache: 'none' // Always fetch fresh SW file
       });
 
-      console.log('[SW] Service worker registered:', registration.scope);
+      logger.info('Service worker registered', { scope: registration.scope });
 
       // SILENT UPDATE: Check for updates but don't prompt user
       setInterval(() => {
@@ -28,7 +32,7 @@ export function registerServiceWorker() {
           newWorker.addEventListener('statechange', () => {
             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
               // New service worker available - activate silently
-              console.log('[SW] New version available, will update on next page load');
+              logger.info('New version available, will update on next page load');
               
               // Option 1: Auto-activate silently (recommended)
               newWorker.postMessage({ type: 'SKIP_WAITING' });
@@ -44,7 +48,7 @@ export function registerServiceWorker() {
       let refreshing = false;
       navigator.serviceWorker.addEventListener('controllerchange', () => {
         if (refreshing) return;
-        console.log('[SW] Controller changed');
+        logger.info('Controller changed');
         
         // Only reload if user is not actively typing/interacting
         if (document.hidden || !isUserActive()) {
@@ -54,7 +58,7 @@ export function registerServiceWorker() {
       });
 
     } catch (error) {
-      console.error('[SW] Registration failed:', error);
+      logger.error('Registration failed', { error });
     }
   });
 }
@@ -107,10 +111,10 @@ export async function unregisterServiceWorker() {
   try {
     const registration = await navigator.serviceWorker.ready;
     const unregistered = await registration.unregister();
-    console.log('[SW] Service worker unregistered:', unregistered);
+    logger.info('Service worker unregistered', { unregistered });
     return unregistered;
   } catch (error) {
-    console.error('[SW] Unregistration failed:', error);
+    logger.error('Unregistration failed', { error });
     return false;
   }
 }
@@ -128,10 +132,10 @@ export async function clearAllCaches() {
     await Promise.all(
       cacheNames.map(name => caches.delete(name))
     );
-    console.log('[SW] All caches cleared');
+    logger.info('All caches cleared');
     return true;
   } catch (error) {
-    console.error('[SW] Failed to clear caches:', error);
+    logger.error('Failed to clear caches', { error });
     return false;
   }
 }
@@ -148,10 +152,10 @@ export async function clearApiCache() {
     navigator.serviceWorker.controller.postMessage({ 
       type: 'CLEAR_API_CACHE' 
     });
-    console.log('[SW] API cache clear requested');
+    logger.info('API cache clear requested');
     return true;
   } catch (error) {
-    console.error('[SW] Failed to clear API cache:', error);
+    logger.error('Failed to clear API cache', { error });
     return false;
   }
 }

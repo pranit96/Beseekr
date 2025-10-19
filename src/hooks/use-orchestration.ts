@@ -1,6 +1,9 @@
 // src/hooks/use-orchestration.ts
 import { useCallback } from 'react';
 import socketService from '@/services/socketService';
+import { createLogger } from '@/services/logging';
+
+const logger = createLogger('useOrchestration');
 
 interface OrchestrationPayload {
   agent_ids: string[];
@@ -29,7 +32,7 @@ const useOrchestration = () => {
    */
   const ensureConnected = useCallback(() => {
     if (!socketService.isConnected()) {
-      console.warn('[useOrchestration] Socket not connected, attempting to reconnect...');
+      logger.warn('Socket not connected, attempting to reconnect');
       
       // Try to get token from cookies
       const getAccessToken = (): string | null => {
@@ -47,11 +50,13 @@ const useOrchestration = () => {
       if (token) {
         try {
           socketService.connect();
+          logger.info('Socket reconnected successfully');
         } catch (error) {
-          console.error('[useOrchestration] Failed to reconnect socket:', error);
+          logger.error('Failed to reconnect socket', { error });
           throw new Error('Failed to establish connection. Please refresh the page.');
         }
       } else {
+        logger.error('No access token found for reconnection');
         throw new Error('Authentication required. Please log in again.');
       }
     }
@@ -104,7 +109,7 @@ const useOrchestration = () => {
         }
 
       } catch (error: any) {
-        console.error('[useOrchestration] Execute error:', error);
+        logger.error('Execute error', { error: error.message });
         callbacks.onError?.(error);
         reject(error);
       }

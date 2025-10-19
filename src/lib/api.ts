@@ -1,4 +1,7 @@
 // API Client Configuration with Enhanced Error Handling
+import { createLogger } from '@/services/logging';
+
+const logger = createLogger('APIClient');
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 interface ApiResponse<T> {
@@ -48,7 +51,7 @@ class ApiClient {
     
     // Check if there's a pending request for the same endpoint
     if (this.pendingRequests.has(cacheKey)) {
-      console.log('[API] Reusing pending request:', endpoint);
+      logger.debug('Reusing pending request', { endpoint });
       return this.pendingRequests.get(cacheKey)!;
     }
 
@@ -56,7 +59,7 @@ class ApiClient {
     if ((options.method === 'GET' || !options.method)) {
       const cached = this.requestCache.get(cacheKey);
       if (cached && this.isCacheValid(cached.timestamp)) {
-        console.log('[API] Returning cached response:', endpoint);
+        logger.debug('Returning cached response', { endpoint });
         return cached.data;
       }
     }
@@ -91,7 +94,7 @@ class ApiClient {
         if (!response.ok) {
           // Handle 401 Unauthorized
           if (response.status === 401) {
-            console.warn('[API] Unauthorized response:', endpoint);
+            logger.warn('Unauthorized response', { endpoint, status: response.status });
             if (this.onUnauthorized) {
               this.onUnauthorized();
             }
@@ -99,6 +102,7 @@ class ApiClient {
           }
 
           // Handle other errors
+          logger.error('Request failed', { endpoint, status: response.status, error: data.error || data.message });
           throw new Error(data.error || data.message || `Request failed with status ${response.status}`);
         }
 
@@ -115,9 +119,10 @@ class ApiClient {
           this.clearCache();
         }
 
+        logger.info('Request successful', { endpoint, status: response.status });
         return data;
       } catch (error: any) {
-        console.error('[API] Request failed:', endpoint, error.message);
+        logger.error('Request failed', { endpoint, error: error.message, errorName: error.name });
         
         // Handle network errors
         if (error.name === 'AbortError') {
@@ -346,6 +351,58 @@ class ApiClient {
     return this.request<any>(
       `/api/messages/conversation/${conversation_id}?${queryParams.toString()}`
     );
+  }
+
+  // Deep Analytics / Thinkers endpoints
+  async getSessionDetails(sessionId: string) {
+    return this.request<{
+      id: string;
+      user_id: string;
+      conversation_id: string | null;
+      problem: string;
+      context: string | null;
+      status: 'completed' | 'failed' | 'in_progress';
+      tier: 'free' | 'standard' | 'pro';
+      output_format: 'markdown' | 'json';
+      final_solution: string;
+      files?: Array<{
+        id: string;
+        filename: string;
+        file_size: number;
+        content_type: string;
+      }>;
+      thinking_ideations?: Array<{
+        role: string;
+        domain: string;
+        content: string;
+        quality_score: number;
+      }>;
+      execution_metrics?: {
+        execution_time_ms: number;
+      };
+      created_at?: string;
+    }>(`/api/thinkers/sessions/${sessionId}`);
+  }
+
+  async getSessions(params?: { limit?: number; page?: number }) {
+    const query = new URLSearchParams(params as any).toString();
+    return this.request<{
+      sessions: Array<{
+        id: string;
+        problem: string;
+        status: string;
+        created_at: string;
+        tier: string;
+        execution_metrics?: {
+          execution_time_ms: number;
+        };
+      }>;
+      pagination?: {
+        page: number;
+        limit: number;
+        total: number;
+      };
+    }>(`/api/thinkers/sessions${query ? `?${query}` : ''}`);
   }
 }
 

@@ -2,6 +2,9 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { apiClient } from "@/lib/api";
 import { Agent } from "@/types/agent";
 import { useAuth } from "@/contexts/AuthContext";
+import { createLogger } from "@/services/logging";
+
+const logger = createLogger('useAgents');
 
 export const useAgents = () => {
   const [agents, setAgents] = useState<Agent[]>([]);
@@ -16,13 +19,13 @@ export const useAgents = () => {
   const fetchAgents = useCallback(async (isRetry: boolean = false) => {
     // Don't fetch if already fetching
     if (fetchingRef.current) {
-      console.log('[useAgents] Fetch already in progress, skipping');
+      logger.debug('Fetch already in progress, skipping');
       return;
     }
 
     // Don't fetch if no user
     if (!user) {
-      console.log('[useAgents] No user, skipping fetch');
+      logger.debug('No user, skipping fetch');
       setAgents([]);
       setLoading(false);
       return;
@@ -49,7 +52,7 @@ export const useAgents = () => {
         throw new Error(res.error || "Failed to fetch agents");
       }
     } catch (err: any) {
-      console.error("[useAgents] Error fetching agents:", err);
+      logger.error("Error fetching agents", { error: err.message, attempt: retryCountRef.current });
       
       retryCountRef.current++;
       
@@ -60,7 +63,7 @@ export const useAgents = () => {
       } else if (retryCountRef.current < maxRetries) {
         // Retry with exponential backoff
         const delay = Math.min(1000 * Math.pow(2, retryCountRef.current), 5000);
-        console.log(`[useAgents] Retrying in ${delay}ms...`);
+        logger.info('Retrying agent fetch', { delay, attempt: retryCountRef.current });
         
         setTimeout(() => {
           fetchingRef.current = false;
@@ -80,7 +83,7 @@ export const useAgents = () => {
 
   // Manual reload function
   const reload = useCallback(async () => {
-    console.log('[useAgents] Manual reload requested');
+    logger.info('Manual reload requested');
     retryCountRef.current = 0;
     fetchingRef.current = false;
     
@@ -95,7 +98,7 @@ export const useAgents = () => {
     if (user) {
       fetchAgents();
     } else {
-      console.log('[useAgents] No user, clearing agents');
+      logger.debug('No user, clearing agents');
       setAgents([]);
       setLoading(false);
       setError(null);

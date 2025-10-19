@@ -5,7 +5,9 @@ import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Clock, FileText, Brain } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { createLogger } from '@/services/logging';
 
+const logger = createLogger('SessionHistory');
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 // Session summary from list endpoint (doesn't include full content)
@@ -26,7 +28,7 @@ export interface SessionFile {
   filename: string;
   content_type: string;
   file_size: number;
-  created_at: string;
+  created_at?: string;
 }
 
 // Full session from detail endpoint
@@ -75,7 +77,7 @@ export const SessionHistory = ({
       // ✅ FIX: Handle the correct response structure
       setSessions(data.sessions || []);
     } catch (error) {
-      console.error('Error fetching sessions:', error);
+      logger.error('Failed to fetch sessions', { error });
       toast({
         title: 'Error',
         description: 'Failed to load session history',

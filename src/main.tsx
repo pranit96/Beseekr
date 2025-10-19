@@ -3,6 +3,8 @@ import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
 import { registerServiceWorker, trackActivity } from "./lib/serviceWorker";
+// Override console methods in production to prevent direct console usage
+import "./lib/console-override";
 
 // Register service worker for caching
 registerServiceWorker();

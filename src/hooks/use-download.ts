@@ -1,5 +1,8 @@
 import { useState } from 'react';
 import { toast } from '@/hooks/use-toast';
+import { createLogger } from '@/services/logging';
+
+const logger = createLogger('useDownload');
 
 interface DownloadOptions {
   filename?: string;
@@ -162,9 +165,10 @@ export const useDownload = () => {
         type: getMimeType(finalFormat) 
       });
       downloadBlob(blob, `${filename}.${getFileExtension(finalFormat)}`);
+      logger.info('File downloaded successfully', { filename, format: finalFormat });
       
     } catch (error) {
-      console.error('Download error:', error);
+      logger.error('Download failed', { error, filename, format });
       toast({
         title: 'Download failed',
         description: 'Could not convert/download the file. Please try again.',

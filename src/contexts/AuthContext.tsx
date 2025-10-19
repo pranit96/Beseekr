@@ -4,6 +4,9 @@ import { apiClient } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import socketService from '@/services/socketService';
+import { createLogger } from '@/services/logging';
+
+const logger = createLogger('AuthContext');
 
 interface User {
   id: string;
@@ -79,21 +82,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // ENHANCED: Refresh authentication state with retry logic
   const refreshAuth = useCallback(async (silent: boolean = false, retries: number = 3) => {
     if (refreshingRef.current) {
-      console.log('[Auth] Refresh already in progress, skipping');
+      logger.debug('Refresh already in progress, skipping');
       return;
     }
 
     refreshingRef.current = true;
 
     try {
-      console.log('[Auth] Refreshing authentication state...');
+      logger.info('Refreshing authentication state', { silent, retries });
       const response = await apiClient.getCurrentUser();
       
       if (response.success && response.data) {
         setUser(response.data.user);
         lastActivityRef.current = Date.now();
         authErrorShownRef.current = false;
-        console.log('[Auth] Auth refresh successful');
+        logger.info('Auth refresh successful', { userId: response.data.user.id });
         
         if (!silent) {
           toast({
@@ -106,11 +109,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         throw new Error('Failed to refresh session');
       }
     } catch (error: any) {
-      console.error('[Auth] Session refresh failed:', error);
+      logger.error('Session refresh failed', { error: error.message, retries });
       
       // Retry logic for network errors
       if (retries > 0 && !error.message?.includes('401') && !error.message?.includes('Unauthorized')) {
-        console.log(`[Auth] Retrying refresh... (${retries} attempts left)`);
+        logger.info('Retrying refresh', { retriesLeft: retries });
         await new Promise(resolve => setTimeout(resolve, 2000));
         refreshingRef.current = false;
         return refreshAuth(silent, retries - 1);
@@ -137,13 +140,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const inactiveTime = Date.now() - lastActivityRef.current;
       
       if (inactiveTime > ACTIVITY_TIMEOUT) {
-        console.log('[Auth] Session expired due to inactivity');
+        logger.warn('Session expired due to inactivity', { inactiveTime });
         if (!authErrorShownRef.current) {
           authErrorShownRef.current = true;
           handleAuthError();
         }
       } else if (inactiveTime > SESSION_CHECK_INTERVAL) {
-        console.log('[Auth] Proactive session check after inactivity');
+        logger.debug('Proactive session check after inactivity', { inactiveTime });
         refreshAuth(true);
       }
     }, SESSION_CHECK_INTERVAL);
@@ -151,7 +154,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Proactive token refresh
     tokenRefreshIntervalRef.current = setInterval(() => {
       if (isSessionValid()) {
-        console.log('[Auth] Proactive token refresh');
+        logger.debug('Proactive token refresh');
         refreshAuth(true);
       }
     }, TOKEN_REFRESH_INTERVAL);
@@ -164,7 +167,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // Socket token refresh callback
   const handleTokensRefreshed = useCallback((tokens: { access_token: string; refresh_token: string }) => {
-    console.log('[Auth] Socket tokens refreshed, updating auth state...');
+    logger.info('Socket tokens refreshed, updating auth state');
     lastActivityRef.current = Date.now();
     refreshAuth(true);
   }, [refreshAuth]);
@@ -173,7 +176,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     if (!user) {
       if (socketService.isConnected()) {
-        console.log('[Auth] User logged out, disconnecting socket');
+        logger.info('User logged out, disconnecting socket');
         socketService.disconnect();
         setSocketConnected(false);
       }
@@ -182,7 +185,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const initializeSocket = async () => {
       try {
-        console.log('[Auth] Initializing socket connection...');
+        logger.info('Initializing socket connection', { userId: user.id });
         
         socketService.setTokenRefreshCallback(handleTokensRefreshed);
 
@@ -190,15 +193,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setSocketConnected(data.connected);
           
           if (data.connected) {
-            console.log('[Auth] Socket connected:', data.socketId);
+            logger.info('Socket connected', { socketId: data.socketId });
             lastActivityRef.current = Date.now();
           } else {
-            console.log('[Auth] Socket disconnected:', data.reason);
+            logger.warn('Socket disconnected', { reason: data.reason });
           }
         });
 
         socketService.on('auth_error', (data: any) => {
-          console.error('[Auth] Socket authentication failed:', data.error);
+          logger.error('Socket authentication failed', { error: data.error });
           if (!authErrorShownRef.current) {
             authErrorShownRef.current = true;
             handleAuthError();
@@ -206,7 +209,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         });
 
         socketService.on('forced_disconnect', (data: any) => {
-          console.warn('[Auth] Socket force disconnected:', data.message);
+          logger.warn('Socket force disconnected', { message: data.message });
           toast({
             title: 'Connection Lost',
             description: data.message || 'Please refresh and log in again.',
@@ -216,10 +219,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         });
 
         socketService.connect();
-        console.log('[Auth] Socket connection initiated');
+        logger.info('Socket connection initiated');
 
       } catch (error) {
-        console.error('[Auth] Socket initialization error:', error);
+        logger.error('Socket initialization error', { error });
       }
     };
 
@@ -237,10 +240,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const initAuth = async () => {
       try {
-        console.log('[Auth] Checking initial authentication state...');
+        logger.info('Checking initial authentication state');
         await fetchCurrentUser();
       } catch (error) {
-        console.error('[Auth] Initial auth check failed:', error);
+        logger.error('Initial auth check failed', { error });
         setLoading(false);
       }
     };
@@ -250,7 +253,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Multi-tab logout sync
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'auth_logout' && e.newValue) {
-        console.log('[Auth] Logout detected in another tab');
+        logger.info('Logout detected in another tab');
         handleAuthError();
       }
     };
@@ -269,7 +272,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(null);
       }
     } catch (error) {
-      console.error('[Auth] Failed to fetch user:', error);
+      logger.error('Failed to fetch user', { error });
       setUser(null);
     } finally {
       setLoading(false);
@@ -277,7 +280,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const handleAuthError = useCallback(() => {
-    console.log('[Auth] Handling auth error - clearing session');
+    logger.info('Handling auth error - clearing session');
     
     if (socketService.isConnected()) socketService.disconnect();
     if (sessionCheckIntervalRef.current) clearInterval(sessionCheckIntervalRef.current);
@@ -381,7 +384,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         description: 'You have been successfully logged out.',
       });
     } catch (error) {
-      console.error('[Auth] Logout error:', error);
+      logger.error('Logout error', { error });
       setUser(null);
       setSocketConnected(false);
       navigate('/');

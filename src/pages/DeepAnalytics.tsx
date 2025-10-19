@@ -11,7 +11,10 @@ import { useToast } from '@/hooks/use-toast';
 import MarkdownRenderer from '@/components/messages/MarkdownRenderer';
 import { useDownload } from '@/hooks/use-download';
 import { SessionHistory, SessionSummary, FullSession } from '@/components/SessionHistory';
+import { createLogger } from '@/services/logging';
+import { apiClient } from '@/lib/api';
 
+const logger = createLogger('DeepAnalytics');
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 interface UploadedFile {
@@ -71,7 +74,7 @@ const DeepAnalytics = () => {
           setUploadedFileIds(parsedFiles.ids || []);
         }
       } catch (error) {
-        console.error('Failed to restore session:', error);
+        logger.error('Failed to restore session', { error });
         localStorage.removeItem('deepAnalytics_lastResult');
       }
     }
@@ -142,7 +145,7 @@ const DeepAnalytics = () => {
         throw new Error('No files returned from server');
       }
     } catch (error: any) {
-      console.error('Upload error:', error);
+      logger.error('File upload failed', { error: error.message, fileCount: newFiles.length });
       toast({ title: 'Upload failed', description: error.message, variant: 'destructive' });
     } finally {
       setUploading(false);
@@ -258,7 +261,7 @@ const DeepAnalytics = () => {
         throw new Error(data.message || 'Unknown error');
       }
     } catch (error: any) {
-      console.error('Execution error:', error);
+      logger.error('Analysis execution failed', { error: error.message, errorName: error.name });
       if (progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);
         progressIntervalRef.current = null;
@@ -313,7 +316,7 @@ const DeepAnalytics = () => {
         throw new Error(data.error || 'Failed to fetch file');
       }
     } catch (error) {
-      console.error('Error fetching file content:', error);
+      logger.error('Failed to fetch file content', { sessionId, fileId, error });
       toast({
         title: 'Error',
         description: 'Failed to load file content',
@@ -325,13 +328,33 @@ const DeepAnalytics = () => {
   // === SESSION HISTORY HANDLING ===
   const handleSelectSession = async (sessionSummary: SessionSummary) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/thinkers/sessions/${sessionSummary.id}`, {
-        credentials: 'include'
-      });
+      // Use API client with caching
+      const apiResponse = await apiClient.getSessionDetails(sessionSummary.id);
+      
+      // Handle the API response structure: { success: boolean, data: {...} }
+      if (!apiResponse.success || !apiResponse.data) {
+        throw new Error('Invalid response format');
+      }
 
-      if (!response.ok) throw new Error('Failed to fetch session');
+      const sessionData = apiResponse.data;
+      
+      // Transform the API response to match FullSession format
+      const fullSession: FullSession = {
+        id: sessionData.id,
+        problem: sessionData.problem,
+        status: sessionData.status,
+        created_at: sessionData.created_at || new Date().toISOString(),
+        tier: sessionData.tier,
+        context: sessionData.context,
+        final_solution: {
+          content: sessionData.final_solution || '',
+          format: sessionData.output_format || 'markdown'
+        },
+        files: sessionData.files || [],
+        thinking_ideations: sessionData.thinking_ideations || [],
+        execution_metrics: sessionData.execution_metrics
+      };
 
-      const fullSession: FullSession = await response.json();
       setResult(fullSession);
       setShowResult(true);
       setIsPreviewing(true);
@@ -354,11 +377,31 @@ const DeepAnalytics = () => {
         setFiles([]);
         setUploadedFileIds([]);
       }
-    } catch (error) {
-      console.error('Error loading session:', error);
+
+      // Cache the session in localStorage
+      localStorage.setItem('deepAnalytics_lastResult', JSON.stringify(fullSession));
+      localStorage.setItem('deepAnalytics_lastProblem', fullSession.problem);
+      localStorage.setItem('deepAnalytics_lastContext', fullSession.context || '');
+      localStorage.setItem('deepAnalytics_lastFiles', JSON.stringify({
+        files: fullSession.files && fullSession.files.length > 0 ? fullSession.files.map((f: SessionFile) => ({
+          id: f.id,
+          name: f.filename,
+          size: f.file_size,
+          type: f.content_type
+        })) : [],
+        ids: fullSession.files?.map(f => f.id) || []
+      }));
+
+      toast({
+        title: 'Session loaded',
+        description: 'Historical session loaded successfully',
+      });
+
+    } catch (error: any) {
+      logger.error('Failed to load session', { sessionId: sessionSummary.id, error });
       toast({
         title: 'Error',
-        description: 'Failed to load session details',
+        description: error.message || 'Failed to load session details',
         variant: 'destructive'
       });
     }
