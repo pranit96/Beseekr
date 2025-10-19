@@ -52,9 +52,9 @@ interface SessionHistoryProps {
   currentSessionId?: string;
 }
 
-export const SessionHistory = ({ 
-  onSelectSession, 
-  currentSessionId 
+export const SessionHistory = ({
+  onSelectSession,
+  currentSessionId
 }: SessionHistoryProps) => {
   const [sessions, setSessions] = useState<SessionSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -70,12 +70,12 @@ export const SessionHistory = ({
       const response = await fetch(`${API_BASE_URL}/api/thinkers/sessions?limit=10`, {
         credentials: 'include'
       });
-      
+
       if (!response.ok) throw new Error('Failed to fetch sessions');
-      
+
       const data = await response.json();
-      // ✅ FIX: Handle the correct response structure
-      setSessions(data.sessions || []);
+      const sessionList = data.data?.sessions || data.sessions || [];
+      setSessions(sessionList);
     } catch (error) {
       logger.error('Failed to fetch sessions', { error });
       toast({
@@ -102,7 +102,7 @@ export const SessionHistory = ({
 
   if (loading) {
     return (
-      <Card className="p-4">
+      <Card className="p-4 shadow-lg border-border/50">
         <div className="flex items-center justify-center h-32">
           <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
         </div>
@@ -111,49 +111,70 @@ export const SessionHistory = ({
   }
 
   return (
-    <Card className="p-4">
-      <h3 className="font-medium mb-3 flex items-center gap-2">
-        <Clock className="w-4 h-4" />
-        Recent Sessions
-      </h3>
-      
+    <Card className="p-4 shadow-lg border-border/50 bg-background">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="font-semibold text-sm flex items-center gap-2">
+          <Clock className="w-4 h-4 text-primary" />
+          Recent Sessions
+        </h3>
+        {sessions.length > 0 && (
+          <span className="text-xs text-muted-foreground">
+            {sessions.length} session{sessions.length !== 1 ? 's' : ''}
+          </span>
+        )}
+      </div>
+
       {sessions.length === 0 ? (
-        <p className="text-sm text-muted-foreground text-center py-4">
-          No previous sessions found
-        </p>
+        <div className="text-center py-8">
+          <FileText className="w-8 h-8 mx-auto mb-2 text-muted-foreground/50" />
+          <p className="text-sm text-muted-foreground">
+            No previous sessions found
+          </p>
+        </div>
       ) : (
-        <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
+        <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1 custom-scrollbar">
           {sessions.map(session => (
-            <div
+            <button
               key={session.id}
-              className={`p-3 rounded-lg border cursor-pointer transition-colors ${
-                currentSessionId === session.id
-                  ? 'border-primary bg-primary/5'
-                  : 'border-border hover:bg-muted/50'
-              }`}
+              className={`w-full text-left p-3 rounded-lg border transition-all ${currentSessionId === session.id
+                ? 'border-primary bg-primary/10 shadow-sm'
+                : 'border-border hover:bg-muted/50 hover:border-border/80'
+                }`}
               onClick={() => handleSelect(session)}
             >
               <div className="flex items-start gap-3">
-                <div className="mt-0.5">
-                  <Brain className={`w-4 h-4 ${
-                    session.status === 'completed' ? 'text-success' : 'text-muted-foreground'
-                  }`} />
+                <div className="mt-1 flex-shrink-0">
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${session.status === 'completed'
+                    ? 'bg-success/10'
+                    : 'bg-muted'
+                    }`}>
+                    <Brain className={`w-4 h-4 ${session.status === 'completed' ? 'text-success' : 'text-muted-foreground'
+                      }`} />
+                  </div>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">
-                    {session.problem.substring(0, 60)}...
+                  <p className="text-sm font-medium line-clamp-2 mb-1">
+                    {session.problem}
                   </p>
-                  <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-                    <span>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
                       {formatDistanceToNow(new Date(session.created_at), { addSuffix: true })}
                     </span>
                     {session.execution_metrics && (
-                      <span>• {Math.round(session.execution_metrics.execution_time_ms / 1000)}s</span>
+                      <span className="flex items-center gap-1">
+                        • {Math.round(session.execution_metrics.execution_time_ms / 1000)}s
+                      </span>
                     )}
                   </div>
+                  {session.tier && (
+                    <span className="inline-block mt-1.5 px-2 py-0.5 text-xs rounded-full bg-muted text-muted-foreground">
+                      {session.tier}
+                    </span>
+                  )}
                 </div>
               </div>
-            </div>
+            </button>
           ))}
         </div>
       )}

@@ -327,7 +327,13 @@ const DeepAnalytics = () => {
 
   // === SESSION HISTORY HANDLING ===
   const handleSelectSession = async (sessionSummary: SessionSummary) => {
+    setShowHistory(false); // Close the dropdown
+    
     try {
+      // Show loading state
+      setResult(null);
+      setShowResult(false);
+      
       // Use API client with caching
       const apiResponse = await apiClient.getSessionDetails(sessionSummary.id);
       
@@ -345,7 +351,7 @@ const DeepAnalytics = () => {
         status: sessionData.status,
         created_at: sessionData.created_at || new Date().toISOString(),
         tier: sessionData.tier,
-        context: sessionData.context,
+        context: sessionData.context || undefined,
         final_solution: {
           content: sessionData.final_solution || '',
           format: sessionData.output_format || 'markdown'
@@ -594,18 +600,24 @@ const DeepAnalytics = () => {
                     variant="outline"
                     size="sm"
                     onClick={() => setShowHistory(!showHistory)}
-                    className="gap-1.5"
+                    className={`gap-1.5 ${showHistory ? 'bg-muted' : ''}`}
                   >
                     <History className="w-4 h-4" />
                     History
                   </Button>
                   {showHistory && (
-                    <div className="absolute right-0 mt-2 z-50 w-80">
-                      <SessionHistory
-                        onSelectSession={handleSelectSession}
-                        currentSessionId={result?.id}
+                    <>
+                      <div 
+                        className="fixed inset-0 z-40" 
+                        onClick={() => setShowHistory(false)}
                       />
-                    </div>
+                      <div className="absolute right-0 mt-2 z-50 w-96">
+                        <SessionHistory
+                          onSelectSession={handleSelectSession}
+                          currentSessionId={result?.id}
+                        />
+                      </div>
+                    </>
                   )}
                 </div>
                 <div className="relative group">
@@ -782,7 +794,7 @@ const DeepAnalytics = () => {
               variant="ghost"
               size="sm"
               onClick={() => setShowHistory(!showHistory)}
-              className="gap-1.5 h-8 text-xs"
+              className={`gap-1.5 h-8 text-xs ${showHistory ? 'bg-muted' : ''}`}
             >
               <History className="w-3.5 h-3.5" />
               {showHistory ? 'Hide History' : 'View History'}
@@ -790,7 +802,7 @@ const DeepAnalytics = () => {
           </div>
 
           {showHistory && (
-            <div className="animate-fade-in">
+            <div className="animate-fade-in relative">
               <SessionHistory
                 onSelectSession={handleSelectSession}
               />
