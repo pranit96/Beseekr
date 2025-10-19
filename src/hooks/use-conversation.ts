@@ -163,6 +163,13 @@ export function useConversation(initialConversationId?: string): UseConversation
   useEffect(() => {
     if (!conversationId) return;
     
+    // Skip loading for temporary conversations (optimistic UI)
+    const isTempConversation = conversationId.startsWith('temp-');
+    if (isTempConversation) {
+      logger.debug('Skipping load for temporary conversation', { conversationId });
+      return;
+    }
+    
     const cached = messageCache.get(conversationId);
     if (cached && cached.length > 0) {
       logger.debug('Using cached messages', { conversationId, messageCount: cached.length });

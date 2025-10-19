@@ -111,6 +111,15 @@ export const ChatInterface: React.FC<{
 
   // sync prop -> internal conversationId
   useEffect(() => {
+    // Skip loading for temporary conversations (optimistic UI)
+    const isTempConversation = activeConversationId?.startsWith('temp-');
+    
+    if (isTempConversation) {
+      logger.debug('Skipping message load for temporary conversation', { conversationId: activeConversationId });
+      setConversationId(activeConversationId);
+      return;
+    }
+    
     // Only load messages if switching to a different conversation
     // Don't load if we just created this conversation
     if (activeConversationId && activeConversationId !== conversationId) {
