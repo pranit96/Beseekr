@@ -93,7 +93,7 @@ const DeepAnalytics = () => {
     if (isProcessing) {
       // Resume processing state if we were processing before
       setProcessing(true);
-      simulateProgress();
+      setProgress(50); // Start at 50% when resuming
     }
 
     if (savedProblem) setProblem(savedProblem);
@@ -108,13 +108,12 @@ const DeepAnalytics = () => {
       }
     }
 
+    // Only cleanup progress interval, NOT the API call
     return () => {
       if (progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);
       }
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
+      // Don't abort API call on unmount - let it continue in background
     };
   }, []);
 
@@ -146,13 +145,44 @@ const DeepAnalytics = () => {
         }
       };
       cleanup();
-      setTimeout(accelerateToComplete, 300);
+      
+      // Animate to completion
+      const start = progress;
+      const duration = 2500;
+      const startTime = Date.now();
+      const animate = () => {
+        const elapsed = Date.now() - startTime;
+        const t = Math.min(elapsed / duration, 1);
+        const easeOut = 1 - Math.pow(1 - t, 3);
+        const newProgress = start + (100 - start) * easeOut;
+        setProgress(newProgress);
+        if (t < 1) {
+          requestAnimationFrame(animate);
+        } else {
+          setProcessing(false);
+        }
+      };
+      requestAnimationFrame(animate);
       
       // Clear processing flag
       localStorage.removeItem('deepAnalytics_processing');
       localStorage.removeItem('deepAnalytics_processingStartTime');
     }
-  }, [result, processing]);
+  }, [result, processing, progress]);
+
+  // Poll for session completion when processing and session ID exists
+  useEffect(() => {
+    if (!processing || !currentSessionId) return;
+
+    // Check if session is complete every 2 seconds
+    const pollInterval = setInterval(() => {
+      queryClient.invalidateQueries({ 
+        queryKey: ['thinkers', 'sessions', currentSessionId] 
+      });
+    }, 2000);
+
+    return () => clearInterval(pollInterval);
+  }, [processing, currentSessionId, queryClient]);
 
   // === FILE HANDLING ===
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -264,6 +294,13 @@ const DeepAnalytics = () => {
     };
     requestAnimationFrame(animate);
   }, [progress]);
+
+  // Resume progress animation when processing state is restored
+  useEffect(() => {
+    if (processing && !progressIntervalRef.current) {
+      simulateProgress();
+    }
+  }, [processing, simulateProgress]);
 
   // Handle tab visibility changes
   useEffect(() => {
