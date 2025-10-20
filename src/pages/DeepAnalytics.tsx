@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import {
   Upload, FileText, X, Brain, Check, Loader2, FileDown, Target,
-  Globe, Database, History, Eye, Wifi, WifiOff, AlertCircle
+  Globe, Database, Eye, Wifi, WifiOff, AlertCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -10,10 +10,11 @@ import { TopBar } from '@/components/TopBar';
 import { useToast } from '@/hooks/use-toast';
 import MarkdownRenderer from '@/components/messages/MarkdownRenderer';
 import { useDownload } from '@/hooks/use-download';
-import { SessionHistory, SessionSummary, FullSession } from '@/components/SessionHistory';
+import { SessionSummary, FullSession } from '@/components/SessionHistory';
+import { DeepAnalyticsSidebar } from '@/components/DeepAnalyticsSidebar';
 import { createLogger } from '@/services/logging';
 import { apiClient } from '@/lib/api';
-import { useSessionDetails } from '@/hooks/use-api-queries';
+import { useSessionDetails, useSessions } from '@/hooks/use-api-queries';
 import { useQueryClient } from '@tanstack/react-query';
 import { useDeepAnalyticsSocket } from '@/hooks/use-deep-analytics-socket';
 import { useAuth } from '@/contexts/AuthContext';
@@ -50,7 +51,7 @@ const DeepAnalytics = () => {
 
   // UI state
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
-  const [showHistory, setShowHistory] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isPreviewing, setIsPreviewing] = useState(false);
   const [fileContent, setFileContent] = useState<{ [fileId: string]: string }>({});
 
@@ -78,6 +79,10 @@ const DeepAnalytics = () => {
 
   // Fetch session details for preview
   const { data: sessionData, isLoading: isLoadingSession, error: sessionError } = useSessionDetails(currentSessionId || '');
+  
+  // Fetch sessions list for sidebar
+  const { data: sessionsResponse, isLoading: loadingSessions } = useSessions({ limit: 20 });
+  const sessions = sessionsResponse?.data?.sessions || [];
 
   // Redirect to auth if not logged in
   useEffect(() => {
@@ -135,6 +140,32 @@ const DeepAnalytics = () => {
   } : null;
 
   const showResult = (!!result && !isProcessing) || (isCompleted && socketResult);
+
+  // Load sidebar state from sessionStorage
+  useEffect(() => {
+    const savedSidebarState = sessionStorage.getItem('deepAnalyticsSidebarOpen');
+    if (savedSidebarState !== null) {
+      setSidebarOpen(savedSidebarState === 'true');
+    }
+  }, []);
+
+  // Save sidebar state to sessionStorage
+  useEffect(() => {
+    sessionStorage.setItem('deepAnalyticsSidebarOpen', sidebarOpen.toString());
+  }, [sidebarOpen]);
+
+  // Keyboard shortcut for sidebar toggle (Ctrl/Cmd + B)
+  useEffect(() => {
+    const handleKeyboard = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+        e.preventDefault();
+        setSidebarOpen(prev => !prev);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyboard);
+    return () => window.removeEventListener('keydown', handleKeyboard);
+  }, []);
 
   // Load persisted session on mount
   useEffect(() => {
@@ -435,7 +466,15 @@ const DeepAnalytics = () => {
 
   // SESSION HISTORY HANDLING
   const handleSelectSession = async (sessionSummary: SessionSummary) => {
-    setShowHistory(false);
+    if (sessionSummary.status !== 'completed') {
+      toast({
+        title: 'Session not ready',
+        description: 'This session is still processing or failed',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
     setCurrentSessionId(sessionSummary.id);
     setIsPreviewing(true);
     setFileContent({});
@@ -445,6 +484,31 @@ const DeepAnalytics = () => {
     toast({
       title: 'Session loaded',
       description: 'Historical session loaded successfully',
+    });
+  };
+
+  // NEW ANALYSIS HANDLER
+  const handleNewAnalysis = () => {
+    // Clear all state
+    setCurrentSessionId(null);
+    setProblem('');
+    setContext('');
+    setFiles([]);
+    setUploadedFileIds([]);
+    setIsPreviewing(false);
+    setFileContent({});
+    loadedSessionRef.current = null;
+    unsubscribeFromSession();
+
+    // Clear localStorage
+    localStorage.removeItem('deepAnalytics_lastSessionId');
+    localStorage.removeItem('deepAnalytics_lastProblem');
+    localStorage.removeItem('deepAnalytics_lastContext');
+    localStorage.removeItem('deepAnalytics_lastFiles');
+
+    toast({
+      title: 'New analysis',
+      description: 'Ready to start a new analysis',
     });
   };
 
@@ -603,9 +667,31 @@ const DeepAnalytics = () => {
   // PROCESSING VIEW
   if (isProcessing) {
     return (
-      <div className="min-h-screen bg-background flex flex-col">
-        <TopBar />
-        <div className="flex-1 flex flex-col items-center justify-center px-4 pb-20">
+      <div className="h-screen flex flex-col overflow-hidden bg-background">
+        <TopBar
+          sidebarOpen={sidebarOpen}
+          onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+          showSidebarToggle
+        />
+        
+        <div className="flex-1 flex overflow-hidden">
+          {/* Sidebar */}
+          <aside
+            className={`transition-all duration-300 ease-in-out border-r border-border bg-muted/30 flex-shrink-0 ${
+              sidebarOpen ? 'w-80 2xl:w-96 opacity-100' : 'w-0 opacity-0'
+            } overflow-hidden`}
+          >
+            <DeepAnalyticsSidebar
+              sessions={sessions}
+              currentSessionId={currentSessionId || undefined}
+              onSelectSession={handleSelectSession}
+              onNewAnalysis={handleNewAnalysis}
+              loading={loadingSessions}
+            />
+          </aside>
+
+          {/* Main Content */}
+          <div className="flex-1 flex flex-col items-center justify-center px-4 pb-20">
           <div className="w-full max-w-md text-center relative">
             {/* Connection indicator */}
             <div className="absolute top-0 right-0 flex items-center gap-2 text-xs">
@@ -671,15 +757,38 @@ const DeepAnalytics = () => {
           </div>
         </div>
       </div>
+      </div>
     );
   }
 
   // RESULTS VIEW
   if (showResult) {
     return (
-      <div className="min-h-screen bg-background flex flex-col">
-        <TopBar />
-        <div className="flex-1 flex flex-col w-full px-4 sm:px-6 py-6">
+      <div className="h-screen flex flex-col overflow-hidden bg-background">
+        <TopBar
+          sidebarOpen={sidebarOpen}
+          onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+          showSidebarToggle
+        />
+        
+        <div className="flex-1 flex overflow-hidden">
+          {/* Sidebar */}
+          <aside
+            className={`transition-all duration-300 ease-in-out border-r border-border bg-muted/30 flex-shrink-0 ${
+              sidebarOpen ? 'w-80 2xl:w-96 opacity-100' : 'w-0 opacity-0'
+            } overflow-hidden`}
+          >
+            <DeepAnalyticsSidebar
+              sessions={sessions}
+              currentSessionId={currentSessionId || undefined}
+              onSelectSession={handleSelectSession}
+              onNewAnalysis={handleNewAnalysis}
+              loading={loadingSessions}
+            />
+          </aside>
+
+          {/* Main Content */}
+          <div className="flex-1 flex flex-col w-full px-4 sm:px-6 py-6 overflow-auto">
           <div className="max-w-5xl mx-auto w-full">
             <div className="flex items-center justify-between mb-6 animate-fade-in">
               <div className="flex items-center gap-3">
@@ -703,31 +812,6 @@ const DeepAnalytics = () => {
                 </div>
               </div>
               <div className="flex gap-2">
-                <div className="relative">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowHistory(!showHistory)}
-                    className={`gap-1.5 ${showHistory ? 'bg-muted' : ''}`}
-                  >
-                    <History className="w-4 h-4" />
-                    History
-                  </Button>
-                  {showHistory && (
-                    <>
-                      <div
-                        className="fixed inset-0 z-40"
-                        onClick={() => setShowHistory(false)}
-                      />
-                      <div className="absolute right-0 mt-2 z-50 w-96">
-                        <SessionHistory
-                          onSelectSession={handleSelectSession}
-                          currentSessionId={result?.id}
-                        />
-                      </div>
-                    </>
-                  )}
-                </div>
                 <div className="relative group">
                   <Button
                     variant="outline"
@@ -753,25 +837,7 @@ const DeepAnalytics = () => {
                 </div>
                 <Button
                   size="sm"
-                  onClick={() => {
-                    // Clear all state
-                    setCurrentSessionId(null);
-                    setProblem('');
-                    setContext('');
-                    setFiles([]);
-                    setUploadedFileIds([]);
-                    setShowHistory(false);
-                    setIsPreviewing(false);
-                    setFileContent({});
-                    loadedSessionRef.current = null; // ✅ Clear the loaded session ref
-                    unsubscribeFromSession();
-
-                    // Clear localStorage
-                    localStorage.removeItem('deepAnalytics_lastSessionId');
-                    localStorage.removeItem('deepAnalytics_lastProblem');
-                    localStorage.removeItem('deepAnalytics_lastContext');
-                    localStorage.removeItem('deepAnalytics_lastFiles');
-                  }}
+                  onClick={handleNewAnalysis}
                 >
                   New Analysis
                 </Button>
@@ -786,13 +852,18 @@ const DeepAnalytics = () => {
           </div>
         </div>
       </div>
+      </div>
     );
   }
 
   // INPUT VIEW
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <TopBar />
+    <div className="h-screen flex flex-col overflow-hidden bg-background">
+      <TopBar
+        sidebarOpen={sidebarOpen}
+        onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+        showSidebarToggle
+      />
 
       {/* Connection Status Bar - Only show if we're processing and not connected */}
       {!isConnected && (isProcessing || currentSessionId) && (
@@ -804,7 +875,24 @@ const DeepAnalytics = () => {
         </div>
       )}
 
-      <div className="flex-1 flex flex-col max-w-3xl mx-auto w-full px-4 sm:px-6 py-6">
+      <div className="flex-1 flex overflow-hidden">
+        {/* Sidebar */}
+        <aside
+          className={`transition-all duration-300 ease-in-out border-r border-border bg-muted/30 flex-shrink-0 ${
+            sidebarOpen ? 'w-80 2xl:w-96 opacity-100' : 'w-0 opacity-0'
+          } overflow-hidden`}
+        >
+          <DeepAnalyticsSidebar
+            sessions={sessions}
+            currentSessionId={currentSessionId || undefined}
+            onSelectSession={handleSelectSession}
+            onNewAnalysis={handleNewAnalysis}
+            loading={loadingSessions}
+          />
+        </aside>
+
+        {/* Main Content */}
+        <div className="flex-1 flex flex-col max-w-3xl mx-auto w-full px-4 sm:px-6 py-6 overflow-auto">
         <div className="text-center mb-6 animate-fade-in">
           <div className="flex items-center justify-center gap-2 mb-2">
             <h1 className="text-2xl font-bold text-foreground">Deep Analytics</h1>
@@ -948,27 +1036,6 @@ const DeepAnalytics = () => {
             )}
           </div>
 
-          {/* Session History Toggle */}
-          <div className="flex justify-end">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowHistory(!showHistory)}
-              className={`gap-1.5 h-8 text-xs ${showHistory ? 'bg-muted' : ''}`}
-            >
-              <History className="w-3.5 h-3.5" />
-              {showHistory ? 'Hide History' : 'View History'}
-            </Button>
-          </div>
-
-          {showHistory && (
-            <div className="animate-fade-in relative">
-              <SessionHistory
-                onSelectSession={handleSelectSession}
-              />
-            </div>
-          )}
-
           {/* Execute */}
           <div className="pt-2 sticky bottom-0 bg-background pb-4">
             <Button
@@ -993,6 +1060,7 @@ const DeepAnalytics = () => {
             </p>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );
