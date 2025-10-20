@@ -67,6 +67,7 @@ const DeepAnalytics = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isPreviewing, setIsPreviewing] = useState(false);
   const [fileContent, setFileContent] = useState<{ [fileId: string]: string }>({});
+  const [isExecuting, setIsExecuting] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -224,6 +225,13 @@ const DeepAnalytics = () => {
     }
   }, [isCompleted]);
 
+  // Reset isExecuting when processing starts or completes
+  useEffect(() => {
+    if (isProcessing || isCompleted) {
+      setIsExecuting(false);
+    }
+  }, [isProcessing, isCompleted]);
+
   // Handle socket errors
   useEffect(() => {
     if (socketError) {
@@ -235,6 +243,7 @@ const DeepAnalytics = () => {
           description: 'Please log in to use Deep Analytics',
           variant: 'destructive',
         });
+        setIsExecuting(false);
         return;
       }
 
@@ -251,6 +260,8 @@ const DeepAnalytics = () => {
           variant: 'destructive',
         });
       }
+
+      setIsExecuting(false);
     }
   }, [socketError, toast]);
 
@@ -351,11 +362,18 @@ const DeepAnalytics = () => {
 
   // EXECUTION
   const handleExecute = async () => {
+    // Prevent double-click/race condition
+    if (isExecuting || isProcessing) {
+      logger.warn('Execution already in progress, ignoring duplicate request');
+      return;
+    }
+
     if (!problem.trim() || problem.length < 20) {
       toast({ title: 'Add more detail', description: 'At least 20 characters required', variant: 'destructive' });
       return;
     }
 
+    setIsExecuting(true);
     setCurrentSessionId(null);
     setIsPreviewing(false);
     setFileContent({});
@@ -405,6 +423,7 @@ const DeepAnalytics = () => {
     } catch (error: any) {
       logger.error('Failed to queue analysis', { error: error.message });
       toast({ title: 'Failed', description: error.message, variant: 'destructive' });
+      setIsExecuting(false);
     }
   };
 
@@ -984,13 +1003,13 @@ const DeepAnalytics = () => {
             <div className="pt-2 sticky bottom-0 bg-background pb-4">
               <Button
                 onClick={handleExecute}
-                disabled={!problem.trim() || problem.length < 20 || isProcessing}
+                disabled={!problem.trim() || problem.length < 20 || isProcessing || isExecuting}
                 className="w-full h-11 text-sm font-medium shadow-lg"
               >
-                {isProcessing ? (
+                {isProcessing || isExecuting ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                    Analyzing...
+                    {isExecuting ? 'Starting...' : 'Analyzing...'}
                   </>
                 ) : (
                   <>
