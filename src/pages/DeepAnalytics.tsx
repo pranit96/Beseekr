@@ -130,7 +130,7 @@ const DeepAnalytics = () => {
   const { data: sessionData, isLoading: isLoadingSession, error: sessionError } = useSessionDetails(currentSessionId || '');
 
   // Fetch sessions list for sidebar
-  const { data: sessionsResponse, isLoading: loadingSessions } = useSessions({ limit: 20 });
+  const { data: sessionsResponse, isLoading: loadingSessions, refetch: refetchSessions } = useSessions({ limit: 20 });
   const sessions = sessionsResponse?.data?.sessions || [];
 
   // Redirect to auth if not logged in
@@ -630,7 +630,8 @@ const DeepAnalytics = () => {
           handleNewAnalysis();
         }
 
-        // Refresh sessions list
+        // Refresh sessions list immediately
+        await refetchSessions();
         queryClient.invalidateQueries({ queryKey: ['sessions'] });
       }
     } catch (error: any) {
@@ -712,6 +713,7 @@ const DeepAnalytics = () => {
 
   // NEW ANALYSIS HANDLER
   const handleNewAnalysis = () => {
+    // Clear all state
     setCurrentSessionId(null);
     setProblem('');
     setContext('');
@@ -722,13 +724,22 @@ const DeepAnalytics = () => {
     setShowLowConfidenceBanner(false);
     setShowKPIInputModal(false);
     setFileContent({});
+    setIsExecuting(false);
     loadedSessionRef.current = null;
+    
+    // Disconnect from any active session
     unsubscribeFromSession();
 
+    // Clear localStorage
     localStorage.removeItem('deepAnalytics_lastSessionId');
     localStorage.removeItem('deepAnalytics_lastProblem');
     localStorage.removeItem('deepAnalytics_lastContext');
     localStorage.removeItem('deepAnalytics_lastFiles');
+
+    // Invalidate session details query to clear cached data
+    queryClient.invalidateQueries({ queryKey: ['session-details'] });
+
+    logger.info('New analysis initiated - all state cleared');
 
     toast({
       title: 'New analysis',

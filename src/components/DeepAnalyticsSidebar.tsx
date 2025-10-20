@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 
 export interface SessionSummary {
   id: string;
-  problem: string;
+  problem?: string | null;
   status: string;
   created_at: string;
   tier: string;
@@ -18,28 +18,37 @@ export interface SessionSummary {
 }
 
 // Helper to extract a readable session name from problem text
-const getSessionName = (problem: string): string => {
-  if (!problem) return 'Untitled Session';
+const getSessionName = (problem: string | undefined | null): string => {
+  if (!problem || typeof problem !== 'string') return 'Untitled Session';
+
+  const trimmed = problem.trim();
+  if (!trimmed) return 'Untitled Session';
 
   // Try to extract first meaningful line (skip flowchart syntax)
-  const lines = problem.split('\n').filter(line => {
-    const trimmed = line.trim();
-    return trimmed &&
-      !trimmed.startsWith('flowchart') &&
-      !trimmed.startsWith('%%') &&
-      !trimmed.startsWith('subgraph') &&
-      !trimmed.startsWith('classDef') &&
-      !trimmed.includes('-->') &&
-      !trimmed.includes('[') &&
-      trimmed.length > 10;
+  const lines = trimmed.split('\n').filter(line => {
+    const lineTrimmed = line.trim();
+    return lineTrimmed &&
+      !lineTrimmed.startsWith('flowchart') &&
+      !lineTrimmed.startsWith('%%') &&
+      !lineTrimmed.startsWith('subgraph') &&
+      !lineTrimmed.startsWith('classDef') &&
+      !lineTrimmed.startsWith('class ') &&
+      !lineTrimmed.includes('-->') &&
+      !lineTrimmed.includes('==>') &&
+      !lineTrimmed.match(/^\w+\[/) && // Skip node definitions like "A[text]"
+      lineTrimmed.length > 10;
   });
 
   if (lines.length > 0) {
-    return lines[0].trim().substring(0, 60);
+    const firstLine = lines[0].trim();
+    // Remove any remaining markdown or special chars
+    const cleaned = firstLine.replace(/[#*`]/g, '').trim();
+    return cleaned.substring(0, 60);
   }
 
-  // Fallback: use first 60 chars
-  return problem.substring(0, 60).trim();
+  // Fallback: use first 60 chars, clean up
+  const cleaned = trimmed.replace(/[#*`]/g, '').substring(0, 60).trim();
+  return cleaned || 'Untitled Session';
 }
 
 interface DeepAnalyticsSidebarProps {
