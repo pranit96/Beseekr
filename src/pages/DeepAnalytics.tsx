@@ -167,13 +167,14 @@ const DeepAnalytics = () => {
     return () => window.removeEventListener('keydown', handleKeyboard);
   }, []);
 
-  // Load persisted session on mount
+  // Load persisted session on mount - ONLY for preview, never for new execution
   useEffect(() => {
     const savedSessionId = localStorage.getItem('deepAnalytics_lastSessionId');
     const savedProblem = localStorage.getItem('deepAnalytics_lastProblem');
     const savedContext = localStorage.getItem('deepAnalytics_lastContext');
     const savedFiles = localStorage.getItem('deepAnalytics_lastFiles');
 
+    // Only restore for preview if we have a valid session ID
     if (savedSessionId) {
       // Load the session for preview, but don't try to reconnect to it
       setCurrentSessionId(savedSessionId);
@@ -343,18 +344,18 @@ const DeepAnalytics = () => {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
-  // EXECUTION
+  // EXECUTION - FIXED: No duplicate session IDs, correct socket call
   const handleExecute = async () => {
     if (!problem.trim() || problem.length < 20) {
       toast({ title: 'Add more detail', description: 'At least 20 characters required', variant: 'destructive' });
       return;
     }
 
-    // No need to check isConnected - subscribeToSession will connect automatically
-
+    // Clear any existing session state for new execution
     setCurrentSessionId(null);
     setIsPreviewing(false);
     setFileContent({});
+    unsubscribeFromSession(); // Unsubscribe from any previous session
 
     try {
       logger.info('Queueing analysis', { problemLength: problem.length, filesCount: uploadedFileIds.length });
@@ -381,7 +382,6 @@ const DeepAnalytics = () => {
       // Backend returns data at root level (not wrapped in data property)
       // Handle both formats: { data: { jobId, sessionId } } or { jobId, sessionId }
       const data = response.data || (response as any);
-      const jobId = data.jobId || data.id || data.sessionId;
       const sessionId = data.sessionId || data.id;
 
       if (!sessionId) {
@@ -393,11 +393,12 @@ const DeepAnalytics = () => {
         throw new Error('Backend returned success but no sessionId. Please check backend response format.');
       }
 
-      logger.info('Analysis queued successfully', { jobId, sessionId });
+      logger.info('Analysis queued successfully', { sessionId });
 
+      // Set the new session ID
       setCurrentSessionId(sessionId);
 
-      // Persist to localStorage
+      // Persist to localStorage for preview only (not for re-execution)
       localStorage.setItem('deepAnalytics_lastSessionId', sessionId);
       localStorage.setItem('deepAnalytics_lastProblem', problem);
       localStorage.setItem('deepAnalytics_lastContext', context);
@@ -406,8 +407,7 @@ const DeepAnalytics = () => {
         ids: uploadedFileIds
       }));
 
-      // Subscribe to real-time updates via socket
-      // This will automatically connect if not connected and wait for authentication
+      // Subscribe to real-time updates via socket - FIXED: Only pass sessionId, no jobId
       await subscribeToSession(sessionId);
 
       // Invalidate sessions list
@@ -426,8 +426,10 @@ const DeepAnalytics = () => {
   // CANCEL EXECUTION
   const handleCancel = () => {
     logger.info('Cancelling analysis');
-    cancelSession();
-    unsubscribeFromSession();
+    if (currentSessionId) {
+      cancelSession();
+      unsubscribeFromSession();
+    }
 
     toast({
       title: 'Cancelled',
@@ -478,6 +480,7 @@ const DeepAnalytics = () => {
     setCurrentSessionId(sessionSummary.id);
     setIsPreviewing(true);
     setFileContent({});
+    unsubscribeFromSession(); // Unsubscribe from any current session
 
     localStorage.setItem('deepAnalytics_lastSessionId', sessionSummary.id);
 
@@ -914,22 +917,7 @@ const DeepAnalytics = () => {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => {
-                  // Clear all state
-                  setCurrentSessionId(null);
-                  setProblem('');
-                  setContext('');
-                  setFiles([]);
-                  setUploadedFileIds([]);
-                  setIsPreviewing(false);
-                  loadedSessionRef.current = null; // ✅ Clear the loaded session ref
-                  
-                  // Clear localStorage
-                  localStorage.removeItem('deepAnalytics_lastSessionId');
-                  localStorage.removeItem('deepAnalytics_lastProblem');
-                  localStorage.removeItem('deepAnalytics_lastContext');
-                  localStorage.removeItem('deepAnalytics_lastFiles');
-                }}
+                onClick={handleNewAnalysis} // Changed to handleNewAnalysis for better UX
                 className="h-6 text-xs"
               >
                 <X className="w-3 h-3 mr-1" />
