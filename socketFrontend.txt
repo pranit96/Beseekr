@@ -1,0 +1,2072 @@
+// services/deepAnalyticsSocket.ts - Corrected for Backend Compatibility
+import { io, Socket } from 'socket.io-client';
+import { createLogger } from '@/services/logging';
+
+const logger = createLogger('DeepAnalyticsSocket');
+
+// ============================================================================
+// TYPES & INTERFACES (Matching Backend)
+// ============================================================================
+export type SessionStatus = 'queued' | 'processing' | 'completed' | 'failed' | 'cancelled';
+
+export type ProgressStage =
+  | 'initializing'
+  | 'file_processing'
+  | 'rag_indexing'
+  | 'context_building'
+  | 'analysis'
+  | 'agent_selection'
+  | 'ideation'
+  | 'synthesis'
+  | 'complete';
+
+// ✅ Backend sends this structure
+export interface ProgressUpdate {
+  sessionId: string;
+  stage: ProgressStage;
+  timestamp: string;
+  message?: string;
+  progress?: number; // Backend sends this directly
+  [key: string]: any; // Additional stage-specific data
+}
+
+// ✅ Backend sends this structure
+export interface SessionResult {
+  sessionId: string;
+  timestamp: string;
+  success?: boolean;
+  tier?: string;
+  final_solution?: {
+    content: string;
+    format: string;
+    confidence: number;
+    word_count: number;
+    validated: boolean;
+  };
+  execution_metrics?: {
+    execution_time_ms: number;
+    tokens_consumed: number;
+    avg_specialist_quality: string;
+  };
+  [key: string]: any;
+}
+
+// ✅ Backend sends this structure
+export interface SessionError {
+  sessionId?: string;
+  timestamp?: string;
+  message: string;
+  code: string;
+  details?: string;
+  retryAfter?: number; // seconds
+}
+
+export interface ConnectionStats {
+  connected: boolean;
+  socketId?: string;
+  userId?: string;
+  tier?: string;
+  activeSubscriptions: string[];
+}
+
+// ============================================================================
+// CALLBACKS
+// ============================================================================
+export interface DeepAnalyticsCallbacks {
+  onConnected?: (data: { userId: string; tier: string; timestamp: string }) => void;
+  onSubscribed?: (data: { sessionId: string; timestamp: string }) => void;
+  onProgress?: (data: ProgressUpdate) => void;
+  onComplete?: (data: SessionResult) => void;
+  onError?: (error: SessionError) => void;
+  onCancelled?: (data: { sessionId: string; timestamp: string }) => void;
+  onDisconnected?: (reason: string) => void;
+  onReconnecting?: (attempt: number) => void;
+  onReconnected?: () => void;
+}
+
+// ============================================================================
+// SERVICE CLASS
+// ============================================================================
+class DeepAnalyticsSocketService {
+  private socket: Socket | null = null;
+  private connected: boolean = false;
+  private subscribedSessions: Set<string> = new Set();
+  private callbacks: Map<string, DeepAnalyticsCallbacks> = new Map();
+  private globalCallbacks: DeepAnalyticsCallbacks = {};
+  private reconnectAttempts: number = 0;
+  private maxReconnectAttempts: number = 10;
+  private heartbeatInterval: NodeJS.Timeout | null = null;
+  private userId: string | null = null;
+  private userTier: string | null = null;
+  private userInteractionDetected: boolean = false;
+  private pendingSubscriptions: Array<{ sessionId: string; callbacks?: DeepAnalyticsCallbacks }> = [];
+
+  // ============================================================================
+  // CONNECTION MANAGEMENT
+  // ============================================================================
+  
+  /**
+   * Initialize user interaction listener to connect socket on first click
+   */
+  initUserInteractionListener(): void {
+    if (this.userInteractionDetected) return;
+
+    const handleInteraction = () => {
+      if (!this.userInteractionDetected) {
+        this.userInteractionDetected = true;
+        logger.debug('👆 User interaction detected, pre-connecting socket');
+        this.connect();
+        
+        // Remove listeners after first interaction
+        document.removeEventListener('click', handleInteraction);
+        document.removeEventListener('keydown', handleInteraction);
+        document.removeEventListener('touchstart', handleInteraction);
+      }
+    };
+
+    document.addEventListener('click', handleInteraction, { once: true, passive: true });
+    document.addEventListener('keydown', handleInteraction, { once: true, passive: true });
+    document.addEventListener('touchstart', handleInteraction, { once: true, passive: true });
+  }
+
+  connect(): Socket {
+    if (this.socket?.connected) {
+      logger.debug('Socket already connected', { socketId: this.socket.id });
+      return this.socket;
+    }
+
+    if (this.socket) {
+      logger.debug('Socket instance exists, reusing');
+      return this.socket;
+    }
+
+    const SOCKET_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+
+    // Debug: Check if we have cookies
+    const cookies = document.cookie;
+    const hasAuthCookie = cookies.includes('connect.sid') || cookies.includes('session');
+    
+    logger.info('Connecting to thinking socket', { 
+      url: SOCKET_URL,
+      hasCookies: cookies.length > 0,
+      hasAuthCookie,
+      cookieCount: cookies.split(';').filter(c => c.trim()).length,
+      cookieNames: cookies.split(';').map(c => c.split('=')[0].trim())
+    });
+
+    if (!hasAuthCookie) {
+      logger.warn('⚠️ No authentication cookie found - connection may fail');
+    }
+
+    // ✅ Connect to /thinking namespace (NOT /thinkers or /deepAnalytics)
+    // IMPORTANT: withCredentials: true will automatically send httpOnly cookies
+    this.socket = io(`${SOCKET_URL}/thinking`, {
+      withCredentials: true, // ✅ CRITICAL - Automatically sends httpOnly cookies
+      transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      reconnectionAttempts: this.maxReconnectAttempts,
+      timeout: 20000,
+      upgrade: true,
+      rememberUpgrade: true,
+      secure: SOCKET_URL.startsWith('https'),
+      rejectUnauthorized: true,
+      // Backend will authenticate using the httpOnly cookie
+      // If backend requires token in query, it should read from cookie
+    });
+
+    this.setupEventHandlers();
+    this.startHeartbeat();
+
+    return this.socket;
+  }
+
+  disconnect(): void {
+    logger.info('Disconnecting socket');
+
+    this.stopHeartbeat();
+    this.subscribedSessions.clear();
+    this.callbacks.clear();
+
+    if (this.socket) {
+      try {
+        this.socket.removeAllListeners();
+        this.socket.disconnect();
+      } catch (error: any) {
+        logger.error('Error during disconnect', { error: error.message });
+      }
+      this.socket = null;
+    }
+
+    this.connected = false;
+    this.userId = null;
+    this.userTier = null;
+  }
+
+  // ============================================================================
+  // EVENT HANDLERS
+  // ============================================================================
+  private setupEventHandlers(): void {
+    if (!this.socket) return;
+
+    // ========== CONNECTION EVENTS ==========
+    this.socket.on('connect', () => {
+      this.connected = true;
+      this.reconnectAttempts = 0;
+      logger.info('✅ Socket connected', { 
+        socketId: this.socket?.id,
+        hasCookies: document.cookie.length > 0,
+        cookieNames: document.cookie.split(';').map(c => c.split('=')[0].trim())
+      });
+    });
+
+    // ✅ Backend emits 'connected' with user info
+    this.socket.on('connected', (data: { userId: string; tier: string; timestamp: string }) => {
+      this.userId = data.userId;
+      this.userTier = data.tier;
+      this.connected = true; // Mark as fully authenticated
+      logger.info('✅ Authenticated and ready', { userId: data.userId, tier: data.tier });
+
+      // Notify global callbacks
+      this.globalCallbacks.onConnected?.(data);
+
+      // Notify all session callbacks
+      this.callbacks.forEach(cb => cb.onConnected?.(data));
+
+      // Process pending subscriptions
+      if (this.pendingSubscriptions.length > 0) {
+        logger.info('📤 Processing pending subscriptions', { count: this.pendingSubscriptions.length });
+        this.pendingSubscriptions.forEach(({ sessionId, callbacks }) => {
+          logger.info('📤 Emitting pending subscribe:session', { sessionId });
+          this.socket?.emit('subscribe:session', sessionId);
+        });
+        this.pendingSubscriptions = [];
+      }
+
+      // Re-subscribe to sessions after reconnect
+      if (this.subscribedSessions.size > 0) {
+        logger.info('Re-subscribing to sessions', { count: this.subscribedSessions.size });
+        this.subscribedSessions.forEach(sessionId => {
+          this.socket?.emit('subscribe:session', sessionId);
+        });
+      }
+    });
+
+    this.socket.on('disconnect', (reason: string) => {
+      this.connected = false;
+      this.stopHeartbeat();
+      logger.warn('🔌 Disconnected', { reason });
+
+      // Notify callbacks
+      this.globalCallbacks.onDisconnected?.(reason);
+      this.callbacks.forEach(cb => cb.onDisconnected?.(reason));
+
+      // Handle forced disconnect (auth failure)
+      if (reason === 'io server disconnect') {
+        logger.error('Server forced disconnect - auth may have failed');
+        this.disconnect();
+      }
+    });
+
+    this.socket.on('connect_error', (error: Error) => {
+      this.reconnectAttempts++;
+      logger.error('❌ Connection error', {
+        error: error.message,
+        attempt: this.reconnectAttempts
+      });
+
+      // Notify callbacks
+      this.globalCallbacks.onReconnecting?.(this.reconnectAttempts);
+      this.callbacks.forEach(cb => cb.onReconnecting?.(this.reconnectAttempts));
+
+      // Check for auth errors
+      if (error.message.includes('Authentication') || error.message.includes('token') || error.message.includes('access token')) {
+        logger.error('❌ Authentication error - backend requires authentication', {
+          error: error.message,
+          hasCookies: document.cookie.length > 0,
+          cookieNames: document.cookie.split(';').map(c => c.split('=')[0].trim())
+        });
+        
+        // Don't show error to user - fail silently as per requirement
+        logger.warn('⚠️ Backend /thinking namespace may not be configured for cookie auth');
+        logger.warn('⚠️ Check backend middleware for /thinking namespace');
+        
+        this.globalCallbacks.onError?.({
+          code: 'AUTH_FAILED',
+          message: 'Authentication failed. Please ensure you are logged in.',
+        });
+        this.disconnect();
+        return;
+      }
+
+      if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+        logger.error('Max reconnection attempts reached');
+        this.globalCallbacks.onError?.({
+          code: 'CONNECTION_FAILED',
+          message: 'Failed to connect after multiple attempts.',
+        });
+        this.disconnect();
+      }
+    });
+
+    this.socket.on('reconnect', (attemptNumber: number) => {
+      logger.info('✅ Reconnected', { attemptNumber });
+      this.globalCallbacks.onReconnected?.();
+      this.callbacks.forEach(cb => cb.onReconnected?.());
+    });
+
+    // ========== SESSION EVENTS ==========
+
+    // ✅ Backend emits 'subscribed'
+    this.socket.on('subscribed', (data: { sessionId: string; timestamp: string }) => {
+      logger.info('✅ [BACKEND] SUBSCRIBED confirmation received', {
+        sessionId: data.sessionId,
+        timestamp: data.timestamp,
+        hasCallbacks: this.callbacks.has(data.sessionId),
+        totalCallbacks: this.callbacks.size,
+        registeredSessions: Array.from(this.callbacks.keys()),
+        socketId: this.socket?.id
+      });
+      const callbacks = this.callbacks.get(data.sessionId);
+      if (callbacks) {
+        callbacks.onSubscribed?.(data);
+      } else {
+        logger.warn('⚠️ [BACKEND] No callbacks found for subscribed session', {
+          sessionId: data.sessionId,
+          registeredSessions: Array.from(this.callbacks.keys())
+        });
+      }
+    });
+
+    // ✅ Backend emits 'progress'
+    this.socket.on('progress', (data: ProgressUpdate) => {
+      logger.debug('📊 [BACKEND] Progress update received', {
+        sessionId: data.sessionId,
+        stage: data.stage,
+        progress: data.progress,
+        hasCallbacks: this.callbacks.has(data.sessionId),
+        socketId: this.socket?.id
+      });
+
+      const callbacks = this.callbacks.get(data.sessionId);
+      if (callbacks) {
+        callbacks.onProgress?.(data);
+      } else {
+        logger.warn('⚠️ [BACKEND] Progress received but no callbacks registered', {
+          sessionId: data.sessionId,
+          registeredSessions: Array.from(this.callbacks.keys())
+        });
+      }
+    });
+
+    // ✅ Backend emits 'complete'
+    this.socket.on('complete', (data: SessionResult) => {
+      logger.info('✅ Complete', { sessionId: data.sessionId });
+
+      const callbacks = this.callbacks.get(data.sessionId);
+      callbacks?.onComplete?.(data);
+
+      // Cleanup
+      this.unsubscribeFromSession(data.sessionId);
+    });
+
+    // ✅ Backend emits 'error'
+    this.socket.on('error', (error: SessionError) => {
+      logger.error('❌ Error', {
+        sessionId: error.sessionId,
+        code: error.code,
+        message: error.message
+      });
+
+      if (error.sessionId) {
+        const callbacks = this.callbacks.get(error.sessionId);
+        callbacks?.onError?.(error);
+
+        // Cleanup on error
+        this.unsubscribeFromSession(error.sessionId);
+      } else {
+        // Global error
+        this.globalCallbacks.onError?.(error);
+        this.callbacks.forEach(cb => cb.onError?.(error));
+      }
+    });
+
+    // ✅ Backend emits 'cancelled'
+    this.socket.on('cancelled', (data: { sessionId: string; timestamp: string }) => {
+      logger.info('🚫 Cancelled', { sessionId: data.sessionId });
+
+      const callbacks = this.callbacks.get(data.sessionId);
+      callbacks?.onCancelled?.(data);
+
+      // Cleanup
+      this.unsubscribeFromSession(data.sessionId);
+    });
+
+    // ✅ Backend emits 'unsubscribed'
+    this.socket.on('unsubscribed', (data: { sessionId: string; timestamp: string }) => {
+      logger.info('Unsubscribed', { sessionId: data.sessionId });
+      this.subscribedSessions.delete(data.sessionId);
+      this.callbacks.delete(data.sessionId);
+    });
+
+    // ✅ Backend emits 'cancel_acknowledged'
+    this.socket.on('cancel_acknowledged', (data: { sessionId: string; timestamp: string }) => {
+      logger.info('Cancel acknowledged', { sessionId: data.sessionId });
+    });
+
+    // ✅ Backend emits 'pong'
+    this.socket.on('pong', (data: { timestamp: number }) => {
+      const latency = Date.now() - data.timestamp;
+      logger.debug('🏓 Pong', { latency });
+    });
+
+    // ✅ Backend emits 'stats' (pro only)
+    this.socket.on('stats', (data: any) => {
+      logger.info('📊 Stats', data);
+    });
+  }
+
+  // ============================================================================
+  // SESSION MANAGEMENT
+  // ============================================================================
+  /**
+   * Subscribe to a session with automatic connection and authentication handling
+   * Silently waits for connection/auth, no errors thrown to user
+   */
+  subscribeToSession(sessionId: string, callbacks?: DeepAnalyticsCallbacks): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (!sessionId) {
+        const error = 'Session ID is required';
+        logger.error(error);
+        callbacks?.onError?.({
+          code: 'INVALID_SESSION_ID',
+          message: error,
+        });
+        reject(new Error(error));
+        return;
+      }
+
+      logger.info('📡 [SUBSCRIBE] Attempting to subscribe to session', { 
+        sessionId, 
+        socketConnected: this.socket?.connected,
+        authenticated: this.connected,
+        userId: this.userId,
+        socketId: this.socket?.id
+      });
+
+      // Store callbacks first
+      if (callbacks) {
+        this.callbacks.set(sessionId, callbacks);
+        logger.debug('📝 [SUBSCRIBE] Callbacks registered', { sessionId });
+      }
+
+      // Track subscription
+      this.subscribedSessions.add(sessionId);
+
+      // Ensure socket is connected
+      if (!this.socket) {
+        logger.info('🔌 [SUBSCRIBE] No socket, connecting now...');
+        this.connect();
+      }
+
+      // Wait for authentication (connected event) before subscribing
+      if (!this.connected || !this.userId) {
+        logger.info('⏳ [SUBSCRIBE] Waiting for authentication before subscribing...', {
+          socketConnected: this.socket?.connected,
+          hasSocket: !!this.socket,
+          sessionId
+        });
+
+        // Add to pending subscriptions
+        this.pendingSubscriptions.push({ sessionId, callbacks });
+
+        // Set up one-time listener for 'connected' event
+        const onConnectedOnce = (data: { userId: string; tier: string; timestamp: string }) => {
+          logger.info('✅ [SUBSCRIBE] Authenticated via connected event', { 
+            sessionId, 
+            userId: data.userId,
+            socketId: this.socket?.id
+          });
+          
+          // Remove the listener after first call
+          this.socket?.off('connected', onConnectedOnce);
+          
+          // Resolve the promise
+          resolve();
+        };
+
+        // Set up error listener
+        const onErrorOnce = (error: SessionError) => {
+          if (error.sessionId === sessionId) {
+            logger.error('❌ [SUBSCRIBE] Error during subscription', { sessionId, error });
+            this.socket?.off('connected', onConnectedOnce);
+            this.socket?.off('error', onErrorOnce);
+            reject(new Error(error.message));
+          }
+        };
+
+        // Add listeners
+        this.socket?.on('connected', onConnectedOnce);
+        this.socket?.on('error', onErrorOnce);
+
+        // Timeout fallback (30 seconds) - but don't show error to user
+        const timeoutId = setTimeout(() => {
+          if (!this.connected || !this.userId) {
+            this.socket?.off('connected', onConnectedOnce);
+            this.socket?.off('error', onErrorOnce);
+            logger.warn('⏰ [SUBSCRIBE] Timeout waiting for authentication (silent)', {
+              connected: this.connected,
+              userId: this.userId,
+              socketConnected: this.socket?.connected,
+              sessionId
+            });
+            // Don't call callbacks.onError - fail silently
+            // The subscription will happen when connection is established
+            resolve(); // Resolve anyway to not block the flow
+          }
+        }, 30000); // 30 seconds
+
+        return;
+      }
+
+      // ✅ Already authenticated, subscribe immediately
+      logger.info('✅ [SUBSCRIBE] Emitting subscribe:session (already authenticated)', { 
+        sessionId, 
+        userId: this.userId,
+        socketId: this.socket?.id
+      });
+      this.socket.emit('subscribe:session', sessionId);
+      resolve();
+    });
+  }
+
+  unsubscribeFromSession(sessionId: string): void {
+    if (!this.socket?.connected) {
+      logger.warn('Cannot unsubscribe - socket not connected', { sessionId });
+      return;
+    }
+
+    logger.info('Unsubscribing from session', { sessionId });
+
+    // ✅ Emit 'unsubscribe:session' with just sessionId (string, not object)
+    this.socket.emit('unsubscribe:session', sessionId);
+
+    this.subscribedSessions.delete(sessionId);
+    this.callbacks.delete(sessionId);
+  }
+
+  cancelSession(sessionId: string): void {
+    if (!this.socket?.connected) {
+      const error = 'Socket not connected';
+      logger.error(error);
+      throw new Error(error);
+    }
+
+    if (!sessionId) {
+      const error = 'Session ID is required';
+      logger.error(error);
+      throw new Error(error);
+    }
+
+    logger.info('Cancelling session', { sessionId });
+
+    // ✅ Emit 'cancel:session' with just sessionId (string, not object)
+    this.socket.emit('cancel:session', sessionId);
+  }
+
+  // ============================================================================
+  // HEARTBEAT & CONNECTION MONITORING
+  // ============================================================================
+  private startHeartbeat(): void {
+    this.stopHeartbeat();
+
+    this.heartbeatInterval = setInterval(() => {
+      if (this.socket?.connected) {
+        // ✅ Emit 'ping' (no payload)
+        this.socket.emit('ping');
+      }
+    }, 25000); // Every 25 seconds
+  }
+
+  private stopHeartbeat(): void {
+    if (this.heartbeatInterval) {
+      clearInterval(this.heartbeatInterval);
+      this.heartbeatInterval = null;
+    }
+  }
+
+  // ============================================================================
+  // UTILITY METHODS
+  // ============================================================================
+  isConnected(): boolean {
+    return this.connected && !!this.socket?.connected;
+  }
+
+  getStats(): ConnectionStats {
+    return {
+      connected: this.isConnected(),
+      socketId: this.socket?.id,
+      userId: this.userId || undefined,
+      tier: this.userTier || undefined,
+      activeSubscriptions: Array.from(this.subscribedSessions),
+    };
+  }
+
+  requestStats(): void {
+    if (!this.socket?.connected) {
+      logger.warn('Cannot get stats - socket not connected');
+      return;
+    }
+
+    // ✅ Emit 'stats' (no payload, pro users only)
+    this.socket.emit('stats');
+  }
+
+  setGlobalCallbacks(callbacks: DeepAnalyticsCallbacks): void {
+    this.globalCallbacks = callbacks;
+  }
+}
+
+// ============================================================================
+// SINGLETON EXPORT
+// ============================================================================
+export const deepAnalyticsSocket = new DeepAnalyticsSocketService();
+
+
+
+
+
+
+
+import { useState, useRef, useCallback, useEffect } from 'react';
+import {
+  Upload, FileText, X, Brain, Check, Loader2, FileDown, Target,
+  Globe, Database, Eye, Wifi, WifiOff, AlertCircle
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Textarea } from '@/components/ui/textarea';
+import { TopBar } from '@/components/TopBar';
+import { useToast } from '@/hooks/use-toast';
+import MarkdownRenderer from '@/components/messages/MarkdownRenderer';
+import { useDownload } from '@/hooks/use-download';
+import { SessionSummary, FullSession } from '@/components/SessionHistory';
+import { DeepAnalyticsSidebar } from '@/components/DeepAnalyticsSidebar';
+import { createLogger } from '@/services/logging';
+import { apiClient } from '@/lib/api';
+import { useSessionDetails, useSessions } from '@/hooks/use-api-queries';
+import { useQueryClient } from '@tanstack/react-query';
+import { useDeepAnalyticsSocket } from '@/hooks/use-deep-analytics-socket';
+import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
+
+const logger = createLogger('DeepAnalytics');
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+interface UploadedFile {
+  id: string;
+  name: string;
+  size: number;
+  type: string;
+}
+
+interface SessionFile {
+  id: string;
+  filename: string;
+  file_size: number;
+  content_type: string;
+}
+
+const DeepAnalytics = () => {
+  // Auth check
+  const { user, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
+
+  // Form state
+  const [files, setFiles] = useState<UploadedFile[]>([]);
+  const [uploadedFileIds, setUploadedFileIds] = useState<string[]>([]);
+  const [problem, setProblem] = useState('');
+  const [context, setContext] = useState('');
+  const [uploading, setUploading] = useState(false);
+
+  // UI state
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isPreviewing, setIsPreviewing] = useState(false);
+  const [fileContent, setFileContent] = useState<{ [fileId: string]: string }>({});
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
+  const { downloadFile, isConverting } = useDownload();
+  const queryClient = useQueryClient();
+
+  // Socket integration (don't auto-connect, only connect when needed)
+  const {
+    socketState,
+    isConnected,
+    sessionState,
+    isProcessing,
+    isCompleted,
+    progress,
+    stage,
+    stageLabel,
+    result: socketResult,
+    error: socketError,
+    subscribeToSession,
+    unsubscribeFromSession,
+    cancelSession,
+  } = useDeepAnalyticsSocket({ autoConnect: false });
+
+  // Fetch session details for preview
+  const { data: sessionData, isLoading: isLoadingSession, error: sessionError } = useSessionDetails(currentSessionId || '');
+  
+  // Fetch sessions list for sidebar
+  const { data: sessionsResponse, isLoading: loadingSessions } = useSessions({ limit: 20 });
+  const sessions = sessionsResponse?.data?.sessions || [];
+
+  // Redirect to auth if not logged in
+  useEffect(() => {
+    if (!authLoading && !user) {
+      logger.warn('User not authenticated, redirecting to auth', {
+        hasCookies: document.cookie.length > 0,
+        cookieNames: document.cookie.split(';').map(c => c.split('=')[0].trim())
+      });
+      toast({
+        title: 'Authentication Required',
+        description: 'Please log in to use Deep Analytics',
+        variant: 'destructive',
+      });
+      navigate('/auth');
+    } else if (user) {
+      logger.info('User authenticated', {
+        userId: user.id,
+        email: user.email,
+        hasCookies: document.cookie.length > 0
+      });
+    }
+  }, [user, authLoading, navigate, toast]);
+
+  // Show loading while checking auth
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col">
+        <TopBar />
+        <div className="flex-1 flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render if not authenticated (will redirect)
+  if (!user) {
+    return null;
+  }
+
+  const result: FullSession | null = sessionData?.success && sessionData.data ? {
+    id: sessionData.data.id,
+    problem: sessionData.data.problem,
+    status: sessionData.data.status,
+    created_at: sessionData.data.created_at || new Date().toISOString(),
+    tier: sessionData.data.tier,
+    context: sessionData.data.context || undefined,
+    final_solution: {
+      content: sessionData.data.final_solution || '',
+      format: sessionData.data.output_format || 'markdown'
+    },
+    files: sessionData.data.files || [],
+    thinking_ideations: sessionData.data.thinking_ideations || [],
+    execution_metrics: sessionData.data.execution_metrics
+  } : null;
+
+  const showResult = (!!result && !isProcessing) || (isCompleted && socketResult);
+
+  // Load sidebar state from sessionStorage
+  useEffect(() => {
+    const savedSidebarState = sessionStorage.getItem('deepAnalyticsSidebarOpen');
+    if (savedSidebarState !== null) {
+      setSidebarOpen(savedSidebarState === 'true');
+    }
+  }, []);
+
+  // Save sidebar state to sessionStorage
+  useEffect(() => {
+    sessionStorage.setItem('deepAnalyticsSidebarOpen', sidebarOpen.toString());
+  }, [sidebarOpen]);
+
+  // Keyboard shortcut for sidebar toggle (Ctrl/Cmd + B)
+  useEffect(() => {
+    const handleKeyboard = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+        e.preventDefault();
+        setSidebarOpen(prev => !prev);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyboard);
+    return () => window.removeEventListener('keydown', handleKeyboard);
+  }, []);
+
+  // Load persisted session on mount
+  useEffect(() => {
+    const savedSessionId = localStorage.getItem('deepAnalytics_lastSessionId');
+    const savedProblem = localStorage.getItem('deepAnalytics_lastProblem');
+    const savedContext = localStorage.getItem('deepAnalytics_lastContext');
+    const savedFiles = localStorage.getItem('deepAnalytics_lastFiles');
+
+    if (savedSessionId) {
+      // Load the session for preview, but don't try to reconnect to it
+      setCurrentSessionId(savedSessionId);
+      setIsPreviewing(true); // Mark as preview so we don't try to process
+      logger.info('Restored previous session for preview', { sessionId: savedSessionId });
+    }
+
+    if (savedProblem) setProblem(savedProblem);
+    if (savedContext) setContext(savedContext);
+    if (savedFiles) {
+      try {
+        const parsedFiles = JSON.parse(savedFiles);
+        setFiles(parsedFiles.files || []);
+        setUploadedFileIds(parsedFiles.ids || []);
+      } catch (error) {
+        logger.error('Failed to restore files', { error });
+      }
+    }
+  }, []);
+
+  // Request notification permission
+  useEffect(() => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+  }, []);
+
+  // Send notification when complete
+  useEffect(() => {
+    if (isCompleted && document.hidden && 'Notification' in window && Notification.permission === 'granted') {
+      new Notification('Deep Analysis Complete', {
+        body: 'Your strategic report is ready to view',
+        icon: '/favicon.svg',
+        tag: 'deep-analytics-complete'
+      });
+    }
+  }, [isCompleted]);
+
+  // Handle socket errors
+  useEffect(() => {
+    if (socketError) {
+      logger.error('Socket error received', { code: socketError.code, message: socketError.message });
+
+      // Handle authentication errors specially
+      if (socketError.code === 'AUTH_FAILED') {
+        toast({
+          title: 'Authentication Required',
+          description: 'Please log in to use Deep Analytics',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      toast({
+        title: 'Analysis Error',
+        description: socketError.message,
+        variant: 'destructive',
+      });
+
+      // Handle specific error codes
+      if (socketError.code === 'RATE_LIMIT_EXCEEDED' && socketError.retryAfter) {
+        toast({
+          title: 'Rate Limit Exceeded',
+          description: `Please wait ${socketError.retryAfter} seconds before trying again`,
+          variant: 'destructive',
+        });
+      }
+    }
+  }, [socketError, toast]);
+
+  // Handle session fetch errors (backend database issues)
+  useEffect(() => {
+    if (sessionError) {
+      const errorMessage = (sessionError as any)?.message || 'Unknown error';
+      
+      // Log backend database errors but don't show to user (they're not user-actionable)
+      if (errorMessage.includes('coerce') || errorMessage.includes('Cannot coerce')) {
+        logger.error('Backend database error fetching session', { 
+          sessionId: currentSessionId,
+          error: errorMessage 
+        });
+        logger.warn('⚠️ Backend needs to fix database query - see BACKEND_AUTH_FIX.md');
+        // Don't show toast - this is a backend issue, not user's fault
+      } else {
+        // Show other errors
+        logger.error('Failed to fetch session details', { error: errorMessage });
+        toast({
+          title: 'Could not load session',
+          description: 'Unable to fetch session details. The analysis may still be running.',
+          variant: 'default',
+        });
+      }
+    }
+  }, [sessionError, currentSessionId, toast]);
+
+  // FILE HANDLING
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFiles = Array.from(e.target.files || []);
+    if (selectedFiles.length === 0) return;
+
+    const existingNames = new Set(files.map(f => f.name));
+    const newFiles = selectedFiles.filter(file => !existingNames.has(file.name));
+
+    if (newFiles.length === 0) {
+      toast({ title: 'Duplicate files', description: 'All selected files are already uploaded.', variant: 'destructive' });
+      return;
+    }
+
+    if (files.length + newFiles.length > 50) {
+      toast({ title: 'Limit reached', description: 'Max 50 files allowed', variant: 'destructive' });
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      newFiles.forEach(file => formData.append('files', file));
+
+      const response = await fetch(`${API_BASE_URL}/api/thinkers/files/upload`, {
+        method: 'POST',
+        credentials: 'include',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Upload failed');
+      }
+
+      const data = await response.json();
+      const uploadedFiles = data.data?.uploaded || [];
+
+      if (uploadedFiles.length > 0) {
+        const frontendFiles = uploadedFiles.map((file: any, index: number) => ({
+          id: file.id,
+          name: file.filename || file.existing_filename || newFiles[index]?.name || 'unknown',
+          size: file.file_size || newFiles[index]?.size || 0,
+          type: file.content_type || newFiles[index]?.type || 'unknown'
+        }));
+
+        setFiles(prev => [...prev, ...frontendFiles]);
+        setUploadedFileIds(prev => [...prev, ...uploadedFiles.map((f: any) => f.id)]);
+        toast({
+          title: 'Files uploaded',
+          description: `${uploadedFiles.length} file(s) uploaded successfully`,
+        });
+      } else {
+        throw new Error('No files returned from server');
+      }
+    } catch (error: any) {
+      logger.error('File upload failed', { error: error.message, fileCount: newFiles.length });
+      toast({ title: 'Upload failed', description: error.message, variant: 'destructive' });
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const removeFile = (id: string) => {
+    setFiles(prev => prev.filter(f => f.id !== id));
+    setUploadedFileIds(prev => prev.filter(fid => fid !== id));
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  // EXECUTION
+  const handleExecute = async () => {
+    if (!problem.trim() || problem.length < 20) {
+      toast({ title: 'Add more detail', description: 'At least 20 characters required', variant: 'destructive' });
+      return;
+    }
+
+    // No need to check isConnected - subscribeToSession will connect automatically
+
+    setCurrentSessionId(null);
+    setIsPreviewing(false);
+    setFileContent({});
+
+    try {
+      logger.info('Queueing analysis', { problemLength: problem.length, filesCount: uploadedFileIds.length });
+
+      // Queue the analysis job
+      const response = await apiClient.queueAnalysis({
+        problem: problem.trim(),
+        context: context.trim() || undefined,
+        files: uploadedFileIds.length > 0 ? uploadedFileIds : undefined,
+        output_format: 'markdown',
+      });
+
+      logger.info('Queue response received', {
+        success: response.success,
+        hasData: !!response.data,
+        hasJobId: !!(response as any).jobId,
+        fullResponse: response
+      });
+
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to queue analysis');
+      }
+
+      // Backend returns data at root level (not wrapped in data property)
+      // Handle both formats: { data: { jobId, sessionId } } or { jobId, sessionId }
+      const data = response.data || (response as any);
+      const jobId = data.jobId || data.id || data.sessionId;
+      const sessionId = data.sessionId || data.id;
+
+      if (!sessionId) {
+        logger.error('No sessionId in response', {
+          response,
+          data,
+          dataKeys: Object.keys(data)
+        });
+        throw new Error('Backend returned success but no sessionId. Please check backend response format.');
+      }
+
+      logger.info('Analysis queued successfully', { jobId, sessionId });
+
+      setCurrentSessionId(sessionId);
+
+      // Persist to localStorage
+      localStorage.setItem('deepAnalytics_lastSessionId', sessionId);
+      localStorage.setItem('deepAnalytics_lastProblem', problem);
+      localStorage.setItem('deepAnalytics_lastContext', context);
+      localStorage.setItem('deepAnalytics_lastFiles', JSON.stringify({
+        files,
+        ids: uploadedFileIds
+      }));
+
+      // Subscribe to real-time updates via socket
+      // This will automatically connect if not connected and wait for authentication
+      await subscribeToSession(sessionId, jobId);
+
+      // Invalidate sessions list
+      queryClient.invalidateQueries({ queryKey: ['sessions'] });
+
+      toast({
+        title: 'Analysis started',
+        description: 'Your analysis has been queued and will begin shortly',
+      });
+    } catch (error: any) {
+      logger.error('Failed to queue analysis', { error: error.message });
+      toast({ title: 'Failed', description: error.message, variant: 'destructive' });
+    }
+  };
+
+  // CANCEL EXECUTION
+  const handleCancel = () => {
+    logger.info('Cancelling analysis');
+    cancelSession();
+    unsubscribeFromSession();
+
+    toast({
+      title: 'Cancelled',
+      description: 'Analysis has been cancelled',
+    });
+  };
+
+  // FETCH FILE CONTENT
+  const fetchFileContent = async (sessionId: string, fileId: string) => {
+    if (fileContent[fileId]) return;
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/thinkers/sessions/${sessionId}/files/${fileId}/content`, {
+        credentials: 'include'
+      });
+
+      if (!response.ok) throw new Error('Failed to fetch file');
+
+      const data = await response.json();
+      if (data.success) {
+        setFileContent(prev => ({
+          ...prev,
+          [fileId]: data.data.content
+        }));
+      } else {
+        throw new Error(data.error || 'Failed to fetch file');
+      }
+    } catch (error) {
+      logger.error('Failed to fetch file content', { sessionId, fileId, error });
+      toast({
+        title: 'Error',
+        description: 'Failed to load file content',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  // SESSION HISTORY HANDLING
+  const handleSelectSession = async (sessionSummary: SessionSummary) => {
+    if (sessionSummary.status !== 'completed') {
+      toast({
+        title: 'Session not ready',
+        description: 'This session is still processing or failed',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
+    setCurrentSessionId(sessionSummary.id);
+    setIsPreviewing(true);
+    setFileContent({});
+
+    localStorage.setItem('deepAnalytics_lastSessionId', sessionSummary.id);
+
+    toast({
+      title: 'Session loaded',
+      description: 'Historical session loaded successfully',
+    });
+  };
+
+  // NEW ANALYSIS HANDLER
+  const handleNewAnalysis = () => {
+    // Clear all state
+    setCurrentSessionId(null);
+    setProblem('');
+    setContext('');
+    setFiles([]);
+    setUploadedFileIds([]);
+    setIsPreviewing(false);
+    setFileContent({});
+    loadedSessionRef.current = null;
+    unsubscribeFromSession();
+
+    // Clear localStorage
+    localStorage.removeItem('deepAnalytics_lastSessionId');
+    localStorage.removeItem('deepAnalytics_lastProblem');
+    localStorage.removeItem('deepAnalytics_lastContext');
+    localStorage.removeItem('deepAnalytics_lastFiles');
+
+    toast({
+      title: 'New analysis',
+      description: 'Ready to start a new analysis',
+    });
+  };
+
+  // Track if we've already loaded this session to prevent infinite loop
+  const loadedSessionRef = useRef<string | null>(null);
+
+  // Update form fields when session data loads (only for previewing)
+  useEffect(() => {
+    // Only load if we're previewing AND have a result AND haven't loaded this session yet
+    if (result && isPreviewing && currentSessionId && result.id !== loadedSessionRef.current) {
+      loadedSessionRef.current = result.id;
+      
+      logger.debug('Loading session data into form', { sessionId: result.id });
+
+      setProblem(result.problem || '');
+      setContext(result.context || '');
+
+      if (result.files && Array.isArray(result.files)) {
+        const sessionFiles: UploadedFile[] = result.files.map((f: SessionFile) => ({
+          id: f.id,
+          name: f.filename,
+          size: f.file_size,
+          type: f.content_type
+        }));
+        setFiles(sessionFiles);
+        setUploadedFileIds(result.files.map(f => f.id));
+      } else {
+        setFiles([]);
+        setUploadedFileIds([]);
+      }
+    }
+    
+    // If not previewing, clear the loaded session ref
+    if (!isPreviewing) {
+      loadedSessionRef.current = null;
+    }
+  }, [result, isPreviewing, currentSessionId]);
+
+  // DOWNLOAD HANDLING
+  const handleDownload = (format?: 'markdown' | 'pdf' | 'html' | 'json' | 'text') => {
+    const content = result?.final_solution?.content || socketResult?.final_solution?.content;
+
+    if (!content) {
+      toast({ title: 'No content', description: 'Nothing to download', variant: 'destructive' });
+      return;
+    }
+
+    const originalFormat = result?.final_solution?.format || socketResult?.final_solution?.format || 'markdown';
+    const filename = `deep-analysis-${new Date().toISOString().slice(0, 10)}`;
+
+    downloadFile(content, originalFormat, {
+      filename,
+      format
+    });
+  };
+
+  // RENDERING
+  const renderResultContent = () => {
+    const content = result?.final_solution?.content || socketResult?.final_solution?.content;
+    const format = result?.final_solution?.format || socketResult?.final_solution?.format || 'markdown';
+
+    if (!content) {
+      return (
+        <div className="text-center py-12 text-muted-foreground">
+          <FileText className="w-12 h-12 mx-auto mb-3 opacity-50" />
+          <p>No content was generated.</p>
+        </div>
+      );
+    }
+
+    const renderContent = () => {
+      if (format === 'markdown') {
+        return (
+          <div className="max-w-3xl mx-auto">
+            <MarkdownRenderer
+              content={content}
+              showToc={false}
+              enableCopy={true}
+            />
+          </div>
+        );
+      }
+
+      if (format === 'json') {
+        try {
+          const parsed = typeof content === 'string' ? JSON.parse(content) : content;
+          return (
+            <div className="max-w-3xl mx-auto">
+              <pre className="whitespace-pre-wrap font-mono text-xs p-6 bg-muted rounded-lg overflow-auto">
+                {JSON.stringify(parsed, null, 2)}
+              </pre>
+            </div>
+          );
+        } catch {
+          return (
+            <pre className="whitespace-pre-wrap font-mono text-xs p-6 bg-muted rounded-lg max-w-3xl mx-auto overflow-auto">
+              {content}
+            </pre>
+          );
+        }
+      }
+
+      return (
+        <pre className="whitespace-pre-wrap font-sans text-sm p-6 bg-muted rounded-lg max-w-3xl mx-auto overflow-auto">
+          {content}
+        </pre>
+      );
+    };
+
+    return (
+      <div className="space-y-8">
+        {renderContent()}
+
+        {result?.files && result.files.length > 0 && (
+          <div className="max-w-3xl mx-auto border-t pt-8">
+            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <Database className="w-5 h-5" />
+              Supporting Files
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {result.files.map((file: SessionFile) => (
+                <Card key={file.id} className="p-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <FileText className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                      <span className="text-sm font-medium truncate">{file.filename}</span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => fetchFileContent(result.id, file.id)}
+                      disabled={!!fileContent[file.id]}
+                      className="h-8 w-8 p-0"
+                    >
+                      {fileContent[file.id] ? (
+                        <Check className="w-4 h-4 text-success" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
+                    </Button>
+                  </div>
+                  {fileContent[file.id] && (
+                    <div className="mt-2 p-2 bg-muted rounded text-xs max-h-32 overflow-auto font-mono">
+                      {fileContent[file.id].substring(0, 200)}...
+                    </div>
+                  )}
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // PROCESSING VIEW
+  if (isProcessing) {
+    return (
+      <div className="h-screen flex flex-col overflow-hidden bg-background">
+        <TopBar
+          sidebarOpen={sidebarOpen}
+          onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+          showSidebarToggle
+        />
+        
+        <div className="flex-1 flex overflow-hidden">
+          {/* Sidebar */}
+          <aside
+            className={`transition-all duration-300 ease-in-out border-r border-border bg-muted/30 flex-shrink-0 ${
+              sidebarOpen ? 'w-80 2xl:w-96 opacity-100' : 'w-0 opacity-0'
+            } overflow-hidden`}
+          >
+            <DeepAnalyticsSidebar
+              sessions={sessions}
+              currentSessionId={currentSessionId || undefined}
+              onSelectSession={handleSelectSession}
+              onNewAnalysis={handleNewAnalysis}
+              loading={loadingSessions}
+            />
+          </aside>
+
+          {/* Main Content */}
+          <div className="flex-1 flex flex-col items-center justify-center px-4 pb-20">
+          <div className="w-full max-w-md text-center relative">
+            {/* Connection indicator */}
+            <div className="absolute top-0 right-0 flex items-center gap-2 text-xs">
+              {isConnected ? (
+                <>
+                  <Wifi className="w-3 h-3 text-success" />
+                  <span className="text-success">Connected</span>
+                </>
+              ) : (
+                <>
+                  <WifiOff className="w-3 h-3 text-destructive" />
+                  <span className="text-destructive">Disconnected</span>
+                </>
+              )}
+            </div>
+
+            <div className="relative mb-8">
+              <div className="relative z-10 w-16 h-16 rounded-2xl bg-gradient-to-br from-muted to-background flex items-center justify-center mx-auto mb-6 shadow-sm animate-float-slow">
+                <Brain className="w-8 h-8 text-foreground" />
+              </div>
+            </div>
+
+            <h1 className="text-2xl font-medium text-foreground mb-2 animate-fade-in">
+              Deep Analysis in Progress
+            </h1>
+            <p className="text-muted-foreground mb-2 transition-opacity duration-500 animate-fade-in">
+              {stageLabel || "Processing your request"}
+            </p>
+            {stage && (
+              <p className="text-xs text-muted-foreground/70 mb-8">
+                Stage: {stage}
+              </p>
+            )}
+
+            <div className="space-y-4 mb-8">
+              <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-primary rounded-full transition-all duration-300 ease-out"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+              <p className="text-sm text-muted-foreground font-medium animate-fade-in">
+                {Math.round(progress)}% complete
+              </p>
+            </div>
+
+            <div className="flex flex-col items-center gap-4">
+              <div className="flex justify-center items-center gap-2 text-xs text-muted-foreground/70 animate-fade-in">
+                <div className="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-pulse"></div>
+                <span>This typically takes 3–5 minutes</span>
+              </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleCancel}
+                className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+              >
+                <X className="w-4 h-4" />
+                Cancel Analysis
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+      </div>
+    );
+  }
+
+  // RESULTS VIEW
+  if (showResult) {
+    return (
+      <div className="h-screen flex flex-col overflow-hidden bg-background">
+        <TopBar
+          sidebarOpen={sidebarOpen}
+          onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+          showSidebarToggle
+        />
+        
+        <div className="flex-1 flex overflow-hidden">
+          {/* Sidebar */}
+          <aside
+            className={`transition-all duration-300 ease-in-out border-r border-border bg-muted/30 flex-shrink-0 ${
+              sidebarOpen ? 'w-80 2xl:w-96 opacity-100' : 'w-0 opacity-0'
+            } overflow-hidden`}
+          >
+            <DeepAnalyticsSidebar
+              sessions={sessions}
+              currentSessionId={currentSessionId || undefined}
+              onSelectSession={handleSelectSession}
+              onNewAnalysis={handleNewAnalysis}
+              loading={loadingSessions}
+            />
+          </aside>
+
+          {/* Main Content */}
+          <div className="flex-1 flex flex-col w-full px-4 sm:px-6 py-6 overflow-auto">
+          <div className="max-w-5xl mx-auto w-full">
+            <div className="flex items-center justify-between mb-6 animate-fade-in">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-success/10 flex items-center justify-center">
+                  <Check className="w-5 h-5 text-success" />
+                </div>
+                <div>
+                  <h1 className="text-xl font-semibold">
+                    {isPreviewing ? 'Session Preview' : 'Analysis Complete'}
+                  </h1>
+                  {result?.execution_metrics && (
+                    <p className="text-sm text-muted-foreground">
+                      Completed in {(result.execution_metrics.execution_time_ms / 1000).toFixed(1)}s
+                    </p>
+                  )}
+                  {isPreviewing && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Viewing historical session from {new Date(result?.created_at || '').toLocaleDateString()}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <div className="relative group">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={isConverting}
+                    className="gap-1.5"
+                  >
+                    <FileDown className="w-4 h-4" />
+                    {isConverting ? 'Converting...' : 'Export'}
+                  </Button>
+                  <div className="absolute right-0 mt-2 z-50 w-48 bg-background border rounded-lg shadow-lg p-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto">
+                    {(['markdown', 'pdf', 'html', 'json', 'text'] as const).map(fmt => (
+                      <Button
+                        key={fmt}
+                        variant="ghost"
+                        className="w-full justify-start"
+                        onClick={() => handleDownload(fmt)}
+                      >
+                        {fmt.charAt(0).toUpperCase() + fmt.slice(1)} ({fmt === 'text' ? '.txt' : `.${fmt}`})
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  onClick={handleNewAnalysis}
+                >
+                  New Analysis
+                </Button>
+              </div>
+            </div>
+
+            <Card className="border bg-card overflow-hidden rounded-xl animate-fade-in-up">
+              <div className="overflow-auto p-8 sm:p-10 lg:p-12">
+                {renderResultContent()}
+              </div>
+            </Card>
+          </div>
+        </div>
+      </div>
+      </div>
+    );
+  }
+
+  // INPUT VIEW
+  return (
+    <div className="h-screen flex flex-col overflow-hidden bg-background">
+      <TopBar
+        sidebarOpen={sidebarOpen}
+        onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+        showSidebarToggle
+      />
+
+      {/* Connection Status Bar - Only show if we're processing and not connected */}
+      {!isConnected && (isProcessing || currentSessionId) && (
+        <div className="bg-destructive/10 border-b border-destructive/20 px-4 py-2">
+          <div className="max-w-3xl mx-auto flex items-center gap-2 text-sm text-destructive">
+            <AlertCircle className="w-4 h-4" />
+            <span>Not connected to server. Reconnecting...</span>
+          </div>
+        </div>
+      )}
+
+      <div className="flex-1 flex overflow-hidden">
+        {/* Sidebar */}
+        <aside
+          className={`transition-all duration-300 ease-in-out border-r border-border bg-muted/30 flex-shrink-0 ${
+            sidebarOpen ? 'w-80 2xl:w-96 opacity-100' : 'w-0 opacity-0'
+          } overflow-hidden`}
+        >
+          <DeepAnalyticsSidebar
+            sessions={sessions}
+            currentSessionId={currentSessionId || undefined}
+            onSelectSession={handleSelectSession}
+            onNewAnalysis={handleNewAnalysis}
+            loading={loadingSessions}
+          />
+        </aside>
+
+        {/* Main Content */}
+        <div className="flex-1 flex flex-col max-w-3xl mx-auto w-full px-4 sm:px-6 py-6 overflow-auto">
+        <div className="text-center mb-6 animate-fade-in">
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <h1 className="text-2xl font-bold text-foreground">Deep Analytics</h1>
+            {isConnected && (
+              <div className="flex items-center gap-1 text-xs text-success">
+                <Wifi className="w-3 h-3" />
+                <span>Live</span>
+              </div>
+            )}
+          </div>
+          <p className="text-sm text-muted-foreground max-w-md mx-auto">
+            Describe a complex challenge. Our AI will deliver a strategic, actionable report.
+          </p>
+          {isPreviewing && currentSessionId && (
+            <div className="mt-3 flex items-center justify-center gap-2">
+              <p className="text-xs text-amber-500">
+                Viewing previous session
+              </p>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  // Clear all state
+                  setCurrentSessionId(null);
+                  setProblem('');
+                  setContext('');
+                  setFiles([]);
+                  setUploadedFileIds([]);
+                  setIsPreviewing(false);
+                  loadedSessionRef.current = null; // ✅ Clear the loaded session ref
+                  
+                  // Clear localStorage
+                  localStorage.removeItem('deepAnalytics_lastSessionId');
+                  localStorage.removeItem('deepAnalytics_lastProblem');
+                  localStorage.removeItem('deepAnalytics_lastContext');
+                  localStorage.removeItem('deepAnalytics_lastFiles');
+                }}
+                className="h-6 text-xs"
+              >
+                <X className="w-3 h-3 mr-1" />
+                Clear & Start Fresh
+              </Button>
+            </div>
+          )}
+        </div>
+
+        <div className="space-y-5 animate-fade-in-up">
+          {/* Problem */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Target className="w-4 h-4 text-primary flex-shrink-0" />
+              <h2 className="text-sm font-medium text-foreground">Your Challenge</h2>
+            </div>
+            <Textarea
+              value={problem}
+              onChange={(e) => setProblem(e.target.value)}
+              placeholder="What strategic, operational, or analytical problem are you facing? Be specific about goals, constraints, and context..."
+              className="min-h-[120px] text-sm resize-none"
+              maxLength={10000}
+            />
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>{problem.length}/10,000 characters</span>
+              {problem.length >= 20 ? (
+                <span className="text-success flex items-center gap-1">
+                  <Check className="w-3 h-3" /> Ready
+                </span>
+              ) : (
+                <span className="text-amber-500">{20 - problem.length} more needed</span>
+              )}
+            </div>
+          </div>
+
+          {/* Context */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Globe className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+              <h2 className="text-sm font-medium text-foreground">Additional Context (Optional)</h2>
+            </div>
+            <Textarea
+              value={context}
+              onChange={(e) => setContext(e.target.value)}
+              placeholder="Industry, timeline, success metrics, existing solutions, or other relevant details..."
+              className="min-h-[80px] text-sm resize-none"
+              maxLength={20000}
+            />
+            <p className="text-xs text-muted-foreground text-right">{context.length}/20,000</p>
+          </div>
+
+          {/* Files */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Database className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+              <h2 className="text-sm font-medium text-foreground">Supporting Files (Optional)</h2>
+            </div>
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              className="border border-dashed border-border rounded-lg p-4 text-center cursor-pointer hover:bg-muted/30 transition-colors"
+            >
+              {uploading ? (
+                <div className="flex flex-col items-center">
+                  <Loader2 className="w-5 h-5 animate-spin text-primary mb-1.5" />
+                  <span className="text-xs font-medium">Uploading...</span>
+                </div>
+              ) : (
+                <div>
+                  <Upload className="w-5 h-5 text-muted-foreground mx-auto mb-1.5" />
+                  <p className="text-xs font-medium text-foreground">Add files for deeper analysis</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">PDF, DOCX, CSV, JSON • Max 5 files</p>
+                </div>
+              )}
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              accept=".pdf,.doc,.docx,.txt,.csv,.json,.md"
+              onChange={handleFileSelect}
+              className="hidden"
+            />
+
+            {files.length > 0 && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                {files.map(file => (
+                  <div key={file.id} className="flex items-center gap-2 p-2.5 bg-muted/30 rounded-lg">
+                    <FileText className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-medium truncate">{file.name}</p>
+                      <p className="text-xs text-muted-foreground">{formatFileSize(file.size)}</p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+                      onClick={() => removeFile(file.id)}
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Execute */}
+          <div className="pt-2 sticky bottom-0 bg-background pb-4">
+            <Button
+              onClick={handleExecute}
+              disabled={!problem.trim() || problem.length < 20 || isProcessing}
+              className="w-full h-11 text-sm font-medium shadow-lg"
+            >
+              {isProcessing ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  Analyzing...
+                </>
+              ) : (
+                <>
+                  <Brain className="w-4 h-4 mr-2" />
+                  Generate Strategic Report
+                </>
+              )}
+            </Button>
+            <p className="text-xs text-muted-foreground text-center mt-2">
+              Your report will include actionable steps, risk analysis, and implementation roadmap
+            </p>
+          </div>
+        </div>
+      </div>
+      </div>
+    </div>
+  );
+};
+
+export default DeepAnalytics;
+
+
+
+// hooks/use-deep-analytics-socket.ts - React Hook for Deep Analytics Socket
+import { useState, useEffect, useRef, useCallback } from 'react';
+import {
+  deepAnalyticsSocket,
+  DeepAnalyticsCallbacks,
+  ConnectionStats,
+  ProgressUpdate,
+  SessionResult,
+  SessionError,
+  ProgressStage,
+  SessionStatus
+} from '@/services/deepAnalyticsSocket';
+import { createLogger } from '@/services/logging';
+
+// Re-export types for convenience
+export type {
+  ProgressUpdate,
+  SessionResult,
+  SessionError,
+  ProgressStage,
+  SessionStatus
+} from '@/services/deepAnalyticsSocket';
+
+const logger = createLogger('useDeepAnalyticsSocket');
+
+// Stage labels for UI display
+const STAGE_LABELS: Record<ProgressStage, string> = {
+  initializing: 'Initializing analysis...',
+  file_processing: 'Processing uploaded files...',
+  rag_indexing: 'Building knowledge index...',
+  context_building: 'Analyzing context...',
+  analysis: 'Performing deep analysis...',
+  agent_selection: 'Selecting specialist agents...',
+  ideation: 'Generating strategic insights...',
+  synthesis: 'Synthesizing final report...',
+  complete: 'Analysis complete'
+};
+
+// ============================================================================
+// HOOK OPTIONS
+// ============================================================================
+export interface UseDeepAnalyticsSocketOptions {
+  sessionId?: string;
+  autoConnect?: boolean;
+  autoSubscribe?: boolean;
+  callbacks?: DeepAnalyticsCallbacks;
+}
+
+// ============================================================================
+// HOOK RETURN TYPE
+// ============================================================================
+export interface UseDeepAnalyticsSocketReturn {
+  // Connection state
+  socketState: 'disconnected' | 'connecting' | 'connected' | 'error';
+  isConnected: boolean;
+
+  // Session state
+  sessionState: SessionStatus | null;
+  isProcessing: boolean;
+  isCompleted: boolean;
+
+  // Progress tracking
+  progress: number;
+  stage: ProgressStage | null;
+  stageLabel: string;
+
+  // Results and errors
+  result: SessionResult | null;
+  error: SessionError | null;
+
+  // Actions
+  subscribeToSession: (sessionId: string, jobId?: string) => void;
+  unsubscribeFromSession: () => void;
+  cancelSession: () => void;
+
+  // Connection management
+  subscribe: (sessionId: string, callbacks?: DeepAnalyticsCallbacks) => void;
+  unsubscribe: (sessionId: string) => void;
+  cancel: (sessionId: string) => void;
+  connect: () => void;
+  disconnect: () => void;
+  getStats: () => ConnectionStats;
+  requestStats: () => void;
+}
+
+// ============================================================================
+// HOOK IMPLEMENTATION
+// ============================================================================
+export function useDeepAnalyticsSocket(
+  options: UseDeepAnalyticsSocketOptions = {}
+): UseDeepAnalyticsSocketReturn {
+  const {
+    sessionId,
+    autoConnect = true,
+    autoSubscribe = true,
+    callbacks
+  } = options;
+
+  const isConnectedRef = useRef(false);
+  const hasSubscribedRef = useRef(false);
+  const currentSessionIdRef = useRef<string | null>(null);
+
+  // State management
+  const [socketState, setSocketState] = useState<'disconnected' | 'connecting' | 'connected' | 'error'>('disconnected');
+  const [sessionState, setSessionState] = useState<SessionStatus | null>(null);
+  const [progress, setProgress] = useState(0);
+  const [stage, setStage] = useState<ProgressStage | null>(null);
+  const [result, setResult] = useState<SessionResult | null>(null);
+  const [error, setError] = useState<SessionError | null>(null);
+
+  // ============================================================================
+  // CONNECTION MANAGEMENT
+  // ============================================================================
+  const connect = useCallback(() => {
+    if (!isConnectedRef.current) {
+      logger.debug('Connecting socket from hook');
+      deepAnalyticsSocket.connect();
+      isConnectedRef.current = true;
+    }
+  }, []);
+
+  const disconnect = useCallback(() => {
+    logger.debug('Disconnecting socket from hook');
+    deepAnalyticsSocket.disconnect();
+    isConnectedRef.current = false;
+    hasSubscribedRef.current = false;
+  }, []);
+
+  // ============================================================================
+  // SESSION MANAGEMENT
+  // ============================================================================
+  const subscribe = useCallback(async (sid: string, cbs?: DeepAnalyticsCallbacks) => {
+    logger.debug('Subscribing to session from hook', { sessionId: sid });
+    try {
+      await deepAnalyticsSocket.subscribeToSession(sid, cbs || callbacks || {});
+    } catch (error: any) {
+      logger.error('Subscription failed', { sessionId: sid, error: error.message });
+      // Fail silently
+    }
+  }, [callbacks]);
+
+  const unsubscribe = useCallback((sid: string) => {
+    logger.debug('Unsubscribing from session', { sessionId: sid });
+    deepAnalyticsSocket.unsubscribeFromSession(sid);
+  }, []);
+
+  const cancel = useCallback((sid: string) => {
+    logger.debug('Cancelling session', { sessionId: sid });
+    deepAnalyticsSocket.cancelSession(sid);
+  }, []);
+
+  const getStats = useCallback(() => {
+    return deepAnalyticsSocket.getStats();
+  }, []);
+
+  const requestStats = useCallback(() => {
+    deepAnalyticsSocket.requestStats();
+  }, []);
+
+  // Session-specific actions
+  const subscribeToSession = useCallback(async (sid: string, jobId?: string) => {
+    logger.info('🎯 [HOOK] subscribeToSession called', { 
+      sessionId: sid, 
+      jobId,
+      isConnected: deepAnalyticsSocket.isConnected(),
+      currentSession: currentSessionIdRef.current
+    });
+
+    currentSessionIdRef.current = sid;
+    setSessionState('queued');
+    setProgress(0);
+    setStage('initializing');
+    setResult(null);
+    setError(null);
+
+    const sessionCallbacks: DeepAnalyticsCallbacks = {
+      onConnected: (data) => {
+        logger.info('✅ [HOOK] Connected to socket', { 
+          userId: data.userId, 
+          tier: data.tier,
+          sessionId: sid
+        });
+        setSocketState('connected');
+      },
+      onSubscribed: (data) => {
+        logger.info('✅ [HOOK] Subscribed to session confirmed', { 
+          sessionId: data.sessionId,
+          timestamp: data.timestamp
+        });
+        setSessionState('processing');
+      },
+      onProgress: (data: ProgressUpdate) => {
+        logger.debug('📊 [HOOK] Progress update', { 
+          sessionId: data.sessionId,
+          stage: data.stage,
+          progress: data.progress
+        });
+        setStage(data.stage);
+        setProgress(data.progress || 0);
+        setSessionState('processing');
+      },
+      onComplete: (data: SessionResult) => {
+        logger.info('✅ [HOOK] Session completed', { sessionId: data.sessionId });
+        setSessionState('completed');
+        setProgress(100);
+        setStage('complete');
+        setResult(data);
+        currentSessionIdRef.current = null;
+      },
+      onError: (err: SessionError) => {
+        logger.error('❌ [HOOK] Session error', { 
+          sessionId: err.sessionId,
+          code: err.code,
+          message: err.message
+        });
+        setSessionState('failed');
+        setError(err);
+        currentSessionIdRef.current = null;
+      },
+      onCancelled: (data) => {
+        logger.info('🚫 [HOOK] Session cancelled', { sessionId: data.sessionId });
+        setSessionState('cancelled');
+        setProgress(0);
+        setStage(null);
+        currentSessionIdRef.current = null;
+      },
+      onDisconnected: (reason) => {
+        logger.warn('🔌 [HOOK] Socket disconnected', { reason, sessionId: sid });
+        setSocketState('disconnected');
+      },
+      onReconnecting: (attempt) => {
+        logger.debug('🔄 [HOOK] Reconnecting', { attempt, sessionId: sid });
+        setSocketState('connecting');
+      },
+      onReconnected: () => {
+        logger.info('✅ [HOOK] Reconnected', { sessionId: sid });
+        setSocketState('connected');
+      }
+    };
+
+    try {
+      logger.info('📤 [HOOK] Calling deepAnalyticsSocket.subscribeToSession', { sessionId: sid });
+      await deepAnalyticsSocket.subscribeToSession(sid, sessionCallbacks);
+      logger.info('✅ [HOOK] Subscription initiated successfully', { sessionId: sid });
+    } catch (error: any) {
+      logger.error('❌ [HOOK] Subscription failed', { sessionId: sid, error: error.message });
+      // Don't throw - fail silently as per requirement
+    }
+  }, []);
+
+  const unsubscribeFromSession = useCallback(() => {
+    if (currentSessionIdRef.current) {
+      logger.info('Unsubscribing from session', { sessionId: currentSessionIdRef.current });
+      deepAnalyticsSocket.unsubscribeFromSession(currentSessionIdRef.current);
+      currentSessionIdRef.current = null;
+    }
+  }, []);
+
+  const cancelSession = useCallback(() => {
+    if (currentSessionIdRef.current) {
+      logger.info('Cancelling session', { sessionId: currentSessionIdRef.current });
+      deepAnalyticsSocket.cancelSession(currentSessionIdRef.current);
+    }
+  }, []);
+
+  // ============================================================================
+  // EFFECTS
+  // ============================================================================
+
+  // Initialize user interaction listener on mount
+  useEffect(() => {
+    deepAnalyticsSocket.initUserInteractionListener();
+  }, []);
+
+  // Auto-connect on mount (but only if we have a sessionId to subscribe to)
+  useEffect(() => {
+    if (autoConnect && sessionId) {
+      connect();
+    }
+
+    // Cleanup on unmount
+    return () => {
+      if (sessionId && hasSubscribedRef.current) {
+        unsubscribe(sessionId);
+      }
+    };
+  }, [autoConnect, connect, sessionId, unsubscribe]);
+
+  // Auto-subscribe when sessionId is provided
+  useEffect(() => {
+    if (autoSubscribe && sessionId && callbacks && !hasSubscribedRef.current) {
+      logger.debug('Auto-subscribing to session', { sessionId });
+      hasSubscribedRef.current = true;
+      
+      // Subscribe immediately - it will handle connection/auth internally
+      subscribe(sessionId, callbacks).catch((error) => {
+        logger.error('Auto-subscribe failed', { sessionId, error: error.message });
+        hasSubscribedRef.current = false;
+      });
+    }
+  }, [autoSubscribe, sessionId, callbacks, subscribe]);
+
+  // Monitor connection state
+  useEffect(() => {
+    const checkConnection = () => {
+      const connected = deepAnalyticsSocket.isConnected();
+      setSocketState(connected ? 'connected' : 'disconnected');
+    };
+
+    // Check immediately
+    checkConnection();
+
+    // Check periodically
+    const interval = setInterval(checkConnection, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Computed values
+  const isProcessing = sessionState === 'processing' || sessionState === 'queued';
+  const isCompleted = sessionState === 'completed';
+  const stageLabel = stage ? STAGE_LABELS[stage] : '';
+
+  // ============================================================================
+  // RETURN
+  // ============================================================================
+  return {
+    // Connection state
+    socketState,
+    isConnected: deepAnalyticsSocket.isConnected(),
+
+    // Session state
+    sessionState,
+    isProcessing,
+    isCompleted,
+
+    // Progress tracking
+    progress,
+    stage,
+    stageLabel,
+
+    // Results and errors
+    result,
+    error,
+
+    // Session-specific actions
+    subscribeToSession,
+    unsubscribeFromSession,
+    cancelSession,
+
+    // Generic actions (for backward compatibility)
+    subscribe,
+    unsubscribe,
+    cancel,
+    connect,
+    disconnect,
+    getStats,
+    requestStats,
+  };
+}

@@ -37,6 +37,19 @@ interface SessionFile {
   content_type: string;
 }
 
+// 🔥 REAL STAGE LABELS — matches your backend stages exactly
+const STAGE_LABELS: Record<string, string> = {
+  initializing: 'Initializing analysis...',
+  file_processing: 'Processing uploaded files...',
+  rag_indexing: 'Building knowledge index...',
+  context_building: 'Analyzing context...',
+  analysis: 'Performing deep analysis...',
+  agent_selection: 'Selecting specialist agents...',
+  ideation: 'Generating strategic insights...',
+  synthesis: 'Synthesizing final report...',
+  complete: 'Analysis complete'
+};
+
 const DeepAnalytics = () => {
   // Auth check
   const { user, loading: authLoading } = useAuth();
@@ -167,18 +180,16 @@ const DeepAnalytics = () => {
     return () => window.removeEventListener('keydown', handleKeyboard);
   }, []);
 
-  // Load persisted session on mount - ONLY for preview, never for new execution
+  // Load persisted session on mount
   useEffect(() => {
     const savedSessionId = localStorage.getItem('deepAnalytics_lastSessionId');
     const savedProblem = localStorage.getItem('deepAnalytics_lastProblem');
     const savedContext = localStorage.getItem('deepAnalytics_lastContext');
     const savedFiles = localStorage.getItem('deepAnalytics_lastFiles');
 
-    // Only restore for preview if we have a valid session ID
     if (savedSessionId) {
-      // Load the session for preview, but don't try to reconnect to it
       setCurrentSessionId(savedSessionId);
-      setIsPreviewing(true); // Mark as preview so we don't try to process
+      setIsPreviewing(true);
       logger.info('Restored previous session for preview', { sessionId: savedSessionId });
     }
 
@@ -218,7 +229,6 @@ const DeepAnalytics = () => {
     if (socketError) {
       logger.error('Socket error received', { code: socketError.code, message: socketError.message });
 
-      // Handle authentication errors specially
       if (socketError.code === 'AUTH_FAILED') {
         toast({
           title: 'Authentication Required',
@@ -234,7 +244,6 @@ const DeepAnalytics = () => {
         variant: 'destructive',
       });
 
-      // Handle specific error codes
       if (socketError.code === 'RATE_LIMIT_EXCEEDED' && socketError.retryAfter) {
         toast({
           title: 'Rate Limit Exceeded',
@@ -245,21 +254,17 @@ const DeepAnalytics = () => {
     }
   }, [socketError, toast]);
 
-  // Handle session fetch errors (backend database issues)
+  // Handle session fetch errors
   useEffect(() => {
     if (sessionError) {
       const errorMessage = (sessionError as any)?.message || 'Unknown error';
-      
-      // Log backend database errors but don't show to user (they're not user-actionable)
       if (errorMessage.includes('coerce') || errorMessage.includes('Cannot coerce')) {
         logger.error('Backend database error fetching session', { 
           sessionId: currentSessionId,
           error: errorMessage 
         });
         logger.warn('⚠️ Backend needs to fix database query - see BACKEND_AUTH_FIX.md');
-        // Don't show toast - this is a backend issue, not user's fault
       } else {
-        // Show other errors
         logger.error('Failed to fetch session details', { error: errorMessage });
         toast({
           title: 'Could not load session',
@@ -344,23 +349,20 @@ const DeepAnalytics = () => {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
-  // EXECUTION - FIXED: No duplicate session IDs, correct socket call
+  // EXECUTION
   const handleExecute = async () => {
     if (!problem.trim() || problem.length < 20) {
       toast({ title: 'Add more detail', description: 'At least 20 characters required', variant: 'destructive' });
       return;
     }
 
-    // Clear any existing session state for new execution
     setCurrentSessionId(null);
     setIsPreviewing(false);
     setFileContent({});
-    unsubscribeFromSession(); // Unsubscribe from any previous session
 
     try {
       logger.info('Queueing analysis', { problemLength: problem.length, filesCount: uploadedFileIds.length });
 
-      // Queue the analysis job
       const response = await apiClient.queueAnalysis({
         problem: problem.trim(),
         context: context.trim() || undefined,
@@ -368,37 +370,21 @@ const DeepAnalytics = () => {
         output_format: 'markdown',
       });
 
-      logger.info('Queue response received', {
-        success: response.success,
-        hasData: !!response.data,
-        hasJobId: !!(response as any).jobId,
-        fullResponse: response
-      });
-
       if (!response.success) {
         throw new Error(response.error || 'Failed to queue analysis');
       }
 
-      // Backend returns data at root level (not wrapped in data property)
-      // Handle both formats: { data: { jobId, sessionId } } or { jobId, sessionId }
       const data = response.data || (response as any);
       const sessionId = data.sessionId || data.id;
 
       if (!sessionId) {
-        logger.error('No sessionId in response', {
-          response,
-          data,
-          dataKeys: Object.keys(data)
-        });
-        throw new Error('Backend returned success but no sessionId. Please check backend response format.');
+        throw new Error('Backend returned success but no sessionId.');
       }
 
       logger.info('Analysis queued successfully', { sessionId });
 
-      // Set the new session ID
       setCurrentSessionId(sessionId);
 
-      // Persist to localStorage for preview only (not for re-execution)
       localStorage.setItem('deepAnalytics_lastSessionId', sessionId);
       localStorage.setItem('deepAnalytics_lastProblem', problem);
       localStorage.setItem('deepAnalytics_lastContext', context);
@@ -407,10 +393,9 @@ const DeepAnalytics = () => {
         ids: uploadedFileIds
       }));
 
-      // Subscribe to real-time updates via socket - FIXED: Only pass sessionId, no jobId
+      // ✅ FIXED: Only pass sessionId — no jobId!
       await subscribeToSession(sessionId);
 
-      // Invalidate sessions list
       queryClient.invalidateQueries({ queryKey: ['sessions'] });
 
       toast({
@@ -426,10 +411,8 @@ const DeepAnalytics = () => {
   // CANCEL EXECUTION
   const handleCancel = () => {
     logger.info('Cancelling analysis');
-    if (currentSessionId) {
-      cancelSession();
-      unsubscribeFromSession();
-    }
+    cancelSession();
+    unsubscribeFromSession();
 
     toast({
       title: 'Cancelled',
@@ -480,8 +463,6 @@ const DeepAnalytics = () => {
     setCurrentSessionId(sessionSummary.id);
     setIsPreviewing(true);
     setFileContent({});
-    unsubscribeFromSession(); // Unsubscribe from any current session
-
     localStorage.setItem('deepAnalytics_lastSessionId', sessionSummary.id);
 
     toast({
@@ -492,7 +473,6 @@ const DeepAnalytics = () => {
 
   // NEW ANALYSIS HANDLER
   const handleNewAnalysis = () => {
-    // Clear all state
     setCurrentSessionId(null);
     setProblem('');
     setContext('');
@@ -503,7 +483,6 @@ const DeepAnalytics = () => {
     loadedSessionRef.current = null;
     unsubscribeFromSession();
 
-    // Clear localStorage
     localStorage.removeItem('deepAnalytics_lastSessionId');
     localStorage.removeItem('deepAnalytics_lastProblem');
     localStorage.removeItem('deepAnalytics_lastContext');
@@ -515,20 +494,13 @@ const DeepAnalytics = () => {
     });
   };
 
-  // Track if we've already loaded this session to prevent infinite loop
   const loadedSessionRef = useRef<string | null>(null);
 
-  // Update form fields when session data loads (only for previewing)
   useEffect(() => {
-    // Only load if we're previewing AND have a result AND haven't loaded this session yet
     if (result && isPreviewing && currentSessionId && result.id !== loadedSessionRef.current) {
       loadedSessionRef.current = result.id;
-      
-      logger.debug('Loading session data into form', { sessionId: result.id });
-
       setProblem(result.problem || '');
       setContext(result.context || '');
-
       if (result.files && Array.isArray(result.files)) {
         const sessionFiles: UploadedFile[] = result.files.map((f: SessionFile) => ({
           id: f.id,
@@ -543,8 +515,6 @@ const DeepAnalytics = () => {
         setUploadedFileIds([]);
       }
     }
-    
-    // If not previewing, clear the loaded session ref
     if (!isPreviewing) {
       loadedSessionRef.current = null;
     }
@@ -553,7 +523,6 @@ const DeepAnalytics = () => {
   // DOWNLOAD HANDLING
   const handleDownload = (format?: 'markdown' | 'pdf' | 'html' | 'json' | 'text') => {
     const content = result?.final_solution?.content || socketResult?.final_solution?.content;
-
     if (!content) {
       toast({ title: 'No content', description: 'Nothing to download', variant: 'destructive' });
       return;
@@ -568,7 +537,6 @@ const DeepAnalytics = () => {
     });
   };
 
-  // RENDERING
   const renderResultContent = () => {
     const content = result?.final_solution?.content || socketResult?.final_solution?.content;
     const format = result?.final_solution?.format || socketResult?.final_solution?.format || 'markdown';
@@ -667,7 +635,7 @@ const DeepAnalytics = () => {
     );
   };
 
-  // PROCESSING VIEW
+  // ✅ REAL-TIME PROCESSING VIEW — NO FAKE PROGRESS
   if (isProcessing) {
     return (
       <div className="h-screen flex flex-col overflow-hidden bg-background">
@@ -678,7 +646,6 @@ const DeepAnalytics = () => {
         />
         
         <div className="flex-1 flex overflow-hidden">
-          {/* Sidebar */}
           <aside
             className={`transition-all duration-300 ease-in-out border-r border-border bg-muted/30 flex-shrink-0 ${
               sidebarOpen ? 'w-80 2xl:w-96 opacity-100' : 'w-0 opacity-0'
@@ -693,73 +660,70 @@ const DeepAnalytics = () => {
             />
           </aside>
 
-          {/* Main Content */}
           <div className="flex-1 flex flex-col items-center justify-center px-4 pb-20">
-          <div className="w-full max-w-md text-center relative">
-            {/* Connection indicator */}
-            <div className="absolute top-0 right-0 flex items-center gap-2 text-xs">
-              {isConnected ? (
-                <>
-                  <Wifi className="w-3 h-3 text-success" />
-                  <span className="text-success">Connected</span>
-                </>
-              ) : (
-                <>
-                  <WifiOff className="w-3 h-3 text-destructive" />
-                  <span className="text-destructive">Disconnected</span>
-                </>
-              )}
-            </div>
-
-            <div className="relative mb-8">
-              <div className="relative z-10 w-16 h-16 rounded-2xl bg-gradient-to-br from-muted to-background flex items-center justify-center mx-auto mb-6 shadow-sm animate-float-slow">
-                <Brain className="w-8 h-8 text-foreground" />
+            <div className="w-full max-w-md text-center relative">
+              {/* Connection indicator */}
+              <div className="absolute top-0 right-0 flex items-center gap-2 text-xs">
+                {isConnected ? (
+                  <>
+                    <Wifi className="w-3 h-3 text-success" />
+                    <span className="text-success">Connected</span>
+                  </>
+                ) : (
+                  <>
+                    <WifiOff className="w-3 h-3 text-destructive" />
+                    <span className="text-destructive">Disconnected</span>
+                  </>
+                )}
               </div>
-            </div>
 
-            <h1 className="text-2xl font-medium text-foreground mb-2 animate-fade-in">
-              Deep Analysis in Progress
-            </h1>
-            <p className="text-muted-foreground mb-2 transition-opacity duration-500 animate-fade-in">
-              {stageLabel || "Processing your request"}
-            </p>
-            {stage && (
-              <p className="text-xs text-muted-foreground/70 mb-8">
-                Stage: {stage}
+              <div className="relative mb-8">
+                <div className="relative z-10 w-16 h-16 rounded-2xl bg-gradient-to-br from-muted to-background flex items-center justify-center mx-auto mb-6 shadow-sm animate-float-slow">
+                  <Brain className="w-8 h-8 text-foreground" />
+                </div>
+              </div>
+
+              <h1 className="text-2xl font-medium text-foreground mb-2 animate-fade-in">
+                Deep Analysis in Progress
+              </h1>
+              
+              {/* ✅ REAL STAGE LABEL */}
+              <p className="text-muted-foreground mb-2 transition-opacity duration-300 animate-fade-in">
+                {stageLabel || "Processing your request"}
               </p>
-            )}
 
-            <div className="space-y-4 mb-8">
-              <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-primary rounded-full transition-all duration-300 ease-out"
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
-              <p className="text-sm text-muted-foreground font-medium animate-fade-in">
-                {Math.round(progress)}% complete
-              </p>
-            </div>
-
-            <div className="flex flex-col items-center gap-4">
-              <div className="flex justify-center items-center gap-2 text-xs text-muted-foreground/70 animate-fade-in">
-                <div className="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-pulse"></div>
-                <span>This typically takes 3–5 minutes</span>
+              {/* ✅ REAL PROGRESS BAR */}
+              <div className="space-y-4 mb-8">
+                <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-primary rounded-full transition-all duration-500 ease-out"
+                    style={{ width: `${Math.min(progress, 100)}%` }}
+                  />
+                </div>
+                <p className="text-sm text-muted-foreground font-medium animate-fade-in">
+                  {Math.round(progress)}% complete
+                </p>
               </div>
 
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleCancel}
-                className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
-              >
-                <X className="w-4 h-4" />
-                Cancel Analysis
-              </Button>
+              <div className="flex flex-col items-center gap-4">
+                <div className="flex justify-center items-center gap-2 text-xs text-muted-foreground/70 animate-fade-in">
+                  <div className="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-pulse"></div>
+                  <span>This typically takes 3–5 minutes</span>
+                </div>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCancel}
+                  className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+                >
+                  <X className="w-4 h-4" />
+                  Cancel Analysis
+                </Button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
       </div>
     );
   }
@@ -775,7 +739,6 @@ const DeepAnalytics = () => {
         />
         
         <div className="flex-1 flex overflow-hidden">
-          {/* Sidebar */}
           <aside
             className={`transition-all duration-300 ease-in-out border-r border-border bg-muted/30 flex-shrink-0 ${
               sidebarOpen ? 'w-80 2xl:w-96 opacity-100' : 'w-0 opacity-0'
@@ -790,71 +753,70 @@ const DeepAnalytics = () => {
             />
           </aside>
 
-          {/* Main Content */}
           <div className="flex-1 flex flex-col w-full px-4 sm:px-6 py-6 overflow-auto">
-          <div className="max-w-5xl mx-auto w-full">
-            <div className="flex items-center justify-between mb-6 animate-fade-in">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-success/10 flex items-center justify-center">
-                  <Check className="w-5 h-5 text-success" />
-                </div>
-                <div>
-                  <h1 className="text-xl font-semibold">
-                    {isPreviewing ? 'Session Preview' : 'Analysis Complete'}
-                  </h1>
-                  {result?.execution_metrics && (
-                    <p className="text-sm text-muted-foreground">
-                      Completed in {(result.execution_metrics.execution_time_ms / 1000).toFixed(1)}s
-                    </p>
-                  )}
-                  {isPreviewing && (
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Viewing historical session from {new Date(result?.created_at || '').toLocaleDateString()}
-                    </p>
-                  )}
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <div className="relative group">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={isConverting}
-                    className="gap-1.5"
-                  >
-                    <FileDown className="w-4 h-4" />
-                    {isConverting ? 'Converting...' : 'Export'}
-                  </Button>
-                  <div className="absolute right-0 mt-2 z-50 w-48 bg-background border rounded-lg shadow-lg p-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto">
-                    {(['markdown', 'pdf', 'html', 'json', 'text'] as const).map(fmt => (
-                      <Button
-                        key={fmt}
-                        variant="ghost"
-                        className="w-full justify-start"
-                        onClick={() => handleDownload(fmt)}
-                      >
-                        {fmt.charAt(0).toUpperCase() + fmt.slice(1)} ({fmt === 'text' ? '.txt' : `.${fmt}`})
-                      </Button>
-                    ))}
+            <div className="max-w-5xl mx-auto w-full">
+              <div className="flex items-center justify-between mb-6 animate-fade-in">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-success/10 flex items-center justify-center">
+                    <Check className="w-5 h-5 text-success" />
+                  </div>
+                  <div>
+                    <h1 className="text-xl font-semibold">
+                      {isPreviewing ? 'Session Preview' : 'Analysis Complete'}
+                    </h1>
+                    {result?.execution_metrics && (
+                      <p className="text-sm text-muted-foreground">
+                        Completed in {(result.execution_metrics.execution_time_ms / 1000).toFixed(1)}s
+                      </p>
+                    )}
+                    {isPreviewing && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Viewing historical session from {new Date(result?.created_at || '').toLocaleDateString()}
+                      </p>
+                    )}
                   </div>
                 </div>
-                <Button
-                  size="sm"
-                  onClick={handleNewAnalysis}
-                >
-                  New Analysis
-                </Button>
+                <div className="flex gap-2">
+                  <div className="relative group">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={isConverting}
+                      className="gap-1.5"
+                    >
+                      <FileDown className="w-4 h-4" />
+                      {isConverting ? 'Converting...' : 'Export'}
+                    </Button>
+                    <div className="absolute right-0 mt-2 z-50 w-48 bg-background border rounded-lg shadow-lg p-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto">
+                      {(['markdown', 'pdf', 'html', 'json', 'text'] as const).map(fmt => (
+                        <Button
+                          key={fmt}
+                          variant="ghost"
+                          className="w-full justify-start"
+                          onClick={() => handleDownload(fmt)}
+                        >
+                          {fmt.charAt(0).toUpperCase() + fmt.slice(1)} ({fmt === 'text' ? '.txt' : `.${fmt}`})
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={handleNewAnalysis}
+                  >
+                    New Analysis
+                  </Button>
+                </div>
               </div>
-            </div>
 
-            <Card className="border bg-card overflow-hidden rounded-xl animate-fade-in-up">
-              <div className="overflow-auto p-8 sm:p-10 lg:p-12">
-                {renderResultContent()}
-              </div>
-            </Card>
+              <Card className="border bg-card overflow-hidden rounded-xl animate-fade-in-up">
+                <div className="overflow-auto p-8 sm:p-10 lg:p-12">
+                  {renderResultContent()}
+                </div>
+              </Card>
+            </div>
           </div>
         </div>
-      </div>
       </div>
     );
   }
@@ -868,7 +830,6 @@ const DeepAnalytics = () => {
         showSidebarToggle
       />
 
-      {/* Connection Status Bar - Only show if we're processing and not connected */}
       {!isConnected && (isProcessing || currentSessionId) && (
         <div className="bg-destructive/10 border-b border-destructive/20 px-4 py-2">
           <div className="max-w-3xl mx-auto flex items-center gap-2 text-sm text-destructive">
@@ -879,7 +840,6 @@ const DeepAnalytics = () => {
       )}
 
       <div className="flex-1 flex overflow-hidden">
-        {/* Sidebar */}
         <aside
           className={`transition-all duration-300 ease-in-out border-r border-border bg-muted/30 flex-shrink-0 ${
             sidebarOpen ? 'w-80 2xl:w-96 opacity-100' : 'w-0 opacity-0'
@@ -894,161 +854,160 @@ const DeepAnalytics = () => {
           />
         </aside>
 
-        {/* Main Content */}
         <div className="flex-1 flex flex-col max-w-3xl mx-auto w-full px-4 sm:px-6 py-6 overflow-auto">
-        <div className="text-center mb-6 animate-fade-in">
-          <div className="flex items-center justify-center gap-2 mb-2">
-            <h1 className="text-2xl font-bold text-foreground">Deep Analytics</h1>
-            {isConnected && (
-              <div className="flex items-center gap-1 text-xs text-success">
-                <Wifi className="w-3 h-3" />
-                <span>Live</span>
-              </div>
-            )}
-          </div>
-          <p className="text-sm text-muted-foreground max-w-md mx-auto">
-            Describe a complex challenge. Our AI will deliver a strategic, actionable report.
-          </p>
-          {isPreviewing && currentSessionId && (
-            <div className="mt-3 flex items-center justify-center gap-2">
-              <p className="text-xs text-amber-500">
-                Viewing previous session
-              </p>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleNewAnalysis} // Changed to handleNewAnalysis for better UX
-                className="h-6 text-xs"
-              >
-                <X className="w-3 h-3 mr-1" />
-                Clear & Start Fresh
-              </Button>
-            </div>
-          )}
-        </div>
-
-        <div className="space-y-5 animate-fade-in-up">
-          {/* Problem */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <Target className="w-4 h-4 text-primary flex-shrink-0" />
-              <h2 className="text-sm font-medium text-foreground">Your Challenge</h2>
-            </div>
-            <Textarea
-              value={problem}
-              onChange={(e) => setProblem(e.target.value)}
-              placeholder="What strategic, operational, or analytical problem are you facing? Be specific about goals, constraints, and context..."
-              className="min-h-[120px] text-sm resize-none"
-              maxLength={10000}
-            />
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>{problem.length}/10,000 characters</span>
-              {problem.length >= 20 ? (
-                <span className="text-success flex items-center gap-1">
-                  <Check className="w-3 h-3" /> Ready
-                </span>
-              ) : (
-                <span className="text-amber-500">{20 - problem.length} more needed</span>
-              )}
-            </div>
-          </div>
-
-          {/* Context */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <Globe className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-              <h2 className="text-sm font-medium text-foreground">Additional Context (Optional)</h2>
-            </div>
-            <Textarea
-              value={context}
-              onChange={(e) => setContext(e.target.value)}
-              placeholder="Industry, timeline, success metrics, existing solutions, or other relevant details..."
-              className="min-h-[80px] text-sm resize-none"
-              maxLength={20000}
-            />
-            <p className="text-xs text-muted-foreground text-right">{context.length}/20,000</p>
-          </div>
-
-          {/* Files */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <Database className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-              <h2 className="text-sm font-medium text-foreground">Supporting Files (Optional)</h2>
-            </div>
-            <div
-              onClick={() => fileInputRef.current?.click()}
-              className="border border-dashed border-border rounded-lg p-4 text-center cursor-pointer hover:bg-muted/30 transition-colors"
-            >
-              {uploading ? (
-                <div className="flex flex-col items-center">
-                  <Loader2 className="w-5 h-5 animate-spin text-primary mb-1.5" />
-                  <span className="text-xs font-medium">Uploading...</span>
-                </div>
-              ) : (
-                <div>
-                  <Upload className="w-5 h-5 text-muted-foreground mx-auto mb-1.5" />
-                  <p className="text-xs font-medium text-foreground">Add files for deeper analysis</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">PDF, DOCX, CSV, JSON • Max 5 files</p>
+          <div className="text-center mb-6 animate-fade-in">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <h1 className="text-2xl font-bold text-foreground">Deep Analytics</h1>
+              {isConnected && (
+                <div className="flex items-center gap-1 text-xs text-success">
+                  <Wifi className="w-3 h-3" />
+                  <span>Live</span>
                 </div>
               )}
             </div>
-            <input
-              ref={fileInputRef}
-              type="file"
-              multiple
-              accept=".pdf,.doc,.docx,.txt,.csv,.json,.md"
-              onChange={handleFileSelect}
-              className="hidden"
-            />
-
-            {files.length > 0 && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
-                {files.map(file => (
-                  <div key={file.id} className="flex items-center gap-2 p-2.5 bg-muted/30 rounded-lg">
-                    <FileText className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-medium truncate">{file.name}</p>
-                      <p className="text-xs text-muted-foreground">{formatFileSize(file.size)}</p>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
-                      onClick={() => removeFile(file.id)}
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Execute */}
-          <div className="pt-2 sticky bottom-0 bg-background pb-4">
-            <Button
-              onClick={handleExecute}
-              disabled={!problem.trim() || problem.length < 20 || isProcessing}
-              className="w-full h-11 text-sm font-medium shadow-lg"
-            >
-              {isProcessing ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                  Analyzing...
-                </>
-              ) : (
-                <>
-                  <Brain className="w-4 h-4 mr-2" />
-                  Generate Strategic Report
-                </>
-              )}
-            </Button>
-            <p className="text-xs text-muted-foreground text-center mt-2">
-              Your report will include actionable steps, risk analysis, and implementation roadmap
+            <p className="text-sm text-muted-foreground max-w-md mx-auto">
+              Describe a complex challenge. Our AI will deliver a strategic, actionable report.
             </p>
+            {isPreviewing && currentSessionId && (
+              <div className="mt-3 flex items-center justify-center gap-2">
+                <p className="text-xs text-amber-500">
+                  Viewing previous session
+                </p>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleNewAnalysis}
+                  className="h-6 text-xs"
+                >
+                  <X className="w-3 h-3 mr-1" />
+                  Clear & Start Fresh
+                </Button>
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-5 animate-fade-in-up">
+            {/* Problem */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Target className="w-4 h-4 text-primary flex-shrink-0" />
+                <h2 className="text-sm font-medium text-foreground">Your Challenge</h2>
+              </div>
+              <Textarea
+                value={problem}
+                onChange={(e) => setProblem(e.target.value)}
+                placeholder="What strategic, operational, or analytical problem are you facing? Be specific about goals, constraints, and context..."
+                className="min-h-[120px] text-sm resize-none"
+                maxLength={10000}
+              />
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>{problem.length}/10,000 characters</span>
+                {problem.length >= 20 ? (
+                  <span className="text-success flex items-center gap-1">
+                    <Check className="w-3 h-3" /> Ready
+                  </span>
+                ) : (
+                  <span className="text-amber-500">{20 - problem.length} more needed</span>
+                )}
+              </div>
+            </div>
+
+            {/* Context */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Globe className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                <h2 className="text-sm font-medium text-foreground">Additional Context (Optional)</h2>
+              </div>
+              <Textarea
+                value={context}
+                onChange={(e) => setContext(e.target.value)}
+                placeholder="Industry, timeline, success metrics, existing solutions, or other relevant details..."
+                className="min-h-[80px] text-sm resize-none"
+                maxLength={20000}
+              />
+              <p className="text-xs text-muted-foreground text-right">{context.length}/20,000</p>
+            </div>
+
+            {/* Files */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Database className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                <h2 className="text-sm font-medium text-foreground">Supporting Files (Optional)</h2>
+              </div>
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                className="border border-dashed border-border rounded-lg p-4 text-center cursor-pointer hover:bg-muted/30 transition-colors"
+              >
+                {uploading ? (
+                  <div className="flex flex-col items-center">
+                    <Loader2 className="w-5 h-5 animate-spin text-primary mb-1.5" />
+                    <span className="text-xs font-medium">Uploading...</span>
+                  </div>
+                ) : (
+                  <div>
+                    <Upload className="w-5 h-5 text-muted-foreground mx-auto mb-1.5" />
+                    <p className="text-xs font-medium text-foreground">Add files for deeper analysis</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">PDF, DOCX, CSV, JSON • Max 5 files</p>
+                  </div>
+                )}
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept=".pdf,.doc,.docx,.txt,.csv,.json,.md"
+                onChange={handleFileSelect}
+                className="hidden"
+              />
+
+              {files.length > 0 && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                  {files.map(file => (
+                    <div key={file.id} className="flex items-center gap-2 p-2.5 bg-muted/30 rounded-lg">
+                      <FileText className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-medium truncate">{file.name}</p>
+                        <p className="text-xs text-muted-foreground">{formatFileSize(file.size)}</p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+                        onClick={() => removeFile(file.id)}
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Execute */}
+            <div className="pt-2 sticky bottom-0 bg-background pb-4">
+              <Button
+                onClick={handleExecute}
+                disabled={!problem.trim() || problem.length < 20 || isProcessing}
+                className="w-full h-11 text-sm font-medium shadow-lg"
+              >
+                {isProcessing ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    Analyzing...
+                  </>
+                ) : (
+                  <>
+                    <Brain className="w-4 h-4 mr-2" />
+                    Generate Strategic Report
+                  </>
+                )}
+              </Button>
+              <p className="text-xs text-muted-foreground text-center mt-2">
+                Your report will include actionable steps, risk analysis, and implementation roadmap
+              </p>
+            </div>
           </div>
         </div>
-      </div>
       </div>
     </div>
   );
