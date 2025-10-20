@@ -282,8 +282,8 @@ const DeepAnalytics = () => {
       return;
     }
 
-    if (files.length + newFiles.length > 5) {
-      toast({ title: 'Limit reached', description: 'Max 5 files allowed', variant: 'destructive' });
+    if (files.length + newFiles.length > 50) {
+      toast({ title: 'Limit reached', description: 'Max 50 files allowed', variant: 'destructive' });
       return;
     }
 
