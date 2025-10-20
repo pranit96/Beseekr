@@ -408,7 +408,7 @@ const DeepAnalytics = () => {
 
       // Subscribe to real-time updates via socket
       // This will automatically connect if not connected and wait for authentication
-      await subscribeToSession(sessionId, jobId);
+      await subscribeToSession(sessionId);
 
       // Invalidate sessions list
       queryClient.invalidateQueries({ queryKey: ['sessions'] });
