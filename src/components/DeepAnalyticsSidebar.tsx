@@ -98,27 +98,33 @@ export const DeepAnalyticsSidebar = ({
                       />
                     </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium mb-1 truncate overflow-hidden whitespace-nowrap">
+                  <div className="flex-1 min-w-0 overflow-hidden">
+                    <p 
+                      className="text-sm font-medium mb-1 overflow-hidden text-ellipsis whitespace-nowrap"
+                      title={session.problem}
+                    >
                       {session.problem}
                     </p>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
-                      <span className="flex items-center gap-1 truncate">
-                        <Clock className="w-3 h-3 flex-shrink-0" />
-                        <span className="truncate">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground overflow-hidden">
+                      <span className="flex items-center gap-1 flex-shrink-0">
+                        <Clock className="w-3 h-3" />
+                        <span className="whitespace-nowrap">
                           {formatDistanceToNow(new Date(session.created_at), {
                             addSuffix: true,
                           })}
                         </span>
                       </span>
                       {session.execution_metrics && (
-                        <span className="flex items-center gap-1 flex-shrink-0">
+                        <span className="flex items-center gap-1 flex-shrink-0 whitespace-nowrap">
                           • {Math.round(session.execution_metrics.execution_time_ms / 60000)}m
                         </span>
                       )}
                     </div>
                     {session.tier && (
-                      <span className="inline-block mt-1.5 px-2 py-0.5 text-xs rounded-full bg-muted text-muted-foreground truncate max-w-full">
+                      <span 
+                        className="inline-block mt-1.5 px-2 py-0.5 text-xs rounded-full bg-muted text-muted-foreground overflow-hidden text-ellipsis whitespace-nowrap max-w-full"
+                        title={session.tier}
+                      >
                         {session.tier}
                       </span>
                     )}
