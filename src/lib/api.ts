@@ -384,23 +384,21 @@ class ApiClient {
 
   async getSessions(params?: { limit?: number; page?: number }) {
     const query = new URLSearchParams(params as any).toString();
-    return this.request<{
-      sessions: Array<{
-        id: string;
-        problem: string;
-        status: string;
-        created_at: string;
-        tier: string;
-        execution_metrics?: {
-          execution_time_ms: number;
-        };
-      }>;
-      pagination?: {
-        page: number;
-        limit: number;
-        total: number;
+    const response: any = await this.request<any>(`/api/thinkers/sessions${query ? `?${query}` : ''}`);
+    
+    // Backend returns sessions at root level, not nested in data
+    // Transform to match expected structure
+    if (response.success && response.sessions) {
+      return {
+        success: response.success,
+        data: {
+          sessions: response.sessions,
+          pagination: response.pagination
+        }
       };
-    }>(`/api/thinkers/sessions${query ? `?${query}` : ''}`);
+    }
+    
+    return response;
   }
 
   async queueAnalysis(payload: {

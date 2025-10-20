@@ -5,9 +5,14 @@ import "./index.css";
 import { registerServiceWorker, trackActivity } from "./lib/serviceWorker";
 // Override console methods in production to prevent direct console usage
 import "./lib/console-override";
+// Initialize socket connection on user interaction
+import { initSocketOnUserInteraction } from "./services/socketInit";
 
 // Register service worker for caching
 registerServiceWorker();
+
+// Initialize socket to connect on first user interaction
+initSocketOnUserInteraction();
 
 // Track user activity to prevent disruptive reloads
 const activityEvents = ['mousedown', 'keydown', 'scroll', 'touchstart', 'click'];

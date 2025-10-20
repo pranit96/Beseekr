@@ -77,7 +77,7 @@ const DeepAnalytics = () => {
   } = useDeepAnalyticsSocket({ autoConnect: false });
 
   // Fetch session details for preview
-  const { data: sessionData, isLoading: isLoadingSession } = useSessionDetails(currentSessionId || '');
+  const { data: sessionData, isLoading: isLoadingSession, error: sessionError } = useSessionDetails(currentSessionId || '');
 
   // Redirect to auth if not logged in
   useEffect(() => {
@@ -212,6 +212,31 @@ const DeepAnalytics = () => {
       }
     }
   }, [socketError, toast]);
+
+  // Handle session fetch errors (backend database issues)
+  useEffect(() => {
+    if (sessionError) {
+      const errorMessage = (sessionError as any)?.message || 'Unknown error';
+      
+      // Log backend database errors but don't show to user (they're not user-actionable)
+      if (errorMessage.includes('coerce') || errorMessage.includes('Cannot coerce')) {
+        logger.error('Backend database error fetching session', { 
+          sessionId: currentSessionId,
+          error: errorMessage 
+        });
+        logger.warn('⚠️ Backend needs to fix database query - see BACKEND_AUTH_FIX.md');
+        // Don't show toast - this is a backend issue, not user's fault
+      } else {
+        // Show other errors
+        logger.error('Failed to fetch session details', { error: errorMessage });
+        toast({
+          title: 'Could not load session',
+          description: 'Unable to fetch session details. The analysis may still be running.',
+          variant: 'default',
+        });
+      }
+    }
+  }, [sessionError, currentSessionId, toast]);
 
   // FILE HANDLING
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -351,7 +376,8 @@ const DeepAnalytics = () => {
       }));
 
       // Subscribe to real-time updates via socket
-      subscribeToSession(sessionId, jobId);
+      // This will automatically connect if not connected and wait for authentication
+      await subscribeToSession(sessionId, jobId);
 
       // Invalidate sessions list
       queryClient.invalidateQueries({ queryKey: ['sessions'] });

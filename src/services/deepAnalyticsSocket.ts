@@ -98,10 +98,37 @@ class DeepAnalyticsSocketService {
   private heartbeatInterval: NodeJS.Timeout | null = null;
   private userId: string | null = null;
   private userTier: string | null = null;
+  private userInteractionDetected: boolean = false;
+  private pendingSubscriptions: Array<{ sessionId: string; callbacks?: DeepAnalyticsCallbacks }> = [];
 
   // ============================================================================
   // CONNECTION MANAGEMENT
   // ============================================================================
+  
+  /**
+   * Initialize user interaction listener to connect socket on first click
+   */
+  initUserInteractionListener(): void {
+    if (this.userInteractionDetected) return;
+
+    const handleInteraction = () => {
+      if (!this.userInteractionDetected) {
+        this.userInteractionDetected = true;
+        logger.debug('👆 User interaction detected, pre-connecting socket');
+        this.connect();
+        
+        // Remove listeners after first interaction
+        document.removeEventListener('click', handleInteraction);
+        document.removeEventListener('keydown', handleInteraction);
+        document.removeEventListener('touchstart', handleInteraction);
+      }
+    };
+
+    document.addEventListener('click', handleInteraction, { once: true, passive: true });
+    document.addEventListener('keydown', handleInteraction, { once: true, passive: true });
+    document.addEventListener('touchstart', handleInteraction, { once: true, passive: true });
+  }
+
   connect(): Socket {
     if (this.socket?.connected) {
       logger.debug('Socket already connected', { socketId: this.socket.id });
@@ -117,12 +144,19 @@ class DeepAnalyticsSocketService {
 
     // Debug: Check if we have cookies
     const cookies = document.cookie;
+    const hasAuthCookie = cookies.includes('connect.sid') || cookies.includes('session');
+    
     logger.info('Connecting to thinking socket', { 
       url: SOCKET_URL,
       hasCookies: cookies.length > 0,
+      hasAuthCookie,
       cookieCount: cookies.split(';').filter(c => c.trim()).length,
       cookieNames: cookies.split(';').map(c => c.split('=')[0].trim())
     });
+
+    if (!hasAuthCookie) {
+      logger.warn('⚠️ No authentication cookie found - connection may fail');
+    }
 
     // ✅ Connect to /thinking namespace (NOT /thinkers or /deepAnalytics)
     // IMPORTANT: withCredentials: true will automatically send httpOnly cookies
@@ -136,8 +170,10 @@ class DeepAnalyticsSocketService {
       timeout: 20000,
       upgrade: true,
       rememberUpgrade: true,
-      // Don't try to manually send cookies - withCredentials handles it
-      // The backend will authenticate using the httpOnly cookie
+      secure: SOCKET_URL.startsWith('https'),
+      rejectUnauthorized: true,
+      // Backend will authenticate using the httpOnly cookie
+      // If backend requires token in query, it should read from cookie
     });
 
     this.setupEventHandlers();
@@ -198,6 +234,16 @@ class DeepAnalyticsSocketService {
       // Notify all session callbacks
       this.callbacks.forEach(cb => cb.onConnected?.(data));
 
+      // Process pending subscriptions
+      if (this.pendingSubscriptions.length > 0) {
+        logger.info('📤 Processing pending subscriptions', { count: this.pendingSubscriptions.length });
+        this.pendingSubscriptions.forEach(({ sessionId, callbacks }) => {
+          logger.info('📤 Emitting pending subscribe:session', { sessionId });
+          this.socket?.emit('subscribe:session', sessionId);
+        });
+        this.pendingSubscriptions = [];
+      }
+
       // Re-subscribe to sessions after reconnect
       if (this.subscribedSessions.size > 0) {
         logger.info('Re-subscribing to sessions', { count: this.subscribedSessions.size });
@@ -235,11 +281,20 @@ class DeepAnalyticsSocketService {
       this.callbacks.forEach(cb => cb.onReconnecting?.(this.reconnectAttempts));
 
       // Check for auth errors
-      if (error.message.includes('Authentication') || error.message.includes('token')) {
-        logger.error('Authentication error - stopping reconnection');
+      if (error.message.includes('Authentication') || error.message.includes('token') || error.message.includes('access token')) {
+        logger.error('❌ Authentication error - backend requires authentication', {
+          error: error.message,
+          hasCookies: document.cookie.length > 0,
+          cookieNames: document.cookie.split(';').map(c => c.split('=')[0].trim())
+        });
+        
+        // Don't show error to user - fail silently as per requirement
+        logger.warn('⚠️ Backend /thinking namespace may not be configured for cookie auth');
+        logger.warn('⚠️ Check backend middleware for /thinking namespace');
+        
         this.globalCallbacks.onError?.({
           code: 'AUTH_FAILED',
-          message: 'Authentication failed. Please log in again.',
+          message: 'Authentication failed. Please ensure you are logged in.',
         });
         this.disconnect();
         return;
@@ -265,17 +320,19 @@ class DeepAnalyticsSocketService {
 
     // ✅ Backend emits 'subscribed'
     this.socket.on('subscribed', (data: { sessionId: string; timestamp: string }) => {
-      logger.info('✅ SUBSCRIBED confirmation received', {
+      logger.info('✅ [BACKEND] SUBSCRIBED confirmation received', {
         sessionId: data.sessionId,
         timestamp: data.timestamp,
         hasCallbacks: this.callbacks.has(data.sessionId),
-        totalCallbacks: this.callbacks.size
+        totalCallbacks: this.callbacks.size,
+        registeredSessions: Array.from(this.callbacks.keys()),
+        socketId: this.socket?.id
       });
       const callbacks = this.callbacks.get(data.sessionId);
       if (callbacks) {
         callbacks.onSubscribed?.(data);
       } else {
-        logger.warn('⚠️ No callbacks found for subscribed session', {
+        logger.warn('⚠️ [BACKEND] No callbacks found for subscribed session', {
           sessionId: data.sessionId,
           registeredSessions: Array.from(this.callbacks.keys())
         });
@@ -284,14 +341,23 @@ class DeepAnalyticsSocketService {
 
     // ✅ Backend emits 'progress'
     this.socket.on('progress', (data: ProgressUpdate) => {
-      logger.debug('📊 Progress', {
+      logger.debug('📊 [BACKEND] Progress update received', {
         sessionId: data.sessionId,
         stage: data.stage,
-        progress: data.progress
+        progress: data.progress,
+        hasCallbacks: this.callbacks.has(data.sessionId),
+        socketId: this.socket?.id
       });
 
       const callbacks = this.callbacks.get(data.sessionId);
-      callbacks?.onProgress?.(data);
+      if (callbacks) {
+        callbacks.onProgress?.(data);
+      } else {
+        logger.warn('⚠️ [BACKEND] Progress received but no callbacks registered', {
+          sessionId: data.sessionId,
+          registeredSessions: Array.from(this.callbacks.keys())
+        });
+      }
     });
 
     // ✅ Backend emits 'complete'
@@ -364,80 +430,115 @@ class DeepAnalyticsSocketService {
   // ============================================================================
   // SESSION MANAGEMENT
   // ============================================================================
-  subscribeToSession(sessionId: string, callbacks?: DeepAnalyticsCallbacks): void {
-    if (!sessionId) {
-      const error = 'Session ID is required';
-      logger.error(error);
-      callbacks?.onError?.({
-        code: 'INVALID_SESSION_ID',
-        message: error,
-      });
-      return;
-    }
-
-    logger.info('📡 Subscribing to session', { 
-      sessionId, 
-      socketConnected: this.socket?.connected,
-      authenticated: this.connected,
-      userId: this.userId 
-    });
-
-    // Store callbacks first
-    if (callbacks) {
-      this.callbacks.set(sessionId, callbacks);
-    }
-
-    // Track subscription
-    this.subscribedSessions.add(sessionId);
-
-    // Wait for authentication (connected event) before subscribing
-    if (!this.connected || !this.userId) {
-      logger.warn('⏳ Waiting for authentication (connected event) before subscribing...', {
-        socketConnected: this.socket?.connected,
-        hasSocket: !!this.socket
-      });
-
-      // Set up one-time listener for 'connected' event
-      const onConnectedOnce = (data: { userId: string; tier: string; timestamp: string }) => {
-        logger.info('✅ Authenticated via connected event, now subscribing', { 
-          sessionId, 
-          userId: data.userId 
+  /**
+   * Subscribe to a session with automatic connection and authentication handling
+   * Silently waits for connection/auth, no errors thrown to user
+   */
+  subscribeToSession(sessionId: string, callbacks?: DeepAnalyticsCallbacks): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (!sessionId) {
+        const error = 'Session ID is required';
+        logger.error(error);
+        callbacks?.onError?.({
+          code: 'INVALID_SESSION_ID',
+          message: error,
         });
-        if (this.socket?.connected) {
-          logger.info('📤 Emitting subscribe:session after authentication', { sessionId });
-          this.socket.emit('subscribe:session', sessionId);
-        } else {
-          logger.error('❌ Socket not connected after authentication', { sessionId });
-        }
-        // Remove the listener after first call
-        this.socket?.off('connected', onConnectedOnce);
-      };
+        reject(new Error(error));
+        return;
+      }
 
-      // Add listener
-      this.socket?.on('connected', onConnectedOnce);
+      logger.info('📡 [SUBSCRIBE] Attempting to subscribe to session', { 
+        sessionId, 
+        socketConnected: this.socket?.connected,
+        authenticated: this.connected,
+        userId: this.userId,
+        socketId: this.socket?.id
+      });
 
-      // Timeout fallback
-      const timeoutId = setTimeout(() => {
-        if (!this.connected || !this.userId) {
+      // Store callbacks first
+      if (callbacks) {
+        this.callbacks.set(sessionId, callbacks);
+        logger.debug('📝 [SUBSCRIBE] Callbacks registered', { sessionId });
+      }
+
+      // Track subscription
+      this.subscribedSessions.add(sessionId);
+
+      // Ensure socket is connected
+      if (!this.socket) {
+        logger.info('🔌 [SUBSCRIBE] No socket, connecting now...');
+        this.connect();
+      }
+
+      // Wait for authentication (connected event) before subscribing
+      if (!this.connected || !this.userId) {
+        logger.info('⏳ [SUBSCRIBE] Waiting for authentication before subscribing...', {
+          socketConnected: this.socket?.connected,
+          hasSocket: !!this.socket,
+          sessionId
+        });
+
+        // Add to pending subscriptions
+        this.pendingSubscriptions.push({ sessionId, callbacks });
+
+        // Set up one-time listener for 'connected' event
+        const onConnectedOnce = (data: { userId: string; tier: string; timestamp: string }) => {
+          logger.info('✅ [SUBSCRIBE] Authenticated via connected event', { 
+            sessionId, 
+            userId: data.userId,
+            socketId: this.socket?.id
+          });
+          
+          // Remove the listener after first call
           this.socket?.off('connected', onConnectedOnce);
-          logger.error('❌ Timeout waiting for authentication', {
-            connected: this.connected,
-            userId: this.userId,
-            socketConnected: this.socket?.connected
-          });
-          callbacks?.onError?.({
-            code: 'AUTH_TIMEOUT',
-            message: 'Authentication timeout. Please refresh and try again.',
-          });
-        }
-      }, 10000);
+          
+          // Resolve the promise
+          resolve();
+        };
 
-      return;
-    }
+        // Set up error listener
+        const onErrorOnce = (error: SessionError) => {
+          if (error.sessionId === sessionId) {
+            logger.error('❌ [SUBSCRIBE] Error during subscription', { sessionId, error });
+            this.socket?.off('connected', onConnectedOnce);
+            this.socket?.off('error', onErrorOnce);
+            reject(new Error(error.message));
+          }
+        };
 
-    // ✅ Already authenticated, subscribe immediately
-    logger.info('✅ Emitting subscribe:session', { sessionId, userId: this.userId });
-    this.socket.emit('subscribe:session', sessionId);
+        // Add listeners
+        this.socket?.on('connected', onConnectedOnce);
+        this.socket?.on('error', onErrorOnce);
+
+        // Timeout fallback (30 seconds) - but don't show error to user
+        const timeoutId = setTimeout(() => {
+          if (!this.connected || !this.userId) {
+            this.socket?.off('connected', onConnectedOnce);
+            this.socket?.off('error', onErrorOnce);
+            logger.warn('⏰ [SUBSCRIBE] Timeout waiting for authentication (silent)', {
+              connected: this.connected,
+              userId: this.userId,
+              socketConnected: this.socket?.connected,
+              sessionId
+            });
+            // Don't call callbacks.onError - fail silently
+            // The subscription will happen when connection is established
+            resolve(); // Resolve anyway to not block the flow
+          }
+        }, 30000); // 30 seconds
+
+        return;
+      }
+
+      // ✅ Already authenticated, subscribe immediately
+      logger.info('✅ [SUBSCRIBE] Emitting subscribe:session (already authenticated)', { 
+        sessionId, 
+        userId: this.userId,
+        socketId: this.socket?.id
+      });
+      this.socket.emit('subscribe:session', sessionId);
+      resolve();
+    });
   }
 
   unsubscribeFromSession(sessionId: string): void {

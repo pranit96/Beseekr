@@ -227,6 +227,15 @@ export function useSessionDetails(sessionId: string) {
     enabled: !!sessionId,
     staleTime: 5 * 60 * 1000, // 5 minutes - session details are static
     gcTime: 30 * 60 * 1000, // 30 minutes
+    retry: (failureCount, error: any) => {
+      // Don't retry on backend database errors (500 with "coerce" message)
+      if (error?.message?.includes('coerce') || error?.message?.includes('Cannot coerce')) {
+        return false;
+      }
+      // Retry other errors up to 2 times
+      return failureCount < 2;
+    },
+    retryDelay: 2000, // Wait 2 seconds between retries
   });
 }
 

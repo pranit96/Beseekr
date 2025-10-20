@@ -129,9 +129,14 @@ export function useDeepAnalyticsSocket(
   // ============================================================================
   // SESSION MANAGEMENT
   // ============================================================================
-  const subscribe = useCallback((sid: string, cbs?: DeepAnalyticsCallbacks) => {
+  const subscribe = useCallback(async (sid: string, cbs?: DeepAnalyticsCallbacks) => {
     logger.debug('Subscribing to session from hook', { sessionId: sid });
-    deepAnalyticsSocket.subscribeToSession(sid, cbs || callbacks || {});
+    try {
+      await deepAnalyticsSocket.subscribeToSession(sid, cbs || callbacks || {});
+    } catch (error: any) {
+      logger.error('Subscription failed', { sessionId: sid, error: error.message });
+      // Fail silently
+    }
   }, [callbacks]);
 
   const unsubscribe = useCallback((sid: string) => {
@@ -153,14 +158,13 @@ export function useDeepAnalyticsSocket(
   }, []);
 
   // Session-specific actions
-  const subscribeToSession = useCallback((sid: string, jobId?: string) => {
-    logger.info('Subscribing to session', { sessionId: sid, jobId });
-
-    // Ensure we're connected before subscribing
-    if (!deepAnalyticsSocket.isConnected()) {
-      logger.info('Not connected, connecting now...');
-      deepAnalyticsSocket.connect();
-    }
+  const subscribeToSession = useCallback(async (sid: string, jobId?: string) => {
+    logger.info('🎯 [HOOK] subscribeToSession called', { 
+      sessionId: sid, 
+      jobId,
+      isConnected: deepAnalyticsSocket.isConnected(),
+      currentSession: currentSessionIdRef.current
+    });
 
     currentSessionIdRef.current = sid;
     setSessionState('queued');
@@ -171,21 +175,32 @@ export function useDeepAnalyticsSocket(
 
     const sessionCallbacks: DeepAnalyticsCallbacks = {
       onConnected: (data) => {
-        logger.debug('Connected to socket', data);
+        logger.info('✅ [HOOK] Connected to socket', { 
+          userId: data.userId, 
+          tier: data.tier,
+          sessionId: sid
+        });
         setSocketState('connected');
       },
       onSubscribed: (data) => {
-        logger.debug('Subscribed to session', data);
+        logger.info('✅ [HOOK] Subscribed to session confirmed', { 
+          sessionId: data.sessionId,
+          timestamp: data.timestamp
+        });
         setSessionState('processing');
       },
       onProgress: (data: ProgressUpdate) => {
-        logger.debug('Progress update', data);
+        logger.debug('📊 [HOOK] Progress update', { 
+          sessionId: data.sessionId,
+          stage: data.stage,
+          progress: data.progress
+        });
         setStage(data.stage);
         setProgress(data.progress || 0);
         setSessionState('processing');
       },
       onComplete: (data: SessionResult) => {
-        logger.info('Session completed', data);
+        logger.info('✅ [HOOK] Session completed', { sessionId: data.sessionId });
         setSessionState('completed');
         setProgress(100);
         setStage('complete');
@@ -193,33 +208,44 @@ export function useDeepAnalyticsSocket(
         currentSessionIdRef.current = null;
       },
       onError: (err: SessionError) => {
-        logger.error('Session error', err);
+        logger.error('❌ [HOOK] Session error', { 
+          sessionId: err.sessionId,
+          code: err.code,
+          message: err.message
+        });
         setSessionState('failed');
         setError(err);
         currentSessionIdRef.current = null;
       },
       onCancelled: (data) => {
-        logger.info('Session cancelled', data);
+        logger.info('🚫 [HOOK] Session cancelled', { sessionId: data.sessionId });
         setSessionState('cancelled');
         setProgress(0);
         setStage(null);
         currentSessionIdRef.current = null;
       },
       onDisconnected: (reason) => {
-        logger.warn('Socket disconnected', { reason });
+        logger.warn('🔌 [HOOK] Socket disconnected', { reason, sessionId: sid });
         setSocketState('disconnected');
       },
       onReconnecting: (attempt) => {
-        logger.debug('Reconnecting', { attempt });
+        logger.debug('🔄 [HOOK] Reconnecting', { attempt, sessionId: sid });
         setSocketState('connecting');
       },
       onReconnected: () => {
-        logger.info('Reconnected');
+        logger.info('✅ [HOOK] Reconnected', { sessionId: sid });
         setSocketState('connected');
       }
     };
 
-    deepAnalyticsSocket.subscribeToSession(sid, sessionCallbacks);
+    try {
+      logger.info('📤 [HOOK] Calling deepAnalyticsSocket.subscribeToSession', { sessionId: sid });
+      await deepAnalyticsSocket.subscribeToSession(sid, sessionCallbacks);
+      logger.info('✅ [HOOK] Subscription initiated successfully', { sessionId: sid });
+    } catch (error: any) {
+      logger.error('❌ [HOOK] Subscription failed', { sessionId: sid, error: error.message });
+      // Don't throw - fail silently as per requirement
+    }
   }, []);
 
   const unsubscribeFromSession = useCallback(() => {
@@ -241,6 +267,11 @@ export function useDeepAnalyticsSocket(
   // EFFECTS
   // ============================================================================
 
+  // Initialize user interaction listener on mount
+  useEffect(() => {
+    deepAnalyticsSocket.initUserInteractionListener();
+  }, []);
+
   // Auto-connect on mount (but only if we have a sessionId to subscribe to)
   useEffect(() => {
     if (autoConnect && sessionId) {
@@ -258,25 +289,14 @@ export function useDeepAnalyticsSocket(
   // Auto-subscribe when sessionId is provided
   useEffect(() => {
     if (autoSubscribe && sessionId && callbacks && !hasSubscribedRef.current) {
-      const isConnected = deepAnalyticsSocket.isConnected();
-
-      if (isConnected) {
-        logger.debug('Auto-subscribing to session', { sessionId });
-        subscribe(sessionId, callbacks);
-        hasSubscribedRef.current = true;
-      } else {
-        // Wait for connection before subscribing
-        logger.debug('Waiting for connection before subscribing', { sessionId });
-        const checkConnection = setInterval(() => {
-          if (deepAnalyticsSocket.isConnected()) {
-            clearInterval(checkConnection);
-            subscribe(sessionId, callbacks);
-            hasSubscribedRef.current = true;
-          }
-        }, 100);
-
-        return () => clearInterval(checkConnection);
-      }
+      logger.debug('Auto-subscribing to session', { sessionId });
+      hasSubscribedRef.current = true;
+      
+      // Subscribe immediately - it will handle connection/auth internally
+      subscribe(sessionId, callbacks).catch((error) => {
+        logger.error('Auto-subscribe failed', { sessionId, error: error.message });
+        hasSubscribedRef.current = false;
+      });
     }
   }, [autoSubscribe, sessionId, callbacks, subscribe]);
 
