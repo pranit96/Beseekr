@@ -17,6 +17,31 @@ export interface SessionSummary {
   };
 }
 
+// Helper to extract a readable session name from problem text
+const getSessionName = (problem: string): string => {
+  if (!problem) return 'Untitled Session';
+
+  // Try to extract first meaningful line (skip flowchart syntax)
+  const lines = problem.split('\n').filter(line => {
+    const trimmed = line.trim();
+    return trimmed &&
+      !trimmed.startsWith('flowchart') &&
+      !trimmed.startsWith('%%') &&
+      !trimmed.startsWith('subgraph') &&
+      !trimmed.startsWith('classDef') &&
+      !trimmed.includes('-->') &&
+      !trimmed.includes('[') &&
+      trimmed.length > 10;
+  });
+
+  if (lines.length > 0) {
+    return lines[0].trim().substring(0, 60);
+  }
+
+  // Fallback: use first 60 chars
+  return problem.substring(0, 60).trim();
+}
+
 interface DeepAnalyticsSidebarProps {
   sessions: SessionSummary[];
   currentSessionId?: string;
@@ -95,8 +120,8 @@ export const DeepAnalyticsSidebar = ({
                           session.status === 'completed'
                             ? 'bg-success/10'
                             : session.status === 'failed'
-                            ? 'bg-destructive/10'
-                            : 'bg-muted'
+                              ? 'bg-destructive/10'
+                              : 'bg-muted'
                         )}
                       >
                         <Brain
@@ -105,18 +130,18 @@ export const DeepAnalyticsSidebar = ({
                             session.status === 'completed'
                               ? 'text-success'
                               : session.status === 'failed'
-                              ? 'text-destructive'
-                              : 'text-muted-foreground'
+                                ? 'text-destructive'
+                                : 'text-muted-foreground'
                           )}
                         />
                       </div>
                     </div>
-                    <div className="flex-1 min-w-0 overflow-hidden">
-                      <p 
+                    <div className="flex-1 min-w-0 overflow-hidden pr-8">
+                      <p
                         className="text-sm font-medium mb-1 overflow-hidden text-ellipsis whitespace-nowrap"
-                        title={session.problem}
+                        title={getSessionName(session.problem)}
                       >
-                        {session.problem}
+                        {getSessionName(session.problem)}
                       </p>
                       <div className="flex items-center gap-2 text-xs text-muted-foreground overflow-hidden">
                         <span className="flex items-center gap-1 flex-shrink-0">
@@ -134,7 +159,7 @@ export const DeepAnalyticsSidebar = ({
                         )}
                       </div>
                       {session.tier && (
-                        <span 
+                        <span
                           className="inline-block mt-1.5 px-2 py-0.5 text-xs rounded-full bg-muted text-muted-foreground overflow-hidden text-ellipsis whitespace-nowrap max-w-full"
                           title={session.tier}
                         >
@@ -145,24 +170,41 @@ export const DeepAnalyticsSidebar = ({
                   </div>
                 </button>
 
-                {/* Delete button - shows on selected session */}
-                {currentSessionId === session.id && onDeleteSession && (
+                {/* Delete button - shows on hover */}
+                {onDeleteSession && (
                   <div className="absolute top-2 right-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setShowDeleteMenu(showDeleteMenu === session.id ? null : session.id);
-                      }}
-                    >
-                      <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                    </Button>
+                    {showDeleteMenu === session.id ? (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 w-7 p-0"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowDeleteMenu(null);
+                        }}
+                      >
+                        <span className="text-sm">×</span>
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowDeleteMenu(session.id);
+                        }}
+                      >
+                        <span className="text-sm">⋮</span>
+                      </Button>
+                    )}
 
                     {/* Delete menu */}
                     {showDeleteMenu === session.id && (
-                      <div className="absolute right-0 top-8 z-50 w-56 bg-background border rounded-lg shadow-lg p-2">
+                      <div
+                        className="absolute right-0 top-8 z-50 w-56 bg-background border rounded-lg shadow-lg p-2"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <div className="text-xs text-muted-foreground mb-2 px-2">
                           Delete this session?
                         </div>
