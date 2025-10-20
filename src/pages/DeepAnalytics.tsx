@@ -92,7 +92,7 @@ const DeepAnalytics = () => {
 
   // Fetch session details for preview
   const { data: sessionData, isLoading: isLoadingSession, error: sessionError } = useSessionDetails(currentSessionId || '');
-  
+
   // Fetch sessions list for sidebar
   const { data: sessionsResponse, isLoading: loadingSessions } = useSessions({ limit: 20 });
   const sessions = sessionsResponse?.data?.sessions || [];
@@ -259,9 +259,9 @@ const DeepAnalytics = () => {
     if (sessionError) {
       const errorMessage = (sessionError as any)?.message || 'Unknown error';
       if (errorMessage.includes('coerce') || errorMessage.includes('Cannot coerce')) {
-        logger.error('Backend database error fetching session', { 
+        logger.error('Backend database error fetching session', {
           sessionId: currentSessionId,
-          error: errorMessage 
+          error: errorMessage
         });
         logger.warn('⚠️ Backend needs to fix database query - see BACKEND_AUTH_FIX.md');
       } else {
@@ -459,7 +459,7 @@ const DeepAnalytics = () => {
       });
       return;
     }
-    
+
     setCurrentSessionId(sessionSummary.id);
     setIsPreviewing(true);
     setFileContent({});
@@ -644,12 +644,11 @@ const DeepAnalytics = () => {
           onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
           showSidebarToggle
         />
-        
+
         <div className="flex-1 flex overflow-hidden">
           <aside
-            className={`transition-all duration-300 ease-in-out border-r border-border bg-muted/30 flex-shrink-0 ${
-              sidebarOpen ? 'w-80 2xl:w-96 opacity-100' : 'w-0 opacity-0'
-            } overflow-hidden`}
+            className={`transition-all duration-300 ease-in-out border-r border-border bg-muted/30 flex-shrink-0 ${sidebarOpen ? 'w-80 2xl:w-96 opacity-100' : 'w-0 opacity-0'
+              } overflow-hidden`}
           >
             <DeepAnalyticsSidebar
               sessions={sessions}
@@ -686,7 +685,7 @@ const DeepAnalytics = () => {
               <h1 className="text-2xl font-medium text-foreground mb-2 animate-fade-in">
                 Deep Analysis in Progress
               </h1>
-              
+
               {/* ✅ REAL STAGE LABEL */}
               <p className="text-muted-foreground mb-2 transition-opacity duration-300 animate-fade-in">
                 {stageLabel || "Processing your request"}
@@ -737,12 +736,11 @@ const DeepAnalytics = () => {
           onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
           showSidebarToggle
         />
-        
+
         <div className="flex-1 flex overflow-hidden">
           <aside
-            className={`transition-all duration-300 ease-in-out border-r border-border bg-muted/30 flex-shrink-0 ${
-              sidebarOpen ? 'w-80 2xl:w-96 opacity-100' : 'w-0 opacity-0'
-            } overflow-hidden`}
+            className={`transition-all duration-300 ease-in-out border-r border-border bg-muted/30 flex-shrink-0 ${sidebarOpen ? 'w-80 2xl:w-96 opacity-100' : 'w-0 opacity-0'
+              } overflow-hidden`}
           >
             <DeepAnalyticsSidebar
               sessions={sessions}
@@ -841,9 +839,8 @@ const DeepAnalytics = () => {
 
       <div className="flex-1 flex overflow-hidden">
         <aside
-          className={`transition-all duration-300 ease-in-out border-r border-border bg-muted/30 flex-shrink-0 ${
-            sidebarOpen ? 'w-80 2xl:w-96 opacity-100' : 'w-0 opacity-0'
-          } overflow-hidden`}
+          className={`transition-all duration-300 ease-in-out border-r border-border bg-muted/30 flex-shrink-0 ${sidebarOpen ? 'w-80 2xl:w-96 opacity-100' : 'w-0 opacity-0'
+            } overflow-hidden`}
         >
           <DeepAnalyticsSidebar
             sessions={sessions}
