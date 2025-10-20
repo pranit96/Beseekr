@@ -18,7 +18,9 @@ export type ProgressStage =
   | 'agent_selection'
   | 'ideation'
   | 'synthesis'
-  | 'complete';
+  | 'complete'
+  | 'stage1'
+  | 'low_confidence_detected';
 
 // ✅ Backend sends this structure
 export interface ProgressUpdate {

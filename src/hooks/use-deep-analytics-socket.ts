@@ -33,7 +33,9 @@ const STAGE_LABELS: Record<ProgressStage, string> = {
   agent_selection: 'Selecting specialist agents...',
   ideation: 'Generating strategic insights...',
   synthesis: 'Synthesizing final report...',
-  complete: 'Analysis complete'
+  complete: 'Analysis complete',
+  stage1: 'Problem DNA analyzed...',
+  low_confidence_detected: 'Low confidence detected in metrics...'
 };
 
 // ============================================================================

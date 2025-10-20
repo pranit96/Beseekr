@@ -1,5 +1,6 @@
 // Deep Analytics Sidebar - Session History
-import { Clock, Brain, Plus, Loader2 } from 'lucide-react';
+import React from 'react';
+import { Clock, Brain, Plus, Loader2, Trash2, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { formatDistanceToNow } from 'date-fns';
@@ -21,6 +22,7 @@ interface DeepAnalyticsSidebarProps {
   currentSessionId?: string;
   onSelectSession: (session: SessionSummary) => void;
   onNewAnalysis: () => void;
+  onDeleteSession?: (sessionId: string, erase: boolean) => void;
   loading?: boolean;
 }
 
@@ -29,8 +31,19 @@ export const DeepAnalyticsSidebar = ({
   currentSessionId,
   onSelectSession,
   onNewAnalysis,
+  onDeleteSession,
   loading = false
 }: DeepAnalyticsSidebarProps) => {
+  const [showDeleteMenu, setShowDeleteMenu] = React.useState<string | null>(null);
+
+  const handleDelete = (sessionId: string, erase: boolean, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onDeleteSession) {
+      onDeleteSession(sessionId, erase);
+    }
+    setShowDeleteMenu(null);
+  };
+
   return (
     <div className="h-full flex flex-col bg-muted/30">
       {/* Header */}
@@ -64,73 +77,121 @@ export const DeepAnalyticsSidebar = ({
             </div>
           ) : (
             sessions.map((session) => (
-              <button
-                key={session.id}
-                onClick={() => onSelectSession(session)}
-                className={cn(
-                  'w-full text-left p-2.5 rounded-lg border transition-all block',
-                  currentSessionId === session.id
-                    ? 'border-primary bg-primary/10 shadow-sm'
-                    : 'border-border hover:bg-muted/50 hover:border-border/80'
-                )}
-              >
-                <div className="flex items-start gap-2.5 w-full">
-                  <div className="mt-0.5 flex-shrink-0">
-                    <div
-                      className={cn(
-                        'w-7 h-7 rounded-lg flex items-center justify-center',
-                        session.status === 'completed'
-                          ? 'bg-success/10'
-                          : session.status === 'failed'
-                          ? 'bg-destructive/10'
-                          : 'bg-muted'
-                      )}
-                    >
-                      <Brain
+              <div key={session.id} className="relative group">
+                <button
+                  onClick={() => onSelectSession(session)}
+                  className={cn(
+                    'w-full text-left p-2.5 rounded-lg border transition-all block',
+                    currentSessionId === session.id
+                      ? 'border-primary bg-primary/10 shadow-sm'
+                      : 'border-border hover:bg-muted/50 hover:border-border/80'
+                  )}
+                >
+                  <div className="flex items-start gap-2.5 w-full">
+                    <div className="mt-0.5 flex-shrink-0">
+                      <div
                         className={cn(
-                          'w-3.5 h-3.5',
+                          'w-7 h-7 rounded-lg flex items-center justify-center',
                           session.status === 'completed'
-                            ? 'text-success'
+                            ? 'bg-success/10'
                             : session.status === 'failed'
-                            ? 'text-destructive'
-                            : 'text-muted-foreground'
+                            ? 'bg-destructive/10'
+                            : 'bg-muted'
                         )}
-                      />
+                      >
+                        <Brain
+                          className={cn(
+                            'w-3.5 h-3.5',
+                            session.status === 'completed'
+                              ? 'text-success'
+                              : session.status === 'failed'
+                              ? 'text-destructive'
+                              : 'text-muted-foreground'
+                          )}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex-1 min-w-0 overflow-hidden">
+                      <p 
+                        className="text-sm font-medium mb-1 overflow-hidden text-ellipsis whitespace-nowrap"
+                        title={session.problem}
+                      >
+                        {session.problem}
+                      </p>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground overflow-hidden">
+                        <span className="flex items-center gap-1 flex-shrink-0">
+                          <Clock className="w-3 h-3" />
+                          <span className="whitespace-nowrap">
+                            {formatDistanceToNow(new Date(session.created_at), {
+                              addSuffix: true,
+                            })}
+                          </span>
+                        </span>
+                        {session.execution_metrics && (
+                          <span className="flex items-center gap-1 flex-shrink-0 whitespace-nowrap">
+                            • {Math.round(session.execution_metrics.execution_time_ms / 60000)}m
+                          </span>
+                        )}
+                      </div>
+                      {session.tier && (
+                        <span 
+                          className="inline-block mt-1.5 px-2 py-0.5 text-xs rounded-full bg-muted text-muted-foreground overflow-hidden text-ellipsis whitespace-nowrap max-w-full"
+                          title={session.tier}
+                        >
+                          {session.tier}
+                        </span>
+                      )}
                     </div>
                   </div>
-                  <div className="flex-1 min-w-0 overflow-hidden">
-                    <p 
-                      className="text-sm font-medium mb-1 overflow-hidden text-ellipsis whitespace-nowrap"
-                      title={session.problem}
+                </button>
+
+                {/* Delete button - shows on selected session */}
+                {currentSessionId === session.id && onDeleteSession && (
+                  <div className="absolute top-2 right-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowDeleteMenu(showDeleteMenu === session.id ? null : session.id);
+                      }}
                     >
-                      {session.problem}
-                    </p>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground overflow-hidden">
-                      <span className="flex items-center gap-1 flex-shrink-0">
-                        <Clock className="w-3 h-3" />
-                        <span className="whitespace-nowrap">
-                          {formatDistanceToNow(new Date(session.created_at), {
-                            addSuffix: true,
-                          })}
-                        </span>
-                      </span>
-                      {session.execution_metrics && (
-                        <span className="flex items-center gap-1 flex-shrink-0 whitespace-nowrap">
-                          • {Math.round(session.execution_metrics.execution_time_ms / 60000)}m
-                        </span>
-                      )}
-                    </div>
-                    {session.tier && (
-                      <span 
-                        className="inline-block mt-1.5 px-2 py-0.5 text-xs rounded-full bg-muted text-muted-foreground overflow-hidden text-ellipsis whitespace-nowrap max-w-full"
-                        title={session.tier}
-                      >
-                        {session.tier}
-                      </span>
+                      <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                    </Button>
+
+                    {/* Delete menu */}
+                    {showDeleteMenu === session.id && (
+                      <div className="absolute right-0 top-8 z-50 w-56 bg-background border rounded-lg shadow-lg p-2">
+                        <div className="text-xs text-muted-foreground mb-2 px-2">
+                          Delete this session?
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="w-full justify-start text-xs h-8 mb-1"
+                          onClick={(e) => handleDelete(session.id, false, e)}
+                        >
+                          <Trash2 className="w-3 h-3 mr-2" />
+                          Standard Delete
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="w-full justify-start text-xs h-8 text-destructive hover:text-destructive"
+                          onClick={(e) => handleDelete(session.id, true, e)}
+                        >
+                          <AlertTriangle className="w-3 h-3 mr-2" />
+                          Complete Erasure (GDPR)
+                        </Button>
+                        <div className="text-xs text-muted-foreground/70 mt-2 px-2 pt-2 border-t">
+                          Standard keeps audit trail. Erasure removes all data.
+                        </div>
+                      </div>
                     )}
                   </div>
-                </div>
-              </button>
+                )}
+              </div>
             ))
           )}
         </div>

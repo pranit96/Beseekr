@@ -436,6 +436,49 @@ class ApiClient {
       method: 'POST',
     });
   }
+
+  async deleteFile(fileId: string) {
+    this.invalidateCache('/api/thinkers/files');
+    return this.request<{
+      success: boolean;
+      message: string;
+    }>(`/api/thinkers/files/${fileId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async deleteSession(sessionId: string, erase: boolean = false) {
+    this.invalidateCache('/api/thinkers/sessions');
+    const query = erase ? '?erase=true' : '';
+    return this.request<{
+      success: boolean;
+      message: string;
+      session_id: string;
+      complete_erasure: boolean;
+      deleted_records: {
+        session: number;
+        ideations: number;
+        audit_trail: number;
+        pii_logs: number;
+      };
+    }>(`/api/thinkers/sessions/${sessionId}${query}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async submitSupplementalInputs(sessionId: string, data: Record<string, any>) {
+    this.invalidateCache('/api/thinkers/sessions');
+    return this.request<{
+      success: boolean;
+      message: string;
+      sessionId: string;
+      jobId: string;
+      reprocessing: boolean;
+    }>(`/api/thinkers/sessions/${sessionId}/inputs`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
 }
 
 export const apiClient = new ApiClient(API_BASE_URL);

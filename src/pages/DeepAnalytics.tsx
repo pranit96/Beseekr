@@ -12,6 +12,8 @@ import MarkdownRenderer from '@/components/messages/MarkdownRenderer';
 import { useDownload } from '@/hooks/use-download';
 import { SessionSummary, FullSession } from '@/components/SessionHistory';
 import { DeepAnalyticsSidebar } from '@/components/DeepAnalyticsSidebar';
+import { LowConfidenceBanner } from '@/components/LowConfidenceBanner';
+import { KPIInputModal } from '@/components/KPIInputModal';
 import { createLogger } from '@/services/logging';
 import { apiClient } from '@/lib/api';
 import { useSessionDetails, useSessions } from '@/hooks/use-api-queries';
@@ -37,6 +39,15 @@ interface SessionFile {
   content_type: string;
 }
 
+interface LowConfidenceKPI {
+  kpi: string;
+  confidence: number;
+  value?: number;
+  unit?: string;
+  threshold: number;
+  canImprove: boolean;
+}
+
 // 🔥 REAL STAGE LABELS — matches your backend stages exactly
 const STAGE_LABELS: Record<string, string> = {
   initializing: 'Initializing analysis...',
@@ -47,7 +58,8 @@ const STAGE_LABELS: Record<string, string> = {
   agent_selection: 'Selecting specialist agents...',
   ideation: 'Generating strategic insights...',
   synthesis: 'Synthesizing final report...',
-  complete: 'Analysis complete'
+  complete: 'Analysis complete',
+  low_confidence_detected: 'Low confidence detected in metrics...'
 };
 
 const DeepAnalytics = () => {
@@ -68,6 +80,11 @@ const DeepAnalytics = () => {
   const [isPreviewing, setIsPreviewing] = useState(false);
   const [fileContent, setFileContent] = useState<{ [fileId: string]: string }>({});
   const [isExecuting, setIsExecuting] = useState(false);
+  
+  // Low confidence state
+  const [lowConfidenceKPIs, setLowConfidenceKPIs] = useState<LowConfidenceKPI[]>([]);
+  const [showLowConfidenceBanner, setShowLowConfidenceBanner] = useState(false);
+  const [showKPIInputModal, setShowKPIInputModal] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -89,7 +106,25 @@ const DeepAnalytics = () => {
     subscribeToSession,
     unsubscribeFromSession,
     cancelSession,
-  } = useDeepAnalyticsSocket({ autoConnect: false });
+  } = useDeepAnalyticsSocket({
+    autoConnect: false,
+    callbacks: {
+      onProgress: (data: any) => {
+        // Check for low confidence detection
+        if (data.stage === 'low_confidence_detected' && data.lowConfidenceKPIs) {
+          logger.info('Low confidence detected', { kpis: data.lowConfidenceKPIs });
+          setLowConfidenceKPIs(data.lowConfidenceKPIs);
+          setShowLowConfidenceBanner(true);
+        }
+        // Also check stage1_complete
+        if (data.stage === 'stage1' && data.lowConfidenceKPIs) {
+          logger.info('Low confidence detected in stage1', { kpis: data.lowConfidenceKPIs });
+          setLowConfidenceKPIs(data.lowConfidenceKPIs);
+          setShowLowConfidenceBanner(true);
+        }
+      }
+    }
+  });
 
   // Fetch session details for preview
   const { data: sessionData, isLoading: isLoadingSession, error: sessionError } = useSessionDetails(currentSessionId || '');
@@ -291,8 +326,49 @@ const DeepAnalytics = () => {
     const selectedFiles = Array.from(e.target.files || []);
     if (selectedFiles.length === 0) return;
 
+    // Client-side validation
+    const maxFileSize = 50 * 1024 * 1024; // 50MB
+    const allowedTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'text/csv',
+      'text/plain',
+      'application/json',
+      'text/markdown',
+      'text/html',
+      'application/xml',
+      'text/xml',
+      'application/zip',
+      'application/x-zip-compressed'
+    ];
+
+    const invalidFiles: string[] = [];
+    const validFiles: File[] = [];
+
+    selectedFiles.forEach(file => {
+      if (file.size > maxFileSize) {
+        invalidFiles.push(`${file.name} (exceeds 50MB limit)`);
+      } else if (!allowedTypes.includes(file.type) && !file.name.match(/\.(pdf|docx?|xlsx?|csv|txt|json|md|html|xml|zip)$/i)) {
+        invalidFiles.push(`${file.name} (unsupported file type)`);
+      } else {
+        validFiles.push(file);
+      }
+    });
+
+    if (invalidFiles.length > 0) {
+      toast({
+        title: 'Invalid files',
+        description: invalidFiles.join(', '),
+        variant: 'destructive'
+      });
+      if (validFiles.length === 0) return;
+    }
+
     const existingNames = new Set(files.map(f => f.name));
-    const newFiles = selectedFiles.filter(file => !existingNames.has(file.name));
+    const newFiles = validFiles.filter(file => !existingNames.has(file.name));
 
     if (newFiles.length === 0) {
       toast({ title: 'Duplicate files', description: 'All selected files are already uploaded.', variant: 'destructive' });
@@ -315,12 +391,39 @@ const DeepAnalytics = () => {
         body: formData,
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Upload failed');
+      const data = await response.json();
+
+      // Handle file verification errors
+      if (!response.ok || !data.success) {
+        if (data.error === 'File verification failed' && data.details) {
+          // Show detailed errors for each failed file
+          const errorMessages = data.details.map((detail: any) => {
+            const errors = detail.errors?.join(', ') || 'Unknown error';
+            const warnings = detail.warnings?.length > 0 ? ` (Warnings: ${detail.warnings.join(', ')})` : '';
+            return `${detail.filename}: ${errors}${warnings}`;
+          });
+
+          toast({
+            title: 'File verification failed',
+            description: errorMessages.join(' | '),
+            variant: 'destructive',
+          });
+
+          // Show summary if some files succeeded
+          if (data.verified > 0) {
+            toast({
+              title: 'Partial upload',
+              description: `${data.verified} file(s) verified, ${data.failed} failed`,
+            });
+          }
+
+          logger.error('File verification failed', { details: data.details });
+          return;
+        }
+
+        throw new Error(data.error || data.message || 'Upload failed');
       }
 
-      const data = await response.json();
       const uploadedFiles = data.data?.uploaded || [];
 
       if (uploadedFiles.length > 0) {
@@ -333,9 +436,23 @@ const DeepAnalytics = () => {
 
         setFiles(prev => [...prev, ...frontendFiles]);
         setUploadedFileIds(prev => [...prev, ...uploadedFiles.map((f: any) => f.id)]);
-        toast({
-          title: 'Files uploaded',
-          description: `${uploadedFiles.length} file(s) uploaded successfully`,
+
+        // Show ZIP extraction notification
+        if (data.data.extractedFromZip) {
+          toast({
+            title: 'ZIP extracted',
+            description: `Extracted ${uploadedFiles.length} file(s) from ZIP archive`,
+          });
+        } else {
+          toast({
+            title: 'Files uploaded',
+            description: `${uploadedFiles.length} file(s) uploaded successfully`,
+          });
+        }
+
+        logger.info('Files uploaded successfully', {
+          count: uploadedFiles.length,
+          extractedFromZip: data.data.extractedFromZip || false
         });
       } else {
         throw new Error('No files returned from server');
@@ -490,6 +607,109 @@ const DeepAnalytics = () => {
     });
   };
 
+  // DELETE SESSION HANDLER
+  const handleDeleteSession = async (sessionId: string, erase: boolean) => {
+    try {
+      logger.info('Deleting session', { sessionId, erase });
+
+      const response = await apiClient.deleteSession(sessionId, erase);
+
+      if (response.success && response.data) {
+        const deletedRecords = response.data.deleted_records;
+        const totalDeleted = deletedRecords.session + deletedRecords.ideations + deletedRecords.audit_trail + deletedRecords.pii_logs;
+
+        toast({
+          title: erase ? 'Session erased' : 'Session deleted',
+          description: erase
+            ? `Permanently erased ${totalDeleted} records`
+            : 'Session deleted successfully',
+        });
+
+        // If deleted session is current, clear it
+        if (currentSessionId === sessionId) {
+          handleNewAnalysis();
+        }
+
+        // Refresh sessions list
+        queryClient.invalidateQueries({ queryKey: ['sessions'] });
+      }
+    } catch (error: any) {
+      logger.error('Failed to delete session', { error: error.message, sessionId });
+      toast({
+        title: 'Delete failed',
+        description: error.message,
+        variant: 'destructive'
+      });
+    }
+  };
+
+  // DELETE FILE HANDLER
+  const handleDeleteFile = async (fileId: string) => {
+    try {
+      logger.info('Deleting file', { fileId });
+
+      const response = await apiClient.deleteFile(fileId);
+
+      if (response.success) {
+        // Remove from local state
+        setFiles(prev => prev.filter(f => f.id !== fileId));
+        setUploadedFileIds(prev => prev.filter(id => id !== fileId));
+
+        toast({
+          title: 'File deleted',
+          description: 'File removed successfully',
+        });
+      }
+    } catch (error: any) {
+      logger.error('Failed to delete file', { error: error.message, fileId });
+      toast({
+        title: 'Delete failed',
+        description: error.message,
+        variant: 'destructive'
+      });
+    }
+  };
+
+  // SUPPLEMENTAL INPUT HANDLERS
+  const handleSubmitSupplementalInputs = async (values: Record<string, any>) => {
+    if (!currentSessionId) return;
+
+    try {
+      logger.info('Submitting supplemental inputs', { sessionId: currentSessionId, values });
+
+      const response = await apiClient.submitSupplementalInputs(currentSessionId, values);
+
+      if (response.success && response.data) {
+        toast({
+          title: 'Data submitted',
+          description: 'Reprocessing analysis with your data...',
+        });
+
+        setShowKPIInputModal(false);
+        setShowLowConfidenceBanner(false);
+
+        // Reconnect to WebSocket for reprocessing
+        await subscribeToSession(response.data.sessionId);
+
+        queryClient.invalidateQueries({ queryKey: ['sessions'] });
+      }
+    } catch (error: any) {
+      logger.error('Failed to submit supplemental inputs', { error: error.message });
+      toast({
+        title: 'Submission failed',
+        description: error.message,
+        variant: 'destructive'
+      });
+      throw error;
+    }
+  };
+
+  const handleUploadSupplementalFiles = () => {
+    // Trigger file input
+    fileInputRef.current?.click();
+    setShowLowConfidenceBanner(false);
+  };
+
   // NEW ANALYSIS HANDLER
   const handleNewAnalysis = () => {
     setCurrentSessionId(null);
@@ -498,6 +718,9 @@ const DeepAnalytics = () => {
     setFiles([]);
     setUploadedFileIds([]);
     setIsPreviewing(false);
+    setLowConfidenceKPIs([]);
+    setShowLowConfidenceBanner(false);
+    setShowKPIInputModal(false);
     setFileContent({});
     loadedSessionRef.current = null;
     unsubscribeFromSession();
@@ -674,6 +897,7 @@ const DeepAnalytics = () => {
               currentSessionId={currentSessionId || undefined}
               onSelectSession={handleSelectSession}
               onNewAnalysis={handleNewAnalysis}
+              onDeleteSession={handleDeleteSession}
               loading={loadingSessions}
             />
           </aside>
@@ -739,9 +963,32 @@ const DeepAnalytics = () => {
                   Cancel Analysis
                 </Button>
               </div>
+
+              {/* Low Confidence Banner */}
+              {showLowConfidenceBanner && lowConfidenceKPIs.length > 0 && (
+                <div className="mt-8 max-w-2xl mx-auto">
+                  <LowConfidenceBanner
+                    sessionId={currentSessionId || ''}
+                    lowConfidenceKPIs={lowConfidenceKPIs}
+                    onUploadFiles={handleUploadSupplementalFiles}
+                    onEnterValues={() => setShowKPIInputModal(true)}
+                    onDismiss={() => setShowLowConfidenceBanner(false)}
+                  />
+                </div>
+              )}
             </div>
           </div>
         </div>
+
+        {/* KPI Input Modal */}
+        {showKPIInputModal && lowConfidenceKPIs.length > 0 && (
+          <KPIInputModal
+            sessionId={currentSessionId || ''}
+            lowConfidenceKPIs={lowConfidenceKPIs}
+            onSubmit={handleSubmitSupplementalInputs}
+            onClose={() => setShowKPIInputModal(false)}
+          />
+        )}
       </div>
     );
   }
@@ -766,6 +1013,7 @@ const DeepAnalytics = () => {
               currentSessionId={currentSessionId || undefined}
               onSelectSession={handleSelectSession}
               onNewAnalysis={handleNewAnalysis}
+              onDeleteSession={handleDeleteSession}
               loading={loadingSessions}
             />
           </aside>
@@ -826,6 +1074,19 @@ const DeepAnalytics = () => {
                 </div>
               </div>
 
+              {/* Low Confidence Banner */}
+              {showLowConfidenceBanner && lowConfidenceKPIs.length > 0 && (
+                <div className="mb-6">
+                  <LowConfidenceBanner
+                    sessionId={currentSessionId || ''}
+                    lowConfidenceKPIs={lowConfidenceKPIs}
+                    onUploadFiles={handleUploadSupplementalFiles}
+                    onEnterValues={() => setShowKPIInputModal(true)}
+                    onDismiss={() => setShowLowConfidenceBanner(false)}
+                  />
+                </div>
+              )}
+
               <Card className="border bg-card overflow-hidden rounded-xl animate-fade-in-up">
                 <div className="overflow-auto p-8 sm:p-10 lg:p-12">
                   {renderResultContent()}
@@ -834,6 +1095,16 @@ const DeepAnalytics = () => {
             </div>
           </div>
         </div>
+
+        {/* KPI Input Modal */}
+        {showKPIInputModal && lowConfidenceKPIs.length > 0 && (
+          <KPIInputModal
+            sessionId={currentSessionId || ''}
+            lowConfidenceKPIs={lowConfidenceKPIs}
+            onSubmit={handleSubmitSupplementalInputs}
+            onClose={() => setShowKPIInputModal(false)}
+          />
+        )}
       </div>
     );
   }
@@ -866,6 +1137,7 @@ const DeepAnalytics = () => {
             currentSessionId={currentSessionId || undefined}
             onSelectSession={handleSelectSession}
             onNewAnalysis={handleNewAnalysis}
+            onDeleteSession={handleDeleteSession}
             loading={loadingSessions}
           />
         </aside>
@@ -963,7 +1235,7 @@ const DeepAnalytics = () => {
                   <div>
                     <Upload className="w-5 h-5 text-muted-foreground mx-auto mb-1.5" />
                     <p className="text-xs font-medium text-foreground">Add files for deeper analysis</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">PDF, DOCX, CSV, JSON • Max 5 files</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">PDF, DOCX, XLSX, CSV, JSON, ZIP • Max 50MB per file</p>
                   </div>
                 )}
               </div>
@@ -971,7 +1243,7 @@ const DeepAnalytics = () => {
                 ref={fileInputRef}
                 type="file"
                 multiple
-                accept=".pdf,.doc,.docx,.txt,.csv,.json,.md"
+                accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.json,.md,.html,.xml,.zip"
                 onChange={handleFileSelect}
                 className="hidden"
               />
@@ -982,14 +1254,15 @@ const DeepAnalytics = () => {
                     <div key={file.id} className="flex items-center gap-2 p-2.5 bg-muted/30 rounded-lg">
                       <FileText className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
                       <div className="min-w-0 flex-1">
-                        <p className="text-xs font-medium truncate">{file.name}</p>
+                        <p className="text-xs font-medium truncate" title={file.name}>{file.name}</p>
                         <p className="text-xs text-muted-foreground">{formatFileSize(file.size)}</p>
                       </div>
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
-                        onClick={() => removeFile(file.id)}
+                        className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
+                        onClick={() => handleDeleteFile(file.id)}
+                        title="Delete file"
                       >
                         <X className="w-3.5 h-3.5" />
                       </Button>
