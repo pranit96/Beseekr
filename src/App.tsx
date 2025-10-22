@@ -35,6 +35,15 @@ const queryClient = new QueryClient({
 const RootRedirect = () => {
   const { user, loading } = useAuth();
   
+  // Check if URL has password reset token in hash
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash.includes('access_token') && hash.includes('type=recovery')) {
+      // Redirect to reset password page with the hash
+      window.location.href = `/reset-password${hash}`;
+    }
+  }, []);
+  
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">

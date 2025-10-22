@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,22 +12,31 @@ const ResetPassword = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [searchParams] = useSearchParams();
+  const [hasValidToken, setHasValidToken] = useState(false);
+  const location = useLocation();
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check if we have the required token parameters
-    const hasToken = searchParams.get("token") || searchParams.get("access_token");
-    if (!hasToken) {
+    // Parse hash parameters (Supabase sends tokens in URL hash)
+    const hashParams = new URLSearchParams(location.hash.substring(1));
+    const accessToken = hashParams.get("access_token");
+    const type = hashParams.get("type");
+    
+    // Check if this is a recovery/reset password link
+    if (accessToken && type === "recovery") {
+      setHasValidToken(true);
+      // Store token temporarily for the API call
+      sessionStorage.setItem("reset_token", accessToken);
+    } else {
       toast({
         title: "Invalid reset link",
         description: "This password reset link is invalid or has expired.",
         variant: "destructive",
       });
-      navigate("/auth");
+      setTimeout(() => navigate("/auth"), 2000);
     }
-  }, [searchParams, navigate, toast]);
+  }, [location, navigate, toast]);
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,6 +79,18 @@ const ResetPassword = () => {
       setIsLoading(false);
     }
   };
+
+  if (!hasValidToken) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4 bg-white dark:bg-background">
+        <Card className="w-full max-w-md p-6 sm:p-8 glass shadow-strong border border-primary/20 bg-white/95 dark:bg-card/90">
+          <div className="text-center">
+            <div className="animate-pulse text-muted-foreground">Validating reset link...</div>
+          </div>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-white dark:bg-background">
