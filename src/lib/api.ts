@@ -217,6 +217,21 @@ class ApiClient {
     });
   }
 
+  async forgotPassword(email: string) {
+    return this.request<any>('/api/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  }
+
+  async resetPassword(password: string) {
+    this.clearCache();
+    return this.request<any>('/api/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ password }),
+    });
+  }
+
   // Agent endpoints
   async getAgents(params?: { domain?: string; page?: number; limit?: number }) {
     const query = new URLSearchParams(params as any).toString();

@@ -12,6 +12,7 @@ import Agents from "./pages/Agents";
 import Analytics from "./pages/Analytics";
 import Profile from "./pages/Profile";
 import Auth from "./pages/Auth";
+import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import Landing from "./pages/Landing";
 import Privacy from "./pages/Privacy";
@@ -119,6 +120,9 @@ const App = () => {
                   </PublicOnlyRoute>
                 } 
               />
+              
+              {/* Reset password page - accessible to everyone with valid token */}
+              <Route path="/reset-password" element={<ResetPassword />} />
               
               {/* Privacy page - accessible to everyone */}
               <Route path="/privacy" element={<Privacy />} />
