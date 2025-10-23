@@ -17,6 +17,7 @@ import NotFound from "./pages/NotFound";
 import Landing from "./pages/Landing";
 import Privacy from "./pages/Privacy";
 import DeepAnalytics from "./pages/DeepAnalytics";
+import Deck from "./pages/Deck";
 import { useEffect } from "react";
 
 const queryClient = new QueryClient({
@@ -174,6 +175,14 @@ const App = () => {
                 element={
                   <ProtectedRoute>
                     <Profile />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/deck" 
+                element={
+                  <ProtectedRoute>
+                    <Deck />
                   </ProtectedRoute>
                 } 
               />

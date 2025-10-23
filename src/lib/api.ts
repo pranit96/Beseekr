@@ -494,6 +494,75 @@ class ApiClient {
       body: JSON.stringify(data),
     });
   }
+
+  // Deck-to-Model endpoints
+  async uploadDeck(formData: FormData) {
+    this.invalidateCache('/api/deck-to-model');
+    
+    // Don't set Content-Type for FormData - browser will set it with boundary
+    const response = await fetch(`${this.baseUrl}/api/deck-to-model/upload`, {
+      method: 'POST',
+      body: formData,
+      credentials: 'include',
+    });
+
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      throw new Error('Server returned non-JSON response');
+    }
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        if (this.onUnauthorized) {
+          this.onUnauthorized();
+        }
+        throw new Error('Session expired. Please log in again.');
+      }
+      throw new Error(data.error || data.message || 'Upload failed');
+    }
+
+    return data;
+  }
+
+  async getDeckOrders(params?: { limit?: number; offset?: number; status?: string }) {
+    const query = new URLSearchParams(params as any).toString();
+    return this.request<any>(`/api/deck-to-model/orders${query ? `?${query}` : ''}`);
+  }
+
+  async getDeckOrder(orderId: string) {
+    return this.request<any>(`/api/deck-to-model/orders/${orderId}`);
+  }
+
+  async downloadDeckModel(orderId: string): Promise<Blob> {
+    const response = await fetch(`${this.baseUrl}/api/deck-to-model/orders/${orderId}/download`, {
+      method: 'GET',
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        const data = await response.json();
+        throw new Error(data.error || data.message || 'Download failed');
+      }
+      throw new Error(`Download failed with status ${response.status}`);
+    }
+
+    return response.blob();
+  }
+
+  async deleteDeckOrder(orderId: string) {
+    this.invalidateCache('/api/deck-to-model');
+    return this.request<any>(`/api/deck-to-model/orders/${orderId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async getDeckMetrics() {
+    return this.request<any>('/api/deck-to-model/metrics');
+  }
 }
 
 export const apiClient = new ApiClient(API_BASE_URL);
