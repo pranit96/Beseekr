@@ -239,7 +239,7 @@ const Chat = () => {
       description: 'You can now start messaging your agents.',
     });
 
-    // Make API call in background with retry logic
+    // Create conversation in background with retry logic
     let attempts = 0;
     const maxAttempts = 3;
     
@@ -247,7 +247,7 @@ const Chat = () => {
       attempts++;
       
       try {
-        logger.info('Creating new conversation', { attempt: attempts });
+        logger.info('Creating new conversation in background', { attempt: attempts, tempId });
         
         const response = await apiClient.createConversation({
           agent_id: null,
@@ -257,11 +257,14 @@ const Chat = () => {
         if (response.success && response.data?.id) {
           const realId = response.data.id;
           
-          logger.info('Conversation created successfully', { 
+          logger.info('Background conversation created successfully', { 
             tempId, 
             realId,
             attempt: attempts 
           });
+          
+          // Store the mapping in sessionStorage so ChatInterface can use it
+          sessionStorage.setItem(`conv_mapping_${tempId}`, realId);
           
           // Replace temp conversation with real one
           setConversations(prev => 
@@ -272,21 +275,25 @@ const Chat = () => {
             )
           );
           
-          // Update current conversation ID
-          if (currentConversationId === tempId) {
-            setCurrentConversationId(realId);
-            sessionStorage.setItem('lastActiveConversation', realId);
-          }
+          // Update current conversation ID if it's still the temp one
+          setCurrentConversationId(prevId => {
+            if (prevId === tempId) {
+              sessionStorage.setItem('lastActiveConversation', realId);
+              return realId;
+            }
+            return prevId;
+          });
           
           // Refresh conversation list in background
-          fetchConversations();
+          setTimeout(() => fetchConversations(), 1000);
         } else {
           throw new Error('Could not create a new session');
         }
       } catch (error: any) {
-        logger.error('Failed to create conversation', { 
+        logger.error('Failed to create conversation in background', { 
           attempt: attempts, 
-          error: error.message 
+          error: error.message,
+          tempId
         });
         
         // Check for auth errors
@@ -294,42 +301,30 @@ const Chat = () => {
           setAuthError(true);
           // Remove temp conversation
           setConversations(prev => prev.filter(conv => conv.id !== tempId));
-          if (currentConversationId === tempId) {
-            setCurrentConversationId(undefined);
-            sessionStorage.removeItem('lastActiveConversation');
-          }
+          setCurrentConversationId(prevId => {
+            if (prevId === tempId) {
+              sessionStorage.removeItem('lastActiveConversation');
+              return undefined;
+            }
+            return prevId;
+          });
           return;
         }
         
         // Retry logic
         if (attempts < maxAttempts) {
           const delay = Math.min(1000 * Math.pow(2, attempts), 5000);
-          logger.info('Retrying conversation creation', { 
+          logger.info('Retrying background conversation creation', { 
             delay, 
             attempt: attempts,
-            nextAttempt: attempts + 1 
+            nextAttempt: attempts + 1,
+            tempId
           });
           
           setTimeout(() => createWithRetry(), delay);
         } else {
-          // All retries failed - show error and remove temp conversation
-          logger.error('All retry attempts failed for conversation creation');
-          
-          toast({
-            title: 'Failed to create session',
-            description: 'Please try again or refresh the page.',
-            variant: 'destructive',
-          });
-          
-          // Remove temp conversation
-          setConversations(prev => prev.filter(conv => conv.id !== tempId));
-          
-          // Clear current conversation if it was the temp one
-          if (currentConversationId === tempId) {
-            setCurrentConversationId(undefined);
-            sessionStorage.removeItem('lastActiveConversation');
-            setKey(prev => prev + 1);
-          }
+          // All retries failed - ChatInterface will create it when user sends first message
+          logger.warn('Background conversation creation failed, will be created on first message', { tempId });
         }
       }
     };
@@ -340,11 +335,37 @@ const Chat = () => {
 
   const handleConversationCreated = useCallback(
     async (conversationId: string) => {
-      // Optimistically add to list if not already there
+      logger.info('Conversation created callback', { conversationId, currentId: currentConversationId });
+      
+      // Replace temporary conversation with real one, or add if not exists
       setConversations(prev => {
-        const exists = prev.some(conv => conv.id === conversationId);
-        if (exists) return prev;
+        // Check if we have a temp conversation to replace
+        const tempIndex = prev.findIndex(conv => conv.id.startsWith('temp-'));
         
+        if (tempIndex >= 0) {
+          // Replace temp conversation with real one
+          logger.info('Replacing temp conversation with real one', { 
+            tempId: prev[tempIndex].id, 
+            realId: conversationId 
+          });
+          
+          const updated = [...prev];
+          updated[tempIndex] = {
+            ...updated[tempIndex],
+            id: conversationId,
+          };
+          return updated;
+        }
+        
+        // Check if conversation already exists
+        const exists = prev.some(conv => conv.id === conversationId);
+        if (exists) {
+          logger.debug('Conversation already exists in list', { conversationId });
+          return prev;
+        }
+        
+        // Add new conversation to the list
+        logger.info('Adding new conversation to list', { conversationId });
         return [{
           id: conversationId,
           title: 'New Conversation',
@@ -357,10 +378,12 @@ const Chat = () => {
       setCurrentConversationId(conversationId);
       sessionStorage.setItem('lastActiveConversation', conversationId);
       
-      // Fetch full conversation list in background
-      fetchConversations();
+      // Fetch full conversation list in background to get updated data
+      setTimeout(() => {
+        fetchConversations();
+      }, 500);
     },
-    [fetchConversations]
+    [fetchConversations, currentConversationId]
   );
 
   const handleConversationChange = useCallback((conversationId: string | null) => {

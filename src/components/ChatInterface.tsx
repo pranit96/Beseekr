@@ -197,8 +197,31 @@ export const ChatInterface: React.FC<{
     try {
       let convId = conversationId;
 
-      // STEP 1: Create conversation FIRST (if needed) - BEFORE any UI updates
-      if (saveToConversation && !convId && !isCreatingConversationRef.current) {
+      // Check if we have a temporary conversation ID that needs to be replaced
+      const isTempConversation = convId?.startsWith('temp-');
+
+      // STEP 1: Check if background conversation creation already succeeded
+      if (isTempConversation && convId) {
+        // Check sessionStorage for the real conversation ID
+        const realId = sessionStorage.getItem(`conv_mapping_${convId}`);
+        if (realId) {
+          logger.info('Using background-created conversation', { tempId: convId, realId });
+          convId = realId;
+          setConversationId(realId);
+          
+          // Clean up the mapping
+          sessionStorage.removeItem(`conv_mapping_${convId}`);
+          
+          // Notify parent components
+          setTimeout(() => {
+            onConversationChange?.(realId);
+            onConversationCreated?.(realId);
+          }, 100);
+        }
+      }
+
+      // STEP 2: Create conversation if needed (no valid conversation ID exists)
+      if (saveToConversation && (!convId || isTempConversation) && !isCreatingConversationRef.current) {
         isCreatingConversationRef.current = true;
         
         try {
@@ -212,7 +235,12 @@ export const ChatInterface: React.FC<{
             title = title.substring(0, 47) + '...';
           }
           
-          logger.info('Creating new conversation', { title });
+          logger.info('Creating new conversation (background creation may have failed)', { 
+            title, 
+            replacingTemp: isTempConversation,
+            tempId: isTempConversation ? convId : undefined
+          });
+          
           const createRes = await apiClient.createConversation({
             agent_id: selectedAgents[0]?.id || null,
             title: title, 
@@ -229,7 +257,10 @@ export const ChatInterface: React.FC<{
               onConversationCreated?.(convId);
             }, 200);
             
-            logger.info('Conversation created successfully', { conversationId: convId });
+            logger.info('Conversation created successfully', { 
+              conversationId: convId, 
+              wasTemp: isTempConversation 
+            });
           }
         } catch (err) {
           logger.error('Failed to create conversation', { error: err });
