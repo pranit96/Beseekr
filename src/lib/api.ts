@@ -30,9 +30,57 @@ class ApiClient {
   private requestCache: Map<string, { data: any; timestamp: number }> = new Map();
   private pendingRequests: Map<string, Promise<any>> = new Map();
   private readonly CACHE_TTL = 30000; // 30 seconds cache
+  private isRefreshingSession = false;
+  private refreshPromise: Promise<void> | null = null;
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
+  }
+
+  // NEW: Attempt to refresh session before calling unauthorized handler
+  private async handleSessionExpired(): Promise<boolean> {
+    if (this.isRefreshingSession && this.refreshPromise) {
+      logger.info('Session refresh already in progress, waiting...');
+      try {
+        await this.refreshPromise;
+        return true;
+      } catch {
+        return false;
+      }
+    }
+
+    this.isRefreshingSession = true;
+    this.refreshPromise = (async () => {
+      try {
+        logger.info('Attempting to refresh expired session');
+        const response = await fetch(`${this.baseUrl}/api/auth/me`, {
+          method: 'GET',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+        });
+
+        if (response.ok) {
+          logger.info('Session refresh successful');
+          this.clearCache(); // Clear cache after refresh
+          return;
+        }
+        
+        throw new Error('Session refresh failed');
+      } catch (error) {
+        logger.error('Session refresh failed', { error });
+        throw error;
+      } finally {
+        this.isRefreshingSession = false;
+        this.refreshPromise = null;
+      }
+    })();
+
+    try {
+      await this.refreshPromise;
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   private getCacheKey(endpoint: string, options: RequestInit): string {
@@ -45,18 +93,19 @@ class ApiClient {
 
   private async request<T>(
     endpoint: string,
-    options: RequestInit = {}
+    options: RequestInit = {},
+    retryCount: number = 0
   ): Promise<ApiResponse<T>> {
     const cacheKey = this.getCacheKey(endpoint, options);
     
-    // Check if there's a pending request for the same endpoint
-    if (this.pendingRequests.has(cacheKey)) {
+    // Check if there's a pending request for the same endpoint (only for first attempt)
+    if (retryCount === 0 && this.pendingRequests.has(cacheKey)) {
       logger.debug('Reusing pending request', { endpoint });
       return this.pendingRequests.get(cacheKey)!;
     }
 
-    // Check cache for GET requests
-    if ((options.method === 'GET' || !options.method)) {
+    // Check cache for GET requests (only for first attempt)
+    if (retryCount === 0 && (options.method === 'GET' || !options.method)) {
       const cached = this.requestCache.get(cacheKey);
       if (cached && this.isCacheValid(cached.timestamp)) {
         logger.debug('Returning cached response', { endpoint });
@@ -92,9 +141,25 @@ class ApiClient {
         const data = await response.json();
 
         if (!response.ok) {
-          // Handle 401 Unauthorized
+          // Handle 401 Unauthorized with automatic retry
           if (response.status === 401) {
-            logger.warn('Unauthorized response', { endpoint, status: response.status });
+            logger.warn('Unauthorized response', { endpoint, status: response.status, retryCount });
+            
+            // Try to refresh session and retry once
+            if (retryCount === 0) {
+              logger.info('Attempting session refresh before retry', { endpoint });
+              const refreshed = await this.handleSessionExpired();
+              
+              if (refreshed) {
+                logger.info('Session refreshed, retrying request', { endpoint });
+                // Remove from pending requests before retry
+                this.pendingRequests.delete(cacheKey);
+                // Retry the request
+                return this.request<T>(endpoint, options, retryCount + 1);
+              }
+            }
+            
+            // If refresh failed or this is already a retry, call unauthorized handler
             if (this.onUnauthorized) {
               this.onUnauthorized();
             }
@@ -119,10 +184,10 @@ class ApiClient {
           this.clearCache();
         }
 
-        logger.info('Request successful', { endpoint, status: response.status });
+        logger.info('Request successful', { endpoint, status: response.status, retryCount });
         return data;
       } catch (error: any) {
-        logger.error('Request failed', { endpoint, error: error.message, errorName: error.name });
+        logger.error('Request failed', { endpoint, error: error.message, errorName: error.name, retryCount });
         
         // Handle network errors
         if (error.name === 'AbortError') {
@@ -140,8 +205,10 @@ class ApiClient {
       }
     })();
 
-    // Store pending request
-    this.pendingRequests.set(cacheKey, requestPromise);
+    // Store pending request (only for first attempt)
+    if (retryCount === 0) {
+      this.pendingRequests.set(cacheKey, requestPromise);
+    }
 
     return requestPromise;
   }

@@ -241,6 +241,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const initAuth = async () => {
       try {
         logger.info('Checking initial authentication state');
+        
+        // Set up API client unauthorized handler
+        apiClient.setUnauthorizedHandler(() => {
+          logger.warn('API client detected unauthorized request');
+          if (!authErrorShownRef.current) {
+            authErrorShownRef.current = true;
+            handleAuthError();
+          }
+        });
+        
         await fetchCurrentUser();
       } catch (error) {
         logger.error('Initial auth check failed', { error });
@@ -260,7 +270,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
+  }, [handleAuthError]);
 
   const fetchCurrentUser = async () => {
     try {

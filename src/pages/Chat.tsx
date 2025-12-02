@@ -78,6 +78,11 @@ const Chat = () => {
     try {
       logger.info('Fetching conversations', { attempt: fetchAttemptRef.current + 1 });
       
+      // Clear cache before fetching to ensure fresh data
+      if (fetchAttemptRef.current === 0) {
+        apiClient.invalidateCache('/api/conversations');
+      }
+      
       const response = await apiClient.getConversations({
         status: 'active',
         page: 1,
@@ -167,10 +172,15 @@ const Chat = () => {
     setAuthError(false);
     
     try {
+      logger.info('Manual auth refresh triggered');
       await refreshAuth();
       await reload();
-      await fetchConversations();
+      
+      // Clear API cache to force fresh data
       apiClient.invalidateCache();
+      
+      // Refetch conversations with fresh session
+      await fetchConversations();
       
       toast({
         title: 'Session refreshed',
@@ -179,6 +189,12 @@ const Chat = () => {
     } catch (error: any) {
       logger.error('Auth refresh failed', { error: error.message });
       setAuthError(true);
+      
+      toast({
+        title: 'Refresh failed',
+        description: 'Please try logging in again',
+        variant: 'destructive',
+      });
     } finally {
       setRetrying(false);
     }
