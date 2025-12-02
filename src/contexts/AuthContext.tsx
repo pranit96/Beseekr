@@ -72,6 +72,38 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
   }, []);
 
+  // DEFINE handleAuthError FIRST (before it's used in other callbacks)
+  const handleAuthError = useCallback(() => {
+    logger.info('Handling auth error - clearing session');
+    
+    if (socketService.isConnected()) socketService.disconnect();
+    if (sessionCheckIntervalRef.current) clearInterval(sessionCheckIntervalRef.current);
+    if (tokenRefreshIntervalRef.current) clearInterval(tokenRefreshIntervalRef.current);
+    
+    setUser(null);
+    setSocketConnected(false);
+    refreshingRef.current = false;
+    
+    localStorage.setItem('auth_logout', Date.now().toString());
+    setTimeout(() => localStorage.removeItem('auth_logout'), 1000);
+    
+    const currentPath = window.location.pathname;
+    const publicPaths = ['/', '/auth', '/privacy'];
+    
+    if (!publicPaths.includes(currentPath)) {
+      navigate('/auth');
+      
+      if (!authErrorShownRef.current) {
+        authErrorShownRef.current = true;
+        toast({
+          title: 'Session expired',
+          description: 'Please log in again.',
+          variant: 'destructive',
+        });
+      }
+    }
+  }, [navigate, toast]);
+
   // Check if session is still valid
   const isSessionValid = useCallback((): boolean => {
     if (!user) return false;
@@ -125,7 +157,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       refreshingRef.current = false;
     }
-  }, [toast]);
+  }, [toast, handleAuthError]);
 
   // ENHANCED: Proactive session maintenance
   useEffect(() => {
@@ -288,37 +320,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setLoading(false);
     }
   };
-
-  const handleAuthError = useCallback(() => {
-    logger.info('Handling auth error - clearing session');
-    
-    if (socketService.isConnected()) socketService.disconnect();
-    if (sessionCheckIntervalRef.current) clearInterval(sessionCheckIntervalRef.current);
-    if (tokenRefreshIntervalRef.current) clearInterval(tokenRefreshIntervalRef.current);
-    
-    setUser(null);
-    setSocketConnected(false);
-    refreshingRef.current = false;
-    
-    localStorage.setItem('auth_logout', Date.now().toString());
-    setTimeout(() => localStorage.removeItem('auth_logout'), 1000);
-    
-    const currentPath = window.location.pathname;
-    const publicPaths = ['/', '/auth', '/privacy'];
-    
-    if (!publicPaths.includes(currentPath)) {
-      navigate('/auth');
-      
-      if (!authErrorShownRef.current) {
-        authErrorShownRef.current = true;
-        toast({
-          title: 'Session expired',
-          description: 'Please log in again.',
-          variant: 'destructive',
-        });
-      }
-    }
-  }, [navigate, toast]);
 
   const login = async (email: string, password: string) => {
     try {
