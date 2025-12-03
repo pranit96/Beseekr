@@ -53,9 +53,7 @@ class LoggingService {
   }
 
   private logToConsole(level: LogLevel, message: string, data?: any): void {
-    // Only log to console in development
-    if (!this.isDevelopment) return;
-
+    // Log to console in both development AND production for full visibility
     const consoleMethod = level === 'debug' ? 'log' : level;
     if (data !== undefined) {
       console[consoleMethod](message, data);
@@ -128,10 +126,10 @@ class LoggingService {
 
     const formattedMessage = this.formatMessage(component, level, message, data);
 
-    // Log to console in development
+    // ALWAYS log to console for visibility (both dev and production)
     this.logToConsole(level, formattedMessage, data);
 
-    // Send to service in production
+    // ALSO send to service in production for centralized logging
     if (!this.isDevelopment) {
       const entry: LogEntry = {
         timestamp: new Date().toISOString(),
