@@ -210,7 +210,7 @@ const Auth = () => {
       if (response.success) {
         toast({
           title: "Email sent!",
-          description: "A new verification link has been sent to your email.",
+          description: "If an account exists with this email and is not yet verified, you will receive a verification link.",
         });
         // Reset countdown
         setResendCountdown(60);
