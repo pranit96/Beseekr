@@ -1,7 +1,7 @@
 // src/contexts/AuthContext.tsx - COMPLETE FILE WITH FIXES
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback, useRef } from 'react';
 import { apiClient } from '@/lib/api';
-import { useToast } from '@/hooks/use-toast';
+import { useToast, toast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import socketService from '@/services/socketService';
 import { createLogger } from '@/services/logging';
@@ -38,7 +38,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [socketConnected, setSocketConnected] = useState(false);
-  const { toast } = useToast();
+  // toast is imported directly to ensure stable reference
   const navigate = useNavigate();
 
   const refreshingRef = useRef(false);
@@ -111,7 +111,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         });
       }
     }
-  }, [toast]);
+  }, []);
 
   // Check if session is still valid
   const isSessionValid = useCallback((): boolean => {
@@ -166,7 +166,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       refreshingRef.current = false;
     }
-  }, [toast, handleAuthError]);
+  }, [handleAuthError]);
 
   // ENHANCED: Proactive session maintenance
   useEffect(() => {
@@ -275,7 +275,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setSocketConnected(false);
       }
     };
-  }, [user, handleTokensRefreshed, toast]);
+  }, [user, handleTokensRefreshed]);
 
   // Initial auth check with retry
   useEffect(() => {
