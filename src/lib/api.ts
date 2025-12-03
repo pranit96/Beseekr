@@ -64,7 +64,7 @@ class ApiClient {
           this.clearCache(); // Clear cache after refresh
           return;
         }
-        
+
         throw new Error('Session refresh failed');
       } catch (error) {
         logger.error('Session refresh failed', { error });
@@ -97,7 +97,7 @@ class ApiClient {
     retryCount: number = 0
   ): Promise<ApiResponse<T>> {
     const cacheKey = this.getCacheKey(endpoint, options);
-    
+
     // Check if there's a pending request for the same endpoint (only for first attempt)
     if (retryCount === 0 && this.pendingRequests.has(cacheKey)) {
       logger.debug('Reusing pending request', { endpoint });
@@ -144,12 +144,12 @@ class ApiClient {
           // Handle 401 Unauthorized with automatic retry
           if (response.status === 401) {
             logger.warn('Unauthorized response', { endpoint, status: response.status, retryCount });
-            
+
             // Try to refresh session and retry once
             if (retryCount === 0) {
               logger.info('Attempting session refresh before retry', { endpoint });
               const refreshed = await this.handleSessionExpired();
-              
+
               if (refreshed) {
                 logger.info('Session refreshed, retrying request', { endpoint });
                 // Remove from pending requests before retry
@@ -158,7 +158,7 @@ class ApiClient {
                 return this.request<T>(endpoint, options, retryCount + 1);
               }
             }
-            
+
             // If refresh failed or this is already a retry, call unauthorized handler
             if (this.onUnauthorized) {
               this.onUnauthorized();
@@ -188,16 +188,16 @@ class ApiClient {
         return data;
       } catch (error: any) {
         logger.error('Request failed', { endpoint, error: error.message, errorName: error.name, retryCount });
-        
+
         // Handle network errors
         if (error.name === 'AbortError') {
           throw new Error('Request timeout. Please try again.');
         }
-        
+
         if (error.message === 'Failed to fetch') {
           throw new Error('Network error. Please check your connection.');
         }
-        
+
         throw error;
       } finally {
         // Remove from pending requests
@@ -215,6 +215,14 @@ class ApiClient {
 
   private clearCache() {
     this.requestCache.clear();
+  }
+
+  public clearAllState() {
+    logger.info('Clearing all API client state');
+    this.clearCache();
+    this.pendingRequests.clear();
+    this.isRefreshingSession = false;
+    this.refreshPromise = null;
   }
 
   public invalidateCache(pattern?: string) {
@@ -268,7 +276,7 @@ class ApiClient {
     // Don't cache this - always fetch fresh
     const cacheKey = this.getCacheKey('/api/auth/me', { method: 'GET' });
     this.requestCache.delete(cacheKey);
-    
+
     return this.request<any>('/api/auth/me');
   }
 
@@ -395,7 +403,7 @@ class ApiClient {
     if (params?.status) queryParams.append('status', params.status);
     if (params?.page) queryParams.append('page', params.page.toString());
     if (params?.limit) queryParams.append('limit', params.limit.toString());
-    
+
     const query = queryParams.toString();
     return this.request<any>(`/api/conversations${query ? `?${query}` : ''}`);
   }
@@ -427,7 +435,7 @@ class ApiClient {
     const queryParams = new URLSearchParams();
     queryParams.append('page', (page || 1).toString());
     queryParams.append('limit', (limit || 50).toString());
-    
+
     return this.request<any>(
       `/api/messages/conversation/${conversation_id}?${queryParams.toString()}`
     );
@@ -467,7 +475,7 @@ class ApiClient {
   async getSessions(params?: { limit?: number; page?: number }) {
     const query = new URLSearchParams(params as any).toString();
     const response: any = await this.request<any>(`/api/thinkers/sessions${query ? `?${query}` : ''}`);
-    
+
     // Backend returns sessions at root level, not nested in data
     // Transform to match expected structure
     if (response.success && response.sessions) {
@@ -479,7 +487,7 @@ class ApiClient {
         }
       };
     }
-    
+
     return response;
   }
 
@@ -565,7 +573,7 @@ class ApiClient {
   // Deck-to-Model endpoints
   async uploadDeck(formData: FormData) {
     this.invalidateCache('/api/deck-to-model');
-    
+
     // Don't set Content-Type for FormData - browser will set it with boundary
     const response = await fetch(`${this.baseUrl}/api/deck-to-model/upload`, {
       method: 'POST',

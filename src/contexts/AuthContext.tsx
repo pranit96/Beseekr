@@ -40,7 +40,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [socketConnected, setSocketConnected] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
-  
+
   const refreshingRef = useRef(false);
   const sessionCheckIntervalRef = useRef<NodeJS.Timeout>();
   const tokenRefreshIntervalRef = useRef<NodeJS.Timeout>();
@@ -50,7 +50,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // ENHANCED: Track user activity with debouncing
   useEffect(() => {
     let debounceTimer: NodeJS.Timeout;
-    
+
     const updateActivity = () => {
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => {
@@ -74,25 +74,34 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // DEFINE handleAuthError FIRST (before it's used in other callbacks)
   const handleAuthError = useCallback(() => {
-    logger.info('Handling auth error - clearing session');
-    
+    logger.info('Handling auth error - clearing all state and caches');
+
+    // Clear API client cache and state
+    apiClient.clearAllState();
+
+    // Disconnect socket
     if (socketService.isConnected()) socketService.disconnect();
+
+    // Clear intervals
     if (sessionCheckIntervalRef.current) clearInterval(sessionCheckIntervalRef.current);
     if (tokenRefreshIntervalRef.current) clearInterval(tokenRefreshIntervalRef.current);
-    
+
+    // Clear local state
     setUser(null);
     setSocketConnected(false);
     refreshingRef.current = false;
-    
+
+    // Clear localStorage
     localStorage.setItem('auth_logout', Date.now().toString());
     setTimeout(() => localStorage.removeItem('auth_logout'), 1000);
-    
+
     const currentPath = window.location.pathname;
     const publicPaths = ['/', '/auth', '/privacy'];
-    
+
     if (!publicPaths.includes(currentPath)) {
-      navigate('/auth');
-      
+      // Force hard navigation to clear React state
+      window.location.href = '/auth';
+
       if (!authErrorShownRef.current) {
         authErrorShownRef.current = true;
         toast({
@@ -102,7 +111,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         });
       }
     }
-  }, [navigate, toast]);
+  }, [toast]);
 
   // Check if session is still valid
   const isSessionValid = useCallback((): boolean => {
@@ -123,13 +132,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       logger.info('Refreshing authentication state', { silent, retries });
       const response = await apiClient.getCurrentUser();
-      
+
       if (response.success && response.data) {
         setUser(response.data.user);
         lastActivityRef.current = Date.now();
         authErrorShownRef.current = false;
         logger.info('Auth refresh successful', { userId: response.data.user.id });
-        
+
         if (!silent) {
           toast({
             title: 'Session refreshed',
@@ -142,7 +151,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     } catch (error: any) {
       logger.error('Session refresh failed', { error: error.message, retries });
-      
+
       // Retry logic for network errors
       if (retries > 0 && !error.message?.includes('401') && !error.message?.includes('Unauthorized')) {
         logger.info('Retrying refresh', { retriesLeft: retries });
@@ -150,7 +159,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         refreshingRef.current = false;
         return refreshAuth(silent, retries - 1);
       }
-      
+
       if (error.message?.includes('401') || error.message?.includes('Unauthorized')) {
         handleAuthError();
       }
@@ -170,7 +179,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Check for inactivity and refresh if needed
     sessionCheckIntervalRef.current = setInterval(() => {
       const inactiveTime = Date.now() - lastActivityRef.current;
-      
+
       if (inactiveTime > ACTIVITY_TIMEOUT) {
         logger.warn('Session expired due to inactivity', { inactiveTime });
         if (!authErrorShownRef.current) {
@@ -218,12 +227,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const initializeSocket = async () => {
       try {
         logger.info('Initializing socket connection', { userId: user.id });
-        
+
         socketService.setTokenRefreshCallback(handleTokensRefreshed);
 
         socketService.on('connection_status', (data: any) => {
           setSocketConnected(data.connected);
-          
+
           if (data.connected) {
             logger.info('Socket connected', { socketId: data.socketId });
             lastActivityRef.current = Date.now();
@@ -273,7 +282,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const initAuth = async () => {
       try {
         logger.info('Checking initial authentication state');
-        
+
         // Set up API client unauthorized handler
         apiClient.setUnauthorizedHandler(() => {
           logger.warn('API client detected unauthorized request');
@@ -282,7 +291,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             handleAuthError();
           }
         });
-        
+
         await fetchCurrentUser();
       } catch (error) {
         logger.error('Initial auth check failed', { error });
@@ -328,12 +337,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(response.data.user);
         lastActivityRef.current = Date.now();
         authErrorShownRef.current = false;
-        
+
         toast({
           title: 'Welcome back!',
           description: 'Successfully logged in.',
         });
-        
+
         navigate('/chat');
       }
     } catch (error: any) {
@@ -350,17 +359,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const response = await apiClient.signup(email, password, full_name);
       if (response.success && response.data) {
+        // Check if user needs email confirmation
+        if (response.data.user && !response.data.user.email_confirmed_at) {
+          // Email confirmation required - throw specific error
+          throw new Error('Please verify your email to continue. Check your inbox for the verification link.');
+        }
+
         setUser(response.data.user);
         lastActivityRef.current = Date.now();
-        
+
         toast({
           title: 'Account created!',
           description: 'Welcome to CreatuAI.',
         });
-        
+
         navigate('/chat');
       }
     } catch (error: any) {
+      // Pass through the error to be handled in Auth.tsx
       toast({
         title: 'Signup failed',
         description: error.message || 'Could not create account',
@@ -376,20 +392,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         socketService.disconnect();
         setSocketConnected(false);
       }
-      
+
       if (sessionCheckIntervalRef.current) clearInterval(sessionCheckIntervalRef.current);
       if (tokenRefreshIntervalRef.current) clearInterval(tokenRefreshIntervalRef.current);
-      
+
       await apiClient.logout();
-      
+
       setUser(null);
       refreshingRef.current = false;
-      
+
       localStorage.setItem('auth_logout', Date.now().toString());
       setTimeout(() => localStorage.removeItem('auth_logout'), 1000);
-      
+
       navigate('/');
-      
+
       toast({
         title: 'Logged out',
         description: 'You have been successfully logged out.',
@@ -424,21 +440,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         socketService.disconnect();
         setSocketConnected(false);
       }
-      
+
       if (sessionCheckIntervalRef.current) clearInterval(sessionCheckIntervalRef.current);
       if (tokenRefreshIntervalRef.current) clearInterval(tokenRefreshIntervalRef.current);
-      
+
       const response = await apiClient.deleteProfile(email);
-      
+
       if (response.success) {
         setUser(null);
         refreshingRef.current = false;
-        
+
         localStorage.setItem('auth_logout', Date.now().toString());
         setTimeout(() => localStorage.removeItem('auth_logout'), 1000);
-        
+
         navigate('/');
-        
+
         toast({
           title: 'Account deleted',
           description: 'Your account and all data have been permanently deleted.',
@@ -455,14 +471,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider 
-      value={{ 
-        user, 
-        loading, 
-        login, 
-        signup, 
-        logout, 
-        exportData, 
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        login,
+        signup,
+        logout,
+        exportData,
         deleteAccount,
         socketConnected,
         refreshAuth,

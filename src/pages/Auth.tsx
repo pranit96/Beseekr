@@ -22,6 +22,8 @@ const Auth = () => {
   const [showSignupPassword, setShowSignupPassword] = useState(false);
   const [loginError, setLoginError] = useState("");
   const [signupError, setSignupError] = useState("");
+  const [verificationPending, setVerificationPending] = useState(false);
+  const [verificationEmail, setVerificationEmail] = useState("");
   const { login, signup } = useAuth();
   const { toast } = useToast();
 
@@ -128,8 +130,19 @@ const Auth = () => {
       await signup(signupEmail, signupPassword, signupName);
     } catch (error: any) {
       const errorMsg = error.message || "Failed to create account";
-      setSignupError(errorMsg);
-      setSignupPassword("");
+
+      // Check if this is an email confirmation required error
+      if (errorMsg.includes("email confirmation") || errorMsg.includes("verify your email")) {
+        setVerificationEmail(signupEmail);
+        setVerificationPending(true);
+        // Clear form
+        setSignupName("");
+        setSignupEmail("");
+        setSignupPassword("");
+      } else {
+        setSignupError(errorMsg);
+        setSignupPassword("");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -225,7 +238,48 @@ const Auth = () => {
             </h2>
           </div>
 
-          {showForgotPassword ? (
+          {verificationPending ? (
+            <div className="space-y-6 text-center">
+              <div className="mx-auto w-16 h-16 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center animate-bounce-slow">
+                <CheckCircle2 className="w-8 h-8 text-white" />
+              </div>
+
+              <div className="space-y-2">
+                <h3 className="text-xl font-bold text-slate-800 dark:text-foreground">
+                  Verification Email Sent!
+                </h3>
+                <p className="text-sm text-slate-600 dark:text-muted-foreground">
+                  We've sent a verification link to:
+                </p>
+                <p className="text-base font-semibold text-primary">
+                  {verificationEmail}
+                </p>
+              </div>
+
+              <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4 space-y-2 text-left border border-slate-200 dark:border-slate-700">
+                <p className="text-sm text-slate-700 dark:text-slate-300 font-medium">
+                  📧 Next Steps:
+                </p>
+                <ol className="text-sm text-slate-600 dark:text-slate-400 space-y-1 list-decimal list-inside">
+                  <li>Check your email inbox (and spam folder)</li>
+                  <li>Click the verification link in the email</li>
+                  <li>Return here and log in with your credentials</li>
+                </ol>
+              </div>
+
+              <Button
+                onClick={() => {
+                  setVerificationPending(false);
+                  setVerificationEmail("");
+                }}
+                className="w-full h-11 shadow-medium hover:shadow-glow"
+                variant="outline"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Login
+              </Button>
+            </div>
+          ) : showForgotPassword ? (
             <div className="space-y-4">
               <Button
                 variant="ghost"
@@ -373,10 +427,10 @@ const Auth = () => {
                         placeholder="••••••••"
                         required
                         className={`h-11 pr-10 ${signupPassword && isPasswordValid(passwordValidation)
-                            ? "border-green-500 dark:border-green-500"
-                            : signupPassword
-                              ? "border-yellow-500 dark:border-yellow-500"
-                              : ""
+                          ? "border-green-500 dark:border-green-500"
+                          : signupPassword
+                            ? "border-yellow-500 dark:border-yellow-500"
+                            : ""
                           }`}
                         value={signupPassword}
                         onChange={(e) => {
