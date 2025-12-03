@@ -20,7 +20,6 @@ export interface Logger {
 
 class LoggingService {
   private isDevelopment = import.meta.env.DEV;
-  private isNetlify = import.meta.env.VITE_NETLIFY === 'true';
   private minLogLevel: LogLevel = this.isDevelopment ? 'debug' : 'info';
   private logQueue: LogEntry[] = [];
   private flushInterval: number | null = null;
@@ -29,7 +28,7 @@ class LoggingService {
 
   constructor() {
     // Start periodic flush in production
-    if (!this.isDevelopment && this.isNetlify) {
+    if (!this.isDevelopment) {
       this.startPeriodicFlush();
     }
   }
@@ -82,11 +81,7 @@ class LoggingService {
     this.logQueue = [];
 
     try {
-      if (this.isNetlify) {
-        await this.sendToNetlifyFunction(logsToSend);
-      } else {
-        await this.sendToExternalService(logsToSend);
-      }
+      await this.sendToLogEndpoint(logsToSend);
     } catch (error) {
       // Silently fail - don't log errors about logging
       // In development, we can still see console output
@@ -96,29 +91,43 @@ class LoggingService {
     }
   }
 
-  private async sendToNetlifyFunction(logs: LogEntry[]): Promise<void> {
+  private async sendToLogEndpoint(logs: LogEntry[]): Promise<void> {
     try {
-      await fetch('/.netlify/functions/log', {
+      // Transform logs to match API expectation
+      const transformedLogs = logs.map(log => ({
+        timestamp: log.timestamp,
+        level: log.level,
+        source: log.component,
+        message: log.message,
+        data: log.data,
+        url: window.location.href,
+        userAgent: navigator.userAgent,
+      }));
+
+      await fetch('/api/log', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ logs }),
+        headers: {
+          'Content-Type': 'application/json',
+          // Add API key if configured
+          ...(import.meta.env.VITE_LOG_API_KEY ? {
+            'Authorization': `Bearer ${import.meta.env.VITE_LOG_API_KEY}`
+          } : {})
+        },
+        body: JSON.stringify(transformedLogs),
       });
     } catch (error) {
       // Silently fail
+      if (this.isDevelopment) {
+        console.error('[LoggingService] Failed to send to /api/log:', error);
+      }
     }
-  }
-
-  private async sendToExternalService(logs: LogEntry[]): Promise<void> {
-    // Implement external logging service integration here
-    // e.g., Sentry, LogRocket, Datadog, etc.
-    // For now, just a placeholder
   }
 
   private log(component: string, level: LogLevel, message: string, data?: any): void {
     if (!this.shouldLog(level)) return;
 
     const formattedMessage = this.formatMessage(component, level, message, data);
-    
+
     // Log to console in development
     this.logToConsole(level, formattedMessage, data);
 

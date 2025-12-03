@@ -13,16 +13,18 @@ const originalConsole = {
 };
 
 // No-op function for production
-const noop = () => {};
+const noop = () => { };
 
-// Override console methods in production
-if (!isDevelopment) {
-  console.log = noop;
-  console.info = noop;
-  console.warn = noop;
-  console.error = noop;
-  console.debug = noop;
-}
+// DISABLED: Override console methods in production
+// Console logs are now handled by the logging service
+// and we want to see server-side logs in Vercel
+// if (!isDevelopment) {
+//   console.log = noop;
+//   console.info = noop;
+//   console.warn = noop;
+//   console.error = noop;
+//   console.debug = noop;
+// }
 
 // Export original console for emergency debugging
 export const devConsole = originalConsole;
@@ -43,5 +45,16 @@ export const enableConsoleTemporarily = (durationMs: number = 60000) => {
       console.error = noop;
       console.debug = noop;
     }, durationMs);
+  }
+};
+
+// Export a function to disable console (if needed for specific use cases)
+export const disableConsole = () => {
+  if (!isDevelopment) {
+    console.log = noop;
+    console.info = noop;
+    console.warn = noop;
+    console.error = noop;
+    console.debug = noop;
   }
 };
