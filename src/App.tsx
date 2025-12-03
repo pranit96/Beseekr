@@ -7,6 +7,7 @@ import { ThemeProvider } from "./hooks/use-theme";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { KeyboardShortcutsDialog } from "./components/KeyboardShortcutsDialog";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { Analytics as VercelAnalytics } from "@vercel/analytics/react";
 import Chat from "./pages/Chat";
 import Agents from "./pages/Agents";
 import Analytics from "./pages/Analytics";
@@ -35,7 +36,7 @@ const queryClient = new QueryClient({
 // Root redirect component
 const RootRedirect = () => {
   const { user, loading } = useAuth();
-  
+
   // Check if URL has password reset token in hash
   useEffect(() => {
     const hash = window.location.hash;
@@ -44,7 +45,7 @@ const RootRedirect = () => {
       window.location.href = `/reset-password${hash}`;
     }
   }, []);
-  
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -52,7 +53,7 @@ const RootRedirect = () => {
       </div>
     );
   }
-  
+
   // If user is logged in, go to chat, otherwise show landing
   return user ? <Navigate to="/chat" replace /> : <Landing />;
 };
@@ -60,7 +61,7 @@ const RootRedirect = () => {
 // Protected route wrapper
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
-  
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -68,18 +69,18 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
       </div>
     );
   }
-  
+
   if (!user) {
     return <Navigate to="/auth" replace />;
   }
-  
+
   return <>{children}</>;
 };
 
 // Public route wrapper (for auth page)
 const PublicOnlyRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
-  
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -87,12 +88,12 @@ const PublicOnlyRoute = ({ children }: { children: React.ReactNode }) => {
       </div>
     );
   }
-  
+
   // If already logged in, redirect to chat
   if (user) {
     return <Navigate to="/chat" replace />;
   }
-  
+
   return <>{children}</>;
 };
 
@@ -118,83 +119,84 @@ const App = () => {
             <BrowserRouter>
               <AuthProvider>
                 <Routes>
-              {/* Root - shows landing if not logged in, redirects to chat if logged in */}
-              <Route path="/" element={<RootRedirect />} />
-              
-              {/* Auth page - only accessible when not logged in */}
-              <Route 
-                path="/auth" 
-                element={
-                  <PublicOnlyRoute>
-                    <Auth />
-                  </PublicOnlyRoute>
-                } 
-              />
-              
-              {/* Reset password page - accessible to everyone with valid token */}
-              <Route path="/reset-password" element={<ResetPassword />} />
-              
-              {/* Privacy page - accessible to everyone */}
-              <Route path="/privacy" element={<Privacy />} />
-              
-              {/* Protected routes - require authentication */}
-              <Route 
-                path="/chat" 
-                element={
-                  <ProtectedRoute>
-                    <Chat />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/agents" 
-                element={
-                  <ProtectedRoute>
-                    <Agents />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/analytics" 
-                element={
-                  <ProtectedRoute>
-                    <Analytics />
-                  </ProtectedRoute>
-                } 
-              />
-               <Route 
-                path="/metaLayer" 
-                element={
-                  <ProtectedRoute>
-                    <DeepAnalytics />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/profile" 
-                element={
-                  <ProtectedRoute>
-                    <Profile />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/deck" 
-                element={
-                  <ProtectedRoute>
-                    <Deck />
-                  </ProtectedRoute>
-                } 
-              />
-              
-              {/* Catch all route */}
-              <Route path="*" element={<NotFound />} />
-              </Routes>
-            </AuthProvider>
-          </BrowserRouter>
-        </TooltipProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
+                  {/* Root - shows landing if not logged in, redirects to chat if logged in */}
+                  <Route path="/" element={<RootRedirect />} />
+
+                  {/* Auth page - only accessible when not logged in */}
+                  <Route
+                    path="/auth"
+                    element={
+                      <PublicOnlyRoute>
+                        <Auth />
+                      </PublicOnlyRoute>
+                    }
+                  />
+
+                  {/* Reset password page - accessible to everyone with valid token */}
+                  <Route path="/reset-password" element={<ResetPassword />} />
+
+                  {/* Privacy page - accessible to everyone */}
+                  <Route path="/privacy" element={<Privacy />} />
+
+                  {/* Protected routes - require authentication */}
+                  <Route
+                    path="/chat"
+                    element={
+                      <ProtectedRoute>
+                        <Chat />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/agents"
+                    element={
+                      <ProtectedRoute>
+                        <Agents />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/analytics"
+                    element={
+                      <ProtectedRoute>
+                        <Analytics />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/metaLayer"
+                    element={
+                      <ProtectedRoute>
+                        <DeepAnalytics />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/profile"
+                    element={
+                      <ProtectedRoute>
+                        <Profile />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/deck"
+                    element={
+                      <ProtectedRoute>
+                        <Deck />
+                      </ProtectedRoute>
+                    }
+                  />
+
+                  {/* Catch all route */}
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </AuthProvider>
+            </BrowserRouter>
+            <VercelAnalytics />
+          </TooltipProvider>
+        </ThemeProvider>
+      </QueryClientProvider>
     </ErrorBoundary>
   );
 };
