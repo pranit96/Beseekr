@@ -24,6 +24,9 @@ const Auth = () => {
   const [signupError, setSignupError] = useState("");
   const [verificationPending, setVerificationPending] = useState(false);
   const [verificationEmail, setVerificationEmail] = useState("");
+  const [resendCountdown, setResendCountdown] = useState(60);
+  const [canResend, setCanResend] = useState(false);
+  const [isResending, setIsResending] = useState(false);
   const { login, signup } = useAuth();
   const { toast } = useToast();
 
@@ -93,6 +96,28 @@ const Auth = () => {
     return () => window.removeEventListener("mousemove", handleMouseMove);
   }, []);
 
+  // Countdown timer for resend verification
+  useEffect(() => {
+    if (!verificationPending || canResend) return;
+
+    if (resendCountdown <= 0) {
+      setCanResend(true);
+      return;
+    }
+
+    const timer = setInterval(() => {
+      setResendCountdown((prev) => {
+        if (prev <= 1) {
+          setCanResend(true);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [verificationPending, resendCountdown, canResend]);
+
   const handleEmailInput = (val: string, type: "login" | "signup") => {
     if (type === "login") setLoginEmail(val);
     else setSignupEmail(val);
@@ -128,11 +153,13 @@ const Auth = () => {
 
     try {
       await signup(signupEmail, signupPassword, signupName);
+      // If we get here, signup was successful and user is logged in
     } catch (error: any) {
-      const errorMsg = error.message || "Failed to create account";
-
-      // Check if this is an email confirmation required error
-      if (errorMsg.includes("email confirmation") || errorMsg.includes("verify your email")) {
+      // Check if this is email verification required (not an actual error)
+      if (error.isEmailVerificationRequired ||
+        error.message?.includes("verify your email") ||
+        error.message?.includes("email confirmation")) {
+        // Show verification pending screen silently (no error message)
         setVerificationEmail(signupEmail);
         setVerificationPending(true);
         // Clear form
@@ -140,6 +167,8 @@ const Auth = () => {
         setSignupEmail("");
         setSignupPassword("");
       } else {
+        // This is an actual error - show it
+        const errorMsg = error.message || "Failed to create account";
         setSignupError(errorMsg);
         setSignupPassword("");
       }
@@ -169,6 +198,32 @@ const Auth = () => {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    if (!canResend || isResending) return;
+
+    setIsResending(true);
+    try {
+      const response = await apiClient.resendVerificationEmail(verificationEmail);
+      if (response.success) {
+        toast({
+          title: "Email sent!",
+          description: "A new verification link has been sent to your email.",
+        });
+        // Reset countdown
+        setResendCountdown(60);
+        setCanResend(false);
+      }
+    } catch (error: any) {
+      toast({
+        title: "Failed to resend",
+        description: error.message || "Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsResending(false);
     }
   };
 
@@ -267,17 +322,36 @@ const Auth = () => {
                 </ol>
               </div>
 
-              <Button
-                onClick={() => {
-                  setVerificationPending(false);
-                  setVerificationEmail("");
-                }}
-                className="w-full h-11 shadow-medium hover:shadow-glow"
-                variant="outline"
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Login
-              </Button>
+              <div className="space-y-3">
+                <Button
+                  onClick={handleResendVerification}
+                  disabled={!canResend || isResending}
+                  className="w-full h-11 shadow-medium hover:shadow-glow"
+                  variant={canResend ? "default" : "secondary"}
+                >
+                  {isResending ? (
+                    "Sending..."
+                  ) : canResend ? (
+                    "Resend Verification Email"
+                  ) : (
+                    `Resend available in ${resendCountdown}s`
+                  )}
+                </Button>
+
+                <Button
+                  onClick={() => {
+                    setVerificationPending(false);
+                    setVerificationEmail("");
+                    setResendCountdown(60);
+                    setCanResend(false);
+                  }}
+                  className="w-full h-11 shadow-medium hover:shadow-glow"
+                  variant="outline"
+                >
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Back to Login
+                </Button>
+              </div>
             </div>
           ) : showForgotPassword ? (
             <div className="space-y-4">

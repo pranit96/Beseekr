@@ -361,8 +361,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (response.success && response.data) {
         // Check if user needs email confirmation
         if (response.data.user && !response.data.user.email_confirmed_at) {
-          // Email confirmation required - throw specific error
-          throw new Error('Please verify your email to continue. Check your inbox for the verification link.');
+          // Email confirmation required - throw special error WITHOUT toast
+          // Auth.tsx will catch this and show verification pending screen
+          const error: any = new Error('Please verify your email to continue. Check your inbox for the verification link.');
+          error.isEmailVerificationRequired = true;
+          throw error;
         }
 
         setUser(response.data.user);
@@ -376,12 +379,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         navigate('/chat');
       }
     } catch (error: any) {
-      // Pass through the error to be handled in Auth.tsx
-      toast({
-        title: 'Signup failed',
-        description: error.message || 'Could not create account',
-        variant: 'destructive',
-      });
+      // Only show toast for ACTUAL errors, not email verification pending
+      if (!error.isEmailVerificationRequired) {
+        toast({
+          title: 'Signup failed',
+          description: error.message || 'Could not create account',
+          variant: 'destructive',
+        });
+      }
+      // Always re-throw so Auth.tsx can handle it
       throw error;
     }
   };

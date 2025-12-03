@@ -307,6 +307,13 @@ class ApiClient {
     });
   }
 
+  async resendVerificationEmail(email: string) {
+    return this.request<any>('/api/auth/resend-verification', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  }
+
   // Agent endpoints
   async getAgents(params?: { domain?: string; page?: number; limit?: number }) {
     const query = new URLSearchParams(params as any).toString();
