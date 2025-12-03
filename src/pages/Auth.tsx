@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
-import { Sparkles, ArrowLeft } from "lucide-react";
+import { Sparkles, ArrowLeft, CheckCircle2, AlertCircle, Eye, EyeOff } from "lucide-react";
 import { apiClient } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
@@ -18,8 +18,36 @@ const Auth = () => {
   const [signupPassword, setSignupPassword] = useState("");
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState("");
   const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [showSignupPassword, setShowSignupPassword] = useState(false);
+  const [loginError, setLoginError] = useState("");
+  const [signupError, setSignupError] = useState("");
   const { login, signup } = useAuth();
   const { toast } = useToast();
+
+  // Password validation state
+  const [passwordValidation, setPasswordValidation] = useState({
+    minLength: false,
+    hasUpperCase: false,
+    hasLowerCase: false,
+    hasNumber: false,
+    hasSpecialChar: false,
+  });
+
+  // Password validation function
+  const validatePassword = (password: string) => {
+    return {
+      minLength: password.length >= 8,
+      hasUpperCase: /[A-Z]/.test(password),
+      hasLowerCase: /[a-z]/.test(password),
+      hasNumber: /[0-9]/.test(password),
+      hasSpecialChar: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password),
+    };
+  };
+
+  const isPasswordValid = (validation: typeof passwordValidation) => {
+    return Object.values(validation).every(Boolean);
+  };
 
   const [bubbles, setBubbles] = useState<{ id: number; x: number; y: number; size: number }[]>([]);
   const [messages] = useState([
@@ -71,9 +99,12 @@ const Auth = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setLoginError("");
     try {
       await login(loginEmail, loginPassword);
-    } catch (error) {
+    } catch (error: any) {
+      const errorMsg = error.message || "Invalid email or password";
+      setLoginError(errorMsg);
       setLoginPassword("");
     } finally {
       setIsLoading(false);
@@ -83,9 +114,21 @@ const Auth = () => {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setSignupError("");
+
+    // Validate password format before submitting
+    const validation = validatePassword(signupPassword);
+    if (!isPasswordValid(validation)) {
+      setSignupError("Please ensure your password meets all requirements");
+      setIsLoading(false);
+      return;
+    }
+
     try {
       await signup(signupEmail, signupPassword, signupName);
-    } catch (error) {
+    } catch (error: any) {
+      const errorMsg = error.message || "Failed to create account";
+      setSignupError(errorMsg);
       setSignupPassword("");
     } finally {
       setIsLoading(false);
@@ -243,15 +286,37 @@ const Auth = () => {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="login-password">Password</Label>
-                    <Input
-                      id="login-password"
-                      type="password"
-                      placeholder="••••••••"
-                      required
-                      className="h-11"
-                      value={loginPassword}
-                      onChange={(e) => setLoginPassword(e.target.value)}
-                    />
+                    <div className="relative">
+                      <Input
+                        id="login-password"
+                        type={showLoginPassword ? "text" : "password"}
+                        placeholder="••••••••"
+                        required
+                        className={`h-11 pr-10 ${loginError ? "border-red-500 dark:border-red-500" : ""}`}
+                        value={loginPassword}
+                        onChange={(e) => {
+                          setLoginPassword(e.target.value);
+                          setLoginError("");
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowLoginPassword(!showLoginPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                      >
+                        {showLoginPassword ? (
+                          <EyeOff className="w-4 h-4" />
+                        ) : (
+                          <Eye className="w-4 h-4" />
+                        )}
+                      </button>
+                    </div>
+                    {loginError && (
+                      <div className="flex items-center gap-1.5 text-red-500 text-sm">
+                        <AlertCircle className="w-4 h-4" />
+                        <span>{loginError}</span>
+                      </div>
+                    )}
                   </div>
                   <div className="flex justify-end">
                     <Button
@@ -301,15 +366,101 @@ const Auth = () => {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="signup-password">Password</Label>
-                    <Input
-                      id="signup-password"
-                      type="password"
-                      placeholder="••••••••"
-                      required
-                      className="h-11"
-                      value={signupPassword}
-                      onChange={(e) => setSignupPassword(e.target.value)}
-                    />
+                    <div className="relative">
+                      <Input
+                        id="signup-password"
+                        type={showSignupPassword ? "text" : "password"}
+                        placeholder="••••••••"
+                        required
+                        className={`h-11 pr-10 ${signupPassword && isPasswordValid(passwordValidation)
+                            ? "border-green-500 dark:border-green-500"
+                            : signupPassword
+                              ? "border-yellow-500 dark:border-yellow-500"
+                              : ""
+                          }`}
+                        value={signupPassword}
+                        onChange={(e) => {
+                          const newPassword = e.target.value;
+                          setSignupPassword(newPassword);
+                          setPasswordValidation(validatePassword(newPassword));
+                          setSignupError("");
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowSignupPassword(!showSignupPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                      >
+                        {showSignupPassword ? (
+                          <EyeOff className="w-4 h-4" />
+                        ) : (
+                          <Eye className="w-4 h-4" />
+                        )}
+                      </button>
+                    </div>
+
+                    {/* Password Requirements */}
+                    {signupPassword && (
+                      <div className="space-y-1.5 text-xs mt-2 p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700">
+                        <div className="flex items-center gap-2">
+                          {passwordValidation.minLength ? (
+                            <CheckCircle2 className="w-4 h-4 text-green-500" />
+                          ) : (
+                            <AlertCircle className="w-4 h-4 text-gray-400" />
+                          )}
+                          <span className={passwordValidation.minLength ? "text-green-600 dark:text-green-400" : "text-gray-600 dark:text-gray-400"}>
+                            At least 8 characters
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {passwordValidation.hasUpperCase ? (
+                            <CheckCircle2 className="w-4 h-4 text-green-500" />
+                          ) : (
+                            <AlertCircle className="w-4 h-4 text-gray-400" />
+                          )}
+                          <span className={passwordValidation.hasUpperCase ? "text-green-600 dark:text-green-400" : "text-gray-600 dark:text-gray-400"}>
+                            One uppercase letter
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {passwordValidation.hasLowerCase ? (
+                            <CheckCircle2 className="w-4 h-4 text-green-500" />
+                          ) : (
+                            <AlertCircle className="w-4 h-4 text-gray-400" />
+                          )}
+                          <span className={passwordValidation.hasLowerCase ? "text-green-600 dark:text-green-400" : "text-gray-600 dark:text-gray-400"}>
+                            One lowercase letter
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {passwordValidation.hasNumber ? (
+                            <CheckCircle2 className="w-4 h-4 text-green-500" />
+                          ) : (
+                            <AlertCircle className="w-4 h-4 text-gray-400" />
+                          )}
+                          <span className={passwordValidation.hasNumber ? "text-green-600 dark:text-green-400" : "text-gray-600 dark:text-gray-400"}>
+                            One number
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {passwordValidation.hasSpecialChar ? (
+                            <CheckCircle2 className="w-4 h-4 text-green-500" />
+                          ) : (
+                            <AlertCircle className="w-4 h-4 text-gray-400" />
+                          )}
+                          <span className={passwordValidation.hasSpecialChar ? "text-green-600 dark:text-green-400" : "text-gray-600 dark:text-gray-400"}>
+                            One special character (!@#$%^&amp;*...)
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    {signupError && (
+                      <div className="flex items-center gap-1.5 text-red-500 text-sm">
+                        <AlertCircle className="w-4 h-4" />
+                        <span>{signupError}</span>
+                      </div>
+                    )}
                   </div>
                   <Button type="submit" className="w-full h-11 shadow-medium hover:shadow-glow" disabled={isLoading}>
                     {isLoading ? "Creating account..." : "Sign Up"}
