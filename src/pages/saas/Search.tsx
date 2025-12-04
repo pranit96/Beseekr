@@ -34,7 +34,7 @@ export function Search() {
     } = useMutation({
         mutationFn: (searchQuery: string) => problemsApi.searchProblems(searchQuery, 20),
         onSuccess: (data) => {
-            setResults(data);
+            setResults(Array.isArray(data) ? data : []);
             setHasSearched(true);
         },
     });

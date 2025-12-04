@@ -158,6 +158,9 @@ export function ProblemsList() {
         staleTime: 30000,
     });
 
+    // Safely extract items array from response
+    const problemItems = Array.isArray(data?.items) ? data.items : (Array.isArray(data) ? data : []);
+
     // Fetch watchlist
     const { data: watchlistData } = useQuery({
         queryKey: ['watchlist'],
@@ -165,11 +168,14 @@ export function ProblemsList() {
         staleTime: 60000,
     });
 
+    // Safely extract watchlist items
+    const watchlistItems = Array.isArray(watchlistData) ? watchlistData : [];
+
     useEffect(() => {
-        if (watchlistData) {
-            setWatchlistSet(new Set(watchlistData.map((item) => item.problem_id)));
+        if (watchlistItems.length > 0) {
+            setWatchlistSet(new Set(watchlistItems.map((item) => item.problem_id)));
         }
-    }, [watchlistData]);
+    }, [watchlistItems]);
 
     // Mutations
     const addMutation = useMutation({
@@ -266,7 +272,7 @@ export function ProblemsList() {
             )}
 
             {/* Empty State */}
-            {!isLoading && !isError && (!data?.items || data.items.length === 0) && (
+            {!isLoading && !isError && problemItems.length === 0 && (
                 <Card>
                     <CardContent className="flex flex-col items-center justify-center py-12 text-center">
                         <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4">
@@ -281,9 +287,9 @@ export function ProblemsList() {
             )}
 
             {/* Problem Cards */}
-            {!isLoading && !isError && data?.items && data.items.length > 0 && (
+            {!isLoading && !isError && problemItems.length > 0 && (
                 <div className="grid gap-4 md:grid-cols-2">
-                    {data.items.map((problem: ProblemListItem) => (
+                    {problemItems.map((problem: ProblemListItem) => (
                         <ProblemListCard
                             key={problem.id}
                             problem={problem}

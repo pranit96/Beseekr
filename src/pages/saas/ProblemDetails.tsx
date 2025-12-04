@@ -54,7 +54,7 @@ export function ProblemDetails() {
         queryFn: () => problemsApi.getWatchlist(),
     });
 
-    const isInWatchlist = watchlistData?.some((item) => item.problem_id === id);
+    const isInWatchlist = Array.isArray(watchlistData) && watchlistData.some((item) => item.problem_id === id);
 
     // Mutations
     const addMutation = useMutation({

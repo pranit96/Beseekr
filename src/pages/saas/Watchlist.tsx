@@ -21,7 +21,7 @@ export function Watchlist() {
     const queryClient = useQueryClient();
 
     const {
-        data: watchlist,
+        data: watchlistData,
         isLoading,
         isError,
         error,
@@ -30,6 +30,9 @@ export function Watchlist() {
         queryKey: ['watchlist'],
         queryFn: () => problemsApi.getWatchlist(),
     });
+
+    // Safely extract watchlist array
+    const watchlist = Array.isArray(watchlistData) ? watchlistData : [];
 
     const removeMutation = useMutation({
         mutationFn: problemsApi.removeFromWatchlist,
@@ -104,7 +107,7 @@ export function Watchlist() {
             )}
 
             {/* Empty State */}
-            {!isLoading && !isError && (!watchlist || watchlist.length === 0) && (
+            {!isLoading && !isError && watchlist.length === 0 && (
                 <Card className="border-dashed">
                     <CardContent className="flex flex-col items-center justify-center py-16 text-center">
                         <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
@@ -122,7 +125,7 @@ export function Watchlist() {
             )}
 
             {/* Watchlist Items */}
-            {!isLoading && !isError && watchlist && watchlist.length > 0 && (
+            {!isLoading && !isError && watchlist.length > 0 && (
                 <div className="grid gap-4">
                     {watchlist.map((item: WatchlistItem) => (
                         <Card

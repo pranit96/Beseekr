@@ -44,7 +44,7 @@ export function Feed() {
     } = useMutation({
         mutationFn: (interests: string[]) => problemsApi.getUserFeed(interests, 20),
         onSuccess: (data) => {
-            setResults(data);
+            setResults(Array.isArray(data) ? data : []);
             setHasSearched(true);
         },
     });
