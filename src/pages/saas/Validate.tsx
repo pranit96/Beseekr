@@ -183,112 +183,130 @@ For example: 'Developers struggle to find and fix security vulnerabilities in th
                         </CardContent>
                     </Card>
 
-                    {/* Nearest Problem */}
-                    <Card>
-                        <CardHeader className="pb-3">
-                            <CardTitle className="text-sm font-medium">Most Similar Validated Problem</CardTitle>
-                        </CardHeader>
-                        <CardContent className="pt-0">
-                            <h3 className="font-semibold text-lg">{result.nearest_problem.title}</h3>
-                            <p className="text-sm text-muted-foreground mt-2">{result.nearest_problem.summary}</p>
-                            <Button variant="outline" size="sm" onClick={handleExplore} className="mt-4 gap-2">
-                                Explore this Problem
-                                <ArrowRight className="h-4 w-4" />
-                            </Button>
-                        </CardContent>
-                    </Card>
-
-                    {/* Signals Grid */}
-                    <div className="grid gap-4 md:grid-cols-3">
+                    {/* Nearest Problem - Only show if exists */}
+                    {result.nearest_problem && (
                         <Card>
-                            <CardContent className="p-4">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                                        <TrendingUp className="h-5 w-5 text-blue-500" />
-                                    </div>
-                                    <div>
-                                        <p className="text-2xl font-bold">{result.signals.frequency_30d}</p>
-                                        <p className="text-xs text-muted-foreground">Frequency (30d)</p>
-                                    </div>
-                                </div>
+                            <CardHeader className="pb-3">
+                                <CardTitle className="text-sm font-medium">Most Similar Validated Problem</CardTitle>
+                            </CardHeader>
+                            <CardContent className="pt-0">
+                                <h3 className="font-semibold text-lg">{result.nearest_problem.title}</h3>
+                                <p className="text-sm text-muted-foreground mt-2">{result.nearest_problem.summary}</p>
+                                <Button variant="outline" size="sm" onClick={handleExplore} className="mt-4 gap-2">
+                                    Explore this Problem
+                                    <ArrowRight className="h-4 w-4" />
+                                </Button>
                             </CardContent>
                         </Card>
+                    )}
 
-                        <Card>
-                            <CardContent className="p-4">
-                                <div className="flex items-center gap-3">
-                                    <div className={cn(
-                                        'w-10 h-10 rounded-lg flex items-center justify-center',
-                                        result.signals.trend_pct >= 0 ? 'bg-green-500/10' : 'bg-red-500/10'
-                                    )}>
-                                        <TrendingUp className={cn('h-5 w-5', result.signals.trend_pct >= 0 ? 'text-green-500' : 'text-red-500')} />
-                                    </div>
-                                    <div>
-                                        <p className="text-2xl font-bold">
-                                            {result.signals.trend_pct > 0 ? '+' : ''}{result.signals.trend_pct}%
-                                        </p>
-                                        <p className="text-xs text-muted-foreground">Trend</p>
-                                    </div>
-                                </div>
+                    {/* No Match Found Message */}
+                    {!result.nearest_problem && (
+                        <Card className="border-yellow-500/30 bg-yellow-500/5">
+                            <CardContent className="p-6 text-center">
+                                <AlertCircle className="h-8 w-8 text-yellow-500 mx-auto mb-3" />
+                                <h3 className="font-semibold text-lg">No Similar Problem Found</h3>
+                                <p className="text-sm text-muted-foreground mt-2">
+                                    This could indicate a novel problem area or insufficient data in our database.
+                                    Consider this an opportunity to explore an underserved market!
+                                </p>
                             </CardContent>
                         </Card>
+                    )}
 
-                        <Card>
-                            <CardContent className="p-4">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
-                                        <ThumbsUp className="h-5 w-5 text-purple-500" />
+                    {/* Signals Grid - Only show if signals exist */}
+                    {result.signals && (
+                        <div className="grid gap-4 md:grid-cols-3">
+                            <Card>
+                                <CardContent className="p-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                                            <TrendingUp className="h-5 w-5 text-blue-500" />
+                                        </div>
+                                        <div>
+                                            <p className="text-2xl font-bold">{result.signals.frequency_30d ?? 0}</p>
+                                            <p className="text-xs text-muted-foreground">Frequency (30d)</p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <p className="text-2xl font-bold">{result.signals.upvote_weighted}</p>
-                                        <p className="text-xs text-muted-foreground">Weighted Upvotes</p>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
+                                </CardContent>
+                            </Card>
 
-                        <Card>
-                            <CardContent className="p-4">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center">
-                                        <DollarSign className="h-5 w-5 text-green-500" />
+                            <Card>
+                                <CardContent className="p-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className={cn(
+                                            'w-10 h-10 rounded-lg flex items-center justify-center',
+                                            (result.signals.trend_pct ?? 0) >= 0 ? 'bg-green-500/10' : 'bg-red-500/10'
+                                        )}>
+                                            <TrendingUp className={cn('h-5 w-5', (result.signals.trend_pct ?? 0) >= 0 ? 'text-green-500' : 'text-red-500')} />
+                                        </div>
+                                        <div>
+                                            <p className="text-2xl font-bold">
+                                                {(result.signals.trend_pct ?? 0) > 0 ? '+' : ''}{result.signals.trend_pct ?? 0}%
+                                            </p>
+                                            <p className="text-xs text-muted-foreground">Trend</p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <p className="text-2xl font-bold">{result.signals.pricing_signals}</p>
-                                        <p className="text-xs text-muted-foreground">Pricing Signals</p>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
+                                </CardContent>
+                            </Card>
 
-                        <Card>
-                            <CardContent className="p-4">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-lg bg-orange-500/10 flex items-center justify-center">
-                                        <Users className="h-5 w-5 text-orange-500" />
+                            <Card>
+                                <CardContent className="p-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
+                                            <ThumbsUp className="h-5 w-5 text-purple-500" />
+                                        </div>
+                                        <div>
+                                            <p className="text-2xl font-bold">{result.signals.upvote_weighted ?? 0}</p>
+                                            <p className="text-xs text-muted-foreground">Weighted Upvotes</p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <p className="text-2xl font-bold">{result.signals.competitors}</p>
-                                        <p className="text-xs text-muted-foreground">Competitors</p>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
+                                </CardContent>
+                            </Card>
 
-                        <Card>
-                            <CardContent className="p-4">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-lg bg-cyan-500/10 flex items-center justify-center">
-                                        <BarChart3 className="h-5 w-5 text-cyan-500" />
+                            <Card>
+                                <CardContent className="p-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center">
+                                            <DollarSign className="h-5 w-5 text-green-500" />
+                                        </div>
+                                        <div>
+                                            <p className="text-2xl font-bold">{result.signals.pricing_signals ?? 0}</p>
+                                            <p className="text-xs text-muted-foreground">Pricing Signals</p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <p className="text-lg font-bold">{result.signals.market_estimate}</p>
-                                        <p className="text-xs text-muted-foreground">Market Size</p>
+                                </CardContent>
+                            </Card>
+
+                            <Card>
+                                <CardContent className="p-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-lg bg-orange-500/10 flex items-center justify-center">
+                                            <Users className="h-5 w-5 text-orange-500" />
+                                        </div>
+                                        <div>
+                                            <p className="text-2xl font-bold">{result.signals.competitors ?? 0}</p>
+                                            <p className="text-xs text-muted-foreground">Competitors</p>
+                                        </div>
                                     </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </div>
+                                </CardContent>
+                            </Card>
+
+                            <Card>
+                                <CardContent className="p-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-lg bg-cyan-500/10 flex items-center justify-center">
+                                            <BarChart3 className="h-5 w-5 text-cyan-500" />
+                                        </div>
+                                        <div>
+                                            <p className="text-lg font-bold">{result.signals.market_estimate ?? 'N/A'}</p>
+                                            <p className="text-xs text-muted-foreground">Market Size</p>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </div>
+                    )}
 
                     {/* Justification */}
                     <Card>
