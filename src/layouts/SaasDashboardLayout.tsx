@@ -265,18 +265,21 @@ export function SaasDashboardLayout() {
                                             'flex items-center gap-3 px-3 py-3 rounded-lg transition-all duration-200 group',
                                             isActive
                                                 ? 'bg-primary text-primary-foreground shadow-sm'
-                                                : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                                                : 'text-muted-foreground hover:bg-secondary hover:text-secondary-foreground'
                                         )}
                                     >
                                         <item.icon className={cn(
                                             'h-5 w-5 transition-colors',
-                                            isActive ? 'text-primary-foreground' : 'text-muted-foreground group-hover:text-accent-foreground'
+                                            isActive ? 'text-primary-foreground' : 'text-muted-foreground group-hover:text-secondary-foreground'
                                         )} />
                                         <div className="flex-1 min-w-0">
-                                            <p className="font-medium text-sm">{item.name}</p>
+                                            <p className={cn(
+                                                'font-medium text-sm',
+                                                !isActive && 'group-hover:text-secondary-foreground'
+                                            )}>{item.name}</p>
                                             <p className={cn(
                                                 'text-xs truncate',
-                                                isActive ? 'text-primary-foreground/70' : 'text-muted-foreground'
+                                                isActive ? 'text-primary-foreground/70' : 'text-muted-foreground group-hover:text-secondary-foreground/70'
                                             )}>
                                                 {item.description}
                                             </p>

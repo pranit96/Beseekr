@@ -140,7 +140,7 @@ export async function removeFromWatchlist(problemId: string): Promise<void> {
 export async function validateProblem(text: string): Promise<ValidationResult> {
     return request<ValidationResult>('/api/validate-problem', {
         method: 'POST',
-        body: JSON.stringify({ text }),
+        body: JSON.stringify({ problem: text }),
     });
 }
 
