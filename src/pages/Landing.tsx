@@ -1,7 +1,7 @@
 // src/pages/Landing.tsx
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Sparkles, MessageSquare, Users, Zap, Brain, ArrowRight, CheckCircle2, Play } from 'lucide-react';
+import { Sparkles, MessageSquare, Users, Zap, Brain, ArrowRight, CheckCircle2 } from 'lucide-react';
 
 const Landing = () => {
   const navigate = useNavigate();
@@ -30,35 +30,35 @@ const Landing = () => {
   const features = [
     {
       icon: Brain,
-      title: 'Multi-Agent Intelligence',
-      description: 'Specialized AI agents collaborate to provide comprehensive solutions across different domains.',
+      title: 'Evidence-Based Discovery',
+      description: 'Clustering of real user conversations reveals startup problems people are actively struggling with.',
       color: 'from-agent-1 to-agent-2',
     },
     {
       icon: MessageSquare,
-      title: 'Natural Conversations',
-      description: 'Chat naturally with your AI team that understands context and remembers details.',
+      title: 'Demand & Pricing Signals',
+      description: 'Extracts pricing intent from conversations: “I’d pay $49/mo…” and other willingness-to-pay signals.',
       color: 'from-agent-3 to-agent-4',
     },
     {
       icon: Zap,
-      title: 'Smart Orchestration',
-      description: 'Intelligent routing automatically directs queries to the most relevant agents.',
+      title: 'Trend Tracking',
+      description: 'Daily snapshots show rising problems, fading pains, and emerging opportunities before anyone else sees it.',
       color: 'from-agent-2 to-agent-3',
     },
     {
       icon: Users,
-      title: 'Custom Agents',
-      description: 'Create personalized AI agents tailored to your specific workflows and needs.',
+      title: 'Real Founder Quotes',
+      description: 'Direct quotes from founders describing their pain. No summaries — just raw insight.',
       color: 'from-agent-4 to-agent-5',
     },
   ];
 
   const benefits = [
-    'Save hours with intelligent automation',
-    'Get expert-level insights instantly',
-    'Scale your productivity effortlessly',
-    'Access multiple specializations at once',
+    'Skip months of idea validation',
+    'Build what people are already begging for',
+    'Replace opinions with real user demand',
+    'Turn thousands of conversations into clear insight',
   ];
 
   return (
@@ -106,7 +106,7 @@ const Landing = () => {
               onClick={() => navigate('/auth')}
               className="px-6 py-2 rounded-lg bg-primary text-primary-foreground hover:shadow-glow transition-smooth font-medium"
             >
-              Get Started
+              Explore Problems
             </button>
           </div>
         </div>
@@ -115,7 +115,7 @@ const Landing = () => {
       {/* Hero Section */}
       <section className="relative z-10 pt-32 pb-48 px-6">
         <div className="max-w-7xl mx-auto text-center">
-          {/* Animated Badge */}
+          {/* Badge */}
           <div
             className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-8 glass transition-smooth"
             style={{
@@ -123,21 +123,17 @@ const Landing = () => {
             }}
           >
             <Sparkles className="w-4 h-4 text-primary" />
-            <span className="text-sm text-primary font-medium">Next-Generation AI Platform</span>
+            <span className="text-sm text-primary font-medium">Validated Startup Problems</span>
           </div>
 
-          {/* Main Headline */}
+          {/* Title */}
           <h1
             className="text-6xl md:text-8xl font-bold mb-8 leading-tight"
             style={{
               transform: `translateY(${scrollY * -0.15}px)`,
             }}
           >
-            Your AI
-            <br />
-            <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent bg-[length:200%_auto] animate-shimmer">
-              Dream Team
-            </span>
+            Find Real Problems <br /> Worth Building
           </h1>
 
           {/* Subtitle */}
@@ -147,12 +143,11 @@ const Landing = () => {
               transform: `translateY(${scrollY * -0.2}px)`,
             }}
           >
-            Multiple specialized AI agents working together in perfect harmony. 
-            Get expert insights, creative solutions, and intelligent assistance 
-            across every domain—all in one seamless conversation.
+            Discover validated startup opportunities backed by real usage data from Reddit, HackerNews, Twitter, and LinkedIn.
+            No surveys. No guesswork. Just evidence.
           </p>
 
-          {/* CTA Buttons */}
+          {/* CTA */}
           <div
             className="flex flex-col sm:flex-row gap-4 justify-center items-center"
             style={{
@@ -163,12 +158,12 @@ const Landing = () => {
               onClick={() => navigate('/auth')}
               className="group px-8 py-4 rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold text-lg shadow-glow hover:shadow-glow-strong transition-smooth hover:scale-105 flex items-center gap-3"
             >
-              Start here!
+              Explore Problems
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-smooth" />
             </button>
           </div>
 
-          {/* Floating Agent Cards */}
+          {/* Floating Cards */}
           <div className="relative mt-32 h-64">
             {[0, 1, 2].map((index) => (
               <div
@@ -199,15 +194,13 @@ const Landing = () => {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-20">
             <h2 className="text-5xl md:text-6xl font-bold mb-8">
-              Built for
-              <br />
+              Powered by <br />
               <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                Extraordinary Results
+                Real User Demand
               </span>
             </h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Harness the collective intelligence of specialized AI agents 
-              designed to amplify your productivity and creativity.
+              Thousands of conversations turned into actionable insights — so you can build something that truly matters.
             </p>
           </div>
 
@@ -237,10 +230,9 @@ const Landing = () => {
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <div>
               <h2 className="text-5xl md:text-6xl font-bold mb-8">
-                Why
-                <br />
+                Stop Guessing. <br />
                 <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                  CreatuAI?
+                  Start Knowing.
                 </span>
               </h2>
               <div className="space-y-6 mb-12">
@@ -261,12 +253,12 @@ const Landing = () => {
                 onClick={() => navigate('/auth')}
                 className="px-8 py-4 rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold text-lg shadow-glow hover:shadow-glow-strong transition-smooth hover:scale-105 flex items-center gap-3"
               >
-                Start Building Your Team
+                Explore Problems
                 <ArrowRight className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Interactive Demo Preview */}
+            {/* Demo */}
             <div className="relative">
               <div className="relative w-full h-96 rounded-2xl glass border border-border p-8 overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-accent/5" />
@@ -276,26 +268,30 @@ const Landing = () => {
                     <div className="w-3 h-3 rounded-full bg-yellow-400" />
                     <div className="w-3 h-3 rounded-full bg-green-400" />
                   </div>
-                  <div className="space-y-4">
-                    {[1, 2, 3].map((i) => (
-                      <div
-                        key={i}
-                        className="flex gap-3 animate-fade-in-up"
-                        style={{ animationDelay: `${i * 0.2}s` }}
-                      >
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                          <Users className="w-4 h-4 text-primary-foreground" />
-                        </div>
-                        <div className="flex-1 bg-secondary rounded-lg p-3">
-                          <div className="h-2 bg-primary/20 rounded w-3/4 mb-2" />
-                          <div className="h-2 bg-primary/20 rounded w-1/2" />
-                        </div>
-                      </div>
-                    ))}
+                  <div className="space-y-4 text-left">
+                    <p className="text-lg font-bold text-foreground">
+                      Example Problem:
+                    </p>
+                    <p className="text-md text-foreground">
+                      “Managing revenue share in B2B SaaS deals”
+                    </p>
+                    <div className="mt-4 space-y-2 text-sm text-muted-foreground">
+                      <p>Frequency: 87 (↑ 23% this week)</p>
+                      <p>Pricing: “I’d pay $49/mo…” (12 mentions)</p>
+                      <p>Competitors: Capshare, Stigg</p>
+                      <p>Source: Reddit, HackerNews</p>
+                    </div>
+                    <div className="mt-4 text-sm text-muted-foreground italic">
+                      “We literally track this in spreadsheets…” — Reddit user
+                    </div>
+                    <div className="text-sm text-muted-foreground italic">
+                      “Revenue split changes constantly…” — HN user
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
+
           </div>
         </div>
       </section>
@@ -305,20 +301,20 @@ const Landing = () => {
         <div className="max-w-4xl mx-auto text-center">
           <div className="p-12 rounded-3xl glass border border-border bg-gradient-to-br from-primary/5 to-accent/5">
             <h2 className="text-5xl md:text-6xl font-bold mb-8">
-              Ready to Build
-              <br />
+              Build What People <br />
               <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                Your AI Team?
+                Actually Want
               </span>
             </h2>
             <p className="text-xl text-muted-foreground mb-10 max-w-2xl mx-auto">
-              Join forward-thinking professionals who are already transforming their workflow with intelligent AI collaboration.
+              Thousands of founders are already talking about their biggest problems.
+              You just need to listen the right way.
             </p>
             <button
               onClick={() => navigate('/auth')}
               className="px-10 py-5 rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-bold text-lg shadow-glow hover:shadow-glow-strong transition-smooth hover:scale-105 inline-flex items-center gap-3"
             >
-              Begin now!
+              Explore Problems
               <ArrowRight className="w-5 h-5" />
             </button>
           </div>
@@ -351,7 +347,7 @@ const Landing = () => {
             </button>
           </div>
           <p className="text-muted-foreground text-sm">
-            © 2025 CreatuAI. Empowering creativity with intelligent collaboration.
+            © 2025 CreatuAI. Real problems, validated.
           </p>
         </div>
       </footer>
