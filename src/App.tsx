@@ -19,6 +19,13 @@ import Landing from "./pages/Landing";
 import Privacy from "./pages/Privacy";
 import DeepAnalytics from "./pages/DeepAnalytics";
 import Deck from "./pages/Deck";
+import { SaasDashboardLayout } from "./layouts/SaasDashboardLayout";
+import ProblemsList from "./pages/saas/ProblemsList";
+import ProblemDetails from "./pages/saas/ProblemDetails";
+import Search from "./pages/saas/Search";
+import Feed from "./pages/saas/Feed";
+import Validate from "./pages/saas/Validate";
+import SaasWatchlist from "./pages/saas/Watchlist";
 import { useEffect } from "react";
 
 const queryClient = new QueryClient({
@@ -187,6 +194,24 @@ const App = () => {
                       </ProtectedRoute>
                     }
                   />
+
+                  {/* SaaS Dashboard routes */}
+                  <Route
+                    path="/dashboard"
+                    element={
+                      <ProtectedRoute>
+                        <SaasDashboardLayout />
+                      </ProtectedRoute>
+                    }
+                  >
+                    <Route index element={<Navigate to="problems" replace />} />
+                    <Route path="problems" element={<ProblemsList />} />
+                    <Route path="problems/:id" element={<ProblemDetails />} />
+                    <Route path="search" element={<Search />} />
+                    <Route path="feed" element={<Feed />} />
+                    <Route path="validate" element={<Validate />} />
+                    <Route path="watchlist" element={<SaasWatchlist />} />
+                  </Route>
 
                   {/* Catch all route */}
                   <Route path="*" element={<NotFound />} />
