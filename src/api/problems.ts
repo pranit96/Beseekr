@@ -45,7 +45,15 @@ async function request<T>(
         throw new Error(errorData.message || `Request failed: ${response.status}`);
     }
 
-    return response.json();
+    const json = await response.json();
+
+    // Backend wraps responses in {success: true, data: {...}}
+    // Unwrap the data field if it exists
+    if (json && typeof json === 'object' && 'success' in json && 'data' in json) {
+        return json.data as T;
+    }
+
+    return json;
 }
 
 /**
@@ -62,9 +70,18 @@ export async function getProblems(
         limit: String(limit),
     });
 
-    return request<PaginatedResponse<ProblemListItem>>(
+    const response = await request<any>(
         `/api/problems?${params.toString()}`
     );
+
+    // Map backend field names to frontend expected names
+    return {
+        items: response.problems || [],
+        total: response.total || 0,
+        page: response.page || 1,
+        limit: response.limit || 20,
+        total_pages: response.totalPages || 1,
+    };
 }
 
 /**
