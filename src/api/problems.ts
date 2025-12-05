@@ -88,7 +88,63 @@ export async function getProblems(
  * Get full problem details by ID
  */
 export async function getProblemDetails(id: string): Promise<Problem> {
-    return request<Problem>(`/api/problems/${id}`);
+    const response = await request<any>(`/api/problems/${id}`);
+
+    // Transform backend response to frontend Problem type
+    return {
+        id: response.id,
+        title: response.title,
+        summary: response.summary,
+        metrics: response.metrics || {
+            frequency: response.frequency || 0,
+            upvote_score: response.upvote_score || 0,
+            source_count: response.source_count || 0,
+        },
+        trend: response.trend || [],
+        pricing_signals: response.pricing_signals || [],
+        competitors: response.similar_problems?.map((sp: any) => ({
+            id: sp.id || sp.problem_id,
+            name: sp.title,
+            description: sp.summary,
+            relevance_score: sp.similarity_score,
+        })) || [],
+        market_estimate: response.market_estimate ? {
+            size: formatMarketSize(response.market_estimate.tam_low, response.market_estimate.tam_high),
+            confidence: response.market_estimate.confidence,
+        } : undefined,
+        quotes: response.top_quotes?.map((q: any, idx: number) => ({
+            id: q.id || `quote-${idx}`,
+            text: q.text || q.body,
+            source: q.source || q.subreddit || 'Unknown',
+            author: q.author,
+            upvotes: q.ups || q.upvotes,
+        })) || [],
+        sources: response.related_posts?.map((post: any, idx: number) => ({
+            id: post.post_id || `source-${idx}`,
+            url: post.permalink || post.url || '',
+            title: post.title || 'Untitled',
+            type: post.subreddit || response.sources?.[0] || 'unknown',
+        })) || [],
+        created_at: response.created_at,
+        updated_at: response.last_updated || response.updated_at,
+    } as Problem;
+}
+
+// Helper to format market size
+function formatMarketSize(low?: number, high?: number): string {
+    if (!low && !high) return 'N/A';
+
+    const formatNumber = (num: number) => {
+        if (num >= 1000000000) return `$${(num / 1000000000).toFixed(1)}B`;
+        if (num >= 1000000) return `$${(num / 1000000).toFixed(1)}M`;
+        if (num >= 1000) return `$${(num / 1000).toFixed(1)}K`;
+        return `$${num}`;
+    };
+
+    if (low && high) {
+        return `${formatNumber(low)} - ${formatNumber(high)}`;
+    }
+    return formatNumber(low || high || 0);
 }
 
 /**
@@ -121,7 +177,26 @@ export async function getUserFeed(
  * Get user's watchlist
  */
 export async function getWatchlist(): Promise<WatchlistItem[]> {
-    return request<WatchlistItem[]>('/api/problems/watchlist');
+    const response = await request<any>('/api/problems/watchlist');
+
+    // Transform backend response to frontend WatchlistItem format
+    const items = response.items || [];
+
+    return items.map((item: any) => ({
+        problem_id: item.id,
+        added_at: item.added_at,
+        problem: {
+            id: item.id,
+            title: item.title,
+            summary: item.summary || '',
+            metrics: {
+                frequency: item.frequency || 0,
+                upvote_score: item.upvote_score || 0,
+                source_count: item.source_count || 0,
+            },
+            in_watchlist: true,
+        },
+    }));
 }
 
 /**
