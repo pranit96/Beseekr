@@ -19,11 +19,20 @@ export interface PricingSignal {
 }
 
 export interface Competitor {
-    id: string;
+    id?: string;
     name: string;
     description?: string;
     url?: string;
     relevance_score?: number;
+    // New enriched fields
+    competitor_type?: string; // 'established' | 'startup' | etc
+    mention_count?: number;
+    sentiment?: string; // 'positive' | 'negative' | 'mixed'
+    strengths?: string[];
+    weaknesses?: string[];
+    common_complaints?: string[];
+    pricing_mention?: string;
+    differentiation_opportunity?: string;
 }
 
 export interface MarketEstimate {

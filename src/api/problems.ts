@@ -136,12 +136,18 @@ export async function getProblemDetails(id: string): Promise<Problem> {
             momentum: t.momentum,
         })) || [],
         pricing_signals: response.pricing_signals || [],
-        // Map similar_problems to competitors
-        competitors: response.similar_problems?.map((sp: any) => ({
-            id: sp.id || sp.problem_id,
-            name: sp.title,
-            description: sp.summary || sp.description,
-            relevance_score: sp.similarity_score,
+        // Map competitors with enriched data (backend now provides detailed competitor info)
+        competitors: response.competitors?.map((comp: any) => ({
+            name: comp.name,
+            description: comp.strengths?.join(', ') || '',
+            competitor_type: comp.competitor_type,
+            mention_count: comp.mention_count,
+            sentiment: comp.sentiment,
+            strengths: comp.strengths || [],
+            weaknesses: comp.weaknesses || [],
+            common_complaints: comp.common_complaints || [],
+            pricing_mention: comp.pricing_mention,
+            differentiation_opportunity: comp.differentiation_opportunity,
         })) || [],
         // Use backend's market_size string if available, otherwise format from market_estimate
         market_estimate: response.market_size ? {

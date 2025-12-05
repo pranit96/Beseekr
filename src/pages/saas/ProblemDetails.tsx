@@ -275,40 +275,85 @@ export function ProblemDetails() {
 
                 {/* Competitors */}
                 {problem.competitors && problem.competitors.length > 0 && (
-                    <Card>
+                    <Card className="lg:col-span-2">
                         <CardHeader className="pb-3">
                             <CardTitle className="text-sm font-medium flex items-center gap-2">
                                 <Users className="h-4 w-4" />
                                 Competitors ({problem.competitors.length})
                             </CardTitle>
                         </CardHeader>
-                        <CardContent className="pt-0 space-y-3">
-                            {problem.competitors.map((comp) => (
-                                <div key={comp.id} className="flex items-start justify-between gap-2">
-                                    <div className="flex-1 min-w-0">
+                        <CardContent className="pt-0 space-y-4">
+                            {problem.competitors.map((comp, idx) => (
+                                <div key={comp.name || idx} className="border rounded-lg p-4 space-y-3">
+                                    <div className="flex items-start justify-between gap-2">
                                         <div className="flex items-center gap-2">
-                                            <span className="font-medium text-sm">{comp.name}</span>
-                                            {comp.url && (
-                                                <a
-                                                    href={comp.url}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="text-muted-foreground hover:text-primary"
+                                            <span className="font-semibold text-base">{comp.name}</span>
+                                            {comp.competitor_type && (
+                                                <Badge variant="outline" className="text-xs capitalize">
+                                                    {comp.competitor_type}
+                                                </Badge>
+                                            )}
+                                            {comp.sentiment && (
+                                                <Badge
+                                                    variant={comp.sentiment === 'positive' ? 'default' : comp.sentiment === 'negative' ? 'destructive' : 'secondary'}
+                                                    className="text-xs capitalize"
                                                 >
-                                                    <ExternalLink className="h-3 w-3" />
-                                                </a>
+                                                    {comp.sentiment}
+                                                </Badge>
                                             )}
                                         </div>
-                                        {comp.description && (
-                                            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
-                                                {comp.description}
-                                            </p>
+                                        {comp.mention_count && (
+                                            <span className="text-xs text-muted-foreground shrink-0">
+                                                {comp.mention_count} mentions
+                                            </span>
                                         )}
                                     </div>
-                                    {comp.relevance_score !== undefined && (
-                                        <Badge variant="outline" className="shrink-0 text-xs">
-                                            {Math.round(comp.relevance_score * 100)}%
-                                        </Badge>
+
+                                    {comp.strengths && comp.strengths.length > 0 && (
+                                        <div>
+                                            <p className="text-xs font-medium text-green-600 dark:text-green-400 mb-1">Strengths:</p>
+                                            <ul className="text-xs text-muted-foreground space-y-0.5 ml-4 list-disc">
+                                                {comp.strengths.map((strength, i) => (
+                                                    <li key={i}>{strength}</li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+
+                                    {comp.weaknesses && comp.weaknesses.length > 0 && (
+                                        <div>
+                                            <p className="text-xs font-medium text-orange-600 dark:text-orange-400 mb-1">Weaknesses:</p>
+                                            <ul className="text-xs text-muted-foreground space-y-0.5 ml-4 list-disc">
+                                                {comp.weaknesses.map((weakness, i) => (
+                                                    <li key={i}>{weakness}</li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+
+                                    {comp.common_complaints && comp.common_complaints.length > 0 && (
+                                        <div>
+                                            <p className="text-xs font-medium text-red-600 dark:text-red-400 mb-1">Common Complaints:</p>
+                                            <ul className="text-xs text-muted-foreground space-y-0.5 ml-4 list-disc">
+                                                {comp.common_complaints.map((complaint, i) => (
+                                                    <li key={i}>{complaint}</li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+
+                                    {comp.differentiation_opportunity && (
+                                        <div className="bg-primary/5 border border-primary/20 rounded p-2">
+                                            <p className="text-xs font-medium text-primary mb-0.5">💡 Differentiation Opportunity:</p>
+                                            <p className="text-xs text-foreground">{comp.differentiation_opportunity}</p>
+                                        </div>
+                                    )}
+
+                                    {comp.pricing_mention && comp.pricing_mention !== 'unknown' && (
+                                        <div className="text-xs">
+                                            <span className="font-medium">Pricing: </span>
+                                            <span className="text-muted-foreground">{comp.pricing_mention}</span>
+                                        </div>
                                     )}
                                 </div>
                             ))}
