@@ -158,8 +158,8 @@ export function ProblemsList() {
         staleTime: 30000,
     });
 
-    // Safely extract items array from response
-    const problemItems = Array.isArray(data?.items) ? data.items : (Array.isArray(data) ? data : []);
+    // Safely extract items array from response - data will be undefined during loading
+    const problemItems = data?.items || [];
 
     // Fetch watchlist
     const { data: watchlistData } = useQuery({

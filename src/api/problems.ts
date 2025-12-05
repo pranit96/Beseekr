@@ -74,9 +74,32 @@ export async function getProblems(
         `/api/problems?${params.toString()}`
     );
 
+    // Robust null checks - ensure we always return valid structure
+    if (!response || typeof response !== 'object') {
+        return {
+            items: [],
+            total: 0,
+            page: 1,
+            limit: 20,
+            total_pages: 1,
+        };
+    }
+
     // Map backend field names to frontend expected names
+    const problems = Array.isArray(response.problems) ? response.problems : [];
+
     return {
-        items: response.problems || [],
+        items: problems.map((problem: any) => ({
+            id: problem.id,
+            title: problem.title || 'Untitled',
+            summary: problem.summary || problem.description || '',
+            metrics: {
+                frequency: problem.frequency || 0,
+                upvote_score: problem.upvote_score || 0,
+                source_count: problem.source_count || 0,
+            },
+            in_watchlist: problem.in_watchlist || false,
+        })),
         total: response.total || 0,
         page: response.page || 1,
         limit: response.limit || 20,
