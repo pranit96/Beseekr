@@ -94,39 +94,68 @@ export async function getProblemDetails(id: string): Promise<Problem> {
     return {
         id: response.id,
         title: response.title,
-        summary: response.summary,
+        // Use description if available, fallback to summary
+        summary: response.description || response.summary || '',
         metrics: response.metrics || {
             frequency: response.frequency || 0,
-            upvote_score: response.upvote_score || 0,
-            source_count: response.source_count || 0,
+            upvote_score: response.upvote_score || response.total_upvotes || 0,
+            source_count: response.source_count || response.related_posts?.length || 0,
         },
-        trend: response.trend || [],
+        // Map trend data with enhanced fields
+        trend: response.trend?.map((t: any) => ({
+            snapshot_date: t.snapshot_date,
+            frequency: t.frequency || 0,
+            upvotes: t.total_upvotes,
+            growth_7d: t.growth_7d,
+            growth_30d: t.growth_30d,
+            momentum: t.momentum,
+        })) || [],
         pricing_signals: response.pricing_signals || [],
+        // Map similar_problems to competitors
         competitors: response.similar_problems?.map((sp: any) => ({
             id: sp.id || sp.problem_id,
             name: sp.title,
-            description: sp.summary,
+            description: sp.summary || sp.description,
             relevance_score: sp.similarity_score,
         })) || [],
-        market_estimate: response.market_estimate ? {
+        // Use backend's market_size string if available, otherwise format from market_estimate
+        market_estimate: response.market_size ? {
+            size: response.market_size,
+            confidence: response.feasibility_score ? response.feasibility_score / 100 : undefined,
+        } : response.market_estimate ? {
             size: formatMarketSize(response.market_estimate.tam_low, response.market_estimate.tam_high),
             confidence: response.market_estimate.confidence,
         } : undefined,
-        quotes: response.top_quotes?.map((q: any, idx: number) => ({
-            id: q.id || `quote-${idx}`,
-            text: q.text || q.body,
-            source: q.source || q.subreddit || 'Unknown',
-            author: q.author,
-            upvotes: q.ups || q.upvotes,
-        })) || [],
+        // Map top_quotes and extract from related_posts if they have body
+        quotes: [
+            ...(response.top_quotes?.map((q: any, idx: number) => ({
+                id: q.id || `quote-${idx}`,
+                text: q.text || q.body,
+                source: q.source || q.source_identifier || 'Unknown',
+                author: q.author,
+                upvotes: q.ups || q.upvotes,
+            })) || []),
+            // Add quotes from related_posts that have body text
+            ...(response.related_posts
+                ?.filter((post: any) => post.body && post.body.trim().length > 0)
+                .slice(0, 5) // Limit to 5 quotes from posts
+                .map((post: any, idx: number) => ({
+                    id: `post-quote-${idx}`,
+                    text: post.body,
+                    source: post.source_identifier || 'reddit',
+                    upvotes: post.ups,
+                })) || [])
+        ],
+        // Map related_posts to sources with proper URLs
         sources: response.related_posts?.map((post: any, idx: number) => ({
             id: post.post_id || `source-${idx}`,
-            url: post.permalink || post.url || '',
+            url: post.permalink || '',
             title: post.title || 'Untitled',
-            type: post.subreddit || response.sources?.[0] || 'unknown',
+            type: post.source_identifier || response.subreddits?.[0] || 'reddit',
+            date: post.created_at,
         })) || [],
         created_at: response.created_at,
-        updated_at: response.last_updated || response.updated_at,
+        updated_at: response.updated_at || response.last_updated,
     } as Problem;
 }
 
