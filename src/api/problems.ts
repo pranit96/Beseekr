@@ -96,7 +96,8 @@ export async function getProblems(
             metrics: {
                 frequency: problem.frequency || 0,
                 upvote_score: problem.upvote_score || 0,
-                source_count: problem.source_count || 0,
+                // Calculate source_count from actual posts, don't trust backend's source_count
+                source_count: problem.related_posts?.length || 0,
             },
             in_watchlist: problem.in_watchlist || false,
         })),
@@ -119,10 +120,11 @@ export async function getProblemDetails(id: string): Promise<Problem> {
         title: response.title,
         // Use description if available, fallback to summary
         summary: response.description || response.summary || '',
-        metrics: response.metrics || {
+        metrics: {
             frequency: response.frequency || 0,
             upvote_score: response.upvote_score || response.total_upvotes || 0,
-            source_count: response.source_count || response.related_posts?.length || 0,
+            // Calculate from actual related_posts, backend's source_count is often 0
+            source_count: response.related_posts?.length || 0,
         },
         // Map trend data with enhanced fields
         trend: response.trend?.map((t: any) => ({
