@@ -59,8 +59,8 @@ const RootRedirect = () => {
     );
   }
 
-  // If user is logged in, go to chat, otherwise show landing
-  return user ? <Navigate to="/" replace /> : <Landing />;
+  // Redirect to dashboard/problems for both guests and logged-in users
+  return <Navigate to="/dashboard/problems" replace />;
 };
 
 // Protected route wrapper
