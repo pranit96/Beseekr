@@ -343,7 +343,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           description: 'Successfully logged in.',
         });
 
-        navigate('/chat');
+        navigate('/dashboard/problems');
       }
     } catch (error: any) {
       toast({
@@ -376,7 +376,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           description: 'Welcome to CreatuAI.',
         });
 
-        navigate('/chat');
+        navigate('/dashboard/problems');
       }
     } catch (error: any) {
       // Only show toast for ACTUAL errors, not email verification pending

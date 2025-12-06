@@ -38,7 +38,7 @@ const navigation = [
 ];
 
 export function SaasDashboardLayout() {
-    const [sidebarOpen, setSidebarOpen] = useState(true);
+    const [sidebarOpen, setSidebarOpen] = useState(false);
     const [mobileNavOpen, setMobileNavOpen] = useState(false);
     const location = useLocation();
     const { theme, setTheme } = useTheme();
