@@ -187,13 +187,13 @@ export function ProblemsList() {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
     const [page, setPage] = useState(1);
-    const [sortBy, setSortBy] = useState<SortOption>('frequency');
+    const [sortBy, setSortBy] = useState<SortOption>('hot');
     const [searchQuery, setSearchQuery] = useState('');
 
     // Fetch problems
     const { data, isLoading, error } = useQuery({
         queryKey: ['problems', page, sortBy],
-        queryFn: () => problemsApi.getProblems(page, ITEMS_PER_PAGE, sortBy),
+        queryFn: () => problemsApi.getProblems(sortBy, page, ITEMS_PER_PAGE),
     });
 
     // Fetch watchlist
@@ -299,19 +299,19 @@ export function ProblemsList() {
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent className="rounded-xl">
-                            <SelectItem value="frequency" className="rounded-lg">
-                                <span className="flex items-center gap-2">
-                                    <TrendingUp className="h-4 w-4" /> Frequency
-                                </span>
-                            </SelectItem>
-                            <SelectItem value="upvotes" className="rounded-lg">
-                                <span className="flex items-center gap-2">
-                                    <ThumbsUp className="h-4 w-4" /> Upvotes
-                                </span>
-                            </SelectItem>
                             <SelectItem value="hot" className="rounded-lg">
                                 <span className="flex items-center gap-2">
                                     <Flame className="h-4 w-4" /> Hot
+                                </span>
+                            </SelectItem>
+                            <SelectItem value="trending" className="rounded-lg">
+                                <span className="flex items-center gap-2">
+                                    <TrendingUp className="h-4 w-4" /> Trending
+                                </span>
+                            </SelectItem>
+                            <SelectItem value="newest" className="rounded-lg">
+                                <span className="flex items-center gap-2">
+                                    <ThumbsUp className="h-4 w-4" /> Newest
                                 </span>
                             </SelectItem>
                         </SelectContent>
