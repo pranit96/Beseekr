@@ -58,12 +58,24 @@ async function request<T>(
 
 /**
  * Get paginated list of problems
+ * Anonymous users get half problems with gated=true
+ * Registered users get all free problems
  */
 export async function getProblems(
     sort: SortOption = 'hot',
     page: number = 1,
     limit: number = 20
-): Promise<PaginatedResponse<ProblemListItem>> {
+): Promise<{
+    items: ProblemListItem[];
+    total: number;
+    page: number;
+    limit: number;
+    total_pages: number;
+    gated?: boolean;
+    total_available?: number;
+    showing?: number;
+    upgrade_message?: string;
+}> {
     const params = new URLSearchParams({
         sort,
         page: String(page),
@@ -109,10 +121,15 @@ export async function getProblems(
             last_updated: problem.last_updated,
             created_at: problem.created_at,
         })),
-        total: response.total || 0,
+        total: response.total || response.total_available || 0,
         page: response.page || 1,
         limit: response.limit || 20,
-        total_pages: response.totalPages || 1,
+        total_pages: response.total_pages || response.totalPages || 1,
+        // Gated info for anonymous users
+        gated: response.gated || false,
+        total_available: response.total_available,
+        showing: response.showing,
+        upgrade_message: response.upgrade_message,
     };
 }
 
@@ -358,6 +375,38 @@ export async function deleteValidationReport(id: string): Promise<void> {
     });
 }
 
+/**
+ * Get premium problems (score > 70) - requires auth
+ * Free tier: gets 1 preview + count
+ * Standard/Pro: gets all premium problems
+ */
+export async function getPremiumProblems(
+    page: number = 1,
+    limit: number = 20
+): Promise<{
+    preview?: any;
+    problems?: any[];
+    available_count?: number;
+    upgrade_message?: string;
+    is_premium: boolean;
+    subscription?: any;
+    total?: number;
+    page?: number;
+    limit?: number;
+    total_pages?: number;
+}> {
+    const params = new URLSearchParams({
+        page: String(page),
+        limit: String(limit),
+    });
+
+    const response = await request<any>(
+        `/api/problem?${params.toString()}`
+    );
+
+    return response || { is_premium: false };
+}
+
 // Export all functions as a namespace for convenience
 export const problemsApi = {
     getProblems,
@@ -372,6 +421,7 @@ export const problemsApi = {
     getValidationReports,
     getValidationReport,
     deleteValidationReport,
+    getPremiumProblems,
 };
 
 export default problemsApi;

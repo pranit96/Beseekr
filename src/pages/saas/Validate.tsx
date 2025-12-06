@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
@@ -33,6 +34,7 @@ import {
     Plus,
     FileText,
     ChevronRight,
+    Lock,
 } from 'lucide-react';
 import { problemsApi } from '@/api/problems';
 import { cn } from '@/lib/utils';
@@ -770,21 +772,22 @@ export function Validate() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const queryClient = useQueryClient();
+    const { user } = useAuth();
     const [problemText, setProblemText] = useState('');
     const [showForm, setShowForm] = useState(false);
 
-    // Fetch reports list
+    // Fetch reports list (only if authenticated)
     const { data: reportsData, isLoading: isLoadingReports } = useQuery({
         queryKey: ['validation-reports'],
         queryFn: () => problemsApi.getValidationReports(),
-        enabled: !id,
+        enabled: !id && !!user,
     });
 
-    // Fetch single report
+    // Fetch single report (only if authenticated)
     const { data: singleReport, isLoading: isLoadingReport } = useQuery({
         queryKey: ['validation-report', id],
         queryFn: () => problemsApi.getValidationReport(id!),
-        enabled: !!id,
+        enabled: !!id && !!user,
     });
 
     // Create new report
@@ -808,6 +811,36 @@ export function Validate() {
             queryClient.invalidateQueries({ queryKey: ['validation-reports'] });
         },
     });
+
+    // Auth check - show sign-in prompt for unauthenticated users
+    if (!user) {
+        return (
+            <div className="flex flex-col items-center justify-center py-20 max-w-md mx-auto text-center">
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5 }}
+                    className="space-y-6"
+                >
+                    <div className="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 flex items-center justify-center">
+                        <Lock className="h-10 w-10 text-emerald-500" />
+                    </div>
+                    <div>
+                        <h2 className="text-2xl font-bold mb-2">Sign In Required</h2>
+                        <p className="text-muted-foreground">
+                            Create an account to research your startup ideas with AI-powered market validation.
+                        </p>
+                    </div>
+                    <Button
+                        onClick={() => navigate('/auth')}
+                        className="rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 hover:opacity-90 transition-opacity"
+                    >
+                        Sign In to Continue
+                    </Button>
+                </motion.div>
+            </div>
+        );
+    }
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();

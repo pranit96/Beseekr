@@ -193,14 +193,10 @@ const App = () => {
                     }
                   />
 
-                  {/* SaaS Dashboard routes */}
+                  {/* SaaS Dashboard routes - public access to problems list */}
                   <Route
                     path="/dashboard"
-                    element={
-                      <ProtectedRoute>
-                        <SaasDashboardLayout />
-                      </ProtectedRoute>
-                    }
+                    element={<SaasDashboardLayout />}
                   >
                     <Route index element={<Navigate to="problems" replace />} />
                     <Route path="problems" element={<ProblemsList />} />

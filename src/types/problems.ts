@@ -234,3 +234,64 @@ export interface PaginatedResponse<T> {
     limit: number;
     total_pages: number;
 }
+
+// Gated response for anonymous users
+export interface GatedProblemsResponse {
+    problems: ProblemListItem[];
+    total_available: number;
+    showing: number;
+    gated: boolean;
+    upgrade_message?: string;
+    page: number;
+    limit: number;
+}
+
+// Full response for registered users
+export interface ProblemsResponse {
+    problems: ProblemListItem[];
+    gated: boolean;
+    page: number;
+    limit: number;
+    total: number;
+    total_pages: number;
+}
+
+// Subscription info
+export interface SubscriptionInfo {
+    is_premium: boolean;
+    tier: 'free' | 'standard' | 'pro';
+    expires_at: string | null;
+    days_remaining?: number;
+}
+
+// Premium problem brief
+export interface PremiumProblemBrief {
+    id: string;
+    problem_id: string;
+    opportunity_score: number;
+    target_audience?: Record<string, unknown>;
+    market_validation?: Record<string, unknown>;
+    problem: ProblemListItem;
+}
+
+// Premium problems response (free tier - preview only)
+export interface PremiumPreviewResponse {
+    preview: PremiumProblemBrief;
+    available_count: number;
+    upgrade_message: string;
+    is_premium: false;
+    subscription: SubscriptionInfo;
+}
+
+// Premium problems response (paid tier - full access)
+export interface PremiumFullResponse {
+    problems: PremiumProblemBrief[];
+    total: number;
+    page: number;
+    limit: number;
+    total_pages: number;
+    is_premium: true;
+    subscription: SubscriptionInfo;
+}
+
+export type PremiumProblemsResponse = PremiumPreviewResponse | PremiumFullResponse;

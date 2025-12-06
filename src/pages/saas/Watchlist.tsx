@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -11,6 +12,7 @@ import {
     FileText,
     ArrowUpRight,
     Sparkles,
+    Lock,
 } from 'lucide-react';
 import { problemsApi } from '@/api/problems';
 import type { WatchlistItem } from '@/types/problems';
@@ -126,10 +128,12 @@ function WatchlistCard({
 export function Watchlist() {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
+    const { user } = useAuth();
 
     const { data: watchlistData, isLoading, isError, error } = useQuery({
         queryKey: ['watchlist'],
         queryFn: () => problemsApi.getWatchlist(),
+        enabled: !!user,
     });
 
     const watchlist = Array.isArray(watchlistData) ? watchlistData : [];
@@ -142,6 +146,36 @@ export function Watchlist() {
     const handleRemove = (problemId: string) => {
         removeMutation.mutate(problemId);
     };
+
+    // Auth check - show sign-in prompt for unauthenticated users
+    if (!user) {
+        return (
+            <div className="flex flex-col items-center justify-center py-20 max-w-md mx-auto text-center">
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5 }}
+                    className="space-y-6"
+                >
+                    <div className="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 flex items-center justify-center">
+                        <Lock className="h-10 w-10 text-amber-500" />
+                    </div>
+                    <div>
+                        <h2 className="text-2xl font-bold mb-2">Sign In Required</h2>
+                        <p className="text-muted-foreground">
+                            Create an account to save problems to your watchlist and track opportunities.
+                        </p>
+                    </div>
+                    <Button
+                        onClick={() => navigate('/auth')}
+                        className="rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:opacity-90 transition-opacity"
+                    >
+                        Sign In to Continue
+                    </Button>
+                </motion.div>
+            </div>
+        );
+    }
 
     if (isError) {
         return (

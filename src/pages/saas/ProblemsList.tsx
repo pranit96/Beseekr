@@ -1,10 +1,12 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
     Select,
     SelectContent,
@@ -25,6 +27,9 @@ import {
     Search,
     Sparkles,
     ArrowUpRight,
+    Lock,
+    Crown,
+    Zap,
 } from 'lucide-react';
 import { problemsApi } from '@/api/problems';
 import type { SortOption, ProblemListItem } from '@/types/problems';
@@ -186,20 +191,31 @@ function ProblemCard({
 export function ProblemsList() {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
+    const { user } = useAuth();
+    const [activeTab, setActiveTab] = useState<'free' | 'premium'>('free');
     const [page, setPage] = useState(1);
+    const [premiumPage, setPremiumPage] = useState(1);
     const [sortBy, setSortBy] = useState<SortOption>('hot');
     const [searchQuery, setSearchQuery] = useState('');
 
-    // Fetch problems
+    // Fetch free problems
     const { data, isLoading, error } = useQuery({
         queryKey: ['problems', page, sortBy],
         queryFn: () => problemsApi.getProblems(sortBy, page, ITEMS_PER_PAGE),
     });
 
-    // Fetch watchlist
+    // Fetch premium problems (requires auth)
+    const { data: premiumData, isLoading: isLoadingPremium } = useQuery({
+        queryKey: ['premium-problems', premiumPage],
+        queryFn: () => problemsApi.getPremiumProblems(premiumPage, ITEMS_PER_PAGE),
+        enabled: activeTab === 'premium',
+    });
+
+    // Fetch watchlist (only for authenticated users)
     const { data: watchlist } = useQuery({
         queryKey: ['watchlist'],
         queryFn: () => problemsApi.getWatchlist(),
+        enabled: !!user,
     });
 
     // Mutations
@@ -273,148 +289,345 @@ export function ProblemsList() {
                 </p>
             </motion.div>
 
-            {/* Search and Filter Bar */}
-            <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.1 }}
-                className="flex flex-col sm:flex-row gap-4 items-center justify-between"
-            >
-                {/* Search */}
-                <div className="relative w-full sm:w-80">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                    <Input
-                        placeholder="Search problems..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-12 h-12 rounded-xl border-border/50 bg-muted/30 focus:bg-background transition-colors"
-                    />
-                </div>
-
-                {/* Sort */}
-                <div className="flex items-center gap-3">
-                    <span className="text-sm text-muted-foreground">Sort by</span>
-                    <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)}>
-                        <SelectTrigger className="w-40 h-12 rounded-xl border-border/50 bg-muted/30">
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-xl">
-                            <SelectItem value="hot" className="rounded-lg">
-                                <span className="flex items-center gap-2">
-                                    <Flame className="h-4 w-4" /> Hot
-                                </span>
-                            </SelectItem>
-                            <SelectItem value="trending" className="rounded-lg">
-                                <span className="flex items-center gap-2">
-                                    <TrendingUp className="h-4 w-4" /> Trending
-                                </span>
-                            </SelectItem>
-                            <SelectItem value="newest" className="rounded-lg">
-                                <span className="flex items-center gap-2">
-                                    <ThumbsUp className="h-4 w-4" /> Newest
-                                </span>
-                            </SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-            </motion.div>
-
-            {/* Problems Grid */}
-            {isLoading ? (
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {Array.from({ length: 6 }).map((_, i) => (
-                        <ProblemSkeleton key={i} />
-                    ))}
-                </div>
-            ) : problems.length > 0 ? (
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <AnimatePresence mode="wait">
-                        {problems.map((problem: ProblemListItem, index: number) => (
-                            <ProblemCard
-                                key={problem.id}
-                                problem={problem}
-                                isWatching={watchlistIds.has(problem.id)}
-                                onWatchlistToggle={handleWatchlistToggle}
-                                index={index}
-                            />
-                        ))}
-                    </AnimatePresence>
-                </div>
-            ) : (
+            {/* Gated Content Banner - Show for anonymous users */}
+            {data?.gated && !user && activeTab === 'free' && (
                 <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="text-center py-20"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: 0.15 }}
+                    className="mx-auto max-w-2xl"
                 >
-                    <div className="w-20 h-20 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-6">
-                        <Search className="h-10 w-10 text-muted-foreground" />
+                    <div className="relative p-4 sm:p-6 rounded-2xl bg-gradient-to-r from-primary/10 via-accent/10 to-primary/10 border border-primary/20 backdrop-blur-sm">
+                        <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
+                            <div className="shrink-0 w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center">
+                                <Lock className="h-6 w-6 text-primary" />
+                            </div>
+                            <div className="flex-1 text-center sm:text-left">
+                                <p className="font-semibold text-foreground">
+                                    Showing {data.showing} of {data.total_available} problems
+                                </p>
+                                <p className="text-sm text-muted-foreground mt-1">
+                                    {data.upgrade_message || 'Sign up free to access all validated problems'}
+                                </p>
+                            </div>
+                            <Button
+                                onClick={() => navigate('/auth')}
+                                className="shrink-0 rounded-xl bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity"
+                            >
+                                Sign Up Free
+                            </Button>
+                        </div>
                     </div>
-                    <h3 className="text-xl font-semibold mb-2">No problems found</h3>
-                    <p className="text-muted-foreground">
-                        {searchQuery ? 'Try adjusting your search terms.' : 'Check back soon for new opportunities.'}
-                    </p>
                 </motion.div>
             )}
 
-            {/* Pagination */}
-            {!isLoading && problems.length > 0 && totalPages > 1 && (
-                <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.3 }}
-                    className="flex items-center justify-center gap-4 pt-8"
+            {/* Tab Toggle - Free vs Premium */}
+            <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.12 }}
+                className="flex justify-center"
+            >
+                <Tabs
+                    value={activeTab}
+                    onValueChange={(v) => setActiveTab(v as 'free' | 'premium')}
+                    className="w-full max-w-md"
                 >
-                    <Button
-                        variant="outline"
-                        size="lg"
-                        onClick={() => setPage(p => Math.max(1, p - 1))}
-                        disabled={page === 1}
-                        className="rounded-xl gap-2"
-                    >
-                        <ChevronLeft className="h-4 w-4" />
-                        Previous
-                    </Button>
+                    <TabsList className="grid w-full grid-cols-2 h-12 rounded-xl bg-muted/50 p-1">
+                        <TabsTrigger
+                            value="free"
+                            className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm flex items-center gap-2"
+                        >
+                            <Sparkles className="h-4 w-4" />
+                            Free Problems
+                        </TabsTrigger>
+                        <TabsTrigger
+                            value="premium"
+                            className="rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500/10 data-[state=active]:to-orange-500/10 data-[state=active]:text-amber-600 flex items-center gap-2"
+                        >
+                            <Crown className="h-4 w-4" />
+                            Premium
+                            {!user && <Lock className="h-3 w-3 ml-1" />}
+                        </TabsTrigger>
+                    </TabsList>
+                </Tabs>
+            </motion.div>
 
-                    <div className="flex items-center gap-2">
-                        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                            const pageNum = i + 1;
-                            return (
-                                <Button
-                                    key={pageNum}
-                                    variant={page === pageNum ? 'default' : 'ghost'}
-                                    size="icon"
-                                    onClick={() => setPage(pageNum)}
-                                    className="rounded-xl w-10 h-10"
-                                >
-                                    {pageNum}
-                                </Button>
-                            );
-                        })}
-                        {totalPages > 5 && (
-                            <>
-                                <span className="text-muted-foreground">...</span>
-                                <Button
-                                    variant={page === totalPages ? 'default' : 'ghost'}
-                                    size="icon"
-                                    onClick={() => setPage(totalPages)}
-                                    className="rounded-xl w-10 h-10"
-                                >
-                                    {totalPages}
-                                </Button>
-                            </>
-                        )}
-                    </div>
-
-                    <Button
-                        variant="outline"
-                        size="lg"
-                        onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                        disabled={page === totalPages}
-                        className="rounded-xl gap-2"
+            {/* Free Problems Tab Content */}
+            {activeTab === 'free' && (
+                <>
+                    {/* Search and Filter Bar */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.4, delay: 0.1 }}
+                        className="flex flex-col sm:flex-row gap-4 items-center justify-between"
                     >
-                        Next
-                        <ChevronRight className="h-4 w-4" />
-                    </Button>
+                        {/* Search */}
+                        <div className="relative w-full sm:w-80">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                            <Input
+                                placeholder="Search problems..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="pl-12 h-12 rounded-xl border-border/50 bg-muted/30 focus:bg-background transition-colors"
+                            />
+                        </div>
+
+                        {/* Sort */}
+                        <div className="flex items-center gap-3">
+                            <span className="text-sm text-muted-foreground">Sort by</span>
+                            <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)}>
+                                <SelectTrigger className="w-40 h-12 rounded-xl border-border/50 bg-muted/30">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent className="rounded-xl">
+                                    <SelectItem value="hot" className="rounded-lg">
+                                        <span className="flex items-center gap-2">
+                                            <Flame className="h-4 w-4" /> Hot
+                                        </span>
+                                    </SelectItem>
+                                    <SelectItem value="trending" className="rounded-lg">
+                                        <span className="flex items-center gap-2">
+                                            <TrendingUp className="h-4 w-4" /> Trending
+                                        </span>
+                                    </SelectItem>
+                                    <SelectItem value="newest" className="rounded-lg">
+                                        <span className="flex items-center gap-2">
+                                            <ThumbsUp className="h-4 w-4" /> Newest
+                                        </span>
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </motion.div>
+
+                    {/* Problems Grid */}
+                    {isLoading ? (
+                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {Array.from({ length: 6 }).map((_, i) => (
+                                <ProblemSkeleton key={i} />
+                            ))}
+                        </div>
+                    ) : problems.length > 0 ? (
+                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <AnimatePresence mode="wait">
+                                {problems.map((problem: ProblemListItem, index: number) => (
+                                    <ProblemCard
+                                        key={problem.id}
+                                        problem={problem}
+                                        isWatching={watchlistIds.has(problem.id)}
+                                        onWatchlistToggle={handleWatchlistToggle}
+                                        index={index}
+                                    />
+                                ))}
+                            </AnimatePresence>
+                        </div>
+                    ) : (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className="text-center py-20"
+                        >
+                            <div className="w-20 h-20 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-6">
+                                <Search className="h-10 w-10 text-muted-foreground" />
+                            </div>
+                            <h3 className="text-xl font-semibold mb-2">No problems found</h3>
+                            <p className="text-muted-foreground">
+                                {searchQuery ? 'Try adjusting your search terms.' : 'Check back soon for new opportunities.'}
+                            </p>
+                        </motion.div>
+                    )}
+
+                    {/* Pagination */}
+                    {!isLoading && problems.length > 0 && totalPages > 1 && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: 0.3 }}
+                            className="flex items-center justify-center gap-4 pt-8"
+                        >
+                            <Button
+                                variant="outline"
+                                size="lg"
+                                onClick={() => setPage(p => Math.max(1, p - 1))}
+                                disabled={page === 1}
+                                className="rounded-xl gap-2"
+                            >
+                                <ChevronLeft className="h-4 w-4" />
+                                Previous
+                            </Button>
+
+                            <div className="flex items-center gap-2">
+                                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                                    const pageNum = i + 1;
+                                    return (
+                                        <Button
+                                            key={pageNum}
+                                            variant={page === pageNum ? 'default' : 'ghost'}
+                                            size="icon"
+                                            onClick={() => setPage(pageNum)}
+                                            className="rounded-xl w-10 h-10"
+                                        >
+                                            {pageNum}
+                                        </Button>
+                                    );
+                                })}
+                                {totalPages > 5 && (
+                                    <>
+                                        <span className="text-muted-foreground">...</span>
+                                        <Button
+                                            variant={page === totalPages ? 'default' : 'ghost'}
+                                            size="icon"
+                                            onClick={() => setPage(totalPages)}
+                                            className="rounded-xl w-10 h-10"
+                                        >
+                                            {totalPages}
+                                        </Button>
+                                    </>
+                                )}
+                            </div>
+
+                            <Button
+                                variant="outline"
+                                size="lg"
+                                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                                disabled={page === totalPages}
+                                className="rounded-xl gap-2"
+                            >
+                                Next
+                                <ChevronRight className="h-4 w-4" />
+                            </Button>
+                        </motion.div>
+                    )}
+                </>
+            )}
+
+            {/* Premium Problems Tab Content */}
+            {activeTab === 'premium' && (
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4 }}
+                >
+                    {/* Guest user - show teaser with signup CTA */}
+                    {!user ? (
+                        <div className="space-y-8">
+                            <div className="p-6 rounded-2xl bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/10 border border-amber-500/20 text-center">
+                                <Crown className="h-12 w-12 text-amber-500 mx-auto mb-4" />
+                                <h3 className="text-xl font-bold mb-2">Premium Problems Await</h3>
+                                <p className="text-muted-foreground mb-4">
+                                    Create a free account to preview high-opportunity problems with scores above 70.
+                                </p>
+                                <Button
+                                    onClick={() => navigate('/auth')}
+                                    className="rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:opacity-90"
+                                >
+                                    Sign Up Free
+                                </Button>
+                            </div>
+
+                            {/* Blurred preview cards to entice */}
+                            <div>
+                                <h4 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                                    <Lock className="h-4 w-4 text-muted-foreground" />
+                                    Sample High-Opportunity Problems
+                                </h4>
+                                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 relative">
+                                    {/* Blurred placeholder cards */}
+                                    {[1, 2, 3].map((i) => (
+                                        <div
+                                            key={i}
+                                            className="relative p-6 rounded-2xl bg-gradient-to-br from-amber-500/5 to-orange-500/5 border border-amber-500/10 blur-[2px] pointer-events-none"
+                                        >
+                                            <div className="space-y-3">
+                                                <div className="h-6 w-3/4 bg-muted/50 rounded" />
+                                                <div className="h-4 w-full bg-muted/30 rounded" />
+                                                <div className="h-4 w-2/3 bg-muted/30 rounded" />
+                                                <div className="flex gap-2 pt-2">
+                                                    <div className="h-6 w-16 bg-amber-500/20 rounded-full" />
+                                                    <div className="h-6 w-20 bg-muted/30 rounded-full" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {/* Overlay */}
+                                    <div className="absolute inset-0 flex items-center justify-center bg-background/50 rounded-2xl">
+                                        <Button
+                                            onClick={() => navigate('/auth')}
+                                            className="rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:opacity-90 gap-2"
+                                        >
+                                            <Lock className="h-4 w-4" />
+                                            Sign Up to Unlock
+                                        </Button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    ) : isLoadingPremium ? (
+                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {Array.from({ length: 6 }).map((_, i) => (
+                                <ProblemSkeleton key={i} />
+                            ))}
+                        </div>
+                    ) : premiumData?.is_premium === false ? (
+                        // Free tier - show preview + upgrade
+                        <div className="space-y-8">
+                            <div className="p-6 rounded-2xl bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/10 border border-amber-500/20 text-center">
+                                <Crown className="h-12 w-12 text-amber-500 mx-auto mb-4" />
+                                <h3 className="text-xl font-bold mb-2">Upgrade to Premium</h3>
+                                <p className="text-muted-foreground mb-4">
+                                    {premiumData?.upgrade_message || `Access ${premiumData?.available_count || 0} high-opportunity problems`}
+                                </p>
+                                <Button className="rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:opacity-90">
+                                    Upgrade Now
+                                </Button>
+                            </div>
+
+                            {premiumData?.preview && (
+                                <div>
+                                    <h4 className="text-lg font-semibold mb-4">Preview Problem</h4>
+                                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                        <ProblemCard
+                                            problem={premiumData.preview.problem}
+                                            isWatching={false}
+                                            onWatchlistToggle={() => { }}
+                                            index={0}
+                                        />
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    ) : (
+                        // Premium tier - show all problems
+                        <div className="space-y-6">
+                            {premiumData?.subscription && (
+                                <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20">
+                                    <div className="flex items-center gap-3">
+                                        <Crown className="h-5 w-5 text-amber-500" />
+                                        <span className="font-medium capitalize">{premiumData.subscription.tier} Plan</span>
+                                    </div>
+                                    {premiumData.subscription.days_remaining && (
+                                        <span className="text-sm text-muted-foreground">
+                                            {premiumData.subscription.days_remaining} days remaining
+                                        </span>
+                                    )}
+                                </div>
+                            )}
+
+                            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {premiumData?.problems?.map((item: any, index: number) => (
+                                    <ProblemCard
+                                        key={item.id}
+                                        problem={item.problem}
+                                        isWatching={watchlistIds.has(item.problem?.id)}
+                                        onWatchlistToggle={handleWatchlistToggle}
+                                        index={index}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </motion.div>
             )}
         </div>
