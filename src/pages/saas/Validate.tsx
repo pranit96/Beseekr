@@ -35,12 +35,43 @@ import {
     ChevronRight,
 } from 'lucide-react';
 import { problemsApi } from '@/api/problems';
-import type { ValidationReport } from '@/types/validation';
 import { cn } from '@/lib/utils';
 
+// Helper to normalize report data - handles both list items and full report
+function normalizeReport(rawReport: any) {
+    // For list view items, data is at top level + full_report
+    // For detail view, same structure
+    const fullReport = rawReport.full_report || rawReport;
+
+    return {
+        id: rawReport.id,
+        idea_input: rawReport.idea_input || fullReport.report_metadata?.idea_submitted || '',
+        recommendation: rawReport.recommendation || fullReport.executive_verdict?.recommendation || '',
+        confidence_grade: rawReport.confidence_grade || fullReport.report_metadata?.confidence_grade || '?',
+        validation_score: rawReport.validation_score || fullReport.executive_verdict?.confidence_score || 0,
+        one_liner: rawReport.one_liner || fullReport.executive_verdict?.one_liner || '',
+        key_insight: rawReport.key_insight || fullReport.executive_verdict?.key_insight || '',
+        evidence_count: rawReport.evidence_count || fullReport.evidence_appendix?.total_sources || 0,
+        created_at: rawReport.created_at || fullReport.report_metadata?.research_completed || '',
+        // Full nested report data
+        report_metadata: fullReport.report_metadata || {},
+        executive_verdict: fullReport.executive_verdict || {},
+        problem_validation: fullReport.problem_validation || {},
+        demand_signals: fullReport.demand_signals || {},
+        competitive_landscape: fullReport.competitive_landscape || {},
+        pricing_intelligence: fullReport.pricing_intelligence || {},
+        customer_profile: fullReport.customer_profile || {},
+        market_sizing: fullReport.market_sizing || {},
+        go_to_market: fullReport.go_to_market || {},
+        risk_assessment: fullReport.risk_assessment || {},
+        evidence_appendix: fullReport.evidence_appendix || {},
+    };
+}
+
 // Report Card for the list view
-function ReportCard({ report, onDelete }: { report: any; onDelete: (id: string) => void }) {
+function ReportCard({ report: rawReport, onDelete }: { report: any; onDelete: (id: string) => void }) {
     const navigate = useNavigate();
+    const report = normalizeReport(rawReport);
 
     const getGradeColor = (grade: string) => {
         switch (grade) {
@@ -53,6 +84,16 @@ function ReportCard({ report, onDelete }: { report: any; onDelete: (id: string) 
         }
     };
 
+    const getRecommendationColor = (rec: string) => {
+        switch (rec?.toUpperCase()) {
+            case 'PURSUE': return 'default';
+            case 'EXPLORE': return 'secondary';
+            case 'CAUTION': return 'outline';
+            case 'AVOID': return 'destructive';
+            default: return 'secondary';
+        }
+    };
+
     const handleClick = () => navigate(`/dashboard/validate/${report.id}`);
     const handleDelete = (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -61,8 +102,7 @@ function ReportCard({ report, onDelete }: { report: any; onDelete: (id: string) 
         }
     };
 
-    const metadata = report.report_metadata || {};
-    const verdict = report.executive_verdict || {};
+    const sourcesAnalyzed = report.report_metadata?.sources_analyzed || {};
 
     return (
         <Card
@@ -74,31 +114,31 @@ function ReportCard({ report, onDelete }: { report: any; onDelete: (id: string) 
                     {/* Grade Badge */}
                     <div className={cn(
                         "w-12 h-12 rounded-lg flex items-center justify-center text-lg font-bold shrink-0",
-                        getGradeColor(metadata.confidence_grade)
+                        getGradeColor(report.confidence_grade)
                     )}>
-                        {metadata.confidence_grade || '?'}
+                        {report.confidence_grade}
                     </div>
 
                     {/* Content */}
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                            <Badge variant={verdict.recommendation === 'PURSUE' ? 'default' : 'secondary'} className="text-xs">
-                                {verdict.recommendation || 'Pending'}
+                            <Badge variant={getRecommendationColor(report.recommendation) as any} className="text-xs">
+                                {report.recommendation || 'Pending'}
                             </Badge>
                             <span className="text-xs text-muted-foreground">
-                                {metadata.evidence_strength} Evidence
+                                Score: {report.validation_score}%
                             </span>
                         </div>
                         <p className="font-medium text-sm line-clamp-2 group-hover:text-primary transition-colors">
-                            {metadata.idea_submitted || 'Untitled Report'}
+                            {report.idea_input || 'Untitled Report'}
                         </p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                            {verdict.one_liner}
+                        <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
+                            {report.one_liner}
                         </p>
                         <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
-                            <span>{metadata.sources_analyzed?.reddit_discussions || 0} Reddit</span>
-                            <span>{metadata.sources_analyzed?.hn_threads || 0} HN</span>
-                            <span>{new Date(metadata.research_completed).toLocaleDateString()}</span>
+                            <span>{sourcesAnalyzed.reddit_discussions || 0} Reddit</span>
+                            <span>{sourcesAnalyzed.hn_threads || 0} HN</span>
+                            <span>{new Date(report.created_at).toLocaleDateString()}</span>
                         </div>
                     </div>
 
@@ -121,7 +161,9 @@ function ReportCard({ report, onDelete }: { report: any; onDelete: (id: string) 
 }
 
 // Full Report Display Component
-function ReportDisplay({ report }: { report: ValidationReport }) {
+function ReportDisplay({ report: rawReport }: { report: any }) {
+    const report = normalizeReport(rawReport);
+
     const getGradeColor = (grade: string) => {
         switch (grade) {
             case 'A': return 'text-green-500 bg-green-500/10 border-green-500/30';
@@ -143,60 +185,82 @@ function ReportDisplay({ report }: { report: ValidationReport }) {
         }
     };
 
+    const metadata = report.report_metadata || {};
+    const verdict = report.executive_verdict || {};
+    const problemValidation = report.problem_validation || {};
+    const demandSignals = report.demand_signals || {};
+    const competitiveLandscape = report.competitive_landscape || {};
+    const pricingIntelligence = report.pricing_intelligence || {};
+    const customerProfile = report.customer_profile || {};
+    const marketSizing = report.market_sizing || {};
+    const goToMarket = report.go_to_market || {};
+    const riskAssessment = report.risk_assessment || {};
+    const evidenceAppendix = report.evidence_appendix || {};
+
+    const sourcesAnalyzed = metadata.sources_analyzed || {};
+
     return (
         <div className="space-y-6">
+            {/* Idea Submitted */}
+            <Card className="bg-muted/30">
+                <CardContent className="pt-6">
+                    <p className="text-sm text-muted-foreground mb-1">Idea Validated</p>
+                    <p className="font-medium">{report.idea_input}</p>
+                </CardContent>
+            </Card>
+
             {/* Executive Summary */}
-            <Card className={cn("border-2", getGradeColor(report.report_metadata.confidence_grade))}>
+            <Card className={cn("border-2", getGradeColor(report.confidence_grade))}>
                 <CardContent className="pt-6">
                     <div className="flex flex-col lg:flex-row lg:items-start gap-6">
                         <div className="flex items-center gap-4">
                             <div className={cn(
                                 "w-20 h-20 rounded-xl flex items-center justify-center text-3xl font-bold border-2",
-                                getGradeColor(report.report_metadata.confidence_grade)
+                                getGradeColor(report.confidence_grade)
                             )}>
-                                {report.report_metadata.confidence_grade}
+                                {report.confidence_grade}
                             </div>
                             <div>
                                 {(() => {
-                                    const style = getRecommendationStyle(report.executive_verdict.recommendation);
+                                    const style = getRecommendationStyle(report.recommendation);
                                     const Icon = style.icon;
                                     return (
                                         <Badge className={cn("text-sm px-3 py-1", style.bg, style.color)}>
                                             <Icon className="h-4 w-4 mr-1" />
-                                            {report.executive_verdict.recommendation}
+                                            {report.recommendation}
                                         </Badge>
                                     );
                                 })()}
                                 <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
-                                    <span>Confidence: {report.executive_verdict.confidence_score}%</span>
+                                    <span>Score: {report.validation_score}%</span>
                                     <span>•</span>
-                                    <span>{report.report_metadata.evidence_strength} Evidence</span>
+                                    <span>{metadata.evidence_strength || 'Unknown'} Evidence</span>
                                 </div>
                             </div>
                         </div>
                         <div className="flex-1">
-                            <h2 className="text-lg font-semibold">{report.executive_verdict.one_liner}</h2>
+                            <h2 className="text-lg font-semibold">{report.one_liner}</h2>
                             <p className="text-sm text-muted-foreground mt-2">
-                                💡 {report.executive_verdict.key_insight}
+                                💡 {report.key_insight}
                             </p>
                         </div>
                     </div>
 
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t">
                         <div className="text-center">
-                            <p className="text-2xl font-bold">{report.report_metadata.sources_analyzed.reddit_discussions}</p>
+                            <p className="text-2xl font-bold">{sourcesAnalyzed.reddit_discussions || 0}</p>
                             <p className="text-xs text-muted-foreground">Reddit Discussions</p>
                         </div>
                         <div className="text-center">
-                            <p className="text-2xl font-bold">{report.report_metadata.sources_analyzed.hn_threads}</p>
+                            <p className="text-2xl font-bold">{sourcesAnalyzed.hn_threads || 0}</p>
                             <p className="text-xs text-muted-foreground">HN Threads</p>
                         </div>
                         <div className="text-center">
-                            <p className="text-2xl font-bold">{report.report_metadata.sources_analyzed.pricing_datapoints}</p>
+                            <p className="text-2xl font-bold">{sourcesAnalyzed.pricing_datapoints || 0}</p>
                             <p className="text-xs text-muted-foreground">Pricing Data</p>
                         </div>
                         <div className="text-center">
-                            <p className="text-2xl font-bold">{report.report_metadata.execution_time_seconds}s</p>
+                            <p className="text-2xl font-bold">{metadata.execution_time_seconds || 0}s</p>
                             <p className="text-xs text-muted-foreground">Analysis Time</p>
                         </div>
                     </div>
@@ -219,7 +283,7 @@ function ReportDisplay({ report }: { report: ValidationReport }) {
                         <Card>
                             <CardHeader className="pb-3">
                                 <CardTitle className="text-sm font-medium flex items-center gap-2">
-                                    {report.problem_validation.problem_exists ? (
+                                    {problemValidation.problem_exists ? (
                                         <CheckCircle2 className="h-4 w-4 text-green-500" />
                                     ) : (
                                         <XCircle className="h-4 w-4 text-red-500" />
@@ -230,22 +294,24 @@ function ReportDisplay({ report }: { report: ValidationReport }) {
                             <CardContent className="space-y-3">
                                 <div className="flex items-center justify-between">
                                     <span className="text-sm">Problem Exists</span>
-                                    <Badge variant={report.problem_validation.problem_exists ? "default" : "destructive"}>
-                                        {report.problem_validation.problem_exists ? "Yes" : "No"}
+                                    <Badge variant={problemValidation.problem_exists ? "default" : "destructive"}>
+                                        {problemValidation.problem_exists ? "Yes" : "No"}
                                     </Badge>
                                 </div>
                                 <div>
                                     <div className="flex items-center justify-between text-sm mb-1">
                                         <span>Severity Score</span>
-                                        <span className="font-medium">{report.problem_validation.severity_score}/10</span>
+                                        <span className="font-medium">{problemValidation.severity_score || 0}/10</span>
                                     </div>
-                                    <Progress value={report.problem_validation.severity_score * 10} className="h-2" />
+                                    <Progress value={(problemValidation.severity_score || 0) * 10} className="h-2" />
                                 </div>
-                                <div className="space-y-1 pt-2">
-                                    {report.problem_validation.evidence.frequency_signals.map((signal, i) => (
-                                        <p key={i} className="text-xs text-muted-foreground">• {signal}</p>
-                                    ))}
-                                </div>
+                                {problemValidation.evidence?.frequency_signals && (
+                                    <div className="space-y-1 pt-2">
+                                        {problemValidation.evidence.frequency_signals.map((signal: string, i: number) => (
+                                            <p key={i} className="text-xs text-muted-foreground">• {signal}</p>
+                                        ))}
+                                    </div>
+                                )}
                             </CardContent>
                         </Card>
 
@@ -259,29 +325,31 @@ function ReportDisplay({ report }: { report: ValidationReport }) {
                             <CardContent className="space-y-3">
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="text-center p-3 bg-muted rounded-lg">
-                                        <p className="text-2xl font-bold">{report.demand_signals.active_seekers}</p>
+                                        <p className="text-2xl font-bold">{demandSignals.active_seekers || 0}</p>
                                         <p className="text-xs text-muted-foreground">Active Seekers</p>
                                     </div>
                                     <div className="text-center p-3 bg-muted rounded-lg">
-                                        <p className="text-2xl font-bold">{report.demand_signals.workaround_users}</p>
+                                        <p className="text-2xl font-bold">{demandSignals.workaround_users || 0}</p>
                                         <p className="text-xs text-muted-foreground">Using Workarounds</p>
                                     </div>
                                 </div>
-                                <div className="pt-2">
-                                    <p className="text-xs font-medium mb-2">Current Workarounds:</p>
-                                    <div className="flex flex-wrap gap-1">
-                                        {report.demand_signals.evidence.workaround_descriptions.map((w, i) => (
-                                            <Badge key={i} variant="outline" className="text-xs">
-                                                {w.method} ({w.mentions})
-                                            </Badge>
-                                        ))}
+                                {demandSignals.evidence?.workaround_descriptions && (
+                                    <div className="pt-2">
+                                        <p className="text-xs font-medium mb-2">Current Workarounds:</p>
+                                        <div className="flex flex-wrap gap-1">
+                                            {demandSignals.evidence.workaround_descriptions.map((w: any, i: number) => (
+                                                <Badge key={i} variant="outline" className="text-xs">
+                                                    {w.method} ({w.mentions})
+                                                </Badge>
+                                            ))}
+                                        </div>
                                     </div>
-                                </div>
+                                )}
                             </CardContent>
                         </Card>
                     </div>
 
-                    {report.problem_validation.evidence.pain_quotes.length > 0 && (
+                    {problemValidation.evidence?.pain_quotes?.length > 0 && (
                         <Card>
                             <CardHeader className="pb-3">
                                 <CardTitle className="text-sm font-medium flex items-center gap-2">
@@ -290,7 +358,7 @@ function ReportDisplay({ report }: { report: ValidationReport }) {
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-3">
-                                {report.problem_validation.evidence.pain_quotes.slice(0, 4).map((quote, i) => (
+                                {problemValidation.evidence.pain_quotes.slice(0, 4).map((quote: any, i: number) => (
                                     <div key={i} className="border-l-2 border-primary/30 pl-3">
                                         <p className="text-sm italic">"{quote.quote}"</p>
                                         <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
@@ -315,28 +383,28 @@ function ReportDisplay({ report }: { report: ValidationReport }) {
                         <Card>
                             <CardHeader className="pb-2">
                                 <CardDescription>TAM</CardDescription>
-                                <CardTitle className="text-2xl text-green-500">{report.market_sizing.TAM.value}</CardTitle>
+                                <CardTitle className="text-2xl text-green-500">{marketSizing.TAM?.value || 'N/A'}</CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <Badge variant="outline">{report.market_sizing.TAM.confidence} Confidence</Badge>
+                                <Badge variant="outline">{marketSizing.TAM?.confidence || 'Unknown'} Confidence</Badge>
                             </CardContent>
                         </Card>
                         <Card>
                             <CardHeader className="pb-2">
                                 <CardDescription>SAM</CardDescription>
-                                <CardTitle className="text-2xl">{report.market_sizing.SAM.value}</CardTitle>
+                                <CardTitle className="text-2xl">{marketSizing.SAM?.value || 'N/A'}</CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <p className="text-xs text-muted-foreground">{report.market_sizing.SAM.notes}</p>
+                                <p className="text-xs text-muted-foreground">{marketSizing.SAM?.notes || ''}</p>
                             </CardContent>
                         </Card>
                         <Card>
                             <CardHeader className="pb-2">
                                 <CardDescription>SOM (3-Year Target)</CardDescription>
-                                <CardTitle className="text-2xl text-primary">{report.market_sizing.SOM.value}</CardTitle>
+                                <CardTitle className="text-2xl text-primary">{marketSizing.SOM?.value || 'N/A'}</CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <p className="text-xs text-muted-foreground">{report.market_sizing.SOM.notes}</p>
+                                <p className="text-xs text-muted-foreground">{marketSizing.SOM?.notes || ''}</p>
                             </CardContent>
                         </Card>
                     </div>
@@ -345,15 +413,15 @@ function ReportDisplay({ report }: { report: ValidationReport }) {
                         <CardHeader className="pb-3">
                             <CardTitle className="text-sm font-medium flex items-center gap-2">
                                 <Users className="h-4 w-4" />
-                                Competitive Landscape ({report.competitive_landscape.total_competitors_found} found)
+                                Competitive Landscape ({competitiveLandscape.total_competitors_found || 0} found)
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            {report.competitive_landscape.direct_competitors.length > 0 && (
+                            {competitiveLandscape.direct_competitors?.length > 0 && (
                                 <div>
                                     <p className="text-xs font-medium text-muted-foreground mb-2">Direct Competitors</p>
                                     <div className="grid gap-2">
-                                        {report.competitive_landscape.direct_competitors.map((comp, i) => (
+                                        {competitiveLandscape.direct_competitors.map((comp: any, i: number) => (
                                             <div key={i} className="flex items-center justify-between p-2 bg-muted rounded">
                                                 <span className="font-medium">{comp.name}</span>
                                                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -365,19 +433,21 @@ function ReportDisplay({ report }: { report: ValidationReport }) {
                                     </div>
                                 </div>
                             )}
-                            <div>
-                                <p className="text-xs font-medium text-muted-foreground mb-2">DIY Alternatives</p>
-                                <div className="flex flex-wrap gap-1">
-                                    {report.competitive_landscape.diy_alternatives.map((alt, i) => (
-                                        <Badge key={i} variant="secondary">{alt}</Badge>
-                                    ))}
+                            {competitiveLandscape.diy_alternatives?.length > 0 && (
+                                <div>
+                                    <p className="text-xs font-medium text-muted-foreground mb-2">DIY Alternatives</p>
+                                    <div className="flex flex-wrap gap-1">
+                                        {competitiveLandscape.diy_alternatives.map((alt: string, i: number) => (
+                                            <Badge key={i} variant="secondary">{alt}</Badge>
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
-                            {report.competitive_landscape.market_gaps.length > 0 && (
+                            )}
+                            {competitiveLandscape.market_gaps?.length > 0 && (
                                 <div className="bg-primary/5 border border-primary/20 rounded p-3">
                                     <p className="text-xs font-medium text-primary mb-1">💡 Market Gaps</p>
                                     <ul className="text-sm space-y-1">
-                                        {report.competitive_landscape.market_gaps.map((gap, i) => (
+                                        {competitiveLandscape.market_gaps.map((gap: string, i: number) => (
                                             <li key={i}>• {gap}</li>
                                         ))}
                                     </ul>
@@ -393,269 +463,303 @@ function ReportDisplay({ report }: { report: ValidationReport }) {
                         <Card>
                             <CardContent className="pt-6 text-center">
                                 <p className="text-xs text-muted-foreground">Low Anchor</p>
-                                <p className="text-2xl font-bold">{report.pricing_intelligence.willingness_to_pay.low_anchor}</p>
+                                <p className="text-2xl font-bold">{pricingIntelligence.willingness_to_pay?.low_anchor || 'N/A'}</p>
                             </CardContent>
                         </Card>
                         <Card className="border-primary">
                             <CardContent className="pt-6 text-center">
                                 <p className="text-xs text-muted-foreground">Median WTP</p>
-                                <p className="text-2xl font-bold text-primary">{report.pricing_intelligence.willingness_to_pay.median}</p>
+                                <p className="text-2xl font-bold text-primary">{pricingIntelligence.willingness_to_pay?.median || 'N/A'}</p>
                             </CardContent>
                         </Card>
                         <Card>
                             <CardContent className="pt-6 text-center">
                                 <p className="text-xs text-muted-foreground">High Anchor</p>
-                                <p className="text-2xl font-bold">{report.pricing_intelligence.willingness_to_pay.high_anchor}</p>
+                                <p className="text-2xl font-bold">{pricingIntelligence.willingness_to_pay?.high_anchor || 'N/A'}</p>
                             </CardContent>
                         </Card>
                         <Card>
                             <CardContent className="pt-6 text-center">
                                 <p className="text-xs text-muted-foreground">Data Points</p>
-                                <p className="text-2xl font-bold">{report.pricing_intelligence.data_points}</p>
+                                <p className="text-2xl font-bold">{pricingIntelligence.data_points || 0}</p>
                             </CardContent>
                         </Card>
                     </div>
 
-                    <Card>
-                        <CardHeader className="pb-3">
-                            <CardTitle className="text-sm font-medium flex items-center gap-2">
-                                <DollarSign className="h-4 w-4" />
-                                Recommended Pricing Strategy
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="flex items-center gap-2">
-                                <Badge>{report.pricing_intelligence.pricing_strategy.recommended_model}</Badge>
-                                <span className="text-sm text-muted-foreground">model recommended</span>
-                            </div>
-                            <div className="grid grid-cols-3 gap-4">
-                                <div className="text-center p-4 border rounded-lg">
-                                    <p className="text-xs text-muted-foreground">Entry</p>
-                                    <p className="text-xl font-bold">${report.pricing_intelligence.pricing_strategy.entry_price}/mo</p>
+                    {pricingIntelligence.pricing_strategy && (
+                        <Card>
+                            <CardHeader className="pb-3">
+                                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                                    <DollarSign className="h-4 w-4" />
+                                    Recommended Pricing Strategy
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <div className="flex items-center gap-2">
+                                    <Badge>{pricingIntelligence.pricing_strategy.recommended_model}</Badge>
+                                    <span className="text-sm text-muted-foreground">model recommended</span>
                                 </div>
-                                <div className="text-center p-4 border-2 border-primary rounded-lg bg-primary/5">
-                                    <p className="text-xs text-muted-foreground">Standard</p>
-                                    <p className="text-xl font-bold text-primary">${report.pricing_intelligence.pricing_strategy.standard_price}/mo</p>
+                                <div className="grid grid-cols-3 gap-4">
+                                    <div className="text-center p-4 border rounded-lg">
+                                        <p className="text-xs text-muted-foreground">Entry</p>
+                                        <p className="text-xl font-bold">${pricingIntelligence.pricing_strategy.entry_price}/mo</p>
+                                    </div>
+                                    <div className="text-center p-4 border-2 border-primary rounded-lg bg-primary/5">
+                                        <p className="text-xs text-muted-foreground">Standard</p>
+                                        <p className="text-xl font-bold text-primary">${pricingIntelligence.pricing_strategy.standard_price}/mo</p>
+                                    </div>
+                                    <div className="text-center p-4 border rounded-lg">
+                                        <p className="text-xs text-muted-foreground">Premium</p>
+                                        <p className="text-xl font-bold">${pricingIntelligence.pricing_strategy.premium_price}/mo</p>
+                                    </div>
                                 </div>
-                                <div className="text-center p-4 border rounded-lg">
-                                    <p className="text-xs text-muted-foreground">Premium</p>
-                                    <p className="text-xl font-bold">${report.pricing_intelligence.pricing_strategy.premium_price}/mo</p>
-                                </div>
-                            </div>
-                            <p className="text-sm text-muted-foreground">{report.pricing_intelligence.pricing_strategy.rationale}</p>
-                        </CardContent>
-                    </Card>
+                                <p className="text-sm text-muted-foreground">{pricingIntelligence.pricing_strategy.rationale}</p>
+                            </CardContent>
+                        </Card>
+                    )}
                 </TabsContent>
 
                 {/* Customers Tab */}
                 <TabsContent value="customers" className="space-y-4">
-                    <Card>
-                        <CardHeader className="pb-3">
-                            <CardTitle className="text-sm font-medium flex items-center gap-2">
-                                <Target className="h-4 w-4" />
-                                Primary Persona
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                                    <Users className="h-6 w-6 text-primary" />
-                                </div>
-                                <div>
-                                    <p className="font-semibold">{report.customer_profile.primary_persona.title}</p>
-                                    <p className="text-sm text-muted-foreground">
-                                        {report.customer_profile.primary_persona.company_stage} • {report.customer_profile.primary_persona.company_size} employees
-                                    </p>
-                                </div>
-                            </div>
-                            <div className="grid gap-4 md:grid-cols-2">
-                                <div>
-                                    <p className="text-xs font-medium mb-2">Key Responsibilities</p>
-                                    <ul className="text-sm text-muted-foreground space-y-1">
-                                        {report.customer_profile.primary_persona.key_responsibilities.map((r, i) => (
-                                            <li key={i}>• {r}</li>
-                                        ))}
-                                    </ul>
-                                </div>
-                                <div>
-                                    <p className="text-xs font-medium mb-2">Pain Points</p>
-                                    <ul className="text-sm text-muted-foreground space-y-1">
-                                        {report.customer_profile.primary_persona.pain_points.map((p, i) => (
-                                            <li key={i}>• {p}</li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardHeader className="pb-3">
-                            <CardTitle className="text-sm font-medium flex items-center gap-2">
-                                <BarChart3 className="h-4 w-4" />
-                                Role Distribution
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-2">
-                            {Object.entries(report.customer_profile.role_distribution).map(([role, data]) => (
-                                <div key={role} className="space-y-1">
-                                    <div className="flex items-center justify-between text-sm">
-                                        <span>{role}</span>
-                                        <span className="text-muted-foreground">{data.percentage}%</span>
+                    {customerProfile.primary_persona && (
+                        <Card>
+                            <CardHeader className="pb-3">
+                                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                                    <Target className="h-4 w-4" />
+                                    Primary Persona
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                                        <Users className="h-6 w-6 text-primary" />
                                     </div>
-                                    <Progress value={data.percentage} className="h-2" />
+                                    <div>
+                                        <p className="font-semibold">{customerProfile.primary_persona.title}</p>
+                                        <p className="text-sm text-muted-foreground">
+                                            {customerProfile.primary_persona.company_stage} • {customerProfile.primary_persona.company_size} employees
+                                        </p>
+                                    </div>
                                 </div>
-                            ))}
-                        </CardContent>
-                    </Card>
+                                <div className="grid gap-4 md:grid-cols-2">
+                                    {customerProfile.primary_persona.key_responsibilities?.length > 0 && (
+                                        <div>
+                                            <p className="text-xs font-medium mb-2">Key Responsibilities</p>
+                                            <ul className="text-sm text-muted-foreground space-y-1">
+                                                {customerProfile.primary_persona.key_responsibilities.map((r: string, i: number) => (
+                                                    <li key={i}>• {r}</li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+                                    {customerProfile.primary_persona.pain_points?.length > 0 && (
+                                        <div>
+                                            <p className="text-xs font-medium mb-2">Pain Points</p>
+                                            <ul className="text-sm text-muted-foreground space-y-1">
+                                                {customerProfile.primary_persona.pain_points.map((p: string, i: number) => (
+                                                    <li key={i}>• {p}</li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
+
+                    {customerProfile.role_distribution && Object.keys(customerProfile.role_distribution).length > 0 && (
+                        <Card>
+                            <CardHeader className="pb-3">
+                                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                                    <BarChart3 className="h-4 w-4" />
+                                    Role Distribution
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-2">
+                                {Object.entries(customerProfile.role_distribution).map(([role, data]: [string, any]) => (
+                                    <div key={role} className="space-y-1">
+                                        <div className="flex items-center justify-between text-sm">
+                                            <span>{role}</span>
+                                            <span className="text-muted-foreground">{data.percentage}%</span>
+                                        </div>
+                                        <Progress value={data.percentage} className="h-2" />
+                                    </div>
+                                ))}
+                            </CardContent>
+                        </Card>
+                    )}
                 </TabsContent>
 
                 {/* GTM Tab */}
                 <TabsContent value="gtm" className="space-y-4">
-                    <Card className="border-primary/30">
-                        <CardHeader className="pb-3">
-                            <CardTitle className="text-sm font-medium flex items-center gap-2">
-                                <Rocket className="h-4 w-4 text-primary" />
-                                Positioning
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-3">
-                            <div>
-                                <p className="text-xs text-muted-foreground">Tagline</p>
-                                <p className="text-lg font-semibold">{report.go_to_market.positioning.tagline}</p>
-                            </div>
-                            <div>
-                                <p className="text-xs text-muted-foreground">Value Proposition</p>
-                                <p className="text-sm">{report.go_to_market.positioning.unique_value_prop}</p>
-                            </div>
-                        </CardContent>
-                    </Card>
+                    {goToMarket.positioning && (
+                        <Card className="border-primary/30">
+                            <CardHeader className="pb-3">
+                                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                                    <Rocket className="h-4 w-4 text-primary" />
+                                    Positioning
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-3">
+                                <div>
+                                    <p className="text-xs text-muted-foreground">Tagline</p>
+                                    <p className="text-lg font-semibold">{goToMarket.positioning.tagline}</p>
+                                </div>
+                                <div>
+                                    <p className="text-xs text-muted-foreground">Value Proposition</p>
+                                    <p className="text-sm">{goToMarket.positioning.unique_value_prop}</p>
+                                </div>
+                                {goToMarket.positioning.avoid_saying && (
+                                    <div className="bg-red-500/10 border border-red-500/20 rounded p-2">
+                                        <p className="text-xs text-red-500">⚠️ Avoid: {goToMarket.positioning.avoid_saying}</p>
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+                    )}
 
                     <div className="grid gap-4 lg:grid-cols-2">
-                        <Card>
-                            <CardHeader className="pb-3">
-                                <CardTitle className="text-sm font-medium">MVP Features</CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-3">
-                                {report.go_to_market.mvp_features.map((feature, i) => (
-                                    <div key={i} className="p-3 bg-muted rounded">
-                                        <p className="font-medium text-sm">{feature.feature}</p>
-                                        <p className="text-xs text-muted-foreground mt-1">{feature.evidence}</p>
-                                    </div>
-                                ))}
-                            </CardContent>
-                        </Card>
+                        {goToMarket.mvp_features?.length > 0 && (
+                            <Card>
+                                <CardHeader className="pb-3">
+                                    <CardTitle className="text-sm font-medium">MVP Features</CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-3">
+                                    {goToMarket.mvp_features.map((feature: any, i: number) => (
+                                        <div key={i} className="p-3 bg-muted rounded">
+                                            <p className="font-medium text-sm">{feature.feature}</p>
+                                            <p className="text-xs text-muted-foreground mt-1">{feature.evidence}</p>
+                                        </div>
+                                    ))}
+                                </CardContent>
+                            </Card>
+                        )}
 
-                        <Card>
-                            <CardHeader className="pb-3">
-                                <CardTitle className="text-sm font-medium">Distribution Channels</CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-3">
-                                {report.go_to_market.distribution_channels.map((channel, i) => (
-                                    <div key={i} className="p-3 border rounded">
-                                        <p className="font-medium text-sm">{channel.channel}</p>
-                                        <p className="text-xs text-muted-foreground mt-1">{channel.tactic}</p>
-                                    </div>
-                                ))}
-                            </CardContent>
-                        </Card>
+                        {goToMarket.distribution_channels?.length > 0 && (
+                            <Card>
+                                <CardHeader className="pb-3">
+                                    <CardTitle className="text-sm font-medium">Distribution Channels</CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-3">
+                                    {goToMarket.distribution_channels.map((channel: any, i: number) => (
+                                        <div key={i} className="p-3 border rounded">
+                                            <p className="font-medium text-sm">{channel.channel}</p>
+                                            <p className="text-xs text-muted-foreground mt-1">{channel.tactic}</p>
+                                        </div>
+                                    ))}
+                                </CardContent>
+                            </Card>
+                        )}
                     </div>
 
-                    <Card>
-                        <CardHeader className="pb-3">
-                            <CardTitle className="text-sm font-medium flex items-center gap-2">
-                                <Clock className="h-4 w-4" />
-                                First 30 Days
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <ol className="space-y-2">
-                                {report.go_to_market.first_30_days.map((step, i) => (
-                                    <li key={i} className="flex gap-3 text-sm">
-                                        <span className="shrink-0 w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-medium">
-                                            {i + 1}
-                                        </span>
-                                        <span>{step}</span>
-                                    </li>
-                                ))}
-                            </ol>
-                        </CardContent>
-                    </Card>
+                    {goToMarket.first_30_days?.length > 0 && (
+                        <Card>
+                            <CardHeader className="pb-3">
+                                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                                    <Clock className="h-4 w-4" />
+                                    First 30 Days
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <ol className="space-y-2">
+                                    {goToMarket.first_30_days.map((step: string, i: number) => (
+                                        <li key={i} className="flex gap-3 text-sm">
+                                            <span className="shrink-0 w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-medium">
+                                                {i + 1}
+                                            </span>
+                                            <span>{step}</span>
+                                        </li>
+                                    ))}
+                                </ol>
+                            </CardContent>
+                        </Card>
+                    )}
                 </TabsContent>
             </Tabs>
 
             {/* Risk Assessment */}
-            <Card className="border-orange-500/30 bg-orange-500/5">
-                <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-medium flex items-center gap-2">
-                        <Shield className="h-4 w-4 text-orange-500" />
-                        Risk Assessment
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                    <div className="grid gap-4 md:grid-cols-2">
-                        <div>
-                            <p className="text-xs font-medium text-orange-500 mb-2">Major Risks</p>
-                            <ul className="text-sm space-y-1">
-                                {report.risk_assessment.major_risks.map((risk, i) => (
-                                    <li key={i} className="flex items-start gap-2">
-                                        <AlertTriangle className="h-4 w-4 text-orange-500 shrink-0 mt-0.5" />
-                                        {risk}
-                                    </li>
-                                ))}
-                            </ul>
+            {(riskAssessment.major_risks?.length > 0 || riskAssessment.mitigations?.length > 0) && (
+                <Card className="border-orange-500/30 bg-orange-500/5">
+                    <CardHeader className="pb-3">
+                        <CardTitle className="text-sm font-medium flex items-center gap-2">
+                            <Shield className="h-4 w-4 text-orange-500" />
+                            Risk Assessment
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                        <div className="grid gap-4 md:grid-cols-2">
+                            {riskAssessment.major_risks?.length > 0 && (
+                                <div>
+                                    <p className="text-xs font-medium text-orange-500 mb-2">Major Risks</p>
+                                    <ul className="text-sm space-y-1">
+                                        {riskAssessment.major_risks.map((risk: string, i: number) => (
+                                            <li key={i} className="flex items-start gap-2">
+                                                <AlertTriangle className="h-4 w-4 text-orange-500 shrink-0 mt-0.5" />
+                                                {risk}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+                            {riskAssessment.mitigations?.length > 0 && (
+                                <div>
+                                    <p className="text-xs font-medium text-green-500 mb-2">Mitigations</p>
+                                    <ul className="text-sm space-y-1">
+                                        {riskAssessment.mitigations.map((mit: string, i: number) => (
+                                            <li key={i} className="flex items-start gap-2">
+                                                <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0 mt-0.5" />
+                                                {mit}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
                         </div>
-                        <div>
-                            <p className="text-xs font-medium text-green-500 mb-2">Mitigations</p>
-                            <ul className="text-sm space-y-1">
-                                {report.risk_assessment.mitigations.map((mit, i) => (
-                                    <li key={i} className="flex items-start gap-2">
-                                        <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0 mt-0.5" />
-                                        {mit}
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-                    </div>
-                    <div className="pt-2 border-t">
-                        <p className="text-sm">
-                            <strong>Recommendation:</strong> {report.risk_assessment.recommendation}
-                        </p>
-                    </div>
-                </CardContent>
-            </Card>
+                        {riskAssessment.recommendation && (
+                            <div className="pt-2 border-t">
+                                <p className="text-sm">
+                                    <strong>Recommendation:</strong> {riskAssessment.recommendation}
+                                </p>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+            )}
 
             {/* Evidence Sources */}
-            <Card>
-                <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-medium flex items-center gap-2">
-                        <MessageSquare className="h-4 w-4" />
-                        Top Sources ({report.evidence_appendix.total_sources})
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="space-y-2">
-                        {report.evidence_appendix.high_quality_sources.slice(0, 5).map((source, i) => (
-                            <a
-                                key={i}
-                                href={source.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center justify-between p-3 border rounded hover:border-primary/30 transition-colors"
-                            >
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium truncate">{source.title}</p>
-                                    <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-                                        <Badge variant="outline">{source.source}</Badge>
-                                        <span>{source.engagement} engagement</span>
+            {evidenceAppendix.high_quality_sources?.length > 0 && (
+                <Card>
+                    <CardHeader className="pb-3">
+                        <CardTitle className="text-sm font-medium flex items-center gap-2">
+                            <MessageSquare className="h-4 w-4" />
+                            Top Sources ({evidenceAppendix.total_sources || 0})
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="space-y-2">
+                            {evidenceAppendix.high_quality_sources.slice(0, 5).map((source: any, i: number) => (
+                                <a
+                                    key={i}
+                                    href={source.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center justify-between p-3 border rounded hover:border-primary/30 transition-colors"
+                                >
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-medium truncate">{source.title}</p>
+                                        <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                                            <Badge variant="outline">{source.source}</Badge>
+                                            <span>{source.engagement} engagement</span>
+                                            <span>{source.relevance} relevant</span>
+                                        </div>
                                     </div>
-                                </div>
-                                <ExternalLink className="h-4 w-4 text-muted-foreground shrink-0 ml-2" />
-                            </a>
-                        ))}
-                    </div>
-                </CardContent>
-            </Card>
+                                    <ExternalLink className="h-4 w-4 text-muted-foreground shrink-0 ml-2" />
+                                </a>
+                            ))}
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
         </div>
     );
 }
