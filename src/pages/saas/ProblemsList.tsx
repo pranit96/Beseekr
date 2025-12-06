@@ -88,11 +88,30 @@ function ProblemListCard({
             <CardContent className="p-4">
                 <div className="flex items-start justify-between gap-4">
                     <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-1">
-                            {problem.title}
-                        </h3>
-                        <p className="mt-1.5 text-sm text-muted-foreground line-clamp-2">
-                            {trimmedSummary}
+                        <div className="flex items-center gap-2 mb-1">
+                            <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-1">
+                                {problem.title}
+                            </h3>
+                            {problem.has_brief && problem.brief_approved && (
+                                <Badge variant="default" className="text-xs shrink-0">
+                                    Brief
+                                </Badge>
+                            )}
+                        </div>
+
+                        {/* Tags */}
+                        {problem.tags && problem.tags.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mb-1.5">
+                                {problem.tags.slice(0, 3).map((tag) => (
+                                    <Badge key={tag} variant="outline" className="text-xs px-1.5 py-0">
+                                        {tag}
+                                    </Badge>
+                                ))}
+                            </div>
+                        )}
+
+                        <p className="text-sm text-muted-foreground line-clamp-2">
+                            {trimmedSummary || 'No summary available'}
                         </p>
 
                         {/* Metrics */}
@@ -111,6 +130,12 @@ function ProblemListCard({
                                 <span className="font-medium">{problem.metrics?.source_count || 0}</span>
                                 <span>sources</span>
                             </div>
+                            {problem.opportunity_score && problem.opportunity_score > 0 && (
+                                <div className="flex items-center gap-1.5 text-primary">
+                                    <span className="font-medium">{problem.opportunity_score}</span>
+                                    <span>score</span>
+                                </div>
+                            )}
                         </div>
                     </div>
 

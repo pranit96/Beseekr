@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Progress } from '@/components/ui/progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
     Loader2,
     AlertCircle,
@@ -18,6 +20,11 @@ import {
     BarChart3,
     ExternalLink,
     Quote,
+    Target,
+    Lightbulb,
+    MessageSquare,
+    Calendar,
+    Zap,
 } from 'lucide-react';
 import {
     LineChart,
@@ -36,7 +43,6 @@ export function ProblemDetails() {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
 
-    // Fetch problem details
     const {
         data: problem,
         isLoading,
@@ -48,7 +54,6 @@ export function ProblemDetails() {
         enabled: !!id,
     });
 
-    // Check watchlist status
     const { data: watchlistData } = useQuery({
         queryKey: ['watchlist'],
         queryFn: () => problemsApi.getWatchlist(),
@@ -56,44 +61,37 @@ export function ProblemDetails() {
 
     const isInWatchlist = Array.isArray(watchlistData) && watchlistData.some((item) => item.problem_id === id);
 
-    // Mutations
     const addMutation = useMutation({
         mutationFn: problemsApi.addToWatchlist,
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['watchlist'] });
-        },
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['watchlist'] }),
     });
 
     const removeMutation = useMutation({
         mutationFn: problemsApi.removeFromWatchlist,
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['watchlist'] });
-        },
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['watchlist'] }),
     });
 
     const handleWatchlistToggle = () => {
         if (!id) return;
-        if (isInWatchlist) {
-            removeMutation.mutate(id);
-        } else {
-            addMutation.mutate(id);
-        }
+        isInWatchlist ? removeMutation.mutate(id) : addMutation.mutate(id);
     };
 
-    // Format trend data for chart
     const chartData = problem?.trend?.map((point) => ({
-        date: new Date(point.snapshot_date).toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-        }),
+        date: new Date(point.snapshot_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
         frequency: point.frequency,
     })) || [];
 
-    const sourceTypeColors: Record<string, string> = {
-        reddit: 'bg-orange-500',
-        hackernews: 'bg-amber-500',
-        twitter: 'bg-sky-500',
-        linkedin: 'bg-blue-600',
+    const formatCurrency = (amount: number) => {
+        if (amount >= 1000000000) return `$${(amount / 1000000000).toFixed(1)}B`;
+        if (amount >= 1000000) return `$${(amount / 1000000).toFixed(1)}M`;
+        if (amount >= 1000) return `$${(amount / 1000).toFixed(1)}K`;
+        return `$${amount}`;
+    };
+
+    const getScoreColor = (score: number) => {
+        if (score >= 70) return 'text-green-500';
+        if (score >= 50) return 'text-yellow-500';
+        return 'text-red-500';
     };
 
     if (isLoading) {
@@ -102,12 +100,9 @@ export function ProblemDetails() {
                 <Skeleton className="h-8 w-32" />
                 <Skeleton className="h-10 w-3/4" />
                 <Skeleton className="h-20 w-full" />
-                <div className="grid gap-4 md:grid-cols-3">
-                    <Skeleton className="h-24" />
-                    <Skeleton className="h-24" />
-                    <Skeleton className="h-24" />
+                <div className="grid gap-4 md:grid-cols-4">
+                    {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-24" />)}
                 </div>
-                <Skeleton className="h-64" />
             </div>
         );
     }
@@ -116,8 +111,7 @@ export function ProblemDetails() {
         return (
             <div className="space-y-6">
                 <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="gap-2">
-                    <ArrowLeft className="h-4 w-4" />
-                    Back
+                    <ArrowLeft className="h-4 w-4" /> Back
                 </Button>
                 <Card className="border-destructive/50">
                     <CardContent className="flex flex-col items-center justify-center py-12 text-center">
@@ -126,29 +120,21 @@ export function ProblemDetails() {
                         <p className="text-sm text-muted-foreground mt-1">
                             {error instanceof Error ? error.message : 'This problem may have been removed'}
                         </p>
-                        <Button variant="outline" className="mt-4" onClick={() => navigate('/dashboard/problems')}>
-                            Back to Problems
-                        </Button>
                     </CardContent>
                 </Card>
             </div>
         );
     }
 
+    const brief = problem.brief;
+
     return (
         <div className="space-y-6">
-            {/* Back Button */}
-            <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="gap-2 -ml-2">
-                <ArrowLeft className="h-4 w-4" />
-                Back
-            </Button>
-
             {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-                <div className="flex-1">
-                    <h1 className="text-2xl md:text-3xl font-bold">{problem.title}</h1>
-                    <p className="mt-3 text-muted-foreground leading-relaxed">{problem.summary}</p>
-                </div>
+            <div className="flex items-start justify-between gap-4">
+                <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="gap-2 -ml-2">
+                    <ArrowLeft className="h-4 w-4" /> Back
+                </Button>
                 <Button
                     variant={isInWatchlist ? 'secondary' : 'default'}
                     onClick={handleWatchlistToggle}
@@ -162,289 +148,396 @@ export function ProblemDetails() {
                     ) : (
                         <Bookmark className="h-4 w-4" />
                     )}
-                    {isInWatchlist ? 'Watching' : 'Add to Watchlist'}
+                    {isInWatchlist ? 'Watching' : 'Watch'}
                 </Button>
             </div>
 
-            {/* Metrics Cards */}
-            <div className="grid gap-4 md:grid-cols-3">
-                <Card>
-                    <CardContent className="p-4">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                                <TrendingUp className="h-5 w-5 text-blue-500" />
-                            </div>
-                            <div>
-                                <p className="text-2xl font-bold">{problem.metrics?.frequency?.toLocaleString() || 0}</p>
-                                <p className="text-xs text-muted-foreground">Frequency</p>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardContent className="p-4">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
-                                <ThumbsUp className="h-5 w-5 text-purple-500" />
-                            </div>
-                            <div>
-                                <p className="text-2xl font-bold">{problem.metrics?.upvote_score?.toLocaleString() || 0}</p>
-                                <p className="text-xs text-muted-foreground">Upvote Score</p>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardContent className="p-4">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center">
-                                <FileText className="h-5 w-5 text-green-500" />
-                            </div>
-                            <div>
-                                <p className="text-2xl font-bold">{problem.metrics?.source_count || 0}</p>
-                                <p className="text-xs text-muted-foreground">Sources</p>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
+            {/* Title Section */}
+            <div>
+                <div className="flex items-center gap-2 mb-2">
+                    {problem.tags?.map((tag) => (
+                        <Badge key={tag} variant="outline" className="text-xs">{tag}</Badge>
+                    ))}
+                    {brief?.approved && (
+                        <Badge variant="default" className="text-xs">Brief Available</Badge>
+                    )}
+                </div>
+                <h1 className="text-2xl md:text-3xl font-bold">{problem.title}</h1>
+                <p className="mt-3 text-muted-foreground leading-relaxed">{problem.summary}</p>
             </div>
 
-            {/* Trend Chart */}
-            {chartData.length > 0 && (
+            {/* Key Metrics */}
+            <div className="grid gap-3 md:grid-cols-4">
                 <Card>
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium">Frequency Trend</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="h-[250px]">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <LineChart data={chartData}>
-                                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                                    <XAxis dataKey="date" tick={{ fontSize: 12 }} className="text-muted-foreground" />
-                                    <YAxis tick={{ fontSize: 12 }} className="text-muted-foreground" />
-                                    <Tooltip
-                                        contentStyle={{
-                                            backgroundColor: 'hsl(var(--background))',
-                                            border: '1px solid hsl(var(--border))',
-                                            borderRadius: '8px',
-                                        }}
-                                    />
-                                    <Line
-                                        type="monotone"
-                                        dataKey="frequency"
-                                        stroke="hsl(var(--primary))"
-                                        strokeWidth={2}
-                                        dot={false}
-                                        activeDot={{ r: 4 }}
-                                    />
-                                </LineChart>
-                            </ResponsiveContainer>
+                    <CardContent className="p-4 flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                            <TrendingUp className="h-5 w-5 text-blue-500" />
+                        </div>
+                        <div>
+                            <p className="text-2xl font-bold">{problem.metrics?.frequency || 0}</p>
+                            <p className="text-xs text-muted-foreground">Frequency</p>
                         </div>
                     </CardContent>
                 </Card>
-            )}
-
-            {/* Two Column Layout */}
-            <div className="grid gap-6 lg:grid-cols-2">
-                {/* Pricing Signals */}
-                {problem.pricing_signals && problem.pricing_signals.length > 0 && (
-                    <Card>
-                        <CardHeader className="pb-3">
-                            <CardTitle className="text-sm font-medium flex items-center gap-2">
-                                <DollarSign className="h-4 w-4" />
-                                Pricing Signals
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="pt-0 space-y-2">
-                            {problem.pricing_signals.map((signal) => (
-                                <div key={signal.id} className="flex items-start gap-2">
-                                    <Badge
-                                        variant={signal.confidence >= 0.7 ? 'default' : 'secondary'}
-                                        className="shrink-0 text-xs"
-                                    >
-                                        {Math.round(signal.confidence * 100)}%
-                                    </Badge>
-                                    <span className="text-sm">{signal.signal}</span>
-                                </div>
-                            ))}
+                <Card>
+                    <CardContent className="p-4 flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
+                            <ThumbsUp className="h-5 w-5 text-purple-500" />
+                        </div>
+                        <div>
+                            <p className="text-2xl font-bold">{problem.metrics?.upvote_score || 0}</p>
+                            <p className="text-xs text-muted-foreground">Upvotes</p>
+                        </div>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardContent className="p-4 flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center">
+                            <FileText className="h-5 w-5 text-green-500" />
+                        </div>
+                        <div>
+                            <p className="text-2xl font-bold">{problem.metrics?.source_count || 0}</p>
+                            <p className="text-xs text-muted-foreground">Sources</p>
+                        </div>
+                    </CardContent>
+                </Card>
+                {brief && (
+                    <Card className="border-primary/30 bg-primary/5">
+                        <CardContent className="p-4 flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
+                                <Zap className="h-5 w-5 text-primary" />
+                            </div>
+                            <div>
+                                <p className={cn("text-2xl font-bold", getScoreColor(brief.opportunity_score))}>
+                                    {brief.opportunity_score}
+                                </p>
+                                <p className="text-xs text-muted-foreground">Opportunity</p>
+                            </div>
                         </CardContent>
                     </Card>
                 )}
+            </div>
 
-                {/* Competitors */}
-                {problem.competitors && problem.competitors.length > 0 && (
-                    <Card className="lg:col-span-2">
-                        <CardHeader className="pb-3">
-                            <CardTitle className="text-sm font-medium flex items-center gap-2">
-                                <Users className="h-4 w-4" />
-                                Competitors ({problem.competitors.length})
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="pt-0 space-y-4">
-                            {problem.competitors.map((comp, idx) => (
-                                <div key={comp.name || idx} className="border rounded-lg p-4 space-y-3">
-                                    <div className="flex items-start justify-between gap-2">
+            {/* Main Content Tabs */}
+            <Tabs defaultValue={brief ? "brief" : "details"} className="space-y-4">
+                <TabsList>
+                    {brief && <TabsTrigger value="brief">📊 Brief</TabsTrigger>}
+                    <TabsTrigger value="details">📝 Details</TabsTrigger>
+                    <TabsTrigger value="sources">💬 Sources ({problem.sources?.length || 0})</TabsTrigger>
+                </TabsList>
+
+                {/* Brief Tab */}
+                {brief && (
+                    <TabsContent value="brief" className="space-y-6">
+                        {/* Score Breakdown */}
+                        <Card>
+                            <CardHeader className="pb-3">
+                                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                                    <BarChart3 className="h-4 w-4" /> Score Breakdown
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-3">
+                                {brief.score_breakdown && Object.entries({
+                                    'Market Size': brief.score_breakdown.market_size,
+                                    'Competition Gap': brief.score_breakdown.competition_gap,
+                                    'Urgency': brief.score_breakdown.urgency,
+                                    'Monetization': brief.score_breakdown.monetization,
+                                    'Execution': brief.score_breakdown.execution,
+                                }).map(([label, score]) => (
+                                    <div key={label} className="space-y-1">
+                                        <div className="flex justify-between text-sm">
+                                            <span>{label}</span>
+                                            <span className={getScoreColor(score)}>{score}/100</span>
+                                        </div>
+                                        <Progress value={score} className="h-2" />
+                                    </div>
+                                ))}
+                            </CardContent>
+                        </Card>
+
+                        <div className="grid gap-4 lg:grid-cols-2">
+                            {/* Target Audience */}
+                            <Card>
+                                <CardHeader className="pb-3">
+                                    <CardTitle className="text-sm font-medium flex items-center gap-2">
+                                        <Target className="h-4 w-4" /> Target Audience
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-3">
+                                    <div className="grid grid-cols-2 gap-3 text-sm">
+                                        <div>
+                                            <p className="text-muted-foreground text-xs">Role</p>
+                                            <p className="font-medium">{brief.target_audience?.primary?.role || 'Unknown'}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-muted-foreground text-xs">Company Size</p>
+                                            <p className="font-medium">{brief.target_audience?.primary?.company_size || 'Unknown'}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-muted-foreground text-xs">Industry</p>
+                                            <p className="font-medium">{brief.target_audience?.primary?.industry || 'Unknown'}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-muted-foreground text-xs">Pain Level</p>
+                                            <p className="font-medium">{brief.target_audience?.primary?.pain_level || 0}/10</p>
+                                        </div>
+                                    </div>
+                                    {brief.target_audience?.budget_range && (
+                                        <div className="pt-2 border-t">
+                                            <p className="text-muted-foreground text-xs">Budget Range</p>
+                                            <p className="font-medium">
+                                                {formatCurrency(brief.target_audience.budget_range.min)} - {formatCurrency(brief.target_audience.budget_range.max)}/mo
+                                            </p>
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+
+                            {/* Market Validation */}
+                            <Card>
+                                <CardHeader className="pb-3">
+                                    <CardTitle className="text-sm font-medium flex items-center gap-2">
+                                        <DollarSign className="h-4 w-4" /> Market Validation
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-3">
+                                    {brief.market_validation?.tam && (
+                                        <div>
+                                            <p className="text-muted-foreground text-xs">Total Addressable Market</p>
+                                            <p className="text-2xl font-bold text-primary">
+                                                {formatCurrency(brief.market_validation.tam.size)}
+                                            </p>
+                                            <p className="text-xs text-muted-foreground mt-1">
+                                                {brief.market_validation.tam.source}
+                                            </p>
+                                        </div>
+                                    )}
+                                    <div className="grid grid-cols-2 gap-3 text-sm pt-2 border-t">
+                                        <div>
+                                            <p className="text-muted-foreground text-xs">Competition</p>
+                                            <Badge variant="outline" className="capitalize">
+                                                {brief.market_validation?.competition?.level || 'Unknown'}
+                                            </Badge>
+                                        </div>
+                                        <div>
+                                            <p className="text-muted-foreground text-xs">Momentum</p>
+                                            <p className="font-medium capitalize">{brief.market_validation?.trends?.momentum || 'Stable'}</p>
+                                        </div>
+                                    </div>
+                                    {brief.market_validation?.competition?.gaps?.length > 0 && (
+                                        <div className="pt-2 border-t">
+                                            <p className="text-muted-foreground text-xs mb-1">Market Gaps</p>
+                                            <ul className="text-sm space-y-1">
+                                                {brief.market_validation.competition.gaps.map((gap, i) => (
+                                                    <li key={i} className="text-muted-foreground">• {gap}</li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        </div>
+
+                        {/* Recommended Approach */}
+                        {brief.recommended_approach && (
+                            <Card className="border-primary/30">
+                                <CardHeader className="pb-3">
+                                    <CardTitle className="text-sm font-medium flex items-center gap-2">
+                                        <Lightbulb className="h-4 w-4 text-primary" /> Recommended Approach
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="prose prose-sm dark:prose-invert max-w-none">
+                                        {brief.recommended_approach.split('\n\n').map((para, i) => (
+                                            <p key={i} className="text-sm text-muted-foreground mb-3 last:mb-0">
+                                                {para}
+                                            </p>
+                                        ))}
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        )}
+                    </TabsContent>
+                )}
+
+                {/* Details Tab */}
+                <TabsContent value="details" className="space-y-6">
+                    {/* Trend Chart */}
+                    {chartData.length > 0 && (
+                        <Card>
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-sm font-medium">Frequency Trend</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="h-[200px]">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <LineChart data={chartData}>
+                                            <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                                            <XAxis dataKey="date" tick={{ fontSize: 12 }} />
+                                            <YAxis tick={{ fontSize: 12 }} />
+                                            <Tooltip />
+                                            <Line type="monotone" dataKey="frequency" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
+                                        </LineChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
+
+                    {/* Market Estimate from original data */}
+                    {problem.market_estimate?.size && (
+                        <Card>
+                            <CardHeader className="pb-3">
+                                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                                    <DollarSign className="h-4 w-4" /> Market Estimate
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <p className="text-2xl font-bold text-primary">{problem.market_estimate.size}</p>
+                            </CardContent>
+                        </Card>
+                    )}
+
+                    {/* Competitors */}
+                    {problem.competitors && problem.competitors.length > 0 && (
+                        <Card>
+                            <CardHeader className="pb-3">
+                                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                                    <Users className="h-4 w-4" /> Competitors ({problem.competitors.length})
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                {problem.competitors.map((comp, idx) => (
+                                    <div key={comp.name || idx} className="border rounded-lg p-4 space-y-2">
                                         <div className="flex items-center gap-2">
-                                            <span className="font-semibold text-base">{comp.name}</span>
+                                            <span className="font-semibold">{comp.name}</span>
                                             {comp.competitor_type && (
-                                                <Badge variant="outline" className="text-xs capitalize">
-                                                    {comp.competitor_type}
-                                                </Badge>
+                                                <Badge variant="outline" className="text-xs capitalize">{comp.competitor_type}</Badge>
                                             )}
                                             {comp.sentiment && (
                                                 <Badge
                                                     variant={comp.sentiment === 'positive' ? 'default' : comp.sentiment === 'negative' ? 'destructive' : 'secondary'}
-                                                    className="text-xs capitalize"
+                                                    className="text-xs"
                                                 >
                                                     {comp.sentiment}
                                                 </Badge>
                                             )}
                                         </div>
-                                        {comp.mention_count && (
-                                            <span className="text-xs text-muted-foreground shrink-0">
-                                                {comp.mention_count} mentions
-                                            </span>
+                                        {comp.strengths && comp.strengths.length > 0 && (
+                                            <div className="text-sm">
+                                                <span className="text-green-600 dark:text-green-400 font-medium">Strengths: </span>
+                                                <span className="text-muted-foreground">{comp.strengths.join(', ')}</span>
+                                            </div>
+                                        )}
+                                        {comp.weaknesses && comp.weaknesses.length > 0 && (
+                                            <div className="text-sm">
+                                                <span className="text-orange-600 dark:text-orange-400 font-medium">Weaknesses: </span>
+                                                <span className="text-muted-foreground">{comp.weaknesses.join(', ')}</span>
+                                            </div>
+                                        )}
+                                        {comp.differentiation_opportunity && (
+                                            <div className="bg-primary/5 border border-primary/20 rounded p-2 text-sm">
+                                                <span className="text-primary font-medium">💡 Opportunity: </span>
+                                                <span>{comp.differentiation_opportunity}</span>
+                                            </div>
                                         )}
                                     </div>
+                                ))}
+                            </CardContent>
+                        </Card>
+                    )}
 
-                                    {comp.strengths && comp.strengths.length > 0 && (
-                                        <div>
-                                            <p className="text-xs font-medium text-green-600 dark:text-green-400 mb-1">Strengths:</p>
-                                            <ul className="text-xs text-muted-foreground space-y-0.5 ml-4 list-disc">
-                                                {comp.strengths.map((strength, i) => (
-                                                    <li key={i}>{strength}</li>
-                                                ))}
-                                            </ul>
+                    {/* Quotes */}
+                    {problem.quotes && problem.quotes.length > 0 && (
+                        <Card>
+                            <CardHeader className="pb-3">
+                                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                                    <Quote className="h-4 w-4" /> User Quotes
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-3">
+                                {problem.quotes.map((quote) => (
+                                    <div key={quote.id} className="border-l-2 border-primary/30 pl-3">
+                                        <p className="text-sm italic">"{quote.text}"</p>
+                                        <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                                            <span>{quote.source}</span>
+                                            {quote.upvotes && (
+                                                <span className="flex items-center gap-1">
+                                                    <ThumbsUp className="h-3 w-3" /> {quote.upvotes}
+                                                </span>
+                                            )}
                                         </div>
-                                    )}
-
-                                    {comp.weaknesses && comp.weaknesses.length > 0 && (
-                                        <div>
-                                            <p className="text-xs font-medium text-orange-600 dark:text-orange-400 mb-1">Weaknesses:</p>
-                                            <ul className="text-xs text-muted-foreground space-y-0.5 ml-4 list-disc">
-                                                {comp.weaknesses.map((weakness, i) => (
-                                                    <li key={i}>{weakness}</li>
-                                                ))}
-                                            </ul>
-                                        </div>
-                                    )}
-
-                                    {comp.common_complaints && comp.common_complaints.length > 0 && (
-                                        <div>
-                                            <p className="text-xs font-medium text-red-600 dark:text-red-400 mb-1">Common Complaints:</p>
-                                            <ul className="text-xs text-muted-foreground space-y-0.5 ml-4 list-disc">
-                                                {comp.common_complaints.map((complaint, i) => (
-                                                    <li key={i}>{complaint}</li>
-                                                ))}
-                                            </ul>
-                                        </div>
-                                    )}
-
-                                    {comp.differentiation_opportunity && (
-                                        <div className="bg-primary/5 border border-primary/20 rounded p-2">
-                                            <p className="text-xs font-medium text-primary mb-0.5">💡 Differentiation Opportunity:</p>
-                                            <p className="text-xs text-foreground">{comp.differentiation_opportunity}</p>
-                                        </div>
-                                    )}
-
-                                    {comp.pricing_mention && comp.pricing_mention !== 'unknown' && (
-                                        <div className="text-xs">
-                                            <span className="font-medium">Pricing: </span>
-                                            <span className="text-muted-foreground">{comp.pricing_mention}</span>
-                                        </div>
-                                    )}
-                                </div>
-                            ))}
-                        </CardContent>
-                    </Card>
-                )}
-
-                {/* Market Estimate */}
-                {problem.market_estimate && problem.market_estimate.size && (
-                    <Card>
-                        <CardHeader className="pb-3">
-                            <CardTitle className="text-sm font-medium flex items-center gap-2">
-                                <BarChart3 className="h-4 w-4" />
-                                Market Estimate
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="pt-0">
-                            <p className="text-2xl font-bold text-primary">{problem.market_estimate.size}</p>
-                            <p className="text-xs text-muted-foreground">Total Addressable Market</p>
-                            {problem.market_estimate.growth_rate && (
-                                <div className="flex items-center gap-2 mt-2 text-sm text-green-500">
-                                    <TrendingUp className="h-4 w-4" />
-                                    {problem.market_estimate.growth_rate} growth
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
-                )}
-
-                {/* Quotes */}
-                {problem.quotes && problem.quotes.length > 0 && (
-                    <Card className="lg:col-span-2">
-                        <CardHeader className="pb-3">
-                            <CardTitle className="text-sm font-medium flex items-center gap-2">
-                                <Quote className="h-4 w-4" />
-                                Top Quotes
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="pt-0 space-y-4">
-                            {problem.quotes.slice(0, 5).map((quote) => (
-                                <div key={quote.id} className="border-l-2 border-primary/30 pl-3">
-                                    <p className="text-sm italic">"{quote.text}"</p>
-                                    <div className="mt-1 flex items-center gap-3 text-xs text-muted-foreground">
-                                        <span>{quote.source}</span>
-                                        {quote.author && <span>— {quote.author}</span>}
-                                        {quote.upvotes !== undefined && (
-                                            <span className="flex items-center gap-1">
-                                                <ThumbsUp className="h-3 w-3" />
-                                                {quote.upvotes}
-                                            </span>
-                                        )}
                                     </div>
-                                </div>
-                            ))}
-                        </CardContent>
-                    </Card>
-                )}
-            </div>
+                                ))}
+                            </CardContent>
+                        </Card>
+                    )}
+                </TabsContent>
 
-            {/* Sources */}
-            {problem.sources && problem.sources.length > 0 && (
-                <Card>
-                    <CardHeader className="pb-3">
-                        <CardTitle className="text-sm font-medium">
-                            Sources ({problem.sources.length})
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                        <div className="grid gap-2 sm:grid-cols-2">
-                            {problem.sources.map((source) => (
-                                <div key={source.id} className="flex items-center gap-2 p-2 rounded-lg bg-muted/50">
-                                    <Badge
-                                        className={cn('shrink-0 text-xs text-white', sourceTypeColors[source.type] || 'bg-gray-500')}
-                                    >
-                                        {source.type}
-                                    </Badge>
-                                    <a
-                                        href={source.url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-sm text-primary hover:underline truncate flex items-center gap-1"
-                                    >
-                                        <span className="truncate">{source.title}</span>
-                                        <ExternalLink className="h-3 w-3 shrink-0" />
-                                    </a>
-                                </div>
-                            ))}
-                        </div>
-                    </CardContent>
-                </Card>
-            )}
+                {/* Sources Tab */}
+                <TabsContent value="sources" className="space-y-4">
+                    {problem.sources && problem.sources.length > 0 ? (
+                        problem.sources.map((source) => (
+                            <Card key={source.id} className="hover:border-primary/30 transition-colors">
+                                <CardContent className="p-4">
+                                    <div className="flex items-start justify-between gap-4">
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <Badge variant="outline" className="text-xs capitalize">{source.type}</Badge>
+                                                {source.date && (
+                                                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                                        <Calendar className="h-3 w-3" />
+                                                        {new Date(source.date).toLocaleDateString()}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <a
+                                                href={source.url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="font-medium hover:text-primary transition-colors line-clamp-2"
+                                            >
+                                                {source.title}
+                                            </a>
+                                            {source.body && (
+                                                <p className="mt-2 text-sm text-muted-foreground line-clamp-3 italic">
+                                                    "{source.body}"
+                                                </p>
+                                            )}
+                                            <div className="mt-2 flex items-center gap-3 text-xs text-muted-foreground">
+                                                {source.ups !== undefined && (
+                                                    <span className="flex items-center gap-1">
+                                                        <ThumbsUp className="h-3 w-3" /> {source.ups}
+                                                    </span>
+                                                )}
+                                                {source.num_comments !== undefined && (
+                                                    <span className="flex items-center gap-1">
+                                                        <MessageSquare className="h-3 w-3" /> {source.num_comments}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <a
+                                            href={source.url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="shrink-0 p-2 hover:bg-muted rounded-md transition-colors"
+                                        >
+                                            <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                                        </a>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ))
+                    ) : (
+                        <Card>
+                            <CardContent className="py-8 text-center text-muted-foreground">
+                                No sources available
+                            </CardContent>
+                        </Card>
+                    )}
+                </TabsContent>
+            </Tabs>
         </div>
     );
 }

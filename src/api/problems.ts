@@ -97,9 +97,17 @@ export async function getProblems(
                 frequency: problem.frequency || 0,
                 upvote_score: problem.upvote_score || 0,
                 // Calculate source_count from actual posts, don't trust backend's source_count
-                source_count: problem.related_posts?.length || 0,
+                source_count: problem.source_count || problem.related_posts?.length || 0,
             },
             in_watchlist: problem.in_watchlist || false,
+            // New enriched fields
+            tags: problem.tags || [],
+            hot_score: problem.hot_score,
+            opportunity_score: problem.opportunity_score,
+            has_brief: problem.has_brief,
+            brief_approved: problem.brief_approved,
+            last_updated: problem.last_updated,
+            created_at: problem.created_at,
         })),
         total: response.total || 0,
         page: response.page || 1,
@@ -184,9 +192,20 @@ export async function getProblemDetails(id: string): Promise<Problem> {
             title: post.title || 'Untitled',
             type: post.source_identifier || response.subreddits?.[0] || 'reddit',
             date: post.created_at,
+            ups: post.ups,
+            num_comments: post.num_comments,
+            body: post.body,
         })) || [],
         created_at: response.created_at,
         updated_at: response.updated_at || response.last_updated,
+        // New enriched fields
+        tags: response.tags || [],
+        category: response.category,
+        domain: response.domain,
+        target_audience: response.target_audience,
+        recommended_action: response.recommended_action,
+        // Map brief data if available
+        brief: response.brief,
     } as Problem;
 }
 

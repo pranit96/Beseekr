@@ -9,6 +9,10 @@ export interface ProblemMetrics {
 export interface TrendPoint {
     snapshot_date: string;
     frequency: number;
+    total_upvotes?: number;
+    growth_7d?: number;
+    growth_30d?: number;
+    momentum?: string;
 }
 
 export interface PricingSignal {
@@ -24,10 +28,10 @@ export interface Competitor {
     description?: string;
     url?: string;
     relevance_score?: number;
-    // New enriched fields
-    competitor_type?: string; // 'established' | 'startup' | etc
+    // Enriched fields
+    competitor_type?: string;
     mention_count?: number;
-    sentiment?: string; // 'positive' | 'negative' | 'mixed'
+    sentiment?: string;
     strengths?: string[];
     weaknesses?: string[];
     common_complaints?: string[];
@@ -36,10 +40,12 @@ export interface Competitor {
 }
 
 export interface MarketEstimate {
-    size: string;
+    size?: string;
     growth_rate?: string;
     confidence?: number;
     sources?: string[];
+    tam_low?: number;
+    tam_high?: number;
 }
 
 export interface Quote {
@@ -55,8 +61,82 @@ export interface Source {
     id: string;
     url: string;
     title: string;
-    type: string; // 'reddit' | 'hackernews' | 'twitter' | 'linkedin'
+    type: string;
     date?: string;
+    ups?: number;
+    num_comments?: number;
+    body?: string;
+}
+
+// Brief types - rich market validation data
+export interface BriefTargetAudience {
+    primary: {
+        role: string;
+        industry: string;
+        pain_level: number;
+        company_size: string;
+    };
+    secondary: any[];
+    budget_range: {
+        min: number;
+        max: number;
+        currency: string;
+        confidence: string;
+    };
+    key_insights: string[];
+}
+
+export interface BriefMarketValidation {
+    tam: {
+        size: number;
+        year: number;
+        source: string;
+        currency: string;
+        confidence: string;
+    };
+    trends: {
+        momentum: string;
+        searches: string;
+    };
+    competition: {
+        level: string;
+        gaps: string[];
+        key_players: any[];
+    };
+    growth_rate: number;
+    pricing_signals_count: number;
+}
+
+export interface BriefScoreBreakdown {
+    urgency: number;
+    execution: number;
+    market_size: number;
+    monetization: number;
+    competition_gap: number;
+    weights: {
+        urgency: number;
+        execution: number;
+        market_size: number;
+        monetization: number;
+        competition_gap: number;
+    };
+}
+
+export interface Brief {
+    id: string;
+    problem_id: string;
+    target_audience: BriefTargetAudience;
+    market_validation: BriefMarketValidation;
+    evidence: any[];
+    opportunity_score: number;
+    score_breakdown: BriefScoreBreakdown;
+    brief_markdown: string;
+    recommended_approach: string;
+    reviewed: boolean;
+    approved: boolean;
+    reviewer_notes?: string;
+    generation_date: string;
+    last_updated: string;
 }
 
 export interface Problem {
@@ -67,11 +147,18 @@ export interface Problem {
     trend: TrendPoint[];
     pricing_signals: PricingSignal[];
     competitors: Competitor[];
-    market_estimate: MarketEstimate;
+    market_estimate?: MarketEstimate;
     quotes: Quote[];
     sources: Source[];
     created_at: string;
     updated_at: string;
+    // New enriched fields
+    tags?: string[];
+    category?: string;
+    domain?: string[];
+    target_audience?: string;
+    recommended_action?: string;
+    brief?: Brief;
 }
 
 export interface ProblemListItem {
@@ -80,6 +167,13 @@ export interface ProblemListItem {
     summary: string;
     metrics: ProblemMetrics;
     in_watchlist?: boolean;
+    tags?: string[];
+    hot_score?: number;
+    opportunity_score?: number;
+    has_brief?: boolean;
+    brief_approved?: boolean;
+    last_updated?: string;
+    created_at?: string;
 }
 
 export interface SearchResult {
@@ -109,12 +203,12 @@ export interface ValidationSignals {
 
 export interface ValidationResult {
     match_score: number;
-    nearest_problem: {
+    nearest_problem?: {
         id: string;
         title: string;
         summary: string;
-    };
-    signals: ValidationSignals;
+    } | null;
+    signals?: ValidationSignals | null;
     validation_score: number;
     justification: string;
     quotes: Quote[];
