@@ -306,12 +306,55 @@ export async function removeFromWatchlist(problemId: string): Promise<void> {
 }
 
 /**
- * Validate a problem idea
+ * Validate a problem idea (creates a new report)
  */
-export async function validateProblem(text: string): Promise<ValidationResult> {
-    return request<ValidationResult>('/api/validate-problem', {
+export async function validateProblem(text: string): Promise<any> {
+    return request<any>('/api/validate', {
         method: 'POST',
         body: JSON.stringify({ problem: text }),
+    });
+}
+
+/**
+ * Get all validation reports (paginated)
+ */
+export async function getValidationReports(
+    page: number = 1,
+    limit: number = 20
+): Promise<{ items: any[]; total: number; page: number; total_pages: number }> {
+    const params = new URLSearchParams({
+        page: String(page),
+        limit: String(limit),
+    });
+
+    const response = await request<any>(`/api/validate?${params.toString()}`);
+
+    // Handle response structure
+    if (!response || typeof response !== 'object') {
+        return { items: [], total: 0, page: 1, total_pages: 1 };
+    }
+
+    return {
+        items: response.reports || response.items || [],
+        total: response.total || 0,
+        page: response.page || 1,
+        total_pages: response.total_pages || response.totalPages || 1,
+    };
+}
+
+/**
+ * Get a single validation report by ID
+ */
+export async function getValidationReport(id: string): Promise<any> {
+    return request<any>(`/api/validate/${id}`);
+}
+
+/**
+ * Delete a validation report
+ */
+export async function deleteValidationReport(id: string): Promise<void> {
+    await request<void>(`/api/validate/${id}`, {
+        method: 'DELETE',
     });
 }
 
@@ -326,6 +369,9 @@ export const problemsApi = {
     addToWatchlist,
     removeFromWatchlist,
     validateProblem,
+    getValidationReports,
+    getValidationReport,
+    deleteValidationReport,
 };
 
 export default problemsApi;

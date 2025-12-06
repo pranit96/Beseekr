@@ -210,6 +210,7 @@ const App = () => {
                     <Route path="search" element={<Search />} />
                     <Route path="feed" element={<Feed />} />
                     <Route path="validate" element={<Validate />} />
+                    <Route path="validate/:id" element={<Validate />} />
                     <Route path="watchlist" element={<SaasWatchlist />} />
                   </Route>
 
