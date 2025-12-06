@@ -439,6 +439,55 @@ export function ProblemsList() {
                         </motion.div>
                     )}
 
+                    {/* Premium Teaser on Free Tab */}
+                    {!isLoading && problems.length > 0 && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.4 }}
+                            className="mt-8 p-6 rounded-2xl bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/10 border border-amber-500/20"
+                        >
+                            <div className="flex flex-col lg:flex-row gap-6 items-center">
+                                {/* Premium Problem Preview */}
+                                <div className="flex-1 w-full">
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <Crown className="h-5 w-5 text-amber-500" />
+                                        <span className="text-sm font-medium text-amber-600">Featured Premium Problem</span>
+                                    </div>
+                                    {problems[0] && (
+                                        <div
+                                            className="p-4 rounded-xl bg-background/50 border border-amber-500/10 cursor-pointer hover:border-amber-500/30 transition-all"
+                                            onClick={() => user ? setActiveTab('premium') : navigate('/auth')}
+                                        >
+                                            <div className="flex items-start justify-between gap-4">
+                                                <div className="flex-1">
+                                                    <h4 className="font-semibold line-clamp-1">{problems[0].title}</h4>
+                                                    <p className="text-sm text-muted-foreground line-clamp-1 mt-1">{problems[0].description}</p>
+                                                </div>
+                                                <div className="shrink-0 px-3 py-1 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white text-sm font-bold">
+                                                    85+
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* CTA */}
+                                <div className="text-center lg:text-right shrink-0">
+                                    <p className="text-sm text-muted-foreground mb-3">
+                                        <span className="text-foreground font-semibold">20+</span> high-opportunity problems
+                                    </p>
+                                    <Button
+                                        onClick={() => user ? setActiveTab('premium') : navigate('/auth')}
+                                        className="rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:opacity-90"
+                                    >
+                                        {user ? 'View Premium' : 'Get Premium Access'}
+                                    </Button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    )}
+
                     {/* Pagination */}
                     {!isLoading && problems.length > 0 && totalPages > 1 && (
                         <motion.div

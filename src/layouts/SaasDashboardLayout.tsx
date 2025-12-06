@@ -136,36 +136,44 @@ export function SaasDashboardLayout() {
                                 </Button>
                             </motion.div>
 
-                            {/* Profile */}
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                                        <Button variant="ghost" size="icon" className="rounded-xl">
-                                            <User className="h-5 w-5" />
-                                        </Button>
-                                    </motion.div>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-56 rounded-xl">
-                                    {user && (
+                            {/* Profile - show for logged users, Login for guests */}
+                            {user ? (
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                                            <Button variant="ghost" size="icon" className="rounded-xl">
+                                                <User className="h-5 w-5" />
+                                            </Button>
+                                        </motion.div>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" className="w-56 rounded-xl">
                                         <div className="px-3 py-3">
                                             <p className="font-medium">{user.full_name || 'User'}</p>
                                             <p className="text-xs text-muted-foreground">{user.email}</p>
                                         </div>
-                                    )}
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
-                                        <Link to="/profile" className="flex items-center w-full">
-                                            <Settings className="mr-2 h-4 w-4" />
-                                            Settings
-                                        </Link>
-                                    </DropdownMenuItem>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={logout} className="rounded-lg cursor-pointer text-destructive focus:text-destructive">
-                                        <LogOut className="mr-2 h-4 w-4" />
-                                        Sign Out
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
+                                            <Link to="/profile" className="flex items-center w-full">
+                                                <Settings className="mr-2 h-4 w-4" />
+                                                Settings
+                                            </Link>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem onClick={logout} className="rounded-lg cursor-pointer text-destructive focus:text-destructive">
+                                            <LogOut className="mr-2 h-4 w-4" />
+                                            Sign Out
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            ) : (
+                                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                                    <Link to="/auth">
+                                        <Button className="rounded-xl bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity">
+                                            Login / Sign Up
+                                        </Button>
+                                    </Link>
+                                </motion.div>
+                            )}
                         </div>
                     </div>
                 </motion.div>
