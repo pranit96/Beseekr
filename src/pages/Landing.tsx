@@ -113,7 +113,7 @@ const Landing = () => {
               Sign In
             </button>
             <button
-              onClick={() => navigate('/auth')}
+              onClick={() => navigate('/dashboard/problems')}
               className="px-4 sm:px-6 py-2 rounded-lg bg-gradient-to-r from-primary to-accent text-white text-sm font-medium hover:opacity-90 transition-opacity"
             >
               Get Started
@@ -145,7 +145,7 @@ const Landing = () => {
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button
-              onClick={() => navigate('/auth')}
+              onClick={() => navigate('/dashboard/problems')}
               className="group px-6 py-3 rounded-xl bg-gradient-to-r from-primary to-accent text-white font-semibold text-base hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
             >
               Explore Problems
