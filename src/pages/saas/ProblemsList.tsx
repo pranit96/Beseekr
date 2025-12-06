@@ -510,58 +510,69 @@ export function ProblemsList() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4 }}
                 >
-                    {/* Guest user - show teaser with signup CTA */}
+                    {/* Guest user - show 1 real preview problem, click to signup */}
                     {!user ? (
-                        <div className="space-y-8">
-                            <div className="p-6 rounded-2xl bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/10 border border-amber-500/20 text-center">
-                                <Crown className="h-12 w-12 text-amber-500 mx-auto mb-4" />
-                                <h3 className="text-xl font-bold mb-2">Premium Problems Await</h3>
+                        <div className="space-y-6">
+                            <div className="text-center">
+                                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-500/10 text-amber-600 mb-4">
+                                    <Crown className="h-4 w-4" />
+                                    <span className="text-sm font-medium">Premium Preview</span>
+                                </div>
+                                <h3 className="text-xl font-bold mb-2">High-Opportunity Problems</h3>
+                                <p className="text-muted-foreground">
+                                    Click any problem to sign up and unlock full details
+                                </p>
+                            </div>
+
+                            {/* Show top 3 problems from free data as "premium preview" */}
+                            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {(data?.problems || []).slice(0, 3).map((problem: ProblemListItem, index: number) => (
+                                    <motion.div
+                                        key={problem.id}
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ duration: 0.3, delay: index * 0.1 }}
+                                        onClick={() => navigate('/auth')}
+                                        className="group relative cursor-pointer p-6 rounded-2xl bg-gradient-to-br from-amber-500/5 to-orange-500/5 border border-amber-500/20 hover:border-amber-500/40 transition-all hover:shadow-lg hover:shadow-amber-500/10"
+                                    >
+                                        {/* Premium badge */}
+                                        <div className="absolute -top-2 -right-2 px-2 py-1 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-medium flex items-center gap-1">
+                                            <Crown className="h-3 w-3" />
+                                            85+
+                                        </div>
+
+                                        <h4 className="font-semibold text-lg mb-2 line-clamp-2 group-hover:text-amber-600 transition-colors">
+                                            {problem.title}
+                                        </h4>
+                                        <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
+                                            {problem.description}
+                                        </p>
+
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                                <ThumbsUp className="h-4 w-4" />
+                                                {problem.upvotes}
+                                            </div>
+                                            <div className="flex items-center gap-1 text-amber-600 text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <Lock className="h-3 w-3" />
+                                                Sign up to view
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                ))}
+                            </div>
+
+                            {/* More available banner */}
+                            <div className="text-center p-6 rounded-2xl bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/10 border border-amber-500/20">
                                 <p className="text-muted-foreground mb-4">
-                                    Create a free account to preview high-opportunity problems with scores above 70.
+                                    <span className="text-foreground font-semibold">20+ premium problems</span> with opportunity scores above 85
                                 </p>
                                 <Button
                                     onClick={() => navigate('/auth')}
                                     className="rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:opacity-90"
                                 >
-                                    Sign Up Free
+                                    Sign Up Free to Unlock All
                                 </Button>
-                            </div>
-
-                            {/* Blurred preview cards to entice */}
-                            <div>
-                                <h4 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                                    <Lock className="h-4 w-4 text-muted-foreground" />
-                                    Sample High-Opportunity Problems
-                                </h4>
-                                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 relative">
-                                    {/* Blurred placeholder cards */}
-                                    {[1, 2, 3].map((i) => (
-                                        <div
-                                            key={i}
-                                            className="relative p-6 rounded-2xl bg-gradient-to-br from-amber-500/5 to-orange-500/5 border border-amber-500/10 blur-[2px] pointer-events-none"
-                                        >
-                                            <div className="space-y-3">
-                                                <div className="h-6 w-3/4 bg-muted/50 rounded" />
-                                                <div className="h-4 w-full bg-muted/30 rounded" />
-                                                <div className="h-4 w-2/3 bg-muted/30 rounded" />
-                                                <div className="flex gap-2 pt-2">
-                                                    <div className="h-6 w-16 bg-amber-500/20 rounded-full" />
-                                                    <div className="h-6 w-20 bg-muted/30 rounded-full" />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                    {/* Overlay */}
-                                    <div className="absolute inset-0 flex items-center justify-center bg-background/50 rounded-2xl">
-                                        <Button
-                                            onClick={() => navigate('/auth')}
-                                            className="rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:opacity-90 gap-2"
-                                        >
-                                            <Lock className="h-4 w-4" />
-                                            Sign Up to Unlock
-                                        </Button>
-                                    </div>
-                                </div>
                             </div>
                         </div>
                     ) : isLoadingPremium ? (
