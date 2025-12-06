@@ -113,18 +113,6 @@ export function SaasDashboardLayout() {
 
                         {/* Right Controls */}
                         <div className="flex items-center gap-2">
-                            {/* Back to Chat */}
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                asChild
-                                className="rounded-xl text-muted-foreground hover:text-foreground"
-                            >
-                                <Link to="/chat" className="gap-2">
-                                    <ArrowLeft className="h-4 w-4" />
-                                    <span className="hidden md:inline">Chat</span>
-                                </Link>
-                            </Button>
 
                             {/* Theme Toggle */}
                             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
