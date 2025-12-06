@@ -22,8 +22,6 @@ import Deck from "./pages/Deck";
 import { SaasDashboardLayout } from "./layouts/SaasDashboardLayout";
 import ProblemsList from "./pages/saas/ProblemsList";
 import ProblemDetails from "./pages/saas/ProblemDetails";
-import Search from "./pages/saas/Search";
-import Feed from "./pages/saas/Feed";
 import Validate from "./pages/saas/Validate";
 import SaasWatchlist from "./pages/saas/Watchlist";
 import { useEffect } from "react";
@@ -62,7 +60,7 @@ const RootRedirect = () => {
   }
 
   // If user is logged in, go to chat, otherwise show landing
-  return user ? <Navigate to="/chat" replace /> : <Landing />;
+  return user ? <Navigate to="/" replace /> : <Landing />;
 };
 
 // Protected route wrapper
@@ -96,9 +94,9 @@ const PublicOnlyRoute = ({ children }: { children: React.ReactNode }) => {
     );
   }
 
-  // If already logged in, redirect to chat
+  // If already logged in, redirect to dashboard
   if (user) {
-    return <Navigate to="/chat" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <>{children}</>;
@@ -207,8 +205,6 @@ const App = () => {
                     <Route index element={<Navigate to="problems" replace />} />
                     <Route path="problems" element={<ProblemsList />} />
                     <Route path="problems/:id" element={<ProblemDetails />} />
-                    <Route path="search" element={<Search />} />
-                    <Route path="feed" element={<Feed />} />
                     <Route path="validate" element={<Validate />} />
                     <Route path="validate/:id" element={<Validate />} />
                     <Route path="watchlist" element={<SaasWatchlist />} />

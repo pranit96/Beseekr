@@ -36,6 +36,7 @@ import {
 } from 'lucide-react';
 import { problemsApi } from '@/api/problems';
 import { cn } from '@/lib/utils';
+import { motion, AnimatePresence } from 'framer-motion';
 
 // Helper to normalize report data - handles both list items and full report
 function normalizeReport(rawReport: any) {
@@ -857,125 +858,194 @@ export function Validate() {
 
     // Reports list view
     return (
-        <div className="space-y-6 max-w-5xl mx-auto">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-2xl font-bold">Idea Validation</h1>
-                    <p className="text-muted-foreground text-sm mt-1">
-                        {reports.length} report{reports.length !== 1 ? 's' : ''} • Validate new ideas with AI research
-                    </p>
-                </div>
-                <Button onClick={() => setShowForm(true)} className="gap-2">
-                    <Plus className="h-4 w-4" />
-                    New Validation
-                </Button>
-            </div>
+        <div className="space-y-8">
+            {/* Hero Header */}
+            <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                className="text-center max-w-2xl mx-auto"
+            >
+                <h1 className="text-4xl md:text-5xl font-bold mb-4">
+                    Research{' '}
+                    <span className="bg-gradient-to-r from-emerald-500 via-cyan-500 to-emerald-500 bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient">
+                        Your Ideas
+                    </span>
+                </h1>
+                <p className="text-lg text-muted-foreground">
+                    Test your startup ideas with AI-powered market research. {reports.length > 0 && `${reports.length} report${reports.length !== 1 ? 's' : ''} analyzed.`}
+                </p>
+            </motion.div>
+
+            {/* New Validation Button */}
+            {!showForm && !createMutation.isPending && (
+                <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: 0.1 }}
+                    className="flex justify-center"
+                >
+                    <Button
+                        size="lg"
+                        onClick={() => setShowForm(true)}
+                        className="rounded-xl gap-2 shadow-lg shadow-primary/20"
+                    >
+                        <Zap className="h-5 w-5" />
+                        Validate New Idea
+                    </Button>
+                </motion.div>
+            )}
 
             {/* New Validation Form */}
-            {(showForm || createMutation.isPending) && (
-                <Card>
-                    <CardContent className="pt-6">
-                        <form onSubmit={handleSubmit} className="space-y-4">
-                            <Textarea
-                                placeholder="Describe your startup idea, problem, or concept..."
-                                value={problemText}
-                                onChange={(e) => setProblemText(e.target.value)}
-                                className="min-h-[120px] resize-none"
-                                disabled={createMutation.isPending}
-                                autoFocus
-                            />
-                            <div className="flex items-center justify-between">
-                                <p className="text-xs text-muted-foreground">
-                                    Be specific about the problem and target audience
-                                </p>
-                                <div className="flex gap-2">
-                                    <Button type="button" variant="outline" onClick={() => setShowForm(false)} disabled={createMutation.isPending}>
-                                        Cancel
-                                    </Button>
-                                    <Button type="submit" disabled={!problemText.trim() || createMutation.isPending}>
-                                        {createMutation.isPending ? (
-                                            <>
-                                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                                Analyzing...
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Zap className="h-4 w-4 mr-2" />
-                                                Validate
-                                            </>
-                                        )}
-                                    </Button>
+            <AnimatePresence>
+                {(showForm || createMutation.isPending) && (
+                    <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.3 }}
+                        className="max-w-3xl mx-auto"
+                    >
+                        <div className="p-6 rounded-2xl bg-gradient-to-br from-background to-muted/30 border border-border/50">
+                            <form onSubmit={handleSubmit} className="space-y-4">
+                                <Textarea
+                                    placeholder="Describe your startup idea, problem, or concept..."
+                                    value={problemText}
+                                    onChange={(e) => setProblemText(e.target.value)}
+                                    className="min-h-[140px] resize-none rounded-xl bg-background border-border/50"
+                                    disabled={createMutation.isPending}
+                                    autoFocus
+                                />
+                                <div className="flex items-center justify-between">
+                                    <p className="text-xs text-muted-foreground">
+                                        Be specific about the problem and target audience
+                                    </p>
+                                    <div className="flex gap-2">
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            onClick={() => setShowForm(false)}
+                                            disabled={createMutation.isPending}
+                                            className="rounded-xl"
+                                        >
+                                            Cancel
+                                        </Button>
+                                        <Button
+                                            type="submit"
+                                            disabled={!problemText.trim() || createMutation.isPending}
+                                            className="rounded-xl gap-2"
+                                        >
+                                            {createMutation.isPending ? (
+                                                <>
+                                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                                    Analyzing...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Zap className="h-4 w-4" />
+                                                    Validate
+                                                </>
+                                            )}
+                                        </Button>
+                                    </div>
                                 </div>
-                            </div>
-                        </form>
-                    </CardContent>
-                </Card>
-            )}
+                            </form>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Loading State */}
             {createMutation.isPending && (
-                <Card className="border-primary/30">
-                    <CardContent className="py-12 text-center">
-                        <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
-                        <h3 className="font-semibold text-lg">Analyzing Your Idea</h3>
-                        <p className="text-sm text-muted-foreground mt-2">
-                            Researching Reddit, Hacker News, and pricing data...
-                        </p>
-                        <div className="flex justify-center gap-2 mt-4 text-xs text-muted-foreground">
-                            <span>📊 Market Research</span>
-                            <span>•</span>
-                            <span>👥 Customer Analysis</span>
-                            <span>•</span>
-                            <span>💰 Pricing Intel</span>
-                        </div>
-                    </CardContent>
-                </Card>
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="max-w-3xl mx-auto p-8 rounded-2xl bg-gradient-to-br from-emerald-500/5 to-cyan-500/5 border border-emerald-500/20 text-center"
+                >
+                    <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+                    >
+                        <Loader2 className="h-12 w-12 text-emerald-500 mx-auto mb-4" />
+                    </motion.div>
+                    <h3 className="font-semibold text-lg">Analyzing Your Idea</h3>
+                    <p className="text-sm text-muted-foreground mt-2">
+                        Researching Reddit, Hacker News, and pricing data...
+                    </p>
+                    <div className="flex justify-center gap-4 mt-4 text-xs text-muted-foreground">
+                        <span>📊 Market Research</span>
+                        <span>👥 Customer Analysis</span>
+                        <span>💰 Pricing Intel</span>
+                    </div>
+                </motion.div>
             )}
 
             {/* Reports List */}
             {isLoadingReports ? (
-                <div className="space-y-3">
+                <div className="space-y-4 max-w-4xl mx-auto">
                     {[1, 2, 3].map((i) => (
-                        <Card key={i}>
-                            <CardContent className="p-4">
-                                <div className="flex gap-4">
-                                    <Skeleton className="h-12 w-12 rounded-lg" />
-                                    <div className="flex-1">
-                                        <Skeleton className="h-4 w-1/4 mb-2" />
-                                        <Skeleton className="h-4 w-full" />
-                                    </div>
+                        <div key={i} className="p-6 rounded-2xl bg-gradient-to-br from-muted/50 to-muted/30 border border-border/50">
+                            <div className="flex gap-4">
+                                <Skeleton className="h-14 w-14 rounded-xl" />
+                                <div className="flex-1">
+                                    <Skeleton className="h-5 w-1/4 mb-3" />
+                                    <Skeleton className="h-4 w-full mb-2" />
+                                    <Skeleton className="h-4 w-2/3" />
                                 </div>
-                            </CardContent>
-                        </Card>
+                            </div>
+                        </div>
                     ))}
                 </div>
             ) : reports.length > 0 ? (
-                <div className="space-y-3">
-                    {reports.map((report: any) => (
-                        <ReportCard
-                            key={report.id}
-                            report={report}
-                            onDelete={(id) => deleteMutation.mutate(id)}
-                        />
-                    ))}
-                </div>
-            ) : !showForm && (
-                <Card>
-                    <CardContent className="py-16 text-center">
-                        <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
-                            <FileText className="h-8 w-8 text-muted-foreground" />
-                        </div>
-                        <h3 className="font-semibold text-lg">No validation reports yet</h3>
-                        <p className="text-sm text-muted-foreground mt-1 mb-4">
-                            Validate your first startup idea to get comprehensive market research
-                        </p>
-                        <Button onClick={() => setShowForm(true)} className="gap-2">
-                            <Plus className="h-4 w-4" />
-                            Validate an Idea
-                        </Button>
-                    </CardContent>
-                </Card>
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.2 }}
+                    className="space-y-4 max-w-4xl mx-auto"
+                >
+                    <AnimatePresence>
+                        {reports.map((report: any, index: number) => (
+                            <motion.div
+                                key={report.id}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.3, delay: index * 0.05 }}
+                            >
+                                <ReportCard
+                                    report={report}
+                                    onDelete={(id) => deleteMutation.mutate(id)}
+                                />
+                            </motion.div>
+                        ))}
+                    </AnimatePresence>
+                </motion.div>
+            ) : !showForm && !createMutation.isPending && (
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="text-center py-16"
+                >
+                    <motion.div
+                        initial={{ y: 10 }}
+                        animate={{ y: [10, -10, 10] }}
+                        transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                        className="w-24 h-24 rounded-full bg-gradient-to-br from-emerald-500/20 to-cyan-500/10 flex items-center justify-center mx-auto mb-8 border border-emerald-500/20"
+                    >
+                        <Zap className="h-12 w-12 text-emerald-500" />
+                    </motion.div>
+                    <h3 className="text-2xl font-semibold mb-3">No validation reports yet</h3>
+                    <p className="text-muted-foreground mb-8 max-w-md mx-auto">
+                        Validate your first startup idea and get comprehensive market research, pricing intel, and go-to-market strategies.
+                    </p>
+                    <Button
+                        size="lg"
+                        onClick={() => setShowForm(true)}
+                        className="rounded-xl gap-2"
+                    >
+                        <Zap className="h-5 w-5" />
+                        Validate an Idea
+                    </Button>
+                </motion.div>
             )}
         </div>
     );
