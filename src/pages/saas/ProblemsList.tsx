@@ -559,7 +559,7 @@ export function ProblemsList() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4 }}
                 >
-                    {/* Guest user - show 1 real preview problem, click to signup */}
+                    {/* Guest user - show actual premium API response */}
                     {!user ? (
                         <div className="space-y-6">
                             <div className="text-center">
@@ -569,38 +569,81 @@ export function ProblemsList() {
                                 </div>
                                 <h3 className="text-xl font-bold mb-2">High-Opportunity Problems</h3>
                                 <p className="text-muted-foreground">
-                                    Click any problem to sign up and unlock full details
+                                    Sign up to unlock full access and detailed insights
                                 </p>
                             </div>
 
-                            {/* Show top 3 problems from free data as "premium preview" */}
-                            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {(data?.problems || []).slice(0, 3).map((problem: ProblemListItem, index: number) => (
+                            {/* Loading state */}
+                            {isLoadingPremium ? (
+                                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {Array.from({ length: 3 }).map((_, i) => (
+                                        <ProblemSkeleton key={i} />
+                                    ))}
+                                </div>
+                            ) : premiumData?.problems ? (
+                                // Show actual premium problems from API
+                                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {premiumData.problems.map((item: any, index: number) => (
+                                        <motion.div
+                                            key={item.id || index}
+                                            initial={{ opacity: 0, y: 20 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ duration: 0.3, delay: index * 0.1 }}
+                                            onClick={() => navigate('/auth')}
+                                            className="group relative cursor-pointer p-6 rounded-2xl bg-gradient-to-br from-amber-500/5 to-orange-500/5 border border-amber-500/20 hover:border-amber-500/40 transition-all hover:shadow-lg hover:shadow-amber-500/10"
+                                        >
+                                            {/* Premium badge with actual score */}
+                                            <div className="absolute -top-2 -right-2 px-2 py-1 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-medium flex items-center gap-1">
+                                                <Crown className="h-3 w-3" />
+                                                {item.problem?.opportunity_score || item.brief?.opportunity_score || '85+'}
+                                            </div>
+
+                                            <h4 className="font-semibold text-lg mb-2 line-clamp-2 group-hover:text-amber-600 transition-colors">
+                                                {item.problem?.title || item.brief?.title || 'Premium Problem'}
+                                            </h4>
+                                            <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
+                                                {item.problem?.description || item.brief?.problem_summary || ''}
+                                            </p>
+
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                                    <ThumbsUp className="h-4 w-4" />
+                                                    {item.problem?.upvotes || item.brief?.total_mentions || 0}
+                                                </div>
+                                                <div className="flex items-center gap-1 text-amber-600 text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <Lock className="h-3 w-3" />
+                                                    Sign up to view
+                                                </div>
+                                            </div>
+                                        </motion.div>
+                                    ))}
+                                </div>
+                            ) : premiumData?.preview ? (
+                                // Show single preview problem
+                                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                                     <motion.div
-                                        key={problem.id}
                                         initial={{ opacity: 0, y: 20 }}
                                         animate={{ opacity: 1, y: 0 }}
-                                        transition={{ duration: 0.3, delay: index * 0.1 }}
+                                        transition={{ duration: 0.3 }}
                                         onClick={() => navigate('/auth')}
                                         className="group relative cursor-pointer p-6 rounded-2xl bg-gradient-to-br from-amber-500/5 to-orange-500/5 border border-amber-500/20 hover:border-amber-500/40 transition-all hover:shadow-lg hover:shadow-amber-500/10"
                                     >
-                                        {/* Premium badge */}
                                         <div className="absolute -top-2 -right-2 px-2 py-1 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-medium flex items-center gap-1">
                                             <Crown className="h-3 w-3" />
-                                            85+
+                                            {premiumData.preview.problem?.opportunity_score || '85+'}
                                         </div>
 
                                         <h4 className="font-semibold text-lg mb-2 line-clamp-2 group-hover:text-amber-600 transition-colors">
-                                            {problem.title}
+                                            {premiumData.preview.problem?.title || 'Premium Problem'}
                                         </h4>
                                         <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
-                                            {problem.description}
+                                            {premiumData.preview.problem?.description || ''}
                                         </p>
 
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                                 <ThumbsUp className="h-4 w-4" />
-                                                {problem.upvotes}
+                                                {premiumData.preview.problem?.upvotes || 0}
                                             </div>
                                             <div className="flex items-center gap-1 text-amber-600 text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity">
                                                 <Lock className="h-3 w-3" />
@@ -608,13 +651,13 @@ export function ProblemsList() {
                                             </div>
                                         </div>
                                     </motion.div>
-                                ))}
-                            </div>
+                                </div>
+                            ) : null}
 
-                            {/* More available banner */}
+                            {/* Signup banner */}
                             <div className="text-center p-6 rounded-2xl bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/10 border border-amber-500/20">
                                 <p className="text-muted-foreground mb-4">
-                                    <span className="text-foreground font-semibold">20+ premium problems</span> with opportunity scores above 85
+                                    <span className="text-foreground font-semibold">{premiumData?.available_count || premiumData?.total || '20+'}  premium problems</span> with high opportunity scores
                                 </p>
                                 <Button
                                     onClick={() => navigate('/auth')}
