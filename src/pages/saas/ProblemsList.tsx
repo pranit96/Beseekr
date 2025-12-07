@@ -687,7 +687,7 @@ export function ProblemsList() {
                             {/* Razorpay Payment Button */}
                             <div className="rounded-2xl overflow-hidden border border-amber-500/20 bg-background">
                                 <iframe
-                                    src="https://rzp.io/l/abcd1234"
+                                    src="https://rzp.io/rzp/uwMQj2O"
                                     style={{ width: '100%', height: '800px', border: 'none' }}
                                     title="Premium Upgrade Payment"
                                 />
