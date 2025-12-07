@@ -1,5 +1,5 @@
 // public/sw.js - SERVICE WORKER FOR CACHING
-const CACHE_VERSION = 'v1';
+const CACHE_VERSION = 'v2';
 const CACHE_NAME = `beseekr-cache-${CACHE_VERSION}`;
 const API_CACHE_NAME = `beseekr-api-cache-${CACHE_VERSION}`;
 
