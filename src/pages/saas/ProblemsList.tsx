@@ -674,7 +674,7 @@ export function ProblemsList() {
                             ))}
                         </div>
                     ) : premiumData?.is_premium === false ? (
-                        // Free tier - show preview + upgrade
+                        // Free tier - show preview + upgrade with payment
                         <div className="space-y-8">
                             <div className="p-6 rounded-2xl bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/10 border border-amber-500/20 text-center">
                                 <Crown className="h-12 w-12 text-amber-500 mx-auto mb-4" />
@@ -682,9 +682,15 @@ export function ProblemsList() {
                                 <p className="text-muted-foreground mb-4">
                                     {premiumData?.upgrade_message || `Access ${premiumData?.available_count || 0} high-opportunity problems`}
                                 </p>
-                                <Button className="rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:opacity-90">
-                                    Upgrade Now
-                                </Button>
+                            </div>
+
+                            {/* Razorpay Payment Button */}
+                            <div className="rounded-2xl overflow-hidden border border-amber-500/20 bg-background">
+                                <iframe
+                                    src="https://rzp.io/l/abcd1234"
+                                    style={{ width: '100%', height: '800px', border: 'none' }}
+                                    title="Premium Upgrade Payment"
+                                />
                             </div>
 
                             {premiumData?.preview && (
