@@ -66,7 +66,7 @@ export function SaasDashboardLayout() {
                                 <Sparkles className="h-5 w-5 text-white" />
                             </motion.div>
                             <span className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent group-hover:opacity-80 transition-opacity">
-                                CreatuAI
+                                beseekr
                             </span>
                         </Link>
 

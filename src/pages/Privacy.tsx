@@ -24,7 +24,7 @@ const Privacy = () => {
               <Sparkles className="w-4 h-4 text-white" />
             </div>
             <span className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              CreatuAI
+              beseekr
             </span>
           </div>
           <Button onClick={() => navigate('/auth')} variant="outline" size="sm">
@@ -130,7 +130,7 @@ const Privacy = () => {
             <Card className="p-6 glass">
               <div className="space-y-4 text-muted-foreground">
                 <p>
-                  <strong className="text-foreground">Provide Services:</strong> We use your information to deliver and improve CreatuAI's features, including AI agent orchestration, conversation management, and personalized experiences.
+                  <strong className="text-foreground">Provide Services:</strong> We use your information to deliver and improve beseekr's features, including AI agent orchestration, conversation management, and personalized experiences.
                 </p>
                 <p>
                   <strong className="text-foreground">Communication:</strong> We may send you service updates, security alerts, and account-related notifications. Marketing communications are opt-in only.
@@ -192,8 +192,8 @@ const Privacy = () => {
                 </ul>
                 <p className="mt-4">
                   To exercise any of these rights, visit your Profile Settings or contact us at{' '}
-                  <a href="mailto:privacy@creatuai.com" className="text-primary hover:underline">
-                    privacy@creatuai.com
+                  <a href="mailto:privacy@beseekr.com" className="text-primary hover:underline">
+                    privacy@beseekr.com
                   </a>
                 </p>
               </div>
@@ -219,7 +219,7 @@ const Privacy = () => {
             <h2 className="text-2xl font-bold mb-4">Third-Party Services</h2>
             <Card className="p-6 glass">
               <p className="text-muted-foreground mb-4">
-                We use select third-party services to operate CreatuAI:
+                We use select third-party services to operate beseekr:
               </p>
               <ul className="space-y-3 text-muted-foreground">
                 <li>
@@ -242,7 +242,7 @@ const Privacy = () => {
             <h2 className="text-2xl font-bold mb-4">Children's Privacy</h2>
             <Card className="p-6 glass">
               <p className="text-muted-foreground">
-                CreatuAI is not intended for users under 13 years of age. We do not knowingly collect personal information from children. If you believe a child has provided us with personal information, please contact us immediately.
+                beseekr is not intended for users under 13 years of age. We do not knowingly collect personal information from children. If you believe a child has provided us with personal information, please contact us immediately.
               </p>
             </Card>
           </section>
@@ -251,7 +251,7 @@ const Privacy = () => {
             <h2 className="text-2xl font-bold mb-4">Changes to This Policy</h2>
             <Card className="p-6 glass">
               <p className="text-muted-foreground">
-                We may update this Privacy Policy periodically. When we make significant changes, we'll notify you via email or through the platform. Continued use of CreatuAI after changes indicates your acceptance of the updated policy.
+                We may update this Privacy Policy periodically. When we make significant changes, we'll notify you via email or through the platform. Continued use of beseekr after changes indicates your acceptance of the updated policy.
               </p>
             </Card>
           </section>
@@ -265,14 +265,14 @@ const Privacy = () => {
               <div className="space-y-2 text-muted-foreground">
                 <p>
                   <strong className="text-foreground">Email:</strong>{' '}
-                  <a href="mailto:privacy@creatuai.com" className="text-primary hover:underline">
-                    privacy@creatuai.com
+                  <a href="mailto:privacy@beseekr.com" className="text-primary hover:underline">
+                    privacy@beseekr.com
                   </a>
                 </p>
                 <p>
                   <strong className="text-foreground">Support:</strong>{' '}
-                  <a href="mailto:support@creatuai.com" className="text-primary hover:underline">
-                    support@creatuai.com
+                  <a href="mailto:support@beseekr.com" className="text-primary hover:underline">
+                    support@beseekr.com
                   </a>
                 </p>
               </div>
@@ -282,7 +282,7 @@ const Privacy = () => {
 
         <div className="text-center mt-16">
           <Button onClick={() => navigate('/auth')} size="lg" className="gap-2">
-            Get Started with CreatuAI
+            Get Started with beseekr
             <ArrowLeft className="w-4 h-4 rotate-180" />
           </Button>
         </div>

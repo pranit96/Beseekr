@@ -285,7 +285,7 @@ const Auth = () => {
                 <Sparkles className="w-8 h-8 text-white animate-pulse" />
               </div>
               <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                CreatuAI
+                beseekr
               </h1>
             </div>
             <h2 className="text-lg sm:text-xl font-semibold mb-2 text-slate-700 dark:text-foreground">

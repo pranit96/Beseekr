@@ -91,7 +91,7 @@ const Landing = () => {
               <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
             </div>
             <span className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              CreatuAI
+              beseekr
             </span>
           </div>
           <div className="hidden md:flex items-center gap-6">
@@ -396,7 +396,7 @@ const Landing = () => {
               <Sparkles className="w-4 h-4 text-white" />
             </div>
             <span className="text-lg font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              CreatuAI
+              beseekr
             </span>
           </div>
           <div className="flex items-center gap-6">
@@ -414,7 +414,7 @@ const Landing = () => {
             </a>
           </div>
           <p className="text-sm text-muted-foreground">
-            © 2025 CreatuAI
+            © 2025 beseekr
           </p>
         </div>
       </footer>

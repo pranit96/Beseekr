@@ -462,7 +462,7 @@ export function ProblemsList() {
                                             <div className="flex items-start justify-between gap-4">
                                                 <div className="flex-1">
                                                     <h4 className="font-semibold line-clamp-1">{problems[0].title}</h4>
-                                                    <p className="text-sm text-muted-foreground line-clamp-1 mt-1">{problems[0].description}</p>
+                                                    <p className="text-sm text-muted-foreground line-clamp-1 mt-1">{problems[0].summary}</p>
                                                 </div>
                                                 <div className="shrink-0 px-3 py-1 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white text-sm font-bold">
                                                     85+

@@ -1,7 +1,7 @@
 // public/sw.js - SERVICE WORKER FOR CACHING
 const CACHE_VERSION = 'v1';
-const CACHE_NAME = `creatuai-cache-${CACHE_VERSION}`;
-const API_CACHE_NAME = `creatuai-api-cache-${CACHE_VERSION}`;
+const CACHE_NAME = `beseekr-cache-${CACHE_VERSION}`;
+const API_CACHE_NAME = `beseekr-api-cache-${CACHE_VERSION}`;
 
 // Resources to cache on install
 const STATIC_CACHE_URLS = [
@@ -33,7 +33,7 @@ const API_CACHE_DURATION = 2 * 60 * 1000; // 2 minutes
  */
 self.addEventListener('install', (event) => {
   console.log('[SW] Installing service worker...');
-  
+
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
@@ -49,16 +49,16 @@ self.addEventListener('install', (event) => {
  */
 self.addEventListener('activate', (event) => {
   console.log('[SW] Activating service worker...');
-  
+
   event.waitUntil(
     caches.keys()
       .then((cacheNames) => {
         return Promise.all(
           cacheNames
             .filter((name) => {
-              return name.startsWith('creatuai-') && 
-                     name !== CACHE_NAME && 
-                     name !== API_CACHE_NAME;
+              return name.startsWith('beseekr-') &&
+                name !== CACHE_NAME &&
+                name !== API_CACHE_NAME;
             })
             .map((name) => {
               console.log('[SW] Deleting old cache:', name);
@@ -76,19 +76,19 @@ self.addEventListener('activate', (event) => {
 function shouldCacheRequest(url) {
   // Don't cache non-GET requests
   if (url.method !== 'GET') return false;
-  
+
   const urlString = url.url;
-  
+
   // Check if explicitly uncacheable
   if (UNCACHEABLE_API_PATTERNS.some(pattern => pattern.test(urlString))) {
     return false;
   }
-  
+
   // Check if cacheable API endpoint
   if (CACHEABLE_API_PATTERNS.some(pattern => pattern.test(urlString))) {
     return true;
   }
-  
+
   return false;
 }
 
@@ -97,10 +97,10 @@ function shouldCacheRequest(url) {
  */
 function isCacheFresh(response) {
   if (!response) return false;
-  
+
   const cachedTime = response.headers.get('sw-cached-time');
   if (!cachedTime) return false;
-  
+
   const age = Date.now() - parseInt(cachedTime, 10);
   return age < API_CACHE_DURATION;
 }
@@ -111,7 +111,7 @@ function isCacheFresh(response) {
 function addCacheTimestamp(response) {
   const headers = new Headers(response.headers);
   headers.set('sw-cached-time', Date.now().toString());
-  
+
   return new Response(response.body, {
     status: response.status,
     statusText: response.statusText,
@@ -126,31 +126,31 @@ async function networkFirstStrategy(request) {
   try {
     // Try network first
     const networkResponse = await fetch(request);
-    
+
     // Only cache successful responses
     if (networkResponse.ok) {
       const cache = await caches.open(API_CACHE_NAME);
       const responseToCache = addCacheTimestamp(networkResponse.clone());
       cache.put(request, responseToCache);
     }
-    
+
     return networkResponse;
   } catch (error) {
     console.log('[SW] Network request failed, trying cache:', error);
-    
+
     // If network fails, try cache
     const cachedResponse = await caches.match(request);
-    
+
     if (cachedResponse) {
       console.log('[SW] Serving from cache');
       return cachedResponse;
     }
-    
+
     // If no cache, return error response
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         error: 'Network unavailable and no cached data',
-        offline: true 
+        offline: true
       }),
       {
         status: 503,
@@ -165,20 +165,20 @@ async function networkFirstStrategy(request) {
  */
 async function cacheFirstStrategy(request) {
   const cachedResponse = await caches.match(request);
-  
+
   if (cachedResponse) {
     console.log('[SW] Serving static resource from cache');
     return cachedResponse;
   }
-  
+
   try {
     const networkResponse = await fetch(request);
-    
+
     if (networkResponse.ok) {
       const cache = await caches.open(CACHE_NAME);
       cache.put(request, networkResponse.clone());
     }
-    
+
     return networkResponse;
   } catch (error) {
     console.error('[SW] Failed to fetch resource:', error);
@@ -191,13 +191,13 @@ async function cacheFirstStrategy(request) {
  */
 async function staleWhileRevalidate(request) {
   const cachedResponse = await caches.match(request);
-  
+
   // Return cached response if fresh
   if (cachedResponse && isCacheFresh(cachedResponse)) {
     console.log('[SW] Serving fresh cache');
     return cachedResponse;
   }
-  
+
   // Fetch from network
   const networkPromise = fetch(request)
     .then(async (response) => {
@@ -212,13 +212,13 @@ async function staleWhileRevalidate(request) {
       console.error('[SW] Network error:', error);
       return null;
     });
-  
+
   // Return stale cache immediately if available
   if (cachedResponse) {
     console.log('[SW] Serving stale cache, revalidating in background');
     return cachedResponse;
   }
-  
+
   // Otherwise wait for network
   return networkPromise || new Response(
     JSON.stringify({ error: 'Request failed' }),
@@ -232,22 +232,22 @@ async function staleWhileRevalidate(request) {
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
-  
+
   // Skip non-GET requests
   if (request.method !== 'GET') {
     return;
   }
-  
+
   // Skip chrome extensions and other protocols
   if (!url.protocol.startsWith('http')) {
     return;
   }
-  
+
   // Skip WebSocket connections
   if (url.pathname.includes('socket.io')) {
     return;
   }
-  
+
   // Handle API requests
   if (url.pathname.startsWith('/api/')) {
     if (shouldCacheRequest(request)) {
@@ -259,7 +259,7 @@ self.addEventListener('fetch', (event) => {
     }
     return;
   }
-  
+
   // Handle static resources
   event.respondWith(cacheFirstStrategy(request));
 });
@@ -271,7 +271,7 @@ self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
   }
-  
+
   if (event.data && event.data.type === 'CLEAR_CACHE') {
     event.waitUntil(
       caches.keys().then((cacheNames) => {
@@ -281,7 +281,7 @@ self.addEventListener('message', (event) => {
       })
     );
   }
-  
+
   if (event.data && event.data.type === 'CLEAR_API_CACHE') {
     event.waitUntil(
       caches.delete(API_CACHE_NAME)

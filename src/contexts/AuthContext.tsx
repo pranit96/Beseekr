@@ -373,7 +373,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         toast({
           title: 'Account created!',
-          description: 'Welcome to CreatuAI.',
+          description: 'Welcome to beseekr.',
         });
 
         navigate('/dashboard/problems');

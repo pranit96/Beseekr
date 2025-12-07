@@ -94,9 +94,9 @@ const PublicOnlyRoute = ({ children }: { children: React.ReactNode }) => {
     );
   }
 
-  // If already logged in, redirect to dashboard
+  // If already logged in, redirect to dashboard problems
   if (user) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/dashboard/problems" replace />;
   }
 
   return <>{children}</>;
