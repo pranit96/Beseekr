@@ -35,10 +35,323 @@ import {
     FileText,
     ChevronRight,
     Lock,
+    Download,
 } from 'lucide-react';
 import { problemsApi } from '@/api/problems';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+
+// Helper function to generate Markdown content from report
+function generateMarkdownContent(report: any): string {
+    const metadata = report.report_metadata || {};
+    const verdict = report.executive_verdict || {};
+    const problemValidation = report.problem_validation || {};
+    const demandSignals = report.demand_signals || {};
+    const competitiveLandscape = report.competitive_landscape || {};
+    const pricingIntelligence = report.pricing_intelligence || {};
+    const customerProfile = report.customer_profile || {};
+    const marketSizing = report.market_sizing || {};
+    const goToMarket = report.go_to_market || {};
+    const riskAssessment = report.risk_assessment || {};
+    const sourcesAnalyzed = metadata.sources_analyzed || {};
+
+    let markdown = `# Validation Report\n\n`;
+    markdown += `**Generated:** ${new Date(report.created_at || Date.now()).toLocaleDateString()}\n\n`;
+
+    // Idea
+    markdown += `## Idea Validated\n\n`;
+    markdown += `${report.idea_input || 'N/A'}\n\n`;
+
+    // Executive Summary
+    markdown += `## Executive Summary\n\n`;
+    markdown += `- **Grade:** ${report.confidence_grade || '?'}\n`;
+    markdown += `- **Recommendation:** ${report.recommendation || 'N/A'}\n`;
+    markdown += `- **Confidence Score:** ${report.validation_score || 0}%\n`;
+    markdown += `- **Evidence Strength:** ${metadata.evidence_strength || 'Unknown'}\n\n`;
+    markdown += `### Key Insight\n\n${report.key_insight || 'N/A'}\n\n`;
+    markdown += `### One-Liner\n\n${report.one_liner || 'N/A'}\n\n`;
+
+    // Sources Analyzed
+    markdown += `### Sources Analyzed\n\n`;
+    markdown += `- Reddit Discussions: ${sourcesAnalyzed.reddit_discussions || 0}\n`;
+    markdown += `- HN Threads: ${sourcesAnalyzed.hn_threads || 0}\n`;
+    markdown += `- Pricing Data Points: ${sourcesAnalyzed.pricing_datapoints || 0}\n\n`;
+
+    // Problem Validation
+    markdown += `## Problem Validation\n\n`;
+    markdown += `- **Problem Exists:** ${problemValidation.problem_exists ? 'Yes' : 'No'}\n`;
+    markdown += `- **Severity Score:** ${problemValidation.severity_score || 0}/10\n\n`;
+
+    if (problemValidation.evidence?.frequency_signals?.length > 0) {
+        markdown += `### Frequency Signals\n\n`;
+        problemValidation.evidence.frequency_signals.forEach((signal: string) => {
+            markdown += `- ${signal}\n`;
+        });
+        markdown += `\n`;
+    }
+
+    if (problemValidation.evidence?.pain_quotes?.length > 0) {
+        markdown += `### Pain Quotes\n\n`;
+        problemValidation.evidence.pain_quotes.slice(0, 4).forEach((quote: any) => {
+            markdown += `> "${quote.quote}"\n`;
+            markdown += `> — ${quote.source}, ${quote.upvotes} upvotes\n\n`;
+        });
+    }
+
+    // Demand Signals
+    markdown += `## Demand Signals\n\n`;
+    markdown += `- **Active Seekers:** ${demandSignals.active_seekers || 0}\n`;
+    markdown += `- **Workaround Users:** ${demandSignals.workaround_users || 0}\n\n`;
+
+    if (demandSignals.evidence?.workaround_descriptions?.length > 0) {
+        markdown += `### Current Workarounds\n\n`;
+        demandSignals.evidence.workaround_descriptions.forEach((w: any) => {
+            markdown += `- ${w.method} (${w.mentions} mentions)\n`;
+        });
+        markdown += `\n`;
+    }
+
+    // Market Sizing
+    markdown += `## Market Sizing\n\n`;
+    markdown += `| Metric | Value | Confidence/Notes |\n`;
+    markdown += `|--------|-------|------------------|\n`;
+    markdown += `| TAM | ${marketSizing.TAM?.value || 'N/A'} | ${marketSizing.TAM?.confidence || 'N/A'} |\n`;
+    markdown += `| SAM | ${marketSizing.SAM?.value || 'N/A'} | ${marketSizing.SAM?.notes || 'N/A'} |\n`;
+    markdown += `| SOM | ${marketSizing.SOM?.value || 'N/A'} | ${marketSizing.SOM?.notes || 'N/A'} |\n\n`;
+
+    // Competitive Landscape
+    markdown += `## Competitive Landscape\n\n`;
+    markdown += `**Total Competitors Found:** ${competitiveLandscape.total_competitors_found || 0}\n\n`;
+
+    if (competitiveLandscape.direct_competitors?.length > 0) {
+        markdown += `### Direct Competitors\n\n`;
+        competitiveLandscape.direct_competitors.forEach((comp: any) => {
+            markdown += `- **${comp.name}**: ${comp.mentions} mentions, ${comp.sentiment} sentiment\n`;
+        });
+        markdown += `\n`;
+    }
+
+    if (competitiveLandscape.market_gaps?.length > 0) {
+        markdown += `### Market Gaps\n\n`;
+        competitiveLandscape.market_gaps.forEach((gap: string) => {
+            markdown += `- ${gap}\n`;
+        });
+        markdown += `\n`;
+    }
+
+    // Pricing Intelligence
+    markdown += `## Pricing Intelligence\n\n`;
+    markdown += `- **Low Anchor:** ${pricingIntelligence.willingness_to_pay?.low_anchor || 'N/A'}\n`;
+    markdown += `- **Median WTP:** ${pricingIntelligence.willingness_to_pay?.median || 'N/A'}\n`;
+    markdown += `- **High Anchor:** ${pricingIntelligence.willingness_to_pay?.high_anchor || 'N/A'}\n`;
+    markdown += `- **Data Points:** ${pricingIntelligence.data_points || 0}\n\n`;
+
+    if (pricingIntelligence.pricing_strategy) {
+        markdown += `### Recommended Pricing Strategy\n\n`;
+        markdown += `- **Model:** ${pricingIntelligence.pricing_strategy.recommended_model}\n`;
+        markdown += `- **Entry Price:** $${pricingIntelligence.pricing_strategy.entry_price}/mo\n`;
+        markdown += `- **Standard Price:** $${pricingIntelligence.pricing_strategy.standard_price}/mo\n`;
+        markdown += `- **Premium Price:** $${pricingIntelligence.pricing_strategy.premium_price}/mo\n\n`;
+        markdown += `**Rationale:** ${pricingIntelligence.pricing_strategy.rationale}\n\n`;
+    }
+
+    // Customer Profile
+    if (customerProfile.primary_persona) {
+        markdown += `## Customer Profile\n\n`;
+        markdown += `### Primary Persona\n\n`;
+        markdown += `- **Title:** ${customerProfile.primary_persona.title}\n`;
+        markdown += `- **Company Stage:** ${customerProfile.primary_persona.company_stage}\n`;
+        markdown += `- **Company Size:** ${customerProfile.primary_persona.company_size} employees\n\n`;
+
+        if (customerProfile.primary_persona.key_responsibilities?.length > 0) {
+            markdown += `### Key Responsibilities\n\n`;
+            customerProfile.primary_persona.key_responsibilities.forEach((r: string) => {
+                markdown += `- ${r}\n`;
+            });
+            markdown += `\n`;
+        }
+
+        if (customerProfile.primary_persona.pain_points?.length > 0) {
+            markdown += `### Pain Points\n\n`;
+            customerProfile.primary_persona.pain_points.forEach((p: string) => {
+                markdown += `- ${p}\n`;
+            });
+            markdown += `\n`;
+        }
+    }
+
+    // Go-to-Market
+    if (goToMarket.positioning) {
+        markdown += `## Go-to-Market Strategy\n\n`;
+        markdown += `### Positioning\n\n`;
+        markdown += `- **Tagline:** ${goToMarket.positioning.tagline}\n`;
+        markdown += `- **Value Proposition:** ${goToMarket.positioning.unique_value_prop}\n`;
+        if (goToMarket.positioning.avoid_saying) {
+            markdown += `- **⚠️ Avoid Saying:** ${goToMarket.positioning.avoid_saying}\n`;
+        }
+        markdown += `\n`;
+    }
+
+    if (goToMarket.mvp_features?.length > 0) {
+        markdown += `### MVP Features\n\n`;
+        goToMarket.mvp_features.forEach((feature: any) => {
+            markdown += `- **${feature.feature}**: ${feature.evidence}\n`;
+        });
+        markdown += `\n`;
+    }
+
+    if (goToMarket.first_30_days?.length > 0) {
+        markdown += `### First 30 Days\n\n`;
+        goToMarket.first_30_days.forEach((step: string, i: number) => {
+            markdown += `${i + 1}. ${step}\n`;
+        });
+        markdown += `\n`;
+    }
+
+    // Risk Assessment
+    if (riskAssessment.major_risks?.length > 0 || riskAssessment.mitigations?.length > 0) {
+        markdown += `## Risk Assessment\n\n`;
+
+        if (riskAssessment.major_risks?.length > 0) {
+            markdown += `### Major Risks\n\n`;
+            riskAssessment.major_risks.forEach((risk: string) => {
+                markdown += `- ⚠️ ${risk}\n`;
+            });
+            markdown += `\n`;
+        }
+
+        if (riskAssessment.mitigations?.length > 0) {
+            markdown += `### Mitigations\n\n`;
+            riskAssessment.mitigations.forEach((mit: string) => {
+                markdown += `- ✅ ${mit}\n`;
+            });
+            markdown += `\n`;
+        }
+
+        if (riskAssessment.recommendation) {
+            markdown += `**Recommendation:** ${riskAssessment.recommendation}\n\n`;
+        }
+    }
+
+    return markdown;
+}
+
+// Helper function to export as Markdown file
+function exportAsMarkdown(report: any) {
+    const normalizedReport = normalizeReport(report);
+    const markdown = generateMarkdownContent(normalizedReport);
+    const blob = new Blob([markdown], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `validation-report-${new Date().toISOString().split('T')[0]}.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+// Helper function to export as PDF
+async function exportAsPDF(report: any) {
+    const normalizedReport = normalizeReport(report);
+    const markdown = generateMarkdownContent(normalizedReport);
+
+    // Create a styled HTML version for printing
+    const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>Validation Report</title>
+            <style>
+                body {
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                    line-height: 1.6;
+                    max-width: 800px;
+                    margin: 0 auto;
+                    padding: 40px;
+                    color: #1a1a1a;
+                }
+                h1 { color: #059669; font-size: 28px; margin-bottom: 10px; }
+                h2 { color: #374151; font-size: 20px; margin-top: 30px; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px; }
+                h3 { color: #4b5563; font-size: 16px; margin-top: 20px; }
+                blockquote { 
+                    border-left: 4px solid #059669; 
+                    margin: 15px 0; 
+                    padding: 10px 20px; 
+                    background: #f9fafb; 
+                    font-style: italic;
+                }
+                table { border-collapse: collapse; width: 100%; margin: 15px 0; }
+                th, td { border: 1px solid #e5e7eb; padding: 10px; text-align: left; }
+                th { background: #f3f4f6; }
+                ul, ol { margin: 10px 0; padding-left: 25px; }
+                li { margin: 5px 0; }
+                strong { color: #059669; }
+                .grade { 
+                    display: inline-block; 
+                    font-size: 32px; 
+                    font-weight: bold; 
+                    padding: 10px 20px; 
+                    border-radius: 8px; 
+                    margin: 10px 0;
+                }
+                .grade-A { background: #d1fae5; color: #059669; }
+                .grade-B { background: #dbeafe; color: #3b82f6; }
+                .grade-C { background: #fef3c7; color: #d97706; }
+                .grade-D { background: #ffedd5; color: #ea580c; }
+                .grade-F { background: #fee2e2; color: #dc2626; }
+                @media print {
+                    body { padding: 20px; }
+                    h2 { page-break-after: avoid; }
+                }
+            </style>
+        </head>
+        <body>
+            <h1>📊 Validation Report</h1>
+            <p><strong>Generated:</strong> ${new Date(normalizedReport.created_at || Date.now()).toLocaleDateString()}</p>
+            
+            <h2>Idea Validated</h2>
+            <p>${normalizedReport.idea_input || 'N/A'}</p>
+            
+            <h2>Executive Summary</h2>
+            <div class="grade grade-${normalizedReport.confidence_grade}">${normalizedReport.confidence_grade}</div>
+            <ul>
+                <li><strong>Recommendation:</strong> ${normalizedReport.recommendation || 'N/A'}</li>
+                <li><strong>Confidence Score:</strong> ${normalizedReport.validation_score || 0}%</li>
+                <li><strong>Evidence Strength:</strong> ${normalizedReport.report_metadata?.evidence_strength || 'Unknown'}</li>
+            </ul>
+            <h3>Key Insight</h3>
+            <p>${normalizedReport.key_insight || 'N/A'}</p>
+            <h3>One-Liner</h3>
+            <p>${normalizedReport.one_liner || 'N/A'}</p>
+            
+            ${markdown.split('## ').slice(2).map(section => {
+        const lines = section.split('\n');
+        const title = lines[0];
+        const content = lines.slice(1).join('<br>');
+        return `<h2>${title}</h2><div>${content}</div>`;
+    }).join('')}
+        </body>
+        </html>
+    `;
+
+    // Open print dialog
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+        printWindow.document.write(htmlContent);
+        printWindow.document.close();
+        printWindow.onload = () => {
+            printWindow.print();
+        };
+    }
+}
 
 // Helper to normalize report data - handles both list items and full report
 function normalizeReport(rawReport: any) {
@@ -871,9 +1184,32 @@ export function Validate() {
 
         return (
             <div className="space-y-6 max-w-5xl mx-auto">
-                <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard/validate')} className="gap-2 -ml-2">
-                    <ArrowLeft className="h-4 w-4" /> All Reports
-                </Button>
+                <div className="flex items-center justify-between">
+                    <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard/validate')} className="gap-2 -ml-2">
+                        <ArrowLeft className="h-4 w-4" /> All Reports
+                    </Button>
+
+                    {singleReport && (
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="outline" size="sm" className="gap-2">
+                                    <Download className="h-4 w-4" />
+                                    Export Report
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => exportAsPDF(singleReport)} className="cursor-pointer">
+                                    <FileText className="h-4 w-4 mr-2" />
+                                    Export as PDF
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => exportAsMarkdown(singleReport)} className="cursor-pointer">
+                                    <FileText className="h-4 w-4 mr-2" />
+                                    Export as Markdown
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    )}
+                </div>
 
                 {singleReport ? (
                     <ReportDisplay report={singleReport} />
