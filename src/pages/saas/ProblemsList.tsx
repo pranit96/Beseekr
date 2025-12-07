@@ -197,6 +197,7 @@ export function ProblemsList() {
     const [premiumPage, setPremiumPage] = useState(1);
     const [sortBy, setSortBy] = useState<SortOption>('hot');
     const [searchQuery, setSearchQuery] = useState('');
+    const [showPayment, setShowPayment] = useState(false);
 
     // Fetch free problems
     const { data, isLoading, error } = useQuery({
@@ -682,16 +683,32 @@ export function ProblemsList() {
                                 <p className="text-muted-foreground mb-4">
                                     {premiumData?.upgrade_message || `Access ${premiumData?.available_count || 0} high-opportunity problems`}
                                 </p>
+                                {!showPayment && (
+                                    <Button
+                                        onClick={() => setShowPayment(true)}
+                                        className="rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:opacity-90 gap-2"
+                                    >
+                                        <Zap className="h-4 w-4" />
+                                        Activate Premium
+                                    </Button>
+                                )}
                             </div>
 
-                            {/* Razorpay Payment Button */}
-                            <div className="rounded-2xl overflow-hidden border border-amber-500/20 bg-background">
-                                <iframe
-                                    src="https://rzp.io/rzp/uwMQj2O"
-                                    style={{ width: '100%', height: '800px', border: 'none' }}
-                                    title="Premium Upgrade Payment"
-                                />
-                            </div>
+                            {/* Razorpay Payment Button - Only shown after clicking CTA */}
+                            {showPayment && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.3 }}
+                                    className="rounded-2xl overflow-hidden border border-amber-500/20 bg-background"
+                                >
+                                    <iframe
+                                        src="https://rzp.io/l/abcd1234"
+                                        style={{ width: '100%', height: '800px', border: 'none' }}
+                                        title="Premium Upgrade Payment"
+                                    />
+                                </motion.div>
+                            )}
 
                             {premiumData?.preview && (
                                 <div>
