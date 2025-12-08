@@ -103,7 +103,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       currentPath === '/auth' ||
       currentPath === '/privacy' ||
       currentPath.startsWith('/dashboard') ||
-      currentPath.startsWith('/pricing');
+      currentPath.startsWith('/pricing') ||
+      currentPath.startsWith('/payment');
 
     // Only redirect to auth for protected routes
     if (!isPublicPath) {

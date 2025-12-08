@@ -22,6 +22,8 @@ import Landing from "./pages/Landing";
 import Privacy from "./pages/Privacy";
 import DeepAnalytics from "./pages/DeepAnalytics";
 import Deck from "./pages/Deck";
+import PaymentSuccess from "./pages/PaymentSuccess";
+import PaymentFailed from "./pages/PaymentFailed";
 
 // SaaS Dashboard (PUBLIC)
 import { SaasDashboardLayout } from "./layouts/SaasDashboardLayout";
@@ -106,6 +108,12 @@ const App = () => {
 
                   {/* Privacy policy */}
                   <Route path="/privacy" element={<Privacy />} />
+
+                  {/* Payment success - Razorpay redirect */}
+                  <Route path="/payment/success" element={<PaymentSuccess />} />
+
+                  {/* Payment failed - Razorpay redirect */}
+                  <Route path="/payment/failed" element={<PaymentFailed />} />
 
                   {/* =============================================
                       DASHBOARD - FULLY PUBLIC
