@@ -1,9 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { paymentsApi, type Plan } from '@/api/payments';
 import { cn } from '@/lib/utils';
@@ -11,11 +10,36 @@ import { motion } from 'framer-motion';
 import {
     Crown,
     Check,
-    Zap,
     Loader2,
     Sparkles,
     ArrowRight,
+    Globe,
+    IndianRupee,
+    DollarSign,
 } from 'lucide-react';
+
+type Currency = 'INR' | 'USD';
+
+// Detect if user is from India using timezone and language
+function detectUserCountry(): Currency {
+    try {
+        // Check timezone
+        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        if (timezone?.includes('Kolkata') || timezone?.includes('India')) {
+            return 'INR';
+        }
+
+        // Check language as fallback
+        const lang = navigator.language || (navigator as any).userLanguage;
+        if (lang?.startsWith('hi') || lang === 'en-IN') {
+            return 'INR';
+        }
+
+        return 'USD';
+    } catch {
+        return 'INR'; // Default to INR
+    }
+}
 
 export function Pricing() {
     const navigate = useNavigate();
@@ -23,21 +47,45 @@ export function Pricing() {
     const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('yearly');
     const [selectedTier, setSelectedTier] = useState<'standard' | 'pro'>('pro');
     const [isCreatingLink, setIsCreatingLink] = useState(false);
+    const [currency, setCurrency] = useState<Currency>('INR');
+
+    // Detect user location on mount
+    useEffect(() => {
+        const detected = detectUserCountry();
+        setCurrency(detected);
+    }, []);
 
     // Fetch plans with caching (5 minutes stale time)
     const { data: plansData, isLoading } = useQuery({
         queryKey: ['subscription-plans'],
         queryFn: () => paymentsApi.getPlans(),
-        staleTime: 5 * 60 * 1000, // Cache for 5 minutes
-        gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
+        staleTime: 5 * 60 * 1000,
+        gcTime: 10 * 60 * 1000,
     });
 
-    // Extract plans from response
     const plans = plansData?.plans;
 
-    // Get plans by billing cycle using plan_type field
+    // Get plans by billing cycle
     const standardPlan = plans?.find(p => p.tier === 'standard' && p.plan_type === billingCycle);
     const proPlan = plans?.find(p => p.tier === 'pro' && p.plan_type === billingCycle);
+
+    // Format price based on currency
+    const formatPrice = (plan: Plan | undefined): string => {
+        if (!plan) return currency === 'INR' ? '₹--' : '$--';
+        if (currency === 'USD') {
+            return plan.amount_usd_display || `$${plan.amount_usd}`;
+        }
+        return plan.amount_inr_display || `₹${plan.amount_inr}`;
+    };
+
+    // Get per-month price for yearly plans
+    const getPerMonth = (plan: Plan | undefined): string | null => {
+        if (!plan || billingCycle !== 'yearly') return null;
+        if (currency === 'USD') {
+            return plan.per_month_usd;
+        }
+        return plan.per_month_inr;
+    };
 
     // Handle plan selection and payment
     const handleSelectPlan = async () => {
@@ -49,7 +97,11 @@ export function Pricing() {
         setIsCreatingLink(true);
         try {
             const planKey = `${selectedTier}_${billingCycle}`;
-            const paymentLink = await paymentsApi.createPaymentLink(planKey);
+            // Pass currency for international payments
+            const paymentLink = await paymentsApi.createPaymentLink(
+                planKey,
+                currency === 'USD' ? 'USD' : undefined // Only send USD explicitly
+            );
 
             if (paymentLink.short_url) {
                 window.location.href = paymentLink.short_url;
@@ -81,18 +133,19 @@ export function Pricing() {
                 </p>
             </motion.div>
 
-            {/* Billing Toggle */}
+            {/* Toggles Row */}
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="flex justify-center"
+                className="flex flex-col sm:flex-row items-center justify-center gap-4"
             >
+                {/* Billing Cycle Toggle */}
                 <div className="inline-flex items-center gap-2 p-1.5 rounded-2xl bg-muted/50 border border-border/50 backdrop-blur-sm">
                     <button
                         onClick={() => setBillingCycle('monthly')}
                         className={cn(
-                            "px-5 py-2.5 rounded-xl text-sm font-medium transition-all",
+                            "px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl text-sm font-medium transition-all",
                             billingCycle === 'monthly'
                                 ? "bg-background shadow-md text-foreground"
                                 : "text-muted-foreground hover:text-foreground"
@@ -103,7 +156,7 @@ export function Pricing() {
                     <button
                         onClick={() => setBillingCycle('yearly')}
                         className={cn(
-                            "px-5 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center gap-2",
+                            "px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl text-sm font-medium transition-all flex items-center gap-2",
                             billingCycle === 'yearly'
                                 ? "bg-background shadow-md text-foreground"
                                 : "text-muted-foreground hover:text-foreground"
@@ -115,7 +168,49 @@ export function Pricing() {
                         </span>
                     </button>
                 </div>
+
+                {/* Currency Toggle */}
+                <div className="inline-flex items-center gap-2 p-1.5 rounded-2xl bg-muted/50 border border-border/50 backdrop-blur-sm">
+                    <button
+                        onClick={() => setCurrency('INR')}
+                        className={cn(
+                            "px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl text-sm font-medium transition-all flex items-center gap-1.5",
+                            currency === 'INR'
+                                ? "bg-background shadow-md text-foreground"
+                                : "text-muted-foreground hover:text-foreground"
+                        )}
+                    >
+                        <IndianRupee className="h-3.5 w-3.5" />
+                        <span>INR</span>
+                    </button>
+                    <button
+                        onClick={() => setCurrency('USD')}
+                        className={cn(
+                            "px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl text-sm font-medium transition-all flex items-center gap-1.5",
+                            currency === 'USD'
+                                ? "bg-background shadow-md text-foreground"
+                                : "text-muted-foreground hover:text-foreground"
+                        )}
+                    >
+                        <DollarSign className="h-3.5 w-3.5" />
+                        <span>USD</span>
+                    </button>
+                </div>
             </motion.div>
+
+            {/* PayPal Notice for USD */}
+            {currency === 'USD' && (
+                <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    className="flex justify-center"
+                >
+                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-500/10 border border-blue-500/20 text-sm text-blue-600 dark:text-blue-400">
+                        <Globe className="h-4 w-4" />
+                        <span>PayPal available for international payments</span>
+                    </div>
+                </motion.div>
+            )}
 
             {/* Pricing Cards */}
             {isLoading ? (
@@ -158,15 +253,15 @@ export function Pricing() {
                         <div className="mb-6">
                             <div className="flex items-baseline gap-1">
                                 <span className="text-4xl sm:text-5xl font-bold">
-                                    {standardPlan?.amount_display || (billingCycle === 'yearly' ? '₹2,999' : '₹299')}
+                                    {formatPrice(standardPlan)}
                                 </span>
                                 <span className="text-muted-foreground">
                                     /{billingCycle === 'yearly' ? 'year' : 'month'}
                                 </span>
                             </div>
-                            {billingCycle === 'yearly' && standardPlan?.per_month && (
+                            {getPerMonth(standardPlan) && (
                                 <p className="text-sm text-muted-foreground mt-1">
-                                    {standardPlan.per_month}/month billed annually
+                                    {getPerMonth(standardPlan)}/month billed annually
                                 </p>
                             )}
                         </div>
@@ -207,21 +302,14 @@ export function Pricing() {
                                 setSelectedTier('standard');
                                 handleSelectPlan();
                             }}
-                            disabled={isCreatingLink && selectedTier === 'standard'}
+                            disabled={isCreatingLink}
                             variant={selectedTier === 'standard' ? 'default' : 'outline'}
                             className="w-full rounded-xl h-12"
                         >
                             {isCreatingLink && selectedTier === 'standard' ? (
-                                <>
-                                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                                    Processing...
-                                </>
-                            ) : (
-                                <>
-                                    Get Started
-                                    <ArrowRight className="h-4 w-4 ml-2" />
-                                </>
-                            )}
+                                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                            ) : null}
+                            Get Standard
                         </Button>
                     </div>
 
@@ -231,32 +319,48 @@ export function Pricing() {
                         className={cn(
                             "relative p-6 sm:p-8 rounded-3xl border-2 cursor-pointer transition-all duration-300",
                             selectedTier === 'pro'
-                                ? "border-amber-500 bg-amber-500/5 shadow-xl shadow-amber-500/10"
+                                ? "border-amber-500 bg-gradient-to-br from-amber-500/10 to-orange-500/10 shadow-xl shadow-amber-500/10"
                                 : "border-border/50 hover:border-amber-500/50 hover:shadow-lg"
                         )}
                     >
-                        <Badge className="absolute top-4 right-4 bg-gradient-to-r from-amber-500 to-orange-500 text-white">
-                            <Sparkles className="h-3 w-3 mr-1" />
-                            Popular
-                        </Badge>
+                        {/* Popular Badge */}
+                        <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                            <div className="px-4 py-1 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-semibold flex items-center gap-1">
+                                <Sparkles className="h-3 w-3" />
+                                Most Popular
+                            </div>
+                        </div>
 
-                        <div className="mb-6">
-                            <h3 className="text-xl font-bold mb-2">Pro</h3>
-                            <p className="text-sm text-muted-foreground">For serious founders and agencies</p>
+                        {selectedTier === 'pro' && (
+                            <motion.div
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                className="absolute top-4 right-4 w-6 h-6 rounded-full bg-amber-500 flex items-center justify-center"
+                            >
+                                <Check className="h-4 w-4 text-white" />
+                            </motion.div>
+                        )}
+
+                        <div className="mb-6 pt-2">
+                            <h3 className="text-xl font-bold mb-2 flex items-center gap-2">
+                                Pro
+                                <Crown className="h-5 w-5 text-amber-500" />
+                            </h3>
+                            <p className="text-sm text-muted-foreground">For serious entrepreneurs and teams</p>
                         </div>
 
                         <div className="mb-6">
                             <div className="flex items-baseline gap-1">
-                                <span className="text-4xl sm:text-5xl font-bold">
-                                    {proPlan?.amount_display || (billingCycle === 'yearly' ? '₹5,999' : '₹599')}
+                                <span className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-amber-500 to-orange-500 bg-clip-text text-transparent">
+                                    {formatPrice(proPlan)}
                                 </span>
                                 <span className="text-muted-foreground">
                                     /{billingCycle === 'yearly' ? 'year' : 'month'}
                                 </span>
                             </div>
-                            {billingCycle === 'yearly' && proPlan?.per_month && (
+                            {getPerMonth(proPlan) && (
                                 <p className="text-sm text-muted-foreground mt-1">
-                                    {proPlan.per_month}/month billed annually
+                                    {getPerMonth(proPlan)}/month billed annually
                                 </p>
                             )}
                         </div>
@@ -265,31 +369,31 @@ export function Pricing() {
                             {proPlan?.features?.length ? (
                                 proPlan.features.map((feature, idx) => (
                                     <li key={idx} className="flex items-start gap-3">
-                                        <Check className="h-5 w-5 text-green-500 shrink-0 mt-0.5" />
+                                        <Check className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
                                         <span className="text-sm">{feature}</span>
                                     </li>
                                 ))
                             ) : (
                                 <>
                                     <li className="flex items-start gap-3">
-                                        <Check className="h-5 w-5 text-green-500 shrink-0" />
+                                        <Check className="h-5 w-5 text-amber-500 shrink-0" />
                                         <span className="text-sm">Everything in Standard</span>
                                     </li>
                                     <li className="flex items-start gap-3">
-                                        <Check className="h-5 w-5 text-green-500 shrink-0" />
+                                        <Check className="h-5 w-5 text-amber-500 shrink-0" />
                                         <span className="text-sm">Unlimited idea validations</span>
                                     </li>
                                     <li className="flex items-start gap-3">
-                                        <Check className="h-5 w-5 text-green-500 shrink-0" />
-                                        <span className="text-sm">Priority support</span>
+                                        <Check className="h-5 w-5 text-amber-500 shrink-0" />
+                                        <span className="text-sm">Priority access to new problems</span>
                                     </li>
                                     <li className="flex items-start gap-3">
-                                        <Check className="h-5 w-5 text-green-500 shrink-0" />
-                                        <span className="text-sm">Export reports (PDF/Markdown)</span>
+                                        <Check className="h-5 w-5 text-amber-500 shrink-0" />
+                                        <span className="text-sm">Advanced market analysis</span>
                                     </li>
                                     <li className="flex items-start gap-3">
-                                        <Check className="h-5 w-5 text-green-500 shrink-0" />
-                                        <span className="text-sm">Early access to new features</span>
+                                        <Check className="h-5 w-5 text-amber-500 shrink-0" />
+                                        <span className="text-sm">Export reports & data</span>
                                     </li>
                                 </>
                             )}
@@ -301,34 +405,40 @@ export function Pricing() {
                                 setSelectedTier('pro');
                                 handleSelectPlan();
                             }}
-                            disabled={isCreatingLink && selectedTier === 'pro'}
-                            className="w-full rounded-xl h-12 bg-gradient-to-r from-amber-500 to-orange-500 hover:opacity-90"
+                            disabled={isCreatingLink}
+                            className={cn(
+                                "w-full rounded-xl h-12",
+                                selectedTier === 'pro'
+                                    ? "bg-gradient-to-r from-amber-500 to-orange-500 hover:opacity-90"
+                                    : ""
+                            )}
+                            variant={selectedTier === 'pro' ? 'default' : 'outline'}
                         >
                             {isCreatingLink && selectedTier === 'pro' ? (
-                                <>
-                                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                                    Processing...
-                                </>
-                            ) : (
-                                <>
-                                    <Zap className="h-4 w-4 mr-2" />
-                                    Get Pro
-                                </>
-                            )}
+                                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                            ) : null}
+                            Get Pro
+                            <ArrowRight className="h-4 w-4 ml-2" />
                         </Button>
                     </div>
                 </motion.div>
             )}
 
-            {/* FAQ or Trust Signals */}
+            {/* Trust Section */}
             <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-                className="text-center text-sm text-muted-foreground space-y-2 pt-8"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.4 }}
+                className="text-center space-y-4 pt-8"
             >
-                <p>🔒 Secure payment via Razorpay • Cancel anytime</p>
-                <p>Questions? <a href="mailto:support@beseekr.com" className="text-primary hover:underline">Contact us</a></p>
+                <p className="text-muted-foreground text-sm">
+                    Secure payments powered by Razorpay{currency === 'USD' ? ' & PayPal' : ''}
+                </p>
+                <div className="flex items-center justify-center gap-6 text-muted-foreground/60">
+                    <span className="text-xs">🔒 SSL Secured</span>
+                    <span className="text-xs">💳 PCI Compliant</span>
+                    <span className="text-xs">🔄 Cancel Anytime</span>
+                </div>
             </motion.div>
         </div>
     );

@@ -7,13 +7,15 @@ export interface Plan {
     key: string;
     tier: 'standard' | 'pro';
     plan_type: 'monthly' | 'yearly';
-    amount: number;
-    amount_display: string;
-    currency: string;
-    currency_symbol: string;
+    // INR pricing
+    amount_inr: number;
+    amount_inr_display: string;
+    per_month_inr: string | null; // Monthly equivalent for yearly plans
+    // USD pricing
     amount_usd: number;
     amount_usd_display: string;
-    per_month: string | null; // Shows monthly equivalent for yearly plans
+    per_month_usd: string | null; // Monthly equivalent for yearly plans
+    // Plan details
     description: string;
     duration_days: number;
     features: string[];
@@ -104,11 +106,21 @@ export async function getPlans(): Promise<PlansResponse> {
 /**
  * Create a Razorpay payment link for a plan
  * Requires authentication (cookie)
+ * @param plan - Plan key (e.g., 'standard_monthly', 'pro_yearly')
+ * @param currency - Optional currency ('INR' for India, 'USD' for international/PayPal)
  */
-export async function createPaymentLink(plan: string = 'standard_monthly'): Promise<PaymentLink> {
+export async function createPaymentLink(
+    plan: string = 'standard_monthly',
+    currency?: 'INR' | 'USD'
+): Promise<PaymentLink> {
+    const body: { plan: string; currency?: string } = { plan };
+    if (currency) {
+        body.currency = currency;
+    }
+
     return request<PaymentLink>('/api/payments/create-link', {
         method: 'POST',
-        body: JSON.stringify({ plan }),
+        body: JSON.stringify(body),
     });
 }
 

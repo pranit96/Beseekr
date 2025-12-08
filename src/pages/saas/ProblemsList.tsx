@@ -809,14 +809,14 @@ export function ProblemsList() {
                                                         <h4 className="text-lg font-bold mb-2">Standard</h4>
                                                         <div className="mb-4">
                                                             <span className="text-3xl font-bold">
-                                                                {standardPlan?.amount_display || (billingCycle === 'yearly' ? '₹2,999' : '₹299')}
+                                                                {standardPlan?.amount_inr_display || (billingCycle === 'yearly' ? '₹2,499' : '₹299')}
                                                             </span>
                                                             <span className="text-muted-foreground text-sm">
                                                                 /{billingCycle === 'yearly' ? 'year' : 'month'}
                                                             </span>
-                                                            {billingCycle === 'yearly' && standardPlan?.per_month && (
+                                                            {billingCycle === 'yearly' && standardPlan?.per_month_inr && (
                                                                 <p className="text-xs text-muted-foreground mt-1">
-                                                                    {standardPlan.per_month}/month
+                                                                    {standardPlan.per_month_inr}/month
                                                                 </p>
                                                             )}
                                                         </div>
@@ -864,14 +864,14 @@ export function ProblemsList() {
                                                         <h4 className="text-lg font-bold mb-2">Pro</h4>
                                                         <div className="mb-4">
                                                             <span className="text-3xl font-bold">
-                                                                {proPlan?.amount_display || (billingCycle === 'yearly' ? '₹5,999' : '₹599')}
+                                                                {proPlan?.amount_inr_display || (billingCycle === 'yearly' ? '₹6,999' : '₹799')}
                                                             </span>
                                                             <span className="text-muted-foreground text-sm">
                                                                 /{billingCycle === 'yearly' ? 'year' : 'month'}
                                                             </span>
-                                                            {billingCycle === 'yearly' && proPlan?.per_month && (
+                                                            {billingCycle === 'yearly' && proPlan?.per_month_inr && (
                                                                 <p className="text-xs text-muted-foreground mt-1">
-                                                                    {proPlan.per_month}/month
+                                                                    {proPlan.per_month_inr}/month
                                                                 </p>
                                                             )}
                                                         </div>
