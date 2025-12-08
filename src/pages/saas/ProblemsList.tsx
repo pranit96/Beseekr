@@ -787,7 +787,7 @@ export function ProblemsList() {
                                         <div className="grid sm:grid-cols-2 gap-4 max-w-2xl mx-auto">
                                             {/* Standard Plan */}
                                             {(() => {
-                                                const standardPlan = plans?.find(p => p.tier === 'standard' && p.key.includes(billingCycle));
+                                                const standardPlan = plans?.find(p => p.tier === 'standard' && p.plan_type === billingCycle);
                                                 return (
                                                     <div
                                                         onClick={() => setSelectedTier('standard')}
@@ -844,7 +844,7 @@ export function ProblemsList() {
 
                                             {/* Pro Plan */}
                                             {(() => {
-                                                const proPlan = plans?.find(p => p.tier === 'pro' && p.key.includes(billingCycle));
+                                                const proPlan = plans?.find(p => p.tier === 'pro' && p.plan_type === billingCycle);
                                                 return (
                                                     <div
                                                         onClick={() => setSelectedTier('pro')}
@@ -942,36 +942,36 @@ export function ProblemsList() {
                             )}
                         </div>
                     ) : (
-        // Premium tier - show all problems
-        <div className="space-y-6">
-            {premiumData?.subscription && (
-                <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20">
-                    <div className="flex items-center gap-3">
-                        <Crown className="h-5 w-5 text-amber-500" />
-                        <span className="font-medium capitalize">{premiumData.subscription.tier} Plan</span>
-                    </div>
-                    {premiumData.subscription.days_remaining && (
-                        <span className="text-sm text-muted-foreground">
-                            {premiumData.subscription.days_remaining} days remaining
-                        </span>
-                    )}
-                </div>
-            )}
+                        // Premium tier - show all problems
+                        <div className="space-y-6">
+                            {premiumData?.subscription && (
+                                <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20">
+                                    <div className="flex items-center gap-3">
+                                        <Crown className="h-5 w-5 text-amber-500" />
+                                        <span className="font-medium capitalize">{premiumData.subscription.tier} Plan</span>
+                                    </div>
+                                    {premiumData.subscription.days_remaining && (
+                                        <span className="text-sm text-muted-foreground">
+                                            {premiumData.subscription.days_remaining} days remaining
+                                        </span>
+                                    )}
+                                </div>
+                            )}
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {premiumData?.problems?.map((item: any, index: number) => (
-                    <ProblemCard
-                        key={item.id}
-                        problem={item.problem}
-                        isWatching={watchlistIds.has(item.problem?.id)}
-                        onWatchlistToggle={handleWatchlistToggle}
-                        index={index}
-                    />
-                ))}
-            </div>
-        </div>
-    )
-}
+                            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {premiumData?.problems?.map((item: any, index: number) => (
+                                    <ProblemCard
+                                        key={item.id}
+                                        problem={item.problem}
+                                        isWatching={watchlistIds.has(item.problem?.id)}
+                                        onWatchlistToggle={handleWatchlistToggle}
+                                        index={index}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                    )
+                    }
                 </motion.div >
             )}
         </div >

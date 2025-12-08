@@ -32,9 +32,9 @@ export function Pricing() {
         gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
     });
 
-    // Get plans by billing cycle
-    const standardPlan = plans?.find(p => p.tier === 'standard' && p.key.includes(billingCycle));
-    const proPlan = plans?.find(p => p.tier === 'pro' && p.key.includes(billingCycle));
+    // Get plans by billing cycle using plan_type field
+    const standardPlan = plans?.find(p => p.tier === 'standard' && p.plan_type === billingCycle);
+    const proPlan = plans?.find(p => p.tier === 'pro' && p.plan_type === billingCycle);
 
     // Handle plan selection and payment
     const handleSelectPlan = async () => {

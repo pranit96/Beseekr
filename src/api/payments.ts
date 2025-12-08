@@ -6,15 +6,16 @@ const API_BASE = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_U
 export interface Plan {
     key: string;
     tier: 'standard' | 'pro';
-    plan_type?: 'monthly' | 'yearly';
+    plan_type: 'monthly' | 'yearly';
     amount: number;
     amount_display: string;
     currency: string;
     currency_symbol: string;
-    amount_usd?: number;
-    amount_usd_display?: string;
-    per_month?: string | null; // Shows monthly equivalent for yearly plans
-    duration_days?: number;
+    amount_usd: number;
+    amount_usd_display: string;
+    per_month: string | null; // Shows monthly equivalent for yearly plans
+    description: string;
+    duration_days: number;
     features: string[];
 }
 
