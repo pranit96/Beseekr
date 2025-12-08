@@ -72,7 +72,7 @@ export function Contact() {
         } catch (error) {
             console.error('Contact form error:', error);
             // Fallback to mailto if API fails
-            const mailtoLink = `mailto:hello@beseekr.com?subject=${encodeURIComponent(formData.subject || 'Contact Form')}&body=${encodeURIComponent(`Name: ${formData.name}\nEmail: ${formData.email}\n\n${formData.message}`)}`;
+            const mailtoLink = `mailto:hello@support.beseekr.com?subject=${encodeURIComponent(formData.subject || 'Contact Form')}&body=${encodeURIComponent(`Name: ${formData.name}\nEmail: ${formData.email}\n\n${formData.message}`)}`;
             window.location.href = mailtoLink;
             toast.info('Opening your email client...');
         } finally {
@@ -238,11 +238,11 @@ export function Contact() {
                                 Or reach us directly at
                             </p>
                             <a
-                                href="mailto:hello@beseekr.com"
+                                href="mailto:hello@support.beseekr.com"
                                 className="inline-flex items-center gap-2 text-primary hover:underline"
                             >
                                 <Mail className="h-4 w-4" />
-                                hello@beseekr.com
+                                hello@support.beseekr.com
                             </a>
                         </div>
                     </Card>

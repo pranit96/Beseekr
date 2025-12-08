@@ -225,8 +225,8 @@ const Privacy = () => {
                 </ul>
                 <p className="mt-4">
                   To exercise any of these rights, visit your Profile Settings or contact us at{' '}
-                  <a href="mailto:hello@beseekr.com" className="text-primary hover:underline">
-                    hello@beseekr.com
+                  <a href="mailto:hello@support.beseekr.com" className="text-primary hover:underline">
+                    hello@support.beseekr.com
                   </a>
                 </p>
               </div>
@@ -288,8 +288,8 @@ const Privacy = () => {
               <div className="space-y-2 text-muted-foreground">
                 <p>
                   <strong className="text-foreground">Email:</strong>{' '}
-                  <a href="mailto:hello@beseekr.com" className="text-primary hover:underline">
-                    hello@beseekr.com
+                  <a href="mailto:hello@support.beseekr.com" className="text-primary hover:underline">
+                    hello@support.beseekr.com
                   </a>
                 </p>
               </div>
@@ -329,7 +329,7 @@ const Privacy = () => {
                 Pricing
               </Link>
               <a
-                href="mailto:hello@beseekr.com"
+                href="mailto:hello@support.beseekr.com"
                 className="text-muted-foreground hover:text-foreground transition-colors"
               >
                 Contact Us
