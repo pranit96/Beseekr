@@ -102,6 +102,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       currentPath === '/' ||
       currentPath === '/auth' ||
       currentPath === '/privacy' ||
+      currentPath === '/contact' ||
       currentPath.startsWith('/dashboard') ||
       currentPath.startsWith('/pricing') ||
       currentPath.startsWith('/payment');

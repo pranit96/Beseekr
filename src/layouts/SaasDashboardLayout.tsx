@@ -273,12 +273,12 @@ export function SaasDashboardLayout() {
                             >
                                 Pricing
                             </Link>
-                            <a
-                                href="mailto:hello@beseekr.com"
+                            <Link
+                                to="/contact"
                                 className="text-muted-foreground hover:text-foreground transition-colors"
                             >
                                 Contact Us
-                            </a>
+                            </Link>
                         </div>
 
                         {/* Right - Social/Extra */}

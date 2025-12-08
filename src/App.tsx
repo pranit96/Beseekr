@@ -24,6 +24,7 @@ import DeepAnalytics from "./pages/DeepAnalytics";
 import Deck from "./pages/Deck";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import PaymentFailed from "./pages/PaymentFailed";
+import Contact from "./pages/Contact";
 
 // SaaS Dashboard (PUBLIC)
 import { SaasDashboardLayout } from "./layouts/SaasDashboardLayout";
@@ -108,6 +109,9 @@ const App = () => {
 
                   {/* Privacy policy */}
                   <Route path="/privacy" element={<Privacy />} />
+
+                  {/* Contact page */}
+                  <Route path="/contact" element={<Contact />} />
 
                   {/* Payment success - Razorpay redirect */}
                   <Route path="/payment/success" element={<PaymentSuccess />} />
