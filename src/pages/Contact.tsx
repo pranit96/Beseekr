@@ -63,18 +63,23 @@ export function Contact() {
                 body: JSON.stringify(formData),
             });
 
+            const data = await response.json();
+
             if (!response.ok) {
-                throw new Error('Failed to send message');
+                // Show API error message (e.g., "Message must be at least 10 characters")
+                const errorMessage = data?.error || data?.message || 'Failed to send message';
+                toast.error(errorMessage);
+                return;
             }
 
             setIsSubmitted(true);
             toast.success('Message sent successfully!');
         } catch (error) {
             console.error('Contact form error:', error);
-            // Fallback to mailto if API fails
+            // Only fallback to mailto for network errors (fetch failed)
+            toast.error('Network error. Opening email client...');
             const mailtoLink = `mailto:hello@support.beseekr.com?subject=${encodeURIComponent(formData.subject || 'Contact Form')}&body=${encodeURIComponent(`Name: ${formData.name}\nEmail: ${formData.email}\n\n${formData.message}`)}`;
-            window.location.href = mailtoLink;
-            toast.info('Opening your email client...');
+            window.open(mailtoLink, '_blank');
         } finally {
             setIsSubmitting(false);
         }
@@ -212,6 +217,9 @@ export function Contact() {
                                     className="rounded-xl min-h-[150px] resize-none"
                                     required
                                 />
+                                <p className={`text-xs ${formData.message.length < 10 ? 'text-muted-foreground' : 'text-green-600'}`}>
+                                    {formData.message.length}/10 characters minimum
+                                </p>
                             </div>
 
                             <Button
