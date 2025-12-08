@@ -263,9 +263,6 @@ export function SaasDashboardLayout() {
                         </div>
 
                         {/* Right - Social/Extra */}
-                        <div className="text-xs text-muted-foreground/60">
-                            Made with ♥ in India
-                        </div>
                     </div>
                 </div>
             </footer>
