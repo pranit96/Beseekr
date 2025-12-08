@@ -24,6 +24,7 @@ import ProblemsList from "./pages/saas/ProblemsList";
 import ProblemDetails from "./pages/saas/ProblemDetails";
 import Validate from "./pages/saas/Validate";
 import SaasWatchlist from "./pages/saas/Watchlist";
+import Pricing from "./pages/saas/Pricing";
 import { useEffect } from "react";
 
 const queryClient = new QueryClient({
@@ -204,6 +205,7 @@ const App = () => {
                     <Route path="validate" element={<Validate />} />
                     <Route path="validate/:id" element={<Validate />} />
                     <Route path="watchlist" element={<SaasWatchlist />} />
+                    <Route path="pricing" element={<Pricing />} />
                   </Route>
 
                   {/* Catch all route */}

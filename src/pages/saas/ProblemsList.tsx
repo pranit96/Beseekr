@@ -786,86 +786,120 @@ export function ProblemsList() {
                                     ) : (
                                         <div className="grid sm:grid-cols-2 gap-4 max-w-2xl mx-auto">
                                             {/* Standard Plan */}
-                                            <div
-                                                onClick={() => setSelectedTier('standard')}
-                                                className={cn(
-                                                    "relative p-5 sm:p-6 rounded-2xl border-2 cursor-pointer transition-all",
-                                                    selectedTier === 'standard'
-                                                        ? "border-amber-500 bg-amber-500/5"
-                                                        : "border-border/50 hover:border-amber-500/50"
-                                                )}
-                                            >
-                                                {selectedTier === 'standard' && (
-                                                    <div className="absolute top-3 right-3 w-5 h-5 rounded-full bg-amber-500 flex items-center justify-center">
-                                                        <Check className="h-3 w-3 text-white" />
+                                            {(() => {
+                                                const standardPlan = plans?.find(p => p.tier === 'standard' && p.key.includes(billingCycle));
+                                                return (
+                                                    <div
+                                                        onClick={() => setSelectedTier('standard')}
+                                                        className={cn(
+                                                            "relative p-5 sm:p-6 rounded-2xl border-2 cursor-pointer transition-all",
+                                                            selectedTier === 'standard'
+                                                                ? "border-amber-500 bg-amber-500/5"
+                                                                : "border-border/50 hover:border-amber-500/50"
+                                                        )}
+                                                    >
+                                                        {selectedTier === 'standard' && (
+                                                            <div className="absolute top-3 right-3 w-5 h-5 rounded-full bg-amber-500 flex items-center justify-center">
+                                                                <Check className="h-3 w-3 text-white" />
+                                                            </div>
+                                                        )}
+                                                        <h4 className="text-lg font-bold mb-2">Standard</h4>
+                                                        <div className="mb-4">
+                                                            <span className="text-3xl font-bold">
+                                                                {standardPlan?.amount_display || (billingCycle === 'yearly' ? '₹2,999' : '₹299')}
+                                                            </span>
+                                                            <span className="text-muted-foreground text-sm">
+                                                                /{billingCycle === 'yearly' ? 'year' : 'month'}
+                                                            </span>
+                                                            {billingCycle === 'yearly' && standardPlan?.per_month && (
+                                                                <p className="text-xs text-muted-foreground mt-1">
+                                                                    {standardPlan.per_month}/month
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                        <ul className="space-y-2 text-sm text-muted-foreground">
+                                                            {standardPlan?.features?.length ? (
+                                                                standardPlan.features.map((feature, idx) => (
+                                                                    <li key={idx} className="flex items-center gap-2">
+                                                                        <Check className="h-4 w-4 text-green-500 shrink-0" />
+                                                                        {feature}
+                                                                    </li>
+                                                                ))
+                                                            ) : (
+                                                                <>
+                                                                    <li className="flex items-center gap-2">
+                                                                        <Check className="h-4 w-4 text-green-500" />
+                                                                        All premium problems access
+                                                                    </li>
+                                                                    <li className="flex items-center gap-2">
+                                                                        <Check className="h-4 w-4 text-green-500" />
+                                                                        10 validations/month
+                                                                    </li>
+                                                                </>
+                                                            )}
+                                                        </ul>
                                                     </div>
-                                                )}
-                                                <h4 className="text-lg font-bold mb-2">Standard</h4>
-                                                <div className="mb-4">
-                                                    <span className="text-3xl font-bold">
-                                                        ₹{plans?.find(p => p.tier === 'standard' && p.plan_type === billingCycle)?.amount || (billingCycle === 'yearly' ? '4,999' : '499')}
-                                                    </span>
-                                                    <span className="text-muted-foreground text-sm">
-                                                        /{billingCycle === 'yearly' ? 'year' : 'month'}
-                                                    </span>
-                                                </div>
-                                                <ul className="space-y-2 text-sm text-muted-foreground">
-                                                    <li className="flex items-center gap-2">
-                                                        <Check className="h-4 w-4 text-green-500" />
-                                                        Access all premium problems
-                                                    </li>
-                                                    <li className="flex items-center gap-2">
-                                                        <Check className="h-4 w-4 text-green-500" />
-                                                        Opportunity scores & insights
-                                                    </li>
-                                                    <li className="flex items-center gap-2">
-                                                        <Check className="h-4 w-4 text-green-500" />
-                                                        Email alerts for new problems
-                                                    </li>
-                                                </ul>
-                                            </div>
+                                                );
+                                            })()}
 
                                             {/* Pro Plan */}
-                                            <div
-                                                onClick={() => setSelectedTier('pro')}
-                                                className={cn(
-                                                    "relative p-5 sm:p-6 rounded-2xl border-2 cursor-pointer transition-all",
-                                                    selectedTier === 'pro'
-                                                        ? "border-amber-500 bg-amber-500/5"
-                                                        : "border-border/50 hover:border-amber-500/50"
-                                                )}
-                                            >
-                                                <Badge className="absolute top-3 right-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[10px]">
-                                                    Popular
-                                                </Badge>
-                                                <h4 className="text-lg font-bold mb-2">Pro</h4>
-                                                <div className="mb-4">
-                                                    <span className="text-3xl font-bold">
-                                                        ₹{plans?.find(p => p.tier === 'pro' && p.plan_type === billingCycle)?.amount || (billingCycle === 'yearly' ? '9,999' : '999')}
-                                                    </span>
-                                                    <span className="text-muted-foreground text-sm">
-                                                        /{billingCycle === 'yearly' ? 'year' : 'month'}
-                                                    </span>
-                                                </div>
-                                                <ul className="space-y-2 text-sm text-muted-foreground">
-                                                    <li className="flex items-center gap-2">
-                                                        <Check className="h-4 w-4 text-green-500" />
-                                                        Everything in Standard
-                                                    </li>
-                                                    <li className="flex items-center gap-2">
-                                                        <Check className="h-4 w-4 text-green-500" />
-                                                        Unlimited idea validations
-                                                    </li>
-                                                    <li className="flex items-center gap-2">
-                                                        <Check className="h-4 w-4 text-green-500" />
-                                                        Priority support
-                                                    </li>
-                                                    <li className="flex items-center gap-2">
-                                                        <Check className="h-4 w-4 text-green-500" />
-                                                        Export reports (PDF/Markdown)
-                                                    </li>
-                                                </ul>
-                                            </div>
+                                            {(() => {
+                                                const proPlan = plans?.find(p => p.tier === 'pro' && p.key.includes(billingCycle));
+                                                return (
+                                                    <div
+                                                        onClick={() => setSelectedTier('pro')}
+                                                        className={cn(
+                                                            "relative p-5 sm:p-6 rounded-2xl border-2 cursor-pointer transition-all",
+                                                            selectedTier === 'pro'
+                                                                ? "border-amber-500 bg-amber-500/5"
+                                                                : "border-border/50 hover:border-amber-500/50"
+                                                        )}
+                                                    >
+                                                        <Badge className="absolute top-3 right-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[10px]">
+                                                            Popular
+                                                        </Badge>
+                                                        <h4 className="text-lg font-bold mb-2">Pro</h4>
+                                                        <div className="mb-4">
+                                                            <span className="text-3xl font-bold">
+                                                                {proPlan?.amount_display || (billingCycle === 'yearly' ? '₹5,999' : '₹599')}
+                                                            </span>
+                                                            <span className="text-muted-foreground text-sm">
+                                                                /{billingCycle === 'yearly' ? 'year' : 'month'}
+                                                            </span>
+                                                            {billingCycle === 'yearly' && proPlan?.per_month && (
+                                                                <p className="text-xs text-muted-foreground mt-1">
+                                                                    {proPlan.per_month}/month
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                        <ul className="space-y-2 text-sm text-muted-foreground">
+                                                            {proPlan?.features?.length ? (
+                                                                proPlan.features.map((feature, idx) => (
+                                                                    <li key={idx} className="flex items-center gap-2">
+                                                                        <Check className="h-4 w-4 text-green-500 shrink-0" />
+                                                                        {feature}
+                                                                    </li>
+                                                                ))
+                                                            ) : (
+                                                                <>
+                                                                    <li className="flex items-center gap-2">
+                                                                        <Check className="h-4 w-4 text-green-500" />
+                                                                        Everything in Standard
+                                                                    </li>
+                                                                    <li className="flex items-center gap-2">
+                                                                        <Check className="h-4 w-4 text-green-500" />
+                                                                        Unlimited validations
+                                                                    </li>
+                                                                    <li className="flex items-center gap-2">
+                                                                        <Check className="h-4 w-4 text-green-500" />
+                                                                        Priority support
+                                                                    </li>
+                                                                </>
+                                                            )}
+                                                        </ul>
+                                                    </div>
+                                                );
+                                            })()}
                                         </div>
                                     )}
 
@@ -908,38 +942,39 @@ export function ProblemsList() {
                             )}
                         </div>
                     ) : (
-                        // Premium tier - show all problems
-                        <div className="space-y-6">
-                            {premiumData?.subscription && (
-                                <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20">
-                                    <div className="flex items-center gap-3">
-                                        <Crown className="h-5 w-5 text-amber-500" />
-                                        <span className="font-medium capitalize">{premiumData.subscription.tier} Plan</span>
-                                    </div>
-                                    {premiumData.subscription.days_remaining && (
-                                        <span className="text-sm text-muted-foreground">
-                                            {premiumData.subscription.days_remaining} days remaining
-                                        </span>
-                                    )}
-                                </div>
-                            )}
-
-                            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {premiumData?.problems?.map((item: any, index: number) => (
-                                    <ProblemCard
-                                        key={item.id}
-                                        problem={item.problem}
-                                        isWatching={watchlistIds.has(item.problem?.id)}
-                                        onWatchlistToggle={handleWatchlistToggle}
-                                        index={index}
-                                    />
-                                ))}
-                            </div>
-                        </div>
+        // Premium tier - show all problems
+        <div className="space-y-6">
+            {premiumData?.subscription && (
+                <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20">
+                    <div className="flex items-center gap-3">
+                        <Crown className="h-5 w-5 text-amber-500" />
+                        <span className="font-medium capitalize">{premiumData.subscription.tier} Plan</span>
+                    </div>
+                    {premiumData.subscription.days_remaining && (
+                        <span className="text-sm text-muted-foreground">
+                            {premiumData.subscription.days_remaining} days remaining
+                        </span>
                     )}
-                </motion.div>
+                </div>
             )}
+
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {premiumData?.problems?.map((item: any, index: number) => (
+                    <ProblemCard
+                        key={item.id}
+                        problem={item.problem}
+                        isWatching={watchlistIds.has(item.problem?.id)}
+                        onWatchlistToggle={handleWatchlistToggle}
+                        index={index}
+                    />
+                ))}
+            </div>
         </div>
+    )
+}
+                </motion.div >
+            )}
+        </div >
     );
 }
 

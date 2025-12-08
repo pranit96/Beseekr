@@ -15,6 +15,7 @@ import {
     Settings,
     ArrowLeft,
     Zap,
+    CreditCard,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -30,6 +31,7 @@ const navigation = [
     { name: 'Discover', href: 'problems', icon: Compass, color: 'from-violet-500 to-purple-600' },
     { name: 'Research', href: 'validate', icon: Zap, color: 'from-emerald-500 to-cyan-500', subtitle: 'Test your ideas' },
     { name: 'Watchlist', href: 'watchlist', icon: Bookmark, color: 'from-amber-500 to-orange-500' },
+    { name: 'Pricing', href: 'pricing', icon: CreditCard, color: 'from-pink-500 to-rose-500' },
 ];
 
 export function SaasDashboardLayout() {
