@@ -250,7 +250,7 @@ export function SaasDashboardLayout() {
             </main>
 
             {/* Footer */}
-            <footer className="relative z-10 border-t border-border/50 bg-background/50 backdrop-blur-sm mt-8">
+            <footer className="relative z-10 border-t border-border/50 bg-background/80 backdrop-blur-sm mt-auto">
                 <div className="mx-auto max-w-6xl px-4 sm:px-6 py-6 sm:py-8">
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                         {/* Left - Brand & Copyright */}
