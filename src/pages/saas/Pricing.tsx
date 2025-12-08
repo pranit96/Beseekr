@@ -25,12 +25,15 @@ export function Pricing() {
     const [isCreatingLink, setIsCreatingLink] = useState(false);
 
     // Fetch plans with caching (5 minutes stale time)
-    const { data: plans, isLoading } = useQuery({
+    const { data: plansData, isLoading } = useQuery({
         queryKey: ['subscription-plans'],
         queryFn: () => paymentsApi.getPlans(),
         staleTime: 5 * 60 * 1000, // Cache for 5 minutes
         gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
     });
+
+    // Extract plans from response
+    const plans = plansData?.plans;
 
     // Get plans by billing cycle using plan_type field
     const standardPlan = plans?.find(p => p.tier === 'standard' && p.plan_type === billingCycle);

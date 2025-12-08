@@ -19,6 +19,20 @@ export interface Plan {
     features: string[];
 }
 
+// User subscription info returned with plans
+export interface UserSubscription {
+    is_premium: boolean;
+    tier: 'free' | 'standard' | 'pro';
+    validity: string | null;
+    days_remaining: number | null;
+}
+
+// Full response from getPlans endpoint
+export interface PlansResponse {
+    plans: Plan[];
+    user: UserSubscription | null;
+}
+
 export interface PaymentLink {
     id: string;
     short_url: string;
@@ -35,8 +49,8 @@ export interface SubscriptionStatus {
     days_remaining?: number;
 }
 
-// Base request helper
-async function request<T>(
+// Base request helper - returns raw response without unwrapping
+async function requestRaw<T>(
     endpoint: string,
     options: RequestInit = {}
 ): Promise<T> {
@@ -56,7 +70,15 @@ async function request<T>(
         throw new Error(errorData.message || `Request failed: ${response.status}`);
     }
 
-    const json = await response.json();
+    return response.json();
+}
+
+// Base request helper - unwraps data from response
+async function request<T>(
+    endpoint: string,
+    options: RequestInit = {}
+): Promise<T> {
+    const json = await requestRaw<any>(endpoint, options);
 
     // Backend wraps responses in {success: true, data: {...}}
     if (json && typeof json === 'object' && 'success' in json && 'data' in json) {
@@ -67,10 +89,16 @@ async function request<T>(
 }
 
 /**
- * Get available subscription plans
+ * Get available subscription plans + user subscription status
  */
-export async function getPlans(): Promise<Plan[]> {
-    return request<Plan[]>('/api/payments/plans');
+export async function getPlans(): Promise<PlansResponse> {
+    const json = await requestRaw<any>('/api/payments/plans');
+
+    // Response structure: { success: true, data: [...plans], user: {...} }
+    return {
+        plans: json.data || [],
+        user: json.user || null,
+    };
 }
 
 /**

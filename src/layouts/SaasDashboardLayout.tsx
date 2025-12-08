@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { NavLink, Outlet, useLocation, Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/contexts/AuthContext';
+import { paymentsApi } from '@/api/payments';
 import {
     Compass,
     Sparkles,
@@ -14,8 +16,6 @@ import {
     Settings,
     Zap,
     CreditCard,
-    Menu,
-    X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -27,21 +27,40 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const navigation = [
+const baseNavigation = [
     { name: 'Discover', href: 'problems', icon: Compass, color: 'from-violet-500 to-purple-600' },
     { name: 'Research', href: 'validate', icon: Zap, color: 'from-emerald-500 to-cyan-500' },
     { name: 'Watchlist', href: 'watchlist', icon: Bookmark, color: 'from-amber-500 to-orange-500' },
-    { name: 'Pricing', href: 'pricing', icon: CreditCard, color: 'from-pink-500 to-rose-500' },
+    { name: 'Pricing', href: 'pricing', icon: CreditCard, color: 'from-pink-500 to-rose-500', premiumHide: true },
 ];
 
 export function SaasDashboardLayout() {
     const location = useLocation();
     const { theme, setTheme } = useTheme();
     const { user, logout } = useAuth();
-    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+    // Fetch plans to get user subscription status
+    const { data: plansData } = useQuery({
+        queryKey: ['subscription-plans'],
+        queryFn: () => paymentsApi.getPlans(),
+        staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+        gcTime: 10 * 60 * 1000,
+    });
+
+    // Filter navigation - hide Pricing for premium users
+    const navigation = useMemo(() => {
+        const isPremium = plansData?.user?.is_premium === true;
+
+        // If user is premium, hide items marked with premiumHide
+        if (isPremium) {
+            return baseNavigation.filter(item => !item.premiumHide);
+        }
+
+        return baseNavigation;
+    }, [plansData?.user?.is_premium]);
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+        <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex flex-col">
             {/* Ambient Background */}
             <div className="fixed inset-0 overflow-hidden pointer-events-none">
                 <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-primary/5 rounded-full blur-3xl" />

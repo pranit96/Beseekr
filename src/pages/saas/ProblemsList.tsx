@@ -219,12 +219,15 @@ export function ProblemsList() {
     });
 
     // Fetch subscription plans when Premium tab is active
-    const { data: plans, isLoading: isLoadingPlans } = useQuery({
+    const { data: plansData, isLoading: isLoadingPlans } = useQuery({
         queryKey: ['subscription-plans'],
         queryFn: () => paymentsApi.getPlans(),
         enabled: activeTab === 'premium' && !premiumData?.is_premium,
         staleTime: 5 * 60 * 1000, // Cache for 5 minutes
     });
+
+    // Extract plans from response
+    const plans = plansData?.plans;
 
     // Fetch watchlist (only for authenticated users)
     const { data: watchlist } = useQuery({
