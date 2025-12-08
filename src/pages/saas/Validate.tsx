@@ -422,14 +422,14 @@ function ReportCard({ report: rawReport, onDelete }: { report: any; onDelete: (i
 
     return (
         <Card
-            className="cursor-pointer transition-all hover:shadow-md hover:border-primary/30 group"
+            className="cursor-pointer transition-all hover:shadow-md hover:border-primary/30 group active:scale-[0.99]"
             onClick={handleClick}
         >
-            <CardContent className="p-4">
-                <div className="flex items-start gap-4">
+            <CardContent className="p-3 sm:p-4">
+                <div className="flex items-start gap-3 sm:gap-4">
                     {/* Grade Badge */}
                     <div className={cn(
-                        "w-12 h-12 rounded-lg flex items-center justify-center text-lg font-bold shrink-0",
+                        "w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center text-base sm:text-lg font-bold shrink-0",
                         getGradeColor(report.confidence_grade)
                     )}>
                         {report.confidence_grade}
@@ -437,38 +437,38 @@ function ReportCard({ report: rawReport, onDelete }: { report: any; onDelete: (i
 
                     {/* Content */}
                     <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                            <Badge variant={getRecommendationColor(report.recommendation) as any} className="text-xs">
+                        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-1">
+                            <Badge variant={getRecommendationColor(report.recommendation) as any} className="text-[10px] sm:text-xs">
                                 {report.recommendation || 'Pending'}
                             </Badge>
-                            <span className="text-xs text-muted-foreground">
+                            <span className="text-[10px] sm:text-xs text-muted-foreground">
                                 Score: {report.validation_score}%
                             </span>
                         </div>
-                        <p className="font-medium text-sm line-clamp-2 group-hover:text-primary transition-colors">
+                        <p className="font-medium text-xs sm:text-sm line-clamp-2 group-hover:text-primary transition-colors">
                             {report.idea_input || 'Untitled Report'}
                         </p>
-                        <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
+                        <p className="text-[10px] sm:text-xs text-muted-foreground mt-1 line-clamp-1 hidden sm:block">
                             {report.one_liner}
                         </p>
-                        <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-2 sm:gap-3 mt-2 text-[10px] sm:text-xs text-muted-foreground">
                             <span>{sourcesAnalyzed.reddit_discussions || 0} Reddit</span>
-                            <span>{sourcesAnalyzed.hn_threads || 0} HN</span>
+                            <span className="hidden sm:inline">{sourcesAnalyzed.hn_threads || 0} HN</span>
                             <span>{new Date(report.created_at).toLocaleDateString()}</span>
                         </div>
                     </div>
 
                     {/* Actions */}
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center gap-1 sm:gap-2 shrink-0">
                         <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                            className="h-8 w-8 sm:h-9 sm:w-9 text-muted-foreground hover:text-destructive"
                             onClick={handleDelete}
                         >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                         </Button>
-                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                        <ChevronRight className="h-4 w-4 text-muted-foreground hidden sm:block" />
                     </div>
                 </div>
             </CardContent>
@@ -516,22 +516,22 @@ function ReportDisplay({ report: rawReport }: { report: any }) {
     const sourcesAnalyzed = metadata.sources_analyzed || {};
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
             {/* Idea Submitted */}
             <Card className="bg-muted/30">
-                <CardContent className="pt-6">
-                    <p className="text-sm text-muted-foreground mb-1">Idea Validated</p>
-                    <p className="font-medium">{report.idea_input}</p>
+                <CardContent className="pt-4 sm:pt-6 pb-4 sm:pb-6">
+                    <p className="text-xs sm:text-sm text-muted-foreground mb-1">Idea Validated</p>
+                    <p className="font-medium text-sm sm:text-base">{report.idea_input}</p>
                 </CardContent>
             </Card>
 
             {/* Executive Summary */}
             <Card className={cn("border-2", getGradeColor(report.confidence_grade))}>
-                <CardContent className="pt-6">
-                    <div className="flex flex-col lg:flex-row lg:items-start gap-6">
-                        <div className="flex items-center gap-4">
+                <CardContent className="pt-4 sm:pt-6">
+                    <div className="flex flex-col lg:flex-row lg:items-start gap-4 sm:gap-6">
+                        <div className="flex items-center gap-3 sm:gap-4">
                             <div className={cn(
-                                "w-20 h-20 rounded-xl flex items-center justify-center text-3xl font-bold border-2",
+                                "w-14 h-14 sm:w-20 sm:h-20 rounded-lg sm:rounded-xl flex items-center justify-center text-2xl sm:text-3xl font-bold border-2",
                                 getGradeColor(report.confidence_grade)
                             )}>
                                 {report.confidence_grade}
@@ -541,56 +541,56 @@ function ReportDisplay({ report: rawReport }: { report: any }) {
                                     const style = getRecommendationStyle(report.recommendation);
                                     const Icon = style.icon;
                                     return (
-                                        <Badge className={cn("text-sm px-3 py-1", style.bg, style.color)}>
-                                            <Icon className="h-4 w-4 mr-1" />
+                                        <Badge className={cn("text-xs sm:text-sm px-2 sm:px-3 py-0.5 sm:py-1", style.bg, style.color)}>
+                                            <Icon className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                                             {report.recommendation}
                                         </Badge>
                                     );
                                 })()}
-                                <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
+                                <div className="mt-1.5 sm:mt-2 flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-muted-foreground">
                                     <span>Score: {report.validation_score}%</span>
                                     <span>•</span>
-                                    <span>{metadata.evidence_strength || 'Unknown'} Evidence</span>
+                                    <span className="hidden sm:inline">{metadata.evidence_strength || 'Unknown'} Evidence</span>
                                 </div>
                             </div>
                         </div>
                         <div className="flex-1">
-                            <h2 className="text-lg font-semibold">{report.one_liner}</h2>
-                            <p className="text-sm text-muted-foreground mt-2">
+                            <h2 className="text-base sm:text-lg font-semibold">{report.one_liner}</h2>
+                            <p className="text-xs sm:text-sm text-muted-foreground mt-1.5 sm:mt-2">
                                 💡 {report.key_insight}
                             </p>
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-4 sm:mt-6 pt-4 sm:pt-6 border-t">
                         <div className="text-center">
-                            <p className="text-2xl font-bold">{sourcesAnalyzed.reddit_discussions || 0}</p>
-                            <p className="text-xs text-muted-foreground">Reddit Discussions</p>
+                            <p className="text-lg sm:text-2xl font-bold">{sourcesAnalyzed.reddit_discussions || 0}</p>
+                            <p className="text-[10px] sm:text-xs text-muted-foreground">Reddit</p>
                         </div>
                         <div className="text-center">
-                            <p className="text-2xl font-bold">{sourcesAnalyzed.hn_threads || 0}</p>
-                            <p className="text-xs text-muted-foreground">HN Threads</p>
+                            <p className="text-lg sm:text-2xl font-bold">{sourcesAnalyzed.hn_threads || 0}</p>
+                            <p className="text-[10px] sm:text-xs text-muted-foreground">HN Threads</p>
                         </div>
                         <div className="text-center">
-                            <p className="text-2xl font-bold">{sourcesAnalyzed.pricing_datapoints || 0}</p>
-                            <p className="text-xs text-muted-foreground">Pricing Data</p>
+                            <p className="text-lg sm:text-2xl font-bold">{sourcesAnalyzed.pricing_datapoints || 0}</p>
+                            <p className="text-[10px] sm:text-xs text-muted-foreground">Pricing Data</p>
                         </div>
                         <div className="text-center">
-                            <p className="text-2xl font-bold">{metadata.execution_time_seconds || 0}s</p>
-                            <p className="text-xs text-muted-foreground">Analysis Time</p>
+                            <p className="text-lg sm:text-2xl font-bold">{metadata.execution_time_seconds || 0}s</p>
+                            <p className="text-[10px] sm:text-xs text-muted-foreground">Analysis Time</p>
                         </div>
                     </div>
                 </CardContent>
             </Card>
 
             {/* Detailed Tabs */}
-            <Tabs defaultValue="validation" className="space-y-4">
-                <TabsList className="grid grid-cols-2 md:grid-cols-5 w-full">
-                    <TabsTrigger value="validation">🎯 Validation</TabsTrigger>
-                    <TabsTrigger value="market">📊 Market</TabsTrigger>
-                    <TabsTrigger value="pricing">💰 Pricing</TabsTrigger>
-                    <TabsTrigger value="customers">👥 Customers</TabsTrigger>
-                    <TabsTrigger value="gtm">🚀 Go-to-Market</TabsTrigger>
+            <Tabs defaultValue="validation" className="space-y-3 sm:space-y-4">
+                <TabsList className="grid grid-cols-3 sm:grid-cols-5 w-full h-auto p-1">
+                    <TabsTrigger value="validation" className="text-xs sm:text-sm py-2">🎯 <span className="hidden sm:inline">Validation</span></TabsTrigger>
+                    <TabsTrigger value="market" className="text-xs sm:text-sm py-2">📊 <span className="hidden sm:inline">Market</span></TabsTrigger>
+                    <TabsTrigger value="pricing" className="text-xs sm:text-sm py-2">💰 <span className="hidden sm:inline">Pricing</span></TabsTrigger>
+                    <TabsTrigger value="customers" className="text-xs sm:text-sm py-2 hidden sm:flex">👥 <span className="hidden sm:inline">Customers</span></TabsTrigger>
+                    <TabsTrigger value="gtm" className="text-xs sm:text-sm py-2 hidden sm:flex">🚀 <span className="hidden sm:inline">GTM</span></TabsTrigger>
                 </TabsList>
 
                 {/* Validation Tab */}
@@ -1183,26 +1183,26 @@ export function Validate() {
         }
 
         return (
-            <div className="space-y-6 max-w-5xl mx-auto">
-                <div className="flex items-center justify-between">
-                    <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard/validate')} className="gap-2 -ml-2">
-                        <ArrowLeft className="h-4 w-4" /> All Reports
+            <div className="space-y-4 sm:space-y-6 max-w-5xl mx-auto px-2 sm:px-0">
+                <div className="flex items-center justify-between gap-2">
+                    <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard/validate')} className="gap-1.5 sm:gap-2 -ml-2 text-sm">
+                        <ArrowLeft className="h-4 w-4" /> <span className="hidden sm:inline">All</span> Reports
                     </Button>
 
                     {singleReport && (
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button variant="outline" size="sm" className="gap-2">
-                                    <Download className="h-4 w-4" />
-                                    Export Report
+                                <Button variant="outline" size="sm" className="gap-1.5 sm:gap-2 text-xs sm:text-sm">
+                                    <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                                    <span className="hidden sm:inline">Export</span> Report
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => exportAsPDF(singleReport)} className="cursor-pointer">
+                                <DropdownMenuItem onClick={() => exportAsPDF(singleReport)} className="cursor-pointer text-sm">
                                     <FileText className="h-4 w-4 mr-2" />
                                     Export as PDF
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => exportAsMarkdown(singleReport)} className="cursor-pointer">
+                                <DropdownMenuItem onClick={() => exportAsMarkdown(singleReport)} className="cursor-pointer text-sm">
                                     <FileText className="h-4 w-4 mr-2" />
                                     Export as Markdown
                                 </DropdownMenuItem>
@@ -1227,21 +1227,21 @@ export function Validate() {
 
     // Reports list view
     return (
-        <div className="space-y-8">
+        <div className="space-y-6 sm:space-y-8">
             {/* Hero Header */}
             <motion.div
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
-                className="text-center max-w-2xl mx-auto"
+                className="text-center max-w-2xl mx-auto px-2"
             >
-                <h1 className="text-4xl md:text-5xl font-bold mb-4">
+                <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4">
                     Research{' '}
                     <span className="bg-gradient-to-r from-emerald-500 via-cyan-500 to-emerald-500 bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient">
                         Your Ideas
                     </span>
                 </h1>
-                <p className="text-lg text-muted-foreground">
+                <p className="text-sm sm:text-lg text-muted-foreground">
                     Test your startup ideas with AI-powered market research. {reports.length > 0 && `${reports.length} report${reports.length !== 1 ? 's' : ''} analyzed.`}
                 </p>
             </motion.div>

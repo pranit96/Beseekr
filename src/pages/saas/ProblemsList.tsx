@@ -41,19 +41,19 @@ const ITEMS_PER_PAGE = 12;
 // Skeleton loading
 function ProblemSkeleton() {
     return (
-        <div className="group relative p-6 rounded-2xl bg-gradient-to-br from-muted/50 to-muted/30 border border-border/50">
-            <div className="space-y-4">
+        <div className="group relative p-4 sm:p-6 rounded-2xl bg-gradient-to-br from-muted/50 to-muted/30 border border-border/50">
+            <div className="space-y-3 sm:space-y-4">
                 <div className="flex gap-2">
-                    <Skeleton className="h-5 w-16 rounded-full" />
-                    <Skeleton className="h-5 w-20 rounded-full" />
+                    <Skeleton className="h-5 w-14 sm:w-16 rounded-full" />
+                    <Skeleton className="h-5 w-16 sm:w-20 rounded-full" />
                 </div>
-                <Skeleton className="h-6 w-3/4" />
+                <Skeleton className="h-5 sm:h-6 w-3/4" />
                 <Skeleton className="h-4 w-full" />
                 <Skeleton className="h-4 w-2/3" />
-                <div className="flex gap-4 pt-2">
-                    <Skeleton className="h-5 w-16" />
-                    <Skeleton className="h-5 w-16" />
-                    <Skeleton className="h-5 w-16" />
+                <div className="flex gap-3 sm:gap-4 pt-2">
+                    <Skeleton className="h-5 w-12 sm:w-16" />
+                    <Skeleton className="h-5 w-12 sm:w-16" />
+                    <Skeleton className="h-5 w-12 sm:w-16" />
                 </div>
             </div>
         </div>
@@ -101,17 +101,17 @@ function ProblemCard({
             whileHover={{ y: -4, transition: { duration: 0.2 } }}
             onClick={handleClick}
             className={cn(
-                "group relative cursor-pointer rounded-2xl p-6 transition-all duration-300",
+                "group relative cursor-pointer rounded-xl sm:rounded-2xl p-4 sm:p-6 transition-all duration-300",
                 "bg-gradient-to-br from-background to-muted/30",
                 "border border-border/50 hover:border-primary/30",
-                "hover:shadow-xl hover:shadow-primary/5",
+                "hover:shadow-xl hover:shadow-primary/5 active:scale-[0.98]",
                 problem.has_brief && problem.brief_approved && "ring-2 ring-primary/20"
             )}
         >
             {/* Opportunity score badge - floating */}
             {problem.opportunity_score && (
                 <div className={cn(
-                    "absolute -top-3 -right-3 px-3 py-1 rounded-full text-sm font-bold shadow-lg",
+                    "absolute -top-2 -right-2 sm:-top-3 sm:-right-3 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs sm:text-sm font-bold shadow-lg",
                     "bg-gradient-to-r", getScoreGradient(problem.opportunity_score),
                     "border border-border/50 backdrop-blur-sm",
                     getScoreColor(problem.opportunity_score)
@@ -121,45 +121,45 @@ function ProblemCard({
             )}
 
             {/* Tags */}
-            <div className="flex flex-wrap items-center gap-2 mb-4">
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-3 sm:mb-4">
                 {problem.tags?.slice(0, 2).map((tag) => (
                     <span
                         key={tag}
-                        className="px-3 py-1 rounded-full text-xs font-medium bg-muted/80 text-muted-foreground"
+                        className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium bg-muted/80 text-muted-foreground"
                     >
                         {tag}
                     </span>
                 ))}
                 {problem.has_brief && problem.brief_approved && (
-                    <span className="px-3 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary flex items-center gap-1">
-                        <Sparkles className="h-3 w-3" />
+                    <span className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium bg-primary/10 text-primary flex items-center gap-1">
+                        <Sparkles className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                         Brief Ready
                     </span>
                 )}
             </div>
 
             {/* Title */}
-            <h3 className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-2 mb-3 leading-snug">
+            <h3 className="text-base sm:text-lg font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-2 mb-2 sm:mb-3 leading-snug">
                 {problem.title}
             </h3>
 
             {/* Summary */}
-            <p className="text-sm text-muted-foreground line-clamp-2 mb-6 leading-relaxed">
+            <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2 mb-4 sm:mb-6 leading-relaxed">
                 {problem.summary || 'Discover validated pain points and market opportunities.'}
             </p>
 
             {/* Stats row */}
-            <div className="flex items-center gap-4 text-sm">
-                <div className="flex items-center gap-1.5 text-muted-foreground">
-                    <TrendingUp className="h-4 w-4" />
+            <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm">
+                <div className="flex items-center gap-1 sm:gap-1.5 text-muted-foreground">
+                    <TrendingUp className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                     <span className="font-medium">{problem.metrics?.frequency || 0}</span>
                 </div>
-                <div className="flex items-center gap-1.5 text-muted-foreground">
-                    <ThumbsUp className="h-4 w-4" />
+                <div className="flex items-center gap-1 sm:gap-1.5 text-muted-foreground">
+                    <ThumbsUp className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                     <span className="font-medium">{problem.metrics?.upvote_score || 0}</span>
                 </div>
-                <div className="flex items-center gap-1.5 text-muted-foreground">
-                    <FileText className="h-4 w-4" />
+                <div className="flex items-center gap-1 sm:gap-1.5 text-muted-foreground">
+                    <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                     <span className="font-medium">{problem.metrics?.source_count || 0}</span>
                 </div>
 
@@ -172,7 +172,7 @@ function ProblemCard({
                     whileTap={{ scale: 0.95 }}
                     onClick={handleWatchlistClick}
                     className={cn(
-                        "p-2 rounded-xl transition-colors",
+                        "p-2 rounded-lg sm:rounded-xl transition-colors min-w-[40px] min-h-[40px] flex items-center justify-center",
                         isWatching
                             ? "bg-primary/10 text-primary"
                             : "text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -181,8 +181,8 @@ function ProblemCard({
                     {isWatching ? <BookmarkCheck className="h-5 w-5" /> : <Bookmark className="h-5 w-5" />}
                 </motion.button>
 
-                {/* Arrow indicator */}
-                <ArrowUpRight className="h-5 w-5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                {/* Arrow indicator - hidden on mobile */}
+                <ArrowUpRight className="h-5 w-5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity hidden sm:block" />
             </div>
         </motion.div>
     );
@@ -277,15 +277,15 @@ export function ProblemsList() {
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
-                className="text-center max-w-2xl mx-auto"
+                className="text-center max-w-2xl mx-auto px-2"
             >
-                <h1 className="text-4xl md:text-5xl font-bold mb-4">
+                <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4">
                     Discover{' '}
                     <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient">
                         Real Problems
                     </span>
                 </h1>
-                <p className="text-lg text-muted-foreground">
+                <p className="text-sm sm:text-lg text-muted-foreground">
                     Validated pain points from thousands of real conversations. Find your next startup idea.
                 </p>
             </motion.div>
@@ -327,28 +327,28 @@ export function ProblemsList() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: 0.12 }}
-                className="flex justify-center"
+                className="flex justify-center px-2"
             >
                 <Tabs
                     value={activeTab}
                     onValueChange={(v) => setActiveTab(v as 'free' | 'premium')}
                     className="w-full max-w-md"
                 >
-                    <TabsList className="grid w-full grid-cols-2 h-12 rounded-xl bg-muted/50 p-1">
+                    <TabsList className="grid w-full grid-cols-2 h-11 sm:h-12 rounded-xl bg-muted/50 p-1">
                         <TabsTrigger
                             value="free"
-                            className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm flex items-center gap-2"
+                            className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm flex items-center gap-1.5 sm:gap-2 text-sm"
                         >
-                            <Sparkles className="h-4 w-4" />
-                            Free Problems
+                            <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                            <span className="hidden xs:inline">Free </span>Problems
                         </TabsTrigger>
                         <TabsTrigger
                             value="premium"
-                            className="rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500/10 data-[state=active]:to-orange-500/10 data-[state=active]:text-amber-600 flex items-center gap-2"
+                            className="rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500/10 data-[state=active]:to-orange-500/10 data-[state=active]:text-amber-600 flex items-center gap-1.5 sm:gap-2 text-sm"
                         >
-                            <Crown className="h-4 w-4" />
+                            <Crown className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                             Premium
-                            {!user && <Lock className="h-3 w-3 ml-1" />}
+                            {!user && <Lock className="h-3 w-3 ml-0.5 sm:ml-1" />}
                         </TabsTrigger>
                     </TabsList>
                 </Tabs>
@@ -362,24 +362,24 @@ export function ProblemsList() {
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.4, delay: 0.1 }}
-                        className="flex flex-col sm:flex-row gap-4 items-center justify-between"
+                        className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-stretch sm:items-center justify-between"
                     >
                         {/* Search */}
                         <div className="relative w-full sm:w-80">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                            <Search className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
                             <Input
                                 placeholder="Search problems..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="pl-12 h-12 rounded-xl border-border/50 bg-muted/30 focus:bg-background transition-colors"
+                                className="pl-10 sm:pl-12 h-11 sm:h-12 rounded-xl border-border/50 bg-muted/30 focus:bg-background transition-colors text-sm sm:text-base"
                             />
                         </div>
 
                         {/* Sort */}
-                        <div className="flex items-center gap-3">
-                            <span className="text-sm text-muted-foreground">Sort by</span>
+                        <div className="flex items-center gap-2 sm:gap-3">
+                            <span className="text-xs sm:text-sm text-muted-foreground">Sort by</span>
                             <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)}>
-                                <SelectTrigger className="w-40 h-12 rounded-xl border-border/50 bg-muted/30">
+                                <SelectTrigger className="w-32 sm:w-40 h-11 sm:h-12 rounded-xl border-border/50 bg-muted/30 text-sm">
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent className="rounded-xl">
@@ -405,13 +405,13 @@ export function ProblemsList() {
 
                     {/* Problems Grid */}
                     {isLoading ? (
-                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                             {Array.from({ length: 6 }).map((_, i) => (
                                 <ProblemSkeleton key={i} />
                             ))}
                         </div>
                     ) : problems.length > 0 ? (
-                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                             <AnimatePresence mode="wait">
                                 {problems.map((problem: ProblemListItem, index: number) => (
                                     <ProblemCard
@@ -495,21 +495,21 @@ export function ProblemsList() {
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             transition={{ delay: 0.3 }}
-                            className="flex items-center justify-center gap-4 pt-8"
+                            className="flex items-center justify-center gap-2 sm:gap-4 pt-6 sm:pt-8"
                         >
                             <Button
                                 variant="outline"
-                                size="lg"
+                                size="default"
                                 onClick={() => setPage(p => Math.max(1, p - 1))}
                                 disabled={page === 1}
-                                className="rounded-xl gap-2"
+                                className="rounded-xl gap-1 sm:gap-2 h-10 sm:h-11 px-3 sm:px-4"
                             >
                                 <ChevronLeft className="h-4 w-4" />
-                                Previous
+                                <span className="hidden sm:inline">Previous</span>
                             </Button>
 
-                            <div className="flex items-center gap-2">
-                                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                            <div className="flex items-center gap-1 sm:gap-2">
+                                {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
                                     const pageNum = i + 1;
                                     return (
                                         <Button
@@ -517,20 +517,20 @@ export function ProblemsList() {
                                             variant={page === pageNum ? 'default' : 'ghost'}
                                             size="icon"
                                             onClick={() => setPage(pageNum)}
-                                            className="rounded-xl w-10 h-10"
+                                            className="rounded-lg sm:rounded-xl w-9 h-9 sm:w-10 sm:h-10 text-sm"
                                         >
                                             {pageNum}
                                         </Button>
                                     );
                                 })}
-                                {totalPages > 5 && (
+                                {totalPages > 3 && (
                                     <>
-                                        <span className="text-muted-foreground">...</span>
+                                        <span className="text-muted-foreground text-sm">...</span>
                                         <Button
                                             variant={page === totalPages ? 'default' : 'ghost'}
                                             size="icon"
                                             onClick={() => setPage(totalPages)}
-                                            className="rounded-xl w-10 h-10"
+                                            className="rounded-lg sm:rounded-xl w-9 h-9 sm:w-10 sm:h-10 text-sm"
                                         >
                                             {totalPages}
                                         </Button>
@@ -540,12 +540,12 @@ export function ProblemsList() {
 
                             <Button
                                 variant="outline"
-                                size="lg"
+                                size="default"
                                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                                 disabled={page === totalPages}
-                                className="rounded-xl gap-2"
+                                className="rounded-xl gap-1 sm:gap-2 h-10 sm:h-11 px-3 sm:px-4"
                             >
-                                Next
+                                <span className="hidden sm:inline">Next</span>
                                 <ChevronRight className="h-4 w-4" />
                             </Button>
                         </motion.div>

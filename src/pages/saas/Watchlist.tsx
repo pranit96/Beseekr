@@ -21,14 +21,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 function WatchlistSkeleton() {
     return (
-        <div className="p-6 rounded-2xl bg-gradient-to-br from-muted/50 to-muted/30 border border-border/50">
-            <div className="space-y-4">
-                <Skeleton className="h-6 w-3/4" />
+        <div className="p-4 sm:p-6 rounded-xl sm:rounded-2xl bg-gradient-to-br from-muted/50 to-muted/30 border border-border/50">
+            <div className="space-y-3 sm:space-y-4">
+                <Skeleton className="h-5 sm:h-6 w-3/4" />
                 <Skeleton className="h-4 w-full" />
                 <Skeleton className="h-4 w-2/3" />
-                <div className="flex gap-4 pt-2">
-                    <Skeleton className="h-5 w-16" />
-                    <Skeleton className="h-5 w-16" />
+                <div className="flex gap-3 sm:gap-4 pt-2">
+                    <Skeleton className="h-5 w-12 sm:w-16" />
+                    <Skeleton className="h-5 w-12 sm:w-16" />
                 </div>
             </div>
         </div>
@@ -64,61 +64,61 @@ function WatchlistCard({
             whileHover={{ scale: 1.01, transition: { duration: 0.2 } }}
             onClick={handleClick}
             className={cn(
-                "group relative cursor-pointer rounded-2xl p-6 transition-all duration-300",
+                "group relative cursor-pointer rounded-xl sm:rounded-2xl p-4 sm:p-6 transition-all duration-300",
                 "bg-gradient-to-br from-background to-muted/30",
                 "border border-border/50 hover:border-amber-500/30",
-                "hover:shadow-xl hover:shadow-amber-500/5"
+                "hover:shadow-xl hover:shadow-amber-500/5 active:scale-[0.98]"
             )}
         >
             {/* Bookmark indicator */}
-            <div className="absolute -top-2 -left-2 p-2 rounded-xl bg-amber-500/10 border border-amber-500/20 backdrop-blur-sm">
-                <Bookmark className="h-4 w-4 text-amber-500 fill-amber-500" />
+            <div className="absolute -top-1.5 -left-1.5 sm:-top-2 sm:-left-2 p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-amber-500/10 border border-amber-500/20 backdrop-blur-sm">
+                <Bookmark className="h-3 w-3 sm:h-4 sm:w-4 text-amber-500 fill-amber-500" />
             </div>
 
-            <div className="flex items-start gap-4">
-                <div className="flex-1 min-w-0 ml-4">
+            <div className="flex items-start gap-3 sm:gap-4">
+                <div className="flex-1 min-w-0 ml-3 sm:ml-4">
                     {/* Title */}
-                    <h3 className="text-lg font-semibold text-foreground group-hover:text-amber-500 transition-colors line-clamp-1 mb-2">
+                    <h3 className="text-base sm:text-lg font-semibold text-foreground group-hover:text-amber-500 transition-colors line-clamp-1 mb-1.5 sm:mb-2">
                         {problem?.title || 'Untitled Problem'}
                     </h3>
 
                     {/* Summary */}
-                    <p className="text-sm text-muted-foreground line-clamp-2 mb-4 leading-relaxed">
+                    <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2 mb-3 sm:mb-4 leading-relaxed">
                         {problem?.summary || 'No description available'}
                     </p>
 
                     {/* Stats */}
-                    <div className="flex items-center gap-4 text-sm">
-                        <div className="flex items-center gap-1.5 text-muted-foreground">
-                            <TrendingUp className="h-4 w-4" />
+                    <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs sm:text-sm">
+                        <div className="flex items-center gap-1 sm:gap-1.5 text-muted-foreground">
+                            <TrendingUp className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                             <span className="font-medium">{problem?.metrics?.frequency || 0}</span>
                         </div>
-                        <div className="flex items-center gap-1.5 text-muted-foreground">
-                            <ThumbsUp className="h-4 w-4" />
+                        <div className="flex items-center gap-1 sm:gap-1.5 text-muted-foreground">
+                            <ThumbsUp className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                             <span className="font-medium">{problem?.metrics?.upvote_score || 0}</span>
                         </div>
-                        <div className="flex items-center gap-1.5 text-muted-foreground">
+                        <div className="hidden sm:flex items-center gap-1.5 text-muted-foreground">
                             <FileText className="h-4 w-4" />
                             <span className="font-medium">{problem?.metrics?.source_count || 0}</span>
                         </div>
-                        <span className="text-muted-foreground/50">•</span>
-                        <span className="text-xs text-muted-foreground">
+                        <span className="hidden sm:inline text-muted-foreground/50">•</span>
+                        <span className="text-[10px] sm:text-xs text-muted-foreground">
                             Saved {new Date(item.added_at).toLocaleDateString()}
                         </span>
                     </div>
                 </div>
 
                 {/* Actions */}
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex items-center gap-1 sm:gap-2 shrink-0">
                     <motion.button
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={handleRemove}
-                        className="p-2 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                        className="p-2 rounded-lg sm:rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors min-w-[40px] min-h-[40px] flex items-center justify-center"
                     >
-                        <Trash2 className="h-5 w-5" />
+                        <Trash2 className="h-4 w-4 sm:h-5 sm:w-5" />
                     </motion.button>
-                    <ArrowUpRight className="h-5 w-5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <ArrowUpRight className="h-5 w-5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity hidden sm:block" />
                 </div>
             </div>
         </motion.div>
@@ -191,28 +191,28 @@ export function Watchlist() {
     }
 
     return (
-        <div className="space-y-8">
+        <div className="space-y-6 sm:space-y-8">
             {/* Hero Header */}
             <motion.div
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
-                className="text-center max-w-2xl mx-auto"
+                className="text-center max-w-2xl mx-auto px-2"
             >
-                <h1 className="text-4xl md:text-5xl font-bold mb-4">
+                <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4">
                     Your{' '}
                     <span className="bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient">
                         Watchlist
                     </span>
                 </h1>
-                <p className="text-lg text-muted-foreground">
+                <p className="text-sm sm:text-lg text-muted-foreground">
                     Problems you're tracking. Build something that solves real pain.
                 </p>
             </motion.div>
 
             {/* Loading State */}
             {isLoading && (
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                     {Array.from({ length: 3 }).map((_, i) => (
                         <WatchlistSkeleton key={i} />
                     ))}
@@ -225,26 +225,26 @@ export function Watchlist() {
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.4 }}
-                    className="text-center py-20"
+                    className="text-center py-12 sm:py-20 px-4"
                 >
                     <motion.div
                         initial={{ y: 10 }}
                         animate={{ y: [10, -10, 10] }}
                         transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-                        className="w-24 h-24 rounded-full bg-gradient-to-br from-amber-500/20 to-orange-500/10 flex items-center justify-center mx-auto mb-8 border border-amber-500/20"
+                        className="w-16 h-16 sm:w-24 sm:h-24 rounded-full bg-gradient-to-br from-amber-500/20 to-orange-500/10 flex items-center justify-center mx-auto mb-5 sm:mb-8 border border-amber-500/20"
                     >
-                        <Bookmark className="h-12 w-12 text-amber-500" />
+                        <Bookmark className="h-8 w-8 sm:h-12 sm:w-12 text-amber-500" />
                     </motion.div>
-                    <h3 className="text-2xl font-semibold mb-3">No saved problems yet</h3>
-                    <p className="text-muted-foreground mb-8 max-w-md mx-auto">
+                    <h3 className="text-xl sm:text-2xl font-semibold mb-2 sm:mb-3">No saved problems yet</h3>
+                    <p className="text-sm sm:text-base text-muted-foreground mb-6 sm:mb-8 max-w-md mx-auto">
                         Discover problems worth solving and save them here to track your potential startup ideas.
                     </p>
                     <Button
-                        size="lg"
+                        size="default"
                         onClick={() => navigate('/dashboard/problems')}
-                        className="rounded-xl gap-2"
+                        className="rounded-xl gap-2 h-11 sm:h-12 px-5 sm:px-6"
                     >
-                        <Sparkles className="h-5 w-5" />
+                        <Sparkles className="h-4 w-4 sm:h-5 sm:w-5" />
                         Discover Problems
                     </Button>
                 </motion.div>
