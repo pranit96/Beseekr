@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -36,8 +36,11 @@ import {
     ChevronRight,
     Lock,
     Download,
+    Crown,
+    X,
+    Sparkles,
 } from 'lucide-react';
-import { problemsApi } from '@/api/problems';
+import { problemsApi, ApiError } from '@/api/problems';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -46,6 +49,20 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+
+// Upgrade required error response type
+interface UpgradeError {
+    success: false;
+    error: string;
+    message: string;
+    tier: string;
+    limit: number;
+    upgrade_options: Array<{
+        tier: string;
+        validations: number | string;
+        price: string;
+    }>;
+}
 
 // Helper function to generate Markdown content from report
 function generateMarkdownContent(report: any): string {
@@ -1088,6 +1105,7 @@ export function Validate() {
     const { user } = useAuth();
     const [problemText, setProblemText] = useState('');
     const [showForm, setShowForm] = useState(false);
+    const [upgradeError, setUpgradeError] = useState<UpgradeError | null>(null);
 
     // Fetch reports list (only if authenticated)
     const { data: reportsData, isLoading: isLoadingReports } = useQuery({
@@ -1113,6 +1131,12 @@ export function Validate() {
             // Navigate to the new report if it has an ID
             if (data?.id) {
                 navigate(`/dashboard/validate/${data.id}`);
+            }
+        },
+        onError: (error: Error) => {
+            // Check if this is an ApiError with upgrade_options
+            if (error instanceof ApiError && error.data?.upgrade_options) {
+                setUpgradeError(error.data as UpgradeError);
             }
         },
     });
@@ -1416,6 +1440,113 @@ export function Validate() {
                     </Button>
                 </motion.div>
             )}
+
+            {/* Upgrade Required Modal */}
+            <AnimatePresence>
+                {upgradeError && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm"
+                        onClick={() => setUpgradeError(null)}
+                    >
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            transition={{ type: 'spring', bounce: 0.3 }}
+                            className="bg-background border border-border rounded-3xl shadow-2xl max-w-lg w-full p-6 sm:p-8"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            {/* Close Button */}
+                            <button
+                                onClick={() => setUpgradeError(null)}
+                                className="absolute top-4 right-4 p-2 rounded-full hover:bg-muted transition-colors"
+                            >
+                                <X className="h-5 w-5" />
+                            </button>
+
+                            {/* Icon */}
+                            <div className="flex justify-center mb-6">
+                                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 flex items-center justify-center">
+                                    <Crown className="h-8 w-8 text-amber-500" />
+                                </div>
+                            </div>
+
+                            {/* Title */}
+                            <h2 className="text-2xl font-bold text-center mb-2">
+                                Upgrade Required
+                            </h2>
+                            <p className="text-muted-foreground text-center mb-6">
+                                {upgradeError.message}
+                            </p>
+
+                            {/* Current Tier Badge */}
+                            <div className="flex justify-center mb-6">
+                                <Badge variant="outline" className="text-sm px-3 py-1">
+                                    Current Plan: {upgradeError.tier.charAt(0).toUpperCase() + upgradeError.tier.slice(1)}
+                                </Badge>
+                            </div>
+
+                            {/* Upgrade Options */}
+                            <div className="space-y-3 mb-6">
+                                {upgradeError.upgrade_options.map((option, idx) => (
+                                    <div
+                                        key={idx}
+                                        className={cn(
+                                            "p-4 rounded-xl border-2 transition-all",
+                                            option.tier === 'pro'
+                                                ? "border-amber-500/50 bg-gradient-to-br from-amber-500/5 to-orange-500/5"
+                                                : "border-border hover:border-primary/50"
+                                        )}
+                                    >
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                {option.tier === 'pro' ? (
+                                                    <Crown className="h-5 w-5 text-amber-500" />
+                                                ) : (
+                                                    <Sparkles className="h-5 w-5 text-primary" />
+                                                )}
+                                                <div>
+                                                    <h3 className="font-semibold capitalize">
+                                                        {option.tier}
+                                                    </h3>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        {option.validations === 'unlimited'
+                                                            ? 'Unlimited validations'
+                                                            : `${option.validations} validations/month`}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <span className="font-bold text-lg">
+                                                {option.price}
+                                            </span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* CTA Buttons */}
+                            <div className="flex flex-col sm:flex-row gap-3">
+                                <Button
+                                    variant="outline"
+                                    className="flex-1 rounded-xl"
+                                    onClick={() => setUpgradeError(null)}
+                                >
+                                    Maybe Later
+                                </Button>
+                                <Link to="/dashboard/pricing" className="flex-1">
+                                    <Button className="w-full rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:opacity-90">
+                                        <Crown className="mr-2 h-4 w-4" />
+                                        Upgrade Now
+                                    </Button>
+                                </Link>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

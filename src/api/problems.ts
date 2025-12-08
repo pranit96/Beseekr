@@ -24,6 +24,19 @@ const getAuthHeaders = (): HeadersInit => ({
     'x-user-id': getUserId(),
 });
 
+// Custom error class that includes full API response
+export class ApiError extends Error {
+    data: any;
+    status: number;
+
+    constructor(message: string, data: any, status: number) {
+        super(message);
+        this.name = 'ApiError';
+        this.data = data;
+        this.status = status;
+    }
+}
+
 // Base request helper
 async function request<T>(
     endpoint: string,
@@ -42,7 +55,12 @@ async function request<T>(
 
     if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `Request failed: ${response.status}`);
+        // Throw ApiError with full response data for upgrade errors, etc.
+        throw new ApiError(
+            errorData.message || errorData.error || `Request failed: ${response.status}`,
+            errorData,
+            response.status
+        );
     }
 
     const json = await response.json();
