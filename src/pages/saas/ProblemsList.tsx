@@ -30,8 +30,11 @@ import {
     Lock,
     Crown,
     Zap,
+    Check,
+    Loader2,
 } from 'lucide-react';
 import { problemsApi } from '@/api/problems';
+import { paymentsApi, type Plan } from '@/api/payments';
 import type { SortOption, ProblemListItem } from '@/types/problems';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -198,6 +201,9 @@ export function ProblemsList() {
     const [sortBy, setSortBy] = useState<SortOption>('hot');
     const [searchQuery, setSearchQuery] = useState('');
     const [showPayment, setShowPayment] = useState(false);
+    const [selectedTier, setSelectedTier] = useState<'standard' | 'pro'>('standard');
+    const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('yearly');
+    const [isCreatingLink, setIsCreatingLink] = useState(false);
 
     // Fetch free problems
     const { data, isLoading, error } = useQuery({
@@ -210,6 +216,14 @@ export function ProblemsList() {
         queryKey: ['premium-problems', premiumPage],
         queryFn: () => problemsApi.getPremiumProblems(premiumPage, ITEMS_PER_PAGE),
         enabled: activeTab === 'premium',
+    });
+
+    // Fetch subscription plans when Premium tab is active
+    const { data: plans, isLoading: isLoadingPlans } = useQuery({
+        queryKey: ['subscription-plans'],
+        queryFn: () => paymentsApi.getPlans(),
+        enabled: activeTab === 'premium' && !premiumData?.is_premium,
+        staleTime: 5 * 60 * 1000, // Cache for 5 minutes
     });
 
     // Fetch watchlist (only for authenticated users)
@@ -243,6 +257,36 @@ export function ProblemsList() {
         } else {
             removeFromWatchlistMutation.mutate(problemId);
         }
+    };
+
+    // Handle plan selection and payment
+    const handlePlanSelect = async () => {
+        if (!user) {
+            navigate('/auth');
+            return;
+        }
+
+        setIsCreatingLink(true);
+        try {
+            const planKey = `${selectedTier}_${billingCycle}` as string;
+            const paymentLink = await paymentsApi.createPaymentLink(planKey);
+
+            // Redirect to Razorpay payment page
+            if (paymentLink.short_url) {
+                window.location.href = paymentLink.short_url;
+            }
+        } catch (error) {
+            console.error('Failed to create payment link:', error);
+            // Could add toast notification here
+        } finally {
+            setIsCreatingLink(false);
+        }
+    };
+
+    // Get selected plan details
+    const getSelectedPlan = (): Plan | undefined => {
+        if (!plans) return undefined;
+        return plans.find(p => p.tier === selectedTier && p.plan_type === billingCycle);
     };
 
     // Filter problems by search
@@ -676,11 +720,11 @@ export function ProblemsList() {
                         </div>
                     ) : premiumData?.is_premium === false ? (
                         // Free tier - show preview + upgrade with payment
-                        <div className="space-y-8">
-                            <div className="p-6 rounded-2xl bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/10 border border-amber-500/20 text-center">
-                                <Crown className="h-12 w-12 text-amber-500 mx-auto mb-4" />
-                                <h3 className="text-xl font-bold mb-2">Upgrade to Premium</h3>
-                                <p className="text-muted-foreground mb-4">
+                        <div className="space-y-6 sm:space-y-8">
+                            <div className="p-4 sm:p-6 rounded-2xl bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/10 border border-amber-500/20 text-center">
+                                <Crown className="h-10 w-10 sm:h-12 sm:w-12 text-amber-500 mx-auto mb-3 sm:mb-4" />
+                                <h3 className="text-lg sm:text-xl font-bold mb-2">Upgrade to Premium</h3>
+                                <p className="text-sm sm:text-base text-muted-foreground mb-4">
                                     {premiumData?.upgrade_message || `Access ${premiumData?.available_count || 0} high-opportunity problems`}
                                 </p>
                                 {!showPayment && (
@@ -689,24 +733,163 @@ export function ProblemsList() {
                                         className="rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:opacity-90 gap-2"
                                     >
                                         <Zap className="h-4 w-4" />
-                                        Activate Premium
+                                        View Plans
                                     </Button>
                                 )}
                             </div>
 
-                            {/* Razorpay Payment Button - Only shown after clicking CTA */}
+                            {/* Plan Selection - Only shown after clicking CTA */}
                             {showPayment && (
                                 <motion.div
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ duration: 0.3 }}
-                                    className="rounded-2xl overflow-hidden border border-amber-500/20 bg-background"
+                                    className="space-y-6"
                                 >
-                                    <iframe
-                                        src="https://rzp.io/rzp/uwMQj2O"
-                                        style={{ width: '100%', height: '800px', border: 'none' }}
-                                        title="Premium Upgrade Payment"
-                                    />
+                                    {/* Billing Cycle Toggle */}
+                                    <div className="flex justify-center">
+                                        <div className="inline-flex items-center gap-2 p-1 rounded-xl bg-muted/50 border border-border/50">
+                                            <button
+                                                onClick={() => setBillingCycle('monthly')}
+                                                className={cn(
+                                                    "px-4 py-2 rounded-lg text-sm font-medium transition-all",
+                                                    billingCycle === 'monthly'
+                                                        ? "bg-background shadow-sm text-foreground"
+                                                        : "text-muted-foreground hover:text-foreground"
+                                                )}
+                                            >
+                                                Monthly
+                                            </button>
+                                            <button
+                                                onClick={() => setBillingCycle('yearly')}
+                                                className={cn(
+                                                    "px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2",
+                                                    billingCycle === 'yearly'
+                                                        ? "bg-background shadow-sm text-foreground"
+                                                        : "text-muted-foreground hover:text-foreground"
+                                                )}
+                                            >
+                                                Yearly
+                                                <span className="text-[10px] sm:text-xs px-1.5 py-0.5 rounded-full bg-green-500/10 text-green-600 font-semibold">
+                                                    Save 17%
+                                                </span>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Plan Cards */}
+                                    {isLoadingPlans ? (
+                                        <div className="grid sm:grid-cols-2 gap-4">
+                                            <Skeleton className="h-64 rounded-2xl" />
+                                            <Skeleton className="h-64 rounded-2xl" />
+                                        </div>
+                                    ) : (
+                                        <div className="grid sm:grid-cols-2 gap-4 max-w-2xl mx-auto">
+                                            {/* Standard Plan */}
+                                            <div
+                                                onClick={() => setSelectedTier('standard')}
+                                                className={cn(
+                                                    "relative p-5 sm:p-6 rounded-2xl border-2 cursor-pointer transition-all",
+                                                    selectedTier === 'standard'
+                                                        ? "border-amber-500 bg-amber-500/5"
+                                                        : "border-border/50 hover:border-amber-500/50"
+                                                )}
+                                            >
+                                                {selectedTier === 'standard' && (
+                                                    <div className="absolute top-3 right-3 w-5 h-5 rounded-full bg-amber-500 flex items-center justify-center">
+                                                        <Check className="h-3 w-3 text-white" />
+                                                    </div>
+                                                )}
+                                                <h4 className="text-lg font-bold mb-2">Standard</h4>
+                                                <div className="mb-4">
+                                                    <span className="text-3xl font-bold">
+                                                        ₹{plans?.find(p => p.tier === 'standard' && p.plan_type === billingCycle)?.amount || (billingCycle === 'yearly' ? '4,999' : '499')}
+                                                    </span>
+                                                    <span className="text-muted-foreground text-sm">
+                                                        /{billingCycle === 'yearly' ? 'year' : 'month'}
+                                                    </span>
+                                                </div>
+                                                <ul className="space-y-2 text-sm text-muted-foreground">
+                                                    <li className="flex items-center gap-2">
+                                                        <Check className="h-4 w-4 text-green-500" />
+                                                        Access all premium problems
+                                                    </li>
+                                                    <li className="flex items-center gap-2">
+                                                        <Check className="h-4 w-4 text-green-500" />
+                                                        Opportunity scores & insights
+                                                    </li>
+                                                    <li className="flex items-center gap-2">
+                                                        <Check className="h-4 w-4 text-green-500" />
+                                                        Email alerts for new problems
+                                                    </li>
+                                                </ul>
+                                            </div>
+
+                                            {/* Pro Plan */}
+                                            <div
+                                                onClick={() => setSelectedTier('pro')}
+                                                className={cn(
+                                                    "relative p-5 sm:p-6 rounded-2xl border-2 cursor-pointer transition-all",
+                                                    selectedTier === 'pro'
+                                                        ? "border-amber-500 bg-amber-500/5"
+                                                        : "border-border/50 hover:border-amber-500/50"
+                                                )}
+                                            >
+                                                <Badge className="absolute top-3 right-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[10px]">
+                                                    Popular
+                                                </Badge>
+                                                <h4 className="text-lg font-bold mb-2">Pro</h4>
+                                                <div className="mb-4">
+                                                    <span className="text-3xl font-bold">
+                                                        ₹{plans?.find(p => p.tier === 'pro' && p.plan_type === billingCycle)?.amount || (billingCycle === 'yearly' ? '9,999' : '999')}
+                                                    </span>
+                                                    <span className="text-muted-foreground text-sm">
+                                                        /{billingCycle === 'yearly' ? 'year' : 'month'}
+                                                    </span>
+                                                </div>
+                                                <ul className="space-y-2 text-sm text-muted-foreground">
+                                                    <li className="flex items-center gap-2">
+                                                        <Check className="h-4 w-4 text-green-500" />
+                                                        Everything in Standard
+                                                    </li>
+                                                    <li className="flex items-center gap-2">
+                                                        <Check className="h-4 w-4 text-green-500" />
+                                                        Unlimited idea validations
+                                                    </li>
+                                                    <li className="flex items-center gap-2">
+                                                        <Check className="h-4 w-4 text-green-500" />
+                                                        Priority support
+                                                    </li>
+                                                    <li className="flex items-center gap-2">
+                                                        <Check className="h-4 w-4 text-green-500" />
+                                                        Export reports (PDF/Markdown)
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Continue Button */}
+                                    <div className="flex justify-center">
+                                        <Button
+                                            onClick={handlePlanSelect}
+                                            disabled={isCreatingLink || isLoadingPlans}
+                                            size="lg"
+                                            className="rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:opacity-90 gap-2 min-w-[200px]"
+                                        >
+                                            {isCreatingLink ? (
+                                                <>
+                                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                                    Creating Payment...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Zap className="h-4 w-4" />
+                                                    Continue with {selectedTier === 'pro' ? 'Pro' : 'Standard'}
+                                                </>
+                                            )}
+                                        </Button>
+                                    </div>
                                 </motion.div>
                             )}
 
