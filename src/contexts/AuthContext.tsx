@@ -95,11 +95,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem('auth_logout', Date.now().toString());
     setTimeout(() => localStorage.removeItem('auth_logout'), 1000);
 
+    // Dashboard routes are PUBLIC - don't redirect to auth
+    // Only redirect for truly protected routes like /chat, /profile, etc.
     const currentPath = window.location.pathname;
-    const publicPaths = ['/', '/auth', '/privacy'];
+    const isPublicPath =
+      currentPath === '/' ||
+      currentPath === '/auth' ||
+      currentPath === '/privacy' ||
+      currentPath.startsWith('/dashboard') ||
+      currentPath.startsWith('/pricing');
 
-    if (!publicPaths.includes(currentPath)) {
-      // Force hard navigation to clear React state
+    // Only redirect to auth for protected routes
+    if (!isPublicPath) {
       window.location.href = '/auth';
 
       if (!authErrorShownRef.current) {
