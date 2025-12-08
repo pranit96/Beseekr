@@ -1,66 +1,51 @@
-// src/main.tsx - COMPLETE FILE WITH ACTIVITY TRACKING
+// src/main.tsx - SERVICE WORKER DISABLED
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
-import { registerServiceWorker, trackActivity } from "./lib/serviceWorker";
-// Override console methods in production to prevent direct console usage
+
+// Console override in production
 import "./lib/console-override";
-// Initialize socket connection on user interaction
+
+// Socket initialization
 import { initSocketOnUserInteraction } from "./services/socketInit";
 
-// AGGRESSIVE CACHE CLEAR ON STARTUP - Version 2
-// This runs once to clear old cached content
-const CACHE_CLEAR_VERSION = 'v2';
-const storageKey = 'beseekr-cache-cleared';
+// =============================================
+// SERVICE WORKER COMPLETELY DISABLED
+// =============================================
 
-async function clearOldCaches() {
-  const clearedVersion = localStorage.getItem(storageKey);
-
-  // Only clear if we haven't cleared for this version
-  if (clearedVersion !== CACHE_CLEAR_VERSION) {
-    console.log('[CacheClear] Clearing old caches for version:', CACHE_CLEAR_VERSION);
-
+// Clean up any existing service workers on startup
+async function cleanupServiceWorkers() {
+  if ('serviceWorker' in navigator) {
     try {
-      // Unregister all service workers
-      if ('serviceWorker' in navigator) {
-        const registrations = await navigator.serviceWorker.getRegistrations();
-        for (const registration of registrations) {
-          await registration.unregister();
-          console.log('[CacheClear] Unregistered SW:', registration.scope);
-        }
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      for (const registration of registrations) {
+        await registration.unregister();
+        console.log('[Cleanup] Unregistered service worker:', registration.scope);
       }
+    } catch (e) {
+      // Ignore errors
+    }
+  }
 
-      // Clear all caches
-      if ('caches' in window) {
-        const cacheNames = await caches.keys();
-        for (const name of cacheNames) {
-          await caches.delete(name);
-          console.log('[CacheClear] Deleted cache:', name);
-        }
+  // Clear all caches
+  if ('caches' in window) {
+    try {
+      const names = await caches.keys();
+      for (const name of names) {
+        await caches.delete(name);
+        console.log('[Cleanup] Deleted cache:', name);
       }
-
-      // Mark as cleared
-      localStorage.setItem(storageKey, CACHE_CLEAR_VERSION);
-      console.log('[CacheClear] Cache clear complete');
-    } catch (error) {
-      console.error('[CacheClear] Error clearing caches:', error);
+    } catch (e) {
+      // Ignore errors
     }
   }
 }
 
-// Clear old caches first, then initialize app
-clearOldCaches().then(() => {
-  // Register service worker for caching
-  registerServiceWorker();
-});
+// Run cleanup on startup
+cleanupServiceWorkers();
 
-// Initialize socket to connect on first user interaction
+// Initialize socket on user interaction
 initSocketOnUserInteraction();
 
-// Track user activity to prevent disruptive reloads
-const activityEvents = ['mousedown', 'keydown', 'scroll', 'touchstart', 'click'];
-activityEvents.forEach(event => {
-  window.addEventListener(event, trackActivity, { passive: true });
-});
-
+// Render app
 createRoot(document.getElementById("root")!).render(<App />);
