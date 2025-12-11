@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import {
     Loader2,
     AlertCircle,
@@ -25,6 +26,10 @@ import {
     MessageSquare,
     Calendar,
     Zap,
+    Info,
+    CheckCircle2,
+    AlertTriangle,
+    Sparkles,
 } from 'lucide-react';
 import {
     LineChart,
@@ -32,8 +37,13 @@ import {
     XAxis,
     YAxis,
     CartesianGrid,
-    Tooltip,
+    Tooltip as RechartsTooltip,
     ResponsiveContainer,
+    RadarChart,
+    PolarGrid,
+    PolarAngleAxis,
+    PolarRadiusAxis,
+    Radar,
 } from 'recharts';
 import { problemsApi } from '@/api/problems';
 import { cn } from '@/lib/utils';
@@ -95,6 +105,68 @@ export function ProblemDetails() {
         if (score >= 50) return 'text-yellow-500';
         return 'text-red-500';
     };
+
+    const getScoreBgColor = (score: number) => {
+        if (score >= 70) return 'bg-green-500/10 border-green-500/20';
+        if (score >= 50) return 'bg-yellow-500/10 border-yellow-500/20';
+        return 'bg-red-500/10 border-red-500/20';
+    };
+
+    const getScoreLabel = (score: number): { label: string; color: string } => {
+        if (score >= 80) return { label: 'Excellent', color: 'text-green-600 bg-green-500/10' };
+        if (score >= 70) return { label: 'High', color: 'text-green-500 bg-green-500/10' };
+        if (score >= 50) return { label: 'Moderate', color: 'text-yellow-500 bg-yellow-500/10' };
+        if (score >= 30) return { label: 'Low', color: 'text-orange-500 bg-orange-500/10' };
+        return { label: 'Critical', color: 'text-red-500 bg-red-500/10' };
+    };
+
+    const getUrgencyInsight = (frequency: number, sources: number) => {
+        if (frequency >= 50 && sources >= 10) return 'High urgency - many users reporting this frequently';
+        if (frequency >= 20 || sources >= 5) return 'Moderate urgency - recurring pain point';
+        if (frequency >= 5) return 'Low urgency - occasional mentions';
+        return 'Very low urgency - only a few mentions found';
+    };
+
+    // Determine overall verdict
+    const getVerdict = () => {
+        const brief = problem?.brief;
+        if (!brief) {
+            const metrics = problem?.metrics;
+            const frequency = metrics?.frequency || 0;
+            const sources = metrics?.source_count || 0;
+            if (frequency >= 30 && sources >= 5) return { level: 'promising', label: 'Worth Exploring', color: 'green' };
+            if (frequency >= 10) return { level: 'moderate', label: 'Moderate Potential', color: 'yellow' };
+            return { level: 'low', label: 'Low Priority', color: 'orange' };
+        }
+        const score = brief.opportunity_score;
+        if (score >= 75) return { level: 'strong', label: 'Strong Opportunity', color: 'green' };
+        if (score >= 60) return { level: 'good', label: 'Good Potential', color: 'emerald' };
+        if (score >= 45) return { level: 'moderate', label: 'Moderate Opportunity', color: 'yellow' };
+        return { level: 'weak', label: 'Low Priority', color: 'orange' };
+    };
+
+    // Radar chart data for opportunity fingerprint
+    const radarData = problem?.brief?.score_breakdown ? [
+        { metric: 'Market', value: problem.brief.score_breakdown.market_size, fullMark: 100 },
+        { metric: 'Gap', value: problem.brief.score_breakdown.competition_gap, fullMark: 100 },
+        { metric: 'Urgency', value: problem.brief.score_breakdown.urgency, fullMark: 100 },
+        { metric: 'Revenue', value: problem.brief.score_breakdown.monetization, fullMark: 100 },
+        { metric: 'Execution', value: problem.brief.score_breakdown.execution, fullMark: 100 },
+    ] : [];
+
+    const metricDescriptions = {
+        frequency: 'How often this problem is mentioned across platforms. Higher = more widespread pain.',
+        upvotes: 'Community validation score. Higher upvotes = stronger resonance with users.',
+        sources: 'Number of unique sources (posts, threads) mentioning this problem.',
+        opportunity: 'AI-calculated score based on market size, competition, and urgency.',
+        marketSize: 'Total Addressable Market (TAM) - estimated from industry reports.',
+        competitionGap: 'How underserved this problem is by existing solutions.',
+        urgency: 'Frequency + severity of complaints. High urgency = users actively seeking solutions.',
+        monetization: 'Willingness to pay signals and pricing potential.',
+        execution: 'How feasible it is to build a solution.'
+    };
+
+    const verdict = getVerdict();
 
     if (isLoading) {
         return (
@@ -168,55 +240,201 @@ export function ProblemDetails() {
                 <p className="mt-3 text-muted-foreground leading-relaxed">{problem.summary}</p>
             </div>
 
-            {/* Key Metrics */}
-            <div className="grid gap-3 md:grid-cols-4">
-                <Card>
-                    <CardContent className="p-4 flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                            <TrendingUp className="h-5 w-5 text-blue-500" />
+            {/* ✨ OPPORTUNITY INSIGHT SUMMARY - Decision Tool */}
+            <Card className={cn(
+                "border-2 relative overflow-hidden",
+                verdict.color === 'green' ? "border-green-500/30 bg-gradient-to-r from-green-500/5 to-emerald-500/5" :
+                    verdict.color === 'emerald' ? "border-emerald-500/30 bg-gradient-to-r from-emerald-500/5 to-teal-500/5" :
+                        verdict.color === 'yellow' ? "border-yellow-500/30 bg-gradient-to-r from-yellow-500/5 to-amber-500/5" :
+                            "border-orange-500/30 bg-gradient-to-r from-orange-500/5 to-red-500/5"
+            )}>
+                <CardContent className="p-4 sm:p-6">
+                    <div className="flex items-start gap-4">
+                        <div className={cn(
+                            "shrink-0 w-12 h-12 rounded-xl flex items-center justify-center",
+                            verdict.color === 'green' || verdict.color === 'emerald' ? "bg-green-500/20" :
+                                verdict.color === 'yellow' ? "bg-yellow-500/20" : "bg-orange-500/20"
+                        )}>
+                            {verdict.level === 'strong' || verdict.level === 'good' ? (
+                                <CheckCircle2 className="h-6 w-6 text-green-500" />
+                            ) : verdict.level === 'moderate' || verdict.level === 'promising' ? (
+                                <Sparkles className="h-6 w-6 text-yellow-500" />
+                            ) : (
+                                <AlertTriangle className="h-6 w-6 text-orange-500" />
+                            )}
                         </div>
-                        <div>
-                            <p className="text-2xl font-bold">{problem.metrics?.frequency || 0}</p>
-                            <p className="text-xs text-muted-foreground">Frequency</p>
-                        </div>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardContent className="p-4 flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
-                            <ThumbsUp className="h-5 w-5 text-purple-500" />
-                        </div>
-                        <div>
-                            <p className="text-2xl font-bold">{problem.metrics?.upvote_score || 0}</p>
-                            <p className="text-xs text-muted-foreground">Upvotes</p>
-                        </div>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardContent className="p-4 flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center">
-                            <FileText className="h-5 w-5 text-green-500" />
-                        </div>
-                        <div>
-                            <p className="text-2xl font-bold">{problem.metrics?.source_count || 0}</p>
-                            <p className="text-xs text-muted-foreground">Sources</p>
-                        </div>
-                    </CardContent>
-                </Card>
-                {brief && (
-                    <Card className="border-primary/30 bg-primary/5">
-                        <CardContent className="p-4 flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
-                                <Zap className="h-5 w-5 text-primary" />
+                        <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-2">
+                                <span className="text-sm font-medium text-muted-foreground">Opportunity Insight</span>
+                                <Badge className={cn(
+                                    "text-xs font-semibold",
+                                    verdict.color === 'green' || verdict.color === 'emerald' ? "bg-green-500 hover:bg-green-600" :
+                                        verdict.color === 'yellow' ? "bg-yellow-500 text-black hover:bg-yellow-600" :
+                                            "bg-orange-500 hover:bg-orange-600"
+                                )}>
+                                    {verdict.label}
+                                </Badge>
                             </div>
-                            <div>
-                                <p className={cn("text-2xl font-bold", getScoreColor(brief.opportunity_score))}>
-                                    {brief.opportunity_score}
+                            <p className="text-sm text-foreground leading-relaxed">
+                                {problem.tags?.[0] && `${problem.tags[0]} teams `}
+                                {problem.metrics?.frequency && problem.metrics.frequency >= 20
+                                    ? 'frequently struggle with'
+                                    : 'occasionally face challenges with'} this problem.
+                                {brief?.score_breakdown && (
+                                    <span className="block mt-1">
+                                        Pain level is {getScoreLabel(brief.score_breakdown.urgency).label.toLowerCase()},
+                                        urgency is {getScoreLabel(brief.score_breakdown.urgency).label.toLowerCase()},
+                                        {brief.score_breakdown.competition_gap >= 60 ? ' but competition gap is high.' : ' and competition gap is moderate.'}
+                                    </span>
+                                )}
+                            </p>
+                            {brief?.opportunity_score && (
+                                <p className="text-xs text-muted-foreground mt-2">
+                                    <strong>Potential outcome:</strong> {
+                                        brief.opportunity_score >= 70
+                                            ? `High-value opportunity for ${brief.target_audience?.primary?.company_size || 'mid-size'} ${problem.tags?.[0] || 'companies'}`
+                                            : brief.opportunity_score >= 50
+                                                ? `Niche opportunity worth exploring for specialized teams`
+                                                : `Consider only if you have domain expertise in ${problem.tags?.[0] || 'this space'}`
+                                    }
                                 </p>
-                                <p className="text-xs text-muted-foreground">Opportunity</p>
-                            </div>
-                        </CardContent>
-                    </Card>
+                            )}
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+
+            {/* Key Metrics with Tooltips */}
+            <div className="grid gap-3 md:grid-cols-4">
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Card className="cursor-help hover:border-blue-500/30 transition-colors">
+                            <CardContent className="p-4 flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                                    <TrendingUp className="h-5 w-5 text-blue-500" />
+                                </div>
+                                <div className="flex-1">
+                                    <div className="flex items-center gap-2">
+                                        <p className="text-2xl font-bold">{problem.metrics?.frequency || 0}</p>
+                                        <Badge variant="outline" className={cn(
+                                            "text-[10px]",
+                                            (problem.metrics?.frequency || 0) >= 30 ? "border-green-500/50 text-green-500" :
+                                                (problem.metrics?.frequency || 0) >= 10 ? "border-yellow-500/50 text-yellow-500" :
+                                                    "border-orange-500/50 text-orange-500"
+                                        )}>
+                                            {(problem.metrics?.frequency || 0) >= 30 ? 'High' : (problem.metrics?.frequency || 0) >= 10 ? 'Moderate' : 'Low'}
+                                        </Badge>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                        Frequency <Info className="h-3 w-3" />
+                                    </p>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="max-w-xs">
+                        <p className="text-sm">{metricDescriptions.frequency}</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                            {(problem.metrics?.frequency || 0) >= 30 ? '✓ High frequency = widespread pain point' :
+                                (problem.metrics?.frequency || 0) >= 10 ? '~ Moderate = recurring issue' :
+                                    '⚠ Low = only occasional mentions'}
+                        </p>
+                    </TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Card className="cursor-help hover:border-purple-500/30 transition-colors">
+                            <CardContent className="p-4 flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
+                                    <ThumbsUp className="h-5 w-5 text-purple-500" />
+                                </div>
+                                <div className="flex-1">
+                                    <div className="flex items-center gap-2">
+                                        <p className="text-2xl font-bold">{problem.metrics?.upvote_score || 0}</p>
+                                        <Badge variant="outline" className={cn(
+                                            "text-[10px]",
+                                            (problem.metrics?.upvote_score || 0) >= 100 ? "border-green-500/50 text-green-500" :
+                                                (problem.metrics?.upvote_score || 0) >= 20 ? "border-yellow-500/50 text-yellow-500" :
+                                                    "border-muted-foreground/50 text-muted-foreground"
+                                        )}>
+                                            {(problem.metrics?.upvote_score || 0) >= 100 ? 'Strong' : (problem.metrics?.upvote_score || 0) >= 20 ? 'Good' : 'Limited'}
+                                        </Badge>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                        Upvotes <Info className="h-3 w-3" />
+                                    </p>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="max-w-xs">
+                        <p className="text-sm">{metricDescriptions.upvotes}</p>
+                    </TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Card className="cursor-help hover:border-green-500/30 transition-colors">
+                            <CardContent className="p-4 flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center">
+                                    <FileText className="h-5 w-5 text-green-500" />
+                                </div>
+                                <div className="flex-1">
+                                    <div className="flex items-center gap-2">
+                                        <p className="text-2xl font-bold">{problem.metrics?.source_count || 0}</p>
+                                        <Badge variant="outline" className={cn(
+                                            "text-[10px]",
+                                            (problem.metrics?.source_count || 0) >= 10 ? "border-green-500/50 text-green-500" :
+                                                (problem.metrics?.source_count || 0) >= 3 ? "border-yellow-500/50 text-yellow-500" :
+                                                    "border-muted-foreground/50 text-muted-foreground"
+                                        )}>
+                                            {(problem.metrics?.source_count || 0) >= 10 ? 'Many' : (problem.metrics?.source_count || 0) >= 3 ? 'Some' : 'Few'}
+                                        </Badge>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                        Sources <Info className="h-3 w-3" />
+                                    </p>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="max-w-xs">
+                        <p className="text-sm">{metricDescriptions.sources}</p>
+                    </TooltipContent>
+                </Tooltip>
+
+                {brief && (
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Card className={cn("cursor-help border-primary/30", getScoreBgColor(brief.opportunity_score))}>
+                                <CardContent className="p-4 flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
+                                        <Zap className="h-5 w-5 text-primary" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-2">
+                                            <p className={cn("text-2xl font-bold", getScoreColor(brief.opportunity_score))}>
+                                                {brief.opportunity_score}
+                                            </p>
+                                            <Badge variant="outline" className={cn("text-[10px]", getScoreLabel(brief.opportunity_score).color)}>
+                                                {getScoreLabel(brief.opportunity_score).label}
+                                            </Badge>
+                                        </div>
+                                        <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                            Opportunity Score <Info className="h-3 w-3" />
+                                        </p>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="max-w-xs">
+                            <p className="text-sm">{metricDescriptions.opportunity}</p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                                Score combines market size, urgency, competition gap, and monetization potential.
+                            </p>
+                        </TooltipContent>
+                    </Tooltip>
                 )}
             </div>
 
@@ -231,32 +449,97 @@ export function ProblemDetails() {
                 {/* Brief Tab */}
                 {brief && (
                     <TabsContent value="brief" className="space-y-6">
-                        {/* Score Breakdown */}
-                        <Card>
-                            <CardHeader className="pb-3">
-                                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                                    <BarChart3 className="h-4 w-4" /> Score Breakdown
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-3">
-                                {brief.score_breakdown && Object.entries({
-                                    'Market Size': brief.score_breakdown.market_size,
-                                    'Competition Gap': brief.score_breakdown.competition_gap,
-                                    'Urgency': brief.score_breakdown.urgency,
-                                    'Monetization': brief.score_breakdown.monetization,
-                                    'Execution': brief.score_breakdown.execution,
-                                }).map(([label, score]) => (
-                                    <div key={label} className="space-y-1">
-                                        <div className="flex justify-between text-sm">
-                                            <span>{label}</span>
-                                            <span className={getScoreColor(score)}>{score}/100</span>
-                                        </div>
-                                        <Progress value={score} className="h-2" />
-                                    </div>
-                                ))}
-                            </CardContent>
-                        </Card>
+                        {/* Score Breakdown + Radar Chart */}
+                        <div className="grid gap-4 lg:grid-cols-2">
+                            {/* Score Breakdown with Labels */}
+                            <Card>
+                                <CardHeader className="pb-3">
+                                    <CardTitle className="text-sm font-medium flex items-center gap-2">
+                                        <BarChart3 className="h-4 w-4" /> Score Breakdown
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-3">
+                                    {brief.score_breakdown && Object.entries({
+                                        'Market Size': { score: brief.score_breakdown.market_size, desc: metricDescriptions.marketSize },
+                                        'Competition Gap': { score: brief.score_breakdown.competition_gap, desc: metricDescriptions.competitionGap },
+                                        'Urgency': { score: brief.score_breakdown.urgency, desc: metricDescriptions.urgency },
+                                        'Monetization': { score: brief.score_breakdown.monetization, desc: metricDescriptions.monetization },
+                                        'Execution': { score: brief.score_breakdown.execution, desc: metricDescriptions.execution },
+                                    }).map(([label, { score, desc }]) => {
+                                        const scoreInfo = getScoreLabel(score);
+                                        return (
+                                            <Tooltip key={label}>
+                                                <TooltipTrigger asChild>
+                                                    <div className="space-y-1 cursor-help">
+                                                        <div className="flex justify-between text-sm">
+                                                            <span className="flex items-center gap-1">
+                                                                {label} <Info className="h-3 w-3 text-muted-foreground" />
+                                                            </span>
+                                                            <span className="flex items-center gap-2">
+                                                                <Badge variant="outline" className={cn("text-[10px] px-1.5", scoreInfo.color)}>
+                                                                    {scoreInfo.label}
+                                                                </Badge>
+                                                                <span className={getScoreColor(score)}>{score}/100</span>
+                                                            </span>
+                                                        </div>
+                                                        <Progress value={score} className={cn(
+                                                            "h-2",
+                                                            score >= 70 ? "[&>div]:bg-green-500" :
+                                                                score >= 50 ? "[&>div]:bg-yellow-500" :
+                                                                    "[&>div]:bg-orange-500"
+                                                        )} />
+                                                    </div>
+                                                </TooltipTrigger>
+                                                <TooltipContent side="left" className="max-w-xs">
+                                                    <p className="text-sm">{desc}</p>
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        );
+                                    })}
+                                </CardContent>
+                            </Card>
 
+                            {/* Opportunity Fingerprint - Radar Chart */}
+                            {radarData.length > 0 && (
+                                <Card className="border-primary/20">
+                                    <CardHeader className="pb-2">
+                                        <CardTitle className="text-sm font-medium flex items-center gap-2">
+                                            <Sparkles className="h-4 w-4 text-primary" /> Opportunity Fingerprint
+                                        </CardTitle>
+                                        <p className="text-xs text-muted-foreground">Visual signature of this opportunity</p>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="h-[220px]">
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <RadarChart data={radarData} margin={{ top: 10, right: 30, bottom: 10, left: 30 }}>
+                                                    <PolarGrid stroke="hsl(var(--border))" />
+                                                    <PolarAngleAxis
+                                                        dataKey="metric"
+                                                        tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                                                    />
+                                                    <PolarRadiusAxis
+                                                        angle={90}
+                                                        domain={[0, 100]}
+                                                        tick={{ fontSize: 10 }}
+                                                        tickCount={5}
+                                                    />
+                                                    <Radar
+                                                        name="Score"
+                                                        dataKey="value"
+                                                        stroke="hsl(var(--primary))"
+                                                        fill="hsl(var(--primary))"
+                                                        fillOpacity={0.3}
+                                                        strokeWidth={2}
+                                                    />
+                                                </RadarChart>
+                                            </ResponsiveContainer>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            )}
+                        </div>
+
+                        {/* Target Audience & Market Validation */}
                         <div className="grid gap-4 lg:grid-cols-2">
                             {/* Target Audience */}
                             <Card>
@@ -377,7 +660,7 @@ export function ProblemDetails() {
                                             <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                                             <XAxis dataKey="date" tick={{ fontSize: 12 }} />
                                             <YAxis tick={{ fontSize: 12 }} />
-                                            <Tooltip />
+                                            <RechartsTooltip />
                                             <Line type="monotone" dataKey="frequency" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
                                         </LineChart>
                                     </ResponsiveContainer>
@@ -540,7 +823,7 @@ export function ProblemDetails() {
                     )}
                 </TabsContent>
             </Tabs>
-        </div>
+        </div >
     );
 }
 
