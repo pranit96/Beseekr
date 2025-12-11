@@ -1059,6 +1059,109 @@ function ReportDisplay({ report: rawReport }: { report: any }) {
                 </Card>
             )}
 
+            {/* Go-to-Market Strategy / Recommended Approach */}
+            {goToMarket && (goToMarket.mvp_approach || goToMarket.pricing_strategy || goToMarket.customer_acquisition || goToMarket.timeline || goToMarket.success_metrics) && (
+                <Card className="bg-gradient-to-br from-emerald-500/5 via-background to-cyan-500/5 border-emerald-500/20">
+                    <CardHeader className="pb-4">
+                        <CardTitle className="text-base sm:text-lg font-semibold flex items-center gap-2">
+                            <div className="p-2 rounded-lg bg-gradient-to-br from-emerald-500/20 to-cyan-500/20">
+                                <Rocket className="h-5 w-5 text-emerald-500" />
+                            </div>
+                            Recommended Approach
+                        </CardTitle>
+                        <CardDescription className="text-xs sm:text-sm">
+                            A strategic roadmap to bring your idea to market successfully
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4 sm:space-y-6">
+                        {/* MVP Approach */}
+                        {goToMarket.mvp_approach && (
+                            <div className="p-4 rounded-xl bg-background border">
+                                <div className="flex items-start gap-3">
+                                    <div className="p-2 rounded-lg bg-violet-500/10 shrink-0">
+                                        <Lightbulb className="h-4 w-4 text-violet-500" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <h4 className="font-semibold text-sm sm:text-base mb-2">MVP Approach</h4>
+                                        <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                                            {goToMarket.mvp_approach}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Pricing Strategy */}
+                        {goToMarket.pricing_strategy && (
+                            <div className="p-4 rounded-xl bg-background border">
+                                <div className="flex items-start gap-3">
+                                    <div className="p-2 rounded-lg bg-green-500/10 shrink-0">
+                                        <DollarSign className="h-4 w-4 text-green-500" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <h4 className="font-semibold text-sm sm:text-base mb-2">Pricing Strategy</h4>
+                                        <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                                            {goToMarket.pricing_strategy}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Customer Acquisition */}
+                        {goToMarket.customer_acquisition && (
+                            <div className="p-4 rounded-xl bg-background border">
+                                <div className="flex items-start gap-3">
+                                    <div className="p-2 rounded-lg bg-blue-500/10 shrink-0">
+                                        <Users className="h-4 w-4 text-blue-500" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <h4 className="font-semibold text-sm sm:text-base mb-2">Target Customer Acquisition</h4>
+                                        <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                                            {goToMarket.customer_acquisition}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Timeline */}
+                        {goToMarket.timeline && (
+                            <div className="p-4 rounded-xl bg-background border">
+                                <div className="flex items-start gap-3">
+                                    <div className="p-2 rounded-lg bg-amber-500/10 shrink-0">
+                                        <Clock className="h-4 w-4 text-amber-500" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <h4 className="font-semibold text-sm sm:text-base mb-2">Timeline Estimate</h4>
+                                        <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                                            {goToMarket.timeline}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Success Metrics */}
+                        {goToMarket.success_metrics && (
+                            <div className="p-4 rounded-xl bg-background border">
+                                <div className="flex items-start gap-3">
+                                    <div className="p-2 rounded-lg bg-pink-500/10 shrink-0">
+                                        <Target className="h-4 w-4 text-pink-500" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <h4 className="font-semibold text-sm sm:text-base mb-2">Success Metrics</h4>
+                                        <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                                            {goToMarket.success_metrics}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+            )}
+
             {/* Evidence Sources */}
             {evidenceAppendix.high_quality_sources?.length > 0 && (
                 <Card>
