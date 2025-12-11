@@ -239,21 +239,41 @@ export function ProblemsList() {
         };
     }, []);
 
-    // Fetch free problems (cache for 1 hour)
-    const { data, isLoading, error } = useQuery({
+    // Helper to get cached data from localStorage for instant display
+    const getCachedProblems = (key: string) => {
+        try {
+            const cached = localStorage.getItem(`beseekr_cache_${key}`);
+            if (cached) {
+                const entry = JSON.parse(cached);
+                if (Date.now() - entry.timestamp < 60 * 60 * 1000) { // 1 hour
+                    return entry.data;
+                }
+            }
+        } catch { }
+        return undefined;
+    };
+
+    // Fetch free problems - AGGRESSIVE CACHING
+    // Show cached data instantly (placeholderData), while fetching fresh in background
+    const { data, isLoading, error, isFetching } = useQuery({
         queryKey: ['problems', page, sortBy],
         queryFn: () => problemsApi.getProblems(sortBy, page, ITEMS_PER_PAGE),
-        staleTime: 60 * 60 * 1000, // 1 hour
-        gcTime: 2 * 60 * 60 * 1000, // 2 hours
+        staleTime: 0, // Always refetch in background
+        gcTime: 24 * 60 * 60 * 1000, // Keep in memory for 24 hours
+        refetchOnMount: true,
+        refetchOnWindowFocus: false,
+        placeholderData: getCachedProblems(`problems_${sortBy}_${page}_${ITEMS_PER_PAGE}`),
     });
 
-    // Fetch premium problems (requires auth, cache for 1 hour)
-    const { data: premiumData, isLoading: isLoadingPremium } = useQuery({
+    // Fetch premium problems - AGGRESSIVE CACHING
+    const { data: premiumData, isLoading: isLoadingPremium, isFetching: isFetchingPremium } = useQuery({
         queryKey: ['premium-problems', premiumPage],
         queryFn: () => problemsApi.getPremiumProblems(premiumPage, ITEMS_PER_PAGE),
         enabled: activeTab === 'premium',
-        staleTime: 60 * 60 * 1000, // 1 hour
-        gcTime: 2 * 60 * 60 * 1000, // 2 hours
+        staleTime: 0, // Always refetch in background
+        gcTime: 24 * 60 * 60 * 1000,
+        refetchOnMount: true,
+        refetchOnWindowFocus: false,
     });
 
     // Fetch subscription plans when Premium tab is active
