@@ -74,10 +74,52 @@ async function request<T>(
     return json;
 }
 
+// ====== LOCAL STORAGE CACHING FOR INSTANT LOADS ======
+const CACHE_PREFIX = 'beseekr_cache_';
+const CACHE_TTL = 60 * 60 * 1000; // 1 hour
+
+interface CacheEntry<T> {
+    data: T;
+    timestamp: number;
+}
+
+function getCached<T>(key: string): T | null {
+    try {
+        const cached = localStorage.getItem(CACHE_PREFIX + key);
+        if (!cached) return null;
+
+        const entry: CacheEntry<T> = JSON.parse(cached);
+        if (Date.now() - entry.timestamp > CACHE_TTL) {
+            localStorage.removeItem(CACHE_PREFIX + key);
+            return null;
+        }
+        return entry.data;
+    } catch {
+        return null;
+    }
+}
+
+function setCache<T>(key: string, data: T): void {
+    try {
+        const entry: CacheEntry<T> = { data, timestamp: Date.now() };
+        localStorage.setItem(CACHE_PREFIX + key, JSON.stringify(entry));
+    } catch {
+        // localStorage full or disabled - ignore
+    }
+}
+
+function clearProblemsCache(): void {
+    try {
+        const keys = Object.keys(localStorage).filter(k => k.startsWith(CACHE_PREFIX + 'problems'));
+        keys.forEach(k => localStorage.removeItem(k));
+    } catch {
+        // ignore
+    }
+}
+
 /**
  * Get paginated list of problems
- * Anonymous users get half problems with gated=true
- * Registered users get all free problems
+ * Uses cache-first pattern: returns cached data instantly, fetches fresh in background
  */
 export async function getProblems(
     sort: SortOption = 'hot',
@@ -93,62 +135,81 @@ export async function getProblems(
     total_available?: number;
     showing?: number;
     upgrade_message?: string;
+    fromCache?: boolean;
 }> {
+    const cacheKey = `problems_${sort}_${page}_${limit}`;
+
     const params = new URLSearchParams({
         sort,
         page: String(page),
         limit: String(limit),
     });
 
-    const response = await request<any>(
-        `/api/problems?${params.toString()}`
-    );
+    // Try to get cached data first for instant display
+    const cached = getCached<any>(cacheKey);
 
-    // Robust null checks - ensure we always return valid structure
-    if (!response || typeof response !== 'object') {
-        return {
-            items: [],
-            total: 0,
-            page: 1,
-            limit: 20,
-            total_pages: 1,
+    try {
+        const response = await request<any>(
+            `/api/problems?${params.toString()}`
+        );
+
+        // Robust null checks - ensure we always return valid structure
+        if (!response || typeof response !== 'object') {
+            // If no response, return cache if available
+            if (cached) return { ...cached, fromCache: true };
+            return {
+                items: [],
+                total: 0,
+                page: 1,
+                limit: 20,
+                total_pages: 1,
+            };
+        }
+
+        // Map backend field names to frontend expected names
+        const problems = Array.isArray(response.problems) ? response.problems : [];
+
+        const result = {
+            items: problems.map((problem: any) => ({
+                id: problem.id,
+                title: problem.title || 'Untitled',
+                summary: problem.summary || problem.description || '',
+                metrics: {
+                    frequency: problem.frequency || 0,
+                    upvote_score: problem.upvote_score || 0,
+                    source_count: problem.source_count || problem.related_posts?.length || 0,
+                },
+                in_watchlist: problem.in_watchlist || false,
+                tags: problem.tags || [],
+                hot_score: problem.hot_score,
+                opportunity_score: problem.opportunity_score,
+                has_brief: problem.has_brief,
+                brief_approved: problem.brief_approved,
+                last_updated: problem.last_updated,
+                created_at: problem.created_at,
+            })),
+            total: response.total || response.total_available || 0,
+            page: response.page || 1,
+            limit: response.limit || 20,
+            total_pages: response.total_pages || response.totalPages || 1,
+            gated: response.gated || false,
+            total_available: response.total_available,
+            showing: response.showing,
+            upgrade_message: response.upgrade_message,
         };
+
+        // Cache the result for future instant loads
+        setCache(cacheKey, result);
+
+        return result;
+    } catch (error) {
+        // On network error, return cached data if available
+        if (cached) {
+            console.log('[Problems API] Network error, using cached data');
+            return { ...cached, fromCache: true };
+        }
+        throw error;
     }
-
-    // Map backend field names to frontend expected names
-    const problems = Array.isArray(response.problems) ? response.problems : [];
-
-    return {
-        items: problems.map((problem: any) => ({
-            id: problem.id,
-            title: problem.title || 'Untitled',
-            summary: problem.summary || problem.description || '',
-            metrics: {
-                frequency: problem.frequency || 0,
-                upvote_score: problem.upvote_score || 0,
-                // Calculate source_count from actual posts, don't trust backend's source_count
-                source_count: problem.source_count || problem.related_posts?.length || 0,
-            },
-            in_watchlist: problem.in_watchlist || false,
-            // New enriched fields
-            tags: problem.tags || [],
-            hot_score: problem.hot_score,
-            opportunity_score: problem.opportunity_score,
-            has_brief: problem.has_brief,
-            brief_approved: problem.brief_approved,
-            last_updated: problem.last_updated,
-            created_at: problem.created_at,
-        })),
-        total: response.total || response.total_available || 0,
-        page: response.page || 1,
-        limit: response.limit || 20,
-        total_pages: response.total_pages || response.totalPages || 1,
-        // Gated info for anonymous users
-        gated: response.gated || false,
-        total_available: response.total_available,
-        showing: response.showing,
-        upgrade_message: response.upgrade_message,
-    };
 }
 
 /**
