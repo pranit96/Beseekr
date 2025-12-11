@@ -8,6 +8,13 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import {
     Select,
     SelectContent,
     SelectItem,
@@ -207,6 +214,10 @@ export function ProblemsList() {
     const [selectedTier, setSelectedTier] = useState<'standard' | 'pro'>('standard');
     const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('yearly');
     const [isCreatingLink, setIsCreatingLink] = useState(false);
+    const [showLoginModal, setShowLoginModal] = useState(false);
+
+    // Helper to prompt login instead of direct redirect
+    const promptLogin = () => setShowLoginModal(true);
 
     // SEO - Update page meta tags (search-query focused)
     useEffect(() => {
@@ -292,7 +303,7 @@ export function ProblemsList() {
     // Handle plan selection and payment
     const handlePlanSelect = async () => {
         if (!user) {
-            navigate('/auth');
+            promptLogin();
             return;
         }
 
@@ -402,7 +413,7 @@ export function ProblemsList() {
                                 </p>
                             </div>
                             <Button
-                                onClick={() => navigate('/auth')}
+                                onClick={promptLogin}
                                 className="shrink-0 rounded-xl bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity"
                             >
                                 Sign Up Free
@@ -548,7 +559,7 @@ export function ProblemsList() {
                                     {problems[0] && (
                                         <div
                                             className="p-4 rounded-xl bg-background/50 border border-amber-500/10 cursor-pointer hover:border-amber-500/30 transition-all"
-                                            onClick={() => user ? setActiveTab('premium') : navigate('/auth')}
+                                            onClick={() => user ? setActiveTab('premium') : promptLogin()}
                                         >
                                             <div className="flex items-start justify-between gap-4">
                                                 <div className="flex-1">
@@ -569,7 +580,7 @@ export function ProblemsList() {
                                         <span className="text-foreground font-semibold">20+</span> high-opportunity problems
                                     </p>
                                     <Button
-                                        onClick={() => user ? setActiveTab('premium') : navigate('/auth')}
+                                        onClick={() => user ? setActiveTab('premium') : promptLogin()}
                                         className="rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:opacity-90"
                                     >
                                         {user ? 'View Premium' : 'Get Premium Access'}
@@ -680,7 +691,7 @@ export function ProblemsList() {
                                             initial={{ opacity: 0, y: 20 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             transition={{ duration: 0.3, delay: index * 0.1 }}
-                                            onClick={() => navigate('/auth')}
+                                            onClick={promptLogin}
                                             className="group relative cursor-pointer p-6 rounded-2xl bg-gradient-to-br from-amber-500/5 to-orange-500/5 border border-amber-500/20 hover:border-amber-500/40 transition-all hover:shadow-lg hover:shadow-amber-500/10"
                                         >
                                             {/* Premium badge with actual score */}
@@ -716,7 +727,7 @@ export function ProblemsList() {
                                         initial={{ opacity: 0, y: 20 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         transition={{ duration: 0.3 }}
-                                        onClick={() => navigate('/auth')}
+                                        onClick={promptLogin}
                                         className="group relative cursor-pointer p-6 rounded-2xl bg-gradient-to-br from-amber-500/5 to-orange-500/5 border border-amber-500/20 hover:border-amber-500/40 transition-all hover:shadow-lg hover:shadow-amber-500/10"
                                     >
                                         <div className="absolute -top-2 -right-2 px-2 py-1 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-medium flex items-center gap-1">
@@ -751,7 +762,7 @@ export function ProblemsList() {
                                     <span className="text-foreground font-semibold">{premiumData?.available_count || premiumData?.total || '20+'}  premium problems</span> with high opportunity scores
                                 </p>
                                 <Button
-                                    onClick={() => navigate('/auth')}
+                                    onClick={promptLogin}
                                     className="rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:opacity-90"
                                 >
                                     Sign Up Free to Unlock All
@@ -1020,6 +1031,59 @@ export function ProblemsList() {
                     }
                 </motion.div >
             )}
+
+            {/* Login Prompt Modal - Better UX than direct redirect */}
+            <Dialog open={showLoginModal} onOpenChange={setShowLoginModal}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <Sparkles className="h-5 w-5 text-primary" />
+                            Unlock Premium Problems
+                        </DialogTitle>
+                        <DialogDescription className="text-left pt-2">
+                            Create a free account to access:
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-3 py-4">
+                        <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-green-500/10 flex items-center justify-center">
+                                <CheckCircle2 className="h-4 w-4 text-green-500" />
+                            </div>
+                            <span className="text-sm">All free problems with full details</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-amber-500/10 flex items-center justify-center">
+                                <Crown className="h-4 w-4 text-amber-500" />
+                            </div>
+                            <span className="text-sm">Preview of premium high-score opportunities</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                                <Bookmark className="h-4 w-4 text-primary" />
+                            </div>
+                            <span className="text-sm">Save problems to your watchlist</span>
+                        </div>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                        <Button
+                            onClick={() => {
+                                setShowLoginModal(false);
+                                navigate('/auth');
+                            }}
+                            className="w-full bg-gradient-to-r from-primary to-accent"
+                        >
+                            Sign Up Free
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            onClick={() => setShowLoginModal(false)}
+                            className="text-muted-foreground"
+                        >
+                            Maybe Later
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div >
     );
 }

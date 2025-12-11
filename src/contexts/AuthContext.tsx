@@ -287,10 +287,53 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [user, handleTokensRefreshed]);
 
   // Initial auth check with retry
+  // OPTIMISTIC AUTH: Cache user in localStorage for instant page loads
+  const CACHED_USER_KEY = 'beseekr_cached_user';
+  const CACHE_EXPIRY_KEY = 'beseekr_cache_expiry';
+  const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
+
+  const getCachedUser = (): User | null => {
+    try {
+      const expiry = localStorage.getItem(CACHE_EXPIRY_KEY);
+      if (expiry && Date.now() > parseInt(expiry)) {
+        localStorage.removeItem(CACHED_USER_KEY);
+        localStorage.removeItem(CACHE_EXPIRY_KEY);
+        return null;
+      }
+      const cached = localStorage.getItem(CACHED_USER_KEY);
+      return cached ? JSON.parse(cached) : null;
+    } catch {
+      return null;
+    }
+  };
+
+  const setCachedUser = (user: User | null) => {
+    try {
+      if (user) {
+        localStorage.setItem(CACHED_USER_KEY, JSON.stringify(user));
+        localStorage.setItem(CACHE_EXPIRY_KEY, String(Date.now() + CACHE_TTL));
+      } else {
+        localStorage.removeItem(CACHED_USER_KEY);
+        localStorage.removeItem(CACHE_EXPIRY_KEY);
+      }
+    } catch {
+      // localStorage might be full or disabled
+    }
+  };
+
+  // ENHANCED: Initial auth check with optimistic loading
   useEffect(() => {
     const initAuth = async () => {
       try {
         logger.info('Checking initial authentication state');
+
+        // 1. OPTIMISTIC: Immediately show cached user (instant UI)
+        const cachedUser = getCachedUser();
+        if (cachedUser) {
+          logger.info('Using cached user for instant load', { userId: cachedUser.id });
+          setUser(cachedUser);
+          setLoading(false); // Show content immediately
+        }
 
         // Set up API client unauthorized handler
         apiClient.setUnauthorizedHandler(() => {
@@ -298,9 +341,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           if (!authErrorShownRef.current) {
             authErrorShownRef.current = true;
             handleAuthError();
+            setCachedUser(null); // Clear cache on auth error
           }
         });
 
+        // 2. VERIFY: API check in background (updates if different)
         await fetchCurrentUser();
       } catch (error) {
         logger.error('Initial auth check failed', { error });
@@ -315,6 +360,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (e.key === 'auth_logout' && e.newValue) {
         logger.info('Logout detected in another tab');
         handleAuthError();
+        setCachedUser(null);
       }
     };
 
@@ -327,13 +373,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const response = await apiClient.getCurrentUser();
       if (response.success && response.data) {
         setUser(response.data.user);
+        setCachedUser(response.data.user); // Update cache
         lastActivityRef.current = Date.now();
       } else {
         setUser(null);
+        setCachedUser(null);
       }
     } catch (error) {
       logger.error('Failed to fetch user', { error });
       setUser(null);
+      setCachedUser(null);
     } finally {
       setLoading(false);
     }
