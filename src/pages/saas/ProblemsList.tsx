@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
@@ -32,6 +32,8 @@ import {
     Zap,
     Check,
     Loader2,
+    Shield,
+    CheckCircle2,
 } from 'lucide-react';
 import { problemsApi } from '@/api/problems';
 import { paymentsApi, type Plan } from '@/api/payments';
@@ -205,6 +207,26 @@ export function ProblemsList() {
     const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('yearly');
     const [isCreatingLink, setIsCreatingLink] = useState(false);
 
+    // SEO - Update page meta tags (search-query focused)
+    useEffect(() => {
+        document.title = 'Startup Ideas 2024: Find Validated Business Problems | beseekr';
+        const metaDesc = document.querySelector('meta[name="description"]');
+        if (metaDesc) {
+            metaDesc.setAttribute('content', 'Find startup ideas that actually work. Discover validated SaaS ideas, B2B problems, and business opportunities from real market research. Free to browse.');
+        }
+        // Add keywords meta
+        let metaKeywords = document.querySelector('meta[name="keywords"]');
+        if (!metaKeywords) {
+            metaKeywords = document.createElement('meta');
+            metaKeywords.setAttribute('name', 'keywords');
+            document.head.appendChild(metaKeywords);
+        }
+        metaKeywords.setAttribute('content', 'startup ideas 2024, SaaS ideas, business ideas, validated problems, B2B startup ideas, indie hacker ideas, micro SaaS ideas');
+        return () => {
+            document.title = 'beseekr - Discover Validated Startup Problems';
+        };
+    }, []);
+
     // Fetch free problems
     const { data, isLoading, error } = useQuery({
         queryKey: ['problems', page, sortBy],
@@ -335,6 +357,32 @@ export function ProblemsList() {
                 <p className="text-sm sm:text-lg text-muted-foreground">
                     Validated pain points from thousands of real conversations. Find your next startup idea.
                 </p>
+
+                {/* Trust Badges */}
+                <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 mt-4 sm:mt-6">
+                    <div className="flex items-center gap-1.5 text-xs sm:text-sm text-muted-foreground">
+                        <CheckCircle2 className="h-4 w-4 text-green-500" />
+                        <span>Free forever</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs sm:text-sm text-muted-foreground">
+                        <Shield className="h-4 w-4 text-blue-500" />
+                        <span>No credit card</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs sm:text-sm text-muted-foreground">
+                        <Sparkles className="h-4 w-4 text-purple-500" />
+                        <span>AI-powered</span>
+                    </div>
+                </div>
+
+                {/* Social Proof */}
+                <div className="flex items-center justify-center gap-2 mt-3 sm:mt-4 text-xs sm:text-sm text-muted-foreground">
+                    <div className="flex -space-x-2">
+                        {[...Array(4)].map((_, i) => (
+                            <div key={i} className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-gradient-to-br from-primary/60 to-accent/60 border-2 border-background" />
+                        ))}
+                    </div>
+                    <span>Join <strong className="text-foreground">500+</strong> entrepreneurs finding validated ideas</span>
+                </div>
             </motion.div>
 
             {/* Gated Content Banner - Show for anonymous users */}

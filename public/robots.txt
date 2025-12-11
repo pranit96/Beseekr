@@ -1,7 +1,38 @@
-User-agent: Googlebot
+# beseekr Robots.txt
+# https://beseekr.com/robots.txt
+
+# Allow all crawlers
+User-agent: *
 Allow: /
 
+# Important pages for indexing
+Allow: /dashboard/problems
+Allow: /dashboard/pricing
+Allow: /dashboard/validate
+Allow: /contact
+Allow: /privacy
+Allow: /auth
+
+# Disallow internal/admin paths
+Disallow: /api/
+Disallow: /payment/
+Disallow: /*.json$
+Disallow: /*?*
+
+# Specific search engine crawlers
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 1
+
 User-agent: Bingbot
+Allow: /
+Crawl-delay: 2
+
+User-agent: Slurp
+Allow: /
+Crawl-delay: 2
+
+User-agent: DuckDuckBot
 Allow: /
 
 User-agent: Twitterbot
@@ -10,5 +41,11 @@ Allow: /
 User-agent: facebookexternalhit
 Allow: /
 
-User-agent: *
+User-agent: LinkedInBot
 Allow: /
+
+# Sitemap location
+Sitemap: https://beseekr.com/sitemap.xml
+
+# Host directive
+Host: https://beseekr.com

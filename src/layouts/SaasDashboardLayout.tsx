@@ -260,12 +260,18 @@ export function SaasDashboardLayout() {
                         </div>
 
                         {/* Center - Links */}
-                        <div className="flex items-center gap-4 sm:gap-6 text-sm">
+                        <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 text-sm">
                             <Link
-                                to="/privacy"
+                                to="/dashboard/problems"
                                 className="text-muted-foreground hover:text-foreground transition-colors"
                             >
-                                Privacy Policy
+                                Browse Problems
+                            </Link>
+                            <Link
+                                to="/dashboard/validate"
+                                className="text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                                Validate Ideas
                             </Link>
                             <Link
                                 to="/dashboard/pricing"
@@ -277,7 +283,13 @@ export function SaasDashboardLayout() {
                                 to="/contact"
                                 className="text-muted-foreground hover:text-foreground transition-colors"
                             >
-                                Contact Us
+                                Contact
+                            </Link>
+                            <Link
+                                to="/privacy"
+                                className="text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                                Privacy
                             </Link>
                         </div>
 

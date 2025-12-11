@@ -1,33 +1,241 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Multi-Agent AI Chat</title>
-    <meta name="description" content="Modern multi-agent AI orchestration platform with sequential and parallel execution modes" />
-    <meta name="author" content="Prompt Weaver" />
 
-    <!-- Rubik from Google Fonts for UI / headlines -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Funnel+Sans:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet">  
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <!-- Primary Meta Tags -->
+  <title>beseekr - Discover Validated Startup Problems & Business Ideas | AI Market Research</title>
+  <meta name="title" content="beseekr - Discover Validated Startup Problems & Business Ideas | AI Market Research" />
+  <meta name="description"
+    content="Find real problems people are willing to pay to solve. beseekr uses AI to analyze Reddit, forums & communities to discover validated startup ideas with market demand signals. Start free today." />
+  <meta name="author" content="beseekr" />
+  <meta name="keywords"
+    content="startup ideas, validated problems, business ideas, market research, AI research, startup validation, problem discovery, SaaS ideas, B2B problems, indie hackers, entrepreneur tools, market demand, startup opportunities, problem-solution fit" />
 
-    <!-- Open Graph -->
-    <meta property="og:title" content="Multi-Agent AI Chat" />
-    <meta property="og:description" content="Modern multi-agent AI orchestration platform" />
-    <meta property="og:type" content="website" />
-    <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+  <!-- Robots & Indexing -->
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+  <meta name="googlebot" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+  <meta name="bingbot" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
 
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@lovable_dev" />
-    <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
-  </head>
+  <!-- Canonical URL -->
+  <link rel="canonical" href="https://beseekr.com/" />
 
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+  <!-- Favicon & Icons -->
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+  <link rel="manifest" href="/site.webmanifest" />
+  <meta name="theme-color" content="#10b981" />
+  <meta name="msapplication-TileColor" content="#10b981" />
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://beseekr.com/" />
+  <meta property="og:title" content="beseekr - Discover Validated Startup Problems Worth Solving" />
+  <meta property="og:description"
+    content="Find real problems people are willing to pay to solve. AI-powered market research analyzing thousands of discussions to discover validated startup ideas." />
+  <meta property="og:image" content="https://beseekr.com/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="beseekr - AI-Powered Startup Problem Discovery Platform" />
+  <meta property="og:site_name" content="beseekr" />
+  <meta property="og:locale" content="en_US" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:url" content="https://beseekr.com/" />
+  <meta name="twitter:title" content="beseekr - Discover Validated Startup Problems Worth Solving" />
+  <meta name="twitter:description"
+    content="Find real problems people are willing to pay to solve. AI-powered market research for startup ideas." />
+  <meta name="twitter:image" content="https://beseekr.com/og-image.png" />
+  <meta name="twitter:image:alt" content="beseekr - AI-Powered Startup Problem Discovery" />
+  <meta name="twitter:site" content="@beseekr" />
+  <meta name="twitter:creator" content="@beseekr" />
+
+  <!-- Additional SEO Meta Tags -->
+  <meta name="rating" content="general" />
+  <meta name="referrer" content="origin-when-cross-origin" />
+  <meta name="format-detection" content="telephone=no" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="beseekr" />
+  <meta name="application-name" content="beseekr" />
+
+  <!-- Structured Data - Organization -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "beseekr",
+      "url": "https://beseekr.com",
+      "logo": "https://beseekr.com/logo.png",
+      "description": "AI-powered startup problem discovery and market research platform",
+      "sameAs": [
+        "https://twitter.com/beseekr",
+        "https://linkedin.com/company/beseekr"
+      ],
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "email": "hello@support.beseekr.com",
+        "contactType": "customer service"
+      }
+    }
+    </script>
+
+  <!-- Structured Data - WebSite with SearchAction -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "beseekr",
+      "url": "https://beseekr.com",
+      "description": "Discover validated startup problems worth solving with AI-powered market research",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "https://beseekr.com/dashboard/search?q={search_term_string}"
+        },
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
+
+  <!-- Structured Data - SoftwareApplication -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "beseekr",
+      "operatingSystem": "Web",
+      "applicationCategory": "BusinessApplication",
+      "description": "AI-powered platform to discover and validate startup problems by analyzing real market demand signals from online communities",
+      "offers": {
+        "@type": "AggregateOffer",
+        "lowPrice": "0",
+        "highPrice": "799",
+        "priceCurrency": "INR",
+        "offerCount": "3"
+      },
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.8",
+        "ratingCount": "50",
+        "bestRating": "5",
+        "worstRating": "1"
+      },
+      "featureList": [
+        "AI-powered problem discovery",
+        "Market demand validation",
+        "Real-time research reports",
+        "Startup idea validation",
+        "Competitive landscape analysis"
+      ]
+    }
+    </script>
+
+  <!-- Structured Data - FAQ -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is beseekr?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "beseekr is an AI-powered platform that helps entrepreneurs and founders discover validated startup problems by analyzing thousands of discussions from Reddit, forums, and online communities to identify real market demand signals."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How does beseekr find startup ideas?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "beseekr uses AI to analyze public discussions, identifying pain points, complaints, and requests that indicate genuine market demand. Each problem is scored based on frequency, engagement, and willingness to pay."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is beseekr free to use?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes! beseekr offers a free tier with access to basic problems. Premium tiers starting at ₹299/month unlock all problems and AI-powered validation reports."
+          }
+        }
+      ]
+    }
+    </script>
+
+  <!-- Structured Data - BreadcrumbList -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Home",
+          "item": "https://beseekr.com/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Browse Problems",
+          "item": "https://beseekr.com/dashboard/problems"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "Validate Ideas",
+          "item": "https://beseekr.com/dashboard/validate"
+        },
+        {
+          "@type": "ListItem",
+          "position": 4,
+          "name": "Pricing",
+          "item": "https://beseekr.com/dashboard/pricing"
+        }
+      ]
+    }
+    </script>
+
+  <!-- Preconnect for performance -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet" />
+
+  <!-- Preload critical resources -->
+  <link rel="preload" as="style"
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" />
+</head>
+
+<body>
+  <!-- Noscript fallback for SEO -->
+  <noscript>
+    <div style="padding: 20px; text-align: center; font-family: system-ui, sans-serif;">
+      <h1>beseekr - Discover Validated Startup Problems</h1>
+      <p>Find real problems people are willing to pay to solve. Our AI-powered platform analyzes thousands of
+        discussions to discover validated startup ideas with market demand signals.</p>
+      <p>Please enable JavaScript to use beseekr.</p>
+      <a href="https://beseekr.com/dashboard/problems">Browse Problems</a> |
+      <a href="https://beseekr.com/dashboard/pricing">View Pricing</a> |
+      <a href="https://beseekr.com/contact">Contact Us</a>
+    </div>
+  </noscript>
+
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
 </html>

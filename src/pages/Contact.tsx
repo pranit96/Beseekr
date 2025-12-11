@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -37,6 +37,18 @@ export function Contact() {
         subject: '',
         message: '',
     });
+
+    // SEO - Update page meta tags
+    useEffect(() => {
+        document.title = 'Contact Us - Get in Touch | beseekr';
+        const metaDesc = document.querySelector('meta[name="description"]');
+        if (metaDesc) {
+            metaDesc.setAttribute('content', 'Have questions about beseekr? Contact our team for support, feedback, or partnership inquiries. We typically respond within 24-48 hours.');
+        }
+        return () => {
+            document.title = 'beseekr - Discover Validated Startup Problems';
+        };
+    }, []);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;

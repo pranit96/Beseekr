@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -1209,6 +1209,25 @@ export function Validate() {
     const [problemText, setProblemText] = useState('');
     const [showForm, setShowForm] = useState(false);
     const [upgradeError, setUpgradeError] = useState<UpgradeError | null>(null);
+
+    // SEO - Update page meta tags (search-query focused)
+    useEffect(() => {
+        document.title = 'Validate Your Startup Idea: Free AI Market Research Tool | beseekr';
+        const metaDesc = document.querySelector('meta[name="description"]');
+        if (metaDesc) {
+            metaDesc.setAttribute('content', 'Free AI tool to validate your startup idea. Get instant market research reports with demand signals, competitor analysis, pricing insights, and go-to-market strategy.');
+        }
+        let metaKeywords = document.querySelector('meta[name="keywords"]');
+        if (!metaKeywords) {
+            metaKeywords = document.createElement('meta');
+            metaKeywords.setAttribute('name', 'keywords');
+            document.head.appendChild(metaKeywords);
+        }
+        metaKeywords.setAttribute('content', 'validate startup idea, market research tool, idea validation, startup validation, competitor analysis, AI market research');
+        return () => {
+            document.title = 'beseekr - Discover Validated Startup Problems';
+        };
+    }, []);
 
     // Fetch reports list (only if authenticated)
     const { data: reportsData, isLoading: isLoadingReports } = useQuery({

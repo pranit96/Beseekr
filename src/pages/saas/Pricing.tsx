@@ -49,10 +49,20 @@ export function Pricing() {
     const [isCreatingLink, setIsCreatingLink] = useState(false);
     const [currency, setCurrency] = useState<Currency>('INR');
 
-    // Detect user location on mount
+    // Detect user location on mount + SEO
     useEffect(() => {
         const detected = detectUserCountry();
         setCurrency(detected);
+
+        // SEO - Update page meta tags
+        document.title = 'Pricing Plans - Affordable Market Research | beseekr';
+        const metaDesc = document.querySelector('meta[name="description"]');
+        if (metaDesc) {
+            metaDesc.setAttribute('content', 'Choose the perfect plan to discover validated startup problems. Free tier available. Premium plans from ₹299/month or $3.99/month.');
+        }
+        return () => {
+            document.title = 'beseekr - Discover Validated Startup Problems';
+        };
     }, []);
 
     // Fetch plans with caching (5 minutes stale time)
@@ -131,6 +141,22 @@ export function Pricing() {
                 <p className="text-muted-foreground text-base sm:text-lg max-w-2xl mx-auto">
                     Get access to premium problems, unlimited validations, and powerful insights to build your next successful product.
                 </p>
+
+                {/* Trust Badges */}
+                <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-8 mt-6">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Check className="h-4 w-4 text-green-500" />
+                        <span>Cancel anytime</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Check className="h-4 w-4 text-green-500" />
+                        <span>Secure payments</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Check className="h-4 w-4 text-green-500" />
+                        <span>7-day refund</span>
+                    </div>
+                </div>
             </motion.div>
 
             {/* Toggles Row */}
