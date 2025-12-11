@@ -6,7 +6,7 @@
   
   <!-- Homepage / Landing -->
   <url>
-    <loc>https://www.beseekr.com/</loc>
+    <loc>https://beseekr.com/</loc>
     <lastmod>2025-12-11</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
@@ -14,7 +14,7 @@
   
   <!-- Problems Discovery (Main Feature) -->
   <url>
-    <loc>https://www.beseekr.com/dashboard/problems</loc>
+    <loc>https://beseekr.com/dashboard/problems</loc>
     <lastmod>2025-12-11</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
@@ -22,7 +22,7 @@
   
   <!-- Pricing Page -->
   <url>
-    <loc>https://www.beseekr.com/dashboard/pricing</loc>
+    <loc>https://beseekr.com/dashboard/pricing</loc>
     <lastmod>2025-12-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
@@ -30,7 +30,7 @@
   
   <!-- Idea Validation / Research -->
   <url>
-    <loc>https://www.beseekr.com/dashboard/validate</loc>
+    <loc>https://beseekr.com/dashboard/validate</loc>
     <lastmod>2025-12-11</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -38,7 +38,7 @@
   
   <!-- Search -->
   <url>
-    <loc>https://www.beseekr.com/dashboard/search</loc>
+    <loc>https://beseekr.com/dashboard/search</loc>
     <lastmod>2025-12-11</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
@@ -46,7 +46,7 @@
   
   <!-- Watchlist -->
   <url>
-    <loc>https://www.beseekr.com/dashboard/watchlist</loc>
+    <loc>https://beseekr.com/dashboard/watchlist</loc>
     <lastmod>2025-12-11</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
@@ -54,7 +54,7 @@
   
   <!-- Authentication -->
   <url>
-    <loc>https://www.beseekr.com/auth</loc>
+    <loc>https://beseekr.com/auth</loc>
     <lastmod>2025-12-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
@@ -62,7 +62,7 @@
   
   <!-- Contact Page -->
   <url>
-    <loc>https://www.beseekr.com/contact</loc>
+    <loc>https://beseekr.com/contact</loc>
     <lastmod>2025-12-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
@@ -70,7 +70,7 @@
   
   <!-- Privacy Policy -->
   <url>
-    <loc>https://www.beseekr.com/privacy</loc>
+    <loc>https://beseekr.com/privacy</loc>
     <lastmod>2025-12-11</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
