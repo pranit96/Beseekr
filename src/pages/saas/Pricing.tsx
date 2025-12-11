@@ -268,7 +268,7 @@ export function Pricing() {
                         )}
 
                         <div className="mb-6">
-                            <h3 className="text-xl font-bold mb-2">Standard</h3>
+                            <h2 className="text-xl font-bold mb-2">Standard</h2>
                             <p className="text-sm text-muted-foreground">Perfect for indie hackers and solopreneurs</p>
                         </div>
 
@@ -364,10 +364,10 @@ export function Pricing() {
                         )}
 
                         <div className="mb-6 pt-2">
-                            <h3 className="text-xl font-bold mb-2 flex items-center gap-2">
+                            <h2 className="text-xl font-bold mb-2 flex items-center gap-2">
                                 Pro
                                 <Crown className="h-5 w-5 text-amber-500" />
-                            </h3>
+                            </h2>
                             <p className="text-sm text-muted-foreground">For serious entrepreneurs and teams</p>
                         </div>
 

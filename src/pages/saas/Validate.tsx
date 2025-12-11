@@ -482,6 +482,7 @@ function ReportCard({ report: rawReport, onDelete }: { report: any; onDelete: (i
                             size="icon"
                             className="h-8 w-8 sm:h-9 sm:w-9 text-muted-foreground hover:text-destructive"
                             onClick={handleDelete}
+                            aria-label="Delete report"
                         >
                             <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                         </Button>

@@ -174,6 +174,7 @@ export function SaasDashboardLayout() {
                                     size="icon"
                                     onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
                                     className="rounded-lg sm:rounded-xl h-8 w-8 sm:h-9 sm:w-9"
+                                    aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
                                 >
                                     <AnimatePresence mode="wait">
                                         <motion.div
@@ -194,7 +195,7 @@ export function SaasDashboardLayout() {
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
                                         <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                                            <Button variant="ghost" size="icon" className="rounded-lg sm:rounded-xl h-8 w-8 sm:h-9 sm:w-9">
+                                            <Button variant="ghost" size="icon" className="rounded-lg sm:rounded-xl h-8 w-8 sm:h-9 sm:w-9" aria-label="User menu">
                                                 <User className="h-4 w-4 sm:h-5 sm:w-5" />
                                             </Button>
                                         </motion.div>

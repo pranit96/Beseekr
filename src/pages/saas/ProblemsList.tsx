@@ -43,10 +43,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const ITEMS_PER_PAGE = 12;
 
-// Skeleton loading
+// Skeleton loading - fixed height to prevent layout shift
 function ProblemSkeleton() {
     return (
-        <div className="group relative p-4 sm:p-6 rounded-2xl bg-gradient-to-br from-muted/50 to-muted/30 border border-border/50">
+        <div className="group relative p-4 sm:p-6 rounded-2xl bg-gradient-to-br from-muted/50 to-muted/30 border border-border/50 min-h-[180px] sm:min-h-[200px]">
             <div className="space-y-3 sm:space-y-4">
                 <div className="flex gap-2">
                     <Skeleton className="h-5 w-14 sm:w-16 rounded-full" />
@@ -110,6 +110,7 @@ function ProblemCard({
                 "bg-gradient-to-br from-background to-muted/30",
                 "border border-border/50 hover:border-primary/30",
                 "hover:shadow-xl hover:shadow-primary/5 active:scale-[0.98]",
+                "min-h-[180px] sm:min-h-[200px]",
                 problem.has_brief && problem.brief_approved && "ring-2 ring-primary/20"
             )}
         >
@@ -358,20 +359,10 @@ export function ProblemsList() {
                     Validated pain points from thousands of real conversations. Find your next startup idea.
                 </p>
 
-                {/* Trust Badges */}
-                <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 mt-4 sm:mt-6">
-                    <div className="flex items-center gap-1.5 text-xs sm:text-sm text-muted-foreground">
-                        <CheckCircle2 className="h-4 w-4 text-green-500" />
-                        <span>Free forever</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 text-xs sm:text-sm text-muted-foreground">
-                        <Shield className="h-4 w-4 text-blue-500" />
-                        <span>No credit card</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 text-xs sm:text-sm text-muted-foreground">
-                        <Sparkles className="h-4 w-4 text-purple-500" />
-                        <span>AI-powered</span>
-                    </div>
+                {/* Trust Badge */}
+                <div className="flex items-center justify-center gap-1.5 text-xs sm:text-sm text-muted-foreground mt-4 sm:mt-6">
+                    <Sparkles className="h-4 w-4 text-purple-500" />
+                    <span>AI-powered research</span>
                 </div>
 
                 {/* Social Proof */}

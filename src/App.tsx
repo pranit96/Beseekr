@@ -8,31 +8,41 @@ import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { KeyboardShortcutsDialog } from "./components/KeyboardShortcutsDialog";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { Analytics as VercelAnalytics } from "@vercel/analytics/react";
-import { useEffect } from "react";
+import { useEffect, lazy, Suspense } from "react";
+import { Loader2 } from "lucide-react";
 
-// Page imports
-import Chat from "./pages/Chat";
-import Agents from "./pages/Agents";
-import Analytics from "./pages/Analytics";
-import Profile from "./pages/Profile";
+// Critical page imports (loaded immediately)
 import Auth from "./pages/Auth";
-import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
-import Landing from "./pages/Landing";
 import Privacy from "./pages/Privacy";
-import DeepAnalytics from "./pages/DeepAnalytics";
-import Deck from "./pages/Deck";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import PaymentFailed from "./pages/PaymentFailed";
 import Contact from "./pages/Contact";
 
-// SaaS Dashboard (PUBLIC)
+// Lazy loaded pages (reduced initial bundle)
+const Chat = lazy(() => import("./pages/Chat"));
+const Agents = lazy(() => import("./pages/Agents"));
+const Analytics = lazy(() => import("./pages/Analytics"));
+const Profile = lazy(() => import("./pages/Profile"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const Landing = lazy(() => import("./pages/Landing"));
+const DeepAnalytics = lazy(() => import("./pages/DeepAnalytics"));
+const Deck = lazy(() => import("./pages/Deck"));
+
+// SaaS Dashboard - Critical, loaded immediately
 import { SaasDashboardLayout } from "./layouts/SaasDashboardLayout";
 import ProblemsList from "./pages/saas/ProblemsList";
 import ProblemDetails from "./pages/saas/ProblemDetails";
 import Validate from "./pages/saas/Validate";
 import SaasWatchlist from "./pages/saas/Watchlist";
 import Pricing from "./pages/saas/Pricing";
+
+// Loading fallback for lazy components
+const PageLoader = () => (
+  <div className="min-h-screen flex items-center justify-center">
+    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+  </div>
+);
 
 // Query client
 const queryClient = new QueryClient({
@@ -105,7 +115,7 @@ const App = () => {
                   <Route path="/auth" element={<Auth />} />
 
                   {/* Password reset */}
-                  <Route path="/reset-password" element={<ResetPassword />} />
+                  <Route path="/reset-password" element={<Suspense fallback={<PageLoader />}><ResetPassword /></Suspense>} />
 
                   {/* Privacy policy */}
                   <Route path="/privacy" element={<Privacy />} />
@@ -139,27 +149,27 @@ const App = () => {
                       ============================================= */}
                   <Route
                     path="/chat"
-                    element={<ProtectedRoute><Chat /></ProtectedRoute>}
+                    element={<ProtectedRoute><Suspense fallback={<PageLoader />}><Chat /></Suspense></ProtectedRoute>}
                   />
                   <Route
                     path="/agents"
-                    element={<ProtectedRoute><Agents /></ProtectedRoute>}
+                    element={<ProtectedRoute><Suspense fallback={<PageLoader />}><Agents /></Suspense></ProtectedRoute>}
                   />
                   <Route
                     path="/analytics"
-                    element={<ProtectedRoute><Analytics /></ProtectedRoute>}
+                    element={<ProtectedRoute><Suspense fallback={<PageLoader />}><Analytics /></Suspense></ProtectedRoute>}
                   />
                   <Route
                     path="/metaLayer"
-                    element={<ProtectedRoute><DeepAnalytics /></ProtectedRoute>}
+                    element={<ProtectedRoute><Suspense fallback={<PageLoader />}><DeepAnalytics /></Suspense></ProtectedRoute>}
                   />
                   <Route
                     path="/profile"
-                    element={<ProtectedRoute><Profile /></ProtectedRoute>}
+                    element={<ProtectedRoute><Suspense fallback={<PageLoader />}><Profile /></Suspense></ProtectedRoute>}
                   />
                   <Route
                     path="/deck"
-                    element={<ProtectedRoute><Deck /></ProtectedRoute>}
+                    element={<ProtectedRoute><Suspense fallback={<PageLoader />}><Deck /></Suspense></ProtectedRoute>}
                   />
 
                   {/* 404 */}
