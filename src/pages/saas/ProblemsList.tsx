@@ -228,17 +228,21 @@ export function ProblemsList() {
         };
     }, []);
 
-    // Fetch free problems
+    // Fetch free problems (cache for 1 hour)
     const { data, isLoading, error } = useQuery({
         queryKey: ['problems', page, sortBy],
         queryFn: () => problemsApi.getProblems(sortBy, page, ITEMS_PER_PAGE),
+        staleTime: 60 * 60 * 1000, // 1 hour
+        gcTime: 2 * 60 * 60 * 1000, // 2 hours
     });
 
-    // Fetch premium problems (requires auth)
+    // Fetch premium problems (requires auth, cache for 1 hour)
     const { data: premiumData, isLoading: isLoadingPremium } = useQuery({
         queryKey: ['premium-problems', premiumPage],
         queryFn: () => problemsApi.getPremiumProblems(premiumPage, ITEMS_PER_PAGE),
         enabled: activeTab === 'premium',
+        staleTime: 60 * 60 * 1000, // 1 hour
+        gcTime: 2 * 60 * 60 * 1000, // 2 hours
     });
 
     // Fetch subscription plans when Premium tab is active

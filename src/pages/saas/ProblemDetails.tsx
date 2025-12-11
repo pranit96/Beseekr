@@ -52,6 +52,8 @@ export function ProblemDetails() {
         queryKey: ['problem', id],
         queryFn: () => problemsApi.getProblemDetails(id!),
         enabled: !!id,
+        staleTime: 24 * 60 * 60 * 1000, // 24 hours - data won't refetch
+        gcTime: 48 * 60 * 60 * 1000, // 48 hours - keep in cache
     });
 
     const { data: watchlistData } = useQuery({
