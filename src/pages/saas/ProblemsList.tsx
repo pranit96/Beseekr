@@ -562,7 +562,8 @@ export function ProblemsList() {
                     )}
 
                     {/* Premium Teaser on Free Tab */}
-                    {!isLoading && problems.length > 0 && (
+                    {/* Hide Featured Premium Problem footer for premium users (same logic as pricing tab) */}
+                    {!isLoading && problems.length > 0 && !premiumData?.is_premium && (
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
