@@ -306,68 +306,30 @@ export function ProblemDetails() {
                 <p className="mt-3 text-muted-foreground leading-relaxed">{problem.summary || problem.description}</p>
             </div>
 
-            {/* ⚠️ DATA RELIABILITY NOTICE - Show based on data confidence */}
-            {problem.data_confidence && (
-                <div className={cn(
-                    "flex items-start gap-3 p-4 rounded-lg border",
-                    problem.data_confidence.level === 'low'
-                        ? "bg-amber-500/10 border-amber-500/30"
-                        : problem.data_confidence.level === 'medium'
-                            ? "bg-yellow-500/5 border-yellow-500/20"
-                            : "bg-green-500/5 border-green-500/20"
-                )}>
-                    {problem.data_confidence.level === 'low' ? (
-                        <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
-                    ) : problem.data_confidence.level === 'medium' ? (
-                        <Info className="h-5 w-5 text-yellow-500 shrink-0 mt-0.5" />
-                    ) : (
-                        <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0 mt-0.5" />
-                    )}
-                    <div className="flex-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                            <p className={cn(
-                                "font-medium",
-                                problem.data_confidence.level === 'low' ? "text-amber-600 dark:text-amber-400" :
-                                    problem.data_confidence.level === 'medium' ? "text-yellow-600 dark:text-yellow-400" :
-                                        "text-green-600 dark:text-green-400"
-                            )}>
-                                {problem.data_confidence.level === 'low' ? 'Low' :
-                                    problem.data_confidence.level === 'medium' ? 'Moderate' : 'High'} Data Reliability
-                            </p>
-                            <Badge variant="outline" className="text-[10px]">
-                                Score: {problem.data_confidence.score}/100
-                            </Badge>
+            {/* Data Reliability - Compact inline notice (details in tooltip) */}
+            {problem.data_confidence && problem.data_confidence.level !== 'high' && (
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <div className={cn(
+                            "inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs cursor-help",
+                            problem.data_confidence.level === 'low'
+                                ? "bg-amber-500/10 text-amber-600"
+                                : "bg-yellow-500/10 text-yellow-600"
+                        )}>
+                            <AlertTriangle className="h-3 w-3" />
+                            {problem.data_confidence.level === 'low' ? 'Limited data' : 'Moderate confidence'}
                         </div>
-
-                        {/* Explicit reliability messaging */}
-                        <div className="text-sm text-muted-foreground mt-1 space-y-1">
-                            {problem.data_confidence.level === 'low' ? (
-                                <>
-                                    <p>⚠️ <strong>Insights are provisional.</strong> Limited data ({problem.metrics?.source_count || 1} source{(problem.metrics?.source_count || 1) > 1 ? 's' : ''}).</p>
-                                    <p className="text-xs">Opportunity score may change as more signals appear. Verify with independent research.</p>
-                                </>
-                            ) : problem.data_confidence.level === 'medium' ? (
-                                <p>Moderate evidence. Cross-reference before major decisions.</p>
-                            ) : (
-                                <p>Strong evidence from multiple validated sources.</p>
-                            )}
-                        </div>
-
-                        {/* Data factors */}
-                        <div className="flex flex-wrap gap-3 mt-2">
-                            {Object.entries(problem.data_confidence.factors).map(([key, factor]) => (
-                                factor && (
-                                    <span key={key} className="text-xs text-muted-foreground">
-                                        {factor.label}: <span className={cn(
-                                            factor.status === 'low' ? 'text-amber-500 font-medium' :
-                                                factor.status === 'medium' ? 'text-yellow-500' : 'text-green-500'
-                                        )}>{factor.value}</span>
-                                    </span>
-                                )
-                            ))}
-                        </div>
-                    </div>
-                </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="max-w-xs">
+                        <p className="font-medium mb-1">
+                            {problem.data_confidence.level === 'low' ? 'Early insights' : 'Growing evidence'}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                            Based on {problem.metrics?.source_count || 1} source(s).
+                            {problem.data_confidence.level === 'low' && ' Scores may change as more signals appear.'}
+                        </p>
+                    </TooltipContent>
+                </Tooltip>
             )}
 
             {/* ✨ OPPORTUNITY INSIGHT SUMMARY - Decision Tool */}
@@ -459,16 +421,8 @@ export function ProblemDetails() {
                 </CardContent>
             </Card>
 
-            {/* ─────────────────────────────────────────────────────────── */}
-            {/* 1️⃣ SHOW ME: Problem Evidence */}
-            {/* ─────────────────────────────────────────────────────────── */}
-            <div className="flex items-center gap-2 pt-2">
-                <div className="h-px flex-1 bg-border" />
-                <span className="text-xs font-medium text-muted-foreground px-2">📋 Problem Evidence</span>
-                <div className="h-px flex-1 bg-border" />
-            </div>
 
-            {/* Key Metrics with Tooltips */}
+            {/* Key Metrics */}
             <div className="grid gap-3 md:grid-cols-4">
                 <Tooltip>
                     <TooltipTrigger asChild>
@@ -489,10 +443,7 @@ export function ProblemDetails() {
                                             {(problem.metrics?.frequency || 0) >= 30 ? 'High' : (problem.metrics?.frequency || 0) >= 10 ? 'Moderate' : 'Low'}
                                         </Badge>
                                     </div>
-                                    <p className="text-xs text-muted-foreground flex items-center gap-1">
-                                        Frequency <Info className="h-3 w-3" />
-                                    </p>
-                                    <p className="text-[10px] text-muted-foreground/70">How often this appears</p>
+                                    <p className="text-xs text-muted-foreground">Frequency</p>
                                 </div>
                             </CardContent>
                         </Card>
@@ -526,10 +477,7 @@ export function ProblemDetails() {
                                             {(problem.metrics?.upvote_score || 0) >= 100 ? 'Strong' : (problem.metrics?.upvote_score || 0) >= 20 ? 'Good' : 'Limited'}
                                         </Badge>
                                     </div>
-                                    <p className="text-xs text-muted-foreground flex items-center gap-1">
-                                        Upvotes <Info className="h-3 w-3" />
-                                    </p>
-                                    <p className="text-[10px] text-muted-foreground/70">Community validation</p>
+                                    <p className="text-xs text-muted-foreground">Upvotes</p>
                                 </div>
                             </CardContent>
                         </Card>
@@ -635,16 +583,7 @@ export function ProblemDetails() {
                 )}
             </div>
 
-            {/* ─────────────────────────────────────────────────────────── */}
-            {/* 2️⃣ EXPLAIN TO ME: Analysis & Validation */}
-            {/* ─────────────────────────────────────────────────────────── */}
-            <div className="flex items-center gap-2 pt-2">
-                <div className="h-px flex-1 bg-border" />
-                <span className="text-xs font-medium text-muted-foreground px-2">📊 Analysis & Validation</span>
-                <div className="h-px flex-1 bg-border" />
-            </div>
-
-            {/* 📊 NEW: MARKET SIZING + BUILD ESTIMATE + GO-TO-MARKET */}
+            {/* Market Sizing + Build Estimate */}
             <div className="grid gap-4 lg:grid-cols-2">
                 {/* Market Sizing Funnel */}
                 {problem.market_sizing && (
@@ -784,16 +723,8 @@ export function ProblemDetails() {
                 )}
             </div>
 
-            {/* ─────────────────────────────────────────────────────────── */}
-            {/* 3️⃣ GUIDE ME: Recommendations */}
-            {/* ─────────────────────────────────────────────────────────── */}
-            <div className="flex items-center gap-2 pt-2">
-                <div className="h-px flex-1 bg-border" />
-                <span className="text-xs font-medium text-muted-foreground px-2">🚀 Recommendations</span>
-                <div className="h-px flex-1 bg-border" />
-            </div>
 
-            {/* 🚀 GO-TO-MARKET TACTICS */}
+            {/* Go-to-Market Tactics */}
             {problem.go_to_market && (
                 <Card className="border-purple-500/20">
                     <CardHeader className="pb-2">

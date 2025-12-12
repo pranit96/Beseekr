@@ -627,45 +627,27 @@ function ReportDisplay({ report: rawReport }: { report: any }) {
                         </div>
                     </div>
 
-                    {/* Metrics Grid with Micro-signifiers (Norman Gap A) */}
-                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4 mt-4 sm:mt-6 pt-4 sm:pt-6 border-t">
+                    {/* Metrics Grid */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-4 sm:mt-6 pt-4 sm:pt-6 border-t">
                         <div className="text-center">
                             <p className="text-lg sm:text-2xl font-bold">{uniqueVoices}</p>
-                            <p className="text-[10px] sm:text-xs text-muted-foreground">Unique Voices</p>
-                            <p className="text-[9px] text-muted-foreground/70">Validated discussions</p>
+                            <p className="text-[10px] sm:text-xs text-muted-foreground">Sources</p>
                         </div>
                         <div className="text-center">
                             <p className="text-lg sm:text-2xl font-bold">{sourcesAnalyzed.reddit_discussions || 0}</p>
                             <p className="text-[10px] sm:text-xs text-muted-foreground">Reddit</p>
-                            <p className="text-[9px] text-muted-foreground/70">Community signals</p>
                         </div>
                         <div className="text-center">
                             <p className="text-lg sm:text-2xl font-bold">{sourcesAnalyzed.hn_threads || 0}</p>
-                            <p className="text-[10px] sm:text-xs text-muted-foreground">HN Threads</p>
-                            <p className="text-[9px] text-muted-foreground/70">Tech community</p>
+                            <p className="text-[10px] sm:text-xs text-muted-foreground">HN</p>
                         </div>
                         <div className="text-center">
                             <p className="text-lg sm:text-2xl font-bold">{sourcesAnalyzed.pricing_datapoints || 0}</p>
-                            <p className="text-[10px] sm:text-xs text-muted-foreground">Pricing Data</p>
-                            <p className="text-[9px] text-muted-foreground/70">Willingness to pay</p>
-                        </div>
-                        <div className="text-center hidden sm:block">
-                            <p className="text-lg sm:text-2xl font-bold">{metadata.execution_time_seconds || 0}s</p>
-                            <p className="text-[10px] sm:text-xs text-muted-foreground">Analysis</p>
-                            <p className="text-[9px] text-muted-foreground/70">Processing time</p>
+                            <p className="text-[10px] sm:text-xs text-muted-foreground">Pricing</p>
                         </div>
                     </div>
                 </CardContent>
             </Card>
-
-            {/* ─────────────────────────────────────────────────────────── */}
-            {/* 1️⃣ SHOW ME: Evidence & Validation (Norman Gap E) */}
-            {/* ─────────────────────────────────────────────────────────── */}
-            <div className="flex items-center gap-2 pt-2">
-                <div className="h-px flex-1 bg-border" />
-                <span className="text-xs font-medium text-muted-foreground px-2">📋 Evidence & Validation</span>
-                <div className="h-px flex-1 bg-border" />
-            </div>
 
             {/* Detailed Tabs */}
             <Tabs defaultValue="validation" className="space-y-3 sm:space-y-4">
