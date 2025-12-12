@@ -15,6 +15,136 @@ export interface TrendPoint {
     momentum?: string;
 }
 
+// ============ NEW ENRICHED API TYPES ============
+
+export interface OpportunityScoreFactor {
+    name: string;
+    score: number;
+    original_score?: number;
+    weight: number;
+    impact: 'high' | 'medium' | 'low';
+    reason: string;
+}
+
+export interface OpportunityScore {
+    value: number;
+    original_value?: number;
+    evidence_penalty?: string;
+    confidence_adjusted?: number;
+    confidence_penalty?: string;
+    summary?: string;
+    warnings?: string[];
+    factors?: OpportunityScoreFactor[];
+}
+
+export interface DataConfidenceFactor {
+    value: number;
+    status: 'high' | 'medium' | 'low';
+    label: string;
+}
+
+export interface DataConfidence {
+    level: 'high' | 'medium' | 'low';
+    score: number;
+    factors: {
+        frequency?: DataConfidenceFactor;
+        sources?: DataConfidenceFactor;
+        evidence?: DataConfidenceFactor;
+        validation_signals?: DataConfidenceFactor;
+    };
+    disclaimer?: string;
+}
+
+export interface ValidationStrength {
+    score: number;
+    max_score: number;
+    verdict: string;
+    breakdown: {
+        discussion_volume: number;
+        evidence_quality: number;
+        external_validation: number;
+        trend_momentum: number;
+    };
+    missing: string[];
+    recommendation?: string;
+}
+
+export interface MarketSizingTier {
+    value: number;
+    display: string;
+    source: string;
+    raw_source?: string;
+    multiplier?: string;
+}
+
+export interface MarketSizing {
+    tam: MarketSizingTier;
+    sam: MarketSizingTier;
+    som: MarketSizingTier;
+    growth_rate?: {
+        value: number;
+        display: string;
+        source: string;
+    };
+    methodology_note?: string;
+}
+
+export interface GoToMarket {
+    first_10_customers: string[];
+    communities: string[];
+    content_hooks: string[];
+    competitor_strategy?: string;
+    launch_platform?: string;
+}
+
+export interface BuildEstimate {
+    mvp_weeks: number;
+    complexity: 'low' | 'medium' | 'high';
+    suggested_stack: string[];
+    key_challenge?: string;
+    solo_founder_feasible: boolean;
+    team_recommendation?: string;
+    cost_estimate?: {
+        solo: string;
+        outsourced: string;
+    };
+}
+
+export interface CompetitorIntelDirect {
+    name: string;
+    type: string;
+    mentions: number;
+    sentiment: string;
+    pricing: string;
+    weaknesses: string[];
+    strengths: string[];
+}
+
+export interface CompetitorIntel {
+    total_competitors: number;
+    filtered_out?: number;
+    direct: CompetitorIntelDirect[];
+    gaps: string[];
+    pain_points: string[];
+    positioning?: string;
+    data_quality?: {
+        level: string;
+        warning?: string;
+    };
+}
+
+export interface RecommendedApproachBullet {
+    type: 'mvp' | 'monetization' | 'acquisition' | 'timeline' | 'metrics';
+    text: string;
+}
+
+export interface RecommendedApproach {
+    bullets: RecommendedApproachBullet[];
+    full_text: string;
+}
+
+// ============ END NEW TYPES ============
+
 export interface PricingSignal {
     id: string;
     signal: string;
@@ -143,22 +273,49 @@ export interface Problem {
     id: string;
     title: string;
     summary: string;
+    description?: string;
     metrics: ProblemMetrics;
     trend: TrendPoint[];
     pricing_signals: PricingSignal[];
     competitors: Competitor[];
     market_estimate?: MarketEstimate;
     quotes: Quote[];
-    sources: Source[];
+    sources: Source[] | string[];
     created_at: string;
     updated_at: string;
-    // New enriched fields
+    // Enriched fields
     tags?: string[];
     category?: string;
     domain?: string[];
     target_audience?: string;
     recommended_action?: string;
     brief?: Brief;
+    // NEW: Structured opportunity score
+    opportunity_score?: OpportunityScore;
+    // NEW: Data confidence indicator
+    data_confidence?: DataConfidence;
+    // NEW: Validation strength
+    validation_strength?: ValidationStrength;
+    // NEW: Market sizing (TAM/SAM/SOM)
+    market_sizing?: MarketSizing;
+    // NEW: Go-to-market tactics
+    go_to_market?: GoToMarket;
+    // NEW: Build estimate
+    build_estimate?: BuildEstimate;
+    // NEW: Competitor intelligence
+    competitor_intel?: CompetitorIntel;
+    // NEW: Structured recommended approach
+    recommended_approach?: RecommendedApproach;
+    // Additional fields from API
+    potential_score?: number;
+    feasibility_score?: number;
+    quality_score?: number;
+    market_size?: string;
+    competition_level?: string;
+    technical_difficulty?: string;
+    subreddits?: string[];
+    related_posts?: any[];
+    top_quotes?: any[];
 }
 
 export interface ProblemListItem {

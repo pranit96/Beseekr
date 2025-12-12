@@ -8,6 +8,12 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import {
+    Accordion,
+    AccordionContent,
+    AccordionItem,
+    AccordionTrigger,
+} from '@/components/ui/accordion';
+import {
     Loader2,
     AlertCircle,
     ArrowLeft,
@@ -30,6 +36,16 @@ import {
     CheckCircle2,
     AlertTriangle,
     Sparkles,
+    Clock,
+    Rocket,
+    Shield,
+    Code,
+    Wrench,
+    Copy,
+    Check,
+    XCircle,
+    ArrowRight,
+    ChevronRight,
 } from 'lucide-react';
 import {
     LineChart,
@@ -228,17 +244,45 @@ export function ProblemDetails() {
 
             {/* Title Section */}
             <div>
-                <div className="flex items-center gap-2 mb-2">
-                    {problem.tags?.map((tag) => (
-                        <Badge key={tag} variant="outline" className="text-xs">{tag}</Badge>
-                    ))}
-                    {brief?.approved && (
-                        <Badge variant="default" className="text-xs">Brief Available</Badge>
+                <div className="flex flex-wrap items-center gap-2 mb-2">
+                    {problem.category && (
+                        <Badge variant="default" className="text-xs capitalize">{problem.category}</Badge>
                     )}
+                    {problem.domain?.map((d) => (
+                        <Badge key={d} variant="outline" className="text-xs">{d}</Badge>
+                    ))}
+                    {problem.tags?.map((tag) => (
+                        <Badge key={tag} variant="secondary" className="text-xs">{tag}</Badge>
+                    ))}
                 </div>
                 <h1 className="text-2xl md:text-3xl font-bold">{problem.title}</h1>
-                <p className="mt-3 text-muted-foreground leading-relaxed">{problem.summary}</p>
+                <p className="mt-3 text-muted-foreground leading-relaxed">{problem.summary || problem.description}</p>
             </div>
+
+            {/* ⚠️ DATA CONFIDENCE WARNING - Show if low confidence */}
+            {problem.data_confidence && problem.data_confidence.level === 'low' && (
+                <div className="flex items-start gap-3 p-4 rounded-lg bg-amber-500/10 border border-amber-500/30">
+                    <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                        <p className="font-medium text-amber-600 dark:text-amber-400">Low Data Confidence</p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                            {problem.data_confidence.disclaimer || 'Limited data volume - insights may be less reliable. More research recommended.'}
+                        </p>
+                        <div className="flex flex-wrap gap-3 mt-2">
+                            {Object.entries(problem.data_confidence.factors).map(([key, factor]) => (
+                                factor && (
+                                    <span key={key} className="text-xs text-muted-foreground">
+                                        {factor.label}: <span className={cn(
+                                            factor.status === 'low' ? 'text-amber-500' :
+                                                factor.status === 'medium' ? 'text-yellow-500' : 'text-green-500'
+                                        )}>{factor.value}</span>
+                                    </span>
+                                )
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* ✨ OPPORTUNITY INSIGHT SUMMARY - Decision Tool */}
             <Card className={cn(
@@ -438,6 +482,377 @@ export function ProblemDetails() {
                 )}
             </div>
 
+            {/* 📊 NEW: MARKET SIZING + BUILD ESTIMATE + GO-TO-MARKET */}
+            <div className="grid gap-4 lg:grid-cols-2">
+                {/* Market Sizing Funnel */}
+                {problem.market_sizing && (
+                    <Card className="border-green-500/20">
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-sm font-medium flex items-center gap-2">
+                                <DollarSign className="h-4 w-4 text-green-500" />
+                                Market Opportunity
+                                {problem.market_sizing.growth_rate && (
+                                    <Badge variant="outline" className="ml-auto text-xs text-green-600">
+                                        {problem.market_sizing.growth_rate.display} growth
+                                    </Badge>
+                                )}
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                            {/* TAM */}
+                            <div className="flex items-center justify-between p-3 rounded-lg bg-green-500/5 border border-green-500/20">
+                                <div>
+                                    <p className="text-xs text-muted-foreground">TAM (Total Market)</p>
+                                    <p className="text-xl font-bold text-green-600">{problem.market_sizing.tam.display}</p>
+                                </div>
+                                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                            </div>
+                            {/* SAM */}
+                            <div className="flex items-center justify-between p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/20 ml-4">
+                                <div>
+                                    <p className="text-xs text-muted-foreground">SAM (Serviceable)</p>
+                                    <p className="text-lg font-bold text-emerald-600">{problem.market_sizing.sam.display}</p>
+                                    {problem.market_sizing.sam.multiplier && (
+                                        <p className="text-[10px] text-muted-foreground">{problem.market_sizing.sam.multiplier}</p>
+                                    )}
+                                </div>
+                                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                            </div>
+                            {/* SOM */}
+                            <div className="flex items-center justify-between p-3 rounded-lg bg-teal-500/5 border border-teal-500/20 ml-8">
+                                <div>
+                                    <p className="text-xs text-muted-foreground">SOM (Obtainable)</p>
+                                    <p className="text-lg font-bold text-teal-600">{problem.market_sizing.som.display}</p>
+                                    <p className="text-[10px] text-muted-foreground">Your realistic target</p>
+                                </div>
+                                <Target className="h-4 w-4 text-teal-500" />
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
+
+                {/* Build Estimate */}
+                {problem.build_estimate && (
+                    <Card className="border-blue-500/20">
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-sm font-medium flex items-center gap-2">
+                                <Wrench className="h-4 w-4 text-blue-500" />
+                                Build Estimate
+                                <Badge variant="outline" className={cn(
+                                    "ml-auto text-xs",
+                                    problem.build_estimate.complexity === 'low' ? 'text-green-600' :
+                                        problem.build_estimate.complexity === 'medium' ? 'text-yellow-600' : 'text-red-600'
+                                )}>
+                                    {problem.build_estimate.complexity} complexity
+                                </Badge>
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="p-3 rounded-lg bg-blue-500/5">
+                                    <div className="flex items-center gap-2 text-blue-500">
+                                        <Clock className="h-4 w-4" />
+                                        <span className="text-xs font-medium">MVP Time</span>
+                                    </div>
+                                    <p className="text-xl font-bold mt-1">{problem.build_estimate.mvp_weeks} weeks</p>
+                                </div>
+                                <div className="p-3 rounded-lg bg-blue-500/5">
+                                    <div className="flex items-center gap-2 text-blue-500">
+                                        <Users className="h-4 w-4" />
+                                        <span className="text-xs font-medium">Solo Founder?</span>
+                                    </div>
+                                    <p className="text-lg font-bold mt-1 flex items-center gap-1">
+                                        {problem.build_estimate.solo_founder_feasible ? (
+                                            <><CheckCircle2 className="h-4 w-4 text-green-500" /> Yes</>
+                                        ) : (
+                                            <><XCircle className="h-4 w-4 text-red-500" /> No</>
+                                        )}
+                                    </p>
+                                </div>
+                            </div>
+                            {problem.build_estimate.cost_estimate && (
+                                <div className="p-3 rounded-lg border">
+                                    <p className="text-xs text-muted-foreground mb-2">Estimated Cost</p>
+                                    <div className="flex gap-4">
+                                        <div>
+                                            <p className="text-xs text-muted-foreground">Solo</p>
+                                            <p className="text-sm font-medium">{problem.build_estimate.cost_estimate.solo}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-xs text-muted-foreground">Outsourced</p>
+                                            <p className="text-sm font-medium">{problem.build_estimate.cost_estimate.outsourced}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                            {problem.build_estimate.suggested_stack && (
+                                <div className="flex flex-wrap gap-1">
+                                    {problem.build_estimate.suggested_stack.map((tech) => (
+                                        <Badge key={tech} variant="secondary" className="text-xs">
+                                            <Code className="h-3 w-3 mr-1" />{tech}
+                                        </Badge>
+                                    ))}
+                                </div>
+                            )}
+                            {!problem.build_estimate.solo_founder_feasible && problem.build_estimate.team_recommendation && (
+                                <p className="text-xs text-amber-600">💡 {problem.build_estimate.team_recommendation}</p>
+                            )}
+                        </CardContent>
+                    </Card>
+                )}
+            </div>
+
+            {/* 🚀 GO-TO-MARKET TACTICS */}
+            {problem.go_to_market && (
+                <Card className="border-purple-500/20">
+                    <CardHeader className="pb-2">
+                        <CardTitle className="text-sm font-medium flex items-center gap-2">
+                            <Rocket className="h-4 w-4 text-purple-500" />
+                            Go-to-Market Tactics
+                            {problem.go_to_market.launch_platform && (
+                                <Badge variant="outline" className="ml-auto text-xs text-purple-600">
+                                    Launch via {problem.go_to_market.launch_platform}
+                                </Badge>
+                            )}
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <Accordion type="multiple" defaultValue={['customers']} className="space-y-2">
+                            {problem.go_to_market.first_10_customers?.length > 0 && (
+                                <AccordionItem value="customers" className="border rounded-lg px-4">
+                                    <AccordionTrigger className="text-sm font-medium py-3">
+                                        <div className="flex items-center gap-2">
+                                            <Target className="h-4 w-4 text-green-500" />
+                                            First 10 Customers
+                                            <Badge variant="outline" className="ml-2 text-xs">{problem.go_to_market.first_10_customers.length}</Badge>
+                                        </div>
+                                    </AccordionTrigger>
+                                    <AccordionContent className="pb-4 space-y-2">
+                                        {problem.go_to_market.first_10_customers.map((tactic, idx) => (
+                                            <div key={idx} className="flex items-start gap-2 p-2 rounded-lg bg-green-500/5">
+                                                <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0 mt-0.5" />
+                                                <p className="text-sm">{tactic}</p>
+                                            </div>
+                                        ))}
+                                    </AccordionContent>
+                                </AccordionItem>
+                            )}
+                            {problem.go_to_market.communities?.length > 0 && (
+                                <AccordionItem value="communities" className="border rounded-lg px-4">
+                                    <AccordionTrigger className="text-sm font-medium py-3">
+                                        <div className="flex items-center gap-2">
+                                            <Users className="h-4 w-4 text-blue-500" />
+                                            Target Communities
+                                        </div>
+                                    </AccordionTrigger>
+                                    <AccordionContent className="pb-4">
+                                        <div className="flex flex-wrap gap-2">
+                                            {problem.go_to_market.communities.map((community) => (
+                                                <Badge key={community} variant="secondary" className="text-xs">{community}</Badge>
+                                            ))}
+                                        </div>
+                                    </AccordionContent>
+                                </AccordionItem>
+                            )}
+                            {problem.go_to_market.content_hooks?.length > 0 && (
+                                <AccordionItem value="content" className="border rounded-lg px-4">
+                                    <AccordionTrigger className="text-sm font-medium py-3">
+                                        <div className="flex items-center gap-2">
+                                            <FileText className="h-4 w-4 text-amber-500" />
+                                            Content Hooks
+                                        </div>
+                                    </AccordionTrigger>
+                                    <AccordionContent className="pb-4 space-y-2">
+                                        {problem.go_to_market.content_hooks.map((hook, idx) => (
+                                            <div key={idx} className="flex items-center justify-between p-2 rounded-lg border group">
+                                                <p className="text-sm flex-1">{hook}</p>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="h-7 text-xs opacity-60 group-hover:opacity-100 transition-opacity"
+                                                    onClick={() => {
+                                                        navigator.clipboard.writeText(hook);
+                                                        // Show temporary feedback
+                                                        const btn = document.activeElement as HTMLButtonElement;
+                                                        if (btn) {
+                                                            const originalText = btn.innerHTML;
+                                                            btn.innerHTML = '<span class="text-green-500">✓ Copied!</span>';
+                                                            setTimeout(() => { btn.innerHTML = originalText; }, 1500);
+                                                        }
+                                                    }}
+                                                >
+                                                    <Copy className="h-3 w-3 mr-1" /> Copy
+                                                </Button>
+                                            </div>
+                                        ))}
+                                    </AccordionContent>
+                                </AccordionItem>
+                            )}
+                        </Accordion>
+                        {problem.go_to_market.competitor_strategy && (
+                            <p className="text-xs text-muted-foreground mt-3 p-2 bg-muted/50 rounded">
+                                💡 {problem.go_to_market.competitor_strategy}
+                            </p>
+                        )}
+                    </CardContent>
+                </Card>
+            )}
+
+            {/* ✅ VALIDATION STRENGTH */}
+            {problem.validation_strength && (
+                <Card className="border-amber-500/20">
+                    <CardHeader className="pb-2">
+                        <CardTitle className="text-sm font-medium flex items-center gap-2">
+                            <Shield className="h-4 w-4 text-amber-500" />
+                            Validation Strength
+                            <Badge variant="outline" className={cn(
+                                "ml-auto text-xs",
+                                problem.validation_strength.score >= 60 ? 'text-green-600' :
+                                    problem.validation_strength.score >= 40 ? 'text-yellow-600' : 'text-red-600'
+                            )}>
+                                {problem.validation_strength.score}/{problem.validation_strength.max_score}
+                            </Badge>
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        {/* Verdict */}
+                        <div className="flex items-center gap-3 p-3 rounded-lg bg-amber-500/5">
+                            {problem.validation_strength.score >= 60 ? (
+                                <CheckCircle2 className="h-5 w-5 text-green-500" />
+                            ) : problem.validation_strength.score >= 40 ? (
+                                <AlertTriangle className="h-5 w-5 text-yellow-500" />
+                            ) : (
+                                <XCircle className="h-5 w-5 text-red-500" />
+                            )}
+                            <div>
+                                <p className="font-medium">{problem.validation_strength.verdict}</p>
+                                {problem.validation_strength.recommendation && (
+                                    <p className="text-xs text-muted-foreground">{problem.validation_strength.recommendation}</p>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Breakdown Bars */}
+                        <div className="space-y-2">
+                            {Object.entries(problem.validation_strength.breakdown).map(([key, value]) => (
+                                <div key={key} className="space-y-1">
+                                    <div className="flex justify-between text-xs">
+                                        <span className="capitalize text-muted-foreground">{key.replace('_', ' ')}</span>
+                                        <span className="font-medium">{value}</span>
+                                    </div>
+                                    <Progress value={value} className="h-1.5" />
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Missing Items Checklist */}
+                        {problem.validation_strength.missing && problem.validation_strength.missing.length > 0 && (
+                            <div className="p-3 rounded-lg border border-red-500/20 bg-red-500/5">
+                                <p className="text-xs font-medium text-red-600 mb-2">⚠️ Missing Validation</p>
+                                <ul className="space-y-1">
+                                    {problem.validation_strength.missing.map((item, idx) => (
+                                        <li key={idx} className="flex items-start gap-2 text-xs text-muted-foreground">
+                                            <XCircle className="h-3 w-3 text-red-400 shrink-0 mt-0.5" />
+                                            {item}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+            )}
+
+            {/* 🏢 COMPETITOR INTELLIGENCE */}
+            {problem.competitor_intel && (
+                <Card className="border-violet-500/20">
+                    <CardHeader className="pb-2">
+                        <CardTitle className="text-sm font-medium flex items-center gap-2">
+                            <Users className="h-4 w-4 text-violet-500" />
+                            Competitor Intelligence
+                            <Badge variant="outline" className="ml-auto text-xs">
+                                {problem.competitor_intel.total_competitors} competitors
+                            </Badge>
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        {/* Direct Competitors Grid */}
+                        {problem.competitor_intel.direct && problem.competitor_intel.direct.length > 0 && (
+                            <div className="grid gap-3 md:grid-cols-2">
+                                {problem.competitor_intel.direct.map((comp, idx) => (
+                                    <div key={comp.name || idx} className="p-3 rounded-lg border space-y-2">
+                                        <div className="flex items-center justify-between">
+                                            <span className="font-semibold text-sm">{comp.name}</span>
+                                            <Badge variant="outline" className={cn(
+                                                "text-[10px]",
+                                                comp.sentiment === 'positive' ? 'text-green-600' :
+                                                    comp.sentiment === 'negative' ? 'text-red-600' : 'text-yellow-600'
+                                            )}>
+                                                {comp.sentiment}
+                                            </Badge>
+                                        </div>
+                                        {comp.strengths && comp.strengths.length > 0 && (
+                                            <div className="flex flex-wrap gap-1">
+                                                {comp.strengths.slice(0, 2).map((s) => (
+                                                    <Badge key={s} variant="secondary" className="text-[10px] bg-green-500/10 text-green-600">
+                                                        + {s}
+                                                    </Badge>
+                                                ))}
+                                            </div>
+                                        )}
+                                        {comp.weaknesses && comp.weaknesses.length > 0 && (
+                                            <div className="flex flex-wrap gap-1">
+                                                {comp.weaknesses.slice(0, 2).map((w) => (
+                                                    <Badge key={w} variant="secondary" className="text-[10px] bg-red-500/10 text-red-600">
+                                                        - {w}
+                                                    </Badge>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* Market Gaps */}
+                        {problem.competitor_intel.gaps && problem.competitor_intel.gaps.length > 0 && (
+                            <div className="p-3 rounded-lg bg-green-500/5 border border-green-500/20">
+                                <p className="text-xs font-medium text-green-600 mb-2">🎯 Market Gaps to Exploit</p>
+                                <ul className="space-y-1">
+                                    {problem.competitor_intel.gaps.map((gap, idx) => (
+                                        <li key={idx} className="flex items-start gap-2 text-xs">
+                                            <ArrowRight className="h-3 w-3 text-green-500 shrink-0 mt-0.5" />
+                                            {gap}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
+
+                        {/* Pain Points */}
+                        {problem.competitor_intel.pain_points && problem.competitor_intel.pain_points.length > 0 && (
+                            <div className="p-3 rounded-lg bg-amber-500/5 border border-amber-500/20">
+                                <p className="text-xs font-medium text-amber-600 mb-2">😤 User Pain Points</p>
+                                <div className="flex flex-wrap gap-2">
+                                    {problem.competitor_intel.pain_points.map((pain) => (
+                                        <Badge key={pain} variant="outline" className="text-xs">
+                                            {pain}
+                                        </Badge>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Positioning */}
+                        {problem.competitor_intel.positioning && (
+                            <p className="text-xs text-muted-foreground p-2 bg-muted/50 rounded">
+                                💡 <strong>Positioning:</strong> {problem.competitor_intel.positioning}
+                            </p>
+                        )}
+                    </CardContent>
+                </Card>
+            )}
+
             {/* Main Content Tabs */}
             <Tabs defaultValue={brief ? "brief" : "details"} className="space-y-4">
                 <TabsList>
@@ -508,27 +923,29 @@ export function ProblemDetails() {
                                         </CardTitle>
                                         <p className="text-xs text-muted-foreground">Visual signature of this opportunity</p>
                                     </CardHeader>
-                                    <CardContent>
-                                        <div className="h-[220px]">
+                                    <CardContent className="pt-0">
+                                        <div className="h-[200px]">
                                             <ResponsiveContainer width="100%" height="100%">
-                                                <RadarChart data={radarData} margin={{ top: 10, right: 30, bottom: 10, left: 30 }}>
+                                                <RadarChart data={radarData} margin={{ top: 5, right: 25, bottom: 5, left: 25 }}>
                                                     <PolarGrid stroke="hsl(var(--border))" />
                                                     <PolarAngleAxis
                                                         dataKey="metric"
-                                                        tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                                                        tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                                                        tickLine={false}
                                                     />
                                                     <PolarRadiusAxis
                                                         angle={90}
                                                         domain={[0, 100]}
-                                                        tick={{ fontSize: 10 }}
-                                                        tickCount={5}
+                                                        tick={{ fontSize: 9 }}
+                                                        tickCount={4}
+                                                        axisLine={false}
                                                     />
                                                     <Radar
                                                         name="Score"
                                                         dataKey="value"
                                                         stroke="hsl(var(--primary))"
                                                         fill="hsl(var(--primary))"
-                                                        fillOpacity={0.3}
+                                                        fillOpacity={0.25}
                                                         strokeWidth={2}
                                                     />
                                                 </RadarChart>
@@ -646,20 +1063,20 @@ export function ProblemDetails() {
                 )}
 
                 {/* Details Tab */}
-                <TabsContent value="details" className="space-y-6">
-                    {/* Trend Chart */}
+                <TabsContent value="details" className="space-y-4">
+                    {/* Trend Chart - Always visible */}
                     {chartData.length > 0 && (
                         <Card>
                             <CardHeader className="pb-2">
                                 <CardTitle className="text-sm font-medium">Frequency Trend</CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <div className="h-[200px]">
+                                <div className="h-[180px]">
                                     <ResponsiveContainer width="100%" height="100%">
                                         <LineChart data={chartData}>
                                             <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                                            <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-                                            <YAxis tick={{ fontSize: 12 }} />
+                                            <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                                            <YAxis tick={{ fontSize: 11 }} />
                                             <RechartsTooltip />
                                             <Line type="monotone" dataKey="frequency" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
                                         </LineChart>
@@ -669,94 +1086,106 @@ export function ProblemDetails() {
                         </Card>
                     )}
 
-                    {/* Market Estimate from original data */}
-                    {problem.market_estimate?.size && (
-                        <Card>
-                            <CardHeader className="pb-3">
-                                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                                    <DollarSign className="h-4 w-4" /> Market Estimate
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <p className="text-2xl font-bold text-primary">{problem.market_estimate.size}</p>
-                            </CardContent>
-                        </Card>
-                    )}
+                    {/* Collapsible Sections - Scan & Expand */}
+                    <Accordion type="multiple" defaultValue={['market']} className="space-y-2">
+                        {/* Market Estimate */}
+                        {problem.market_estimate?.size && (
+                            <AccordionItem value="market" className="border rounded-lg px-4">
+                                <AccordionTrigger className="text-sm font-medium py-3">
+                                    <div className="flex items-center gap-2">
+                                        <DollarSign className="h-4 w-4 text-green-500" />
+                                        Market Estimate
+                                        <Badge variant="outline" className="ml-2 text-xs text-green-600">{problem.market_estimate.size}</Badge>
+                                    </div>
+                                </AccordionTrigger>
+                                <AccordionContent className="pb-4">
+                                    <p className="text-2xl font-bold text-green-600">{problem.market_estimate.size}</p>
+                                    {problem.market_estimate.sources && problem.market_estimate.sources.length > 0 && (
+                                        <p className="text-xs text-muted-foreground mt-1">Source: {problem.market_estimate.sources[0]}</p>
+                                    )}
+                                </AccordionContent>
+                            </AccordionItem>
+                        )}
 
-                    {/* Competitors */}
-                    {problem.competitors && problem.competitors.length > 0 && (
-                        <Card>
-                            <CardHeader className="pb-3">
-                                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                                    <Users className="h-4 w-4" /> Competitors ({problem.competitors.length})
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                                {problem.competitors.map((comp, idx) => (
-                                    <div key={comp.name || idx} className="border rounded-lg p-4 space-y-2">
-                                        <div className="flex items-center gap-2">
-                                            <span className="font-semibold">{comp.name}</span>
-                                            {comp.competitor_type && (
-                                                <Badge variant="outline" className="text-xs capitalize">{comp.competitor_type}</Badge>
+                        {/* Competitors */}
+                        {problem.competitors && problem.competitors.length > 0 && (
+                            <AccordionItem value="competitors" className="border rounded-lg px-4">
+                                <AccordionTrigger className="text-sm font-medium py-3">
+                                    <div className="flex items-center gap-2">
+                                        <Users className="h-4 w-4 text-blue-500" />
+                                        Competitors
+                                        <Badge variant="outline" className="ml-2 text-xs">{problem.competitors.length}</Badge>
+                                    </div>
+                                </AccordionTrigger>
+                                <AccordionContent className="pb-4 space-y-3">
+                                    {problem.competitors.map((comp, idx) => (
+                                        <div key={comp.name || idx} className="border rounded-lg p-3 space-y-2">
+                                            <div className="flex items-center gap-2">
+                                                <span className="font-semibold text-sm">{comp.name}</span>
+                                                {comp.competitor_type && (
+                                                    <Badge variant="outline" className="text-xs capitalize">{comp.competitor_type}</Badge>
+                                                )}
+                                                {comp.sentiment && (
+                                                    <Badge
+                                                        variant={comp.sentiment === 'positive' ? 'default' : comp.sentiment === 'negative' ? 'destructive' : 'secondary'}
+                                                        className="text-xs"
+                                                    >
+                                                        {comp.sentiment}
+                                                    </Badge>
+                                                )}
+                                            </div>
+                                            {comp.strengths && comp.strengths.length > 0 && (
+                                                <p className="text-xs">
+                                                    <span className="text-green-600 font-medium">Strengths: </span>
+                                                    <span className="text-muted-foreground">{comp.strengths.join(', ')}</span>
+                                                </p>
                                             )}
-                                            {comp.sentiment && (
-                                                <Badge
-                                                    variant={comp.sentiment === 'positive' ? 'default' : comp.sentiment === 'negative' ? 'destructive' : 'secondary'}
-                                                    className="text-xs"
-                                                >
-                                                    {comp.sentiment}
-                                                </Badge>
+                                            {comp.weaknesses && comp.weaknesses.length > 0 && (
+                                                <p className="text-xs">
+                                                    <span className="text-orange-600 font-medium">Weaknesses: </span>
+                                                    <span className="text-muted-foreground">{comp.weaknesses.join(', ')}</span>
+                                                </p>
+                                            )}
+                                            {comp.differentiation_opportunity && (
+                                                <div className="bg-primary/5 border border-primary/20 rounded p-2 text-xs">
+                                                    <span className="text-primary font-medium">💡 Opportunity: </span>
+                                                    <span>{comp.differentiation_opportunity}</span>
+                                                </div>
                                             )}
                                         </div>
-                                        {comp.strengths && comp.strengths.length > 0 && (
-                                            <div className="text-sm">
-                                                <span className="text-green-600 dark:text-green-400 font-medium">Strengths: </span>
-                                                <span className="text-muted-foreground">{comp.strengths.join(', ')}</span>
-                                            </div>
-                                        )}
-                                        {comp.weaknesses && comp.weaknesses.length > 0 && (
-                                            <div className="text-sm">
-                                                <span className="text-orange-600 dark:text-orange-400 font-medium">Weaknesses: </span>
-                                                <span className="text-muted-foreground">{comp.weaknesses.join(', ')}</span>
-                                            </div>
-                                        )}
-                                        {comp.differentiation_opportunity && (
-                                            <div className="bg-primary/5 border border-primary/20 rounded p-2 text-sm">
-                                                <span className="text-primary font-medium">💡 Opportunity: </span>
-                                                <span>{comp.differentiation_opportunity}</span>
-                                            </div>
-                                        )}
-                                    </div>
-                                ))}
-                            </CardContent>
-                        </Card>
-                    )}
+                                    ))}
+                                </AccordionContent>
+                            </AccordionItem>
+                        )}
 
-                    {/* Quotes */}
-                    {problem.quotes && problem.quotes.length > 0 && (
-                        <Card>
-                            <CardHeader className="pb-3">
-                                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                                    <Quote className="h-4 w-4" /> User Quotes
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-3">
-                                {problem.quotes.map((quote) => (
-                                    <div key={quote.id} className="border-l-2 border-primary/30 pl-3">
-                                        <p className="text-sm italic">"{quote.text}"</p>
-                                        <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-                                            <span>{quote.source}</span>
-                                            {quote.upvotes && (
-                                                <span className="flex items-center gap-1">
-                                                    <ThumbsUp className="h-3 w-3" /> {quote.upvotes}
-                                                </span>
-                                            )}
-                                        </div>
+                        {/* User Quotes */}
+                        {problem.quotes && problem.quotes.length > 0 && (
+                            <AccordionItem value="quotes" className="border rounded-lg px-4">
+                                <AccordionTrigger className="text-sm font-medium py-3">
+                                    <div className="flex items-center gap-2">
+                                        <Quote className="h-4 w-4 text-purple-500" />
+                                        User Quotes
+                                        <Badge variant="outline" className="ml-2 text-xs">{problem.quotes.length}</Badge>
                                     </div>
-                                ))}
-                            </CardContent>
-                        </Card>
-                    )}
+                                </AccordionTrigger>
+                                <AccordionContent className="pb-4 space-y-3">
+                                    {problem.quotes.map((quote) => (
+                                        <div key={quote.id} className="border-l-2 border-primary/30 pl-3">
+                                            <p className="text-sm italic">"{quote.text}"</p>
+                                            <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                                                <span>{quote.source}</span>
+                                                {quote.upvotes && (
+                                                    <span className="flex items-center gap-1">
+                                                        <ThumbsUp className="h-3 w-3" /> {quote.upvotes}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </AccordionContent>
+                            </AccordionItem>
+                        )}
+                    </Accordion>
                 </TabsContent>
 
                 {/* Sources Tab */}
