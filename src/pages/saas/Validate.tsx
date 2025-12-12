@@ -533,6 +533,12 @@ function ReportDisplay({ report: rawReport }: { report: any }) {
 
     const sourcesAnalyzed = metadata.sources_analyzed || {};
 
+    // ⚠️ CONSTRAINT: Data quality checks for Norman principle compliance
+    const isLowDataQuality = marketSizing.data_quality === 'low';
+    const isTAMLowConfidence = marketSizing.TAM?.confidence === 'Low';
+    const uniqueVoices = sourcesAnalyzed.unique_voices || 0;
+    const isLowEvidence = uniqueVoices < 10;
+
     return (
         <div className="space-y-4 sm:space-y-6">
             {/* Idea Submitted */}
@@ -542,6 +548,25 @@ function ReportDisplay({ report: rawReport }: { report: any }) {
                     <p className="font-medium text-sm sm:text-base">{report.idea_input}</p>
                 </CardContent>
             </Card>
+
+            {/* ⚠️ DATA RELIABILITY BANNER - Norman Gap C + G */}
+            {(isLowDataQuality || isTAMLowConfidence) && (
+                <div className="flex items-start gap-3 p-4 rounded-lg bg-amber-500/10 border border-amber-500/30">
+                    <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                        <p className="font-medium text-amber-600 dark:text-amber-400">
+                            {isLowDataQuality ? 'Low Data Reliability' : 'Market Estimates Uncertain'}
+                        </p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                            ⚠️ <strong>Insights are provisional.</strong> Based on {uniqueVoices} validated discussion{uniqueVoices !== 1 ? 's' : ''}.
+                            {isTAMLowConfidence && ' TAM estimates have wide confidence intervals.'}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                            Recommendations may change as more signals appear. Verify with independent research.
+                        </p>
+                    </div>
+                </div>
+            )}
 
             {/* Executive Summary */}
             <Card className={cn("border-2", getGradeColor(report.confidence_grade))}>
@@ -577,29 +602,70 @@ function ReportDisplay({ report: rawReport }: { report: any }) {
                             <p className="text-xs sm:text-sm text-muted-foreground mt-1.5 sm:mt-2">
                                 💡 {report.key_insight}
                             </p>
+
+                            {/* Score Transparency Breakdown (Norman Gap B) */}
+                            <div className="mt-3 p-2 rounded-lg bg-muted/50 text-xs">
+                                <p className="font-medium text-muted-foreground mb-1">📊 Score breakdown:</p>
+                                <div className="flex flex-wrap gap-x-3 gap-y-1 text-muted-foreground">
+                                    <span className="flex items-center gap-1">
+                                        {problemValidation.problem_exists ?
+                                            <CheckCircle2 className="h-3 w-3 text-green-500" /> :
+                                            <XCircle className="h-3 w-3 text-red-500" />
+                                        }
+                                        Problem: {problemValidation.problem_exists ? 'Yes' : 'No'}
+                                    </span>
+                                    <span>Severity: {problemValidation.severity_score || 0}/10</span>
+                                    <span>Evidence: {metadata.evidence_strength || 'Unknown'}</span>
+                                    <span>Seekers: {demandSignals.active_seekers || 0}</span>
+                                </div>
+                                {isLowEvidence && (
+                                    <p className="text-amber-600 mt-1 text-[10px]">
+                                        ⚠️ Score may be less reliable with &lt;10 unique voices
+                                    </p>
+                                )}
+                            </div>
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-4 sm:mt-6 pt-4 sm:pt-6 border-t">
+                    {/* Metrics Grid with Micro-signifiers (Norman Gap A) */}
+                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4 mt-4 sm:mt-6 pt-4 sm:pt-6 border-t">
+                        <div className="text-center">
+                            <p className="text-lg sm:text-2xl font-bold">{uniqueVoices}</p>
+                            <p className="text-[10px] sm:text-xs text-muted-foreground">Unique Voices</p>
+                            <p className="text-[9px] text-muted-foreground/70">Validated discussions</p>
+                        </div>
                         <div className="text-center">
                             <p className="text-lg sm:text-2xl font-bold">{sourcesAnalyzed.reddit_discussions || 0}</p>
                             <p className="text-[10px] sm:text-xs text-muted-foreground">Reddit</p>
+                            <p className="text-[9px] text-muted-foreground/70">Community signals</p>
                         </div>
                         <div className="text-center">
                             <p className="text-lg sm:text-2xl font-bold">{sourcesAnalyzed.hn_threads || 0}</p>
                             <p className="text-[10px] sm:text-xs text-muted-foreground">HN Threads</p>
+                            <p className="text-[9px] text-muted-foreground/70">Tech community</p>
                         </div>
                         <div className="text-center">
                             <p className="text-lg sm:text-2xl font-bold">{sourcesAnalyzed.pricing_datapoints || 0}</p>
                             <p className="text-[10px] sm:text-xs text-muted-foreground">Pricing Data</p>
+                            <p className="text-[9px] text-muted-foreground/70">Willingness to pay</p>
                         </div>
-                        <div className="text-center">
+                        <div className="text-center hidden sm:block">
                             <p className="text-lg sm:text-2xl font-bold">{metadata.execution_time_seconds || 0}s</p>
-                            <p className="text-[10px] sm:text-xs text-muted-foreground">Analysis Time</p>
+                            <p className="text-[10px] sm:text-xs text-muted-foreground">Analysis</p>
+                            <p className="text-[9px] text-muted-foreground/70">Processing time</p>
                         </div>
                     </div>
                 </CardContent>
             </Card>
+
+            {/* ─────────────────────────────────────────────────────────── */}
+            {/* 1️⃣ SHOW ME: Evidence & Validation (Norman Gap E) */}
+            {/* ─────────────────────────────────────────────────────────── */}
+            <div className="flex items-center gap-2 pt-2">
+                <div className="h-px flex-1 bg-border" />
+                <span className="text-xs font-medium text-muted-foreground px-2">📋 Evidence & Validation</span>
+                <div className="h-px flex-1 bg-border" />
+            </div>
 
             {/* Detailed Tabs */}
             <Tabs defaultValue="validation" className="space-y-3 sm:space-y-4">
@@ -693,15 +759,22 @@ function ReportDisplay({ report: rawReport }: { report: any }) {
                             </CardHeader>
                             <CardContent className="space-y-3">
                                 {problemValidation.evidence.pain_quotes.slice(0, 4).map((quote: any, i: number) => (
-                                    <div key={i} className="border-l-2 border-primary/30 pl-3">
+                                    <div key={i} className="border-l-2 border-primary/30 pl-3 group">
                                         <p className="text-sm italic">"{quote.quote}"</p>
                                         <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
                                             <Badge variant="outline" className="text-xs">{quote.source}</Badge>
                                             <span className="flex items-center gap-1">
                                                 <ThumbsUp className="h-3 w-3" /> {quote.upvotes}
                                             </span>
-                                            <a href={quote.url} target="_blank" rel="noopener noreferrer" className="hover:text-primary">
+                                            {/* Clickable Source Affordance (Norman Gap F) */}
+                                            <a
+                                                href={quote.url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="flex items-center gap-1 text-green-600 hover:text-green-500 hover:underline cursor-pointer transition-colors"
+                                            >
                                                 <ExternalLink className="h-3 w-3" />
+                                                <span className="hidden group-hover:inline">View Source →</span>
                                             </a>
                                         </div>
                                     </div>
@@ -714,22 +787,42 @@ function ReportDisplay({ report: rawReport }: { report: any }) {
                 {/* Market Tab */}
                 <TabsContent value="market" className="space-y-4">
                     <div className="grid gap-4 lg:grid-cols-3">
-                        <Card>
+                        {/* TAM Card - with constraint for low confidence (Gap G) */}
+                        <Card className={cn(isTAMLowConfidence && "border-amber-500/30")}>
                             <CardHeader className="pb-2">
-                                <CardDescription>TAM</CardDescription>
-                                <CardTitle className="text-2xl text-green-500">{marketSizing.TAM?.value || 'N/A'}</CardTitle>
+                                <CardDescription className="flex items-center gap-1">
+                                    TAM (Total Market)
+                                    {isTAMLowConfidence && <AlertTriangle className="h-3 w-3 text-amber-500" />}
+                                </CardDescription>
+                                {isTAMLowConfidence ? (
+                                    <>
+                                        <CardTitle className="text-xl text-amber-500">
+                                            ${(marketSizing.TAM?.low / 1e9 || 0).toFixed(1)}B - ${(marketSizing.TAM?.high / 1e9 || 0).toFixed(1)}B
+                                        </CardTitle>
+                                        <p className="text-[10px] text-amber-600">Wide range due to limited data</p>
+                                    </>
+                                ) : (
+                                    <CardTitle className="text-2xl text-green-500">{marketSizing.TAM?.value || 'N/A'}</CardTitle>
+                                )}
                             </CardHeader>
                             <CardContent>
-                                <Badge variant="outline">{marketSizing.TAM?.confidence || 'Unknown'} Confidence</Badge>
+                                <Badge
+                                    variant="outline"
+                                    className={cn(isTAMLowConfidence && "border-amber-500/50 text-amber-600")}
+                                >
+                                    {marketSizing.TAM?.confidence || 'Unknown'} Confidence
+                                </Badge>
+                                <p className="text-[10px] text-muted-foreground mt-1">Everyone who could buy</p>
                             </CardContent>
                         </Card>
                         <Card>
                             <CardHeader className="pb-2">
-                                <CardDescription>SAM</CardDescription>
+                                <CardDescription>SAM (Serviceable)</CardDescription>
                                 <CardTitle className="text-2xl">{marketSizing.SAM?.value || 'N/A'}</CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <p className="text-xs text-muted-foreground">{marketSizing.SAM?.notes || ''}</p>
+                                <p className="text-[10px] text-muted-foreground mt-1">Your reachable segment</p>
                             </CardContent>
                         </Card>
                         <Card>
@@ -738,7 +831,8 @@ function ReportDisplay({ report: rawReport }: { report: any }) {
                                 <CardTitle className="text-2xl text-primary">{marketSizing.SOM?.value || 'N/A'}</CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <p className="text-xs text-muted-foreground">{marketSizing.SOM?.notes || ''}</p>
+                                <p className="text-xs text-muted-foreground">{marketSizing.SOM?.calculation || marketSizing.SOM?.notes || ''}</p>
+                                <p className="text-[10px] text-muted-foreground mt-1">Realistic capture target</p>
                             </CardContent>
                         </Card>
                     </div>

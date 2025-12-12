@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -7,6 +8,13 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from '@/components/ui/dialog';
 import {
     Accordion,
     AccordionContent,
@@ -104,6 +112,10 @@ export function ProblemDetails() {
         isInWatchlist ? removeMutation.mutate(id) : addMutation.mutate(id);
     };
 
+    // Interactive affordance states
+    const [activeTab, setActiveTab] = useState<string>('');
+    const [showScoreModal, setShowScoreModal] = useState(false);
+
     const chartData = problem?.trend?.map((point) => ({
         date: new Date(point.snapshot_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
         frequency: point.frequency,
@@ -143,20 +155,45 @@ export function ProblemDetails() {
         return 'Very low urgency - only a few mentions found';
     };
 
-    // Determine overall verdict
+    // Determine overall verdict - MUST reflect data honestly (Norman principle)
     const getVerdict = () => {
         const brief = problem?.brief;
+        const dataConfidence = problem?.data_confidence?.level;
+        const metrics = problem?.metrics;
+        const frequency = metrics?.frequency || 0;
+        const sources = metrics?.source_count || 0;
+        const upvotes = metrics?.upvote_score || 0;
+
+        // Low evidence check - frequency <= 3, upvotes = 0, sources <= 1
+        const isLowEvidence = frequency <= 3 && upvotes <= 5 && sources <= 1;
+        const isVeryLowEvidence = frequency <= 1 && upvotes === 0 && sources <= 1;
+
         if (!brief) {
-            const metrics = problem?.metrics;
-            const frequency = metrics?.frequency || 0;
-            const sources = metrics?.source_count || 0;
             if (frequency >= 30 && sources >= 5) return { level: 'promising', label: 'Worth Exploring', color: 'green' };
             if (frequency >= 10) return { level: 'moderate', label: 'Moderate Potential', color: 'yellow' };
-            return { level: 'low', label: 'Low Priority', color: 'orange' };
+            if (isVeryLowEvidence) return { level: 'early', label: 'Early Signal', color: 'orange' };
+            return { level: 'low', label: 'Needs Validation', color: 'orange' };
         }
+
         const score = brief.opportunity_score;
+
+        // Honest labels based on BOTH score AND evidence quality
+        if (isVeryLowEvidence || dataConfidence === 'low') {
+            // Low evidence overrides high scores - be honest!
+            if (score >= 70) return { level: 'speculative', label: 'Low Evidence – High Market', color: 'yellow' };
+            if (score >= 50) return { level: 'early', label: 'Speculative Opportunity', color: 'yellow' };
+            return { level: 'early', label: 'Early Signal', color: 'orange' };
+        }
+
+        if (isLowEvidence || dataConfidence === 'medium') {
+            if (score >= 70) return { level: 'promising', label: 'Promising – Verify Further', color: 'emerald' };
+            if (score >= 50) return { level: 'moderate', label: 'Moderate – Needs Data', color: 'yellow' };
+            return { level: 'weak', label: 'Weak Signal', color: 'orange' };
+        }
+
+        // High evidence - safe to use confident labels
         if (score >= 75) return { level: 'strong', label: 'Strong Opportunity', color: 'green' };
-        if (score >= 60) return { level: 'good', label: 'Good Potential', color: 'emerald' };
+        if (score >= 60) return { level: 'good', label: 'Validated Potential', color: 'emerald' };
         if (score >= 45) return { level: 'moderate', label: 'Moderate Opportunity', color: 'yellow' };
         return { level: 'weak', label: 'Low Priority', color: 'orange' };
     };
@@ -181,6 +218,16 @@ export function ProblemDetails() {
         monetization: 'Willingness to pay signals and pricing potential.',
         execution: 'How feasible it is to build a solution.'
     };
+
+    // ⚠️ CONSTRAINT: Prevent misinterpretation from tiny sample sizes
+    const sourceCount = problem?.metrics?.source_count || 0;
+    const frequency = problem?.metrics?.frequency || 0;
+    const isLowSampleSize = sourceCount < 5 || frequency < 3;
+
+    // Cap displayed score at 40 when sample is too small
+    const rawScore = problem?.brief?.opportunity_score || 0;
+    const constrainedScore = isLowSampleSize ? Math.min(rawScore, 40) : rawScore;
+    const wasScoreCapped = isLowSampleSize && rawScore > 40;
 
     const verdict = getVerdict();
 
@@ -259,21 +306,60 @@ export function ProblemDetails() {
                 <p className="mt-3 text-muted-foreground leading-relaxed">{problem.summary || problem.description}</p>
             </div>
 
-            {/* ⚠️ DATA CONFIDENCE WARNING - Show if low confidence */}
-            {problem.data_confidence && problem.data_confidence.level === 'low' && (
-                <div className="flex items-start gap-3 p-4 rounded-lg bg-amber-500/10 border border-amber-500/30">
-                    <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+            {/* ⚠️ DATA RELIABILITY NOTICE - Show based on data confidence */}
+            {problem.data_confidence && (
+                <div className={cn(
+                    "flex items-start gap-3 p-4 rounded-lg border",
+                    problem.data_confidence.level === 'low'
+                        ? "bg-amber-500/10 border-amber-500/30"
+                        : problem.data_confidence.level === 'medium'
+                            ? "bg-yellow-500/5 border-yellow-500/20"
+                            : "bg-green-500/5 border-green-500/20"
+                )}>
+                    {problem.data_confidence.level === 'low' ? (
+                        <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+                    ) : problem.data_confidence.level === 'medium' ? (
+                        <Info className="h-5 w-5 text-yellow-500 shrink-0 mt-0.5" />
+                    ) : (
+                        <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0 mt-0.5" />
+                    )}
                     <div className="flex-1">
-                        <p className="font-medium text-amber-600 dark:text-amber-400">Low Data Confidence</p>
-                        <p className="text-sm text-muted-foreground mt-1">
-                            {problem.data_confidence.disclaimer || 'Limited data volume - insights may be less reliable. More research recommended.'}
-                        </p>
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <p className={cn(
+                                "font-medium",
+                                problem.data_confidence.level === 'low' ? "text-amber-600 dark:text-amber-400" :
+                                    problem.data_confidence.level === 'medium' ? "text-yellow-600 dark:text-yellow-400" :
+                                        "text-green-600 dark:text-green-400"
+                            )}>
+                                {problem.data_confidence.level === 'low' ? 'Low' :
+                                    problem.data_confidence.level === 'medium' ? 'Moderate' : 'High'} Data Reliability
+                            </p>
+                            <Badge variant="outline" className="text-[10px]">
+                                Score: {problem.data_confidence.score}/100
+                            </Badge>
+                        </div>
+
+                        {/* Explicit reliability messaging */}
+                        <div className="text-sm text-muted-foreground mt-1 space-y-1">
+                            {problem.data_confidence.level === 'low' ? (
+                                <>
+                                    <p>⚠️ <strong>Insights are provisional.</strong> Limited data ({problem.metrics?.source_count || 1} source{(problem.metrics?.source_count || 1) > 1 ? 's' : ''}).</p>
+                                    <p className="text-xs">Opportunity score may change as more signals appear. Verify with independent research.</p>
+                                </>
+                            ) : problem.data_confidence.level === 'medium' ? (
+                                <p>Moderate evidence. Cross-reference before major decisions.</p>
+                            ) : (
+                                <p>Strong evidence from multiple validated sources.</p>
+                            )}
+                        </div>
+
+                        {/* Data factors */}
                         <div className="flex flex-wrap gap-3 mt-2">
                             {Object.entries(problem.data_confidence.factors).map(([key, factor]) => (
                                 factor && (
                                     <span key={key} className="text-xs text-muted-foreground">
                                         {factor.label}: <span className={cn(
-                                            factor.status === 'low' ? 'text-amber-500' :
+                                            factor.status === 'low' ? 'text-amber-500 font-medium' :
                                                 factor.status === 'medium' ? 'text-yellow-500' : 'text-green-500'
                                         )}>{factor.value}</span>
                                     </span>
@@ -308,7 +394,7 @@ export function ProblemDetails() {
                             )}
                         </div>
                         <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-2">
+                            <div className="flex items-center gap-2 mb-2 flex-wrap">
                                 <span className="text-sm font-medium text-muted-foreground">Opportunity Insight</span>
                                 <Badge className={cn(
                                     "text-xs font-semibold",
@@ -318,35 +404,69 @@ export function ProblemDetails() {
                                 )}>
                                     {verdict.label}
                                 </Badge>
+                                {/* Confidence Meter */}
+                                {problem.data_confidence && (
+                                    <Badge variant="outline" className={cn(
+                                        "text-[10px] ml-auto",
+                                        problem.data_confidence.level === 'high' ? 'text-green-600 border-green-500/50' :
+                                            problem.data_confidence.level === 'medium' ? 'text-yellow-600 border-yellow-500/50' :
+                                                'text-red-600 border-red-500/50'
+                                    )}>
+                                        <Shield className="h-3 w-3 mr-1" />
+                                        {problem.data_confidence.level.charAt(0).toUpperCase() + problem.data_confidence.level.slice(1)} Confidence
+                                    </Badge>
+                                )}
                             </div>
                             <p className="text-sm text-foreground leading-relaxed">
-                                {problem.tags?.[0] && `${problem.tags[0]} teams `}
-                                {problem.metrics?.frequency && problem.metrics.frequency >= 20
-                                    ? 'frequently struggle with'
-                                    : 'occasionally face challenges with'} this problem.
-                                {brief?.score_breakdown && (
-                                    <span className="block mt-1">
-                                        Pain level is {getScoreLabel(brief.score_breakdown.urgency).label.toLowerCase()},
-                                        urgency is {getScoreLabel(brief.score_breakdown.urgency).label.toLowerCase()},
-                                        {brief.score_breakdown.competition_gap >= 60 ? ' but competition gap is high.' : ' and competition gap is moderate.'}
-                                    </span>
+                                {problem.opportunity_score?.summary || (
+                                    <>
+                                        {problem.tags?.[0] && `${problem.tags[0]} teams `}
+                                        {problem.metrics?.frequency && problem.metrics.frequency >= 20
+                                            ? 'frequently struggle with'
+                                            : 'occasionally face challenges with'} this problem.
+                                    </>
                                 )}
                             </p>
-                            {brief?.opportunity_score && (
-                                <p className="text-xs text-muted-foreground mt-2">
-                                    <strong>Potential outcome:</strong> {
-                                        brief.opportunity_score >= 70
-                                            ? `High-value opportunity for ${brief.target_audience?.primary?.company_size || 'mid-size'} ${problem.tags?.[0] || 'companies'}`
-                                            : brief.opportunity_score >= 50
-                                                ? `Niche opportunity worth exploring for specialized teams`
-                                                : `Consider only if you have domain expertise in ${problem.tags?.[0] || 'this space'}`
-                                    }
-                                </p>
+
+                            {/* Score Calculation Transparency */}
+                            {(problem.opportunity_score?.factors || brief?.score_breakdown) && (
+                                <div className="mt-3 p-2 rounded-md bg-muted/30 text-[11px] text-muted-foreground">
+                                    <p className="font-medium mb-1">📊 Score breakdown:</p>
+                                    <p>Market {brief?.score_breakdown?.weights?.market_size ? `${brief.score_breakdown.weights.market_size * 100}%` : '25%'} ·
+                                        Urgency {brief?.score_breakdown?.weights?.urgency ? `${brief.score_breakdown.weights.urgency * 100}%` : '20%'} ·
+                                        Competition {brief?.score_breakdown?.weights?.competition_gap ? `${brief.score_breakdown.weights.competition_gap * 100}%` : '20%'} ·
+                                        Monetization {brief?.score_breakdown?.weights?.monetization ? `${brief.score_breakdown.weights.monetization * 100}%` : '20%'} ·
+                                        Execution {brief?.score_breakdown?.weights?.execution ? `${brief.score_breakdown.weights.execution * 100}%` : '15%'}
+                                    </p>
+                                    {problem.opportunity_score?.evidence_penalty && (
+                                        <p className="text-amber-600 mt-1">⚠️ Score reduced {problem.opportunity_score.evidence_penalty} due to low data volume</p>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Warnings from opportunity_score */}
+                            {problem.opportunity_score?.warnings && problem.opportunity_score.warnings.length > 0 && (
+                                <div className="mt-2 space-y-1">
+                                    {problem.opportunity_score.warnings.slice(0, 2).map((warning, idx) => (
+                                        <p key={idx} className="text-[10px] text-amber-600 flex items-start gap-1">
+                                            <AlertTriangle className="h-3 w-3 shrink-0 mt-0.5" /> {warning}
+                                        </p>
+                                    ))}
+                                </div>
                             )}
                         </div>
                     </div>
                 </CardContent>
             </Card>
+
+            {/* ─────────────────────────────────────────────────────────── */}
+            {/* 1️⃣ SHOW ME: Problem Evidence */}
+            {/* ─────────────────────────────────────────────────────────── */}
+            <div className="flex items-center gap-2 pt-2">
+                <div className="h-px flex-1 bg-border" />
+                <span className="text-xs font-medium text-muted-foreground px-2">📋 Problem Evidence</span>
+                <div className="h-px flex-1 bg-border" />
+            </div>
 
             {/* Key Metrics with Tooltips */}
             <div className="grid gap-3 md:grid-cols-4">
@@ -372,6 +492,7 @@ export function ProblemDetails() {
                                     <p className="text-xs text-muted-foreground flex items-center gap-1">
                                         Frequency <Info className="h-3 w-3" />
                                     </p>
+                                    <p className="text-[10px] text-muted-foreground/70">How often this appears</p>
                                 </div>
                             </CardContent>
                         </Card>
@@ -408,6 +529,7 @@ export function ProblemDetails() {
                                     <p className="text-xs text-muted-foreground flex items-center gap-1">
                                         Upvotes <Info className="h-3 w-3" />
                                     </p>
+                                    <p className="text-[10px] text-muted-foreground/70">Community validation</p>
                                 </div>
                             </CardContent>
                         </Card>
@@ -419,7 +541,14 @@ export function ProblemDetails() {
 
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <Card className="cursor-help hover:border-green-500/30 transition-colors">
+                        <Card
+                            className="cursor-pointer hover:border-green-500/50 hover:ring-2 hover:ring-green-500/20 transition-all"
+                            onClick={() => {
+                                setActiveTab('sources');
+                                // Scroll to tabs section
+                                document.querySelector('[role="tablist"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                            }}
+                        >
                             <CardContent className="p-4 flex items-center gap-3">
                                 <div className="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center">
                                     <FileText className="h-5 w-5 text-green-500" />
@@ -437,43 +566,67 @@ export function ProblemDetails() {
                                         </Badge>
                                     </div>
                                     <p className="text-xs text-muted-foreground flex items-center gap-1">
-                                        Sources <Info className="h-3 w-3" />
+                                        Sources <ExternalLink className="h-3 w-3" />
                                     </p>
+                                    <p className="text-[10px] text-green-600">Click to view →</p>
                                 </div>
                             </CardContent>
                         </Card>
                     </TooltipTrigger>
                     <TooltipContent side="bottom" className="max-w-xs">
                         <p className="text-sm">{metricDescriptions.sources}</p>
+                        <p className="text-xs text-green-500 mt-1">Click to view raw sources</p>
                     </TooltipContent>
                 </Tooltip>
 
                 {brief && (
                     <Tooltip>
                         <TooltipTrigger asChild>
-                            <Card className={cn("cursor-help border-primary/30", getScoreBgColor(brief.opportunity_score))}>
+                            <Card className={cn(
+                                "cursor-help border-primary/30",
+                                wasScoreCapped ? "border-amber-500/50 bg-amber-500/5" : getScoreBgColor(constrainedScore)
+                            )}>
                                 <CardContent className="p-4 flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
-                                        <Zap className="h-5 w-5 text-primary" />
+                                    <div className={cn(
+                                        "w-10 h-10 rounded-lg flex items-center justify-center",
+                                        wasScoreCapped ? "bg-amber-500/20" : "bg-primary/20"
+                                    )}>
+                                        <Zap className={cn("h-5 w-5", wasScoreCapped ? "text-amber-500" : "text-primary")} />
                                     </div>
                                     <div className="flex-1">
                                         <div className="flex items-center gap-2">
-                                            <p className={cn("text-2xl font-bold", getScoreColor(brief.opportunity_score))}>
-                                                {brief.opportunity_score}
+                                            <p className={cn("text-2xl font-bold", wasScoreCapped ? "text-amber-500" : getScoreColor(constrainedScore))}>
+                                                {constrainedScore}
                                             </p>
-                                            <Badge variant="outline" className={cn("text-[10px]", getScoreLabel(brief.opportunity_score).color)}>
-                                                {getScoreLabel(brief.opportunity_score).label}
+                                            {wasScoreCapped && (
+                                                <Badge variant="outline" className="text-[10px] text-amber-600 border-amber-500/50">
+                                                    ⚠️ Capped
+                                                </Badge>
+                                            )}
+                                            <Badge variant="outline" className={cn("text-[10px]", getScoreLabel(constrainedScore).color)}>
+                                                {isLowSampleSize ? 'Early Signal' : getScoreLabel(constrainedScore).label}
                                             </Badge>
                                         </div>
                                         <p className="text-xs text-muted-foreground flex items-center gap-1">
                                             Opportunity Score <Info className="h-3 w-3" />
                                         </p>
+                                        {wasScoreCapped ? (
+                                            <p className="text-[10px] text-amber-600">Score capped due to low evidence</p>
+                                        ) : (
+                                            <p className="text-[10px] text-muted-foreground/70">Urgency × market × competition</p>
+                                        )}
                                     </div>
                                 </CardContent>
                             </Card>
                         </TooltipTrigger>
                         <TooltipContent side="bottom" className="max-w-xs">
                             <p className="text-sm">{metricDescriptions.opportunity}</p>
+                            {wasScoreCapped && (
+                                <p className="text-xs text-amber-500 mt-1">
+                                    ⚠️ Original score was {rawScore}, capped to 40 due to only {sourceCount} source(s).
+                                    More evidence needed for full confidence.
+                                </p>
+                            )}
                             <p className="text-xs text-muted-foreground mt-1">
                                 Score combines market size, urgency, competition gap, and monetization potential.
                             </p>
@@ -482,16 +635,29 @@ export function ProblemDetails() {
                 )}
             </div>
 
+            {/* ─────────────────────────────────────────────────────────── */}
+            {/* 2️⃣ EXPLAIN TO ME: Analysis & Validation */}
+            {/* ─────────────────────────────────────────────────────────── */}
+            <div className="flex items-center gap-2 pt-2">
+                <div className="h-px flex-1 bg-border" />
+                <span className="text-xs font-medium text-muted-foreground px-2">📊 Analysis & Validation</span>
+                <div className="h-px flex-1 bg-border" />
+            </div>
+
             {/* 📊 NEW: MARKET SIZING + BUILD ESTIMATE + GO-TO-MARKET */}
             <div className="grid gap-4 lg:grid-cols-2">
                 {/* Market Sizing Funnel */}
                 {problem.market_sizing && (
-                    <Card className="border-green-500/20">
+                    <Card className={cn("border-green-500/20", isLowSampleSize && "border-amber-500/20")}>
                         <CardHeader className="pb-2">
                             <CardTitle className="text-sm font-medium flex items-center gap-2">
-                                <DollarSign className="h-4 w-4 text-green-500" />
+                                <DollarSign className={cn("h-4 w-4", isLowSampleSize ? "text-amber-500" : "text-green-500")} />
                                 Market Opportunity
-                                {problem.market_sizing.growth_rate && (
+                                {isLowSampleSize ? (
+                                    <Badge variant="outline" className="ml-auto text-xs text-amber-600 border-amber-500/50">
+                                        ⚠️ Low Evidence
+                                    </Badge>
+                                ) : problem.market_sizing.growth_rate && (
                                     <Badge variant="outline" className="ml-auto text-xs text-green-600">
                                         {problem.market_sizing.growth_rate.display} growth
                                     </Badge>
@@ -499,34 +665,50 @@ export function ProblemDetails() {
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-3">
-                            {/* TAM */}
-                            <div className="flex items-center justify-between p-3 rounded-lg bg-green-500/5 border border-green-500/20">
-                                <div>
-                                    <p className="text-xs text-muted-foreground">TAM (Total Market)</p>
-                                    <p className="text-xl font-bold text-green-600">{problem.market_sizing.tam.display}</p>
+                            {isLowSampleSize ? (
+                                /* Show constraint warning instead of TAM numbers */
+                                <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/30 text-center">
+                                    <AlertTriangle className="h-6 w-6 text-amber-500 mx-auto mb-2" />
+                                    <p className="text-sm font-medium text-amber-600">Insufficient data for TAM estimate</p>
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                        Only {sourceCount} source(s) found. Market sizing requires 5+ validated sources.
+                                    </p>
+                                    <p className="text-[10px] text-muted-foreground mt-2">
+                                        API estimate: {problem.market_sizing.tam.display} — shown for reference only
+                                    </p>
                                 </div>
-                                <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                            </div>
-                            {/* SAM */}
-                            <div className="flex items-center justify-between p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/20 ml-4">
-                                <div>
-                                    <p className="text-xs text-muted-foreground">SAM (Serviceable)</p>
-                                    <p className="text-lg font-bold text-emerald-600">{problem.market_sizing.sam.display}</p>
-                                    {problem.market_sizing.sam.multiplier && (
-                                        <p className="text-[10px] text-muted-foreground">{problem.market_sizing.sam.multiplier}</p>
-                                    )}
-                                </div>
-                                <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                            </div>
-                            {/* SOM */}
-                            <div className="flex items-center justify-between p-3 rounded-lg bg-teal-500/5 border border-teal-500/20 ml-8">
-                                <div>
-                                    <p className="text-xs text-muted-foreground">SOM (Obtainable)</p>
-                                    <p className="text-lg font-bold text-teal-600">{problem.market_sizing.som.display}</p>
-                                    <p className="text-[10px] text-muted-foreground">Your realistic target</p>
-                                </div>
-                                <Target className="h-4 w-4 text-teal-500" />
-                            </div>
+                            ) : (
+                                <>
+                                    {/* TAM */}
+                                    <div className="flex items-center justify-between p-3 rounded-lg bg-green-500/5 border border-green-500/20">
+                                        <div>
+                                            <p className="text-xs text-muted-foreground">TAM (Total Market)</p>
+                                            <p className="text-xl font-bold text-green-600">{problem.market_sizing.tam.display}</p>
+                                        </div>
+                                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                                    </div>
+                                    {/* SAM */}
+                                    <div className="flex items-center justify-between p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/20 ml-4">
+                                        <div>
+                                            <p className="text-xs text-muted-foreground">SAM (Serviceable)</p>
+                                            <p className="text-lg font-bold text-emerald-600">{problem.market_sizing.sam.display}</p>
+                                            {problem.market_sizing.sam.multiplier && (
+                                                <p className="text-[10px] text-muted-foreground">{problem.market_sizing.sam.multiplier}</p>
+                                            )}
+                                        </div>
+                                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                                    </div>
+                                    {/* SOM */}
+                                    <div className="flex items-center justify-between p-3 rounded-lg bg-teal-500/5 border border-teal-500/20 ml-8">
+                                        <div>
+                                            <p className="text-xs text-muted-foreground">SOM (Obtainable)</p>
+                                            <p className="text-lg font-bold text-teal-600">{problem.market_sizing.som.display}</p>
+                                            <p className="text-[10px] text-muted-foreground">Your realistic target</p>
+                                        </div>
+                                        <Target className="h-4 w-4 text-teal-500" />
+                                    </div>
+                                </>
+                            )}
                         </CardContent>
                     </Card>
                 )}
@@ -600,6 +782,15 @@ export function ProblemDetails() {
                         </CardContent>
                     </Card>
                 )}
+            </div>
+
+            {/* ─────────────────────────────────────────────────────────── */}
+            {/* 3️⃣ GUIDE ME: Recommendations */}
+            {/* ─────────────────────────────────────────────────────────── */}
+            <div className="flex items-center gap-2 pt-2">
+                <div className="h-px flex-1 bg-border" />
+                <span className="text-xs font-medium text-muted-foreground px-2">🚀 Recommendations</span>
+                <div className="h-px flex-1 bg-border" />
             </div>
 
             {/* 🚀 GO-TO-MARKET TACTICS */}
@@ -854,7 +1045,11 @@ export function ProblemDetails() {
             )}
 
             {/* Main Content Tabs */}
-            <Tabs defaultValue={brief ? "brief" : "details"} className="space-y-4">
+            <Tabs
+                value={activeTab || (brief ? "brief" : "details")}
+                onValueChange={setActiveTab}
+                className="space-y-4"
+            >
                 <TabsList>
                     {brief && <TabsTrigger value="brief">📊 Brief</TabsTrigger>}
                     <TabsTrigger value="details">📝 Details</TabsTrigger>
