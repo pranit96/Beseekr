@@ -66,14 +66,68 @@ export function ProblemDetails() {
         isInWatchlist ? removeMutation.mutate(id) : addMutation.mutate(id);
     };
 
-    // Extract report data
+    // Extract report data OR fallback to raw problem data
     const report = problem?.report;
-    const header = report?.header;
-    const summary = report?.executive_summary;
-    const problemSection = report?.section_1_problem;
-    const marketSection = report?.section_2_market;
-    const validationSection = report?.section_3_validation;
-    const actionSection = report?.section_5_action_plan;
+    const hasReport = !!report?.executive_summary;
+
+    // Fallback data from raw problem when report is missing
+    const header = report?.header || {
+        category: problem?.category,
+        domain: problem?.domain,
+    };
+
+    const summary = report?.executive_summary || {
+        verdict: problem?.data_confidence?.level === 'low' ? 'Early Signal' :
+            problem?.opportunity_score?.value >= 70 ? 'Worth Exploring' : 'Needs Validation',
+        score: problem?.opportunity_score?.value || problem?.brief?.opportunity_score || 0,
+        original_score: problem?.opportunity_score?.original_value,
+        confidence: problem?.data_confidence?.level || 'low',
+        one_liner: problem?.summary || problem?.description,
+        warnings: problem?.opportunity_score?.warnings || [],
+    };
+
+    const problemSection = report?.section_1_problem || {
+        title: 'The Problem',
+        description: problem?.summary || problem?.description,
+        target_audience: problem?.brief?.target_audience?.primary?.role
+            ? `${problem.brief.target_audience.primary.role} at ${problem.brief.target_audience.primary.company_size} companies`
+            : problem?.target_audience,
+        pain_level: problem?.brief?.target_audience?.primary?.pain_level || 5,
+        key_insights: problem?.brief?.target_audience?.key_insights || [],
+    };
+
+    const marketSection = report?.section_2_market || (problem?.market_sizing ? {
+        title: 'Market Opportunity',
+        tam: problem.market_sizing.tam,
+        sam: problem.market_sizing.sam,
+        som: problem.market_sizing.som,
+        growth_rate: problem.market_sizing.growth_rate,
+        competition_level: problem.competition_level,
+    } : null);
+
+    const validationSection = report?.section_3_validation || (problem?.validation_strength ? {
+        title: 'Validation Status',
+        score: problem.validation_strength.score,
+        max_score: problem.validation_strength.max_score,
+        verdict: problem.validation_strength.verdict,
+        signals: {
+            discussions: problem.metrics?.frequency || 0,
+            sources: problem.metrics?.source_count || 0,
+            quotes: problem.top_quotes?.length || 0,
+            external_signals: 0,
+        },
+        what_is_missing: problem.validation_strength.missing || [],
+    } : null);
+
+    const actionSection = report?.section_5_action_plan || (problem?.build_estimate ? {
+        title: 'Next Steps',
+        mvp_timeline: `${problem.build_estimate.mvp_weeks} weeks`,
+        complexity: problem.build_estimate.complexity,
+        solo_feasible: problem.build_estimate.solo_founder_feasible,
+        estimated_cost: problem.build_estimate.cost_estimate,
+        first_10_customers: problem.go_to_market?.first_10_customers || [],
+        communities_to_target: problem.go_to_market?.communities || [],
+    } : null);
 
     // Helpers
     const getConfidenceColor = (confidence: string) => {

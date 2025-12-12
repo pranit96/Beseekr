@@ -302,6 +302,16 @@ export async function getProblemDetails(id: string): Promise<Problem> {
         recommended_action: response.recommended_action,
         // Map brief data if available
         brief: response.brief,
+        // Pass through enriched report and other data
+        report: response.report,
+        data_confidence: response.data_confidence,
+        opportunity_score: response.opportunity_score,
+        market_sizing: response.market_sizing,
+        validation_strength: response.validation_strength,
+        build_estimate: response.build_estimate,
+        go_to_market: response.go_to_market,
+        competitor_intel: response.competitor_intel,
+        related_posts: response.related_posts,
     } as Problem;
 }
 
