@@ -276,13 +276,16 @@ export function ProblemsList() {
         refetchOnWindowFocus: false,
     });
 
-    // Fetch subscription plans when Premium tab is active
+    // Fetch subscription plans - always for logged-in users (to check premium status)
     const { data: plansData, isLoading: isLoadingPlans } = useQuery({
         queryKey: ['subscription-plans'],
         queryFn: () => paymentsApi.getPlans(),
-        enabled: activeTab === 'premium' && !premiumData?.is_premium,
+        enabled: !!user, // Always fetch for logged-in users
         staleTime: 5 * 60 * 1000, // Cache for 5 minutes
     });
+
+    // Check if user is premium (from plans API)
+    const isPremiumUser = plansData?.user?.is_premium === true;
 
     // Extract plans from response
     const plans = plansData?.plans;
@@ -561,9 +564,8 @@ export function ProblemsList() {
                         </motion.div>
                     )}
 
-                    {/* Premium Teaser on Free Tab */}
-                    {/* Hide Featured Premium Problem footer for premium users (same logic as pricing tab) */}
-                    {!isLoading && problems.length > 0 && !premiumData?.is_premium && (
+                    {/* Premium Teaser on Free Tab - hidden for premium users */}
+                    {!isLoading && problems.length > 0 && !isPremiumUser && (
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
