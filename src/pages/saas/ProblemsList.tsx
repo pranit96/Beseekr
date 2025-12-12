@@ -221,7 +221,7 @@ export function ProblemsList() {
 
     // SEO - Update page meta tags (search-query focused)
     useEffect(() => {
-        document.title = 'Startup Ideas 2024: Find Validated Business Problems | beseekr';
+        document.title = 'Startup Ideas: Find Validated Business Problems | beseekr';
         const metaDesc = document.querySelector('meta[name="description"]');
         if (metaDesc) {
             metaDesc.setAttribute('content', 'Find startup ideas that actually work. Discover validated SaaS ideas, B2B problems, and business opportunities from real market research. Free to browse.');
