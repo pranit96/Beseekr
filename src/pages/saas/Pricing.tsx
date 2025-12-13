@@ -44,7 +44,7 @@ function detectUserCountry(): Currency {
 export function Pricing() {
     const navigate = useNavigate();
     const { user } = useAuth();
-    const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('yearly');
+    const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
     const [selectedTier, setSelectedTier] = useState<'standard' | 'pro'>('pro');
     const [isCreatingLink, setIsCreatingLink] = useState(false);
     const [currency, setCurrency] = useState<Currency>('INR');
