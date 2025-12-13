@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Download, Trash2, Archive, RotateCcw, Shield, Lock, Eye, Users, Server } from 'lucide-react';
+import { Download, Trash2, Archive, RotateCcw, Shield, Lock, Eye, Users, Server, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -15,11 +15,13 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { TopBar } from '@/components/TopBar';
 import { useConversations, useUpdateConversationStatus, useDeleteConversation } from '@/hooks/use-api-queries';
+import { apiClient } from '@/lib/api';
 
 interface ArchivedConversation {
   id: string;
@@ -28,10 +30,26 @@ interface ArchivedConversation {
   archived_at: string;
 }
 
+interface NotificationPreferences {
+  email_weekly_digest: boolean;
+  email_problem_alerts: boolean;
+  email_product_updates: boolean;
+  email_marketing: boolean;
+}
+
 const Profile = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [confirmEmail, setConfirmEmail] = useState('');
   const [isExporting, setIsExporting] = useState(false);
+  const [notificationPrefs, setNotificationPrefs] = useState<NotificationPreferences>({
+    email_weekly_digest: true,
+    email_problem_alerts: true,
+    email_product_updates: false,
+    email_marketing: false,
+  });
+  const [loadingNotifications, setLoadingNotifications] = useState(true);
+  const [savingNotification, setSavingNotification] = useState<string | null>(null);
+
   const { user, exportData, deleteAccount } = useAuth();
   const { toast } = useToast();
 
@@ -46,6 +64,24 @@ const Profile = () => {
 
   const archivedConversations = archivedResponse?.data || [];
 
+  // Fetch notification preferences
+  useEffect(() => {
+    const fetchNotificationPrefs = async () => {
+      try {
+        const response = await apiClient.getNotificationPreferences();
+        if (response.success && response.data) {
+          setNotificationPrefs(response.data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch notification preferences:', err);
+      } finally {
+        setLoadingNotifications(false);
+      }
+    };
+
+    fetchNotificationPrefs();
+  }, []);
+
   // Show error toast if query fails (only once)
   useEffect(() => {
     if (error) {
@@ -56,6 +92,36 @@ const Profile = () => {
       });
     }
   }, [error, toast]);
+
+  // Handle notification toggle
+  const handleNotificationToggle = async (key: keyof NotificationPreferences) => {
+    const newValue = !notificationPrefs[key];
+    setSavingNotification(key);
+
+    // Optimistically update UI
+    setNotificationPrefs(prev => ({ ...prev, [key]: newValue }));
+
+    try {
+      const response = await apiClient.updateNotificationPreferences({ [key]: newValue });
+      if (response.success && response.data) {
+        setNotificationPrefs(response.data);
+        toast({
+          title: 'Preferences updated',
+          description: 'Your notification settings have been saved.',
+        });
+      }
+    } catch (err) {
+      // Revert on error
+      setNotificationPrefs(prev => ({ ...prev, [key]: !newValue }));
+      toast({
+        title: 'Failed to update preferences',
+        description: (err as any).message || 'Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setSavingNotification(null);
+    }
+  };
 
   const handleExportData = async () => {
     setIsExporting(true);
@@ -121,8 +187,9 @@ const Profile = () => {
         </div>
 
         <Tabs defaultValue="account" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:inline-grid">
+          <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid">
             <TabsTrigger value="account">Account</TabsTrigger>
+            <TabsTrigger value="notifications">Notifications</TabsTrigger>
             <TabsTrigger value="data">Data & Archive</TabsTrigger>
             <TabsTrigger value="privacy">Privacy Policy</TabsTrigger>
           </TabsList>
@@ -162,6 +229,93 @@ const Profile = () => {
                   </Button>
                 </div>
               </div>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="notifications" className="space-y-6">
+            <Card className="p-6 glass">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <Bell className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-semibold">Email Notifications</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Manage which emails you receive from us
+                  </p>
+                </div>
+              </div>
+
+              {loadingNotifications ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  Loading notification preferences...
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-muted/30 transition-colors">
+                    <div className="flex-1">
+                      <div className="font-medium">Weekly Digest</div>
+                      <div className="text-sm text-muted-foreground">
+                        Receive a weekly summary of new problems and opportunities
+                      </div>
+                    </div>
+                    <Switch
+                      checked={notificationPrefs.email_weekly_digest}
+                      onCheckedChange={() => handleNotificationToggle('email_weekly_digest')}
+                      disabled={savingNotification === 'email_weekly_digest'}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-muted/30 transition-colors">
+                    <div className="flex-1">
+                      <div className="font-medium">Problem Alerts</div>
+                      <div className="text-sm text-muted-foreground">
+                        Get notified when problems in your watchlist have updates
+                      </div>
+                    </div>
+                    <Switch
+                      checked={notificationPrefs.email_problem_alerts}
+                      onCheckedChange={() => handleNotificationToggle('email_problem_alerts')}
+                      disabled={savingNotification === 'email_problem_alerts'}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-muted/30 transition-colors">
+                    <div className="flex-1">
+                      <div className="font-medium">Product Updates</div>
+                      <div className="text-sm text-muted-foreground">
+                        Receive news about new features and improvements
+                      </div>
+                    </div>
+                    <Switch
+                      checked={notificationPrefs.email_product_updates}
+                      onCheckedChange={() => handleNotificationToggle('email_product_updates')}
+                      disabled={savingNotification === 'email_product_updates'}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-muted/30 transition-colors">
+                    <div className="flex-1">
+                      <div className="font-medium">Marketing Communications</div>
+                      <div className="text-sm text-muted-foreground">
+                        Receive tips, guides, and promotional content
+                      </div>
+                    </div>
+                    <Switch
+                      checked={notificationPrefs.email_marketing}
+                      onCheckedChange={() => handleNotificationToggle('email_marketing')}
+                      disabled={savingNotification === 'email_marketing'}
+                    />
+                  </div>
+                </div>
+              )}
+            </Card>
+
+            <Card className="p-6 glass">
+              <h3 className="font-semibold mb-2">Unsubscribe from All</h3>
+              <p className="text-sm text-muted-foreground mb-3">
+                To unsubscribe from all emails, click the unsubscribe link at the bottom of any email we send you.
+              </p>
             </Card>
           </TabsContent>
 

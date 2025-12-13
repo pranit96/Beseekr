@@ -645,6 +645,34 @@ class ApiClient {
   async getDeckMetrics() {
     return this.request<any>('/api/deck-to-model/metrics');
   }
+
+  // Notification preferences endpoints
+  async getNotificationPreferences() {
+    return this.request<{
+      email_weekly_digest: boolean;
+      email_problem_alerts: boolean;
+      email_product_updates: boolean;
+      email_marketing: boolean;
+    }>('/api/user/notifications');
+  }
+
+  async updateNotificationPreferences(preferences: {
+    email_weekly_digest?: boolean;
+    email_problem_alerts?: boolean;
+    email_product_updates?: boolean;
+    email_marketing?: boolean;
+  }) {
+    this.clearCache();
+    return this.request<{
+      email_weekly_digest: boolean;
+      email_problem_alerts: boolean;
+      email_product_updates: boolean;
+      email_marketing: boolean;
+    }>('/api/user/notifications', {
+      method: 'PUT',
+      body: JSON.stringify(preferences),
+    });
+  }
 }
 
 export const apiClient = new ApiClient(API_BASE_URL);
