@@ -142,6 +142,7 @@ const App = () => {
                     <Route path="validate/:id" element={<Validate />} />
                     <Route path="watchlist" element={<SaasWatchlist />} />
                     <Route path="pricing" element={<Pricing />} />
+                    <Route path="profile" element={<Suspense fallback={<PageLoader />}><Profile /></Suspense>} />
                   </Route>
 
                   {/* =============================================
@@ -165,7 +166,7 @@ const App = () => {
                   />
                   <Route
                     path="/profile"
-                    element={<ProtectedRoute><Suspense fallback={<PageLoader />}><Profile /></Suspense></ProtectedRoute>}
+                    element={<Navigate to="/dashboard/profile" replace />}
                   />
                   <Route
                     path="/deck"

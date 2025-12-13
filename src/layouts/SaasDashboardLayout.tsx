@@ -207,7 +207,7 @@ export function SaasDashboardLayout() {
                                         </div>
                                         <DropdownMenuSeparator />
                                         <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
-                                            <Link to="/profile" className="flex items-center w-full">
+                                            <Link to="/dashboard/profile" className="flex items-center w-full">
                                                 <Settings className="mr-2 h-4 w-4" />
                                                 Settings
                                             </Link>
