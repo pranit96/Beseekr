@@ -1099,17 +1099,7 @@ export function ProblemsList() {
                 setShowLoginModal(open);
             }} modal={true}>
                 <DialogContent
-                    className="sm:max-w-md max-w-[90vw] rounded-2xl p-6 gap-6"
-                    style={{
-                        position: 'fixed',
-                        top: '50%',
-                        left: '50%',
-                        transform: 'translate(-50%, -50%)',
-                        zIndex: '9999',
-                        pointerEvents: 'auto',
-                        maxHeight: '90vh',
-                        overflowY: 'auto',
-                    }}
+                    className="!fixed !top-[50vh] !left-[50vw] !-translate-x-1/2 !-translate-y-1/2 !z-[9999] sm:max-w-md max-w-[90vw] rounded-2xl p-6 gap-6 !m-0 !max-h-[90vh] !overflow-y-auto"
                     onPointerDownOutside={(e) => {
                         console.log('Pointer down outside dialog');
                         e.preventDefault();
