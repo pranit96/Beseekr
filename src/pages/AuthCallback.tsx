@@ -15,44 +15,84 @@ export default function AuthCallback() {
     const [errorMessage, setErrorMessage] = useState('');
 
     useEffect(() => {
+        let authListener: { data: { subscription: { unsubscribe: () => void } } } | null = null;
+
         const handleCallback = async () => {
             try {
-                // Get the session from URL hash (Supabase puts tokens there)
-                const { data, error } = await supabase.auth.getSession();
+                // First, check if there are tokens in the URL hash
+                const hashParams = new URLSearchParams(window.location.hash.substring(1));
+                const hasTokensInUrl = hashParams.has('access_token');
 
-                if (error) {
-                    throw new Error(error.message);
-                }
+                if (hasTokensInUrl) {
+                    // Tokens are in URL - Supabase needs to process them
+                    // Wait for auth state change which fires after Supabase processes the URL
+                    const session = await new Promise<any>((resolve, reject) => {
+                        const timeout = setTimeout(() => {
+                            reject(new Error('Authentication timed out. Please try again.'));
+                        }, 10000); // 10 second timeout
 
-                if (!data.session) {
-                    // Try to get session from URL params (some OAuth flows use this)
-                    const hashParams = new URLSearchParams(window.location.hash.substring(1));
-                    const accessToken = hashParams.get('access_token');
+                        authListener = supabase.auth.onAuthStateChange((event, session) => {
+                            if (event === 'SIGNED_IN' && session) {
+                                clearTimeout(timeout);
+                                resolve(session);
+                            } else if (event === 'TOKEN_REFRESHED' && session) {
+                                clearTimeout(timeout);
+                                resolve(session);
+                            }
+                        });
 
-                    if (!accessToken) {
+                        // Also try getting session immediately in case it's already processed
+                        supabase.auth.getSession().then(({ data }) => {
+                            if (data.session) {
+                                clearTimeout(timeout);
+                                resolve(data.session);
+                            }
+                        });
+                    });
+
+                    if (!session?.access_token) {
+                        throw new Error('No access token received from Google.');
+                    }
+
+                    // Exchange Supabase tokens with backend to create session cookie
+                    const response = await apiClient.googleCallback(
+                        session.access_token,
+                        session.refresh_token
+                    );
+
+                    if (response.success) {
+                        setStatus('success');
+                        setTimeout(() => {
+                            navigate('/dashboard/problems', { replace: true });
+                        }, 1000);
+                    } else {
+                        throw new Error(response.error || 'Failed to authenticate with server.');
+                    }
+                } else {
+                    // No tokens in URL - try to get existing session
+                    const { data, error } = await supabase.auth.getSession();
+
+                    if (error) {
+                        throw new Error(error.message);
+                    }
+
+                    if (!data.session) {
                         throw new Error('No session found. Please try again.');
                     }
-                }
 
-                // Get both tokens to send to backend
-                const accessToken = data.session?.access_token;
-                const refreshToken = data.session?.refresh_token;
+                    const response = await apiClient.googleCallback(
+                        data.session.access_token,
+                        data.session.refresh_token
+                    );
 
-                if (!accessToken) {
-                    throw new Error('No access token received from Google.');
-                }
-
-                // Exchange Supabase tokens with backend to create session cookie
-                const response = await apiClient.googleCallback(accessToken, refreshToken);
-
-                if (response.success) {
-                    setStatus('success');
-                    // Short delay to show success message
-                    setTimeout(() => {
-                        navigate('/dashboard/problems', { replace: true });
-                    }, 1000);
-                } else {
-                    throw new Error(response.error || 'Failed to authenticate with server.');
+                    if (response.success) {
+                        setStatus('success');
+                        setTimeout(() => {
+                            navigate('/dashboard/problems', { replace: true });
+                        }, 1000);
+                    } else {
+                        throw new Error(response.error || 'Failed to authenticate with server.');
+                    }
                 }
             } catch (err: any) {
                 console.error('OAuth callback error:', err);
@@ -62,6 +102,13 @@ export default function AuthCallback() {
         };
 
         handleCallback();
+
+        // Cleanup listener on unmount
+        return () => {
+            if (authListener?.data?.subscription) {
+                authListener.data.subscription.unsubscribe();
+            }
+        };
     }, [navigate]);
 
     return (
