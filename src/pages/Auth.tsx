@@ -8,7 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Sparkles, ArrowLeft, CheckCircle2, AlertCircle, Eye, EyeOff, Loader2 } from "lucide-react";
 import { apiClient } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
-import { supabase, isSupabaseConfigured } from "@/lib/supabase";
+import { supabase, isSupabaseConfigured, isSafariBrowser } from "@/lib/supabase";
 
 const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -37,18 +37,34 @@ const Auth = () => {
     if (!isSupabaseConfigured()) {
       toast({
         title: "Configuration Error",
-        description: "Google sign-in is not configured. Please contact support.",
+        description: "Google sign-in is not available. Please contact support or try email/password signup.",
         variant: "destructive",
       });
+      console.error('Supabase not configured - missing environment variables');
       return;
     }
 
     setIsGoogleLoading(true);
+
+    // Detect Safari for conditional handling
+    const isSafari = isSafariBrowser();
+
+    console.log('Initiating Google OAuth', {
+      isSafari,
+      isMobile: /iPhone|iPad|iPod|Android/i.test(navigator.userAgent),
+      redirectUrl: `${window.location.origin}/auth/callback`,
+    });
+
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
+          skipBrowserRedirect: false, // Explicitly use redirect flow (not popup)
+          queryParams: {
+            access_type: 'offline', // Request refresh token
+            prompt: 'consent', // Force consent screen to ensure we get refresh token
+          },
         },
       });
 
@@ -56,11 +72,23 @@ const Auth = () => {
         throw error;
       }
       // If no error, browser will redirect to Google
+      // On Safari mobile, this may take a moment
+      console.log('Redirecting to Google OAuth...');
     } catch (error: any) {
       console.error('Google sign-in error:', error);
+
+      // Provide more helpful error message for Safari users
+      let errorMessage = error.message || "Could not connect to Google. Please try again.";
+
+      if (isSafari && error.message?.includes('popup')) {
+        errorMessage = "Safari blocked the sign-in popup. Please allow popups and try again, or use email/password signup.";
+      } else if (isSafari) {
+        errorMessage = `${errorMessage} If this persists on Safari, try using email/password signup instead.`;
+      }
+
       toast({
         title: "Sign in failed",
-        description: error.message || "Could not connect to Google. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
       setIsGoogleLoading(false);

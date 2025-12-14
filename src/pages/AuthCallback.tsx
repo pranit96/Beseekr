@@ -21,19 +21,44 @@ export default function AuthCallback() {
 
         const handleCallback = async () => {
             try {
+                // Detect browser and device for debugging
+                const userAgent = navigator.userAgent;
+                const isSafari = /^((?!chrome|android).)*safari/i.test(userAgent);
+                const isMobile = /iPhone|iPad|iPod|Android/i.test(userAgent);
+
+                console.log('OAuth Callback - Browser Info:', {
+                    isSafari,
+                    isMobile,
+                    userAgent: userAgent.substring(0, 100), // Truncated for brevity
+                });
+
                 // First, check if there are tokens in the URL hash
                 const hashParams = new URLSearchParams(window.location.hash.substring(1));
                 const hasTokensInUrl = hashParams.has('access_token');
 
-                if (hasTokensInUrl) {
+                // Also check URL search params (some browsers may use this instead)
+                const searchParams = new URLSearchParams(window.location.search);
+                const hasTokensInSearch = searchParams.has('access_token');
+
+                console.log('OAuth Callback - URL Token Detection:', {
+                    hasTokensInUrl,
+                    hasTokensInSearch,
+                    hashLength: window.location.hash.length,
+                    searchLength: window.location.search.length,
+                });
+
+                if (hasTokensInUrl || hasTokensInSearch) {
                     // Tokens are in URL - Supabase needs to process them
                     // Wait for auth state change which fires after Supabase processes the URL
                     const session = await new Promise<any>((resolve, reject) => {
+                        // Increased timeout to 15 seconds for mobile connections
                         const timeout = setTimeout(() => {
-                            reject(new Error('Authentication timed out. Please try again.'));
-                        }, 10000); // 10 second timeout
+                            reject(new Error('Authentication timed out. Please check your internet connection and try again.'));
+                        }, 15000);
 
                         authListener = supabase.auth.onAuthStateChange((event, session) => {
+                            console.log('OAuth Callback - Auth State Change:', { event, hasSession: !!session });
+
                             if (event === 'SIGNED_IN' && session) {
                                 clearTimeout(timeout);
                                 resolve(session);
@@ -44,8 +69,12 @@ export default function AuthCallback() {
                         });
 
                         // Also try getting session immediately in case it's already processed
-                        supabase.auth.getSession().then(({ data }) => {
+                        supabase.auth.getSession().then(({ data, error }) => {
+                            if (error) {
+                                console.error('OAuth Callback - getSession error:', error);
+                            }
                             if (data.session) {
+                                console.log('OAuth Callback - Session found immediately');
                                 clearTimeout(timeout);
                                 resolve(data.session);
                             }
@@ -53,8 +82,10 @@ export default function AuthCallback() {
                     });
 
                     if (!session?.access_token) {
-                        throw new Error('No access token received from Google.');
+                        throw new Error('No access token received from Google. Please try again.');
                     }
+
+                    console.log('OAuth Callback - Exchanging tokens with backend');
 
                     // Exchange Supabase tokens with backend to create session cookie
                     const response = await apiClient.googleCallback(
@@ -63,6 +94,7 @@ export default function AuthCallback() {
                     );
 
                     if (response.success) {
+                        console.log('OAuth Callback - Backend authentication successful');
                         // Refresh auth context to update user state across all components
                         await refreshAuth(true);
                         setStatus('success');
@@ -73,16 +105,46 @@ export default function AuthCallback() {
                         throw new Error(response.error || 'Failed to authenticate with server.');
                     }
                 } else {
+                    console.log('OAuth Callback - No tokens in URL, checking for existing session');
+
                     // No tokens in URL - try to get existing session
+                    // Safari mobile may have stored the session but cleared the URL
                     const { data, error } = await supabase.auth.getSession();
 
                     if (error) {
+                        console.error('OAuth Callback - Session retrieval error:', error);
                         throw new Error(error.message);
                     }
 
                     if (!data.session) {
-                        throw new Error('No session found. Please try again.');
+                        console.error('OAuth Callback - No session found');
+
+                        // Safari-specific: Try to recover from localStorage directly
+                        if (isSafari) {
+                            console.log('Safari detected - attempting localStorage recovery');
+                            try {
+                                const storedSession = localStorage.getItem('beseekr-auth-token');
+                                if (storedSession) {
+                                    console.log('Found stored session in localStorage');
+                                    // Session exists but Supabase didn't pick it up
+                                    // Try to refresh the page once to let Supabase reinitialize
+                                    const hasRefreshed = sessionStorage.getItem('oauth-refresh-attempted');
+                                    if (!hasRefreshed) {
+                                        sessionStorage.setItem('oauth-refresh-attempted', 'true');
+                                        console.log('Refreshing page to reinitialize Supabase session');
+                                        window.location.reload();
+                                        return; // Exit to prevent error showing
+                                    }
+                                }
+                            } catch (storageError) {
+                                console.error('Safari localStorage recovery failed:', storageError);
+                            }
+                        }
+
+                        throw new Error('No session found. Please try signing in again.');
                     }
+
+                    console.log('OAuth Callback - Exchanging stored session with backend');
 
                     const response = await apiClient.googleCallback(
                         data.session.access_token,
@@ -90,6 +152,7 @@ export default function AuthCallback() {
                     );
 
                     if (response.success) {
+                        console.log('OAuth Callback - Backend authentication successful');
                         // Refresh auth context to update user state across all components
                         await refreshAuth(true);
                         setStatus('success');
@@ -102,6 +165,11 @@ export default function AuthCallback() {
                 }
             } catch (err: any) {
                 console.error('OAuth callback error:', err);
+                console.error('OAuth callback error details:', {
+                    message: err.message,
+                    stack: err.stack,
+                    userAgent: navigator.userAgent,
+                });
                 setStatus('error');
                 setErrorMessage(err.message || 'Authentication failed. Please try again.');
             }
@@ -115,7 +183,7 @@ export default function AuthCallback() {
                 authListener.data.subscription.unsubscribe();
             }
         };
-    }, [navigate]);
+    }, [navigate, refreshAuth]);
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/20 p-4">
