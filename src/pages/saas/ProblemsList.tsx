@@ -437,7 +437,7 @@ export function ProblemsList() {
                             </div>
                             <Button
                                 onClick={promptLogin}
-                                className="shrink-0 rounded-xl bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity"
+                                className="shrink-0 rounded-xl bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity touch-manipulation active:scale-95"
                             >
                                 Sign Up Free
                             </Button>
@@ -786,7 +786,7 @@ export function ProblemsList() {
                                 </p>
                                 <Button
                                     onClick={promptLogin}
-                                    className="rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:opacity-90"
+                                    className="rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:opacity-90 touch-manipulation active:scale-95"
                                 >
                                     Sign Up Free to Unlock All
                                 </Button>
@@ -1055,52 +1055,46 @@ export function ProblemsList() {
                 </motion.div >
             )}
 
-            {/* Login Prompt Modal - Better UX than direct redirect */}
+            {/* Login Modal - Mobile Safari Optimized */}
             <Dialog open={showLoginModal} onOpenChange={setShowLoginModal}>
-                <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2">
-                            <Sparkles className="h-5 w-5 text-primary" />
-                            Unlock Premium Problems
-                        </DialogTitle>
-                        <DialogDescription className="text-left pt-2">
-                            Create a free account to access:
+                <DialogContent className="sm:max-w-md max-w-[90vw] rounded-2xl p-6 gap-6 pointer-events-auto touch-manipulation" style={{ zIndex: 9999 }}>
+                    <DialogHeader className="space-y-3">
+                        <div className="mx-auto w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg">
+                            <Sparkles className="w-8 h-8 text-white" />
+                        </div>
+                        <DialogTitle className="text-center text-2xl font-bold">Join beseekr</DialogTitle>
+                        <DialogDescription className="text-center text-base">
+                            Get full access to validated startup problems and insights
                         </DialogDescription>
                     </DialogHeader>
-                    <div className="space-y-3 py-4">
-                        <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-green-500/10 flex items-center justify-center">
-                                <CheckCircle2 className="h-4 w-4 text-green-500" />
+                    <div className="space-y-4">
+                        <div className="flex items-start gap-3 p-3 rounded-xl bg-muted/50">
+                            <div className="shrink-0 w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center mt-0.5">
+                                <TrendingUp className="h-4 w-4 text-primary" />
                             </div>
-                            <span className="text-sm">All free problems with full details</span>
+                            <span className="text-sm">Access all validated problems and opportunities</span>
                         </div>
-                        <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-amber-500/10 flex items-center justify-center">
-                                <Crown className="h-4 w-4 text-amber-500" />
-                            </div>
-                            <span className="text-sm">Preview of premium high-score opportunities</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                        <div className="flex items-start gap-3 p-3 rounded-xl bg-muted/50">
+                            <div className="shrink-0 w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center mt-0.5">
                                 <Bookmark className="h-4 w-4 text-primary" />
                             </div>
                             <span className="text-sm">Save problems to your watchlist</span>
                         </div>
                     </div>
-                    <div className="flex flex-col gap-2">
+                    <div className="flex flex-col gap-3 pt-2">
                         <Button
                             onClick={() => {
                                 setShowLoginModal(false);
                                 navigate('/auth');
                             }}
-                            className="w-full bg-gradient-to-r from-primary to-accent"
+                            className="w-full h-12 bg-gradient-to-r from-primary to-accent text-base font-semibold touch-manipulation active:scale-95"
                         >
                             Sign Up Free
                         </Button>
                         <Button
                             variant="ghost"
                             onClick={() => setShowLoginModal(false)}
-                            className="text-muted-foreground"
+                            className="text-muted-foreground h-11 touch-manipulation active:scale-95"
                         >
                             Maybe Later
                         </Button>

@@ -37,7 +37,7 @@ export const TopBar = ({ sidebarOpen, onToggleSidebar, showSidebarToggle }: TopB
   const toggleMobileNav = () => setMobileNavOpen((prev) => !prev);
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-xl">
+    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-xl pointer-events-auto">
       <div className="mx-auto w-full max-w-[2200px] flex h-16 items-center justify-between px-4 md:px-6">
         {/* Left Section */}
         <div className="flex items-center gap-3 min-w-[240px]">
