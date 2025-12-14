@@ -121,10 +121,10 @@ const Auth = () => {
 
   const [bubbles, setBubbles] = useState<{ id: number; x: number; y: number; size: number }[]>([]);
   const [messages] = useState([
-    "Imagine Smarter.",
-    "Talk to Your AI Team.",
-    "Ideas That Grow With You.",
-    "Dream. Type. Discover.",
+    "Find Real Problems.",
+    "Build What Matters.",
+    "Validated Opportunities.",
+    "Your Next Startup Idea.",
   ]);
   const [currentMsg, setCurrentMsg] = useState(0);
 
@@ -369,7 +369,7 @@ const Auth = () => {
             {messages[currentMsg]}
           </h1>
           <p className="text-base md:text-lg text-slate-700 dark:text-white/80 max-w-2xl mx-auto">
-            Step into a world where every AI collaborates like a friend. Your ideas, shared and evolved.
+            Discover validated startup problems from real conversations. Turn market insights into your next big idea.
           </p>
         </div>
 
@@ -391,7 +391,7 @@ const Auth = () => {
               </h1>
             </div>
             <h2 className="text-lg sm:text-xl font-semibold mb-2 text-slate-700 dark:text-foreground">
-              Let's continue your creative AI journey
+              Start discovering validated opportunities
             </h2>
           </div>
 

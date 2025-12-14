@@ -217,7 +217,15 @@ export function ProblemsList() {
     const [showLoginModal, setShowLoginModal] = useState(false);
 
     // Helper to prompt login instead of direct redirect
-    const promptLogin = () => setShowLoginModal(true);
+    const promptLogin = () => {
+        console.log('promptLogin called - setting showLoginModal to true');
+        console.log('Current showLoginModal state:', showLoginModal);
+        setShowLoginModal(true);
+        // Force a small delay to ensure state updates
+        setTimeout(() => {
+            console.log('After timeout - showLoginModal should be true:', showLoginModal);
+        }, 100);
+    };
 
     // SEO - Update page meta tags (search-query focused)
     useEffect(() => {
@@ -1056,8 +1064,25 @@ export function ProblemsList() {
             )}
 
             {/* Login Modal - Mobile Safari Optimized */}
-            <Dialog open={showLoginModal} onOpenChange={setShowLoginModal}>
-                <DialogContent className="sm:max-w-md max-w-[90vw] rounded-2xl p-6 gap-6 pointer-events-auto touch-manipulation" style={{ zIndex: 9999 }}>
+            <Dialog open={showLoginModal} onOpenChange={(open) => {
+                console.log('Dialog onOpenChange called:', open);
+                setShowLoginModal(open);
+            }} modal={true}>
+                <DialogContent
+                    className="sm:max-w-md max-w-[90vw] rounded-2xl p-6 gap-6"
+                    style={{
+                        zIndex: '9999',
+                        position: 'fixed',
+                        pointerEvents: 'auto',
+                    }}
+                    onPointerDownOutside={(e) => {
+                        console.log('Pointer down outside dialog');
+                        e.preventDefault();
+                    }}
+                    onInteractOutside={(e) => {
+                        console.log('Interact outside dialog - closing');
+                    }}
+                >
                     <DialogHeader className="space-y-3">
                         <div className="mx-auto w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg">
                             <Sparkles className="w-8 h-8 text-white" />
@@ -1084,6 +1109,7 @@ export function ProblemsList() {
                     <div className="flex flex-col gap-3 pt-2">
                         <Button
                             onClick={() => {
+                                console.log('Sign Up Free button clicked in modal');
                                 setShowLoginModal(false);
                                 navigate('/auth');
                             }}
@@ -1093,7 +1119,10 @@ export function ProblemsList() {
                         </Button>
                         <Button
                             variant="ghost"
-                            onClick={() => setShowLoginModal(false)}
+                            onClick={() => {
+                                console.log('Maybe Later clicked');
+                                setShowLoginModal(false);
+                            }}
                             className="text-muted-foreground h-11 touch-manipulation active:scale-95"
                         >
                             Maybe Later
