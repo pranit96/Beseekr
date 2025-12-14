@@ -227,17 +227,15 @@ export function ProblemsList() {
         }, 100);
     };
 
-    // Scroll to top and lock body when dialog opens (mobile Safari fix)
+    // Lock body scroll when dialog opens (mobile Safari fix)
     useEffect(() => {
         if (showLoginModal) {
-            // Scroll to top so dialog is visible in viewport
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-
-            // Lock body scroll on mobile
+            // Lock body scroll on mobile to prevent background scrolling
+            const scrollY = window.scrollY;
             document.body.style.overflow = 'hidden';
             document.body.style.position = 'fixed';
             document.body.style.width = '100%';
-            document.body.style.top = `-${window.scrollY}px`;
+            document.body.style.top = `-${scrollY}px`;
         } else {
             // Restore scroll position
             const scrollY = document.body.style.top;
