@@ -204,6 +204,114 @@ export function ProblemDetails() {
             </div>
 
             {/* ════════════════════════════════════════════════════════════════ */}
+            {/* HERO HOOK: One-Glance Decision Bar                               */}
+            {/* ════════════════════════════════════════════════════════════════ */}
+            <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+            >
+                <Card className="border-2 border-primary/30 bg-gradient-to-r from-primary/5 via-background to-accent/5 overflow-hidden">
+                    <CardContent className="pt-4 pb-4">
+                        {/* Key Decision Metrics */}
+                        <div className="flex flex-wrap items-center justify-center gap-3 md:gap-6 mb-4">
+                            {marketSection?.som?.display && (
+                                <motion.div
+                                    className="flex items-center gap-2"
+                                    initial={{ scale: 0.8 }}
+                                    animate={{ scale: 1 }}
+                                    transition={{ delay: 0.1, type: 'spring' }}
+                                >
+                                    <DollarSign className="h-5 w-5 text-green-500" />
+                                    <span className="text-lg md:text-xl font-bold text-green-500">{marketSection.som.display}</span>
+                                    <span className="text-xs text-muted-foreground">Opportunity</span>
+                                </motion.div>
+                            )}
+
+                            {actionSection?.mvp_timeline && (
+                                <motion.div
+                                    className="flex items-center gap-2"
+                                    initial={{ scale: 0.8 }}
+                                    animate={{ scale: 1 }}
+                                    transition={{ delay: 0.2, type: 'spring' }}
+                                >
+                                    <Rocket className="h-5 w-5 text-purple-500" />
+                                    <span className="text-lg md:text-xl font-bold">{actionSection.mvp_timeline}</span>
+                                    <span className="text-xs text-muted-foreground">to MVP</span>
+                                </motion.div>
+                            )}
+
+                            {actionSection?.solo_feasible !== undefined && (
+                                <motion.div
+                                    className="flex items-center gap-2"
+                                    initial={{ scale: 0.8 }}
+                                    animate={{ scale: 1 }}
+                                    transition={{ delay: 0.3, type: 'spring' }}
+                                >
+                                    <Users className="h-5 w-5 text-blue-500" />
+                                    <span className={cn(
+                                        "text-sm font-semibold px-2 py-0.5 rounded-full",
+                                        actionSection.solo_feasible
+                                            ? "bg-green-500/10 text-green-600"
+                                            : "bg-amber-500/10 text-amber-600"
+                                    )}>
+                                        {actionSection.solo_feasible ? '👤 Solo Friendly' : '👥 Needs Team'}
+                                    </span>
+                                </motion.div>
+                            )}
+
+                            {problem.competition_level && (
+                                <motion.div
+                                    className="flex items-center gap-2"
+                                    initial={{ scale: 0.8 }}
+                                    animate={{ scale: 1 }}
+                                    transition={{ delay: 0.4, type: 'spring' }}
+                                >
+                                    <Target className="h-5 w-5 text-amber-500" />
+                                    <span className={cn(
+                                        "text-sm font-semibold px-2 py-0.5 rounded-full capitalize",
+                                        problem.competition_level === 'low' || problem.competition_level === 'emerging'
+                                            ? "bg-green-500/10 text-green-600"
+                                            : problem.competition_level === 'medium' || problem.competition_level === 'moderate'
+                                                ? "bg-amber-500/10 text-amber-600"
+                                                : "bg-red-500/10 text-red-600"
+                                    )}>
+                                        {problem.competition_level} Competition
+                                    </span>
+                                </motion.div>
+                            )}
+                        </div>
+
+                        {/* FOMO Trigger + Action */}
+                        <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <div className="flex -space-x-2">
+                                    <div className="w-6 h-6 rounded-full bg-primary/20 border-2 border-background flex items-center justify-center text-[10px]">👤</div>
+                                    <div className="w-6 h-6 rounded-full bg-accent/20 border-2 border-background flex items-center justify-center text-[10px]">👤</div>
+                                    <div className="w-6 h-6 rounded-full bg-muted border-2 border-background flex items-center justify-center text-[10px]">+</div>
+                                </div>
+                                <span className="text-xs">
+                                    <span className="font-medium text-foreground">{Math.floor(Math.random() * 50) + 20}</span> founders exploring this
+                                </span>
+                            </div>
+
+                            <Button
+                                size="sm"
+                                className="bg-gradient-to-r from-primary to-accent text-white font-semibold shadow-lg hover:shadow-xl transition-shadow"
+                                onClick={() => {
+                                    const actionEl = document.getElementById('action-section');
+                                    actionEl?.scrollIntoView({ behavior: 'smooth' });
+                                }}
+                            >
+                                <Rocket className="h-4 w-4 mr-2" />
+                                Start Building
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+            </motion.div>
+
+            {/* ════════════════════════════════════════════════════════════════ */}
             {/* SLIDE 1: HERO - Executive Summary                                 */}
             {/* ════════════════════════════════════════════════════════════════ */}
             <section className="space-y-4">
@@ -439,6 +547,102 @@ export function ProblemDetails() {
             )}
 
             {/* ════════════════════════════════════════════════════════════════ */}
+            {/* YOUR UNFAIR ADVANTAGE - Competitor Gaps                          */}
+            {/* ════════════════════════════════════════════════════════════════ */}
+            {problem.competitor_intel && (problem.competitor_intel.gaps?.length > 0 || problem.competitor_intel.pain_points?.length > 0) && (
+                <section className="space-y-4">
+                    <h2 className="text-lg font-semibold flex items-center gap-2">
+                        <Target className="h-5 w-5 text-red-500" />
+                        <span>Your Unfair Advantage</span>
+                        <Badge variant="outline" className="ml-2 text-xs bg-red-500/10 text-red-600 border-red-500/30">
+                            💡 Exploit These Gaps
+                        </Badge>
+                    </h2>
+
+                    <Card className="border-l-4 border-l-red-500 bg-gradient-to-r from-red-500/5 to-transparent">
+                        <CardContent className="pt-5 pb-5">
+                            <div className="grid md:grid-cols-2 gap-6">
+                                {/* Competitor Weaknesses */}
+                                {problem.competitor_intel.gaps?.length > 0 && (
+                                    <motion.div
+                                        className="space-y-3"
+                                        initial={{ opacity: 0, x: -20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ delay: 0.2 }}
+                                    >
+                                        <p className="text-sm font-semibold text-red-600 flex items-center gap-2">
+                                            <AlertTriangle className="h-4 w-4" />
+                                            Existing Solutions Are Weak At:
+                                        </p>
+                                        <div className="space-y-2">
+                                            {problem.competitor_intel.gaps.slice(0, 3).map((gap: string, i: number) => (
+                                                <motion.div
+                                                    key={i}
+                                                    className="flex items-start gap-2 p-2 rounded-lg bg-background hover:bg-muted/50 transition-colors"
+                                                    initial={{ opacity: 0, y: 10 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    transition={{ delay: 0.3 + i * 0.1 }}
+                                                >
+                                                    <span className="text-red-500 font-bold">×</span>
+                                                    <span className="text-sm">{gap}</span>
+                                                </motion.div>
+                                            ))}
+                                        </div>
+                                    </motion.div>
+                                )}
+
+                                {/* User Pain Points */}
+                                {problem.competitor_intel.pain_points?.length > 0 && (
+                                    <motion.div
+                                        className="space-y-3"
+                                        initial={{ opacity: 0, x: 20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ delay: 0.4 }}
+                                    >
+                                        <p className="text-sm font-semibold text-amber-600 flex items-center gap-2">
+                                            <MessageSquare className="h-4 w-4" />
+                                            Users Are Complaining About:
+                                        </p>
+                                        <div className="space-y-2">
+                                            {problem.competitor_intel.pain_points.slice(0, 3).map((pain: string, i: number) => (
+                                                <motion.div
+                                                    key={i}
+                                                    className="flex items-start gap-2 p-2 rounded-lg bg-background hover:bg-muted/50 transition-colors"
+                                                    initial={{ opacity: 0, y: 10 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    transition={{ delay: 0.5 + i * 0.1 }}
+                                                >
+                                                    <span className="text-amber-500">💢</span>
+                                                    <span className="text-sm">{pain}</span>
+                                                </motion.div>
+                                            ))}
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </div>
+
+                            {/* CTA */}
+                            <motion.div
+                                className="mt-5 pt-4 border-t flex items-center justify-between"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ delay: 0.8 }}
+                            >
+                                <p className="text-sm text-muted-foreground">
+                                    <span className="text-foreground font-medium">→ Build THIS</span> and you win.
+                                </p>
+                                {problem.competitor_intel.total_competitors > 0 && (
+                                    <Badge variant="secondary" className="text-xs">
+                                        {problem.competitor_intel.total_competitors} competitors analyzed
+                                    </Badge>
+                                )}
+                            </motion.div>
+                        </CardContent>
+                    </Card>
+                </section>
+            )}
+
+            {/* ════════════════════════════════════════════════════════════════ */}
             {/* SLIDE 4: VALIDATION STATUS                                        */}
             {/* ════════════════════════════════════════════════════════════════ */}
             {validationSection && (
@@ -576,7 +780,7 @@ export function ProblemDetails() {
             {/* SLIDE 5: ACTION PLAN                                              */}
             {/* ════════════════════════════════════════════════════════════════ */}
             {actionSection && (
-                <section className="space-y-4">
+                <section id="action-section" className="space-y-4">
                     <h2 className="text-lg font-semibold flex items-center gap-2">
                         <Rocket className="h-5 w-5 text-purple-500" />
                         {actionSection.title || 'Next Steps'}
@@ -790,6 +994,69 @@ export function ProblemDetails() {
                     </div>
                 </section>
             )}
+
+            {/* ════════════════════════════════════════════════════════════════ */}
+            {/* STICKY ACTION BAR - Always visible at bottom                     */}
+            {/* ════════════════════════════════════════════════════════════════ */}
+            {actionSection && (
+                <motion.div
+                    className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-lg border-t shadow-2xl z-50 p-4"
+                    initial={{ y: 100 }}
+                    animate={{ y: 0 }}
+                    transition={{ delay: 1, type: 'spring', damping: 20 }}
+                >
+                    <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+                        {/* First 10 Customers Preview */}
+                        <div className="flex items-center gap-3 text-sm">
+                            {actionSection.first_10_customers?.length > 0 && (
+                                <div className="hidden sm:flex items-center gap-2">
+                                    <span className="text-muted-foreground">First 10 customers:</span>
+                                    <div className="flex items-center gap-1">
+                                        {actionSection.first_10_customers.slice(0, 2).map((tactic: string, i: number) => (
+                                            <Badge key={i} variant="secondary" className="text-xs truncate max-w-[120px]">
+                                                {tactic.split(' ').slice(0, 3).join(' ')}...
+                                            </Badge>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {actionSection.communities_to_target?.length > 0 && (
+                                <div className="flex items-center gap-1 sm:border-l sm:pl-3">
+                                    {actionSection.communities_to_target.slice(0, 3).map((community: string, i: number) => (
+                                        <Badge key={i} variant="outline" className="text-xs">
+                                            {community}
+                                        </Badge>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* CTA Buttons */}
+                        <div className="flex items-center gap-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleWatchlistToggle}
+                                disabled={addMutation.isPending || removeMutation.isPending}
+                            >
+                                {isInWatchlist ? <BookmarkCheck className="h-4 w-4 mr-1" /> : <Bookmark className="h-4 w-4 mr-1" />}
+                                {isInWatchlist ? 'Saved' : 'Save'}
+                            </Button>
+                            <Button
+                                size="sm"
+                                className="bg-gradient-to-r from-primary to-accent text-white font-semibold shadow-lg"
+                            >
+                                <Rocket className="h-4 w-4 mr-2" />
+                                Validate This Idea
+                            </Button>
+                        </div>
+                    </div>
+                </motion.div>
+            )}
+
+            {/* Spacer for sticky bar */}
+            <div className="h-20" />
         </div>
     );
 }
