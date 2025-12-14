@@ -98,8 +98,15 @@ export default function AuthCallback() {
                         // Refresh auth context to update user state across all components
                         await refreshAuth(true);
                         setStatus('success');
+
+                        // SAFARI FIX: Use hard navigation for Safari to ensure UI state sync
                         setTimeout(() => {
-                            navigate('/dashboard/problems', { replace: true });
+                            if (isSafari) {
+                                console.log('Safari detected - using hard navigation to ensure dashboard UI sync');
+                                window.location.href = '/dashboard/problems';
+                            } else {
+                                navigate('/dashboard/problems', { replace: true });
+                            }
                         }, 1000);
                     } else {
                         throw new Error(response.error || 'Failed to authenticate with server.');
@@ -156,8 +163,15 @@ export default function AuthCallback() {
                         // Refresh auth context to update user state across all components
                         await refreshAuth(true);
                         setStatus('success');
+
+                        // SAFARI FIX: Use hard navigation for Safari to ensure UI state sync
                         setTimeout(() => {
-                            navigate('/dashboard/problems', { replace: true });
+                            if (isSafari) {
+                                console.log('Safari detected - using hard navigation to ensure dashboard UI sync');
+                                window.location.href = '/dashboard/problems';
+                            } else {
+                                navigate('/dashboard/problems', { replace: true });
+                            }
                         }, 1000);
                     } else {
                         throw new Error(response.error || 'Failed to authenticate with server.');
@@ -170,8 +184,50 @@ export default function AuthCallback() {
                     stack: err.stack,
                     userAgent: navigator.userAgent,
                 });
-                setStatus('error');
-                setErrorMessage(err.message || 'Authentication failed. Please try again.');
+
+                // CRITICAL: Don't just set error status - this leaves user on callback page
+                // Instead, redirect appropriately based on error type
+
+                // Check if this is a timeout or network error (temporary)
+                const isTemporaryError = err.message?.includes('timed out') ||
+                    err.message?.includes('network') ||
+                    err.message?.includes('fetch');
+
+                // Check if this is an auth configuration error
+                const isConfigError = err.message?.includes('not configured') ||
+                    err.message?.includes('environment');
+
+                if (isConfigError) {
+                    // Configuration error - redirect to auth with clear message
+                    console.log('OAuth Config Error - redirecting to auth page');
+                    setStatus('error');
+                    setErrorMessage(err.message || 'Authentication configuration error.');
+                    // Don't auto-redirect for config errors - let user see the error and manually go back
+                } else if (isTemporaryError) {
+                    // Temporary error - show error but allow retry
+                    console.log('OAuth Temporary Error - showing retry option');
+                    setStatus('error');
+                    setErrorMessage(err.message || 'Authentication failed. Please try again.');
+                } else {
+                    // Other auth errors - redirect to dashboard (public) with error toast
+                    console.log('OAuth Auth Error - redirecting to dashboard with error');
+                    setStatus('error');
+                    setErrorMessage(err.message || 'Authentication failed. Please try signing in again.');
+
+                    // Clear any partial OAuth state that might be corrupting the auth page
+                    try {
+                        localStorage.removeItem('beseekr-auth-token');
+                        sessionStorage.removeItem('oauth-refresh-attempted');
+                    } catch (cleanupError) {
+                        console.error('Failed to clean up OAuth state:', cleanupError);
+                    }
+
+                    // Redirect to dashboard (public page) instead of /auth to avoid confusion
+                    // This prevents the Google button from disappearing issue
+                    setTimeout(() => {
+                        navigate('/dashboard/problems', { replace: true });
+                    }, 3000);
+                }
             }
         };
 

@@ -183,6 +183,43 @@ const Auth = () => {
     return () => clearInterval(timer);
   }, [verificationPending, resendCountdown, canResend]);
 
+  // SAFARI FIX: Clean up potentially corrupt OAuth state on mount
+  // This prevents the Google button from disappearing after failed OAuth attempts
+  useEffect(() => {
+    const cleanupOAuthState = () => {
+      try {
+        // Check if we just came from a failed OAuth attempt
+        const oauthRefreshAttempted = sessionStorage.getItem('oauth-refresh-attempted');
+
+        if (oauthRefreshAttempted) {
+          console.log('Cleaning up OAuth state from previous attempt');
+          sessionStorage.removeItem('oauth-refresh-attempted');
+
+          // Don't remove beseekr-auth-token here as it might be a valid session
+          // Only remove if it's clearly corrupted (Supabase returns error)
+          const checkSupabaseState = async () => {
+            try {
+              const { data, error } = await supabase.auth.getSession();
+              if (error || !data.session) {
+                console.log('No valid Supabase session found, cleaning up storage');
+                localStorage.removeItem('beseekr-auth-token');
+              }
+            } catch (e) {
+              console.log('Supabase session check failed, storage might be corrupted');
+              // Don't remove - let user try OAuth again
+            }
+          };
+
+          checkSupabaseState();
+        }
+      } catch (e) {
+        console.error('OAuth state cleanup error:', e);
+      }
+    };
+
+    cleanupOAuthState();
+  }, []); // Only run on mount
+
   const handleEmailInput = (val: string, type: "login" | "signup") => {
     if (type === "login") setLoginEmail(val);
     else setSignupEmail(val);

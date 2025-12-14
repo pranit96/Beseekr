@@ -146,6 +146,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (response.success && response.data) {
         setUser(response.data.user);
+        setCachedUser(response.data.user); // SAFARI FIX: Update cache so dashboard sees logged-in state
         lastActivityRef.current = Date.now();
         authErrorShownRef.current = false;
         logger.info('Auth refresh successful', { userId: response.data.user.id });
