@@ -101,6 +101,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const isPublicPath =
       currentPath === '/' ||
       currentPath === '/auth' ||
+      currentPath.startsWith('/auth/') || // OAuth callbacks like /auth/callback
       currentPath === '/privacy' ||
       currentPath === '/contact' ||
       currentPath.startsWith('/dashboard') ||
