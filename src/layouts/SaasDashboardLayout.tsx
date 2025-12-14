@@ -202,7 +202,7 @@ export function SaasDashboardLayout() {
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end" className="w-56 rounded-xl">
                                         <div className="px-3 py-3">
-                                            <p className="font-medium">{user.full_name || 'User'}</p>
+                                            <p className="font-medium">{user.full_name || user.name || 'User'}</p>
                                             <p className="text-xs text-muted-foreground">{user.email}</p>
                                         </div>
                                         <DropdownMenuSeparator />

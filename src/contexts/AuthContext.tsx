@@ -12,6 +12,7 @@ interface User {
   id: string;
   email: string;
   full_name?: string;
+  name?: string; // Google OAuth returns name instead of full_name
 }
 
 interface AuthContextType {
