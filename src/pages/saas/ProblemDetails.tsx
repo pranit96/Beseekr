@@ -6,6 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
 import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
     Loader2,
     AlertCircle,
     ArrowLeft,
@@ -22,9 +28,14 @@ import {
     DollarSign,
     Rocket,
     MessageSquare,
+    Info,
+    Lightbulb,
+    Quote,
+    Sparkles,
 } from 'lucide-react';
 import { problemsApi } from '@/api/problems';
 import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
 
 // ============================================================================
 // STORY-DRIVEN PROBLEM DETAILS PAGE
@@ -329,32 +340,85 @@ export function ProblemDetails() {
                         {marketSection.title || 'Market Opportunity'}
                     </h2>
 
-                    {/* TAM/SAM/SOM Cards */}
+                    {/* TAM/SAM/SOM Cards with hover effects */}
                     <div className="grid grid-cols-3 gap-3">
-                        <Card className="text-center">
-                            <CardContent className="pt-4 pb-3">
-                                <p className="text-xs text-muted-foreground mb-1">TAM</p>
-                                <p className="text-xl md:text-2xl font-bold text-green-500">
-                                    {marketSection.tam?.display || 'N/A'}
-                                </p>
-                            </CardContent>
-                        </Card>
-                        <Card className="text-center">
-                            <CardContent className="pt-4 pb-3">
-                                <p className="text-xs text-muted-foreground mb-1">SAM</p>
-                                <p className="text-xl md:text-2xl font-bold">
-                                    {marketSection.sam?.display || 'N/A'}
-                                </p>
-                            </CardContent>
-                        </Card>
-                        <Card className="text-center">
-                            <CardContent className="pt-4 pb-3">
-                                <p className="text-xs text-muted-foreground mb-1">SOM</p>
-                                <p className="text-xl md:text-2xl font-bold text-primary">
-                                    {marketSection.som?.display || 'N/A'}
-                                </p>
-                            </CardContent>
-                        </Card>
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: 0.1 }}
+                                        whileHover={{ scale: 1.03 }}
+                                    >
+                                        <Card className="text-center cursor-help hover:bg-muted/30 transition-colors">
+                                            <CardContent className="pt-4 pb-3">
+                                                <p className="text-xs text-muted-foreground mb-1">TAM</p>
+                                                <p className="text-xl md:text-2xl font-bold text-green-500">
+                                                    {marketSection.tam?.display || 'N/A'}
+                                                </p>
+                                            </CardContent>
+                                        </Card>
+                                    </motion.div>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p className="text-xs font-medium">Total Addressable Market</p>
+                                    <p className="text-xs text-muted-foreground">The entire market demand for this solution</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: 0.2 }}
+                                        whileHover={{ scale: 1.03 }}
+                                    >
+                                        <Card className="text-center cursor-help hover:bg-muted/30 transition-colors">
+                                            <CardContent className="pt-4 pb-3">
+                                                <p className="text-xs text-muted-foreground mb-1">SAM</p>
+                                                <p className="text-xl md:text-2xl font-bold">
+                                                    {marketSection.sam?.display || 'N/A'}
+                                                </p>
+                                            </CardContent>
+                                        </Card>
+                                    </motion.div>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p className="text-xs font-medium">Serviceable Addressable Market</p>
+                                    <p className="text-xs text-muted-foreground">Realistic market you can target</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: 0.3 }}
+                                        whileHover={{ scale: 1.03 }}
+                                    >
+                                        <Card className="text-center cursor-help hover:bg-muted/30 transition-colors border-primary/20">
+                                            <CardContent className="pt-4 pb-3">
+                                                <p className="text-xs text-muted-foreground mb-1">SOM</p>
+                                                <p className="text-xl md:text-2xl font-bold text-primary">
+                                                    {marketSection.som?.display || 'N/A'}
+                                                </p>
+                                            </CardContent>
+                                        </Card>
+                                    </motion.div>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p className="text-xs font-medium">Serviceable Obtainable Market</p>
+                                    <p className="text-xs text-muted-foreground">Your realistic initial market share goal</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
                     </div>
 
                     {/* Growth + Competition */}
@@ -384,60 +448,124 @@ export function ProblemDetails() {
                         {validationSection.title || 'Validation Status'}
                     </h2>
 
-                    <Card>
+                    <Card className="overflow-hidden">
                         <CardContent className="pt-6 space-y-4">
-                            {/* Validation Score Bar */}
+                            {/* Validation Score Bar with Tooltip */}
                             <div className="flex items-center gap-4">
                                 <div className="flex-1">
                                     <div className="flex justify-between text-sm mb-1">
-                                        <span>Validation Score</span>
+                                        <TooltipProvider>
+                                            <Tooltip>
+                                                <TooltipTrigger className="flex items-center gap-1.5 cursor-help">
+                                                    <span>Validation Score</span>
+                                                    <Info className="h-3.5 w-3.5 text-muted-foreground" />
+                                                </TooltipTrigger>
+                                                <TooltipContent className="max-w-xs">
+                                                    <p>Based on discussion volume, source diversity, user quotes, and external signals. Higher scores = more validated pain point.</p>
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        </TooltipProvider>
                                         <span className="font-medium">{validationSection.score}/{validationSection.max_score}</span>
                                     </div>
-                                    <Progress value={(validationSection.score / validationSection.max_score) * 100} className="h-2" />
+                                    <motion.div
+                                        initial={{ width: 0 }}
+                                        animate={{ width: '100%' }}
+                                        transition={{ duration: 0.8, ease: 'easeOut' }}
+                                    >
+                                        <Progress value={(validationSection.score / validationSection.max_score) * 100} className="h-2" />
+                                    </motion.div>
                                 </div>
                             </div>
 
-                            {/* Verdict */}
-                            <p className={cn(
-                                "text-sm font-medium px-3 py-2 rounded-lg inline-block",
-                                validationSection.score >= 70 ? "bg-green-500/10 text-green-600" :
-                                    validationSection.score >= 40 ? "bg-yellow-500/10 text-yellow-600" :
-                                        "bg-amber-500/10 text-amber-600"
-                            )}>
-                                {validationSection.verdict}
-                            </p>
+                            {/* Positive Verdict Framing */}
+                            <motion.div
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.3 }}
+                            >
+                                <div className={cn(
+                                    "flex items-center gap-2 px-3 py-2 rounded-lg inline-flex",
+                                    validationSection.score >= 70 ? "bg-green-500/10" :
+                                        validationSection.score >= 40 ? "bg-blue-500/10" :
+                                            "bg-purple-500/10"
+                                )}>
+                                    {validationSection.score < 40 ? (
+                                        <>
+                                            <Rocket className="h-4 w-4 text-purple-500" />
+                                            <span className="text-sm font-medium text-purple-600">Early Stage Opportunity</span>
+                                            <span className="text-xs text-purple-500/70 ml-1">• Less competition</span>
+                                        </>
+                                    ) : validationSection.score < 70 ? (
+                                        <>
+                                            <TrendingUp className="h-4 w-4 text-blue-500" />
+                                            <span className="text-sm font-medium text-blue-600">Emerging Validation</span>
+                                            <span className="text-xs text-blue-500/70 ml-1">• Building momentum</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <CheckCircle2 className="h-4 w-4 text-green-500" />
+                                            <span className="text-sm font-medium text-green-600">Strong Validation</span>
+                                            <span className="text-xs text-green-500/70 ml-1">• High confidence</span>
+                                        </>
+                                    )}
+                                </div>
+                            </motion.div>
 
-                            {/* Signals */}
+                            {/* Signals with hover effects */}
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-2">
-                                <div className="text-center p-3 rounded-lg bg-muted/50">
-                                    <p className="text-lg font-bold">{validationSection.signals?.discussions || 0}</p>
-                                    <p className="text-xs text-muted-foreground">Discussions</p>
-                                </div>
-                                <div className="text-center p-3 rounded-lg bg-muted/50">
-                                    <p className="text-lg font-bold">{validationSection.signals?.sources || 0}</p>
-                                    <p className="text-xs text-muted-foreground">Sources</p>
-                                </div>
-                                <div className="text-center p-3 rounded-lg bg-muted/50">
-                                    <p className="text-lg font-bold">{validationSection.signals?.quotes || 0}</p>
-                                    <p className="text-xs text-muted-foreground">Quotes</p>
-                                </div>
-                                <div className="text-center p-3 rounded-lg bg-muted/50">
-                                    <p className="text-lg font-bold">{validationSection.signals?.external_signals || 0}</p>
-                                    <p className="text-xs text-muted-foreground">External</p>
-                                </div>
+                                {[
+                                    { value: validationSection.signals?.discussions || 0, label: 'Discussions', tip: 'Total Reddit/forum discussions mentioning this pain' },
+                                    { value: validationSection.signals?.sources || 0, label: 'Sources', tip: 'Unique platforms where this problem appeared' },
+                                    { value: validationSection.signals?.quotes || 0, label: 'Quotes', tip: 'Direct user quotes expressing frustration' },
+                                    { value: validationSection.signals?.external_signals || 0, label: 'External', tip: 'HackerNews, Twitter, LinkedIn mentions' },
+                                ].map((signal, i) => (
+                                    <TooltipProvider key={i}>
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <motion.div
+                                                    className="text-center p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-help hover:scale-105 transform"
+                                                    initial={{ opacity: 0, y: 20 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    transition={{ delay: 0.2 + i * 0.1 }}
+                                                    whileHover={{ scale: 1.05 }}
+                                                >
+                                                    <p className="text-lg font-bold">{signal.value}</p>
+                                                    <p className="text-xs text-muted-foreground">{signal.label}</p>
+                                                </motion.div>
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                                <p className="text-xs">{signal.tip}</p>
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </TooltipProvider>
+                                ))}
                             </div>
 
-                            {/* What's Missing */}
+                            {/* Strengthen This Idea (formerly "What's Missing") */}
                             {validationSection.what_is_missing?.length > 0 && (
-                                <div className="pt-4 border-t space-y-2">
-                                    <p className="text-sm font-medium text-amber-600">What's Missing</p>
+                                <motion.div
+                                    className="pt-4 border-t space-y-2"
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    transition={{ delay: 0.6 }}
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <Lightbulb className="h-4 w-4 text-amber-500" />
+                                        <p className="text-sm font-medium text-foreground">Strengthen This Idea</p>
+                                    </div>
                                     {validationSection.what_is_missing.slice(0, 3).map((item: string, i: number) => (
-                                        <p key={i} className="text-sm text-muted-foreground flex items-start gap-2">
-                                            <XCircle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
-                                            {item}
-                                        </p>
+                                        <motion.p
+                                            key={i}
+                                            className="text-sm text-muted-foreground flex items-start gap-2 pl-6"
+                                            initial={{ opacity: 0, x: -10 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            transition={{ delay: 0.7 + i * 0.1 }}
+                                        >
+                                            <Sparkles className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
+                                            <span><span className="text-amber-600 font-medium">Research tip:</span> {item}</span>
+                                        </motion.p>
                                     ))}
-                                </div>
+                                </motion.div>
                             )}
                         </CardContent>
                     </Card>
@@ -454,36 +582,87 @@ export function ProblemDetails() {
                         {actionSection.title || 'Next Steps'}
                     </h2>
 
-                    {/* Quick Stats */}
+                    {/* Quick Stats with hover effects and tooltips */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                        <Card className="text-center">
-                            <CardContent className="pt-4 pb-3">
-                                <Clock className="h-5 w-5 mx-auto text-muted-foreground mb-1" />
-                                <p className="text-lg font-bold">{actionSection.mvp_timeline || '?'}</p>
-                                <p className="text-xs text-muted-foreground">MVP Time</p>
-                            </CardContent>
-                        </Card>
-                        <Card className="text-center">
-                            <CardContent className="pt-4 pb-3">
-                                <TrendingUp className="h-5 w-5 mx-auto text-muted-foreground mb-1" />
-                                <p className="text-lg font-bold capitalize">{actionSection.complexity || 'medium'}</p>
-                                <p className="text-xs text-muted-foreground">Complexity</p>
-                            </CardContent>
-                        </Card>
-                        <Card className="text-center">
-                            <CardContent className="pt-4 pb-3">
-                                <Users className="h-5 w-5 mx-auto text-muted-foreground mb-1" />
-                                <p className="text-lg font-bold">{actionSection.solo_feasible ? 'Yes' : 'Team'}</p>
-                                <p className="text-xs text-muted-foreground">Solo Founder</p>
-                            </CardContent>
-                        </Card>
-                        <Card className="text-center">
-                            <CardContent className="pt-4 pb-3">
-                                <DollarSign className="h-5 w-5 mx-auto text-muted-foreground mb-1" />
-                                <p className="text-sm font-bold">{actionSection.estimated_cost?.solo || 'N/A'}</p>
-                                <p className="text-xs text-muted-foreground">Est. Cost</p>
-                            </CardContent>
-                        </Card>
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <motion.div whileHover={{ scale: 1.03 }} transition={{ type: 'spring', stiffness: 300 }}>
+                                        <Card className="text-center cursor-help hover:bg-muted/30 transition-colors">
+                                            <CardContent className="pt-4 pb-3">
+                                                <Clock className="h-5 w-5 mx-auto text-muted-foreground mb-1" />
+                                                <p className="text-lg font-bold">{actionSection.mvp_timeline || '?'}</p>
+                                                <p className="text-xs text-muted-foreground">MVP Time</p>
+                                            </CardContent>
+                                        </Card>
+                                    </motion.div>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p className="text-xs">Estimated time to build a minimal viable product</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <motion.div whileHover={{ scale: 1.03 }} transition={{ type: 'spring', stiffness: 300 }}>
+                                        <Card className="text-center cursor-help hover:bg-muted/30 transition-colors">
+                                            <CardContent className="pt-4 pb-3">
+                                                <TrendingUp className="h-5 w-5 mx-auto text-muted-foreground mb-1" />
+                                                <p className="text-lg font-bold capitalize">{actionSection.complexity || 'medium'}</p>
+                                                <p className="text-xs text-muted-foreground">Complexity</p>
+                                            </CardContent>
+                                        </Card>
+                                    </motion.div>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p className="text-xs">Technical difficulty: Low = templates exist, High = custom development</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <motion.div whileHover={{ scale: 1.03 }} transition={{ type: 'spring', stiffness: 300 }}>
+                                        <Card className="text-center cursor-help hover:bg-muted/30 transition-colors">
+                                            <CardContent className="pt-4 pb-3">
+                                                <Users className="h-5 w-5 mx-auto text-muted-foreground mb-1" />
+                                                <p className="text-lg font-bold">{actionSection.solo_feasible ? 'Yes' : 'Team'}</p>
+                                                <p className="text-xs text-muted-foreground">Solo Founder</p>
+                                            </CardContent>
+                                        </Card>
+                                    </motion.div>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p className="text-xs">Can one person build and launch this MVP?</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <motion.div whileHover={{ scale: 1.03 }} transition={{ type: 'spring', stiffness: 300 }}>
+                                        <Card className="text-center cursor-help hover:bg-muted/30 transition-colors border-amber-500/20 bg-gradient-to-b from-amber-500/5 to-transparent">
+                                            <CardContent className="pt-4 pb-3">
+                                                <DollarSign className="h-5 w-5 mx-auto text-amber-500 mb-1" />
+                                                <p className="text-sm font-bold text-amber-600">{actionSection.estimated_cost?.solo || 'N/A'}</p>
+                                                <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
+                                                    Opportunity Cost
+                                                    <Info className="h-3 w-3 text-muted-foreground/60" />
+                                                </p>
+                                            </CardContent>
+                                        </Card>
+                                    </motion.div>
+                                </TooltipTrigger>
+                                <TooltipContent className="max-w-xs">
+                                    <p className="text-xs font-medium mb-1">💡 What this means:</p>
+                                    <p className="text-xs">The cost someone would pay to have this problem solved. This represents potential revenue opportunity if you build a solution.</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
                     </div>
 
                     {/* First 10 Customers */}
@@ -516,6 +695,61 @@ export function ProblemDetails() {
                     )}
                 </section>
             )}
+
+            {/* ════════════════════════════════════════════════════════════════ */}
+            {/* REAL USER PAIN (Quotes)                                           */}
+            {/* ════════════════════════════════════════════════════════════════ */}
+            <section className="space-y-4 pt-4 border-t">
+                <h2 className="text-lg font-semibold flex items-center gap-2">
+                    <Quote className="h-5 w-5 text-primary" />
+                    Real User Pain
+                </h2>
+
+                {problem.top_quotes?.length > 0 ? (
+                    <div className="space-y-3">
+                        {problem.top_quotes.slice(0, 3).map((quote: any, i: number) => (
+                            <motion.div
+                                key={i}
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: i * 0.15 }}
+                            >
+                                <Card className="border-l-4 border-l-primary/50 hover:border-l-primary transition-colors hover:bg-muted/30">
+                                    <CardContent className="pt-4 pb-4">
+                                        <div className="flex gap-3">
+                                            <Quote className="h-5 w-5 text-primary/40 shrink-0 mt-1" />
+                                            <div className="space-y-2">
+                                                <p className="text-sm italic text-foreground/90 leading-relaxed">
+                                                    "{typeof quote === 'string' ? quote : quote.text || quote.quote}"
+                                                </p>
+                                                {(quote.source || quote.author) && (
+                                                    <p className="text-xs text-muted-foreground">
+                                                        — {quote.author || quote.source || 'Anonymous user'}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </motion.div>
+                        ))}
+                    </div>
+                ) : (
+                    <Card className="bg-muted/30 border-dashed">
+                        <CardContent className="pt-4 pb-4">
+                            <div className="text-center space-y-2">
+                                <Quote className="h-8 w-8 text-muted-foreground/40 mx-auto" />
+                                <p className="text-sm text-muted-foreground">
+                                    User quotes help validate real pain. Check the source posts below for direct user feedback.
+                                </p>
+                                <p className="text-xs text-muted-foreground/60">
+                                    Look for phrases like "I wish...", "It's frustrating that...", "I'd pay for..."
+                                </p>
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
+            </section>
 
             {/* ════════════════════════════════════════════════════════════════ */}
             {/* RELATED POSTS (if available)                                      */}
