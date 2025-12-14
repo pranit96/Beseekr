@@ -212,7 +212,7 @@ export function ProblemsList() {
     const [searchQuery, setSearchQuery] = useState('');
     const [showPayment, setShowPayment] = useState(false);
     const [selectedTier, setSelectedTier] = useState<'standard' | 'pro'>('standard');
-    const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('yearly');
+    const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
     const [isCreatingLink, setIsCreatingLink] = useState(false);
     const [showLoginModal, setShowLoginModal] = useState(false);
 

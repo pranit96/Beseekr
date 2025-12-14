@@ -24,7 +24,7 @@ interface AuthContextType {
   exportData: () => Promise<any>;
   deleteAccount: (email: string) => Promise<void>;
   socketConnected: boolean;
-  refreshAuth: () => Promise<void>;
+  refreshAuth: (silent?: boolean) => Promise<void>;
   isSessionValid: () => boolean;
 }
 

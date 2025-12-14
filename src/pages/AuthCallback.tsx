@@ -5,12 +5,14 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { apiClient } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
 import { Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
 export default function AuthCallback() {
     const navigate = useNavigate();
+    const { refreshAuth } = useAuth();
     const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
     const [errorMessage, setErrorMessage] = useState('');
 
@@ -61,6 +63,8 @@ export default function AuthCallback() {
                     );
 
                     if (response.success) {
+                        // Refresh auth context to update user state across all components
+                        await refreshAuth(true);
                         setStatus('success');
                         setTimeout(() => {
                             navigate('/dashboard/problems', { replace: true });
@@ -86,6 +90,8 @@ export default function AuthCallback() {
                     );
 
                     if (response.success) {
+                        // Refresh auth context to update user state across all components
+                        await refreshAuth(true);
                         setStatus('success');
                         setTimeout(() => {
                             navigate('/dashboard/problems', { replace: true });
