@@ -28,6 +28,7 @@ const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Landing = lazy(() => import("./pages/Landing"));
 const DeepAnalytics = lazy(() => import("./pages/DeepAnalytics"));
 const Deck = lazy(() => import("./pages/Deck"));
+const AuthCallback = lazy(() => import("./pages/AuthCallback"));
 
 // SaaS Dashboard - Critical, loaded immediately
 import { SaasDashboardLayout } from "./layouts/SaasDashboardLayout";
@@ -113,6 +114,9 @@ const App = () => {
 
                   {/* Auth page - anyone can access */}
                   <Route path="/auth" element={<Auth />} />
+
+                  {/* OAuth callback - handles Google redirect */}
+                  <Route path="/auth/callback" element={<Suspense fallback={<PageLoader />}><AuthCallback /></Suspense>} />
 
                   {/* Password reset */}
                   <Route path="/reset-password" element={<Suspense fallback={<PageLoader />}><ResetPassword /></Suspense>} />

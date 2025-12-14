@@ -314,6 +314,18 @@ class ApiClient {
     });
   }
 
+  // Google OAuth - exchange Supabase token for backend session
+  async googleCallback(accessToken: string, refreshToken?: string) {
+    this.clearCache();
+    return this.request<any>('/api/auth/google-callback', {
+      method: 'POST',
+      body: JSON.stringify({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      }),
+    });
+  }
+
   // Agent endpoints
   async getAgents(params?: { domain?: string; page?: number; limit?: number }) {
     const query = new URLSearchParams(params as any).toString();
