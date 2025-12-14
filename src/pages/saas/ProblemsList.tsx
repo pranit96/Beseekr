@@ -1118,17 +1118,17 @@ export function ProblemsList() {
                         </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4">
-                        <div className="flex items-start gap-3 p-3 rounded-xl bg-muted/50">
-                            <div className="shrink-0 w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center mt-0.5">
+                        <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/50">
+                            <div className="shrink-0 w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
                                 <TrendingUp className="h-4 w-4 text-primary" />
                             </div>
-                            <span className="text-sm">Access all validated problems and opportunities</span>
+                            <span className="text-sm leading-tight">Access all validated problems and opportunities</span>
                         </div>
-                        <div className="flex items-start gap-3 p-3 rounded-xl bg-muted/50">
-                            <div className="shrink-0 w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center mt-0.5">
+                        <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/50">
+                            <div className="shrink-0 w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
                                 <Bookmark className="h-4 w-4 text-primary" />
                             </div>
-                            <span className="text-sm">Save problems to your watchlist</span>
+                            <span className="text-sm leading-tight">Save problems to your watchlist</span>
                         </div>
                     </div>
                     <div className="flex flex-col gap-3 pt-2">
