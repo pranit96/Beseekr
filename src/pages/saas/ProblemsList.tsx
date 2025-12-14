@@ -1071,9 +1071,14 @@ export function ProblemsList() {
                 <DialogContent
                     className="sm:max-w-md max-w-[90vw] rounded-2xl p-6 gap-6"
                     style={{
-                        zIndex: '9999',
                         position: 'fixed',
+                        top: '50%',
+                        left: '50%',
+                        transform: 'translate(-50%, -50%)',
+                        zIndex: '9999',
                         pointerEvents: 'auto',
+                        maxHeight: '90vh',
+                        overflowY: 'auto',
                     }}
                     onPointerDownOutside={(e) => {
                         console.log('Pointer down outside dialog');
