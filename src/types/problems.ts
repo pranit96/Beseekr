@@ -316,6 +316,58 @@ export interface Problem {
     subreddits?: string[];
     related_posts?: any[];
     top_quotes?: any[];
+    // Report data (enriched analysis)
+    report?: {
+        header?: {
+            category?: string;
+            domain?: string[];
+        };
+        executive_summary?: {
+            verdict?: string;
+            score?: number;
+            original_score?: number;
+            confidence?: string;
+            one_liner?: string;
+            warnings?: string[];
+        };
+        section_1_problem?: {
+            title?: string;
+            description?: string;
+            target_audience?: string;
+            pain_level?: number;
+            key_insights?: string[];
+        };
+        section_2_market?: {
+            title?: string;
+            tam?: { value: number; display: string };
+            sam?: { value: number; display: string };
+            som?: { value: number; display: string };
+            growth_rate?: { value: number; display: string };
+            competition_level?: string;
+        };
+        section_3_validation?: {
+            title?: string;
+            score?: number;
+            max_score?: number;
+            verdict?: string;
+            signals?: {
+                discussions?: number;
+                sources?: number;
+                quotes?: number;
+                external_signals?: number;
+            };
+            what_is_missing?: string[];
+        };
+        section_5_action_plan?: {
+            title?: string;
+            mvp_timeline?: string;
+            complexity?: string;
+            solo_feasible?: boolean;
+            estimated_cost?: { solo?: string; outsourced?: string };
+            first_10_customers?: string[];
+            communities_to_target?: string[];
+        };
+    };
 }
 
 export interface ProblemListItem {
