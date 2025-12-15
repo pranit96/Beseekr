@@ -187,6 +187,10 @@ export async function getProblems(
                 brief_approved: problem.brief_approved,
                 last_updated: problem.last_updated,
                 created_at: problem.created_at,
+                // Rating fields (from nested feedback object)
+                upvotes: problem.feedback?.upvotes ?? 0,
+                downvotes: problem.feedback?.downvotes ?? 0,
+                user_vote: problem.feedback?.user_vote ?? problem.user_vote ?? null,
             })),
             total: response.total || response.total_available || 0,
             page: response.page || 1,
@@ -496,6 +500,38 @@ export async function getPremiumProblems(
     return response || { is_premium: false };
 }
 
+/**
+ * Rate a problem (upvote or downvote)
+ * Requires authentication
+ */
+export async function rateProblem(
+    problemId: string,
+    rating: 'upvote' | 'downvote'
+): Promise<{ success: boolean; upvotes: number; downvotes: number; user_vote: 'upvote' | 'downvote' | null }> {
+    return request<{ success: boolean; upvotes: number; downvotes: number; user_vote: 'upvote' | 'downvote' | null }>(
+        `/api/problems/${problemId}/rate`,
+        {
+            method: 'POST',
+            body: JSON.stringify({ rating }),
+        }
+    );
+}
+
+/**
+ * Remove rating from a problem
+ * Requires authentication
+ */
+export async function removeRating(
+    problemId: string
+): Promise<{ success: boolean; upvotes: number; downvotes: number; user_vote: null }> {
+    return request<{ success: boolean; upvotes: number; downvotes: number; user_vote: null }>(
+        `/api/problems/${problemId}/rate`,
+        {
+            method: 'DELETE',
+        }
+    );
+}
+
 // Export all functions as a namespace for convenience
 export const problemsApi = {
     getProblems,
@@ -511,6 +547,8 @@ export const problemsApi = {
     getValidationReport,
     deleteValidationReport,
     getPremiumProblems,
+    rateProblem,
+    removeRating,
 };
 
 export default problemsApi;

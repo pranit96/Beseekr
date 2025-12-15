@@ -24,6 +24,7 @@ import {
 import {
     TrendingUp,
     ThumbsUp,
+    ThumbsDown,
     FileText,
     Bookmark,
     BookmarkCheck,
@@ -77,11 +78,13 @@ function ProblemCard({
     problem,
     isWatching,
     onWatchlistToggle,
+    onRateToggle,
     index,
 }: {
     problem: ProblemListItem;
     isWatching: boolean;
     onWatchlistToggle: (id: string, add: boolean) => void;
+    onRateToggle: (id: string, rating: 'upvote' | 'downvote') => void;
     index: number;
 }) {
     const navigate = useNavigate();
@@ -163,14 +166,47 @@ function ProblemCard({
 
             {/* Stats row */}
             <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm">
-                <div className="flex items-center gap-1 sm:gap-1.5 text-muted-foreground">
-                    <TrendingUp className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                    <span className="font-medium">{problem.metrics?.frequency || 0}</span>
-                </div>
-                <div className="flex items-center gap-1 sm:gap-1.5 text-muted-foreground">
-                    <ThumbsUp className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                    <span className="font-medium">{problem.metrics?.upvote_score || 0}</span>
-                </div>
+                {/* Rating buttons */}
+                <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onRateToggle(problem.id, 'upvote');
+                    }}
+                    className={cn(
+                        "flex items-center gap-1 sm:gap-1.5 px-2 py-1 rounded-lg transition-colors min-h-[32px]",
+                        problem.user_vote === 'upvote'
+                            ? "bg-emerald-500/10 text-emerald-600"
+                            : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                    )}
+                >
+                    <ThumbsUp className={cn(
+                        "h-3.5 w-3.5 sm:h-4 sm:w-4",
+                        problem.user_vote === 'upvote' && "fill-current"
+                    )} />
+                    <span className="font-medium">{problem.upvotes || 0}</span>
+                </motion.button>
+                <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onRateToggle(problem.id, 'downvote');
+                    }}
+                    className={cn(
+                        "flex items-center gap-1 sm:gap-1.5 px-2 py-1 rounded-lg transition-colors min-h-[32px]",
+                        problem.user_vote === 'downvote'
+                            ? "bg-rose-500/10 text-rose-600"
+                            : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                    )}
+                >
+                    <ThumbsDown className={cn(
+                        "h-3.5 w-3.5 sm:h-4 sm:w-4",
+                        problem.user_vote === 'downvote' && "fill-current"
+                    )} />
+                    <span className="font-medium">{problem.downvotes || 0}</span>
+                </motion.button>
                 <div className="flex items-center gap-1 sm:gap-1.5 text-muted-foreground">
                     <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                     <span className="font-medium">{problem.metrics?.source_count || 0}</span>
@@ -358,6 +394,45 @@ export function ProblemsList() {
             addToWatchlistMutation.mutate(problemId);
         } else {
             removeFromWatchlistMutation.mutate(problemId);
+        }
+    };
+
+    // Rating mutations
+    const rateProblemMutation = useMutation({
+        mutationFn: ({ problemId, rating }: { problemId: string; rating: 'upvote' | 'downvote' }) =>
+            problemsApi.rateProblem(problemId, rating),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['problems'] });
+            queryClient.invalidateQueries({ queryKey: ['premium-problems'] });
+        },
+    });
+
+    const removeRatingMutation = useMutation({
+        mutationFn: problemsApi.removeRating,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['problems'] });
+            queryClient.invalidateQueries({ queryKey: ['premium-problems'] });
+        },
+    });
+
+    const handleRateToggle = (problemId: string, rating: 'upvote' | 'downvote') => {
+        if (!user) {
+            promptLogin();
+            return;
+        }
+
+        // Find current problem to check user's vote
+        const currentProblem = problems.find((p: ProblemListItem) => p.id === problemId) ||
+            premiumData?.problems?.find((item: any) => item.problem?.id === problemId || item.id === problemId);
+
+        const currentVote = currentProblem?.user_vote || (currentProblem?.problem?.user_vote);
+
+        // If clicking the same vote, remove it
+        if (currentVote === rating) {
+            removeRatingMutation.mutate(problemId);
+        } else {
+            // Otherwise, set/change the vote
+            rateProblemMutation.mutate({ problemId, rating });
         }
     };
 
@@ -581,6 +656,7 @@ export function ProblemsList() {
                                         problem={problem}
                                         isWatching={watchlistIds.has(problem.id)}
                                         onWatchlistToggle={handleWatchlistToggle}
+                                        onRateToggle={handleRateToggle}
                                         index={index}
                                     />
                                 ))}
@@ -1053,6 +1129,7 @@ export function ProblemsList() {
                                             problem={premiumData.preview.problem}
                                             isWatching={false}
                                             onWatchlistToggle={() => { }}
+                                            onRateToggle={handleRateToggle}
                                             index={0}
                                         />
                                     </div>
@@ -1083,6 +1160,7 @@ export function ProblemsList() {
                                         problem={item.problem}
                                         isWatching={watchlistIds.has(item.problem?.id)}
                                         onWatchlistToggle={handleWatchlistToggle}
+                                        onRateToggle={handleRateToggle}
                                         index={index}
                                     />
                                 ))}
