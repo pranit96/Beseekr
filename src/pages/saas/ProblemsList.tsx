@@ -166,47 +166,57 @@ function ProblemCard({
 
             {/* Stats row */}
             <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm">
-                {/* Rating buttons */}
-                <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        onRateToggle(problem.id, 'upvote');
-                    }}
-                    className={cn(
-                        "flex items-center gap-1 sm:gap-1.5 px-2 py-1 rounded-lg transition-colors min-h-[32px]",
-                        problem.user_vote === 'upvote'
-                            ? "bg-emerald-500/10 text-emerald-600"
-                            : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                    )}
-                >
-                    <ThumbsUp className={cn(
-                        "h-3.5 w-3.5 sm:h-4 sm:w-4",
-                        problem.user_vote === 'upvote' && "fill-current"
-                    )} />
-                    <span className="font-medium">{problem.upvotes || 0}</span>
-                </motion.button>
-                <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        onRateToggle(problem.id, 'downvote');
-                    }}
-                    className={cn(
-                        "flex items-center gap-1 sm:gap-1.5 px-2 py-1 rounded-lg transition-colors min-h-[32px]",
-                        problem.user_vote === 'downvote'
-                            ? "bg-rose-500/10 text-rose-600"
-                            : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                    )}
-                >
-                    <ThumbsDown className={cn(
-                        "h-3.5 w-3.5 sm:h-4 sm:w-4",
-                        problem.user_vote === 'downvote' && "fill-current"
-                    )} />
-                    <span className="font-medium">{problem.downvotes || 0}</span>
-                </motion.button>
+                {/* Rating buttons - read from either flat fields or nested feedback */}
+                {(() => {
+                    const upvotes = problem.upvotes ?? problem.feedback?.upvotes ?? 0;
+                    const downvotes = problem.downvotes ?? problem.feedback?.downvotes ?? 0;
+                    const userVote = problem.user_vote ?? problem.feedback?.user_vote ?? null;
+
+                    return (
+                        <>
+                            <motion.button
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onRateToggle(problem.id, 'upvote');
+                                }}
+                                className={cn(
+                                    "flex items-center gap-1 sm:gap-1.5 px-2 py-1 rounded-lg transition-colors min-h-[32px]",
+                                    userVote === 'upvote'
+                                        ? "bg-emerald-500/10 text-emerald-600"
+                                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                                )}
+                            >
+                                <ThumbsUp className={cn(
+                                    "h-3.5 w-3.5 sm:h-4 sm:w-4",
+                                    userVote === 'upvote' && "fill-current"
+                                )} />
+                                <span className="font-medium">{upvotes}</span>
+                            </motion.button>
+                            <motion.button
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onRateToggle(problem.id, 'downvote');
+                                }}
+                                className={cn(
+                                    "flex items-center gap-1 sm:gap-1.5 px-2 py-1 rounded-lg transition-colors min-h-[32px]",
+                                    userVote === 'downvote'
+                                        ? "bg-rose-500/10 text-rose-600"
+                                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                                )}
+                            >
+                                <ThumbsDown className={cn(
+                                    "h-3.5 w-3.5 sm:h-4 sm:w-4",
+                                    userVote === 'downvote' && "fill-current"
+                                )} />
+                                <span className="font-medium">{downvotes}</span>
+                            </motion.button>
+                        </>
+                    );
+                })()}
                 <div className="flex items-center gap-1 sm:gap-1.5 text-muted-foreground">
                     <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                     <span className="font-medium">{problem.metrics?.source_count || 0}</span>
@@ -215,19 +225,26 @@ function ProblemCard({
                 {/* Spacer */}
                 <div className="flex-1" />
 
-                {/* Watchlist button */}
+                {/* Watchlist button - styled like vote buttons */}
                 <motion.button
-                    whileHover={{ scale: 1.1 }}
+                    whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={handleWatchlistClick}
                     className={cn(
-                        "p-2 rounded-lg sm:rounded-xl transition-colors min-w-[40px] min-h-[40px] flex items-center justify-center",
+                        "flex items-center gap-1 sm:gap-1.5 px-2 py-1 rounded-lg transition-colors min-h-[32px]",
                         isWatching
-                            ? "bg-primary/10 text-primary"
+                            ? "bg-amber-500/10 text-amber-600"
                             : "text-muted-foreground hover:bg-muted hover:text-foreground"
                     )}
                 >
-                    {isWatching ? <BookmarkCheck className="h-5 w-5" /> : <Bookmark className="h-5 w-5" />}
+                    {isWatching ? (
+                        <BookmarkCheck className="h-3.5 w-3.5 sm:h-4 sm:w-4 fill-current" />
+                    ) : (
+                        <Bookmark className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                    )}
+                    <span className="font-medium text-xs sm:text-sm hidden xs:inline">
+                        {isWatching ? 'Saved' : 'Save'}
+                    </span>
                 </motion.button>
 
                 {/* Arrow indicator - hidden on mobile */}
@@ -371,15 +388,60 @@ export function ProblemsList() {
         enabled: !!user,
     });
 
-    // Mutations
+    // Mutations with optimistic updates
     const addToWatchlistMutation = useMutation({
         mutationFn: problemsApi.addToWatchlist,
-        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['watchlist'] }),
+        onMutate: async (problemId: string) => {
+            // Cancel outgoing refetches
+            await queryClient.cancelQueries({ queryKey: ['watchlist'] });
+
+            // Snapshot previous value
+            const previousWatchlist = queryClient.getQueryData(['watchlist']);
+
+            // Optimistically update watchlist
+            queryClient.setQueryData(['watchlist'], (old: any) => {
+                if (!old) return [{ problem_id: problemId, problem: { id: problemId } }];
+                return [...old, { problem_id: problemId, problem: { id: problemId } }];
+            });
+
+            return { previousWatchlist };
+        },
+        onError: (_err, _problemId, context) => {
+            // Rollback on error
+            if (context?.previousWatchlist) {
+                queryClient.setQueryData(['watchlist'], context.previousWatchlist);
+            }
+        },
+        onSettled: () => {
+            queryClient.invalidateQueries({ queryKey: ['watchlist'] });
+        },
     });
 
     const removeFromWatchlistMutation = useMutation({
         mutationFn: problemsApi.removeFromWatchlist,
-        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['watchlist'] }),
+        onMutate: async (problemId: string) => {
+            await queryClient.cancelQueries({ queryKey: ['watchlist'] });
+
+            const previousWatchlist = queryClient.getQueryData(['watchlist']);
+
+            // Optimistically remove from watchlist
+            queryClient.setQueryData(['watchlist'], (old: any) => {
+                if (!old) return [];
+                return old.filter((item: any) =>
+                    (item.problem?.id || item.problem_id) !== problemId
+                );
+            });
+
+            return { previousWatchlist };
+        },
+        onError: (_err, _problemId, context) => {
+            if (context?.previousWatchlist) {
+                queryClient.setQueryData(['watchlist'], context.previousWatchlist);
+            }
+        },
+        onSettled: () => {
+            queryClient.invalidateQueries({ queryKey: ['watchlist'] });
+        },
     });
 
     const watchlistIds = useMemo(() => {
@@ -390,6 +452,10 @@ export function ProblemsList() {
     }, [watchlist]);
 
     const handleWatchlistToggle = (problemId: string, add: boolean) => {
+        if (!user) {
+            promptLogin();
+            return;
+        }
         if (add) {
             addToWatchlistMutation.mutate(problemId);
         } else {
@@ -397,11 +463,90 @@ export function ProblemsList() {
         }
     };
 
-    // Rating mutations
+    // Helper to optimistically update problems in cache
+    const updateProblemInCache = (
+        problemId: string,
+        updater: (problem: any) => any
+    ) => {
+        // Update free problems cache
+        queryClient.setQueryData(['problems', page, sortBy], (old: any) => {
+            if (!old?.items) return old;
+            return {
+                ...old,
+                items: old.items.map((p: any) =>
+                    p.id === problemId ? updater(p) : p
+                ),
+            };
+        });
+
+        // Update premium problems cache
+        queryClient.setQueryData(['premium-problems', premiumPage], (old: any) => {
+            if (!old?.problems) return old;
+            return {
+                ...old,
+                problems: old.problems.map((item: any) => {
+                    if (item.id === problemId) return updater(item);
+                    if (item.problem?.id === problemId) {
+                        return { ...item, problem: updater(item.problem) };
+                    }
+                    return item;
+                }),
+            };
+        });
+    };
+
+    // Rating mutations with optimistic updates
     const rateProblemMutation = useMutation({
         mutationFn: ({ problemId, rating }: { problemId: string; rating: 'upvote' | 'downvote' }) =>
             problemsApi.rateProblem(problemId, rating),
-        onSuccess: () => {
+        onMutate: async ({ problemId, rating }) => {
+            await queryClient.cancelQueries({ queryKey: ['problems'] });
+            await queryClient.cancelQueries({ queryKey: ['premium-problems'] });
+
+            // Snapshot previous state
+            const previousProblems = queryClient.getQueryData(['problems', page, sortBy]);
+            const previousPremium = queryClient.getQueryData(['premium-problems', premiumPage]);
+
+            // Optimistically update - handle both flat fields and nested feedback
+            updateProblemInCache(problemId, (problem) => {
+                const prevVote = problem.user_vote ?? problem.feedback?.user_vote;
+                const currUpvotes = problem.upvotes ?? problem.feedback?.upvotes ?? 0;
+                const currDownvotes = problem.downvotes ?? problem.feedback?.downvotes ?? 0;
+
+                const newUpvotes = rating === 'upvote'
+                    ? currUpvotes + 1
+                    : (prevVote === 'upvote' ? currUpvotes - 1 : currUpvotes);
+                const newDownvotes = rating === 'downvote'
+                    ? currDownvotes + 1
+                    : (prevVote === 'downvote' ? currDownvotes - 1 : currDownvotes);
+
+                // Update both flat fields and nested feedback for compatibility
+                return {
+                    ...problem,
+                    user_vote: rating,
+                    upvotes: newUpvotes,
+                    downvotes: newDownvotes,
+                    feedback: {
+                        ...problem.feedback,
+                        upvotes: newUpvotes,
+                        downvotes: newDownvotes,
+                        user_vote: rating,
+                    },
+                };
+            });
+
+            return { previousProblems, previousPremium };
+        },
+        onError: (_err, _vars, context) => {
+            // Rollback on error
+            if (context?.previousProblems) {
+                queryClient.setQueryData(['problems', page, sortBy], context.previousProblems);
+            }
+            if (context?.previousPremium) {
+                queryClient.setQueryData(['premium-problems', premiumPage], context.previousPremium);
+            }
+        },
+        onSettled: () => {
             queryClient.invalidateQueries({ queryKey: ['problems'] });
             queryClient.invalidateQueries({ queryKey: ['premium-problems'] });
         },
@@ -409,7 +554,47 @@ export function ProblemsList() {
 
     const removeRatingMutation = useMutation({
         mutationFn: problemsApi.removeRating,
-        onSuccess: () => {
+        onMutate: async (problemId: string) => {
+            await queryClient.cancelQueries({ queryKey: ['problems'] });
+            await queryClient.cancelQueries({ queryKey: ['premium-problems'] });
+
+            const previousProblems = queryClient.getQueryData(['problems', page, sortBy]);
+            const previousPremium = queryClient.getQueryData(['premium-problems', premiumPage]);
+
+            // Optimistically remove vote - handle both flat fields and nested feedback
+            updateProblemInCache(problemId, (problem) => {
+                const prevVote = problem.user_vote ?? problem.feedback?.user_vote;
+                const currUpvotes = problem.upvotes ?? problem.feedback?.upvotes ?? 0;
+                const currDownvotes = problem.downvotes ?? problem.feedback?.downvotes ?? 0;
+
+                const newUpvotes = prevVote === 'upvote' ? Math.max(0, currUpvotes - 1) : currUpvotes;
+                const newDownvotes = prevVote === 'downvote' ? Math.max(0, currDownvotes - 1) : currDownvotes;
+
+                return {
+                    ...problem,
+                    user_vote: null,
+                    upvotes: newUpvotes,
+                    downvotes: newDownvotes,
+                    feedback: {
+                        ...problem.feedback,
+                        upvotes: newUpvotes,
+                        downvotes: newDownvotes,
+                        user_vote: null,
+                    },
+                };
+            });
+
+            return { previousProblems, previousPremium };
+        },
+        onError: (_err, _vars, context) => {
+            if (context?.previousProblems) {
+                queryClient.setQueryData(['problems', page, sortBy], context.previousProblems);
+            }
+            if (context?.previousPremium) {
+                queryClient.setQueryData(['premium-problems', premiumPage], context.previousPremium);
+            }
+        },
+        onSettled: () => {
             queryClient.invalidateQueries({ queryKey: ['problems'] });
             queryClient.invalidateQueries({ queryKey: ['premium-problems'] });
         },
@@ -421,11 +606,17 @@ export function ProblemsList() {
             return;
         }
 
-        // Find current problem to check user's vote
-        const currentProblem = problems.find((p: ProblemListItem) => p.id === problemId) ||
-            premiumData?.problems?.find((item: any) => item.problem?.id === problemId || item.id === problemId);
+        // Find current problem to check user's vote - handle nested structures
+        const currentProblem = problems.find((p: ProblemListItem) => p.id === problemId);
+        const premiumItem = premiumData?.problems?.find((item: any) =>
+            item.problem?.id === problemId || item.id === problemId
+        );
 
-        const currentVote = currentProblem?.user_vote || (currentProblem?.problem?.user_vote);
+        // Check vote from multiple possible locations
+        const currentVote = currentProblem?.user_vote
+            ?? currentProblem?.feedback?.user_vote
+            ?? premiumItem?.problem?.user_vote
+            ?? premiumItem?.problem?.feedback?.user_vote;
 
         // If clicking the same vote, remove it
         if (currentVote === rating) {

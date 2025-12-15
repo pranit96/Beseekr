@@ -383,10 +383,16 @@ export interface ProblemListItem {
     brief_approved?: boolean;
     last_updated?: string;
     created_at?: string;
-    // Rating fields
+    // Rating fields (flat)
     upvotes?: number;
     downvotes?: number;
     user_vote?: 'upvote' | 'downvote' | null;
+    // Rating fields (nested - from API)
+    feedback?: {
+        upvotes: number;
+        downvotes: number;
+        user_vote?: 'upvote' | 'downvote' | null;
+    };
 }
 
 export interface SearchResult {
