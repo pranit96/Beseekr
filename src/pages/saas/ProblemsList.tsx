@@ -546,10 +546,8 @@ export function ProblemsList() {
                 queryClient.setQueryData(['premium-problems', premiumPage], context.previousPremium);
             }
         },
-        onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: ['problems'] });
-            queryClient.invalidateQueries({ queryKey: ['premium-problems'] });
-        },
+        // Don't invalidate queries - the GET endpoint doesn't return user_vote
+        // so refetching would overwrite our optimistic update. Only rollback on error.
     });
 
     const removeRatingMutation = useMutation({
@@ -594,10 +592,8 @@ export function ProblemsList() {
                 queryClient.setQueryData(['premium-problems', premiumPage], context.previousPremium);
             }
         },
-        onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: ['problems'] });
-            queryClient.invalidateQueries({ queryKey: ['premium-problems'] });
-        },
+        // Don't invalidate queries - the GET endpoint doesn't return user_vote
+        // so refetching would overwrite our optimistic update. Only rollback on error.
     });
 
     const handleRateToggle = (problemId: string, rating: 'upvote' | 'downvote') => {
@@ -606,19 +602,24 @@ export function ProblemsList() {
             return;
         }
 
-        // Find current problem to check user's vote - handle nested structures
-        const currentProblem = problems.find((p: ProblemListItem) => p.id === problemId);
-        const premiumItem = premiumData?.problems?.find((item: any) =>
+        // Read directly from cache to get the latest optimistic state
+        const cachedProblems = queryClient.getQueryData<any>(['problems', page, sortBy]);
+        const cachedPremium = queryClient.getQueryData<any>(['premium-problems', premiumPage]);
+
+        // Find current problem from cache
+        const currentProblem = cachedProblems?.items?.find((p: any) => p.id === problemId);
+        const premiumItem = cachedPremium?.problems?.find((item: any) =>
             item.problem?.id === problemId || item.id === problemId
         );
 
-        // Check vote from multiple possible locations
+        // Check vote from multiple possible locations (including nested feedback)
         const currentVote = currentProblem?.user_vote
             ?? currentProblem?.feedback?.user_vote
             ?? premiumItem?.problem?.user_vote
-            ?? premiumItem?.problem?.feedback?.user_vote;
+            ?? premiumItem?.problem?.feedback?.user_vote
+            ?? null;
 
-        // If clicking the same vote, remove it
+        // If clicking the same vote, remove it (toggle off)
         if (currentVote === rating) {
             removeRatingMutation.mutate(problemId);
         } else {
