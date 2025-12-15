@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -31,8 +31,12 @@ import {
     Award,
     CheckCircle,
     XCircle,
+    Loader2,
+    Search,
 } from 'lucide-react';
 import { problemsApi } from '@/api/problems';
+import { paymentsApi } from '@/api/payments';
+import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 
@@ -161,6 +165,18 @@ export function ProblemDetails() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const queryClient = useQueryClient();
+    const { user } = useAuth();
+
+    // Fetch subscription plans to check tier
+    const { data: plansData } = useQuery({
+        queryKey: ['subscription-plans'],
+        queryFn: () => paymentsApi.getPlans(),
+        enabled: !!user,
+        staleTime: 5 * 60 * 1000,
+    });
+
+    const isPremiumUser = plansData?.user?.is_premium === true;
+    const userTier = (plansData?.user as any)?.subscription?.tier || (plansData?.user as any)?.tier || 'free';
 
     const { data: problem, isLoading, isError, error } = useQuery({
         queryKey: ['problem', id],
@@ -189,6 +205,83 @@ export function ProblemDetails() {
     const handleWatchlistToggle = () => {
         if (!id) return;
         isInWatchlist ? removeMutation.mutate(id) : addMutation.mutate(id);
+    };
+
+    // Research state
+    const [researchStatus, setResearchStatus] = useState<'idle' | 'loading' | 'polling' | 'complete' | 'error'>('idle');
+    const [researchJobId, setResearchJobId] = useState<string | null>(null);
+    const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+    // Start research mutation
+    const startResearchMutation = useMutation({
+        mutationFn: () => problemsApi.startResearch(id!),
+        onSuccess: (data) => {
+            setResearchJobId(data.job_id);
+            setResearchStatus('polling');
+        },
+        onError: () => {
+            setResearchStatus('error');
+        },
+    });
+
+    // Poll for research completion
+    const pollResearchStatus = useCallback(async () => {
+        if (!id) return;
+        try {
+            const { job } = await problemsApi.getResearchStatus(id);
+            if (job.status === 'completed' && job.report_id) {
+                setResearchStatus('complete');
+                if (pollingIntervalRef.current) {
+                    clearInterval(pollingIntervalRef.current);
+                    pollingIntervalRef.current = null;
+                }
+                navigate(`/dashboard/research/${job.report_id}`);
+            } else if (job.status === 'failed') {
+                setResearchStatus('error');
+                if (pollingIntervalRef.current) {
+                    clearInterval(pollingIntervalRef.current);
+                    pollingIntervalRef.current = null;
+                }
+            }
+        } catch (err) {
+            // Keep polling on error
+        }
+    }, [id, navigate]);
+
+    // Start polling when research is queued
+    useEffect(() => {
+        if (researchStatus === 'polling' && !pollingIntervalRef.current) {
+            pollingIntervalRef.current = setInterval(pollResearchStatus, 5000);
+        }
+        return () => {
+            if (pollingIntervalRef.current) {
+                clearInterval(pollingIntervalRef.current);
+                pollingIntervalRef.current = null;
+            }
+        };
+    }, [researchStatus, pollResearchStatus]);
+
+    // WebSocket listener for research completion
+    useEffect(() => {
+        const handleResearchComplete = (event: CustomEvent<{ report_id: string }>) => {
+            setResearchStatus('complete');
+            if (pollingIntervalRef.current) {
+                clearInterval(pollingIntervalRef.current);
+                pollingIntervalRef.current = null;
+            }
+            navigate(`/dashboard/research/${event.detail.report_id}`);
+        };
+
+        window.addEventListener('research:complete' as any, handleResearchComplete);
+        return () => {
+            window.removeEventListener('research:complete' as any, handleResearchComplete);
+        };
+    }, [navigate]);
+
+    const handleStartResearch = () => {
+        if (researchStatus !== 'idle' && researchStatus !== 'error') return;
+        setResearchStatus('loading');
+        startResearchMutation.mutate();
     };
 
     // Loading
@@ -446,6 +539,92 @@ export function ProblemDetails() {
                         <p className="text-sm text-muted-foreground">
                             {validation?.verdict || 'Validation pending'}
                         </p>
+
+                        {/* Research CTA for weak validation */}
+                        {(validation?.score || 0) < 60 && (
+                            <motion.div
+                                className="mt-4 p-3 rounded-xl bg-violet-500/10 border border-violet-500/20"
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.6 }}
+                            >
+                                {/* Guest User - Sign In Required */}
+                                {!user && (
+                                    <>
+                                        <p className="text-xs text-muted-foreground mb-2">
+                                            🔒 Sign in to run deep research on this problem
+                                        </p>
+                                        <Button
+                                            size="sm"
+                                            onClick={() => navigate('/auth?mode=login&redirect=' + encodeURIComponent(window.location.pathname))}
+                                            className="w-full bg-violet-500 hover:bg-violet-600 text-white"
+                                        >
+                                            Sign In to Research
+                                        </Button>
+                                    </>
+                                )}
+
+                                {/* Free Tier User - Upgrade Required */}
+                                {user && !isPremiumUser && (
+                                    <>
+                                        <div className="flex items-center justify-between mb-2">
+                                            <p className="text-xs text-muted-foreground">
+                                                ✨ Deep Research is a Pro feature
+                                            </p>
+                                            <Badge variant="outline" className="text-xs capitalize">
+                                                {userTier} Plan
+                                            </Badge>
+                                        </div>
+                                        <Button
+                                            size="sm"
+                                            onClick={() => navigate('/dashboard/problems?tab=premium')}
+                                            className="w-full bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white"
+                                        >
+                                            <Zap className="h-4 w-4 mr-2" />
+                                            Upgrade to Pro
+                                        </Button>
+                                    </>
+                                )}
+
+                                {/* Premium User - Can Use Research */}
+                                {user && isPremiumUser && (
+                                    <>
+                                        {researchStatus === 'idle' || researchStatus === 'error' ? (
+                                            <>
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <p className="text-xs text-muted-foreground">
+                                                        {researchStatus === 'error'
+                                                            ? '❌ Research failed. Try again?'
+                                                            : '💡 Need more validation? Run deep research.'}
+                                                    </p>
+                                                    <Badge variant="outline" className="text-xs bg-violet-500/10 border-violet-500/30 text-violet-600">
+                                                        Pro
+                                                    </Badge>
+                                                </div>
+                                                <Button
+                                                    size="sm"
+                                                    onClick={handleStartResearch}
+                                                    className="w-full bg-violet-500 hover:bg-violet-600 text-white"
+                                                >
+                                                    <Search className="h-4 w-4 mr-2" />
+                                                    Run Deep Research
+                                                </Button>
+                                            </>
+                                        ) : (
+                                            <div className="flex items-center gap-3">
+                                                <Loader2 className="h-5 w-5 text-violet-500 animate-spin" />
+                                                <div>
+                                                    <p className="text-sm font-medium">Researching...</p>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        We'll notify you when it's ready (2-3 min)
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </>
+                                )}
+                            </motion.div>
+                        )}
                     </BentoCard>
 
                     {/* ══════ BUDGET RANGE CARD ══════ */}

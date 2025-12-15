@@ -532,6 +532,32 @@ export async function removeRating(
     );
 }
 
+// Start research job for a problem (returns immediately with job_id)
+// Requires authentication
+async function startResearch(
+    problemId: string
+): Promise<{ job_id: string; status: string }> {
+    return request<{ job_id: string; status: string }>(
+        `/api/problems/${problemId}/research`,
+        {
+            method: 'POST',
+        }
+    );
+}
+
+// Get research job status
+// Requires authentication
+async function getResearchStatus(
+    problemId: string
+): Promise<{ job: { status: string; report_id?: string; error?: string } }> {
+    return request<{ job: { status: string; report_id?: string; error?: string } }>(
+        `/api/problems/${problemId}/research/status`,
+        {
+            method: 'GET',
+        }
+    );
+}
+
 // Export all functions as a namespace for convenience
 export const problemsApi = {
     getProblems,
@@ -549,6 +575,9 @@ export const problemsApi = {
     getPremiumProblems,
     rateProblem,
     removeRating,
+    startResearch,
+    getResearchStatus,
 };
 
 export default problemsApi;
+
