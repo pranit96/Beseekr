@@ -303,22 +303,19 @@ export function ProblemDetails() {
         }
     }, [goNext, goPrev]);
 
-    // Slide animation variants
+    // Slide animation variants - smooth spring
     const slideVariants = {
         enter: (direction: 'left' | 'right') => ({
-            x: direction === 'right' ? 100 : -100,
+            x: direction === 'right' ? 60 : -60,
             opacity: 0,
-            scale: 0.95,
         }),
         center: {
             x: 0,
             opacity: 1,
-            scale: 1,
         },
         exit: (direction: 'left' | 'right') => ({
-            x: direction === 'right' ? -100 : 100,
+            x: direction === 'right' ? -60 : 60,
             opacity: 0,
-            scale: 0.95,
         }),
     };
 
@@ -536,12 +533,34 @@ export function ProblemDetails() {
             <AnimatePresence>
                 {showFullReport && (
                     <motion.div
-                        initial={{ opacity: 0, y: 50 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 50 }}
-                        transition={{ duration: 0.4 }}
-                        className="mt-8"
+                        initial={{ opacity: 0, y: 30, scale: 0.98 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 30, scale: 0.98 }}
+                        transition={{
+                            duration: 0.5,
+                            ease: [0.22, 1, 0.36, 1] // smooth out-expo
+                        }}
+                        className="mt-8 bg-card rounded-2xl border shadow-xl p-4 sm:p-6"
                     >
+                        {/* Close Button Header */}
+                        <div className="flex items-center justify-between mb-4">
+                            <h2 className="text-lg font-semibold flex items-center gap-2">
+                                <Sparkles className="h-5 w-5 text-primary" />
+                                Full Analysis Report
+                            </h2>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                    setShowFullReport(false);
+                                    setCurrentSlide(0); // Reset to first slide
+                                }}
+                                className="text-muted-foreground hover:text-foreground gap-1"
+                            >
+                                <XCircle className="h-4 w-4" />
+                                <span className="hidden sm:inline">Close</span>
+                            </Button>
+                        </div>
                         {/* Slide Progress Dots */}
                         <div className="flex items-center justify-center gap-1.5 sm:gap-2 mb-4 sm:mb-6 px-2">
                             {slides.map((slide, i) => (
@@ -583,48 +602,103 @@ export function ProblemDetails() {
                                         initial="enter"
                                         animate="center"
                                         exit="exit"
-                                        transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
+                                        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
                                         className="space-y-4"
                                     >
                                         <div className="flex items-center gap-2 text-lg font-semibold">
                                             <span className="text-2xl">📊</span>
                                             Executive Summary
                                         </div>
+
+                                        {/* Main Verdict Card */}
                                         <Card className={cn(
-                                            "border-2",
-                                            summary?.score >= 70 ? "border-green-500/30 bg-gradient-to-r from-green-500/5 to-emerald-500/5" :
-                                                summary?.score >= 50 ? "border-blue-500/30 bg-gradient-to-r from-blue-500/5 to-indigo-500/5" :
-                                                    "border-amber-500/30 bg-gradient-to-r from-amber-500/5 to-orange-500/5"
+                                            "border-2 overflow-hidden",
+                                            summary?.score >= 70 ? "border-green-500/40 bg-gradient-to-br from-green-500/10 via-emerald-500/5 to-transparent" :
+                                                summary?.score >= 50 ? "border-blue-500/40 bg-gradient-to-br from-blue-500/10 via-indigo-500/5 to-transparent" :
+                                                    "border-amber-500/40 bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-transparent"
                                         )}>
-                                            <CardContent className="pt-6">
-                                                <div className="flex flex-col sm:flex-row gap-6 items-center">
-                                                    <div className={cn(
-                                                        "w-24 h-24 rounded-full flex items-center justify-center border-4 shrink-0",
-                                                        summary?.score >= 70 ? "border-green-500/50 bg-green-500/10" :
-                                                            summary?.score >= 50 ? "border-blue-500/50 bg-blue-500/10" :
-                                                                "border-amber-500/50 bg-amber-500/10"
-                                                    )}>
+                                            <CardContent className="pt-6 pb-6">
+                                                <div className="flex flex-col items-center text-center mb-6">
+                                                    {/* Large Score */}
+                                                    <motion.div
+                                                        className={cn(
+                                                            "w-28 h-28 rounded-full flex items-center justify-center border-4 mb-4",
+                                                            summary?.score >= 70 ? "border-green-500 bg-green-500/20" :
+                                                                summary?.score >= 50 ? "border-blue-500 bg-blue-500/20" :
+                                                                    "border-amber-500 bg-amber-500/20"
+                                                        )}
+                                                        initial={{ scale: 0.8, opacity: 0 }}
+                                                        animate={{ scale: 1, opacity: 1 }}
+                                                        transition={{ delay: 0.2, duration: 0.4 }}
+                                                    >
                                                         <div className="text-center">
-                                                            <p className={cn("text-3xl font-bold", getScoreColor(summary?.score || 0))}>
+                                                            <p className={cn("text-4xl font-bold", getScoreColor(summary?.score || 0))}>
                                                                 {summary?.score || 0}
                                                             </p>
-                                                            <p className="text-[10px] text-muted-foreground">/100</p>
+                                                            <p className="text-xs text-muted-foreground font-medium">/ 100</p>
+                                                        </div>
+                                                    </motion.div>
+
+                                                    {/* Verdict Badge */}
+                                                    <motion.div
+                                                        initial={{ y: 10, opacity: 0 }}
+                                                        animate={{ y: 0, opacity: 1 }}
+                                                        transition={{ delay: 0.3 }}
+                                                    >
+                                                        <Badge className={cn(
+                                                            "text-sm px-4 py-1.5 mb-3",
+                                                            summary?.score >= 70 ? "bg-green-600 hover:bg-green-700" :
+                                                                summary?.score >= 50 ? "bg-blue-600 hover:bg-blue-700" :
+                                                                    "bg-amber-600 hover:bg-amber-700"
+                                                        )}>
+                                                            {summary?.verdict || 'Analysis Complete'}
+                                                        </Badge>
+                                                    </motion.div>
+
+                                                    <p className="text-muted-foreground max-w-md">{summary?.one_liner}</p>
+                                                </div>
+
+                                                {/* Quick Stats Grid */}
+                                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                                    {marketSection?.som && (
+                                                        <div className="text-center p-3 rounded-lg bg-background/60">
+                                                            <p className="text-xs text-muted-foreground mb-1">Market Opportunity</p>
+                                                            <p className="text-lg font-bold text-green-600">{marketSection.som.display}</p>
+                                                        </div>
+                                                    )}
+                                                    {actionSection?.mvp_timeline && (
+                                                        <div className="text-center p-3 rounded-lg bg-background/60">
+                                                            <p className="text-xs text-muted-foreground mb-1">Time to MVP</p>
+                                                            <p className="text-lg font-bold">{actionSection.mvp_timeline}</p>
+                                                        </div>
+                                                    )}
+                                                    {problem.validation_strength && (
+                                                        <div className="text-center p-3 rounded-lg bg-background/60">
+                                                            <p className="text-xs text-muted-foreground mb-1">Validation</p>
+                                                            <p className="text-lg font-bold">{problem.validation_strength.score}/{problem.validation_strength.max_score}</p>
+                                                        </div>
+                                                    )}
+                                                    {problem.competition_level && (
+                                                        <div className="text-center p-3 rounded-lg bg-background/60">
+                                                            <p className="text-xs text-muted-foreground mb-1">Competition</p>
+                                                            <p className="text-lg font-bold capitalize">{problem.competition_level}</p>
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                {/* Warnings */}
+                                                {summary?.warnings?.length > 0 && (
+                                                    <div className="mt-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
+                                                        <p className="text-xs font-medium text-amber-700 mb-2 flex items-center gap-1">
+                                                            <AlertTriangle className="h-3 w-3" /> Consider These Risks:
+                                                        </p>
+                                                        <div className="space-y-1">
+                                                            {summary.warnings.slice(0, 3).map((w: string, i: number) => (
+                                                                <p key={i} className="text-xs text-amber-600">• {w}</p>
+                                                            ))}
                                                         </div>
                                                     </div>
-                                                    <div className="flex-1 text-center sm:text-left">
-                                                        <h3 className="text-xl font-semibold mb-2">{summary?.verdict || 'Analysis Complete'}</h3>
-                                                        <p className="text-muted-foreground">{summary?.one_liner}</p>
-                                                        {summary?.warnings?.length > 0 && (
-                                                            <div className="mt-3 flex flex-wrap gap-2 justify-center sm:justify-start">
-                                                                {summary.warnings.slice(0, 2).map((w: string, i: number) => (
-                                                                    <span key={i} className="text-xs text-amber-600 flex items-center gap-1">
-                                                                        <AlertTriangle className="h-3 w-3" /> {w}
-                                                                    </span>
-                                                                ))}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </div>
+                                                )}
                                             </CardContent>
                                         </Card>
                                     </motion.div>
@@ -639,7 +713,7 @@ export function ProblemDetails() {
                                         initial="enter"
                                         animate="center"
                                         exit="exit"
-                                        transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
+                                        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
                                         className="space-y-4"
                                     >
                                         <div className="flex items-center gap-2 text-lg font-semibold">
@@ -685,7 +759,7 @@ export function ProblemDetails() {
                                         initial="enter"
                                         animate="center"
                                         exit="exit"
-                                        transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
+                                        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
                                         className="space-y-4"
                                     >
                                         <div className="flex items-center gap-2 text-lg font-semibold">
@@ -729,7 +803,7 @@ export function ProblemDetails() {
                                         initial="enter"
                                         animate="center"
                                         exit="exit"
-                                        transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
+                                        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
                                         className="space-y-4"
                                     >
                                         <div className="flex items-center gap-2 text-lg font-semibold">
@@ -782,7 +856,7 @@ export function ProblemDetails() {
                                         initial="enter"
                                         animate="center"
                                         exit="exit"
-                                        transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
+                                        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
                                         className="space-y-4"
                                     >
                                         <div className="flex items-center gap-2 text-lg font-semibold">
@@ -825,7 +899,7 @@ export function ProblemDetails() {
                                         initial="enter"
                                         animate="center"
                                         exit="exit"
-                                        transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
+                                        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
                                         className="space-y-4"
                                     >
                                         <div className="flex items-center gap-2 text-lg font-semibold">
