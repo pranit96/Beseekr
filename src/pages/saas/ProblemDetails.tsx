@@ -37,6 +37,7 @@ import {
 import { problemsApi } from '@/api/problems';
 import { paymentsApi } from '@/api/payments';
 import { useAuth } from '@/contexts/AuthContext';
+import { useResearchSocket, addPendingJob } from '@/hooks/use-research-socket';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 
@@ -207,10 +208,50 @@ export function ProblemDetails() {
         isInWatchlist ? removeMutation.mutate(id) : addMutation.mutate(id);
     };
 
-    // Research state
-    const [researchStatus, setResearchStatus] = useState<'idle' | 'loading' | 'polling' | 'complete' | 'error'>('idle');
-    const [researchJobId, setResearchJobId] = useState<string | null>(null);
+    // ========== RESEARCH STATE WITH PERSISTENCE ==========
+    const RESEARCH_KEY = `research_job_${id}`;
+
+    // Initialize from localStorage if exists
+    const getStoredResearch = useCallback(() => {
+        try {
+            const stored = localStorage.getItem(RESEARCH_KEY);
+            if (stored) {
+                const parsed = JSON.parse(stored);
+                // Check if job is still recent (less than 10 minutes old)
+                if (Date.now() - parsed.timestamp < 10 * 60 * 1000) {
+                    return parsed;
+                } else {
+                    localStorage.removeItem(RESEARCH_KEY);
+                }
+            }
+        } catch {
+            localStorage.removeItem(RESEARCH_KEY);
+        }
+        return null;
+    }, [RESEARCH_KEY]);
+
+    const [researchStatus, setResearchStatus] = useState<'idle' | 'loading' | 'polling' | 'complete' | 'error'>(() => {
+        const stored = getStoredResearch();
+        return stored?.status === 'polling' ? 'polling' : 'idle';
+    });
+    const [researchJobId, setResearchJobId] = useState<string | null>(() => {
+        const stored = getStoredResearch();
+        return stored?.jobId || null;
+    });
     const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+    // Save research state to localStorage
+    const saveResearchState = useCallback((status: string, jobId: string | null) => {
+        if (status === 'polling' && jobId) {
+            localStorage.setItem(RESEARCH_KEY, JSON.stringify({
+                status,
+                jobId,
+                timestamp: Date.now()
+            }));
+        } else {
+            localStorage.removeItem(RESEARCH_KEY);
+        }
+    }, [RESEARCH_KEY]);
 
     // Start research mutation
     const startResearchMutation = useMutation({
@@ -218,9 +259,13 @@ export function ProblemDetails() {
         onSuccess: (data) => {
             setResearchJobId(data.job_id);
             setResearchStatus('polling');
+            saveResearchState('polling', data.job_id);
+            // Register with socket hook for cross-tab updates
+            addPendingJob(data.job_id, id!);
         },
         onError: () => {
             setResearchStatus('error');
+            saveResearchState('error', null);
         },
     });
 
@@ -231,6 +276,7 @@ export function ProblemDetails() {
             const { job } = await problemsApi.getResearchStatus(id);
             if (job.status === 'completed' && job.report_id) {
                 setResearchStatus('complete');
+                saveResearchState('complete', null);
                 if (pollingIntervalRef.current) {
                     clearInterval(pollingIntervalRef.current);
                     pollingIntervalRef.current = null;
@@ -238,19 +284,31 @@ export function ProblemDetails() {
                 navigate(`/dashboard/research/${job.report_id}`);
             } else if (job.status === 'failed') {
                 setResearchStatus('error');
+                saveResearchState('error', null);
                 if (pollingIntervalRef.current) {
                     clearInterval(pollingIntervalRef.current);
                     pollingIntervalRef.current = null;
                 }
             }
+            // If still processing, keep polling
         } catch (err) {
-            // Keep polling on error
+            // Keep polling on network error
         }
-    }, [id, navigate]);
+    }, [id, navigate, saveResearchState]);
 
-    // Start polling when research is queued
+    // Check for pending research on mount and start polling if needed
+    useEffect(() => {
+        const stored = getStoredResearch();
+        if (stored?.status === 'polling') {
+            // Check status immediately on mount
+            pollResearchStatus();
+        }
+    }, [getStoredResearch, pollResearchStatus]);
+
+    // Start/stop polling based on status
     useEffect(() => {
         if (researchStatus === 'polling' && !pollingIntervalRef.current) {
+            // Poll every 5 seconds
             pollingIntervalRef.current = setInterval(pollResearchStatus, 5000);
         }
         return () => {
@@ -261,22 +319,31 @@ export function ProblemDetails() {
         };
     }, [researchStatus, pollResearchStatus]);
 
-    // WebSocket listener for research completion
+    // Use research socket hook for WebSocket events (handles toasts and navigation)
+    const { isConnected: isSocketConnected, lastEvent } = useResearchSocket({
+        problemId: id,
+        autoNavigate: true,
+        showToasts: true,
+    });
+
+    // Handle WebSocket event completion (stops polling when socket event arrives)
     useEffect(() => {
-        const handleResearchComplete = (event: CustomEvent<{ report_id: string }>) => {
+        if (lastEvent && lastEvent.status === 'completed' && 'report_id' in lastEvent) {
             setResearchStatus('complete');
+            saveResearchState('complete', null);
             if (pollingIntervalRef.current) {
                 clearInterval(pollingIntervalRef.current);
                 pollingIntervalRef.current = null;
             }
-            navigate(`/dashboard/research/${event.detail.report_id}`);
-        };
-
-        window.addEventListener('research:complete' as any, handleResearchComplete);
-        return () => {
-            window.removeEventListener('research:complete' as any, handleResearchComplete);
-        };
-    }, [navigate]);
+        } else if (lastEvent && lastEvent.status === 'failed') {
+            setResearchStatus('error');
+            saveResearchState('error', null);
+            if (pollingIntervalRef.current) {
+                clearInterval(pollingIntervalRef.current);
+                pollingIntervalRef.current = null;
+            }
+        }
+    }, [lastEvent, saveResearchState]);
 
     const handleStartResearch = () => {
         if (researchStatus !== 'idle' && researchStatus !== 'error') return;

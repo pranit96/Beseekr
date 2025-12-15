@@ -49,6 +49,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { ResearchReport, type ValidationReportData } from '@/components/research/ResearchReport';
 
 // Upgrade required error response type
 interface UpgradeError {
@@ -1435,7 +1436,12 @@ export function Validate() {
                 </div>
 
                 {singleReport ? (
-                    <ReportDisplay report={singleReport} />
+                    // Use new ResearchReport if full_report data is available, otherwise fallback to legacy
+                    singleReport.full_report ? (
+                        <ResearchReport data={singleReport as ValidationReportData} />
+                    ) : (
+                        <ReportDisplay report={singleReport} />
+                    )
                 ) : (
                     <Card className="border-destructive/50">
                         <CardContent className="py-8 text-center">
