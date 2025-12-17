@@ -68,7 +68,6 @@ interface UpgradeError {
 // Helper function to generate Markdown content from report
 function generateMarkdownContent(report: any): string {
     const metadata = report.report_metadata || {};
-    const verdict = report.executive_verdict || {};
     const problemValidation = report.problem_validation || {};
     const demandSignals = report.demand_signals || {};
     const competitiveLandscape = report.competitive_landscape || {};
@@ -77,187 +76,330 @@ function generateMarkdownContent(report: any): string {
     const marketSizing = report.market_sizing || {};
     const goToMarket = report.go_to_market || {};
     const riskAssessment = report.risk_assessment || {};
+    const evidenceAppendix = report.evidence_appendix || {};
     const sourcesAnalyzed = metadata.sources_analyzed || {};
 
-    let markdown = `# Validation Report\n\n`;
-    markdown += `**Generated:** ${new Date(report.created_at || Date.now()).toLocaleDateString()}\n\n`;
+    let md = `# 📊 Validation Report\n\n`;
+    md += `> **Generated:** ${new Date(report.created_at || Date.now()).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}\n\n`;
+    md += `---\n\n`;
 
-    // Idea
-    markdown += `## Idea Validated\n\n`;
-    markdown += `${report.idea_input || 'N/A'}\n\n`;
+    // Idea Section
+    md += `## 💡 Idea Validated\n\n`;
+    md += `**${report.idea_input || 'N/A'}**\n\n`;
 
     // Executive Summary
-    markdown += `## Executive Summary\n\n`;
-    markdown += `- **Grade:** ${report.confidence_grade || '?'}\n`;
-    markdown += `- **Recommendation:** ${report.recommendation || 'N/A'}\n`;
-    markdown += `- **Confidence Score:** ${report.validation_score || 0}%\n`;
-    markdown += `- **Evidence Strength:** ${metadata.evidence_strength || 'Unknown'}\n\n`;
-    markdown += `### Key Insight\n\n${report.key_insight || 'N/A'}\n\n`;
-    markdown += `### One-Liner\n\n${report.one_liner || 'N/A'}\n\n`;
+    md += `---\n\n## 🎯 Executive Summary\n\n`;
+    md += `| Metric | Value |\n`;
+    md += `|--------|-------|\n`;
+    md += `| **Grade** | ${report.confidence_grade || '?'} |\n`;
+    md += `| **Recommendation** | ${report.recommendation || 'N/A'} |\n`;
+    md += `| **Confidence Score** | ${report.validation_score || 0}% |\n`;
+    md += `| **Evidence Strength** | ${metadata.evidence_strength || 'Unknown'} |\n\n`;
 
-    // Sources Analyzed
-    markdown += `### Sources Analyzed\n\n`;
-    markdown += `- Reddit Discussions: ${sourcesAnalyzed.reddit_discussions || 0}\n`;
-    markdown += `- HN Threads: ${sourcesAnalyzed.hn_threads || 0}\n`;
-    markdown += `- Pricing Data Points: ${sourcesAnalyzed.pricing_datapoints || 0}\n\n`;
+    md += `### 💡 Key Insight\n\n`;
+    md += `> ${report.key_insight || 'N/A'}\n\n`;
+    md += `### 📝 One-Liner\n\n`;
+    md += `*${report.one_liner || 'N/A'}*\n\n`;
+
+    // Sources
+    md += `### 📚 Sources Analyzed\n\n`;
+    md += `| Source | Count |\n`;
+    md += `|--------|-------|\n`;
+    md += `| Reddit Discussions | ${sourcesAnalyzed.reddit_discussions || 0} |\n`;
+    md += `| HN Threads | ${sourcesAnalyzed.hn_threads || 0} |\n`;
+    md += `| Unique Voices | ${sourcesAnalyzed.unique_voices || 0} |\n`;
+    md += `| Pricing Data Points | ${sourcesAnalyzed.pricing_datapoints || 0} |\n\n`;
 
     // Problem Validation
-    markdown += `## Problem Validation\n\n`;
-    markdown += `- **Problem Exists:** ${problemValidation.problem_exists ? 'Yes' : 'No'}\n`;
-    markdown += `- **Severity Score:** ${problemValidation.severity_score || 0}/10\n\n`;
+    md += `---\n\n## ✅ Problem Validation\n\n`;
+    md += `| Metric | Value |\n`;
+    md += `|--------|-------|\n`;
+    md += `| **Problem Exists** | ${problemValidation.problem_exists ? '✅ Yes' : '❌ No'} |\n`;
+    md += `| **Severity Score** | ${problemValidation.severity_score || 0}/10 |\n\n`;
 
     if (problemValidation.evidence?.frequency_signals?.length > 0) {
-        markdown += `### Frequency Signals\n\n`;
+        md += `### 📊 Frequency Signals\n\n`;
         problemValidation.evidence.frequency_signals.forEach((signal: string) => {
-            markdown += `- ${signal}\n`;
+            md += `- ${signal}\n`;
         });
-        markdown += `\n`;
+        md += `\n`;
+    }
+
+    if (problemValidation.evidence?.urgency_indicators?.length > 0) {
+        md += `### ⚡ Urgency Indicators\n\n`;
+        problemValidation.evidence.urgency_indicators.forEach((indicator: string) => {
+            md += `- ${indicator}\n`;
+        });
+        md += `\n`;
     }
 
     if (problemValidation.evidence?.pain_quotes?.length > 0) {
-        markdown += `### Pain Quotes\n\n`;
-        problemValidation.evidence.pain_quotes.slice(0, 4).forEach((quote: any) => {
-            markdown += `> "${quote.quote}"\n`;
-            markdown += `> — ${quote.source}, ${quote.upvotes} upvotes\n\n`;
+        md += `### 💬 Pain Quotes from Real Users\n\n`;
+        problemValidation.evidence.pain_quotes.slice(0, 5).forEach((quote: any) => {
+            md += `> "${quote.quote}"\n>\n`;
+            md += `> — **${quote.source}** (${quote.upvotes} upvotes) [View Source](${quote.url || '#'})\n\n`;
         });
     }
 
     // Demand Signals
-    markdown += `## Demand Signals\n\n`;
-    markdown += `- **Active Seekers:** ${demandSignals.active_seekers || 0}\n`;
-    markdown += `- **Workaround Users:** ${demandSignals.workaround_users || 0}\n\n`;
+    md += `---\n\n## 📈 Demand Signals\n\n`;
+    md += `| Metric | Value |\n`;
+    md += `|--------|-------|\n`;
+    md += `| **Active Seekers** | ${demandSignals.active_seekers || 0} |\n`;
+    md += `| **Workaround Users** | ${demandSignals.workaround_users || 0} |\n\n`;
 
     if (demandSignals.evidence?.workaround_descriptions?.length > 0) {
-        markdown += `### Current Workarounds\n\n`;
+        md += `### 🔧 Current Workarounds\n\n`;
+        md += `| Method | Mentions |\n`;
+        md += `|--------|----------|\n`;
         demandSignals.evidence.workaround_descriptions.forEach((w: any) => {
-            markdown += `- ${w.method} (${w.mentions} mentions)\n`;
+            md += `| ${w.method} | ${w.mentions} |\n`;
         });
-        markdown += `\n`;
+        md += `\n`;
+    }
+
+    if (demandSignals.evidence?.seeking_quotes?.length > 0) {
+        md += `### 🔍 People Seeking Solutions\n\n`;
+        demandSignals.evidence.seeking_quotes.slice(0, 3).forEach((quote: any) => {
+            md += `> "${quote.quote}"\n>\n`;
+            md += `> — **${quote.source}** (${quote.upvotes} upvotes, ${quote.comments} comments)\n\n`;
+        });
     }
 
     // Market Sizing
-    markdown += `## Market Sizing\n\n`;
-    markdown += `| Metric | Value | Confidence/Notes |\n`;
-    markdown += `|--------|-------|------------------|\n`;
-    markdown += `| TAM | ${marketSizing.TAM?.value || 'N/A'} | ${marketSizing.TAM?.confidence || 'N/A'} |\n`;
-    markdown += `| SAM | ${marketSizing.SAM?.value || 'N/A'} | ${marketSizing.SAM?.notes || 'N/A'} |\n`;
-    markdown += `| SOM | ${marketSizing.SOM?.value || 'N/A'} | ${marketSizing.SOM?.notes || 'N/A'} |\n\n`;
+    md += `---\n\n## 📊 Market Sizing\n\n`;
+    if (marketSizing.methodology) {
+        md += `*Methodology: ${marketSizing.methodology}*\n\n`;
+    }
+    md += `| Market | Value | Notes |\n`;
+    md += `|--------|-------|-------|\n`;
+    md += `| **TAM** (Total Addressable) | ${marketSizing.TAM?.value || 'N/A'} | ${marketSizing.TAM?.confidence || ''} confidence |\n`;
+    md += `| **SAM** (Serviceable) | ${marketSizing.SAM?.value || 'N/A'} | ${marketSizing.SAM?.notes || ''} |\n`;
+    md += `| **SOM** (Obtainable) | ${marketSizing.SOM?.value || 'N/A'} | ${marketSizing.SOM?.notes || ''} |\n\n`;
+
+    if (marketSizing.TAM?.assumptions?.length > 0) {
+        md += `### 📋 Key Assumptions\n\n`;
+        marketSizing.TAM.assumptions.forEach((assumption: string) => {
+            md += `- ${assumption}\n`;
+        });
+        md += `\n`;
+    }
 
     // Competitive Landscape
-    markdown += `## Competitive Landscape\n\n`;
-    markdown += `**Total Competitors Found:** ${competitiveLandscape.total_competitors_found || 0}\n\n`;
+    md += `---\n\n## 🏆 Competitive Landscape\n\n`;
+    md += `**Total Competitors Found:** ${competitiveLandscape.total_competitors_found || 0}\n\n`;
 
     if (competitiveLandscape.direct_competitors?.length > 0) {
-        markdown += `### Direct Competitors\n\n`;
+        md += `### 🎯 Direct Competitors\n\n`;
+        md += `| Name | Mentions | Sentiment | Pricing | Strength | Weakness |\n`;
+        md += `|------|----------|-----------|---------|----------|----------|\n`;
         competitiveLandscape.direct_competitors.forEach((comp: any) => {
-            markdown += `- **${comp.name}**: ${comp.mentions} mentions, ${comp.sentiment} sentiment\n`;
+            md += `| **${comp.name}** | ${comp.mentions} | ${comp.sentiment} | ${comp.pricing || 'N/A'} | ${comp.strength || 'N/A'} | ${comp.weakness || 'N/A'} |\n`;
         });
-        markdown += `\n`;
+        md += `\n`;
+    }
+
+    if (competitiveLandscape.indirect_competitors?.length > 0) {
+        md += `### 🔄 Indirect Competitors\n\n`;
+        competitiveLandscape.indirect_competitors.forEach((comp: any) => {
+            md += `- **${comp.name}**: ${comp.description || comp.mentions + ' mentions'}\n`;
+        });
+        md += `\n`;
     }
 
     if (competitiveLandscape.market_gaps?.length > 0) {
-        markdown += `### Market Gaps\n\n`;
+        md += `### 🎯 Market Gaps (Your Opportunity)\n\n`;
         competitiveLandscape.market_gaps.forEach((gap: string) => {
-            markdown += `- ${gap}\n`;
+            md += `- ✨ ${gap}\n`;
         });
-        markdown += `\n`;
+        md += `\n`;
+    }
+
+    if (competitiveLandscape.diy_alternatives?.length > 0) {
+        md += `### 🛠️ DIY Alternatives Users Are Using\n\n`;
+        competitiveLandscape.diy_alternatives.forEach((alt: string) => {
+            md += `- ${alt}\n`;
+        });
+        md += `\n`;
     }
 
     // Pricing Intelligence
-    markdown += `## Pricing Intelligence\n\n`;
-    markdown += `- **Low Anchor:** ${pricingIntelligence.willingness_to_pay?.low_anchor || 'N/A'}\n`;
-    markdown += `- **Median WTP:** ${pricingIntelligence.willingness_to_pay?.median || 'N/A'}\n`;
-    markdown += `- **High Anchor:** ${pricingIntelligence.willingness_to_pay?.high_anchor || 'N/A'}\n`;
-    markdown += `- **Data Points:** ${pricingIntelligence.data_points || 0}\n\n`;
+    md += `---\n\n## 💰 Pricing Intelligence\n\n`;
+    md += `### Willingness to Pay\n\n`;
+    md += `| Range | Amount |\n`;
+    md += `|-------|--------|\n`;
+    md += `| **Low Anchor** | ${pricingIntelligence.willingness_to_pay?.low_anchor || 'N/A'} |\n`;
+    md += `| **Median** | ${pricingIntelligence.willingness_to_pay?.median || 'N/A'} |\n`;
+    md += `| **High Anchor** | ${pricingIntelligence.willingness_to_pay?.high_anchor || 'N/A'} |\n`;
+    md += `| **Enterprise** | ${pricingIntelligence.willingness_to_pay?.enterprise_mentions || 'N/A'} |\n\n`;
+    md += `*Based on ${pricingIntelligence.data_points || 0} data points*\n\n`;
 
     if (pricingIntelligence.pricing_strategy) {
-        markdown += `### Recommended Pricing Strategy\n\n`;
-        markdown += `- **Model:** ${pricingIntelligence.pricing_strategy.recommended_model}\n`;
-        markdown += `- **Entry Price:** $${pricingIntelligence.pricing_strategy.entry_price}/mo\n`;
-        markdown += `- **Standard Price:** $${pricingIntelligence.pricing_strategy.standard_price}/mo\n`;
-        markdown += `- **Premium Price:** $${pricingIntelligence.pricing_strategy.premium_price}/mo\n\n`;
-        markdown += `**Rationale:** ${pricingIntelligence.pricing_strategy.rationale}\n\n`;
+        const ps = pricingIntelligence.pricing_strategy;
+        md += `### 💵 Recommended Pricing Strategy\n\n`;
+        md += `**Model:** ${ps.recommended_model || ps.model || 'N/A'}\n\n`;
+        md += `| Tier | Price |\n`;
+        md += `|------|-------|\n`;
+        md += `| Entry | $${ps.entry_price}/mo |\n`;
+        md += `| Standard | $${ps.standard_price}/mo |\n`;
+        md += `| Premium | $${ps.premium_price}/mo |\n\n`;
+        md += `**Rationale:** ${ps.rationale}\n\n`;
+    }
+
+    if (pricingIntelligence.value_drivers?.length > 0) {
+        md += `### 💎 Value Drivers\n\n`;
+        pricingIntelligence.value_drivers.forEach((driver: string) => {
+            md += `- ${driver}\n`;
+        });
+        md += `\n`;
+    }
+
+    if (pricingIntelligence.objections?.length > 0) {
+        md += `### ⚠️ Common Pricing Objections\n\n`;
+        pricingIntelligence.objections.forEach((objection: string) => {
+            md += `- ${objection}\n`;
+        });
+        md += `\n`;
     }
 
     // Customer Profile
     if (customerProfile.primary_persona) {
-        markdown += `## Customer Profile\n\n`;
-        markdown += `### Primary Persona\n\n`;
-        markdown += `- **Title:** ${customerProfile.primary_persona.title}\n`;
-        markdown += `- **Company Stage:** ${customerProfile.primary_persona.company_stage}\n`;
-        markdown += `- **Company Size:** ${customerProfile.primary_persona.company_size} employees\n\n`;
+        const persona = customerProfile.primary_persona;
+        md += `---\n\n## 👤 Customer Profile\n\n`;
+        md += `### Primary Persona\n\n`;
+        md += `| Attribute | Value |\n`;
+        md += `|-----------|-------|\n`;
+        md += `| **Title** | ${persona.title} |\n`;
+        md += `| **Company Stage** | ${persona.company_stage} |\n`;
+        md += `| **Company Size** | ${persona.company_size} employees |\n`;
+        md += `| **Budget Authority** | ${persona.budget_authority || 'N/A'} |\n\n`;
 
-        if (customerProfile.primary_persona.key_responsibilities?.length > 0) {
-            markdown += `### Key Responsibilities\n\n`;
-            customerProfile.primary_persona.key_responsibilities.forEach((r: string) => {
-                markdown += `- ${r}\n`;
+        if (persona.key_responsibilities?.length > 0) {
+            md += `### 📋 Key Responsibilities\n\n`;
+            persona.key_responsibilities.forEach((r: string) => {
+                md += `- ${r}\n`;
             });
-            markdown += `\n`;
+            md += `\n`;
         }
 
-        if (customerProfile.primary_persona.pain_points?.length > 0) {
-            markdown += `### Pain Points\n\n`;
-            customerProfile.primary_persona.pain_points.forEach((p: string) => {
-                markdown += `- ${p}\n`;
+        if (persona.pain_points?.length > 0) {
+            md += `### 😤 Pain Points\n\n`;
+            persona.pain_points.forEach((p: string) => {
+                md += `- 🔴 ${p}\n`;
             });
-            markdown += `\n`;
+            md += `\n`;
         }
+
+        if (persona.success_metrics?.length > 0) {
+            md += `### 🎯 Success Metrics\n\n`;
+            persona.success_metrics.forEach((m: string) => {
+                md += `- ✅ ${m}\n`;
+            });
+            md += `\n`;
+        }
+    }
+
+    if (customerProfile.buying_triggers?.length > 0) {
+        md += `### ⚡ Buying Triggers\n\n`;
+        customerProfile.buying_triggers.forEach((trigger: string) => {
+            md += `- ${trigger}\n`;
+        });
+        md += `\n`;
+    }
+
+    if (customerProfile.common_objections?.length > 0) {
+        md += `### 🚫 Common Objections\n\n`;
+        customerProfile.common_objections.forEach((objection: string) => {
+            md += `- ${objection}\n`;
+        });
+        md += `\n`;
     }
 
     // Go-to-Market
-    if (goToMarket.positioning) {
-        markdown += `## Go-to-Market Strategy\n\n`;
-        markdown += `### Positioning\n\n`;
-        markdown += `- **Tagline:** ${goToMarket.positioning.tagline}\n`;
-        markdown += `- **Value Proposition:** ${goToMarket.positioning.unique_value_prop}\n`;
-        if (goToMarket.positioning.avoid_saying) {
-            markdown += `- **⚠️ Avoid Saying:** ${goToMarket.positioning.avoid_saying}\n`;
+    if (goToMarket.positioning || goToMarket.mvp_features?.length > 0) {
+        md += `---\n\n## 🚀 Go-to-Market Strategy\n\n`;
+
+        if (goToMarket.positioning) {
+            md += `### 🎯 Positioning\n\n`;
+            md += `**Tagline:** *"${goToMarket.positioning.tagline}"*\n\n`;
+            md += `**Value Proposition:** ${goToMarket.positioning.unique_value_prop}\n\n`;
+            if (goToMarket.positioning.avoid_saying) {
+                md += `> ⚠️ **Avoid Saying:** ${goToMarket.positioning.avoid_saying}\n\n`;
+            }
         }
-        markdown += `\n`;
-    }
 
-    if (goToMarket.mvp_features?.length > 0) {
-        markdown += `### MVP Features\n\n`;
-        goToMarket.mvp_features.forEach((feature: any) => {
-            markdown += `- **${feature.feature}**: ${feature.evidence}\n`;
-        });
-        markdown += `\n`;
-    }
+        if (goToMarket.mvp_features?.length > 0) {
+            md += `### 🛠️ MVP Features\n\n`;
+            md += `| Feature | Evidence |\n`;
+            md += `|---------|----------|\n`;
+            goToMarket.mvp_features.forEach((feature: any) => {
+                md += `| **${feature.feature}** | ${feature.evidence} |\n`;
+            });
+            md += `\n`;
+        }
 
-    if (goToMarket.first_30_days?.length > 0) {
-        markdown += `### First 30 Days\n\n`;
-        goToMarket.first_30_days.forEach((step: string, i: number) => {
-            markdown += `${i + 1}. ${step}\n`;
-        });
-        markdown += `\n`;
+        if (goToMarket.distribution_channels?.length > 0) {
+            md += `### 📣 Distribution Channels\n\n`;
+            md += `| Channel | Tactic | Why |\n`;
+            md += `|---------|--------|-----|\n`;
+            goToMarket.distribution_channels.forEach((channel: any) => {
+                md += `| ${channel.channel} | ${channel.tactic} | ${channel.why} |\n`;
+            });
+            md += `\n`;
+        }
+
+        if (goToMarket.first_30_days?.length > 0) {
+            md += `### 📅 First 30 Days Action Plan\n\n`;
+            goToMarket.first_30_days.forEach((step: string, i: number) => {
+                md += `${i + 1}. ${step}\n`;
+            });
+            md += `\n`;
+        }
     }
 
     // Risk Assessment
     if (riskAssessment.major_risks?.length > 0 || riskAssessment.mitigations?.length > 0) {
-        markdown += `## Risk Assessment\n\n`;
+        md += `---\n\n## ⚠️ Risk Assessment\n\n`;
+        md += `**Confidence Level:** ${riskAssessment.confidence_level || 'N/A'}\n\n`;
 
         if (riskAssessment.major_risks?.length > 0) {
-            markdown += `### Major Risks\n\n`;
+            md += `### 🔴 Major Risks\n\n`;
             riskAssessment.major_risks.forEach((risk: string) => {
-                markdown += `- ⚠️ ${risk}\n`;
+                md += `- ⚠️ ${risk}\n`;
             });
-            markdown += `\n`;
+            md += `\n`;
         }
 
         if (riskAssessment.mitigations?.length > 0) {
-            markdown += `### Mitigations\n\n`;
+            md += `### ✅ Mitigations\n\n`;
             riskAssessment.mitigations.forEach((mit: string) => {
-                markdown += `- ✅ ${mit}\n`;
+                md += `- ✅ ${mit}\n`;
             });
-            markdown += `\n`;
+            md += `\n`;
         }
 
         if (riskAssessment.recommendation) {
-            markdown += `**Recommendation:** ${riskAssessment.recommendation}\n\n`;
+            md += `### 📋 Final Recommendation\n\n`;
+            md += `> ${riskAssessment.recommendation}\n\n`;
         }
     }
 
-    return markdown;
+    // Evidence Appendix
+    if (evidenceAppendix.high_quality_sources?.length > 0) {
+        md += `---\n\n## 📎 Evidence Appendix\n\n`;
+        md += `**Total Sources Analyzed:** ${evidenceAppendix.total_sources || 0}\n\n`;
+        md += `### High-Quality Sources\n\n`;
+        md += `| Title | Source | Engagement | Relevance |\n`;
+        md += `|-------|--------|------------|----------|\n`;
+        evidenceAppendix.high_quality_sources.slice(0, 10).forEach((source: any) => {
+            md += `| [${source.title}](${source.url}) | ${source.source} | ${source.engagement} | ${source.relevance} |\n`;
+        });
+        md += `\n`;
+    }
+
+    md += `---\n\n*Report generated by BeSeekr AI Research Engine*\n`;
+
+    return md;
 }
 
 // Helper function to export as Markdown file
