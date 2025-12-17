@@ -128,7 +128,7 @@ export function useResearchSocket(options: UseResearchSocketOptions = {}): UseRe
                 description: `Analysis ready for "${data.problem_title}"`,
                 action: {
                     label: 'View Report',
-                    onClick: () => navigate(`/dashboard/research/${data.report_id}`),
+                    onClick: () => navigate(`/dashboard/validate/${data.report_id}`),
                 },
                 duration: 10000,
             });
@@ -136,7 +136,7 @@ export function useResearchSocket(options: UseResearchSocketOptions = {}): UseRe
 
         // Auto-navigate to the report
         if (autoNavigate) {
-            navigate(`/dashboard/research/${data.report_id}`);
+            navigate(`/dashboard/validate/${data.report_id}`);
         }
     }, [navigate, autoNavigate, showToasts, problemId]);
 

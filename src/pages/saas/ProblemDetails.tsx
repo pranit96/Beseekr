@@ -33,6 +33,7 @@ import {
     XCircle,
     Loader2,
     Search,
+    Eye,
 } from 'lucide-react';
 import { problemsApi } from '@/api/problems';
 import { paymentsApi } from '@/api/payments';
@@ -191,6 +192,19 @@ export function ProblemDetails() {
         queryFn: () => problemsApi.getWatchlist(),
     });
 
+    // Check for existing research report
+    const { data: existingResearchData, isLoading: isLoadingResearch } = useQuery({
+        queryKey: ['research-status', id],
+        queryFn: () => problemsApi.getResearchStatus(id!),
+        enabled: !!id && !!user && isPremiumUser,
+        staleTime: 30 * 1000, // Cache for 30 seconds
+    });
+
+    // Determine if research exists and get report ID
+    const existingReportId = existingResearchData?.job?.status === 'completed'
+        ? existingResearchData.job.report_id
+        : null;
+
     const isInWatchlist = Array.isArray(watchlistData) && watchlistData.some((item) => item.problem_id === id);
 
     const addMutation = useMutation({
@@ -281,7 +295,7 @@ export function ProblemDetails() {
                     clearInterval(pollingIntervalRef.current);
                     pollingIntervalRef.current = null;
                 }
-                navigate(`/dashboard/research/${job.report_id}`);
+                navigate(`/dashboard/validate/${job.report_id}`);
             } else if (job.status === 'failed') {
                 setResearchStatus('error');
                 saveResearchState('error', null);
@@ -656,7 +670,32 @@ export function ProblemDetails() {
                                 {/* Premium User - Can Use Research */}
                                 {user && isPremiumUser && (
                                     <>
-                                        {researchStatus === 'idle' || researchStatus === 'error' ? (
+                                        {/* Existing research - Show View Analysis */}
+                                        {existingReportId ? (
+                                            <>
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <p className="text-xs text-muted-foreground">
+                                                        ✅ Research complete! View your analysis.
+                                                    </p>
+                                                    <Badge variant="outline" className="text-xs bg-green-500/10 border-green-500/30 text-green-600">
+                                                        Ready
+                                                    </Badge>
+                                                </div>
+                                                <Button
+                                                    size="sm"
+                                                    onClick={() => navigate(`/dashboard/validate/${existingReportId}`)}
+                                                    className="w-full bg-green-500 hover:bg-green-600 text-white"
+                                                >
+                                                    <Eye className="h-4 w-4 mr-2" />
+                                                    View Analysis
+                                                </Button>
+                                            </>
+                                        ) : isLoadingResearch ? (
+                                            <div className="flex items-center gap-3">
+                                                <Loader2 className="h-5 w-5 text-violet-500 animate-spin" />
+                                                <p className="text-xs text-muted-foreground">Checking research status...</p>
+                                            </div>
+                                        ) : researchStatus === 'idle' || researchStatus === 'error' ? (
                                             <>
                                                 <div className="flex items-center justify-between mb-2">
                                                     <p className="text-xs text-muted-foreground">
