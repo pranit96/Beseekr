@@ -8,7 +8,7 @@ import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { KeyboardShortcutsDialog } from "./components/KeyboardShortcutsDialog";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { Analytics as VercelAnalytics } from "@vercel/analytics/react";
-import { SpeedInsights } from "@vercel/speed-insights/react";
+import { SpeedInsightsTracker } from "@/components/SpeedInsightsTracker";
 import { useEffect, lazy, Suspense } from "react";
 import { Loader2 } from "lucide-react";
 
@@ -184,7 +184,7 @@ const App = () => {
               </AuthProvider>
             </BrowserRouter>
             <VercelAnalytics />
-            <SpeedInsights />
+            <SpeedInsightsTracker />
           </TooltipProvider>
         </ThemeProvider>
       </QueryClientProvider>
