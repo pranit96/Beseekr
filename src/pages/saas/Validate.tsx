@@ -420,25 +420,74 @@ function exportAsMarkdown(report: any) {
 // Helper function to export as PDF
 async function exportAsPDF(report: any) {
     const normalizedReport = normalizeReport(report);
-    const markdown = generateMarkdownContent(normalizedReport);
 
-    // Create a styled HTML version for printing
+    // Helper to convert markdown table to HTML
+    const markdownToHtml = (md: string): string => {
+        let html = md;
+
+        // Convert markdown tables to HTML tables
+        const tableRegex = /\|(.+)\|\n\|[-:\s|]+\|\n((?:\|.+\|\n?)+)/g;
+        html = html.replace(tableRegex, (match, header, rows) => {
+            const headerCells = header.split('|').filter((c: string) => c.trim()).map((c: string) => `<th>${c.trim()}</th>`).join('');
+            const bodyRows = rows.trim().split('\n').map((row: string) => {
+                const cells = row.split('|').filter((c: string) => c.trim()).map((c: string) => `<td>${c.trim()}</td>`).join('');
+                return `<tr>${cells}</tr>`;
+            }).join('');
+            return `<table><thead><tr>${headerCells}</tr></thead><tbody>${bodyRows}</tbody></table>`;
+        });
+
+        // Convert headers
+        html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+        html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+        html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+
+        // Convert blockquotes
+        html = html.replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>');
+
+        // Convert bold
+        html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+
+        // Convert italic
+        html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+
+        // Convert lists
+        html = html.replace(/^- (.+)$/gm, '<li>$1</li>');
+        html = html.replace(/^(\d+)\. (.+)$/gm, '<li>$2</li>');
+
+        // Wrap consecutive li elements in ul
+        html = html.replace(/(<li>.+<\/li>\n?)+/g, '<ul>$&</ul>');
+
+        // Convert line breaks
+        html = html.replace(/\n\n/g, '</p><p>');
+        html = html.replace(/---/g, '<hr>');
+
+        // Convert links
+        html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+
+        return html;
+    };
+
+    const metadata = normalizedReport.report_metadata || {};
+    const sourcesAnalyzed = metadata.sources_analyzed || {};
+
     const htmlContent = `
         <!DOCTYPE html>
         <html>
         <head>
             <meta charset="UTF-8">
-            <title>Validation Report</title>
+            <title>Validation Report - ${normalizedReport.idea_input || 'BeSeekr'}</title>
             <style>
+                * { box-sizing: border-box; }
                 body {
                     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
                     line-height: 1.6;
-                    max-width: 800px;
+                    max-width: 900px;
                     margin: 0 auto;
                     padding: 40px;
                     color: #1a1a1a;
+                    background: #fff;
                 }
-                h1 { color: #059669; font-size: 28px; margin-bottom: 10px; }
+                h1 { color: #059669; font-size: 28px; margin-bottom: 5px; border-bottom: 3px solid #059669; padding-bottom: 10px; }
                 h2 { color: #374151; font-size: 20px; margin-top: 30px; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px; }
                 h3 { color: #4b5563; font-size: 16px; margin-top: 20px; }
                 blockquote { 
@@ -447,57 +496,114 @@ async function exportAsPDF(report: any) {
                     padding: 10px 20px; 
                     background: #f9fafb; 
                     font-style: italic;
+                    border-radius: 0 8px 8px 0;
                 }
-                table { border-collapse: collapse; width: 100%; margin: 15px 0; }
-                th, td { border: 1px solid #e5e7eb; padding: 10px; text-align: left; }
-                th { background: #f3f4f6; }
+                table { 
+                    border-collapse: collapse; 
+                    width: 100%; 
+                    margin: 15px 0; 
+                    font-size: 14px;
+                    border-radius: 8px;
+                    overflow: hidden;
+                    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+                }
+                th { 
+                    background: #059669; 
+                    color: white; 
+                    padding: 12px 15px; 
+                    text-align: left; 
+                    font-weight: 600;
+                }
+                td { 
+                    border: 1px solid #e5e7eb; 
+                    padding: 10px 15px; 
+                    text-align: left; 
+                }
+                tr:nth-child(even) { background: #f9fafb; }
+                tr:hover { background: #f3f4f6; }
                 ul, ol { margin: 10px 0; padding-left: 25px; }
                 li { margin: 5px 0; }
                 strong { color: #059669; }
-                .grade { 
+                hr { border: none; border-top: 1px solid #e5e7eb; margin: 25px 0; }
+                a { color: #059669; text-decoration: none; }
+                a:hover { text-decoration: underline; }
+                .header-section { 
+                    background: linear-gradient(135deg, #059669 0%, #10b981 100%); 
+                    color: white; 
+                    padding: 30px; 
+                    border-radius: 12px; 
+                    margin-bottom: 30px;
+                }
+                .header-section h1 { color: white; border: none; margin: 0; }
+                .header-section p { margin: 5px 0; opacity: 0.9; }
+                .grade-badge { 
                     display: inline-block; 
-                    font-size: 32px; 
+                    font-size: 48px; 
                     font-weight: bold; 
-                    padding: 10px 20px; 
-                    border-radius: 8px; 
-                    margin: 10px 0;
+                    padding: 15px 30px; 
+                    border-radius: 12px; 
+                    margin: 15px 0;
                 }
                 .grade-A { background: #d1fae5; color: #059669; }
                 .grade-B { background: #dbeafe; color: #3b82f6; }
                 .grade-C { background: #fef3c7; color: #d97706; }
                 .grade-D { background: #ffedd5; color: #ea580c; }
                 .grade-F { background: #fee2e2; color: #dc2626; }
+                .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0; }
+                .summary-card { background: #f9fafb; padding: 15px; border-radius: 8px; border: 1px solid #e5e7eb; }
+                .summary-card h4 { margin: 0 0 8px 0; color: #6b7280; font-size: 12px; text-transform: uppercase; }
+                .summary-card p { margin: 0; font-size: 16px; font-weight: 600; }
+                .sources-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 15px 0; }
+                .source-item { text-align: center; padding: 15px; background: #f9fafb; border-radius: 8px; }
+                .source-item .number { font-size: 24px; font-weight: bold; color: #059669; }
+                .source-item .label { font-size: 11px; color: #6b7280; }
                 @media print {
                     body { padding: 20px; }
+                    .header-section { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                    table { page-break-inside: avoid; }
                     h2 { page-break-after: avoid; }
                 }
             </style>
         </head>
         <body>
-            <h1>📊 Validation Report</h1>
-            <p><strong>Generated:</strong> ${new Date(normalizedReport.created_at || Date.now()).toLocaleDateString()}</p>
+            <div class="header-section">
+                <h1>📊 Validation Report</h1>
+                <p><strong>Generated:</strong> ${new Date(normalizedReport.created_at || Date.now()).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+            </div>
             
-            <h2>Idea Validated</h2>
-            <p>${normalizedReport.idea_input || 'N/A'}</p>
+            <h2>💡 Idea Validated</h2>
+            <p><strong>${normalizedReport.idea_input || 'N/A'}</strong></p>
             
-            <h2>Executive Summary</h2>
-            <div class="grade grade-${normalizedReport.confidence_grade}">${normalizedReport.confidence_grade}</div>
-            <ul>
-                <li><strong>Recommendation:</strong> ${normalizedReport.recommendation || 'N/A'}</li>
-                <li><strong>Confidence Score:</strong> ${normalizedReport.validation_score || 0}%</li>
-                <li><strong>Evidence Strength:</strong> ${normalizedReport.report_metadata?.evidence_strength || 'Unknown'}</li>
-            </ul>
-            <h3>Key Insight</h3>
-            <p>${normalizedReport.key_insight || 'N/A'}</p>
-            <h3>One-Liner</h3>
-            <p>${normalizedReport.one_liner || 'N/A'}</p>
+            <h2>🎯 Executive Summary</h2>
+            <div class="grade-badge grade-${normalizedReport.confidence_grade}">${normalizedReport.confidence_grade || '?'}</div>
             
-            ${markdown.split('## ').slice(2).map(section => {
-        const lines = section.split('\n');
-        const title = lines[0];
-        const content = lines.slice(1).join('<br>');
-        return `<h2>${title}</h2><div>${content}</div>`;
-    }).join('')}
+            <table>
+                <thead><tr><th>Metric</th><th>Value</th></tr></thead>
+                <tbody>
+                    <tr><td><strong>Recommendation</strong></td><td>${normalizedReport.recommendation || 'N/A'}</td></tr>
+                    <tr><td><strong>Confidence Score</strong></td><td>${normalizedReport.validation_score || 0}%</td></tr>
+                    <tr><td><strong>Evidence Strength</strong></td><td>${metadata.evidence_strength || 'Unknown'}</td></tr>
+                </tbody>
+            </table>
+            
+            <h3>💡 Key Insight</h3>
+            <blockquote>${normalizedReport.key_insight || 'N/A'}</blockquote>
+            
+            <h3>📝 One-Liner</h3>
+            <p><em>${normalizedReport.one_liner || 'N/A'}</em></p>
+            
+            <h3>📚 Sources Analyzed</h3>
+            <div class="sources-grid">
+                <div class="source-item"><div class="number">${sourcesAnalyzed.reddit_discussions || 0}</div><div class="label">Reddit</div></div>
+                <div class="source-item"><div class="number">${sourcesAnalyzed.hn_threads || 0}</div><div class="label">HN Threads</div></div>
+                <div class="source-item"><div class="number">${sourcesAnalyzed.unique_voices || 0}</div><div class="label">Unique Voices</div></div>
+                <div class="source-item"><div class="number">${sourcesAnalyzed.pricing_datapoints || 0}</div><div class="label">Pricing Data</div></div>
+            </div>
+            
+            ${generatePDFSections(normalizedReport)}
+            
+            <hr>
+            <p style="text-align: center; color: #6b7280; font-size: 12px;">Report generated by BeSeekr AI Research Engine</p>
         </body>
         </html>
     `;
@@ -511,6 +617,118 @@ async function exportAsPDF(report: any) {
             printWindow.print();
         };
     }
+}
+
+// Helper to generate PDF sections with proper HTML formatting
+function generatePDFSections(report: any): string {
+    let html = '';
+
+    const problemValidation = report.problem_validation || {};
+    const demandSignals = report.demand_signals || {};
+    const marketSizing = report.market_sizing || {};
+    const competitiveLandscape = report.competitive_landscape || {};
+    const pricingIntelligence = report.pricing_intelligence || {};
+    const customerProfile = report.customer_profile || {};
+    const goToMarket = report.go_to_market || {};
+    const riskAssessment = report.risk_assessment || {};
+
+    // Problem Validation
+    html += `<h2>✅ Problem Validation</h2>`;
+    html += `<table><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody>`;
+    html += `<tr><td><strong>Problem Exists</strong></td><td>${problemValidation.problem_exists ? '✅ Yes' : '❌ No'}</td></tr>`;
+    html += `<tr><td><strong>Severity Score</strong></td><td>${problemValidation.severity_score || 0}/10</td></tr>`;
+    html += `</tbody></table>`;
+
+    if (problemValidation.evidence?.pain_quotes?.length > 0) {
+        html += `<h3>💬 Pain Quotes</h3>`;
+        problemValidation.evidence.pain_quotes.slice(0, 3).forEach((q: any) => {
+            html += `<blockquote>"${q.quote}"<br><small>— ${q.source} (${q.upvotes} upvotes)</small></blockquote>`;
+        });
+    }
+
+    // Market Sizing
+    html += `<h2>📊 Market Sizing</h2>`;
+    html += `<table><thead><tr><th>Market</th><th>Value</th><th>Notes</th></tr></thead><tbody>`;
+    html += `<tr><td><strong>TAM</strong></td><td>${marketSizing.TAM?.value || 'N/A'}</td><td>${marketSizing.TAM?.confidence || ''}</td></tr>`;
+    html += `<tr><td><strong>SAM</strong></td><td>${marketSizing.SAM?.value || 'N/A'}</td><td>${marketSizing.SAM?.notes || ''}</td></tr>`;
+    html += `<tr><td><strong>SOM</strong></td><td>${marketSizing.SOM?.value || 'N/A'}</td><td>${marketSizing.SOM?.notes || ''}</td></tr>`;
+    html += `</tbody></table>`;
+
+    // Competitive Landscape
+    if (competitiveLandscape.direct_competitors?.length > 0) {
+        html += `<h2>🏆 Competitive Landscape</h2>`;
+        html += `<p><strong>Total Competitors:</strong> ${competitiveLandscape.total_competitors_found || 0}</p>`;
+        html += `<table><thead><tr><th>Competitor</th><th>Mentions</th><th>Sentiment</th><th>Pricing</th></tr></thead><tbody>`;
+        competitiveLandscape.direct_competitors.slice(0, 5).forEach((c: any) => {
+            html += `<tr><td><strong>${c.name}</strong></td><td>${c.mentions}</td><td>${c.sentiment}</td><td>${c.pricing || 'N/A'}</td></tr>`;
+        });
+        html += `</tbody></table>`;
+    }
+
+    // Pricing Intelligence
+    html += `<h2>💰 Pricing Intelligence</h2>`;
+    html += `<table><thead><tr><th>Range</th><th>Amount</th></tr></thead><tbody>`;
+    html += `<tr><td>Low Anchor</td><td>${pricingIntelligence.willingness_to_pay?.low_anchor || 'N/A'}</td></tr>`;
+    html += `<tr><td>Median</td><td>${pricingIntelligence.willingness_to_pay?.median || 'N/A'}</td></tr>`;
+    html += `<tr><td>High Anchor</td><td>${pricingIntelligence.willingness_to_pay?.high_anchor || 'N/A'}</td></tr>`;
+    html += `</tbody></table>`;
+
+    if (pricingIntelligence.pricing_strategy) {
+        const ps = pricingIntelligence.pricing_strategy;
+        html += `<h3>💵 Recommended Pricing</h3>`;
+        html += `<table><thead><tr><th>Tier</th><th>Price</th></tr></thead><tbody>`;
+        html += `<tr><td>Entry</td><td>$${ps.entry_price}/mo</td></tr>`;
+        html += `<tr><td>Standard</td><td>$${ps.standard_price}/mo</td></tr>`;
+        html += `<tr><td>Premium</td><td>$${ps.premium_price}/mo</td></tr>`;
+        html += `</tbody></table>`;
+    }
+
+    // Customer Profile
+    if (customerProfile.primary_persona) {
+        const persona = customerProfile.primary_persona;
+        html += `<h2>👤 Customer Profile</h2>`;
+        html += `<table><thead><tr><th>Attribute</th><th>Value</th></tr></thead><tbody>`;
+        html += `<tr><td><strong>Title</strong></td><td>${persona.title}</td></tr>`;
+        html += `<tr><td><strong>Company Stage</strong></td><td>${persona.company_stage}</td></tr>`;
+        html += `<tr><td><strong>Company Size</strong></td><td>${persona.company_size}</td></tr>`;
+        html += `</tbody></table>`;
+    }
+
+    // Go-to-Market
+    if (goToMarket.positioning) {
+        html += `<h2>🚀 Go-to-Market Strategy</h2>`;
+        html += `<p><strong>Tagline:</strong> <em>"${goToMarket.positioning.tagline}"</em></p>`;
+        html += `<p><strong>Value Prop:</strong> ${goToMarket.positioning.unique_value_prop}</p>`;
+    }
+
+    if (goToMarket.mvp_features?.length > 0) {
+        html += `<h3>🛠️ MVP Features</h3>`;
+        html += `<table><thead><tr><th>Feature</th><th>Evidence</th></tr></thead><tbody>`;
+        goToMarket.mvp_features.forEach((f: any) => {
+            html += `<tr><td><strong>${f.feature}</strong></td><td>${f.evidence}</td></tr>`;
+        });
+        html += `</tbody></table>`;
+    }
+
+    // Risk Assessment
+    if (riskAssessment.major_risks?.length > 0) {
+        html += `<h2>⚠️ Risk Assessment</h2>`;
+        html += `<h3>Major Risks</h3><ul>`;
+        riskAssessment.major_risks.forEach((r: string) => {
+            html += `<li>⚠️ ${r}</li>`;
+        });
+        html += `</ul>`;
+
+        if (riskAssessment.mitigations?.length > 0) {
+            html += `<h3>Mitigations</h3><ul>`;
+            riskAssessment.mitigations.forEach((m: string) => {
+                html += `<li>✅ ${m}</li>`;
+            });
+            html += `</ul>`;
+        }
+    }
+
+    return html;
 }
 
 // Helper to normalize report data - handles both list items and full report
