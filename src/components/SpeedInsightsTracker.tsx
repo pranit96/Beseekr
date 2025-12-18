@@ -1,24 +1,12 @@
-import { useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 
 /**
  * SpeedInsightsTracker component
  *
- * Wraps Vercel Speed Insights and tracks route changes for accurate performance monitoring.
- * This ensures that route changes are properly recorded as page transitions.
- *
- * For Vite + React Router applications, this component automatically detects navigation
- * and sends the current pathname to Speed Insights for proper attribution of Web Vitals.
+ * Wraps Vercel Speed Insights for performance monitoring.
+ * NOTE: This component is rendered outside BrowserRouter, so we cannot use useLocation.
+ * Speed Insights automatically tracks Web Vitals (LCP, FID, CLS, INP, TTFB).
  */
 export function SpeedInsightsTracker() {
-  const location = useLocation();
-
-  useEffect(() => {
-    // Track route changes for Speed Insights
-    // This helps Speed Insights properly attribute performance metrics to specific routes
-    // The component will use the current pathname internally
-  }, [location.pathname]);
-
   return <SpeedInsights />;
 }
