@@ -15,9 +15,16 @@ Allow: /auth
 
 # Disallow internal/admin paths
 Disallow: /api/
+Disallow: /api/*
+Disallow: /_api/
 Disallow: /payment/
+Disallow: /auth/callback
+Disallow: /reset-password
 Disallow: /*.json$
 Disallow: /*?*
+
+# Block any reference to backend API domain
+# (If crawlers somehow discovered it via links)
 
 # Specific search engine crawlers
 User-agent: Googlebot
