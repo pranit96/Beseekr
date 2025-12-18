@@ -49,6 +49,18 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { useToast } from '@/hooks/use-toast';
 import { ResearchReport, type ValidationReportData } from '@/components/research/ResearchReport';
 
 // Upgrade required error response type
@@ -765,7 +777,9 @@ function normalizeReport(rawReport: any) {
 // Report Card for the list view
 function ReportCard({ report: rawReport, onDelete }: { report: any; onDelete: (id: string) => void }) {
     const navigate = useNavigate();
+    const { toast } = useToast();
     const report = normalizeReport(rawReport);
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
     const getGradeColor = (grade: string) => {
         switch (grade) {
@@ -789,69 +803,100 @@ function ReportCard({ report: rawReport, onDelete }: { report: any; onDelete: (i
     };
 
     const handleClick = () => navigate(`/dashboard/validate/${report.id}`);
-    const handleDelete = (e: React.MouseEvent) => {
+
+    const handleDeleteClick = (e: React.MouseEvent) => {
         e.stopPropagation();
-        if (confirm('Delete this validation report?')) {
-            onDelete(report.id);
-        }
+        setDeleteDialogOpen(true);
+    };
+
+    const handleConfirmDelete = () => {
+        onDelete(report.id);
+        setDeleteDialogOpen(false);
+        toast({
+            title: "Report deleted",
+            description: "The validation report has been removed.",
+        });
     };
 
     const sourcesAnalyzed = report.report_metadata?.sources_analyzed || {};
 
     return (
-        <Card
-            className="cursor-pointer transition-all hover:shadow-md hover:border-primary/30 group active:scale-[0.99]"
-            onClick={handleClick}
-        >
-            <CardContent className="p-3 sm:p-4">
-                <div className="flex items-start gap-3 sm:gap-4">
-                    {/* Grade Badge */}
-                    <div className={cn(
-                        "w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center text-base sm:text-lg font-bold shrink-0",
-                        getGradeColor(report.confidence_grade)
-                    )}>
-                        {report.confidence_grade}
-                    </div>
-
-                    {/* Content */}
-                    <div className="flex-1 min-w-0">
-                        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-1">
-                            <Badge variant={getRecommendationColor(report.recommendation) as any} className="text-[10px] sm:text-xs">
-                                {report.recommendation || 'Pending'}
-                            </Badge>
-                            <span className="text-[10px] sm:text-xs text-muted-foreground">
-                                Score: {report.validation_score}%
-                            </span>
+        <>
+            <Card
+                className="cursor-pointer transition-all hover:shadow-md hover:border-primary/30 group active:scale-[0.99]"
+                onClick={handleClick}
+            >
+                <CardContent className="p-3 sm:p-4">
+                    <div className="flex items-start gap-3 sm:gap-4">
+                        {/* Grade Badge */}
+                        <div className={cn(
+                            "w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center text-base sm:text-lg font-bold shrink-0",
+                            getGradeColor(report.confidence_grade)
+                        )}>
+                            {report.confidence_grade}
                         </div>
-                        <p className="font-medium text-xs sm:text-sm line-clamp-2 group-hover:text-primary transition-colors">
-                            {report.idea_input || 'Untitled Report'}
-                        </p>
-                        <p className="text-[10px] sm:text-xs text-muted-foreground mt-1 line-clamp-1 hidden sm:block">
-                            {report.one_liner}
-                        </p>
-                        <div className="flex items-center gap-2 sm:gap-3 mt-2 text-[10px] sm:text-xs text-muted-foreground">
-                            <span>{sourcesAnalyzed.reddit_discussions || 0} Reddit</span>
-                            <span className="hidden sm:inline">{sourcesAnalyzed.hn_threads || 0} HN</span>
-                            <span>{new Date(report.created_at).toLocaleDateString()}</span>
+
+                        {/* Content */}
+                        <div className="flex-1 min-w-0">
+                            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-1">
+                                <Badge variant={getRecommendationColor(report.recommendation) as any} className="text-[10px] sm:text-xs">
+                                    {report.recommendation || 'Pending'}
+                                </Badge>
+                                <span className="text-[10px] sm:text-xs text-muted-foreground">
+                                    Score: {report.validation_score}%
+                                </span>
+                            </div>
+                            <p className="font-medium text-xs sm:text-sm line-clamp-2 group-hover:text-primary transition-colors">
+                                {report.idea_input || 'Untitled Report'}
+                            </p>
+                            <p className="text-[10px] sm:text-xs text-muted-foreground mt-1 line-clamp-1 hidden sm:block">
+                                {report.one_liner}
+                            </p>
+                            <div className="flex items-center gap-2 sm:gap-3 mt-2 text-[10px] sm:text-xs text-muted-foreground">
+                                <span>{sourcesAnalyzed.reddit_discussions || 0} Reddit</span>
+                                <span className="hidden sm:inline">{sourcesAnalyzed.hn_threads || 0} HN</span>
+                                <span>{new Date(report.created_at).toLocaleDateString()}</span>
+                            </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 sm:h-9 sm:w-9 text-muted-foreground hover:text-destructive"
+                                onClick={handleDeleteClick}
+                                aria-label="Delete report"
+                            >
+                                <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                            </Button>
+                            <ChevronRight className="h-4 w-4 text-muted-foreground hidden sm:block" />
                         </div>
                     </div>
+                </CardContent>
+            </Card>
 
-                    {/* Actions */}
-                    <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 sm:h-9 sm:w-9 text-muted-foreground hover:text-destructive"
-                            onClick={handleDelete}
-                            aria-label="Delete report"
+            {/* Delete Confirmation Dialog */}
+            <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Delete this report?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This will permanently delete the validation report for "{report.idea_input?.slice(0, 50)}...". This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleConfirmDelete}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                         >
-                            <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                        </Button>
-                        <ChevronRight className="h-4 w-4 text-muted-foreground hidden sm:block" />
-                    </div>
-                </div>
-            </CardContent>
-        </Card>
+                            Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        </>
     );
 }
 
