@@ -35,13 +35,21 @@ const NotFound = () => {
       </div>
 
       <div className="relative z-10 max-w-md w-full text-center space-y-6 sm:space-y-8">
-        {/* Cute Dog Image */}
+        {/* Cute Dog Image - Different images for light/dark mode */}
         <div className="relative mx-auto w-48 h-48 sm:w-64 sm:h-64 md:w-72 md:h-72 animate-bounce-slow">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-purple-500/20 rounded-full blur-2xl scale-75" />
+          {/* Light mode image */}
           <img
             src="/images/404-dog.png"
             alt="Cute confused puppy"
-            className="relative w-full h-full object-contain drop-shadow-2xl"
+            className="dark:hidden relative w-full h-full object-contain drop-shadow-2xl"
+            loading="eager"
+          />
+          {/* Dark mode image */}
+          <img
+            src="/images/404-dog-dark.png"
+            alt="Cute confused puppy"
+            className="hidden dark:block relative w-full h-full object-contain drop-shadow-[0_20px_40px_rgba(139,92,246,0.3)]"
             loading="eager"
           />
         </div>

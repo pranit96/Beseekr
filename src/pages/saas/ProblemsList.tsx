@@ -693,19 +693,19 @@ export function ProblemsList() {
                 className="text-center max-w-2xl mx-auto px-2"
             >
                 <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4">
-                    Discover{' '}
+                    Find{' '}
                     <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient">
-                        Real Problems
+                        Unmet Needs
                     </span>
                 </h1>
                 <p className="text-sm sm:text-lg text-muted-foreground">
-                    Validated pain points from thousands of real conversations. Find your next startup idea.
+                    Real pain points extracted from Reddit, Hacker News & online communities. Scored by opportunity potential.
                 </p>
 
                 {/* Trust Badge */}
                 <div className="flex items-center justify-center gap-1.5 text-xs sm:text-sm text-muted-foreground mt-4 sm:mt-6">
                     <Sparkles className="h-4 w-4 text-purple-500" />
-                    <span>AI-powered research</span>
+                    <span>AI-curated & updated weekly</span>
                 </div>
 
                 {/* Social Proof */}
@@ -715,7 +715,7 @@ export function ProblemsList() {
                             <div key={i} className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-gradient-to-br from-primary/60 to-accent/60 border-2 border-background" />
                         ))}
                     </div>
-                    <span>Join <strong className="text-foreground">500+</strong> entrepreneurs finding validated ideas</span>
+                    <span>Explore problems. Run deep research. Build what matters.</span>
                 </div>
             </motion.div>
 
