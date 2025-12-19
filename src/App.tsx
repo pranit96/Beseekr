@@ -143,12 +143,12 @@ const App = () => {
                       ============================================= */}
                   <Route path="/dashboard" element={<SaasDashboardLayout />}>
                     <Route index element={<Navigate to="problems" replace />} />
-                    <Route path="problems" element={<ProblemsList />} />
-                    <Route path="problems/:id" element={<ProblemDetails />} />
-                    <Route path="validate" element={<Validate />} />
-                    <Route path="validate/:id" element={<Validate />} />
-                    <Route path="watchlist" element={<SaasWatchlist />} />
-                    <Route path="pricing" element={<Pricing />} />
+                    <Route path="problems" element={<Suspense fallback={<PageLoader />}><ProblemsList /></Suspense>} />
+                    <Route path="problems/:id" element={<Suspense fallback={<PageLoader />}><ProblemDetails /></Suspense>} />
+                    <Route path="validate" element={<Suspense fallback={<PageLoader />}><Validate /></Suspense>} />
+                    <Route path="validate/:id" element={<Suspense fallback={<PageLoader />}><Validate /></Suspense>} />
+                    <Route path="watchlist" element={<Suspense fallback={<PageLoader />}><SaasWatchlist /></Suspense>} />
+                    <Route path="pricing" element={<Suspense fallback={<PageLoader />}><Pricing /></Suspense>} />
                     <Route path="profile" element={<Suspense fallback={<PageLoader />}><Profile /></Suspense>} />
                   </Route>
 
