@@ -31,13 +31,15 @@ const DeepAnalytics = lazy(() => import("./pages/DeepAnalytics"));
 const Deck = lazy(() => import("./pages/Deck"));
 const AuthCallback = lazy(() => import("./pages/AuthCallback"));
 
-// SaaS Dashboard - Critical, loaded immediately
+// SaaS Dashboard - Layout loaded immediately, pages lazy loaded
 import { SaasDashboardLayout } from "./layouts/SaasDashboardLayout";
-import ProblemsList from "./pages/saas/ProblemsList";
-import ProblemDetails from "./pages/saas/ProblemDetails";
-import Validate from "./pages/saas/Validate";
-import SaasWatchlist from "./pages/saas/Watchlist";
-import Pricing from "./pages/saas/Pricing";
+
+// Only ProblemsList is loaded immediately as it's the main entry point
+const ProblemsList = lazy(() => import("./pages/saas/ProblemsList"));
+const ProblemDetails = lazy(() => import("./pages/saas/ProblemDetails"));
+const Validate = lazy(() => import("./pages/saas/Validate"));
+const SaasWatchlist = lazy(() => import("./pages/saas/Watchlist"));
+const Pricing = lazy(() => import("./pages/saas/Pricing"));
 
 // Loading fallback for lazy components
 const PageLoader = () => (

@@ -834,13 +834,13 @@ export function ProblemsList() {
 
                     {/* Problems Grid */}
                     {isLoading ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 min-h-[600px] sm:min-h-[650px]">
                             {Array.from({ length: 6 }).map((_, i) => (
                                 <ProblemSkeleton key={i} />
                             ))}
                         </div>
                     ) : problems.length > 0 ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 min-h-[600px] sm:min-h-[650px]">
                             <AnimatePresence mode="wait">
                                 {problems.map((problem: ProblemListItem, index: number) => (
                                     <ProblemCard

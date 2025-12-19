@@ -210,8 +210,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="preconnect" href="https://api.beseekr.com" crossorigin />
+  <link rel="preconnect" href="https://vitals.vercel-insights.com" crossorigin />
   <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
   <link rel="dns-prefetch" href="https://api.beseekr.com" />
+  <link rel="dns-prefetch" href="https://vitals.vercel-insights.com" />
 
   <!-- Fonts - Non-render-blocking with font-display: swap -->
   <link rel="preload" as="style"
@@ -221,6 +223,32 @@
   <noscript>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   </noscript>
+
+  <!-- Critical CSS for initial paint - inlined to avoid render blocking -->
+  <style>
+    /* Critical above-the-fold styles */
+    :root {
+      --background: 0 0% 100%;
+      --foreground: 240 10% 3.9%;
+      --primary: 160 84% 39%;
+      --muted: 240 4.8% 95.9%;
+      --muted-foreground: 240 3.8% 46.1%;
+    }
+    .dark {
+      --background: 240 10% 3.9%;
+      --foreground: 0 0% 98%;
+      --primary: 160 84% 39%;
+      --muted: 240 3.7% 15.9%;
+      --muted-foreground: 240 5% 64.9%;
+    }
+    *, ::before, ::after { box-sizing: border-box; border-width: 0; border-style: solid; }
+    html { line-height: 1.5; -webkit-text-size-adjust: 100%; font-family: Inter, system-ui, sans-serif; }
+    body { margin: 0; line-height: inherit; background-color: hsl(var(--background)); color: hsl(var(--foreground)); }
+    #root { min-height: 100vh; display: flex; flex-direction: column; }
+    /* Skeleton animation */
+    @keyframes skeleton { from { opacity: 1; } to { opacity: 0.5; } }
+    .skeleton { animation: skeleton 1s ease-in-out infinite alternate; background: hsl(var(--muted)); border-radius: 0.5rem; }
+  </style>
 </head>
 
 <body>
