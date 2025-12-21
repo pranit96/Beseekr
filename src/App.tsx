@@ -20,26 +20,67 @@ import PaymentSuccess from "./pages/PaymentSuccess";
 import PaymentFailed from "./pages/PaymentFailed";
 import Contact from "./pages/Contact";
 
-// Lazy loaded pages (reduced initial bundle)
-const Chat = lazy(() => import("./pages/Chat"));
-const Agents = lazy(() => import("./pages/Agents"));
-const Analytics = lazy(() => import("./pages/Analytics"));
-const Profile = lazy(() => import("./pages/Profile"));
-const ResetPassword = lazy(() => import("./pages/ResetPassword"));
-const Landing = lazy(() => import("./pages/Landing"));
-const DeepAnalytics = lazy(() => import("./pages/DeepAnalytics"));
-const Deck = lazy(() => import("./pages/Deck"));
-const AuthCallback = lazy(() => import("./pages/AuthCallback"));
+/**
+ * Wrapper for lazy imports that handles chunk loading failures after deployments.
+ * When a new version is deployed, chunk hashes change. Users with cached main bundle
+ * will fail to load new chunks. This wrapper auto-refreshes the page once to fix it.
+ */
+const lazyRetry = <T extends React.ComponentType<any>>(
+  importFn: () => Promise<{ default: T }>,
+  chunkName: string
+): React.LazyExoticComponent<T> => {
+  return lazy(async () => {
+    const sessionKey = `chunk-retry-${chunkName}`;
+    const hasRefreshed = sessionStorage.getItem(sessionKey);
+
+    try {
+      const component = await importFn();
+      // Success - clear any retry flag
+      sessionStorage.removeItem(sessionKey);
+      return component;
+    } catch (error: any) {
+      // Check if this is a chunk loading error (likely due to deployment)
+      const isChunkError =
+        error?.message?.includes('Failed to fetch dynamically imported module') ||
+        error?.message?.includes('Loading chunk') ||
+        error?.message?.includes('Loading CSS chunk') ||
+        error?.name === 'ChunkLoadError';
+
+      if (isChunkError && !hasRefreshed) {
+        // Mark that we're retrying, then refresh
+        sessionStorage.setItem(sessionKey, 'true');
+        console.log(`Chunk load failed for ${chunkName}, refreshing page...`);
+        window.location.reload();
+        // Return a placeholder while reloading
+        return { default: (() => null) as unknown as T };
+      }
+
+      // Already refreshed or not a chunk error - throw to show error boundary
+      throw error;
+    }
+  });
+};
+
+// Lazy loaded pages with retry logic for chunk loading failures
+const Chat = lazyRetry(() => import("./pages/Chat"), "Chat");
+const Agents = lazyRetry(() => import("./pages/Agents"), "Agents");
+const Analytics = lazyRetry(() => import("./pages/Analytics"), "Analytics");
+const Profile = lazyRetry(() => import("./pages/Profile"), "Profile");
+const ResetPassword = lazyRetry(() => import("./pages/ResetPassword"), "ResetPassword");
+const Landing = lazyRetry(() => import("./pages/Landing"), "Landing");
+const DeepAnalytics = lazyRetry(() => import("./pages/DeepAnalytics"), "DeepAnalytics");
+const Deck = lazyRetry(() => import("./pages/Deck"), "Deck");
+const AuthCallback = lazyRetry(() => import("./pages/AuthCallback"), "AuthCallback");
 
 // SaaS Dashboard - Layout loaded immediately, pages lazy loaded
 import { SaasDashboardLayout } from "./layouts/SaasDashboardLayout";
 
-// Only ProblemsList is loaded immediately as it's the main entry point
-const ProblemsList = lazy(() => import("./pages/saas/ProblemsList"));
-const ProblemDetails = lazy(() => import("./pages/saas/ProblemDetails"));
-const Validate = lazy(() => import("./pages/saas/Validate"));
-const SaasWatchlist = lazy(() => import("./pages/saas/Watchlist"));
-const Pricing = lazy(() => import("./pages/saas/Pricing"));
+// Dashboard pages with retry logic
+const ProblemsList = lazyRetry(() => import("./pages/saas/ProblemsList"), "ProblemsList");
+const ProblemDetails = lazyRetry(() => import("./pages/saas/ProblemDetails"), "ProblemDetails");
+const Validate = lazyRetry(() => import("./pages/saas/Validate"), "Validate");
+const SaasWatchlist = lazyRetry(() => import("./pages/saas/Watchlist"), "Watchlist");
+const Pricing = lazyRetry(() => import("./pages/saas/Pricing"), "Pricing");
 
 // Loading fallback for lazy components
 const PageLoader = () => (
