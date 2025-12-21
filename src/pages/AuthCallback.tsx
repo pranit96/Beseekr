@@ -51,34 +51,48 @@ export default function AuthCallback() {
                     // Tokens are in URL - Supabase needs to process them
                     // Wait for auth state change which fires after Supabase processes the URL
                     const session = await new Promise<any>((resolve, reject) => {
-                        // Increased timeout to 15 seconds for mobile connections
+                        // Increased timeout to 20 seconds for mobile connections and slow networks
                         const timeout = setTimeout(() => {
                             reject(new Error('Authentication timed out. Please check your internet connection and try again.'));
-                        }, 15000);
+                        }, 20000);
 
+                        let resolved = false;
+                        const safeResolve = (session: any) => {
+                            if (!resolved) {
+                                resolved = true;
+                                clearTimeout(timeout);
+                                resolve(session);
+                            }
+                        };
+
+                        // Set up auth state change listener FIRST
                         authListener = supabase.auth.onAuthStateChange((event, session) => {
                             console.log('OAuth Callback - Auth State Change:', { event, hasSession: !!session });
 
-                            if (event === 'SIGNED_IN' && session) {
-                                clearTimeout(timeout);
-                                resolve(session);
-                            } else if (event === 'TOKEN_REFRESHED' && session) {
-                                clearTimeout(timeout);
-                                resolve(session);
+                            if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') && session) {
+                                safeResolve(session);
                             }
                         });
 
-                        // Also try getting session immediately in case it's already processed
-                        supabase.auth.getSession().then(({ data, error }) => {
-                            if (error) {
-                                console.error('OAuth Callback - getSession error:', error);
+                        // Give Supabase a moment to process the URL hash tokens before checking session
+                        // This delay is critical for PKCE flow where token exchange happens asynchronously
+                        setTimeout(async () => {
+                            if (resolved) return;
+
+                            try {
+                                const { data, error } = await supabase.auth.getSession();
+                                if (error) {
+                                    console.error('OAuth Callback - getSession error:', error);
+                                    return;
+                                }
+                                if (data.session) {
+                                    console.log('OAuth Callback - Session found after delay');
+                                    safeResolve(data.session);
+                                }
+                            } catch (e) {
+                                console.error('OAuth Callback - getSession exception:', e);
                             }
-                            if (data.session) {
-                                console.log('OAuth Callback - Session found immediately');
-                                clearTimeout(timeout);
-                                resolve(data.session);
-                            }
-                        });
+                        }, 500); // 500ms delay to allow PKCE token exchange
                     });
 
                     if (!session?.access_token) {
