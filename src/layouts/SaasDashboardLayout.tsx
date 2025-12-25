@@ -281,6 +281,12 @@ export function SaasDashboardLayout() {
                                 Pricing
                             </Link>
                             <Link
+                                to="/about"
+                                className="text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                                About
+                            </Link>
+                            <Link
                                 to="/contact"
                                 className="text-muted-foreground hover:text-foreground transition-colors"
                             >

@@ -19,6 +19,7 @@ import Privacy from "./pages/Privacy";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import PaymentFailed from "./pages/PaymentFailed";
 import Contact from "./pages/Contact";
+import About from "./pages/About";
 
 /**
  * Wrapper for lazy imports that handles chunk loading failures after deployments.
@@ -170,6 +171,9 @@ const App = () => {
 
                   {/* Contact page */}
                   <Route path="/contact" element={<Contact />} />
+
+                  {/* About page */}
+                  <Route path="/about" element={<About />} />
 
                   {/* Payment success - Razorpay redirect */}
                   <Route path="/payment/success" element={<PaymentSuccess />} />
