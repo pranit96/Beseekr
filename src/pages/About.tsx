@@ -56,12 +56,6 @@ export default function About() {
                         variants={staggerContainer}
                         className="text-center max-w-4xl mx-auto"
                     >
-                        <motion.div variants={fadeInUp} className="mb-6">
-                            <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium bg-primary/10 text-primary border border-primary/20">
-                                <Sparkles className="h-4 w-4" />
-                                AI-Powered Problem Discovery
-                            </span>
-                        </motion.div>
 
                         <motion.h1
                             variants={fadeInUp}
