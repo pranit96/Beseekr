@@ -19,9 +19,11 @@ import {
     Briefcase,
     CheckCircle2,
     XCircle,
-    Clock,
     DollarSign,
     LineChart,
+    MessageSquare,
+    FileText,
+    Eye,
 } from "lucide-react";
 
 const fadeInUp = {
@@ -42,7 +44,6 @@ export default function About() {
         <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20">
             {/* Hero Section */}
             <section className="relative overflow-hidden pt-24 pb-20 lg:pt-32 lg:pb-28">
-                {/* Background Effects */}
                 <div className="absolute inset-0 pointer-events-none">
                     <div className="absolute top-20 left-1/4 w-[500px] h-[500px] bg-primary/5 rounded-full blur-3xl" />
                     <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-cyan-500/5 rounded-full blur-3xl" />
@@ -77,9 +78,10 @@ export default function About() {
                             variants={fadeInUp}
                             className="text-lg sm:text-xl text-muted-foreground max-w-3xl mx-auto mb-10 leading-relaxed"
                         >
-                            Most startups fail because they solve problems nobody has. Beseekr finds the problems
-                            people are already begging for solutions to — backed by real conversations, real pain,
-                            and real market signals.
+                            90% of startups fail because they solve problems nobody has. Beseekr scans thousands of
+                            Reddit threads, Hacker News posts, and online communities to find{" "}
+                            <span className="text-foreground font-medium">real problems</span> people are
+                            desperate to pay for — so you build with confidence, not hope.
                         </motion.p>
 
                         <motion.div variants={fadeInUp} className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -106,7 +108,7 @@ export default function About() {
                 </div>
             </section>
 
-            {/* What is Beseekr Section */}
+            {/* What We Do - With Reddit Analysis Screenshot */}
             <section className="py-20 lg:py-28 border-t border-border/30">
                 <div className="container px-4 md:px-6 max-w-6xl mx-auto">
                     <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
@@ -117,23 +119,25 @@ export default function About() {
                             transition={{ duration: 0.6 }}
                         >
                             <h2 className="text-3xl sm:text-4xl font-bold mb-6">
-                                What is <span className="text-primary">Beseekr</span>?
+                                We Mine <span className="text-primary">Real Conversations</span> for Business Opportunities
                             </h2>
                             <p className="text-lg text-muted-foreground mb-6 leading-relaxed">
-                                Beseekr is an AI-powered problem discovery and validation platform that mines Reddit,
-                                Hacker News, and online communities to uncover genuine business problems that people
-                                are actively discussing — and desperately want solved.
+                                Every day, thousands of people vent their frustrations on Reddit.{" "}
+                                <span className="text-foreground">"I wish there was an app that..."</span>{" "}
+                                <span className="text-foreground">"Why doesn't anyone build..."</span>{" "}
+                                <span className="text-foreground">"I'd pay good money for..."</span>
                             </p>
-                            <p className="text-lg font-medium text-foreground mb-8">
-                                We don't deal in assumptions. We deal in evidence.
+                            <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
+                                Our AI reads these conversations, identifies genuine B2B pain points, filters out noise,
+                                and surfaces only the problems with real market potential.
                             </p>
 
                             <div className="grid sm:grid-cols-2 gap-4">
                                 {[
-                                    { icon: BarChart3, text: "Validated demand signals", desc: "Real engagement metrics" },
-                                    { icon: Target, text: "Target audience profiles", desc: "Know who's willing to pay" },
-                                    { icon: TrendingUp, text: "Market intelligence", desc: "TAM and competitor data" },
-                                    { icon: LineChart, text: "Trend tracking", desc: "Real-time momentum data" },
+                                    { icon: MessageSquare, text: "50+ communities scanned", desc: "Reddit, HN, forums" },
+                                    { icon: BrainCircuit, text: "GPT-4o analysis", desc: "Context-aware filtering" },
+                                    { icon: Target, text: "B2B focus only", desc: "No consumer noise" },
+                                    { icon: Zap, text: "Daily updates", desc: "Fresh problems daily" },
                                 ].map((item, i) => (
                                     <div
                                         key={i}
@@ -158,77 +162,160 @@ export default function About() {
                             transition={{ duration: 0.6, delay: 0.2 }}
                             className="relative"
                         >
-                            <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 to-cyan-500/20 blur-3xl rounded-full opacity-30" />
-                            <div className="relative rounded-2xl overflow-hidden border border-border/30 shadow-2xl">
+                            <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 to-cyan-500/20 blur-3xl rounded-3xl opacity-30" />
+                            <div className="relative rounded-2xl overflow-hidden border border-border/50 shadow-2xl">
                                 <img
-                                    src="/images/about-hero.png"
-                                    alt="AI-powered problem discovery visualization"
+                                    src="/images/reddit-analysis.png"
+                                    alt="AI analyzing Reddit posts to find business problems"
                                     className="w-full h-auto"
                                 />
+                            </div>
+                            <p className="text-xs text-muted-foreground text-center mt-3">
+                                AI identifies pain points from real user discussions
+                            </p>
+                        </motion.div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Problem Cards Section */}
+            <section className="py-20 lg:py-28 bg-muted/20 border-y border-border/30">
+                <div className="container px-4 md:px-6 max-w-6xl mx-auto">
+                    <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+                        <motion.div
+                            initial={{ opacity: 0, x: -30 }}
+                            whileInView={{ opacity: 1, x: 0 }}
+                            viewport={{ once: true }}
+                            className="order-2 lg:order-1"
+                        >
+                            <div className="relative rounded-2xl overflow-hidden border border-border/50 shadow-2xl">
+                                <img
+                                    src="/images/problem-cards.png"
+                                    alt="Dashboard showing validated problem opportunities"
+                                    className="w-full h-auto"
+                                />
+                            </div>
+                            <p className="text-xs text-muted-foreground text-center mt-3">
+                                Each problem comes with scores, audiences, and market data
+                            </p>
+                        </motion.div>
+
+                        <motion.div
+                            initial={{ opacity: 0, x: 30 }}
+                            whileInView={{ opacity: 1, x: 0 }}
+                            viewport={{ once: true }}
+                            className="order-1 lg:order-2"
+                        >
+                            <h2 className="text-3xl sm:text-4xl font-bold mb-6">
+                                Every Problem is <span className="text-primary">Pre-Validated</span>
+                            </h2>
+                            <p className="text-lg text-muted-foreground mb-6 leading-relaxed">
+                                No more guessing if an idea has legs. Every problem on Beseekr comes with data:
+                            </p>
+
+                            <div className="space-y-4">
+                                {[
+                                    {
+                                        icon: BarChart3,
+                                        title: "Opportunity Score (0-100)",
+                                        desc: "Our AI rates each problem based on demand, competition, and monetization potential.",
+                                    },
+                                    {
+                                        icon: Users,
+                                        title: "Target Audience Profile",
+                                        desc: "Who's struggling with this? What's their role, company size, and industry?",
+                                    },
+                                    {
+                                        icon: TrendingUp,
+                                        title: "Market Signals",
+                                        desc: "TAM estimates, pricing indicators, and willingness-to-pay signals from real discussions.",
+                                    },
+                                    {
+                                        icon: LineChart,
+                                        title: "Trend Momentum",
+                                        desc: "Is this problem growing? Track engagement over time to spot rising opportunities.",
+                                    },
+                                ].map((item, i) => (
+                                    <div key={i} className="flex items-start gap-4 p-4 rounded-xl bg-background border border-border/30">
+                                        <div className="p-2 rounded-lg bg-primary/10 shrink-0">
+                                            <item.icon className="h-5 w-5 text-primary" />
+                                        </div>
+                                        <div>
+                                            <p className="font-semibold mb-1">{item.title}</p>
+                                            <p className="text-sm text-muted-foreground">{item.desc}</p>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         </motion.div>
                     </div>
                 </div>
             </section>
 
-            {/* The Problem We Solve */}
-            <section className="py-20 lg:py-28 bg-muted/20 border-y border-border/30">
-                <div className="container px-4 md:px-6 max-w-4xl mx-auto text-center">
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                    >
-                        <h2 className="text-3xl sm:text-4xl font-bold mb-6">The Problem We Solve</h2>
-                        <p className="text-xl text-muted-foreground mb-8">
-                            Building products in the dark is expensive.
-                        </p>
-                    </motion.div>
+            {/* Deep Research Section */}
+            <section className="py-20 lg:py-28">
+                <div className="container px-4 md:px-6 max-w-6xl mx-auto">
+                    <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+                        <motion.div
+                            initial={{ opacity: 0, x: -30 }}
+                            whileInView={{ opacity: 1, x: 0 }}
+                            viewport={{ once: true }}
+                        >
+                            <h2 className="text-3xl sm:text-4xl font-bold mb-6">
+                                Go Deep with <span className="text-primary">AI Research Reports</span>
+                            </h2>
+                            <p className="text-lg text-muted-foreground mb-6 leading-relaxed">
+                                Found a promising problem? Run Deep Research to get a comprehensive analysis that would
+                                take a consultant weeks to produce:
+                            </p>
 
-                    <motion.div
-                        initial="hidden"
-                        whileInView="visible"
-                        viewport={{ once: true }}
-                        variants={staggerContainer}
-                        className="grid sm:grid-cols-3 gap-6 mb-12"
-                    >
-                        {[
-                            { icon: XCircle, text: "Don't exist at scale", color: "text-red-400" },
-                            { icon: Shield, text: "Have dominant competitors", color: "text-orange-400" },
-                            { icon: DollarSign, text: "Target audiences won't pay", color: "text-yellow-400" },
-                        ].map((item, i) => (
-                            <motion.div
-                                key={i}
-                                variants={fadeInUp}
-                                className="p-6 rounded-xl bg-background border border-border/30"
-                            >
-                                <item.icon className={`h-8 w-8 mx-auto mb-3 ${item.color}`} />
-                                <p className="text-muted-foreground">{item.text}</p>
-                            </motion.div>
-                        ))}
-                    </motion.div>
+                            <div className="space-y-3 mb-8">
+                                {[
+                                    "Executive summary with clear build/skip recommendation",
+                                    "Detailed market analysis with TAM breakdown",
+                                    "Competitor landscape and positioning gaps",
+                                    "Risk assessment and entry barriers",
+                                    "Go-to-market strategy suggestions",
+                                    "Confidence scores backed by data sources",
+                                ].map((item, i) => (
+                                    <div key={i} className="flex items-center gap-3">
+                                        <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0" />
+                                        <span className="text-muted-foreground">{item}</span>
+                                    </div>
+                                ))}
+                            </div>
 
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ delay: 0.3 }}
-                        className="p-8 rounded-2xl bg-gradient-to-br from-primary/5 to-cyan-500/5 border border-primary/20"
-                    >
-                        <p className="text-lg text-muted-foreground mb-4">
-                            The result? <span className="text-foreground font-semibold">90% of startups fail.</span>{" "}
-                            Most of them had great ideas — just not the right problems.
-                        </p>
-                        <p className="text-xl font-semibold text-foreground">
-                            What if you could see the problems people are already screaming about?
-                        </p>
-                        <p className="text-primary font-medium mt-2">That's what Beseekr does.</p>
-                    </motion.div>
+                            <p className="text-sm text-muted-foreground bg-primary/5 p-4 rounded-xl border border-primary/20">
+                                <strong className="text-foreground">No more surveys. No more guessing.</strong>{" "}
+                                Just evidence-backed insights from real market data.
+                            </p>
+                        </motion.div>
+
+                        <motion.div
+                            initial={{ opacity: 0, x: 30 }}
+                            whileInView={{ opacity: 1, x: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ delay: 0.2 }}
+                            className="relative"
+                        >
+                            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 blur-3xl rounded-3xl opacity-30" />
+                            <div className="relative rounded-2xl overflow-hidden border border-border/50 shadow-2xl">
+                                <img
+                                    src="/images/research-report.png"
+                                    alt="AI-generated research report with market analysis"
+                                    className="w-full h-auto"
+                                />
+                            </div>
+                            <p className="text-xs text-muted-foreground text-center mt-3">
+                                Comprehensive research reports generated in minutes
+                            </p>
+                        </motion.div>
+                    </div>
                 </div>
             </section>
 
             {/* How It Works */}
-            <section className="py-20 lg:py-28">
+            <section className="py-20 lg:py-28 bg-muted/20 border-y border-border/30">
                 <div className="container px-4 md:px-6 max-w-6xl mx-auto">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
@@ -247,33 +334,29 @@ export default function About() {
                             {
                                 step: "01",
                                 icon: Search,
-                                title: "Discovery",
-                                subtitle: "AI Hunts 24/7",
-                                desc: "Our AI continuously scans 50+ subreddits and communities, extracting genuine B2B pain points. We use GPT-4o to analyze context and filter noise.",
+                                title: "Discover",
+                                desc: "AI scans 50+ subreddits and communities 24/7, extracting genuine B2B pain points using GPT-4o analysis.",
                                 color: "from-blue-500 to-cyan-500",
                             },
                             {
                                 step: "02",
-                                icon: BrainCircuit,
-                                title: "Enrichment",
-                                subtitle: "Market Intelligence",
-                                desc: "Every problem gets enriched with target audience analysis, competitor mapping, TAM estimates, pricing signals, and our proprietary opportunity score.",
+                                icon: BarChart3,
+                                title: "Enrich",
+                                desc: "Every problem gets scored on opportunity potential and enriched with audience, market size, and competitor data.",
                                 color: "from-purple-500 to-pink-500",
                             },
                             {
                                 step: "03",
-                                icon: Shield,
-                                title: "Validation",
-                                subtitle: "Deep Research",
-                                desc: "Run Deep AI Research for comprehensive reports with executive summaries, market analysis, competitive landscape, and data-backed recommendations.",
+                                icon: FileText,
+                                title: "Validate",
+                                desc: "Run Deep Research for comprehensive reports with executive summaries, market analysis, and recommendations.",
                                 color: "from-emerald-500 to-teal-500",
                             },
                             {
                                 step: "04",
-                                icon: Bell,
-                                title: "Tracking",
-                                subtitle: "Watch Markets Evolve",
-                                desc: "Add problems to your Watchlist and get alerts when new pain points emerge, competitor activity changes, or engagement spikes.",
+                                icon: Eye,
+                                title: "Track",
+                                desc: "Add problems to your Watchlist and get alerts when new pain points or competitor activity emerges.",
                                 color: "from-orange-500 to-amber-500",
                             },
                         ].map((item, i) => (
@@ -293,83 +376,10 @@ export default function About() {
                                 <div className={`inline-flex p-3 rounded-xl bg-gradient-to-br ${item.color} mb-4`}>
                                     <item.icon className="h-6 w-6 text-white" />
                                 </div>
-                                <h3 className="text-lg font-bold mb-1">{item.title}</h3>
-                                <p className="text-sm text-primary mb-3">{item.subtitle}</p>
+                                <h3 className="text-lg font-bold mb-2">{item.title}</h3>
                                 <p className="text-sm text-muted-foreground leading-relaxed">{item.desc}</p>
                             </motion.div>
                         ))}
-                    </div>
-
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        className="mt-16 rounded-2xl overflow-hidden border border-border/30 shadow-xl"
-                    >
-                        <img
-                            src="/images/discovery-pipeline.png"
-                            alt="AI Discovery Pipeline"
-                            className="w-full h-auto"
-                        />
-                    </motion.div>
-                </div>
-            </section>
-
-            {/* Validation Process */}
-            <section className="py-20 lg:py-28 bg-muted/20 border-y border-border/30">
-                <div className="container px-4 md:px-6 max-w-6xl mx-auto">
-                    <div className="grid lg:grid-cols-2 gap-12 items-center">
-                        <motion.div
-                            initial={{ opacity: 0, x: -30 }}
-                            whileInView={{ opacity: 1, x: 0 }}
-                            viewport={{ once: true }}
-                            className="order-2 lg:order-1"
-                        >
-                            <div className="rounded-2xl overflow-hidden border border-border/30 shadow-xl">
-                                <img
-                                    src="/images/validation-chart.png"
-                                    alt="Validation Dashboard"
-                                    className="w-full h-auto"
-                                />
-                            </div>
-                        </motion.div>
-
-                        <motion.div
-                            initial={{ opacity: 0, x: 30 }}
-                            whileInView={{ opacity: 1, x: 0 }}
-                            viewport={{ once: true }}
-                            className="order-1 lg:order-2"
-                        >
-                            <h2 className="text-3xl sm:text-4xl font-bold mb-6">How We Validate Problems</h2>
-                            <p className="text-lg text-muted-foreground mb-8">
-                                Not everything that gets complained about is a business opportunity. Every problem
-                                goes through rigorous AI-powered validation.
-                            </p>
-
-                            <div className="space-y-4">
-                                {[
-                                    { label: "Business Relevance", desc: "Is this a B2B/SaaS problem with revenue potential?" },
-                                    { label: "Specificity", desc: "Is it a clear, actionable pain point?" },
-                                    { label: "Frequency", desc: "How often is this mentioned across sources?" },
-                                    { label: "Urgency Signals", desc: "Are users actively seeking solutions?" },
-                                    { label: "Willingness to Pay", desc: "Any pricing discussions or budget mentions?" },
-                                    { label: "Quality Score", desc: "Our 0-100 proprietary score combining all signals" },
-                                ].map((item, i) => (
-                                    <div key={i} className="flex items-start gap-3">
-                                        <CheckCircle2 className="h-5 w-5 text-emerald-500 mt-0.5 shrink-0" />
-                                        <div>
-                                            <span className="font-medium">{item.label}</span>
-                                            <span className="text-muted-foreground"> — {item.desc}</span>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-
-                            <p className="mt-6 text-sm text-muted-foreground bg-muted/50 p-4 rounded-xl border border-border/30">
-                                Problems with quality scores under 50 never make it to your dashboard. Only
-                                validated, actionable opportunities.
-                            </p>
-                        </motion.div>
                     </div>
                 </div>
             </section>
@@ -383,8 +393,8 @@ export default function About() {
                         viewport={{ once: true }}
                         className="text-center mb-16"
                     >
-                        <h2 className="text-3xl sm:text-4xl font-bold mb-4">Who Is Beseekr For?</h2>
-                        <p className="text-lg text-muted-foreground">Built for builders who want to win.</p>
+                        <h2 className="text-3xl sm:text-4xl font-bold mb-4">Built For Builders</h2>
+                        <p className="text-lg text-muted-foreground">Who wins with validated problem discovery?</p>
                     </motion.div>
 
                     <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -392,32 +402,32 @@ export default function About() {
                             {
                                 icon: Rocket,
                                 title: "Indie Hackers",
-                                desc: "Find validated micro-SaaS ideas without spending months lurking in forums.",
+                                desc: "Find micro-SaaS ideas in hours instead of spending months lurking in subreddits.",
                             },
                             {
                                 icon: Briefcase,
                                 title: "Founders",
-                                desc: "De-risk your next venture with real market signals before writing code.",
+                                desc: "De-risk your next venture. Validate market demand before writing a single line of code.",
                             },
                             {
                                 icon: Users,
-                                title: "Product Managers",
-                                desc: "Discover adjacent opportunities and unmet needs in your space.",
+                                title: "Product Teams",
+                                desc: "Discover adjacent opportunities and unmet needs your competitors are missing.",
                             },
                             {
                                 icon: TrendingUp,
                                 title: "VCs & Investors",
-                                desc: "Track emerging problems and spot trends before they hit mainstream.",
+                                desc: "Track emerging problems and spot investable trends before they go mainstream.",
                             },
                             {
                                 icon: Building2,
                                 title: "Agencies",
-                                desc: "Find problems your clients' customers have — and pitch better solutions.",
+                                desc: "Find problems your clients' customers have — and pitch solutions they'll pay for.",
                             },
                             {
                                 icon: Globe,
-                                title: "Researchers",
-                                desc: "Access curated market intelligence without expensive research subscriptions.",
+                                title: "Market Researchers",
+                                desc: "Get curated market intelligence without $5k+ research subscriptions.",
                             },
                         ].map((item, i) => (
                             <motion.div
@@ -426,7 +436,7 @@ export default function About() {
                                 whileInView={{ opacity: 1, y: 0 }}
                                 viewport={{ once: true }}
                                 transition={{ delay: i * 0.05 }}
-                                className="p-6 rounded-2xl bg-background border border-border/30 hover:border-primary/30 transition-colors"
+                                className="p-6 rounded-2xl bg-muted/30 border border-border/30 hover:border-primary/30 transition-colors"
                             >
                                 <div className="p-3 rounded-xl bg-primary/10 w-fit mb-4">
                                     <item.icon className="h-6 w-6 text-primary" />
@@ -439,7 +449,7 @@ export default function About() {
                 </div>
             </section>
 
-            {/* Comparison Section */}
+            {/* The Old Way vs Beseekr */}
             <section className="py-20 lg:py-28 bg-muted/20 border-y border-border/30">
                 <div className="container px-4 md:px-6 max-w-4xl mx-auto">
                     <motion.div
@@ -448,39 +458,42 @@ export default function About() {
                         viewport={{ once: true }}
                         className="text-center mb-12"
                     >
-                        <h2 className="text-3xl sm:text-4xl font-bold mb-4">Why Beseekr?</h2>
-                        <p className="text-lg text-muted-foreground">The smarter way to find what to build.</p>
+                        <h2 className="text-3xl sm:text-4xl font-bold mb-4">The Smarter Way to Find What to Build</h2>
                     </motion.div>
 
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
-                        className="overflow-hidden rounded-2xl border border-border/30"
+                        className="overflow-hidden rounded-2xl border border-border/30 bg-background"
                     >
-                        <table className="w-full">
-                            <thead>
-                                <tr className="bg-muted/50">
-                                    <th className="text-left p-4 font-semibold">The Old Way</th>
-                                    <th className="text-left p-4 font-semibold text-primary">The Beseekr Way</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-border/30">
-                                {[
-                                    ["Spend weeks reading Reddit threads", "Get curated problems in seconds"],
-                                    ["Guess at market size", "AI-powered TAM estimates with sources"],
-                                    ["Build first, validate later", "Validate first, build with confidence"],
-                                    ["Miss emerging trends", "Track problems 24/7 with watchlist alerts"],
-                                    ["Pay $5k+ for market research", "Comprehensive analysis for a fraction"],
-                                    ["Survey bias and small samples", "Real conversations from real users"],
-                                ].map(([old, newWay], i) => (
-                                    <tr key={i} className="bg-background">
-                                        <td className="p-4 text-muted-foreground text-sm">{old}</td>
-                                        <td className="p-4 text-sm font-medium">{newWay}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                        <div className="grid grid-cols-2">
+                            <div className="p-4 bg-muted/50 font-semibold text-muted-foreground border-b border-r border-border/30">
+                                The Old Way
+                            </div>
+                            <div className="p-4 bg-primary/5 font-semibold text-primary border-b border-border/30">
+                                With Beseekr
+                            </div>
+                        </div>
+                        {[
+                            ["Spend weeks reading Reddit threads", "Curated problems in seconds"],
+                            ["Guess at market size", "AI-powered TAM estimates with sources"],
+                            ["Build first, validate later", "Validate first, build with confidence"],
+                            ["Miss emerging trends", "24/7 watchlist alerts on new pain points"],
+                            ["Pay $5k+ for market research", "Comprehensive analysis at a fraction"],
+                            ["Survey bias, small samples", "Real conversations from thousands of users"],
+                        ].map(([old, newWay], i) => (
+                            <div key={i} className="grid grid-cols-2">
+                                <div className="p-4 text-sm text-muted-foreground border-b border-r border-border/30 flex items-center gap-2">
+                                    <XCircle className="h-4 w-4 text-red-400 shrink-0" />
+                                    {old}
+                                </div>
+                                <div className="p-4 text-sm font-medium border-b border-border/30 flex items-center gap-2">
+                                    <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                                    {newWay}
+                                </div>
+                            </div>
+                        ))}
                     </motion.div>
                 </div>
             </section>
@@ -502,8 +515,8 @@ export default function About() {
                             Ready to Build What People Actually Want?
                         </h2>
                         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                            Stop wasting time on ideas nobody needs. Start with validated problems backed by real
-                            conversations from real users.
+                            Stop wasting months on ideas nobody needs. Start with problems people are already
+                            desperate to solve — and willing to pay for.
                         </p>
                         <div className="flex flex-col sm:flex-row gap-4 justify-center">
                             <Link to="/auth">
