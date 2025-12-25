@@ -27,6 +27,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { motion, AnimatePresence } from 'framer-motion';
+import { TrialWelcomeBanner } from '@/components/TrialWelcomeBanner';
 
 const baseNavigation = [
     { name: 'Discover', href: 'problems', icon: Compass, color: 'from-violet-500 to-purple-600' },
@@ -269,6 +270,10 @@ export function SaasDashboardLayout() {
                     transition={{ duration: 0.4, ease: 'easeOut' }}
                     className="mx-auto max-w-6xl"
                 >
+                    {/* Trial Welcome Banner */}
+                    {user?.trial?.active && (
+                        <TrialWelcomeBanner daysRemaining={user.trial.days_remaining} />
+                    )}
                     <Outlet />
                 </motion.div>
             </main>

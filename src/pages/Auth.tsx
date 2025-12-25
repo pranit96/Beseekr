@@ -673,9 +673,17 @@ const Auth = () => {
                       Fastest
                     </span>
                   </div>
-                  <p className="text-center text-xs text-muted-foreground -mt-2">
-                    No email verification needed - instant access!
-                  </p>
+
+                  {/* Trial highlight */}
+                  <div className="p-3 rounded-xl bg-gradient-to-r from-violet-500/10 via-purple-500/10 to-fuchsia-500/10 border border-violet-500/20">
+                    <div className="flex items-center gap-2 text-center justify-center">
+                      <span className="text-lg">🎉</span>
+                      <span className="text-sm font-medium text-foreground">7 Days of Pro Access Free!</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground text-center mt-1">
+                      No credit card required
+                    </p>
+                  </div>
 
                   {/* Divider */}
                   <div className="relative my-6">
