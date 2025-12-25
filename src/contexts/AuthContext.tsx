@@ -13,6 +13,12 @@ interface User {
   email: string;
   full_name?: string;
   name?: string; // Google OAuth returns name instead of full_name
+  tier?: string;
+  trial?: {
+    active: boolean;
+    ends_at: string;
+    days_remaining: number;
+  };
 }
 
 interface AuthContextType {

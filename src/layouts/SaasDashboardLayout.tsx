@@ -16,6 +16,7 @@ import {
     Settings,
     Zap,
     CreditCard,
+    Clock,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -167,6 +168,20 @@ export function SaasDashboardLayout() {
 
                         {/* Right Controls */}
                         <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+                            {/* Trial Badge */}
+                            {user?.trial?.active && (
+                                <motion.div
+                                    initial={{ opacity: 0, scale: 0.8 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    whileHover={{ scale: 1.05 }}
+                                    className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/30"
+                                >
+                                    <Clock className="h-3.5 w-3.5 text-amber-500" />
+                                    <span className="text-xs font-medium text-amber-600 dark:text-amber-400">
+                                        {user.trial.days_remaining} {user.trial.days_remaining === 1 ? 'day' : 'days'} left
+                                    </span>
+                                </motion.div>
+                            )}
                             {/* Theme Toggle */}
                             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                                 <Button
@@ -204,6 +219,14 @@ export function SaasDashboardLayout() {
                                         <div className="px-3 py-3">
                                             <p className="font-medium">{user.full_name || user.name || 'User'}</p>
                                             <p className="text-xs text-muted-foreground">{user.email}</p>
+                                            {user.trial?.active && (
+                                                <div className="flex items-center gap-1.5 mt-2 px-2 py-1 rounded-md bg-amber-500/10 border border-amber-500/20 w-fit">
+                                                    <Clock className="h-3 w-3 text-amber-500" />
+                                                    <span className="text-xs font-medium text-amber-600 dark:text-amber-400">
+                                                        Trial: {user.trial.days_remaining} {user.trial.days_remaining === 1 ? 'day' : 'days'} left
+                                                    </span>
+                                                </div>
+                                            )}
                                         </div>
                                         <DropdownMenuSeparator />
                                         <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
