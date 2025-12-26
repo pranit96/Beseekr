@@ -1389,9 +1389,9 @@ export function ProblemsList() {
                     </DialogHeader>
 
                     {/* Trial Highlight */}
-                    <div className="p-4 rounded-xl bg-gradient-to-r from-violet-500/10 via-purple-500/10 to-fuchsia-500/10 border border-violet-500/20">
+                    <div className="p-4 rounded-xl bg-primary/5 border border-primary/20">
                         <div className="flex items-center gap-3">
-                            <div className="shrink-0 w-10 h-10 rounded-lg bg-violet-500/20 flex items-center justify-center">
+                            <div className="shrink-0 w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
                                 <span className="text-xl">🎉</span>
                             </div>
                             <div>
@@ -1404,7 +1404,7 @@ export function ProblemsList() {
                     <div className="space-y-3">
                         <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/50">
                             <div className="shrink-0 w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
-                                <Crown className="h-4 w-4 text-amber-500" />
+                                <Crown className="h-4 w-4 text-primary" />
                             </div>
                             <span className="text-sm leading-tight">Access all premium problems and deep research</span>
                         </div>
@@ -1428,9 +1428,9 @@ export function ProblemsList() {
                                 setShowLoginModal(false);
                                 navigate('/auth');
                             }}
-                            className="w-full h-12 bg-gradient-to-r from-violet-600 to-fuchsia-600 text-base font-semibold touch-manipulation active:scale-95"
+                            className="w-full h-12 bg-primary hover:bg-primary/90 text-base font-semibold touch-manipulation active:scale-95"
                         >
-                            🚀 Start Free Trial
+                            Start Free Trial
                         </Button>
                         <p className="text-center text-xs text-muted-foreground">
                             No credit card required • Cancel anytime

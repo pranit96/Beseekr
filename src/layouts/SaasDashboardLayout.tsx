@@ -175,10 +175,10 @@ export function SaasDashboardLayout() {
                                     initial={{ opacity: 0, scale: 0.8 }}
                                     animate={{ opacity: 1, scale: 1 }}
                                     whileHover={{ scale: 1.05 }}
-                                    className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/30"
+                                    className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20"
                                 >
-                                    <Clock className="h-3.5 w-3.5 text-amber-500" />
-                                    <span className="text-xs font-medium text-amber-600 dark:text-amber-400">
+                                    <Clock className="h-3.5 w-3.5 text-primary" />
+                                    <span className="text-xs font-medium text-primary">
                                         {user.trial.days_remaining} {user.trial.days_remaining === 1 ? 'day' : 'days'} left
                                     </span>
                                 </motion.div>
@@ -221,9 +221,9 @@ export function SaasDashboardLayout() {
                                             <p className="font-medium">{user.full_name || user.name || 'User'}</p>
                                             <p className="text-xs text-muted-foreground">{user.email}</p>
                                             {user.trial?.active && (
-                                                <div className="flex items-center gap-1.5 mt-2 px-2 py-1 rounded-md bg-amber-500/10 border border-amber-500/20 w-fit">
-                                                    <Clock className="h-3 w-3 text-amber-500" />
-                                                    <span className="text-xs font-medium text-amber-600 dark:text-amber-400">
+                                                <div className="flex items-center gap-1.5 mt-2 px-2 py-1 rounded-md bg-primary/10 border border-primary/20 w-fit">
+                                                    <Clock className="h-3 w-3 text-primary" />
+                                                    <span className="text-xs font-medium text-primary">
                                                         Trial: {user.trial.days_remaining} {user.trial.days_remaining === 1 ? 'day' : 'days'} left
                                                     </span>
                                                 </div>

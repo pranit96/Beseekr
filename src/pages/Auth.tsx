@@ -675,7 +675,7 @@ const Auth = () => {
                   </div>
 
                   {/* Trial highlight */}
-                  <div className="p-3 rounded-xl bg-gradient-to-r from-violet-500/10 via-purple-500/10 to-fuchsia-500/10 border border-violet-500/20">
+                  <div className="p-3 rounded-xl bg-primary/5 border border-primary/20">
                     <div className="flex items-center gap-2 text-center justify-center">
                       <span className="text-lg">🎉</span>
                       <span className="text-sm font-medium text-foreground">7 Days of Pro Access Free!</span>
