@@ -478,6 +478,7 @@ export async function getPremiumProblems(
     limit: number = 20
 ): Promise<{
     preview?: any;
+    previews?: any[];
     problems?: any[];
     available_count?: number;
     unlocked_count?: number;

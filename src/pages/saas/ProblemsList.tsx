@@ -912,9 +912,13 @@ export function ProblemsList() {
                                     </div>
                                     {(() => {
                                         // Get the first premium problem from preview data
-                                        const previewProblem = premiumPreviewData?.problems?.[0];
+                                        // Handle both: previews array with nested problem OR problems array
+                                        const firstItem = premiumPreviewData?.previews?.[0] || premiumPreviewData?.problems?.[0];
 
-                                        if (previewProblem) {
+                                        if (firstItem) {
+                                            const previewProblem = firstItem.problem || firstItem;
+                                            const score = firstItem.opportunity_score || firstItem.score || previewProblem?.opportunity_score || '85+';
+
                                             return (
                                                 <div
                                                     className="p-4 rounded-xl bg-background/50 border border-primary/10 cursor-pointer hover:border-primary/30 transition-all"
@@ -922,13 +926,13 @@ export function ProblemsList() {
                                                 >
                                                     <div className="flex items-start justify-between gap-4">
                                                         <div className="flex-1">
-                                                            <h4 className="font-semibold line-clamp-1">{previewProblem.title}</h4>
+                                                            <h4 className="font-semibold line-clamp-1">{previewProblem?.title || 'Premium Problem'}</h4>
                                                             <p className="text-sm text-muted-foreground line-clamp-1 mt-1">
-                                                                {previewProblem.description || previewProblem.summary}
+                                                                {previewProblem?.description || previewProblem?.summary || ''}
                                                             </p>
                                                         </div>
                                                         <div className="shrink-0 px-3 py-1 rounded-full bg-primary text-primary-foreground text-sm font-bold">
-                                                            {previewProblem.score || previewProblem.opportunity_score || '85+'}
+                                                            {score}
                                                         </div>
                                                     </div>
                                                 </div>
@@ -1065,68 +1069,77 @@ export function ProblemsList() {
                                         <ProblemSkeleton key={i} />
                                     ))}
                                 </div>
-                            ) : premiumData?.problems?.length > 0 ? (
+                            ) : (premiumData?.previews?.length > 0 || premiumData?.problems?.length > 0) ? (
                                 // Show premium problems with unlocked/locked status
                                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                                    {premiumData.problems.map((item: any, index: number) => (
-                                        <motion.div
-                                            key={item.id || index}
-                                            initial={{ opacity: 0, y: 20 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            transition={{ duration: 0.3, delay: index * 0.05 }}
-                                            onClick={promptLogin}
-                                            className={cn(
-                                                "group relative cursor-pointer p-5 sm:p-6 rounded-2xl border transition-all",
-                                                item.unlocked
-                                                    ? "bg-gradient-to-br from-primary/5 to-accent/5 border-primary/20 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/10"
-                                                    : "bg-muted/30 border-border/50 hover:border-border"
-                                            )}
-                                        >
-                                            {/* Score badge */}
-                                            <div className={cn(
-                                                "absolute -top-2 -right-2 px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1",
-                                                item.unlocked
-                                                    ? "bg-primary text-primary-foreground"
-                                                    : "bg-muted text-muted-foreground"
-                                            )}>
-                                                <Crown className="h-3 w-3" />
-                                                {item.score || item.opportunity_score || '85+'}
-                                            </div>
+                                    {(premiumData.previews || premiumData.problems).map((item: any, index: number) => {
+                                        // Handle both structures: direct properties or nested problem object
+                                        const problemData = item.problem || item;
+                                        const title = problemData.title || item.title;
+                                        const description = problemData.description || item.description;
+                                        const score = item.opportunity_score || item.score || problemData.opportunity_score || '85+';
+                                        const isUnlocked = item.unlocked === true;
 
-                                            <h4 className={cn(
-                                                "font-semibold text-base sm:text-lg mb-2 line-clamp-2 transition-colors",
-                                                item.unlocked ? "group-hover:text-primary" : "text-muted-foreground"
-                                            )}>
-                                                {item.title}
-                                            </h4>
-
-                                            {item.description && (
-                                                <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
-                                                    {item.description}
-                                                </p>
-                                            )}
-
-                                            <div className="flex items-center justify-between mt-auto pt-2">
-                                                {item.unlocked ? (
-                                                    <span className="flex items-center gap-1 text-primary text-sm font-medium">
-                                                        <CheckCircle2 className="h-4 w-4" />
-                                                        Free unlock
-                                                    </span>
-                                                ) : (
-                                                    <span className="flex items-center gap-1 text-muted-foreground text-sm">
-                                                        <Lock className="h-4 w-4" />
-                                                        Locked
-                                                    </span>
+                                        return (
+                                            <motion.div
+                                                key={item.id || problemData.id || index}
+                                                initial={{ opacity: 0, y: 20 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                transition={{ duration: 0.3, delay: index * 0.05 }}
+                                                onClick={promptLogin}
+                                                className={cn(
+                                                    "group relative cursor-pointer p-5 sm:p-6 rounded-2xl border transition-all",
+                                                    isUnlocked
+                                                        ? "bg-gradient-to-br from-primary/5 to-accent/5 border-primary/20 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/10"
+                                                        : "bg-muted/30 border-border/50 hover:border-border"
                                                 )}
-                                                <span className={cn(
-                                                    "text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity",
-                                                    item.unlocked ? "text-primary" : "text-muted-foreground"
+                                            >
+                                                {/* Score badge */}
+                                                <div className={cn(
+                                                    "absolute -top-2 -right-2 px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1",
+                                                    isUnlocked
+                                                        ? "bg-primary text-primary-foreground"
+                                                        : "bg-muted text-muted-foreground"
                                                 )}>
-                                                    Sign up to view
-                                                </span>
-                                            </div>
-                                        </motion.div>
-                                    ))}
+                                                    <Crown className="h-3 w-3" />
+                                                    {score}
+                                                </div>
+
+                                                <h4 className={cn(
+                                                    "font-semibold text-base sm:text-lg mb-2 line-clamp-2 transition-colors",
+                                                    isUnlocked ? "group-hover:text-primary" : "text-muted-foreground"
+                                                )}>
+                                                    {title}
+                                                </h4>
+
+                                                {description && (
+                                                    <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+                                                        {description}
+                                                    </p>
+                                                )}
+
+                                                <div className="flex items-center justify-between mt-auto pt-2">
+                                                    {isUnlocked ? (
+                                                        <span className="flex items-center gap-1 text-primary text-sm font-medium">
+                                                            <CheckCircle2 className="h-4 w-4" />
+                                                            Free unlock
+                                                        </span>
+                                                    ) : (
+                                                        <span className="flex items-center gap-1 text-muted-foreground text-sm">
+                                                            <Lock className="h-4 w-4" />
+                                                            Locked
+                                                        </span>
+                                                    )}
+                                                    <span className={cn(
+                                                        "text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity",
+                                                        isUnlocked ? "text-primary" : "text-muted-foreground"
+                                                    )}>
+                                                        Sign up to view
+                                                    </span>
+                                                </div>
+                                            </motion.div>
+                                        );
+                                    })}
                                 </div>
                             ) : null}
 
