@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -256,9 +256,15 @@ function ProblemCard({
 
 export function ProblemsList() {
     const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
     const queryClient = useQueryClient();
     const { user } = useAuth();
-    const [activeTab, setActiveTab] = useState<'free' | 'premium'>('free');
+
+    // Initialize tab from URL query param
+    const tabFromUrl = searchParams.get('tab');
+    const [activeTab, setActiveTab] = useState<'free' | 'premium'>(
+        tabFromUrl === 'premium' ? 'premium' : 'free'
+    );
     const [page, setPage] = useState(1);
     const [premiumPage, setPremiumPage] = useState(1);
     const [sortBy, setSortBy] = useState<SortOption>('hot');
@@ -268,6 +274,16 @@ export function ProblemsList() {
     const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
     const [isCreatingLink, setIsCreatingLink] = useState(false);
     const [showLoginModal, setShowLoginModal] = useState(false);
+
+    // Sync activeTab with URL when it changes
+    useEffect(() => {
+        const urlTab = searchParams.get('tab');
+        if (urlTab === 'premium' && activeTab !== 'premium') {
+            setActiveTab('premium');
+        } else if (urlTab !== 'premium' && activeTab !== 'free') {
+            setActiveTab('free');
+        }
+    }, [searchParams]);
 
     // Helper to prompt login instead of direct redirect
     const promptLogin = () => {
@@ -737,14 +753,14 @@ export function ProblemsList() {
                                     Showing {data.showing} of {data.total_available} problems
                                 </p>
                                 <p className="text-sm text-muted-foreground mt-1">
-                                    {data.upgrade_message || 'Sign up free to access all validated problems'}
+                                    Sign up to unlock all problems + <span className="font-medium text-primary">7 days of Pro access free</span>
                                 </p>
                             </div>
                             <Button
                                 onClick={promptLogin}
-                                className="shrink-0 rounded-xl bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity touch-manipulation active:scale-95"
+                                className="shrink-0 rounded-xl bg-primary hover:bg-primary/90 transition-opacity touch-manipulation active:scale-95"
                             >
-                                Sign Up Free
+                                Start Free Trial
                             </Button>
                         </div>
                     </div>
