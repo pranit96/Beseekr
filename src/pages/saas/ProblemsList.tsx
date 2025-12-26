@@ -1472,20 +1472,6 @@ export function ProblemsList() {
                                 </motion.div>
                             )}
 
-                            {premiumData?.preview && (
-                                <div>
-                                    <h4 className="text-lg font-semibold mb-4">Preview Problem</h4>
-                                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                        <ProblemCard
-                                            problem={premiumData.preview}
-                                            isWatching={false}
-                                            onWatchlistToggle={() => { }}
-                                            onRateToggle={handleRateToggle}
-                                            index={0}
-                                        />
-                                    </div>
-                                </div>
-                            )}
                         </div>
                     ) : (
                         // Premium tier - show all problems
