@@ -1075,6 +1075,7 @@ export function ProblemsList() {
                                     {(premiumData.previews || premiumData.problems).map((item: any, index: number) => {
                                         // Handle both structures: direct properties or nested problem object
                                         const problemData = item.problem || item;
+                                        const problemId = problemData.id || item.problem_id;
                                         const title = problemData.title || item.title;
                                         const description = problemData.description || item.description;
                                         const score = item.opportunity_score || item.score || problemData.opportunity_score || '85+';
@@ -1086,7 +1087,15 @@ export function ProblemsList() {
                                                 initial={{ opacity: 0, y: 20 }}
                                                 animate={{ opacity: 1, y: 0 }}
                                                 transition={{ duration: 0.3, delay: index * 0.05 }}
-                                                onClick={promptLogin}
+                                                onClick={() => {
+                                                    if (isUnlocked && problemId) {
+                                                        // Unlocked problem - navigate to details
+                                                        navigate(`/dashboard/problems/${problemId}`);
+                                                    } else {
+                                                        // Locked - prompt login
+                                                        promptLogin();
+                                                    }
+                                                }}
                                                 className={cn(
                                                     "group relative cursor-pointer p-5 sm:p-6 rounded-2xl border transition-all",
                                                     isUnlocked
@@ -1122,7 +1131,7 @@ export function ProblemsList() {
                                                     {isUnlocked ? (
                                                         <span className="flex items-center gap-1 text-primary text-sm font-medium">
                                                             <CheckCircle2 className="h-4 w-4" />
-                                                            Free unlock
+                                                            Free to view
                                                         </span>
                                                     ) : (
                                                         <span className="flex items-center gap-1 text-muted-foreground text-sm">
@@ -1134,7 +1143,7 @@ export function ProblemsList() {
                                                         "text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity",
                                                         isUnlocked ? "text-primary" : "text-muted-foreground"
                                                     )}>
-                                                        Sign up to view
+                                                        {isUnlocked ? 'View details →' : 'Sign up to unlock'}
                                                     </span>
                                                 </div>
                                             </motion.div>
