@@ -383,15 +383,6 @@ export function ProblemsList() {
         refetchOnWindowFocus: false,
     });
 
-    // Fetch premium preview for teaser on free tab (only for non-premium users)
-    const { data: premiumPreviewData } = useQuery({
-        queryKey: ['premium-preview'],
-        queryFn: () => problemsApi.getPremiumProblems(1, 1),
-        enabled: activeTab === 'free' && !isPremiumUser,
-        staleTime: 10 * 60 * 1000, // Cache for 10 minutes
-        gcTime: 30 * 60 * 1000,
-    });
-
     // Fetch subscription plans - always for logged-in users (to check premium status)
     const { data: plansData, isLoading: isLoadingPlans } = useQuery({
         queryKey: ['subscription-plans'],
@@ -400,8 +391,17 @@ export function ProblemsList() {
         staleTime: 5 * 60 * 1000, // Cache for 5 minutes
     });
 
-    // Check if user is premium (from plans API)
+    // Check if user is premium (from plans API) - must be defined before premiumPreviewData query
     const isPremiumUser = plansData?.user?.is_premium === true;
+
+    // Fetch premium preview for teaser on free tab (only for non-premium users)
+    const { data: premiumPreviewData } = useQuery({
+        queryKey: ['premium-preview'],
+        queryFn: () => problemsApi.getPremiumProblems(1, 1),
+        enabled: activeTab === 'free' && !isPremiumUser,
+        staleTime: 10 * 60 * 1000, // Cache for 10 minutes
+        gcTime: 30 * 60 * 1000,
+    });
 
     // Extract plans from response
     const plans = plansData?.plans;

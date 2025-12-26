@@ -480,6 +480,9 @@ export async function getPremiumProblems(
     preview?: any;
     problems?: any[];
     available_count?: number;
+    unlocked_count?: number;
+    showing?: number;
+    user_type?: 'guest' | 'free' | 'premium';
     upgrade_message?: string;
     is_premium: boolean;
     subscription?: any;
