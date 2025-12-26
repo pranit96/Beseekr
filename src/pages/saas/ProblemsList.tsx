@@ -383,6 +383,15 @@ export function ProblemsList() {
         refetchOnWindowFocus: false,
     });
 
+    // Fetch premium preview for teaser on free tab (only for non-premium users)
+    const { data: premiumPreviewData } = useQuery({
+        queryKey: ['premium-preview'],
+        queryFn: () => problemsApi.getPremiumProblems(1, 1),
+        enabled: activeTab === 'free' && !isPremiumUser,
+        staleTime: 10 * 60 * 1000, // Cache for 10 minutes
+        gcTime: 30 * 60 * 1000,
+    });
+
     // Fetch subscription plans - always for logged-in users (to check premium status)
     const { data: plansData, isLoading: isLoadingPlans } = useQuery({
         queryKey: ['subscription-plans'],
@@ -892,41 +901,70 @@ export function ProblemsList() {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.4 }}
-                            className="mt-8 p-6 rounded-2xl bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/10 border border-amber-500/20"
+                            className="mt-8 p-6 rounded-2xl bg-gradient-to-r from-primary/5 via-accent/5 to-primary/5 border border-primary/20"
                         >
                             <div className="flex flex-col lg:flex-row gap-6 items-center">
                                 {/* Premium Problem Preview */}
                                 <div className="flex-1 w-full">
                                     <div className="flex items-center gap-2 mb-3">
-                                        <Crown className="h-5 w-5 text-amber-500" />
-                                        <span className="text-sm font-medium text-amber-600">Featured Premium Problem</span>
+                                        <Crown className="h-5 w-5 text-primary" />
+                                        <span className="text-sm font-medium text-primary">Featured Premium Problem</span>
                                     </div>
-                                    {problems[0] && (
-                                        <div
-                                            className="p-4 rounded-xl bg-background/50 border border-amber-500/10 cursor-pointer hover:border-amber-500/30 transition-all"
-                                            onClick={() => user ? setActiveTab('premium') : promptLogin()}
-                                        >
-                                            <div className="flex items-start justify-between gap-4">
-                                                <div className="flex-1">
-                                                    <h4 className="font-semibold line-clamp-1">{problems[0].title}</h4>
-                                                    <p className="text-sm text-muted-foreground line-clamp-1 mt-1">{problems[0].summary}</p>
+                                    {(() => {
+                                        // Get the first premium problem from preview data
+                                        const previewProblem = premiumPreviewData?.problems?.[0];
+
+                                        if (previewProblem) {
+                                            return (
+                                                <div
+                                                    className="p-4 rounded-xl bg-background/50 border border-primary/10 cursor-pointer hover:border-primary/30 transition-all"
+                                                    onClick={() => user ? setActiveTab('premium') : promptLogin()}
+                                                >
+                                                    <div className="flex items-start justify-between gap-4">
+                                                        <div className="flex-1">
+                                                            <h4 className="font-semibold line-clamp-1">{previewProblem.title}</h4>
+                                                            <p className="text-sm text-muted-foreground line-clamp-1 mt-1">
+                                                                {previewProblem.description || previewProblem.summary}
+                                                            </p>
+                                                        </div>
+                                                        <div className="shrink-0 px-3 py-1 rounded-full bg-primary text-primary-foreground text-sm font-bold">
+                                                            {previewProblem.score || previewProblem.opportunity_score || '85+'}
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                                <div className="shrink-0 px-3 py-1 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white text-sm font-bold">
-                                                    85+
+                                            );
+                                        }
+
+                                        // Fallback placeholder if no premium data yet
+                                        return (
+                                            <div
+                                                className="p-4 rounded-xl bg-background/50 border border-primary/10 cursor-pointer hover:border-primary/30 transition-all"
+                                                onClick={() => user ? setActiveTab('premium') : promptLogin()}
+                                            >
+                                                <div className="flex items-start justify-between gap-4">
+                                                    <div className="flex-1">
+                                                        <h4 className="font-semibold line-clamp-1">High-Opportunity Business Problem</h4>
+                                                        <p className="text-sm text-muted-foreground line-clamp-1 mt-1">
+                                                            Discover validated problems with 85+ opportunity scores
+                                                        </p>
+                                                    </div>
+                                                    <div className="shrink-0 px-3 py-1 rounded-full bg-primary text-primary-foreground text-sm font-bold">
+                                                        85+
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    )}
+                                        );
+                                    })()}
                                 </div>
 
                                 {/* CTA */}
                                 <div className="text-center lg:text-right shrink-0">
                                     <p className="text-sm text-muted-foreground mb-3">
-                                        <span className="text-foreground font-semibold">20+</span> high-opportunity problems
+                                        <span className="text-foreground font-semibold">{premiumPreviewData?.available_count || premiumPreviewData?.total || '20'}+</span> high-opportunity problems
                                     </p>
                                     <Button
                                         onClick={() => user ? setActiveTab('premium') : promptLogin()}
-                                        className="rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:opacity-90"
+                                        className="rounded-xl bg-primary hover:bg-primary/90"
                                     >
                                         {user ? 'View Premium' : 'Get Premium Access'}
                                     </Button>
@@ -1006,17 +1044,17 @@ export function ProblemsList() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4 }}
                 >
-                    {/* Guest user - show actual premium API response */}
+                    {/* Guest user - show premium problems with unlock status */}
                     {!user ? (
                         <div className="space-y-6">
                             <div className="text-center">
-                                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-500/10 text-amber-600 mb-4">
+                                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary mb-4">
                                     <Crown className="h-4 w-4" />
                                     <span className="text-sm font-medium">Premium Preview</span>
                                 </div>
                                 <h3 className="text-xl font-bold mb-2">High-Opportunity Problems</h3>
                                 <p className="text-muted-foreground">
-                                    Sign up to unlock full access and detailed insights
+                                    {premiumData?.upgrade_message || `Sign up to unlock ${premiumData?.unlocked_count || 1} premium problem for free`}
                                 </p>
                             </div>
 
@@ -1027,90 +1065,84 @@ export function ProblemsList() {
                                         <ProblemSkeleton key={i} />
                                     ))}
                                 </div>
-                            ) : premiumData?.problems ? (
-                                // Show actual premium problems from API
-                                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            ) : premiumData?.problems?.length > 0 ? (
+                                // Show premium problems with unlocked/locked status
+                                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                                     {premiumData.problems.map((item: any, index: number) => (
                                         <motion.div
                                             key={item.id || index}
                                             initial={{ opacity: 0, y: 20 }}
                                             animate={{ opacity: 1, y: 0 }}
-                                            transition={{ duration: 0.3, delay: index * 0.1 }}
+                                            transition={{ duration: 0.3, delay: index * 0.05 }}
                                             onClick={promptLogin}
-                                            className="group relative cursor-pointer p-6 rounded-2xl bg-gradient-to-br from-amber-500/5 to-orange-500/5 border border-amber-500/20 hover:border-amber-500/40 transition-all hover:shadow-lg hover:shadow-amber-500/10"
+                                            className={cn(
+                                                "group relative cursor-pointer p-5 sm:p-6 rounded-2xl border transition-all",
+                                                item.unlocked
+                                                    ? "bg-gradient-to-br from-primary/5 to-accent/5 border-primary/20 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/10"
+                                                    : "bg-muted/30 border-border/50 hover:border-border"
+                                            )}
                                         >
-                                            {/* Premium badge with actual score */}
-                                            <div className="absolute -top-2 -right-2 px-2 py-1 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-medium flex items-center gap-1">
+                                            {/* Score badge */}
+                                            <div className={cn(
+                                                "absolute -top-2 -right-2 px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1",
+                                                item.unlocked
+                                                    ? "bg-primary text-primary-foreground"
+                                                    : "bg-muted text-muted-foreground"
+                                            )}>
                                                 <Crown className="h-3 w-3" />
-                                                {item.problem?.opportunity_score || item.brief?.opportunity_score || '85+'}
+                                                {item.score || item.opportunity_score || '85+'}
                                             </div>
 
-                                            <h4 className="font-semibold text-lg mb-2 line-clamp-2 group-hover:text-amber-600 transition-colors">
-                                                {item.problem?.title || item.brief?.title || 'Premium Problem'}
+                                            <h4 className={cn(
+                                                "font-semibold text-base sm:text-lg mb-2 line-clamp-2 transition-colors",
+                                                item.unlocked ? "group-hover:text-primary" : "text-muted-foreground"
+                                            )}>
+                                                {item.title}
                                             </h4>
-                                            <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
-                                                {item.problem?.description || item.brief?.problem_summary || ''}
-                                            </p>
 
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                                    <ThumbsUp className="h-4 w-4" />
-                                                    {item.problem?.upvotes || item.brief?.total_mentions || 0}
-                                                </div>
-                                                <div className="flex items-center gap-1 text-amber-600 text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    <Lock className="h-3 w-3" />
+                                            {item.description && (
+                                                <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+                                                    {item.description}
+                                                </p>
+                                            )}
+
+                                            <div className="flex items-center justify-between mt-auto pt-2">
+                                                {item.unlocked ? (
+                                                    <span className="flex items-center gap-1 text-primary text-sm font-medium">
+                                                        <CheckCircle2 className="h-4 w-4" />
+                                                        Free unlock
+                                                    </span>
+                                                ) : (
+                                                    <span className="flex items-center gap-1 text-muted-foreground text-sm">
+                                                        <Lock className="h-4 w-4" />
+                                                        Locked
+                                                    </span>
+                                                )}
+                                                <span className={cn(
+                                                    "text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity",
+                                                    item.unlocked ? "text-primary" : "text-muted-foreground"
+                                                )}>
                                                     Sign up to view
-                                                </div>
+                                                </span>
                                             </div>
                                         </motion.div>
                                     ))}
                                 </div>
-                            ) : premiumData?.preview ? (
-                                // Show single preview problem
-                                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                    <motion.div
-                                        initial={{ opacity: 0, y: 20 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ duration: 0.3 }}
-                                        onClick={promptLogin}
-                                        className="group relative cursor-pointer p-6 rounded-2xl bg-gradient-to-br from-amber-500/5 to-orange-500/5 border border-amber-500/20 hover:border-amber-500/40 transition-all hover:shadow-lg hover:shadow-amber-500/10"
-                                    >
-                                        <div className="absolute -top-2 -right-2 px-2 py-1 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-medium flex items-center gap-1">
-                                            <Crown className="h-3 w-3" />
-                                            {premiumData.preview.problem?.opportunity_score || '85+'}
-                                        </div>
-
-                                        <h4 className="font-semibold text-lg mb-2 line-clamp-2 group-hover:text-amber-600 transition-colors">
-                                            {premiumData.preview.problem?.title || 'Premium Problem'}
-                                        </h4>
-                                        <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
-                                            {premiumData.preview.problem?.description || ''}
-                                        </p>
-
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                                <ThumbsUp className="h-4 w-4" />
-                                                {premiumData.preview.problem?.upvotes || 0}
-                                            </div>
-                                            <div className="flex items-center gap-1 text-amber-600 text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <Lock className="h-3 w-3" />
-                                                Sign up to view
-                                            </div>
-                                        </div>
-                                    </motion.div>
-                                </div>
                             ) : null}
 
                             {/* Signup banner */}
-                            <div className="text-center p-6 rounded-2xl bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/10 border border-amber-500/20">
-                                <p className="text-muted-foreground mb-4">
-                                    <span className="text-foreground font-semibold">{premiumData?.available_count || premiumData?.total || '20+'}  premium problems</span> with high opportunity scores
+                            <div className="text-center p-6 rounded-2xl bg-gradient-to-r from-primary/5 via-accent/5 to-primary/5 border border-primary/20">
+                                <p className="text-muted-foreground mb-2">
+                                    <span className="text-foreground font-semibold">{premiumData?.available_count || '20+'}  premium problems</span> with high opportunity scores
+                                </p>
+                                <p className="text-sm text-muted-foreground mb-4">
+                                    Sign up now and get <span className="text-primary font-medium">7 days of Pro access free</span>
                                 </p>
                                 <Button
                                     onClick={promptLogin}
-                                    className="rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:opacity-90 touch-manipulation active:scale-95"
+                                    className="rounded-xl bg-primary hover:bg-primary/90 touch-manipulation active:scale-95"
                                 >
-                                    Sign Up Free to Unlock All
+                                    Start Free Trial
                                 </Button>
                             </div>
                         </div>
@@ -1120,25 +1152,104 @@ export function ProblemsList() {
                                 <ProblemSkeleton key={i} />
                             ))}
                         </div>
-                    ) : premiumData?.is_premium === false ? (
-                        // Free tier - show preview + upgrade with payment
+                    ) : premiumData?.is_premium === false || premiumData?.user_type === 'free' ? (
+                        // Free tier - show problems list with unlocked/locked status + upgrade
                         <div className="space-y-6 sm:space-y-8">
-                            <div className="p-4 sm:p-6 rounded-2xl bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/10 border border-amber-500/20 text-center">
-                                <Crown className="h-10 w-10 sm:h-12 sm:w-12 text-amber-500 mx-auto mb-3 sm:mb-4" />
-                                <h3 className="text-lg sm:text-xl font-bold mb-2">Upgrade to Premium</h3>
+                            {/* Header with count */}
+                            <div className="p-4 sm:p-6 rounded-2xl bg-gradient-to-r from-primary/5 via-accent/5 to-primary/5 border border-primary/20 text-center">
+                                <Crown className="h-10 w-10 sm:h-12 sm:w-12 text-primary mx-auto mb-3 sm:mb-4" />
+                                <h3 className="text-lg sm:text-xl font-bold mb-2">Premium Problems</h3>
                                 <p className="text-sm sm:text-base text-muted-foreground mb-4">
                                     {premiumData?.upgrade_message || `Access ${premiumData?.available_count || 0} high-opportunity problems`}
                                 </p>
-                                {!showPayment && (
+                                <p className="text-xs text-muted-foreground">
+                                    <span className="text-primary font-medium">{premiumData?.unlocked_count || 0} problems</span> unlocked for free users
+                                </p>
+                            </div>
+
+                            {/* Problems List */}
+                            {premiumData?.problems?.length > 0 && (
+                                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                                    {premiumData.problems.map((item: any, index: number) => (
+                                        <motion.div
+                                            key={item.id || index}
+                                            initial={{ opacity: 0, y: 20 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ duration: 0.3, delay: index * 0.05 }}
+                                            onClick={() => {
+                                                if (item.unlocked && item.id) {
+                                                    navigate(`/dashboard/problems/${item.id}`);
+                                                } else {
+                                                    setShowPayment(true);
+                                                }
+                                            }}
+                                            className={cn(
+                                                "group relative cursor-pointer p-5 sm:p-6 rounded-2xl border transition-all",
+                                                item.unlocked
+                                                    ? "bg-gradient-to-br from-primary/5 to-accent/5 border-primary/20 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/10"
+                                                    : "bg-muted/30 border-border/50 hover:border-border"
+                                            )}
+                                        >
+                                            {/* Score badge */}
+                                            <div className={cn(
+                                                "absolute -top-2 -right-2 px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1",
+                                                item.unlocked
+                                                    ? "bg-primary text-primary-foreground"
+                                                    : "bg-muted text-muted-foreground"
+                                            )}>
+                                                <Crown className="h-3 w-3" />
+                                                {item.score || item.opportunity_score || '85+'}
+                                            </div>
+
+                                            <h4 className={cn(
+                                                "font-semibold text-base sm:text-lg mb-2 line-clamp-2 transition-colors",
+                                                item.unlocked ? "group-hover:text-primary" : "text-muted-foreground"
+                                            )}>
+                                                {item.title}
+                                            </h4>
+
+                                            {item.description && (
+                                                <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+                                                    {item.description}
+                                                </p>
+                                            )}
+
+                                            <div className="flex items-center justify-between mt-auto pt-2">
+                                                {item.unlocked ? (
+                                                    <span className="flex items-center gap-1 text-primary text-sm font-medium">
+                                                        <CheckCircle2 className="h-4 w-4" />
+                                                        Unlocked
+                                                    </span>
+                                                ) : (
+                                                    <span className="flex items-center gap-1 text-muted-foreground text-sm">
+                                                        <Lock className="h-4 w-4" />
+                                                        Locked
+                                                    </span>
+                                                )}
+                                                <span className={cn(
+                                                    "text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity",
+                                                    item.unlocked ? "text-primary" : "text-muted-foreground"
+                                                )}>
+                                                    {item.unlocked ? 'View →' : 'Upgrade to view'}
+                                                </span>
+                                            </div>
+                                        </motion.div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* Upgrade CTA */}
+                            {!showPayment && (
+                                <div className="text-center">
                                     <Button
                                         onClick={() => setShowPayment(true)}
-                                        className="rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:opacity-90 gap-2"
+                                        className="rounded-xl bg-primary hover:bg-primary/90 gap-2"
                                     >
                                         <Zap className="h-4 w-4" />
-                                        View Plans
+                                        Upgrade to Unlock All
                                     </Button>
-                                )}
-                            </div>
+                                </div>
+                            )}
 
                             {/* Plan Selection - Only shown after clicking CTA */}
                             {showPayment && (
@@ -1311,7 +1422,7 @@ export function ProblemsList() {
                                             onClick={handlePlanSelect}
                                             disabled={isCreatingLink || isLoadingPlans}
                                             size="lg"
-                                            className="rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:opacity-90 gap-2 min-w-[200px]"
+                                            className="rounded-xl bg-primary hover:bg-primary/90 gap-2 min-w-[200px]"
                                         >
                                             {isCreatingLink ? (
                                                 <>
@@ -1334,7 +1445,7 @@ export function ProblemsList() {
                                     <h4 className="text-lg font-semibold mb-4">Preview Problem</h4>
                                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                                         <ProblemCard
-                                            problem={premiumData.preview.problem}
+                                            problem={premiumData.preview}
                                             isWatching={false}
                                             onWatchlistToggle={() => { }}
                                             onRateToggle={handleRateToggle}
@@ -1348,9 +1459,9 @@ export function ProblemsList() {
                         // Premium tier - show all problems
                         <div className="space-y-6">
                             {premiumData?.subscription && (
-                                <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20">
+                                <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20">
                                     <div className="flex items-center gap-3">
-                                        <Crown className="h-5 w-5 text-amber-500" />
+                                        <Crown className="h-5 w-5 text-primary" />
                                         <span className="font-medium capitalize">{premiumData.subscription.tier} Plan</span>
                                     </div>
                                     {premiumData.subscription.days_remaining && (
