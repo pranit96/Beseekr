@@ -1190,73 +1190,83 @@ export function ProblemsList() {
                             </div>
 
                             {/* Problems List */}
-                            {premiumData?.problems?.length > 0 && (
+                            {(premiumData?.previews?.length > 0 || premiumData?.problems?.length > 0) && (
                                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                                    {premiumData.problems.map((item: any, index: number) => (
-                                        <motion.div
-                                            key={item.id || index}
-                                            initial={{ opacity: 0, y: 20 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            transition={{ duration: 0.3, delay: index * 0.05 }}
-                                            onClick={() => {
-                                                if (item.unlocked && item.id) {
-                                                    navigate(`/dashboard/problems/${item.id}`);
-                                                } else {
-                                                    setShowPayment(true);
-                                                }
-                                            }}
-                                            className={cn(
-                                                "group relative cursor-pointer p-5 sm:p-6 rounded-2xl border transition-all",
-                                                item.unlocked
-                                                    ? "bg-gradient-to-br from-primary/5 to-accent/5 border-primary/20 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/10"
-                                                    : "bg-muted/30 border-border/50 hover:border-border"
-                                            )}
-                                        >
-                                            {/* Score badge */}
-                                            <div className={cn(
-                                                "absolute -top-2 -right-2 px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1",
-                                                item.unlocked
-                                                    ? "bg-primary text-primary-foreground"
-                                                    : "bg-muted text-muted-foreground"
-                                            )}>
-                                                <Crown className="h-3 w-3" />
-                                                {item.score || item.opportunity_score || '85+'}
-                                            </div>
+                                    {(premiumData.previews || premiumData.problems).map((item: any, index: number) => {
+                                        // Handle both structures: direct properties or nested problem object
+                                        const problemData = item.problem || item;
+                                        const problemId = problemData.id || item.problem_id;
+                                        const title = problemData.title || item.title;
+                                        const description = problemData.description || item.description;
+                                        const score = item.opportunity_score || item.score || problemData.opportunity_score || '85+';
+                                        const isUnlocked = item.unlocked === true;
 
-                                            <h4 className={cn(
-                                                "font-semibold text-base sm:text-lg mb-2 line-clamp-2 transition-colors",
-                                                item.unlocked ? "group-hover:text-primary" : "text-muted-foreground"
-                                            )}>
-                                                {item.title}
-                                            </h4>
-
-                                            {item.description && (
-                                                <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
-                                                    {item.description}
-                                                </p>
-                                            )}
-
-                                            <div className="flex items-center justify-between mt-auto pt-2">
-                                                {item.unlocked ? (
-                                                    <span className="flex items-center gap-1 text-primary text-sm font-medium">
-                                                        <CheckCircle2 className="h-4 w-4" />
-                                                        Unlocked
-                                                    </span>
-                                                ) : (
-                                                    <span className="flex items-center gap-1 text-muted-foreground text-sm">
-                                                        <Lock className="h-4 w-4" />
-                                                        Locked
-                                                    </span>
+                                        return (
+                                            <motion.div
+                                                key={item.id || problemData.id || index}
+                                                initial={{ opacity: 0, y: 20 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                transition={{ duration: 0.3, delay: index * 0.05 }}
+                                                onClick={() => {
+                                                    if (isUnlocked && problemId) {
+                                                        navigate(`/dashboard/problems/${problemId}`);
+                                                    } else {
+                                                        setShowPayment(true);
+                                                    }
+                                                }}
+                                                className={cn(
+                                                    "group relative cursor-pointer p-5 sm:p-6 rounded-2xl border transition-all",
+                                                    isUnlocked
+                                                        ? "bg-gradient-to-br from-primary/5 to-accent/5 border-primary/20 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/10"
+                                                        : "bg-muted/30 border-border/50 hover:border-border"
                                                 )}
-                                                <span className={cn(
-                                                    "text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity",
-                                                    item.unlocked ? "text-primary" : "text-muted-foreground"
+                                            >
+                                                {/* Score badge */}
+                                                <div className={cn(
+                                                    "absolute -top-2 -right-2 px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1",
+                                                    isUnlocked
+                                                        ? "bg-primary text-primary-foreground"
+                                                        : "bg-muted text-muted-foreground"
                                                 )}>
-                                                    {item.unlocked ? 'View →' : 'Upgrade to view'}
-                                                </span>
-                                            </div>
-                                        </motion.div>
-                                    ))}
+                                                    <Crown className="h-3 w-3" />
+                                                    {score}
+                                                </div>
+
+                                                <h4 className={cn(
+                                                    "font-semibold text-base sm:text-lg mb-2 line-clamp-2 transition-colors",
+                                                    isUnlocked ? "group-hover:text-primary" : "text-muted-foreground"
+                                                )}>
+                                                    {title}
+                                                </h4>
+
+                                                {description && (
+                                                    <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+                                                        {description}
+                                                    </p>
+                                                )}
+
+                                                <div className="flex items-center justify-between mt-auto pt-2">
+                                                    {isUnlocked ? (
+                                                        <span className="flex items-center gap-1 text-primary text-sm font-medium">
+                                                            <CheckCircle2 className="h-4 w-4" />
+                                                            Unlocked
+                                                        </span>
+                                                    ) : (
+                                                        <span className="flex items-center gap-1 text-muted-foreground text-sm">
+                                                            <Lock className="h-4 w-4" />
+                                                            Locked
+                                                        </span>
+                                                    )}
+                                                    <span className={cn(
+                                                        "text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity",
+                                                        isUnlocked ? "text-primary" : "text-muted-foreground"
+                                                    )}>
+                                                        {isUnlocked ? 'View details →' : 'Upgrade to unlock'}
+                                                    </span>
+                                                </div>
+                                            </motion.div>
+                                        );
+                                    })}
                                 </div>
                             )}
 
