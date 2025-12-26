@@ -567,7 +567,7 @@ export function ProblemDetails() {
                         </div>
                         <p className="text-xs text-muted-foreground mb-1">Competition</p>
                         <p className="text-xl font-bold capitalize">
-                            {problem.competition_level || 'Unknown'}
+                            {brief?.market_validation?.competition?.level || (problem as any)?.market_validation?.competition?.level || (problem as any)?.competition_level || 'N/A'}
                         </p>
                     </BentoCard>
 
