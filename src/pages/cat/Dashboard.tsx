@@ -52,8 +52,8 @@ export default function CatDashboard() {
         );
     }
 
-    const overallProgress = dashboard?.syllabus_progress?.overall_completion || 0;
-    const dueRevisions = revisions?.filter(r => r.status === 'pending' || r.status === 'overdue') || [];
+    const overallProgress = parseFloat(dashboard?.syllabus?.progress_percent || '0');
+    const dueRevisions = dashboard?.revisions?.due_today || 0;
     const weakAreas = dashboard?.weak_areas?.slice(0, 3) || [];
 
     return (
@@ -67,7 +67,7 @@ export default function CatDashboard() {
                     </p>
                 </div>
                 <div className="flex items-center gap-3">
-                    {dashboard?.streak && (
+                    {dashboard?.settings && (
                         <motion.div
                             initial={{ scale: 0.8, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
@@ -76,10 +76,10 @@ export default function CatDashboard() {
                             <Flame className="h-5 w-5 text-amber-500" />
                             <div>
                                 <p className="text-sm font-semibold text-amber-600 dark:text-amber-400">
-                                    {dashboard.streak.current} Day Streak
+                                    {dashboard.settings.current_streak} Day Streak
                                 </p>
                                 <p className="text-xs text-muted-foreground">
-                                    Best: {dashboard.streak.longest} days
+                                    Best: {dashboard.settings.longest_streak} days
                                 </p>
                             </div>
                         </motion.div>
@@ -120,7 +120,7 @@ export default function CatDashboard() {
                         <RotateCcw className="h-6 w-6 text-amber-500 mb-2" />
                         <p className="font-medium">Revisions</p>
                         <p className="text-xs text-muted-foreground">
-                            {dueRevisions.length} due today
+                            {dueRevisions} due today
                         </p>
                     </motion.div>
                 </Link>
@@ -156,33 +156,40 @@ export default function CatDashboard() {
                             <Progress value={overallProgress} className="h-2" />
                         </div>
                         <div className="grid gap-4">
-                            {dashboard?.syllabus_progress?.subjects?.map((subject) => (
-                                <Link
-                                    key={subject.id}
-                                    to={`/cat/subjects?subject=${subject.code}`}
-                                    className="block"
-                                >
-                                    <motion.div
-                                        whileHover={{ x: 4 }}
-                                        className="flex items-center gap-4 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                            {dashboard?.syllabus?.subjects?.map((subject, idx) => {
+                                // Map subject name to code for link
+                                const subjectCode = subject.name.toLowerCase().includes('quantitative') ? 'quant' :
+                                    subject.name.toLowerCase().includes('verbal') ? 'varc' :
+                                        subject.name.toLowerCase().includes('data') ? 'dilr' : 'quant';
+
+                                return (
+                                    <Link
+                                        key={idx}
+                                        to={`/cat/subjects?subject=${subjectCode}`}
+                                        className="block"
                                     >
-                                        <div className="text-2xl">{subject.icon}</div>
-                                        <div className="flex-1">
-                                            <div className="flex items-center justify-between mb-1">
-                                                <span className="font-medium">{subject.name}</span>
-                                                <span className="text-sm text-muted-foreground">
-                                                    {subject.stats.done}/{subject.stats.total} topics
-                                                </span>
+                                        <motion.div
+                                            whileHover={{ x: 4 }}
+                                            className="flex items-center gap-4 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                                        >
+                                            <div className="text-2xl">{subject.icon}</div>
+                                            <div className="flex-1">
+                                                <div className="flex items-center justify-between mb-1">
+                                                    <span className="font-medium">{subject.name}</span>
+                                                    <span className="text-sm text-muted-foreground">
+                                                        {subject.done}/{subject.total} topics
+                                                    </span>
+                                                </div>
+                                                <Progress
+                                                    value={parseFloat(subject.progress)}
+                                                    className="h-1.5"
+                                                />
                                             </div>
-                                            <Progress
-                                                value={(subject.stats.done / subject.stats.total) * 100}
-                                                className="h-1.5"
-                                            />
-                                        </div>
-                                        <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                                    </motion.div>
-                                </Link>
-                            ))}
+                                            <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                                        </motion.div>
+                                    </Link>
+                                )
+                            })}
                         </div>
                     </CardContent>
                 </Card>
@@ -253,26 +260,28 @@ export default function CatDashboard() {
                         </Link>
                     </CardHeader>
                     <CardContent>
-                        {dueRevisions.length > 0 ? (
+                        {dashboard?.revisions && dashboard.revisions.due_today > 0 ? (
                             <div className="space-y-3">
-                                {dueRevisions.slice(0, 5).map((revision) => (
-                                    <div
-                                        key={revision.id}
-                                        className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
-                                    >
+                                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                                    <div>
+                                        <p className="font-medium">Pending Reviews</p>
+                                        <p className="text-xs text-muted-foreground">
+                                            {dashboard.revisions.due_today} topics to revise
+                                        </p>
+                                    </div>
+                                    <Badge variant="secondary">Due Today</Badge>
+                                </div>
+                                {dashboard.revisions.overdue > 0 && (
+                                    <div className="flex items-center justify-between p-3 rounded-lg bg-red-500/10 border border-red-500/20">
                                         <div>
-                                            <p className="font-medium">{revision.topic?.title}</p>
-                                            <p className="text-xs text-muted-foreground">
-                                                Revision #{revision.revision_number}
+                                            <p className="font-medium text-red-500">Overdue</p>
+                                            <p className="text-xs text-red-400">
+                                                {dashboard.revisions.overdue} topics overdue
                                             </p>
                                         </div>
-                                        <Badge
-                                            variant={revision.status === 'overdue' ? 'destructive' : 'secondary'}
-                                        >
-                                            {revision.status === 'overdue' ? 'Overdue' : 'Due Today'}
-                                        </Badge>
+                                        <Badge variant="destructive">Overdue</Badge>
                                     </div>
-                                ))}
+                                )}
                             </div>
                         ) : (
                             <div className="text-center text-muted-foreground py-8">
@@ -308,7 +317,7 @@ export default function CatDashboard() {
                                         className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
                                     >
                                         <div>
-                                            <p className="font-medium">{area.topic_title}</p>
+                                            <p className="font-medium">{area.topic_name}</p>
                                             <p className="text-xs text-muted-foreground">
                                                 {area.attempts} attempts
                                             </p>
@@ -319,7 +328,7 @@ export default function CatDashboard() {
                                                 "font-semibold",
                                                 area.accuracy < 40 ? "text-red-500" : "text-amber-500"
                                             )}>
-                                                {area.accuracy}%
+                                                {Math.round(area.accuracy)}%
                                             </span>
                                         </div>
                                     </div>
@@ -336,7 +345,7 @@ export default function CatDashboard() {
             </div>
 
             {/* Mock Performance */}
-            {dashboard?.mock_performance && dashboard.mock_performance.total_mocks > 0 && (
+            {dashboard?.mocks && (
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between">
                         <div>
@@ -356,26 +365,26 @@ export default function CatDashboard() {
                         <div className="grid grid-cols-3 gap-4 mb-6">
                             <div className="text-center p-4 rounded-lg bg-muted/50">
                                 <p className="text-2xl font-bold text-primary">
-                                    {dashboard.mock_performance.total_mocks}
+                                    {dashboard.mocks.total_mocks}
                                 </p>
                                 <p className="text-sm text-muted-foreground">Total Mocks</p>
                             </div>
                             <div className="text-center p-4 rounded-lg bg-muted/50">
                                 <p className="text-2xl font-bold text-emerald-500">
-                                    {dashboard.mock_performance.average_score.toFixed(1)}
+                                    {parseFloat(dashboard.mocks.average_score).toFixed(1)}
                                 </p>
                                 <p className="text-sm text-muted-foreground">Avg Score</p>
                             </div>
                             <div className="text-center p-4 rounded-lg bg-muted/50">
                                 <p className="text-2xl font-bold text-amber-500">
-                                    {dashboard.mock_performance.best_score}
+                                    {parseFloat(dashboard.mocks.average_accuracy).toFixed(0)}%
                                 </p>
-                                <p className="text-sm text-muted-foreground">Best Score</p>
+                                <p className="text-sm text-muted-foreground">Avg Accuracy</p>
                             </div>
                         </div>
-                        {dashboard.mock_performance.trend.length > 0 && (
+                        {dashboard.score_trend && dashboard.score_trend.length > 0 && (
                             <div className="h-32 flex items-end gap-1">
-                                {dashboard.mock_performance.trend.slice(-10).map((point, i) => (
+                                {dashboard.score_trend.slice(-10).map((point, i) => (
                                     <div
                                         key={i}
                                         className="flex-1 bg-primary/20 hover:bg-primary/30 transition-colors rounded-t"

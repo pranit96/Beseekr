@@ -428,36 +428,57 @@ export interface CatSlot {
 // Dashboard Types
 // ========================
 
+export interface DashboardSyllabusSubject {
+    name: string;
+    icon: string;
+    total: number;
+    done: number;
+    progress: string; // "0" to "100"
+}
+
+export interface DashboardSyllabus {
+    total_topics: number;
+    completed: number;
+    progress_percent: string; // "0.0"
+    subjects: DashboardSyllabusSubject[];
+}
+
+export interface DashboardSettings {
+    target_date: string | null;
+    daily_goal: number;
+    weekly_mock_goal: number;
+    current_streak: number;
+    longest_streak: number;
+    total_study_hours: number;
+}
+
+export interface DashboardRevisions {
+    due_today: number;
+    overdue: number;
+    completion_rate: number;
+}
+
+export interface DashboardMocks {
+    total_mocks: number;
+    average_score: string; // "0.0"
+    average_accuracy: string; // "0.0"
+    weak_areas_count: number;
+}
+
+export interface WeakArea {
+    topic_id: string;
+    topic_name: string;
+    accuracy: number;
+    attempts: number;
+}
+
 export interface DashboardData {
-    syllabus_progress: {
-        subjects: Subject[];
-        overall_completion: number;
-    };
-    settings: CatSettings;
-    revision_stats: {
-        due_today: number;
-        overdue: number;
-        upcoming_7_days: number;
-    };
-    mock_performance: {
-        total_mocks: number;
-        average_score: number;
-        best_score: number;
-        average_percentile?: number;
-        trend: { date: string; score: number }[];
-    };
-    weak_areas: {
-        topic_id: string;
-        topic_title: string;
-        accuracy: number;
-        attempts: number;
-    }[];
-    streak: {
-        current: number;
-        longest: number;
-        last_activity: string;
-    };
-    today_goals: DailyGoal;
+    syllabus: DashboardSyllabus;
+    settings: DashboardSettings;
+    revisions: DashboardRevisions;
+    mocks: DashboardMocks;
+    score_trend: { date: string; score: number }[];
+    weak_areas: WeakArea[];
 }
 
 // ========================
