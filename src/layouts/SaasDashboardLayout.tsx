@@ -17,6 +17,7 @@ import {
     Zap,
     CreditCard,
     Clock,
+    GraduationCap,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -34,6 +35,7 @@ const baseNavigation = [
     { name: 'Research', href: 'validate', icon: Zap, color: 'from-emerald-500 to-cyan-500' },
     { name: 'Watchlist', href: 'watchlist', icon: Bookmark, color: 'from-amber-500 to-orange-500' },
     { name: 'Pricing', href: 'pricing', icon: CreditCard, color: 'from-pink-500 to-rose-500', premiumHide: true },
+    { name: 'CAT Prep', href: '/cat/dashboard', icon: GraduationCap, color: 'from-blue-500 to-indigo-600' },
 ];
 
 export function SaasDashboardLayout() {
