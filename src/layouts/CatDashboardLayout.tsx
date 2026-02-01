@@ -81,11 +81,11 @@ export function CatDashboardLayout() {
     });
 
     const dueRevisions = useMemo(() => {
-        if (!revisions) return 0;
+        if (!revisions || !Array.isArray(revisions)) return 0;
         return revisions.filter(r => r.status === 'pending' || r.status === 'overdue').length;
     }, [revisions]);
 
-    const streak = dashboard?.streak?.current || 0;
+    const streak = dashboard?.settings?.current_streak || 0;
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex">
@@ -233,14 +233,14 @@ export function CatDashboardLayout() {
                         {/* Right Controls */}
                         <div className="flex items-center gap-2">
                             {/* Countdown to CAT */}
-                            {dashboard?.settings?.target_exam_date && (
+                            {dashboard?.settings?.target_date && (
                                 <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20">
                                     <GraduationCap className="h-4 w-4 text-amber-500" />
                                     <span className="text-sm font-medium text-amber-600 dark:text-amber-400">
                                         {Math.max(
                                             0,
                                             Math.ceil(
-                                                (new Date(dashboard.settings.target_exam_date).getTime() - Date.now()) /
+                                                (new Date(dashboard.settings.target_date).getTime() - Date.now()) /
                                                 (1000 * 60 * 60 * 24)
                                             )
                                         )}{' '}
