@@ -32,7 +32,7 @@ export default function Revisions() {
     });
 
     const grouped = useMemo(() => {
-        if (!revisions) return { overdue: [], today: [], upcoming: [], completed: [] };
+        if (!revisions || !Array.isArray(revisions)) return { overdue: [], today: [], upcoming: [], completed: [] };
         return {
             overdue: revisions.filter(r => r.status === 'overdue'),
             today: revisions.filter(r => r.status === 'pending' && isToday(new Date(r.scheduled_date))),
@@ -48,7 +48,7 @@ export default function Revisions() {
     }, [currentMonth]);
 
     const revisionsByDate = useMemo(() => {
-        if (!revisions) return {};
+        if (!revisions || !Array.isArray(revisions)) return {};
         const map: Record<string, Revision[]> = {};
         revisions.forEach(r => {
             const key = format(new Date(r.scheduled_date), 'yyyy-MM-dd');

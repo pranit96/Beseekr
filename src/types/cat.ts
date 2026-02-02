@@ -563,9 +563,39 @@ export interface Problem {
     created_at: string;
 }
 
+export type ConfidenceLevel = 'low' | 'medium' | 'high';
+
 export interface ProblemAttemptPayload {
     answer: string;
     time_spent_seconds: number;
+    hints_used?: number;
+    confidence_level?: ConfidenceLevel;
+}
+
+export interface LessonProgressPayload {
+    status: 'in_progress' | 'completed';
+    progress_percent: number;
+    time_spent_seconds: number;
+    user_notes?: string;
+    is_bookmarked?: boolean;
+}
+
+export interface LessonWithProgress extends Lesson {
+    progress_percent: number;
+    status: 'not_started' | 'in_progress' | 'completed';
+    user_notes?: string;
+    is_bookmarked: boolean;
+    last_accessed_at?: string;
+}
+
+export interface ProblemsQueryParams {
+    difficulty?: 1 | 2 | 3 | 4 | 5;
+    source?: 'practice' | 'cat_pyq';
+}
+
+export interface ProblemWithHints extends Problem {
+    hints: string[];
+    hints_revealed: number;
 }
 
 export interface ProblemAttemptResponse {
@@ -623,11 +653,12 @@ export interface LearnSession {
 }
 
 export interface StartLearnSessionPayload {
-    topic_id: string;
-    session_type: 'lesson' | 'practice' | 'real_cat' | 'mixed';
-    problem_count?: number;
-    difficulty?: ProblemDifficulty;
-    time_limit_minutes?: number;
+    topicName: string;
+    sessionType: 'practice' | 'speed_drill' | 'revision';
+    problemCount?: number;
+    difficulty?: number[];
+    timeLimitMinutes?: number;
+    includeRealCat?: boolean;
 }
 
 export interface LearnSubjectInfo {
@@ -696,6 +727,157 @@ export interface ExplainWrongResponse {
     similar_examples?: { problem: string; solution: string }[];
     tips_to_avoid?: string[];
     related_formulas?: string[];
+}
+
+export interface TutorFollowUpPayload {
+    original_question: string;
+    previous_answer: string;
+    follow_up_question: string;
+}
+
+export interface TutorFollowUpResponse {
+    answer: string;
+    examples?: { problem: string; solution: string }[];
+    next_steps?: string[];
+}
+
+export interface ExplainMockPayload {
+    mock_id: string;
+    limit?: number;
+}
+
+export interface ExplainMockResponse {
+    mistakes: {
+        question_id: string;
+        question_text: string;
+        user_answer: string;
+        correct_answer: string;
+        mistake_type: 'concept' | 'calculation' | 'careless' | 'time_pressure';
+        explanation: string;
+        correct_approach: string;
+    }[];
+    summary: {
+        total_mistakes: number;
+        by_type: Record<string, number>;
+        weakest_topics: string[];
+        practice_recommendation: string;
+    };
+}
+
+export interface TutorUsageResponse {
+    total_questions_asked: number;
+    questions_this_week: number;
+    questions_today: number;
+    topics_covered: { topic: string; count: number }[];
+    streak_days: number;
+}
+
+export interface TutorLimitResponse {
+    daily_limit: number;
+    used_today: number;
+    remaining: number;
+    resets_at: string;
+}
+
+// ========================
+// Features API Types
+// ========================
+
+export interface LeaderboardEntry {
+    rank: number;
+    user_id: string;
+    name: string;
+    avatar_url?: string;
+    score: number;
+    problems_solved: number;
+    streak_days: number;
+}
+
+export interface LeaderboardResponse {
+    period: 'weekly' | 'monthly';
+    entries: LeaderboardEntry[];
+    updated_at: string;
+}
+
+export interface MyRankingResponse {
+    my_rank: number;
+    my_score: number;
+    nearby_users: LeaderboardEntry[];
+    percentile: number;
+}
+
+export interface StartTimerPayload {
+    subjectId?: string;
+    topicId?: string;
+    sessionType: 'study' | 'practice' | 'revision';
+    targetMinutes?: number;
+    isPomodoro?: boolean;
+}
+
+export interface TimerSession {
+    id: string;
+    user_id: string;
+    subject_id?: string;
+    topic_id?: string;
+    session_type: 'study' | 'practice' | 'revision';
+    status: 'running' | 'paused' | 'completed';
+    target_minutes?: number;
+    elapsed_seconds: number;
+    is_pomodoro: boolean;
+    pomodoro_cycle?: number;
+    started_at: string;
+    paused_at?: string;
+    completed_at?: string;
+}
+
+export interface TimerStatsResponse {
+    total_study_minutes: number;
+    today_minutes: number;
+    this_week_minutes: number;
+    by_subject: { subject: string; minutes: number }[];
+    by_topic: { topic: string; minutes: number }[];
+    pomodoro_sessions_completed: number;
+    longest_session_minutes: number;
+}
+
+export type ReportType = 'wrong_answer' | 'typo' | 'unclear' | 'duplicate';
+
+export interface ReportQuestionPayload {
+    reportType: ReportType;
+    description: string;
+}
+
+export interface ReportQuestionResponse {
+    report_id: string;
+    status: 'submitted' | 'under_review' | 'resolved';
+    message: string;
+}
+
+export interface SpeedAnalyticsResponse {
+    topics: {
+        id: string;
+        name: string;
+        avg_time_seconds: number;
+        target_time_seconds: number;
+        improvement_percent: number;
+        problems_attempted: number;
+    }[];
+    overall_avg_time: number;
+    percentile_speed: number;
+}
+
+export interface AdaptiveNextQuestionResponse {
+    question: {
+        id: string;
+        text: string;
+        options?: { key: string; value: string }[];
+        difficulty: number;
+        topic: string;
+        time_limit_seconds?: number;
+        is_ai_generated: boolean;
+    };
+    questions_remaining: number;
+    current_ability_estimate: number;
 }
 
 // ========================

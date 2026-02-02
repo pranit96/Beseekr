@@ -545,12 +545,19 @@ function TaskDialog({
                         </div>
                         <div>
                             <Label>Subject (optional)</Label>
-                            <Select value={subjectId} onValueChange={(v) => { setSubjectId(v); setTopicId(''); }}>
+                            <Select
+                                value={subjectId || '__none__'}
+                                onValueChange={(v) => {
+                                    const value = v === '__none__' ? '' : v;
+                                    setSubjectId(value);
+                                    setTopicId('');
+                                }}
+                            >
                                 <SelectTrigger>
                                     <SelectValue placeholder="Select subject" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="">None</SelectItem>
+                                    <SelectItem value="__none__">None</SelectItem>
                                     {subjects.map((s) => (
                                         <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
                                     ))}
@@ -560,12 +567,15 @@ function TaskDialog({
                         {selectedSubject && (
                             <div>
                                 <Label>Topic (optional)</Label>
-                                <Select value={topicId} onValueChange={setTopicId}>
+                                <Select
+                                    value={topicId || '__none__'}
+                                    onValueChange={(v) => setTopicId(v === '__none__' ? '' : v)}
+                                >
                                     <SelectTrigger>
                                         <SelectValue placeholder="Select topic" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="">None</SelectItem>
+                                        <SelectItem value="__none__">None</SelectItem>
                                         {selectedSubject.topics.map((t) => (
                                             <SelectItem key={t.id} value={t.id}>{t.title}</SelectItem>
                                         ))}

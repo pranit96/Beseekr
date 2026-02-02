@@ -85,7 +85,7 @@ export default function Mistakes() {
                         <CardContent className="pt-6">
                             <p className="text-sm text-muted-foreground mb-3">By Type</p>
                             <div className="flex flex-wrap gap-2">
-                                {stats.by_type.map(t => (
+                                {Array.isArray(stats.by_type) && stats.by_type.map(t => (
                                     <Badge key={t.type} variant="outline" className="flex items-center gap-1">
                                         <div className={cn("w-2 h-2 rounded-full", mistakeTypes[t.type]?.color || 'bg-gray-500')} />
                                         {mistakeTypes[t.type]?.label || t.type}: {t.count}

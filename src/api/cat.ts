@@ -49,6 +49,17 @@ import type {
     LearnSubjectsOverview,
     ExplainProblemPayload,
     ExplainProblemResponse,
+    LessonWithProgress,
+    LessonProgressPayload,
+    ProblemsQueryParams,
+    ProblemWithHints,
+    // Tutor types
+    TutorFollowUpPayload,
+    TutorFollowUpResponse,
+    ExplainMockPayload,
+    ExplainMockResponse,
+    TutorUsageResponse,
+    TutorLimitResponse,
     // Adaptive Exam types
     AbilityCheckResponse,
     DiagnosticConfig,
@@ -76,6 +87,16 @@ import type {
     BenchmarksResponse,
     SectionalMockAnalytics,
     MockSummary,
+    // Features types
+    LeaderboardResponse,
+    MyRankingResponse,
+    StartTimerPayload,
+    TimerSession,
+    TimerStatsResponse,
+    ReportQuestionPayload,
+    ReportQuestionResponse,
+    SpeedAnalyticsResponse,
+    AdaptiveNextQuestionResponse,
 } from '@/types/cat';
 
 const API_BASE = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL;
@@ -461,20 +482,6 @@ export async function getAITopicTips(topicId: string): Promise<AITopicTips> {
     return request<AITopicTips>(`/api/cat/ai/topic-tips/${topicId}`);
 }
 
-export async function askDoubt(payload: AskDoubtPayload): Promise<AskDoubtResponse> {
-    return request<AskDoubtResponse>('/api/cat/tutor/doubt', {
-        method: 'POST',
-        body: JSON.stringify(payload),
-    });
-}
-
-export async function explainWrongAnswer(payload: ExplainWrongPayload): Promise<ExplainWrongResponse> {
-    return request<ExplainWrongResponse>('/api/cat/tutor/explain-wrong', {
-        method: 'POST',
-        body: JSON.stringify(payload),
-    });
-}
-
 // ========================
 // Practice Sessions API
 // ========================
@@ -736,65 +743,71 @@ export async function exportData(format: 'json' | 'csv' = 'json'): Promise<Blob>
 // Learn Section
 // ========================
 
-export async function getTopicLessons(topicName: string): Promise<Lesson[]> {
-    return request<Lesson[]>(`/api/cat/${encodeURIComponent(topicName)}/lessons`);
+export async function getLearnSubjects(): Promise<LearnSubjectsOverview> {
+    return request<LearnSubjectsOverview>('/api/cat/learn/subjects');
+}
+
+// ========================
+// Learning APIs (Topic-based)
+// ========================
+
+export async function getTopicLessons(topicName: string): Promise<LessonWithProgress[]> {
+    return request<LessonWithProgress[]>(`/api/learn/${encodeURIComponent(topicName)}/lessons`);
+}
+
+export async function getLesson(lessonId: string): Promise<LessonWithProgress> {
+    return request<LessonWithProgress>(`/api/learn/lessons/${lessonId}`);
+}
+
+export async function updateLessonProgress(
+    lessonId: string,
+    payload: LessonProgressPayload
+): Promise<LessonWithProgress> {
+    return request<LessonWithProgress>(`/api/learn/lessons/${lessonId}/progress`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+    });
 }
 
 export async function getTopicProblems(
     topicName: string,
-    difficulty?: ProblemDifficulty,
-    limit?: number
+    params?: ProblemsQueryParams
 ): Promise<Problem[]> {
-    const params = new URLSearchParams();
-    if (difficulty) params.append('difficulty', difficulty);
-    if (limit) params.append('limit', limit.toString());
-    return request<Problem[]>(`/api/cat/${encodeURIComponent(topicName)}/problems?${params}`);
+    const searchParams = new URLSearchParams();
+    if (params?.difficulty) searchParams.append('difficulty', params.difficulty.toString());
+    if (params?.source) searchParams.append('source', params.source);
+    const query = searchParams.toString();
+    return request<Problem[]>(`/api/learn/${encodeURIComponent(topicName)}/problems${query ? `?${query}` : ''}`);
 }
 
-export async function getTopicRealCatQuestions(
-    topicName: string,
-    year?: number
-): Promise<Problem[]> {
-    const params = new URLSearchParams();
-    if (year) params.append('year', year.toString());
-    return request<Problem[]>(`/api/cat/${encodeURIComponent(topicName)}/real-cat?${params}`);
+export async function getTopicRealCatProblems(topicName: string): Promise<Problem[]> {
+    return request<Problem[]>(`/api/learn/${encodeURIComponent(topicName)}/real-cat`);
 }
 
-export async function attemptProblem(
+export async function getProblem(problemId: string, hints?: number): Promise<ProblemWithHints> {
+    const query = hints !== undefined ? `?hints=${hints}` : '';
+    return request<ProblemWithHints>(`/api/learn/problems/${problemId}${query}`);
+}
+
+export async function submitProblemAttempt(
     problemId: string,
     payload: ProblemAttemptPayload
 ): Promise<ProblemAttemptResponse> {
-    return request<ProblemAttemptResponse>(`/api/cat/problems/${problemId}/attempt`, {
+    return request<ProblemAttemptResponse>(`/api/learn/problems/${problemId}/attempt`, {
         method: 'POST',
         body: JSON.stringify(payload),
     });
 }
 
-export async function getMasteryOverview(): Promise<MasteryOverview> {
-    return request<MasteryOverview>('/api/cat/mastery');
+export async function getMastery(): Promise<MasteryOverview> {
+    return request<MasteryOverview>('/api/learn/mastery');
 }
 
-export async function startLearnSession(
-    payload: StartLearnSessionPayload
-): Promise<LearnSession> {
-    return request<LearnSession>('/api/cat/sessions/start', {
+export async function startLearnSession(payload: StartLearnSessionPayload): Promise<LearnSession> {
+    return request<LearnSession>('/api/learn/sessions/start', {
         method: 'POST',
         body: JSON.stringify(payload),
     });
-}
-
-export async function getLearnSession(sessionId: string): Promise<LearnSession> {
-    return request<LearnSession>(`/api/cat/sessions/${sessionId}`);
-}
-
-export async function completeLearnSession(sessionId: string): Promise<LearnSession> {
-    return request<LearnSession>(`/api/cat/sessions/${sessionId}/complete`, {
-        method: 'POST',
-    });
-}
-
-export async function getLearnSubjects(): Promise<LearnSubjectsOverview> {
-    return request<LearnSubjectsOverview>('/api/cat/learn/subjects');
 }
 
 export async function getSessionHistory(params?: {
@@ -814,6 +827,46 @@ export async function explainProblem(
         method: 'POST',
         body: JSON.stringify(payload),
     });
+}
+
+// ========================
+// AI Tutor APIs
+// ========================
+
+export async function askDoubt(payload: AskDoubtPayload): Promise<AskDoubtResponse> {
+    return request<AskDoubtResponse>('/api/tutor/doubt', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+    });
+}
+
+export async function askFollowUp(payload: TutorFollowUpPayload): Promise<TutorFollowUpResponse> {
+    return request<TutorFollowUpResponse>('/api/tutor/follow-up', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+    });
+}
+
+export async function explainWrong(payload: ExplainWrongPayload): Promise<ExplainWrongResponse> {
+    return request<ExplainWrongResponse>('/api/tutor/explain-wrong', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+    });
+}
+
+export async function explainMock(payload: ExplainMockPayload): Promise<ExplainMockResponse> {
+    return request<ExplainMockResponse>('/api/tutor/explain-mock', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+    });
+}
+
+export async function getTutorUsage(): Promise<TutorUsageResponse> {
+    return request<TutorUsageResponse>('/api/tutor/usage');
+}
+
+export async function getTutorLimit(): Promise<TutorLimitResponse> {
+    return request<TutorLimitResponse>('/api/tutor/limit');
 }
 
 // ========================
@@ -956,6 +1009,70 @@ export async function getMockSummary(
 }
 
 // ========================
+// Features APIs
+// ========================
+
+export async function getLeaderboard(params?: {
+    period?: 'weekly' | 'monthly';
+    limit?: number;
+}): Promise<LeaderboardResponse> {
+    const searchParams = new URLSearchParams();
+    if (params?.period) searchParams.append('period', params.period);
+    if (params?.limit) searchParams.append('limit', params.limit.toString());
+    const query = searchParams.toString();
+    return request<LeaderboardResponse>(`/api/cat/leaderboard${query ? `?${query}` : ''}`);
+}
+
+export async function getMyRanking(): Promise<MyRankingResponse> {
+    return request<MyRankingResponse>('/api/cat/leaderboard/me');
+}
+
+export async function startTimer(payload: StartTimerPayload): Promise<TimerSession> {
+    return request<TimerSession>('/api/cat/timer/start', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+    });
+}
+
+export async function pauseTimer(): Promise<TimerSession> {
+    return request<TimerSession>('/api/cat/timer/pause', {
+        method: 'POST',
+    });
+}
+
+export async function stopTimer(): Promise<TimerSession> {
+    return request<TimerSession>('/api/cat/timer/stop', {
+        method: 'POST',
+    });
+}
+
+export async function getTimerStats(): Promise<TimerStatsResponse> {
+    return request<TimerStatsResponse>('/api/cat/timer/stats');
+}
+
+export async function reportQuestion(
+    questionId: string,
+    payload: ReportQuestionPayload
+): Promise<ReportQuestionResponse> {
+    return request<ReportQuestionResponse>(`/api/cat/questions/${questionId}/report`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+    });
+}
+
+export async function getSpeedAnalytics(): Promise<SpeedAnalyticsResponse> {
+    return request<SpeedAnalyticsResponse>('/api/cat/analytics/speed');
+}
+
+export async function getAdaptiveNextQuestion(
+    examId: string,
+    useAI: boolean = false
+): Promise<AdaptiveNextQuestionResponse> {
+    const query = useAI ? '?ai=true' : '';
+    return request<AdaptiveNextQuestionResponse>(`/api/cat/adaptive/${examId}/next${query}`);
+}
+
+// ========================
 // Export as namespace
 // ========================
 
@@ -1008,12 +1125,16 @@ export const catApi = {
     updateCatSettings,
     getCatSlots,
     getStrategy,
-    // AI
+    // AI & Tutor
     getAIStudyPlan,
     getAIAnalysis,
     getAITopicTips,
     askDoubt,
-    explainWrongAnswer,
+    askFollowUp,
+    explainWrong,
+    explainMock,
+    getTutorUsage,
+    getTutorLimit,
     // Practice
     startPractice,
     submitPracticeAnswer,
@@ -1051,15 +1172,16 @@ export const catApi = {
     // Export
     exportData,
     // Learn
-    getTopicLessons,
-    getTopicProblems,
-    getTopicRealCatQuestions,
-    attemptProblem,
-    getMasteryOverview,
-    startLearnSession,
-    getLearnSession,
-    completeLearnSession,
     getLearnSubjects,
+    getTopicLessons,
+    getLesson,
+    updateLessonProgress,
+    getTopicProblems,
+    getTopicRealCatProblems,
+    getProblem,
+    submitProblemAttempt,
+    getMastery,
+    startLearnSession,
     getSessionHistory,
     explainProblem,
     // Adaptive Exam
@@ -1081,6 +1203,16 @@ export const catApi = {
     getBenchmarks,
     getAttemptAnalytics,
     getMockSummary,
+    // Features
+    getLeaderboard,
+    getMyRanking,
+    startTimer,
+    pauseTimer,
+    stopTimer,
+    getTimerStats,
+    reportQuestion,
+    getSpeedAnalytics,
+    getAdaptiveNextQuestion,
 };
 
 export default catApi;
