@@ -752,18 +752,18 @@ export async function getLearnSubjects(): Promise<LearnSubjectsOverview> {
 // ========================
 
 export async function getTopicLessons(topicName: string): Promise<LessonWithProgress[]> {
-    return request<LessonWithProgress[]>(`/api/learn/${encodeURIComponent(topicName)}/lessons`);
+    return request<LessonWithProgress[]>(`/api/cat/learn/${encodeURIComponent(topicName)}/lessons`);
 }
 
 export async function getLesson(lessonId: string): Promise<LessonWithProgress> {
-    return request<LessonWithProgress>(`/api/learn/lessons/${lessonId}`);
+    return request<LessonWithProgress>(`/api/cat/learn/lessons/${lessonId}`);
 }
 
 export async function updateLessonProgress(
     lessonId: string,
     payload: LessonProgressPayload
 ): Promise<LessonWithProgress> {
-    return request<LessonWithProgress>(`/api/learn/lessons/${lessonId}/progress`, {
+    return request<LessonWithProgress>(`/api/cat/learn/lessons/${lessonId}/progress`, {
         method: 'POST',
         body: JSON.stringify(payload),
     });
@@ -777,34 +777,34 @@ export async function getTopicProblems(
     if (params?.difficulty) searchParams.append('difficulty', params.difficulty.toString());
     if (params?.source) searchParams.append('source', params.source);
     const query = searchParams.toString();
-    return request<Problem[]>(`/api/learn/${encodeURIComponent(topicName)}/problems${query ? `?${query}` : ''}`);
+    return request<Problem[]>(`/api/cat/learn/${encodeURIComponent(topicName)}/problems${query ? `?${query}` : ''}`);
 }
 
 export async function getTopicRealCatProblems(topicName: string): Promise<Problem[]> {
-    return request<Problem[]>(`/api/learn/${encodeURIComponent(topicName)}/real-cat`);
+    return request<Problem[]>(`/api/cat/learn/${encodeURIComponent(topicName)}/real-cat`);
 }
 
 export async function getProblem(problemId: string, hints?: number): Promise<ProblemWithHints> {
     const query = hints !== undefined ? `?hints=${hints}` : '';
-    return request<ProblemWithHints>(`/api/learn/problems/${problemId}${query}`);
+    return request<ProblemWithHints>(`/api/cat/learn/problems/${problemId}${query}`);
 }
 
 export async function submitProblemAttempt(
     problemId: string,
     payload: ProblemAttemptPayload
 ): Promise<ProblemAttemptResponse> {
-    return request<ProblemAttemptResponse>(`/api/learn/problems/${problemId}/attempt`, {
+    return request<ProblemAttemptResponse>(`/api/cat/learn/problems/${problemId}/attempt`, {
         method: 'POST',
         body: JSON.stringify(payload),
     });
 }
 
 export async function getMastery(): Promise<MasteryOverview> {
-    return request<MasteryOverview>('/api/learn/mastery');
+    return request<MasteryOverview>('/api/cat/learn/mastery');
 }
 
 export async function startLearnSession(payload: StartLearnSessionPayload): Promise<LearnSession> {
-    return request<LearnSession>('/api/learn/sessions/start', {
+    return request<LearnSession>('/api/cat/learn/sessions/start', {
         method: 'POST',
         body: JSON.stringify(payload),
     });
