@@ -834,39 +834,39 @@ export async function explainProblem(
 // ========================
 
 export async function askDoubt(payload: AskDoubtPayload): Promise<AskDoubtResponse> {
-    return request<AskDoubtResponse>('/api/tutor/doubt', {
+    return request<AskDoubtResponse>('/api/cat/tutor/doubt', {
         method: 'POST',
         body: JSON.stringify(payload),
     });
 }
 
 export async function askFollowUp(payload: TutorFollowUpPayload): Promise<TutorFollowUpResponse> {
-    return request<TutorFollowUpResponse>('/api/tutor/follow-up', {
+    return request<TutorFollowUpResponse>('/api/cat/tutor/follow-up', {
         method: 'POST',
         body: JSON.stringify(payload),
     });
 }
 
 export async function explainWrong(payload: ExplainWrongPayload): Promise<ExplainWrongResponse> {
-    return request<ExplainWrongResponse>('/api/tutor/explain-wrong', {
+    return request<ExplainWrongResponse>('/api/cat/tutor/explain-wrong', {
         method: 'POST',
         body: JSON.stringify(payload),
     });
 }
 
 export async function explainMock(payload: ExplainMockPayload): Promise<ExplainMockResponse> {
-    return request<ExplainMockResponse>('/api/tutor/explain-mock', {
+    return request<ExplainMockResponse>('/api/cat/tutor/explain-mock', {
         method: 'POST',
         body: JSON.stringify(payload),
     });
 }
 
 export async function getTutorUsage(): Promise<TutorUsageResponse> {
-    return request<TutorUsageResponse>('/api/tutor/usage');
+    return request<TutorUsageResponse>('/api/cat/tutor/usage');
 }
 
 export async function getTutorLimit(): Promise<TutorLimitResponse> {
-    return request<TutorLimitResponse>('/api/tutor/limit');
+    return request<TutorLimitResponse>('/api/cat/tutor/limit');
 }
 
 // ========================
