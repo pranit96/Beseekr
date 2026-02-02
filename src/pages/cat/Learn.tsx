@@ -1,42 +1,52 @@
-// CAT Learn Page - Topic-based learning with lessons, problems, and real CAT questions
-import { useState } from 'react';
+// CAT Learn Page - Unified learning hub with Topics, Notes, and Flashcards tabs
+import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     BookOpen,
+    Layers,
+    StickyNote,
     GraduationCap,
     Target,
-    CheckCircle2,
-    Clock,
-    TrendingUp,
     ChevronRight,
     Play,
-    AlertCircle,
-    Lightbulb,
-    Star,
-    Timer,
-    BarChart3,
-    Trophy,
-    Brain,
+    Loader2,
+    Plus,
+    Search,
+    Check,
+    X,
+    CheckCircle2,
+    RotateCcw,
     Sparkles,
+    Clock,
+    Trash2,
+    Edit,
+    Filter,
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { cn } from '@/lib/utils';
 import { catApi } from '@/api/cat';
+import { useToast } from '@/hooks/use-toast';
 import type {
-    Lesson,
-    Problem,
     MasteryOverview,
     TopicMastery,
     ProblemDifficulty,
     MasteryLevel,
-    StartLearnSessionPayload
+    StartLearnSessionPayload,
+    Note,
+    CreateNotePayload,
+    Flashcard,
+    CreateFlashcardPayload,
 } from '@/types/cat';
 
 const difficultyColors: Record<ProblemDifficulty, string> = {
@@ -46,7 +56,7 @@ const difficultyColors: Record<ProblemDifficulty, string> = {
     cat_level: 'bg-red-500/20 text-red-400 border-red-500/30',
 };
 
-const masteryLevelColors: Record<MasteryLevel, { bg: string; text: string; label: string }> = {
+const masteryColors: Record<MasteryLevel, { bg: string; text: string; label: string }> = {
     beginner: { bg: 'bg-gray-500/20', text: 'text-gray-400', label: 'Beginner' },
     learning: { bg: 'bg-blue-500/20', text: 'text-blue-400', label: 'Learning' },
     practicing: { bg: 'bg-yellow-500/20', text: 'text-yellow-400', label: 'Practicing' },
@@ -55,609 +65,230 @@ const masteryLevelColors: Record<MasteryLevel, { bg: string; text: string; label
 };
 
 export default function Learn() {
+    const [activeTab, setActiveTab] = useState('topics');
+    const queryClient = useQueryClient();
+    const { toast } = useToast();
+
+    return (
+        <div className="space-y-6">
+            {/* Header */}
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                    <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-2">
+                        <GraduationCap className="h-8 w-8 text-primary" />
+                        Learn
+                    </h1>
+                    <p className="text-muted-foreground">
+                        Master topics, take notes, and review with flashcards
+                    </p>
+                </div>
+            </div>
+
+            {/* Tabs */}
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+                <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:inline-flex">
+                    <TabsTrigger value="topics" className="gap-2">
+                        <BookOpen className="h-4 w-4" />
+                        <span className="hidden sm:inline">Topics</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="notes" className="gap-2">
+                        <StickyNote className="h-4 w-4" />
+                        <span className="hidden sm:inline">Notes</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="flashcards" className="gap-2">
+                        <Layers className="h-4 w-4" />
+                        <span className="hidden sm:inline">Flashcards</span>
+                    </TabsTrigger>
+                </TabsList>
+
+                {/* Topics Tab */}
+                <TabsContent value="topics" className="space-y-6">
+                    <TopicsSection />
+                </TabsContent>
+
+                {/* Notes Tab */}
+                <TabsContent value="notes" className="space-y-6">
+                    <NotesSection />
+                </TabsContent>
+
+                {/* Flashcards Tab */}
+                <TabsContent value="flashcards" className="space-y-6">
+                    <FlashcardsSection />
+                </TabsContent>
+            </Tabs>
+        </div>
+    );
+}
+
+// ========================
+// TOPICS SECTION
+// ========================
+function TopicsSection() {
     const queryClient = useQueryClient();
     const [selectedTopic, setSelectedTopic] = useState<TopicMastery | null>(null);
-    const [activeTab, setActiveTab] = useState<'overview' | 'lessons' | 'practice' | 'real-cat'>('overview');
-    const [difficultyFilter, setDifficultyFilter] = useState<ProblemDifficulty | 'all'>('all');
     const [sessionDialogOpen, setSessionDialogOpen] = useState(false);
-    const [sessionType, setSessionType] = useState<'practice' | 'real_cat' | 'mixed'>('practice');
+    const [sessionType, setSessionType] = useState<'practice' | 'speed_drill' | 'revision'>('practice');
     const [problemCount, setProblemCount] = useState<number>(10);
+    const { toast } = useToast();
 
-    // Fetch mastery overview
     const { data: masteryData, isLoading: masteryLoading } = useQuery({
         queryKey: ['cat', 'mastery'],
-        queryFn: () => catApi.getMasteryOverview(),
+        queryFn: () => catApi.getMastery(),
     });
 
-    // Fetch lessons for selected topic
-    const { data: lessons, isLoading: lessonsLoading } = useQuery({
-        queryKey: ['cat', 'lessons', selectedTopic?.topic_name],
-        queryFn: () => catApi.getTopicLessons(selectedTopic!.topic_name),
-        enabled: !!selectedTopic,
-    });
-
-    // Fetch problems for selected topic
-    const { data: problems, isLoading: problemsLoading } = useQuery({
-        queryKey: ['cat', 'problems', selectedTopic?.topic_name, difficultyFilter],
-        queryFn: () => catApi.getTopicProblems(
-            selectedTopic!.topic_name,
-            difficultyFilter === 'all' ? undefined : difficultyFilter
-        ),
-        enabled: !!selectedTopic,
-    });
-
-    // Fetch real CAT questions for selected topic
-    const { data: realCatQuestions, isLoading: realCatLoading } = useQuery({
-        queryKey: ['cat', 'real-cat', selectedTopic?.topic_name],
-        queryFn: () => catApi.getTopicRealCatQuestions(selectedTopic!.topic_name),
-        enabled: !!selectedTopic,
-    });
-
-    // Start learn session mutation
     const startSession = useMutation({
         mutationFn: (payload: StartLearnSessionPayload) => catApi.startLearnSession(payload),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['cat', 'mastery'] });
             setSessionDialogOpen(false);
+            toast({ title: 'Learning session started!' });
         },
     });
 
     const handleStartSession = () => {
         if (!selectedTopic) return;
         startSession.mutate({
-            topic_id: selectedTopic.topic_id,
-            session_type: sessionType,
-            problem_count: problemCount,
+            topicName: selectedTopic.topic_name,
+            sessionType: sessionType,
+            problemCount: problemCount,
         });
     };
 
-    const containerVariants = {
-        hidden: { opacity: 0 },
-        visible: {
-            opacity: 1,
-            transition: { staggerChildren: 0.1 }
-        },
-    };
+    if (masteryLoading) {
+        return (
+            <div className="flex justify-center py-16">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        );
+    }
 
-    const itemVariants = {
-        hidden: { y: 20, opacity: 0 },
-        visible: { y: 0, opacity: 1 },
-    };
+    const subjectOverviews = masteryData?.by_subject || [];
+    const allTopics = masteryData?.topics || [];
 
     return (
-        <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-            className="space-y-6 p-6"
-        >
-            {/* Header */}
-            <motion.div variants={itemVariants} className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-3xl font-bold bg-gradient-to-r from-violet-400 to-purple-500 bg-clip-text text-transparent">
-                        Learn
-                    </h1>
-                    <p className="text-muted-foreground mt-1">
-                        Master topics through lessons, practice problems, and real CAT questions
-                    </p>
-                </div>
-                {masteryData && (
-                    <div className="flex items-center gap-4">
-                        <div className="text-right">
-                            <p className="text-sm text-muted-foreground">Overall Mastery</p>
-                            <p className="text-2xl font-bold text-violet-400">
-                                {masteryData.overall_mastery}%
-                            </p>
-                        </div>
-                        <div className="w-24 h-24 relative">
-                            <svg className="w-24 h-24 transform -rotate-90">
-                                <circle
-                                    cx="48"
-                                    cy="48"
-                                    r="40"
-                                    stroke="currentColor"
-                                    strokeWidth="8"
-                                    fill="transparent"
-                                    className="text-muted/20"
-                                />
-                                <circle
-                                    cx="48"
-                                    cy="48"
-                                    r="40"
-                                    stroke="url(#gradient)"
-                                    strokeWidth="8"
-                                    fill="transparent"
-                                    strokeDasharray={`${(masteryData.overall_mastery / 100) * 251.2} 251.2`}
-                                    strokeLinecap="round"
-                                />
-                                <defs>
-                                    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                                        <stop offset="0%" stopColor="#8b5cf6" />
-                                        <stop offset="100%" stopColor="#a855f7" />
-                                    </linearGradient>
-                                </defs>
-                            </svg>
-                            <div className="absolute inset-0 flex items-center justify-center">
-                                <Trophy className="w-8 h-8 text-violet-400" />
-                            </div>
-                        </div>
-                    </div>
-                )}
-            </motion.div>
+        <>
+            {/* Subject Overview */}
+            <div className="grid md:grid-cols-3 gap-4">
+                {subjectOverviews.map((subject) => {
+                    const progress = subject.total_topics > 0
+                        ? (subject.topics_mastered / subject.total_topics) * 100
+                        : 0;
 
-            {/* Subject Progress Cards */}
-            {masteryData && (
-                <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {masteryData.by_subject.map((subject) => (
-                        <Card key={subject.subject_code} className="bg-card/50 border-border/50 hover:border-violet-500/30 transition-colors">
-                            <CardContent className="pt-6">
-                                <div className="flex items-center justify-between mb-4">
-                                    <div className="flex items-center gap-3">
-                                        {subject.subject_code === 'quant' && <Target className="w-5 h-5 text-blue-400" />}
-                                        {subject.subject_code === 'varc' && <BookOpen className="w-5 h-5 text-green-400" />}
-                                        {subject.subject_code === 'dilr' && <Brain className="w-5 h-5 text-purple-400" />}
-                                        <span className="font-semibold">{subject.subject_name}</span>
-                                    </div>
-                                    <span className="text-lg font-bold">{subject.mastery_score}%</span>
-                                </div>
-                                <Progress
-                                    value={subject.mastery_score}
-                                    className="h-2"
-                                />
-                                <p className="text-sm text-muted-foreground mt-2">
-                                    {subject.topics_mastered} / {subject.total_topics} topics mastered
-                                </p>
-                            </CardContent>
-                        </Card>
-                    ))}
-                </motion.div>
-            )}
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Topics List */}
-                <motion.div variants={itemVariants} className="lg:col-span-1">
-                    <Card className="bg-card/50 border-border/50 h-[600px] flex flex-col">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <GraduationCap className="w-5 h-5" />
-                                Topics
-                            </CardTitle>
-                            <CardDescription>Select a topic to learn</CardDescription>
-                        </CardHeader>
-                        <CardContent className="flex-1 overflow-hidden p-0">
-                            <ScrollArea className="h-full px-6 pb-6">
-                                {masteryLoading ? (
-                                    <div className="space-y-3">
-                                        {[1, 2, 3, 4, 5].map((i) => (
-                                            <div key={i} className="h-16 bg-muted/20 rounded-lg animate-pulse" />
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <div className="space-y-2">
-                                        {masteryData?.topics.map((topic) => {
-                                            const isSelected = selectedTopic?.topic_id === topic.topic_id;
-                                            const levelInfo = masteryLevelColors[topic.mastery_level];
-                                            return (
-                                                <motion.button
-                                                    key={topic.topic_id}
-                                                    whileHover={{ scale: 1.02 }}
-                                                    whileTap={{ scale: 0.98 }}
-                                                    onClick={() => setSelectedTopic(topic)}
-                                                    className={`w-full p-3 rounded-lg border text-left transition-all ${isSelected
-                                                            ? 'bg-violet-500/20 border-violet-500/50'
-                                                            : 'bg-muted/10 border-border/50 hover:border-violet-500/30'
-                                                        }`}
-                                                >
-                                                    <div className="flex items-center justify-between mb-1">
-                                                        <span className="font-medium text-sm">{topic.topic_name}</span>
-                                                        <Badge variant="outline" className={`${levelInfo.bg} ${levelInfo.text} text-xs`}>
-                                                            {levelInfo.label}
-                                                        </Badge>
-                                                    </div>
-                                                    <div className="flex items-center gap-2">
-                                                        <Progress value={topic.mastery_score} className="h-1 flex-1" />
-                                                        <span className="text-xs text-muted-foreground">
-                                                            {topic.mastery_score}%
-                                                        </span>
-                                                    </div>
-                                                    <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
-                                                        <span className="flex items-center gap-1">
-                                                            <CheckCircle2 className="w-3 h-3" />
-                                                            {topic.lessons_completed}/{topic.total_lessons} lessons
-                                                        </span>
-                                                        <span className="flex items-center gap-1">
-                                                            <Target className="w-3 h-3" />
-                                                            {topic.problems_correct}/{topic.problems_attempted} correct
-                                                        </span>
-                                                    </div>
-                                                </motion.button>
-                                            );
-                                        })}
-                                    </div>
-                                )}
-                            </ScrollArea>
-                        </CardContent>
-                    </Card>
-                </motion.div>
-
-                {/* Topic Content */}
-                <motion.div variants={itemVariants} className="lg:col-span-2">
-                    <Card className="bg-card/50 border-border/50 h-[600px] flex flex-col">
-                        {selectedTopic ? (
-                            <>
-                                <CardHeader className="pb-3">
-                                    <div className="flex items-center justify-between">
-                                        <div>
-                                            <CardTitle className="flex items-center gap-2">
-                                                {selectedTopic.topic_name}
-                                                <Badge variant="outline" className={`${masteryLevelColors[selectedTopic.mastery_level].bg} ${masteryLevelColors[selectedTopic.mastery_level].text}`}>
-                                                    {masteryLevelColors[selectedTopic.mastery_level].label}
-                                                </Badge>
-                                            </CardTitle>
-                                            <CardDescription className="mt-1 flex items-center gap-4">
-                                                <span className="flex items-center gap-1">
-                                                    <TrendingUp className="w-4 h-4" />
-                                                    {selectedTopic.accuracy_percent}% accuracy
-                                                </span>
-                                                <span className="flex items-center gap-1">
-                                                    <Star className="w-4 h-4" />
-                                                    {selectedTopic.streak} day streak
-                                                </span>
-                                            </CardDescription>
-                                        </div>
-                                        <Button
-                                            onClick={() => setSessionDialogOpen(true)}
-                                            className="bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700"
-                                        >
-                                            <Play className="w-4 h-4 mr-2" />
-                                            Start Session
-                                        </Button>
-                                    </div>
-                                    <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)} className="mt-4">
-                                        <TabsList className="bg-muted/20">
-                                            <TabsTrigger value="overview">Overview</TabsTrigger>
-                                            <TabsTrigger value="lessons">Lessons</TabsTrigger>
-                                            <TabsTrigger value="practice">Practice</TabsTrigger>
-                                            <TabsTrigger value="real-cat">Real CAT</TabsTrigger>
-                                        </TabsList>
-                                    </Tabs>
+                    return (
+                        <motion.div
+                            key={subject.subject_code}
+                            whileHover={{ scale: 1.02 }}
+                            className="relative overflow-hidden"
+                        >
+                            <Card className="h-full">
+                                <CardHeader className="pb-2">
+                                    <CardTitle className="flex items-center gap-2 text-lg">
+                                        {subject.subject_code === 'quant' && '📐'}
+                                        {subject.subject_code === 'varc' && '📚'}
+                                        {subject.subject_code === 'dilr' && '🧩'}
+                                        {subject.subject_name}
+                                    </CardTitle>
                                 </CardHeader>
-                                <CardContent className="flex-1 overflow-hidden">
-                                    <ScrollArea className="h-full pr-4">
-                                        <AnimatePresence mode="wait">
-                                            {/* Overview Tab */}
-                                            {activeTab === 'overview' && (
-                                                <motion.div
-                                                    initial={{ opacity: 0, y: 10 }}
-                                                    animate={{ opacity: 1, y: 0 }}
-                                                    exit={{ opacity: 0, y: -10 }}
-                                                    className="space-y-4"
-                                                >
-                                                    <div className="grid grid-cols-2 gap-4">
-                                                        <Card className="bg-muted/10 border-border/50">
-                                                            <CardContent className="pt-4">
-                                                                <div className="flex items-center gap-3">
-                                                                    <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
-                                                                        <BookOpen className="w-5 h-5 text-blue-400" />
-                                                                    </div>
-                                                                    <div>
-                                                                        <p className="text-2xl font-bold">
-                                                                            {selectedTopic.lessons_completed}/{selectedTopic.total_lessons}
-                                                                        </p>
-                                                                        <p className="text-sm text-muted-foreground">Lessons Completed</p>
-                                                                    </div>
-                                                                </div>
-                                                            </CardContent>
-                                                        </Card>
-                                                        <Card className="bg-muted/10 border-border/50">
-                                                            <CardContent className="pt-4">
-                                                                <div className="flex items-center gap-3">
-                                                                    <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
-                                                                        <Target className="w-5 h-5 text-green-400" />
-                                                                    </div>
-                                                                    <div>
-                                                                        <p className="text-2xl font-bold">
-                                                                            {selectedTopic.problems_correct}/{selectedTopic.problems_attempted}
-                                                                        </p>
-                                                                        <p className="text-sm text-muted-foreground">Problems Solved</p>
-                                                                    </div>
-                                                                </div>
-                                                            </CardContent>
-                                                        </Card>
-                                                    </div>
-                                                    <Card className="bg-gradient-to-br from-violet-500/10 to-purple-500/10 border-violet-500/30">
-                                                        <CardContent className="pt-4">
-                                                            <div className="flex items-start gap-3">
-                                                                <div className="w-10 h-10 rounded-full bg-violet-500/20 flex items-center justify-center flex-shrink-0">
-                                                                    <Sparkles className="w-5 h-5 text-violet-400" />
-                                                                </div>
-                                                                <div>
-                                                                    <p className="font-semibold mb-1">AI Recommendation</p>
-                                                                    <p className="text-sm text-muted-foreground">
-                                                                        Based on your performance, focus on medium difficulty problems
-                                                                        to improve your mastery. You're close to reaching the
-                                                                        "Proficient" level!
-                                                                    </p>
-                                                                </div>
-                                                            </div>
-                                                        </CardContent>
-                                                    </Card>
-                                                </motion.div>
-                                            )}
-
-                                            {/* Lessons Tab */}
-                                            {activeTab === 'lessons' && (
-                                                <motion.div
-                                                    initial={{ opacity: 0, y: 10 }}
-                                                    animate={{ opacity: 1, y: 0 }}
-                                                    exit={{ opacity: 0, y: -10 }}
-                                                    className="space-y-3"
-                                                >
-                                                    {lessonsLoading ? (
-                                                        <div className="space-y-3">
-                                                            {[1, 2, 3].map((i) => (
-                                                                <div key={i} className="h-20 bg-muted/20 rounded-lg animate-pulse" />
-                                                            ))}
-                                                        </div>
-                                                    ) : lessons?.length === 0 ? (
-                                                        <div className="text-center py-8 text-muted-foreground">
-                                                            <AlertCircle className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                                                            <p>No lessons available for this topic yet.</p>
-                                                        </div>
-                                                    ) : (
-                                                        lessons?.map((lesson, index) => (
-                                                            <Card
-                                                                key={lesson.id}
-                                                                className={`bg-muted/10 border-border/50 hover:border-violet-500/30 transition-colors cursor-pointer ${lesson.is_completed ? 'opacity-75' : ''
-                                                                    }`}
-                                                            >
-                                                                <CardContent className="py-4">
-                                                                    <div className="flex items-center gap-4">
-                                                                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${lesson.is_completed
-                                                                                ? 'bg-green-500/20 text-green-400'
-                                                                                : 'bg-muted/30 text-muted-foreground'
-                                                                            }`}>
-                                                                            {lesson.is_completed ? (
-                                                                                <CheckCircle2 className="w-5 h-5" />
-                                                                            ) : (
-                                                                                <span className="font-semibold">{index + 1}</span>
-                                                                            )}
-                                                                        </div>
-                                                                        <div className="flex-1">
-                                                                            <p className="font-medium">{lesson.title}</p>
-                                                                            <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                                                                                <Badge variant="outline" className="capitalize">
-                                                                                    {lesson.lesson_type}
-                                                                                </Badge>
-                                                                                {lesson.duration_minutes && (
-                                                                                    <span className="flex items-center gap-1">
-                                                                                        <Clock className="w-3 h-3" />
-                                                                                        {lesson.duration_minutes} min
-                                                                                    </span>
-                                                                                )}
-                                                                            </div>
-                                                                        </div>
-                                                                        <ChevronRight className="w-5 h-5 text-muted-foreground" />
-                                                                    </div>
-                                                                </CardContent>
-                                                            </Card>
-                                                        ))
-                                                    )}
-                                                </motion.div>
-                                            )}
-
-                                            {/* Practice Tab */}
-                                            {activeTab === 'practice' && (
-                                                <motion.div
-                                                    initial={{ opacity: 0, y: 10 }}
-                                                    animate={{ opacity: 1, y: 0 }}
-                                                    exit={{ opacity: 0, y: -10 }}
-                                                    className="space-y-4"
-                                                >
-                                                    <div className="flex items-center justify-between">
-                                                        <p className="text-sm text-muted-foreground">
-                                                            {problems?.length || 0} problems available
-                                                        </p>
-                                                        <Select
-                                                            value={difficultyFilter}
-                                                            onValueChange={(v) => setDifficultyFilter(v as typeof difficultyFilter)}
-                                                        >
-                                                            <SelectTrigger className="w-40">
-                                                                <SelectValue placeholder="Difficulty" />
-                                                            </SelectTrigger>
-                                                            <SelectContent>
-                                                                <SelectItem value="all">All Levels</SelectItem>
-                                                                <SelectItem value="easy">Easy</SelectItem>
-                                                                <SelectItem value="medium">Medium</SelectItem>
-                                                                <SelectItem value="hard">Hard</SelectItem>
-                                                                <SelectItem value="cat_level">CAT Level</SelectItem>
-                                                            </SelectContent>
-                                                        </Select>
-                                                    </div>
-                                                    {problemsLoading ? (
-                                                        <div className="space-y-3">
-                                                            {[1, 2, 3].map((i) => (
-                                                                <div key={i} className="h-24 bg-muted/20 rounded-lg animate-pulse" />
-                                                            ))}
-                                                        </div>
-                                                    ) : problems?.length === 0 ? (
-                                                        <div className="text-center py-8 text-muted-foreground">
-                                                            <AlertCircle className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                                                            <p>No practice problems available.</p>
-                                                        </div>
-                                                    ) : (
-                                                        problems?.slice(0, 10).map((problem) => (
-                                                            <ProblemCard key={problem.id} problem={problem} />
-                                                        ))
-                                                    )}
-                                                </motion.div>
-                                            )}
-
-                                            {/* Real CAT Tab */}
-                                            {activeTab === 'real-cat' && (
-                                                <motion.div
-                                                    initial={{ opacity: 0, y: 10 }}
-                                                    animate={{ opacity: 1, y: 0 }}
-                                                    exit={{ opacity: 0, y: -10 }}
-                                                    className="space-y-4"
-                                                >
-                                                    <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
-                                                        <Lightbulb className="w-5 h-5 text-amber-400" />
-                                                        <p className="text-sm text-amber-400">
-                                                            These are actual questions from past CAT exams. Great for understanding the exam pattern!
-                                                        </p>
-                                                    </div>
-                                                    {realCatLoading ? (
-                                                        <div className="space-y-3">
-                                                            {[1, 2, 3].map((i) => (
-                                                                <div key={i} className="h-24 bg-muted/20 rounded-lg animate-pulse" />
-                                                            ))}
-                                                        </div>
-                                                    ) : realCatQuestions?.length === 0 ? (
-                                                        <div className="text-center py-8 text-muted-foreground">
-                                                            <AlertCircle className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                                                            <p>No real CAT questions available for this topic.</p>
-                                                        </div>
-                                                    ) : (
-                                                        realCatQuestions?.map((problem) => (
-                                                            <ProblemCard key={problem.id} problem={problem} showYear />
-                                                        ))
-                                                    )}
-                                                </motion.div>
-                                            )}
-                                        </AnimatePresence>
-                                    </ScrollArea>
+                                <CardContent>
+                                    <div className="flex items-center justify-between mb-2">
+                                        <span className="text-sm text-muted-foreground">
+                                            {subject.topics_mastered}/{subject.total_topics} mastered
+                                        </span>
+                                        <span className="text-sm font-medium">{Math.round(progress)}%</span>
+                                    </div>
+                                    <Progress value={progress} className="h-2" />
                                 </CardContent>
-                            </>
-                        ) : (
-                            <div className="flex-1 flex items-center justify-center">
-                                <div className="text-center">
-                                    <GraduationCap className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
-                                    <p className="text-muted-foreground">Select a topic to start learning</p>
-                                </div>
-                            </div>
-                        )}
-                    </Card>
-                </motion.div>
+                            </Card>
+                        </motion.div>
+                    );
+                })}
             </div>
 
-            {/* Weak & Strong Topics */}
-            {masteryData && (
-                <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <Card className="bg-card/50 border-border/50">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-amber-400">
-                                <AlertCircle className="w-5 h-5" />
-                                Weak Topics
-                            </CardTitle>
-                            <CardDescription>Focus on these to improve</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="space-y-3">
-                                {masteryData.weak_topics.slice(0, 5).map((topic) => (
-                                    <div
+            {/* Topics Grid */}
+            <Card>
+                <CardHeader>
+                    <CardTitle>All Topics</CardTitle>
+                    <CardDescription>Click on a topic to start learning</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <ScrollArea className="h-[400px]">
+                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
+                            {allTopics.map((topic) => {
+                                const mastery = masteryColors[topic.mastery_level];
+                                return (
+                                    <motion.button
                                         key={topic.topic_id}
-                                        className="flex items-center justify-between p-3 rounded-lg bg-muted/10 hover:bg-muted/20 cursor-pointer transition-colors"
-                                        onClick={() => setSelectedTopic(topic)}
+                                        whileHover={{ scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
+                                        onClick={() => {
+                                            setSelectedTopic(topic);
+                                            setSessionDialogOpen(true);
+                                        }}
+                                        className={cn(
+                                            "text-left p-4 rounded-lg border transition-colors",
+                                            "hover:border-primary/50 hover:bg-muted/50",
+                                            mastery.bg
+                                        )}
                                     >
-                                        <div>
-                                            <p className="font-medium">{topic.topic_name}</p>
-                                            <p className="text-sm text-muted-foreground">
-                                                {topic.accuracy_percent}% accuracy
-                                            </p>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-16">
-                                                <Progress value={topic.mastery_score} className="h-2" />
+                                        <div className="flex items-start justify-between gap-2">
+                                            <div className="flex-1 min-w-0">
+                                                <p className="font-medium truncate">{topic.topic_name}</p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    {topic.problems_correct}/{topic.problems_attempted} correct
+                                                </p>
                                             </div>
-                                            <span className="text-sm font-medium w-8 text-right">
-                                                {topic.mastery_score}%
-                                            </span>
+                                            <Badge variant="outline" className={cn("text-xs", mastery.text)}>
+                                                {mastery.label}
+                                            </Badge>
                                         </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card className="bg-card/50 border-border/50">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-green-400">
-                                <Trophy className="w-5 h-5" />
-                                Strong Topics
-                            </CardTitle>
-                            <CardDescription>Keep up the great work!</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="space-y-3">
-                                {masteryData.strong_topics.slice(0, 5).map((topic) => (
-                                    <div
-                                        key={topic.topic_id}
-                                        className="flex items-center justify-between p-3 rounded-lg bg-muted/10 hover:bg-muted/20 cursor-pointer transition-colors"
-                                        onClick={() => setSelectedTopic(topic)}
-                                    >
-                                        <div>
-                                            <p className="font-medium">{topic.topic_name}</p>
-                                            <p className="text-sm text-muted-foreground">
-                                                {topic.accuracy_percent}% accuracy
-                                            </p>
+                                        <div className="mt-2">
+                                            <Progress
+                                                value={topic.accuracy_percent}
+                                                className="h-1"
+                                            />
                                         </div>
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-16">
-                                                <Progress value={topic.mastery_score} className="h-2" />
-                                            </div>
-                                            <span className="text-sm font-medium w-8 text-right">
-                                                {topic.mastery_score}%
-                                            </span>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </CardContent>
-                    </Card>
-                </motion.div>
-            )}
+                                    </motion.button>
+                                );
+                            })}
+                        </div>
+                    </ScrollArea>
+                </CardContent>
+            </Card>
 
             {/* Start Session Dialog */}
             <Dialog open={sessionDialogOpen} onOpenChange={setSessionDialogOpen}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Start Learning Session</DialogTitle>
+                        <DialogTitle>Start Learning: {selectedTopic?.topic_name}</DialogTitle>
                         <DialogDescription>
-                            Configure your learning session for {selectedTopic?.topic_name}
+                            Configure your practice session
                         </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
                         <div>
-                            <label className="text-sm font-medium mb-2 block">Session Type</label>
-                            <Select
-                                value={sessionType}
-                                onValueChange={(v) => setSessionType(v as typeof sessionType)}
-                            >
+                            <Label>Session Type</Label>
+                            <Select value={sessionType} onValueChange={(v) => setSessionType(v as typeof sessionType)}>
                                 <SelectTrigger>
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="practice">Practice Problems</SelectItem>
-                                    <SelectItem value="real_cat">Real CAT Questions</SelectItem>
-                                    <SelectItem value="mixed">Mixed</SelectItem>
+                                    <SelectItem value="speed_drill">Speed Drill</SelectItem>
+                                    <SelectItem value="revision">Revision</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
                         <div>
-                            <label className="text-sm font-medium mb-2 block">Number of Problems</label>
-                            <Select
-                                value={problemCount.toString()}
-                                onValueChange={(v) => setProblemCount(parseInt(v))}
-                            >
+                            <Label>Number of Problems</Label>
+                            <Select value={String(problemCount)} onValueChange={(v) => setProblemCount(Number(v))}>
                                 <SelectTrigger>
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="5">5 problems</SelectItem>
                                     <SelectItem value="10">10 problems</SelectItem>
-                                    <SelectItem value="15">15 problems</SelectItem>
                                     <SelectItem value="20">20 problems</SelectItem>
+                                    <SelectItem value="30">30 problems</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -666,64 +297,585 @@ export default function Learn() {
                         <Button variant="outline" onClick={() => setSessionDialogOpen(false)}>
                             Cancel
                         </Button>
-                        <Button
-                            onClick={handleStartSession}
-                            disabled={startSession.isPending}
-                            className="bg-gradient-to-r from-violet-500 to-purple-600"
-                        >
-                            {startSession.isPending ? 'Starting...' : 'Start Session'}
+                        <Button onClick={handleStartSession} disabled={startSession.isPending}>
+                            {startSession.isPending ? (
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            ) : (
+                                <Play className="h-4 w-4 mr-2" />
+                            )}
+                            Start Session
                         </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+        </>
+    );
+}
+
+// ========================
+// NOTES SECTION
+// ========================
+function NotesSection() {
+    const [searchQuery, setSearchQuery] = useState('');
+    const [selectedTopic, setSelectedTopic] = useState<string>('all');
+    const [dialogOpen, setDialogOpen] = useState(false);
+    const [editNote, setEditNote] = useState<Note | null>(null);
+    const queryClient = useQueryClient();
+    const { toast } = useToast();
+
+    const { data: subjects } = useQuery({
+        queryKey: ['cat-subjects'],
+        queryFn: () => catApi.getSubjects(),
+        staleTime: 5 * 60 * 1000,
+    });
+
+    const { data: searchResults, isLoading: isSearching } = useQuery({
+        queryKey: ['cat-notes-search', searchQuery],
+        queryFn: () => catApi.searchNotes({ q: searchQuery }),
+        enabled: searchQuery.length > 0,
+    });
+
+    const { data: topicNotes, isLoading } = useQuery({
+        queryKey: ['cat-notes-topic', selectedTopic],
+        queryFn: () => catApi.getTopicNotes(selectedTopic),
+        enabled: selectedTopic !== 'all' && !searchQuery,
+    });
+
+    const allTopics = useMemo(() => {
+        if (!subjects) return [];
+        return subjects.flatMap(s => s.topics.map(t => ({ id: t.id, title: t.title, icon: s.icon })));
+    }, [subjects]);
+
+    const displayNotes = searchQuery ? searchResults : topicNotes;
+
+    const deleteMutation = useMutation({
+        mutationFn: (id: string) => catApi.deleteNote(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['cat-notes'] });
+            toast({ title: 'Note deleted' });
+        },
+    });
+
+    const generateFlashcardsMutation = useMutation({
+        mutationFn: (noteId: string) => catApi.generateFlashcardsFromNote(noteId),
+        onSuccess: (data) => {
+            toast({ title: `Created ${data.length} flashcards!` });
+        },
+    });
+
+    return (
+        <>
+            {/* Header with Actions */}
+            <div className="flex flex-col md:flex-row gap-4">
+                <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Search notes..."
+                        className="pl-9"
+                    />
+                </div>
+                <Select value={selectedTopic} onValueChange={setSelectedTopic}>
+                    <SelectTrigger className="w-48">
+                        <SelectValue placeholder="Filter by topic" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">All Topics</SelectItem>
+                        {allTopics.map(t => (
+                            <SelectItem key={t.id} value={t.id}>{t.icon} {t.title}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+                <Button onClick={() => setDialogOpen(true)}>
+                    <Plus className="h-4 w-4 mr-2" /> Add Note
+                </Button>
+            </div>
+
+            {/* Notes Grid */}
+            {(isLoading || isSearching) ? (
+                <div className="flex justify-center py-16">
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                </div>
+            ) : displayNotes && displayNotes.length > 0 ? (
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {displayNotes.map((note: Note) => (
+                        <motion.div
+                            key={note.id}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            whileHover={{ y: -4 }}
+                        >
+                            <Card className="h-full">
+                                <CardHeader className="pb-2">
+                                    <CardTitle className="text-base line-clamp-1">{note.title}</CardTitle>
+                                    <CardDescription className="text-xs">
+                                        {new Date(note.updated_at).toLocaleDateString()}
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <p className="text-sm text-muted-foreground line-clamp-3 mb-4">
+                                        {note.content}
+                                    </p>
+                                    <div className="flex gap-2">
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() => { setEditNote(note); setDialogOpen(true); }}
+                                        >
+                                            <Edit className="h-3 w-3 mr-1" /> Edit
+                                        </Button>
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() => generateFlashcardsMutation.mutate(note.id)}
+                                            disabled={generateFlashcardsMutation.isPending}
+                                        >
+                                            <Sparkles className="h-3 w-3 mr-1" /> Cards
+                                        </Button>
+                                        <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            className="text-red-500"
+                                            onClick={() => deleteMutation.mutate(note.id)}
+                                        >
+                                            <Trash2 className="h-3 w-3" />
+                                        </Button>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </motion.div>
+                    ))}
+                </div>
+            ) : (
+                <div className="text-center py-16">
+                    <StickyNote className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+                    <h3 className="text-lg font-medium mb-2">No notes yet</h3>
+                    <p className="text-muted-foreground mb-4">
+                        {selectedTopic === 'all'
+                            ? 'Start taking notes to organize your learning'
+                            : 'No notes for this topic yet'}
+                    </p>
+                    <Button onClick={() => setDialogOpen(true)}>
+                        <Plus className="h-4 w-4 mr-2" /> Create Note
+                    </Button>
+                </div>
+            )}
+
+            {/* Note Dialog */}
+            <NoteDialog
+                open={dialogOpen}
+                onOpenChange={(o) => { setDialogOpen(o); if (!o) setEditNote(null); }}
+                note={editNote}
+                topics={allTopics}
+                onSuccess={() => {
+                    queryClient.invalidateQueries({ queryKey: ['cat-notes'] });
+                    setDialogOpen(false);
+                    setEditNote(null);
+                }}
+            />
+        </>
+    );
+}
+
+function NoteDialog({
+    open,
+    onOpenChange,
+    note,
+    topics,
+    onSuccess,
+}: {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    note: Note | null;
+    topics: { id: string; title: string; icon: string }[];
+    onSuccess: () => void;
+}) {
+    const [topicId, setTopicId] = useState(note?.topic_id || '');
+    const [title, setTitle] = useState(note?.title || '');
+    const [content, setContent] = useState(note?.content || '');
+    const { toast } = useToast();
+
+    const createMutation = useMutation({
+        mutationFn: (p: CreateNotePayload) => catApi.createNote(p),
+        onSuccess: () => { toast({ title: 'Note created' }); onSuccess(); },
+    });
+
+    const updateMutation = useMutation({
+        mutationFn: ({ id, ...p }: { id: string } & Partial<CreateNotePayload>) => catApi.updateNote(id, p),
+        onSuccess: () => { toast({ title: 'Note updated' }); onSuccess(); },
+    });
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (note) {
+            updateMutation.mutate({ id: note.id, topic_id: topicId, title, content });
+        } else {
+            createMutation.mutate({ topic_id: topicId, title, content });
+        }
+    };
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>{note ? 'Edit Note' : 'Create Note'}</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div>
+                        <Label>Topic</Label>
+                        <Select value={topicId} onValueChange={setTopicId}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select topic" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {topics.map(t => (
+                                    <SelectItem key={t.id} value={t.id}>{t.icon} {t.title}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div>
+                        <Label>Title</Label>
+                        <Input value={title} onChange={e => setTitle(e.target.value)} />
+                    </div>
+                    <div>
+                        <Label>Content</Label>
+                        <Textarea value={content} onChange={e => setContent(e.target.value)} rows={6} />
+                    </div>
+                    <DialogFooter>
+                        <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                            Cancel
+                        </Button>
+                        <Button type="submit" disabled={!topicId || !title || !content}>
+                            {note ? 'Update' : 'Create'}
+                        </Button>
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+// ========================
+// FLASHCARDS SECTION
+// ========================
+function FlashcardsSection() {
+    const [mode, setMode] = useState<'browse' | 'review'>('browse');
+    const [selectedTopic, setSelectedTopic] = useState<string>('all');
+    const [createDialogOpen, setCreateDialogOpen] = useState(false);
+    const queryClient = useQueryClient();
+    const { toast } = useToast();
+
+    const { data: subjects } = useQuery({
+        queryKey: ['cat-subjects'],
+        queryFn: () => catApi.getSubjects(),
+        staleTime: 5 * 60 * 1000,
+    });
+
+    const { data: dueCards, isLoading: isDueLoading } = useQuery({
+        queryKey: ['cat-flashcards-due'],
+        queryFn: () => catApi.getDueFlashcards(50),
+        staleTime: 1 * 60 * 1000,
+    });
+
+    const { data: topicCards, isLoading: isTopicLoading } = useQuery({
+        queryKey: ['cat-flashcards-topic', selectedTopic],
+        queryFn: () => catApi.getTopicFlashcards(selectedTopic),
+        enabled: selectedTopic !== 'all',
+    });
+
+    const allTopics = useMemo(() => {
+        if (!subjects) return [];
+        return subjects.flatMap(s => s.topics.map(t => ({ id: t.id, title: t.title, icon: s.icon })));
+    }, [subjects]);
+
+    const displayCards = selectedTopic === 'all' ? dueCards : topicCards;
+    const isLoading = selectedTopic === 'all' ? isDueLoading : isTopicLoading;
+
+    return (
+        <>
+            {mode === 'review' && dueCards ? (
+                <ReviewModeComponent
+                    cards={dueCards}
+                    onComplete={() => {
+                        setMode('browse');
+                        queryClient.invalidateQueries({ queryKey: ['cat-flashcards'] });
+                    }}
+                />
+            ) : (
+                <>
+                    {/* Header with Actions */}
+                    <div className="flex flex-col md:flex-row gap-4">
+                        <Select value={selectedTopic} onValueChange={setSelectedTopic}>
+                            <SelectTrigger className="w-56">
+                                <SelectValue placeholder="Filter by topic" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">Due Cards ({dueCards?.length || 0})</SelectItem>
+                                {allTopics.map(t => (
+                                    <SelectItem key={t.id} value={t.id}>{t.icon} {t.title}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        <div className="flex gap-2 ml-auto">
+                            {dueCards && dueCards.length > 0 && (
+                                <Button
+                                    onClick={() => setMode('review')}
+                                    className="bg-gradient-to-r from-violet-500 to-purple-600"
+                                >
+                                    <Play className="h-4 w-4 mr-2" />
+                                    Review {dueCards.length} Due
+                                </Button>
+                            )}
+                            <Button variant="outline" onClick={() => setCreateDialogOpen(true)}>
+                                <Plus className="h-4 w-4 mr-2" /> Add Card
+                            </Button>
+                        </div>
+                    </div>
+
+                    {/* Cards Grid */}
+                    {isLoading ? (
+                        <div className="flex justify-center py-16">
+                            <Loader2 className="h-8 w-8 animate-spin" />
+                        </div>
+                    ) : displayCards && displayCards.length > 0 ? (
+                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {displayCards.map((card: Flashcard) => (
+                                <FlashcardPreviewCard key={card.id} card={card} />
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="text-center py-16">
+                            <Layers className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+                            <h3 className="text-lg font-medium mb-2">
+                                {selectedTopic === 'all' ? 'No cards due for review!' : 'No flashcards'}
+                            </h3>
+                            <p className="text-muted-foreground mb-4">
+                                {selectedTopic === 'all'
+                                    ? 'Great job! Check back later.'
+                                    : 'Create flashcards from notes or add manually.'}
+                            </p>
+                            <Button variant="outline" onClick={() => setCreateDialogOpen(true)}>
+                                <Plus className="h-4 w-4 mr-2" /> Create Card
+                            </Button>
+                        </div>
+                    )}
+                </>
+            )}
+
+            <CreateFlashcardDialog
+                open={createDialogOpen}
+                topics={allTopics}
+                onOpenChange={setCreateDialogOpen}
+                onSuccess={() => {
+                    queryClient.invalidateQueries({ queryKey: ['cat-flashcards'] });
+                    setCreateDialogOpen(false);
+                }}
+            />
+        </>
+    );
+}
+
+function FlashcardPreviewCard({ card }: { card: Flashcard }) {
+    const [flipped, setFlipped] = useState(false);
+
+    return (
+        <motion.div
+            whileHover={{ scale: 1.02 }}
+            className="cursor-pointer"
+            onClick={() => setFlipped(!flipped)}
+        >
+            <Card className="h-40 relative overflow-hidden">
+                <AnimatePresence mode="wait">
+                    <motion.div
+                        key={flipped ? 'back' : 'front'}
+                        initial={{ rotateY: 90, opacity: 0 }}
+                        animate={{ rotateY: 0, opacity: 1 }}
+                        exit={{ rotateY: -90, opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="absolute inset-0 p-4 flex flex-col"
+                    >
+                        <Badge className="self-start mb-2" variant={flipped ? 'secondary' : 'outline'}>
+                            {flipped ? 'Answer' : 'Question'}
+                        </Badge>
+                        <p className="flex-1 text-sm overflow-y-auto">
+                            {flipped ? card.answer : card.question}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-2">Click to flip</p>
+                    </motion.div>
+                </AnimatePresence>
+            </Card>
         </motion.div>
     );
 }
 
-// Problem Card Component
-function ProblemCard({ problem, showYear = false }: { problem: Problem; showYear?: boolean }) {
+function ReviewModeComponent({
+    cards,
+    onComplete,
+}: {
+    cards: Flashcard[];
+    onComplete: () => void;
+}) {
+    const [currentIndex, setCurrentIndex] = useState(0);
+    const [flipped, setFlipped] = useState(false);
+    const [reviewed, setReviewed] = useState<{ id: string; correct: boolean }[]>([]);
+    const { toast } = useToast();
+    const queryClient = useQueryClient();
+
+    const reviewMutation = useMutation({
+        mutationFn: ({ id, correct }: { id: string; correct: boolean }) =>
+            catApi.reviewFlashcard(id, correct),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['cat-flashcards'] }),
+    });
+
+    const currentCard = cards[currentIndex];
+    const progress = (reviewed.length / cards.length) * 100;
+    const correctCount = reviewed.filter(r => r.correct).length;
+
+    const handleReview = (correct: boolean) => {
+        reviewMutation.mutate({ id: currentCard.id, correct });
+        setReviewed([...reviewed, { id: currentCard.id, correct }]);
+        setFlipped(false);
+        if (currentIndex < cards.length - 1) {
+            setCurrentIndex(currentIndex + 1);
+        } else {
+            toast({ title: `Session complete! ${correctCount + (correct ? 1 : 0)}/${cards.length} correct` });
+            onComplete();
+        }
+    };
+
+    if (!currentCard) return null;
+
     return (
-        <Card className="bg-muted/10 border-border/50 hover:border-violet-500/30 transition-colors cursor-pointer">
-            <CardContent className="py-4">
-                <div className="flex items-start gap-4">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${problem.attempted
-                            ? problem.is_correct
-                                ? 'bg-green-500/20 text-green-400'
-                                : 'bg-red-500/20 text-red-400'
-                            : 'bg-muted/30 text-muted-foreground'
-                        }`}>
-                        {problem.attempted ? (
-                            problem.is_correct ? (
-                                <CheckCircle2 className="w-5 h-5" />
-                            ) : (
-                                <AlertCircle className="w-5 h-5" />
-                            )
-                        ) : (
-                            <Target className="w-5 h-5" />
-                        )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                        <p className="text-sm line-clamp-2">{problem.question_text}</p>
-                        <div className="flex items-center gap-2 mt-2 flex-wrap">
-                            <Badge variant="outline" className={`${difficultyColors[problem.difficulty]} capitalize`}>
-                                {problem.difficulty.replace('_', ' ')}
-                            </Badge>
-                            {showYear && problem.cat_year && (
-                                <Badge variant="outline" className="bg-violet-500/20 text-violet-400 border-violet-500/30">
-                                    CAT {problem.cat_year}
+        <div className="max-w-2xl mx-auto space-y-6">
+            <div className="flex items-center justify-between">
+                <Button variant="ghost" onClick={onComplete}>
+                    <X className="h-4 w-4 mr-2" /> Exit
+                </Button>
+                <Badge variant="secondary">{currentIndex + 1} / {cards.length}</Badge>
+            </div>
+
+            <Progress value={progress} className="h-2" />
+
+            <motion.div className="min-h-[300px] cursor-pointer" onClick={() => setFlipped(!flipped)}>
+                <Card className="h-full">
+                    <CardContent className="p-8 flex flex-col items-center justify-center min-h-[300px]">
+                        <AnimatePresence mode="wait">
+                            <motion.div
+                                key={flipped ? 'back' : 'front'}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -20 }}
+                                className="text-center"
+                            >
+                                <Badge className="mb-4" variant={flipped ? 'default' : 'outline'}>
+                                    {flipped ? 'Answer' : 'Question'}
                                 </Badge>
-                            )}
-                            {problem.time_limit_seconds && (
-                                <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                                    <Timer className="w-3 h-3" />
-                                    {Math.floor(problem.time_limit_seconds / 60)}m {problem.time_limit_seconds % 60}s
-                                </span>
-                            )}
-                        </div>
-                    </div>
-                    <ChevronRight className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+                                <p className="text-xl">{flipped ? currentCard.answer : currentCard.question}</p>
+                            </motion.div>
+                        </AnimatePresence>
+                    </CardContent>
+                </Card>
+            </motion.div>
+
+            {flipped ? (
+                <div className="flex justify-center gap-4">
+                    <Button
+                        size="lg"
+                        variant="outline"
+                        className="text-red-500 border-red-500"
+                        onClick={() => handleReview(false)}
+                    >
+                        <X className="h-5 w-5 mr-2" /> Incorrect
+                    </Button>
+                    <Button
+                        size="lg"
+                        className="bg-emerald-500 hover:bg-emerald-600"
+                        onClick={() => handleReview(true)}
+                    >
+                        <CheckCircle2 className="h-5 w-5 mr-2" /> Correct
+                    </Button>
                 </div>
-            </CardContent>
-        </Card>
+            ) : (
+                <div className="text-center text-muted-foreground">
+                    Click the card to reveal the answer
+                </div>
+            )}
+        </div>
+    );
+}
+
+function CreateFlashcardDialog({
+    open,
+    topics,
+    onOpenChange,
+    onSuccess,
+}: {
+    open: boolean;
+    topics: { id: string; title: string; icon: string }[];
+    onOpenChange: (open: boolean) => void;
+    onSuccess: () => void;
+}) {
+    const [topicId, setTopicId] = useState('');
+    const [question, setQuestion] = useState('');
+    const [answer, setAnswer] = useState('');
+    const { toast } = useToast();
+
+    const mutation = useMutation({
+        mutationFn: (p: CreateFlashcardPayload) => catApi.createFlashcard(p),
+        onSuccess: () => {
+            toast({ title: 'Flashcard created' });
+            setQuestion('');
+            setAnswer('');
+            onSuccess();
+        },
+    });
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        mutation.mutate({ topic_id: topicId, question, answer });
+    };
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Create Flashcard</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div>
+                        <Label>Topic</Label>
+                        <Select value={topicId} onValueChange={setTopicId}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {topics.map(t => (
+                                    <SelectItem key={t.id} value={t.id}>{t.icon} {t.title}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div>
+                        <Label>Question</Label>
+                        <Textarea value={question} onChange={e => setQuestion(e.target.value)} rows={3} />
+                    </div>
+                    <div>
+                        <Label>Answer</Label>
+                        <Textarea value={answer} onChange={e => setAnswer(e.target.value)} rows={3} />
+                    </div>
+                    <DialogFooter>
+                        <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                            Cancel
+                        </Button>
+                        <Button type="submit" disabled={!topicId || !question || !answer || mutation.isPending}>
+                            {mutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                            Create
+                        </Button>
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
     );
 }

@@ -104,6 +104,8 @@ const CatAnalytics = lazyRetry(() => import("./pages/cat/Analytics"), "CatAnalyt
 const CatSettings = lazyRetry(() => import("./pages/cat/Settings"), "CatSettings");
 const CatLearn = lazyRetry(() => import("./pages/cat/Learn"), "CatLearn");
 const CatAdaptiveExam = lazyRetry(() => import("./pages/cat/AdaptiveExam"), "CatAdaptiveExam");
+const CatAssess = lazyRetry(() => import("./pages/cat/Assess"), "CatAssess");
+const CatReview = lazyRetry(() => import("./pages/cat/Review"), "CatReview");
 
 // Loading fallback for lazy components
 const PageLoader = () => (
@@ -243,6 +245,8 @@ const App = () => {
                     <Route path="settings" element={<Suspense fallback={<PageLoader />}><CatSettings /></Suspense>} />
                     <Route path="learn" element={<Suspense fallback={<PageLoader />}><CatLearn /></Suspense>} />
                     <Route path="adaptive" element={<Suspense fallback={<PageLoader />}><CatAdaptiveExam /></Suspense>} />
+                    <Route path="assess" element={<Suspense fallback={<PageLoader />}><CatAssess /></Suspense>} />
+                    <Route path="review" element={<Suspense fallback={<PageLoader />}><CatReview /></Suspense>} />
                   </Route>
 
                   {/* =============================================

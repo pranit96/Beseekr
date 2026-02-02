@@ -41,22 +41,16 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
+import FloatingAITutor from '@/components/cat/FloatingAITutor';
 
 const navigation = [
-    { name: 'Dashboard', href: 'dashboard', icon: LayoutDashboard },
-    { name: 'Subjects', href: 'subjects', icon: BookOpen },
-    { name: 'Tasks', href: 'tasks', icon: ListTodo },
-    { name: 'Notes', href: 'notes', icon: StickyNote },
-    { name: 'Flashcards', href: 'flashcards', icon: Layers },
-    { name: 'Mock Tests', href: 'mocks', icon: FileQuestion },
-    { name: 'Practice', href: 'practice', icon: Target },
-    { name: 'External Mocks', href: 'external-mocks', icon: Trophy },
-    { name: 'Revisions', href: 'revisions', icon: RotateCcw },
-    { name: 'Mistakes', href: 'mistakes', icon: AlertCircle },
-    { name: 'Bookmarks', href: 'bookmarks', icon: Bookmark },
-    { name: 'Resources', href: 'resources', icon: Video },
-    { name: 'Analytics', href: 'analytics', icon: BarChart3 },
-    { name: 'Settings', href: 'settings', icon: Settings },
+    { name: 'Dashboard', href: 'dashboard', icon: LayoutDashboard, description: 'Overview & Tasks' },
+    { name: 'Learn', href: 'learn', icon: BookOpen, description: 'Topics, Notes & Cards' },
+    { name: 'Practice', href: 'practice', icon: Target, description: 'Problems & Mistakes' },
+    { name: 'Assess', href: 'assess', icon: FileQuestion, description: 'Mocks & Exams' },
+    { name: 'Review', href: 'review', icon: BarChart3, description: 'Analytics & Revisions' },
+    { name: 'Resources', href: 'resources', icon: Video, description: 'Study Materials' },
+    { name: 'Settings', href: 'settings', icon: Settings, description: 'Preferences' },
 ];
 
 export function CatDashboardLayout() {
@@ -344,6 +338,9 @@ export function CatDashboardLayout() {
                         </div>
                     </div>
                 </footer>
+
+                {/* Floating AI Tutor */}
+                <FloatingAITutor />
             </div>
         </div>
     );
