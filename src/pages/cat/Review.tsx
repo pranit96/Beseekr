@@ -80,8 +80,8 @@ export default function Review() {
         },
     });
 
-    const streak = dashboard?.streak;
-    const mockPerf = dashboard?.mock_performance;
+    const currentStreak = dashboard?.settings?.current_streak || 0;
+    const mockData = dashboard?.mocks;
 
     const grouped = useMemo(() => {
         if (!revisions || !Array.isArray(revisions)) return { overdue: [], today: [], upcoming: [], completed: [] };
@@ -139,7 +139,7 @@ export default function Review() {
                                 <Flame className="h-5 w-5 text-amber-400" />
                             </div>
                             <div>
-                                <p className="text-2xl font-bold text-amber-500">{streak?.current || 0}</p>
+                                <p className="text-2xl font-bold text-amber-500">{currentStreak}</p>
                                 <p className="text-xs text-muted-foreground">Day Streak</p>
                             </div>
                         </div>
@@ -152,7 +152,7 @@ export default function Review() {
                                 <CheckCircle2 className="h-5 w-5 text-violet-400" />
                             </div>
                             <div>
-                                <p className="text-2xl font-bold text-violet-500">{dashboard?.syllabus_progress?.overall_completion || 0}%</p>
+                                <p className="text-2xl font-bold text-violet-500">{dashboard?.syllabus?.progress_percent || 0}%</p>
                                 <p className="text-xs text-muted-foreground">Syllabus</p>
                             </div>
                         </div>
@@ -165,7 +165,7 @@ export default function Review() {
                                 <TrendingUp className="h-5 w-5 text-emerald-400" />
                             </div>
                             <div>
-                                <p className="text-2xl font-bold text-emerald-500">{mockPerf?.average_score?.toFixed(0) || '--'}</p>
+                                <p className="text-2xl font-bold text-emerald-500">{mockData?.average_score || '--'}</p>
                                 <p className="text-xs text-muted-foreground">Avg Score</p>
                             </div>
                         </div>
@@ -236,7 +236,7 @@ export default function Review() {
                             )}
 
                             {/* Mock Performance Trend */}
-                            {mockPerf && mockPerf.trend.length > 0 && (
+                            {dashboard?.score_trend && dashboard.score_trend.length > 0 && (
                                 <Card>
                                     <CardHeader>
                                         <CardTitle className="flex items-center gap-2">
@@ -246,18 +246,21 @@ export default function Review() {
                                     </CardHeader>
                                     <CardContent>
                                         <div className="h-40 flex items-end gap-2">
-                                            {mockPerf.trend.slice(-15).map((point, i) => (
-                                                <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                                                    <span className="text-xs font-medium">{point.score}</span>
-                                                    <div
-                                                        className="w-full bg-primary/20 hover:bg-primary/40 rounded-t transition-colors"
-                                                        style={{ height: `${(point.score / (mockPerf.best_score || 200)) * 100}%` }}
-                                                    />
-                                                    <span className="text-xs text-muted-foreground">
-                                                        {format(new Date(point.date), 'M/d')}
-                                                    </span>
-                                                </div>
-                                            ))}
+                                            {dashboard.score_trend.slice(-15).map((point, i) => {
+                                                const maxScore = Math.max(...dashboard.score_trend.map(p => p.score), 200);
+                                                return (
+                                                    <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                                                        <span className="text-xs font-medium">{point.score}</span>
+                                                        <div
+                                                            className="w-full bg-primary/20 hover:bg-primary/40 rounded-t transition-colors"
+                                                            style={{ height: `${(point.score / maxScore) * 100}%` }}
+                                                        />
+                                                        <span className="text-xs text-muted-foreground">
+                                                            {format(new Date(point.date), 'M/d')}
+                                                        </span>
+                                                    </div>
+                                                );
+                                            })}
                                         </div>
                                     </CardContent>
                                 </Card>
