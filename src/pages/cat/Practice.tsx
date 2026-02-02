@@ -454,7 +454,7 @@ function StartPracticeDialog({
     onSuccess: () => void;
 }) {
     const [sessionType, setSessionType] = useState<SessionType>('timed');
-    const [subjectId, setSubjectId] = useState('');
+    const [subjectId, setSubjectId] = useState('all');
     const [questionCount, setQuestionCount] = useState('10');
     const [timeLimit, setTimeLimit] = useState('15');
     const { toast } = useToast();
@@ -468,7 +468,7 @@ function StartPracticeDialog({
     const handleStart = () => {
         mutation.mutate({
             session_type: sessionType,
-            subject_id: subjectId || undefined,
+            subject_id: subjectId !== 'all' ? subjectId : undefined,
             question_count: parseInt(questionCount),
             time_limit_minutes: sessionType === 'timed' ? parseInt(timeLimit) : undefined,
         });
@@ -509,7 +509,7 @@ function StartPracticeDialog({
                         <Select value={subjectId} onValueChange={setSubjectId}>
                             <SelectTrigger><SelectValue placeholder="All subjects" /></SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="">All Subjects</SelectItem>
+                                <SelectItem value="all">All Subjects</SelectItem>
                                 {subjects.map(s => (
                                     <SelectItem key={s.id} value={s.id}>{s.icon} {s.name}</SelectItem>
                                 ))}

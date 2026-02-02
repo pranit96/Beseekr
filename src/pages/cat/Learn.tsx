@@ -48,6 +48,7 @@ import type {
     Flashcard,
     CreateFlashcardPayload,
 } from '@/types/cat';
+import Subjects from './Subjects';
 
 const difficultyColors: Record<ProblemDifficulty, string> = {
     easy: 'bg-green-500/20 text-green-400 border-green-500/30',
@@ -86,10 +87,14 @@ export default function Learn() {
 
             {/* Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-                <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:inline-flex">
+                <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-flex">
                     <TabsTrigger value="topics" className="gap-2">
                         <BookOpen className="h-4 w-4" />
                         <span className="hidden sm:inline">Topics</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="syllabus" className="gap-2">
+                        <Target className="h-4 w-4" />
+                        <span className="hidden sm:inline">Syllabus</span>
                     </TabsTrigger>
                     <TabsTrigger value="notes" className="gap-2">
                         <StickyNote className="h-4 w-4" />
@@ -104,6 +109,11 @@ export default function Learn() {
                 {/* Topics Tab */}
                 <TabsContent value="topics" className="space-y-6">
                     <TopicsSection />
+                </TabsContent>
+
+                {/* Syllabus Tab */}
+                <TabsContent value="syllabus" className="space-y-6">
+                    <Subjects />
                 </TabsContent>
 
                 {/* Notes Tab */}
