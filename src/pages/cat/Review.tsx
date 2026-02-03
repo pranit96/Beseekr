@@ -228,7 +228,7 @@ export default function Review() {
                                     </CardHeader>
                                     <CardContent>
                                         <div className="flex gap-1 justify-between">
-                                            {goalsHistory.slice(-14).map((goal) => (
+                                            {goalsHistory?.slice(-14)?.map((goal) => (
                                                 <div key={goal.date} className="flex flex-col items-center">
                                                     <div className={cn(
                                                         "w-8 h-8 rounded-lg flex items-center justify-center text-sm font-medium",
@@ -257,8 +257,8 @@ export default function Review() {
                                     </CardHeader>
                                     <CardContent>
                                         <div className="h-40 flex items-end gap-2">
-                                            {dashboard.score_trend.slice(-15).map((point, i) => {
-                                                const maxScore = Math.max(...dashboard.score_trend.map(p => p.score), 200);
+                                            {dashboard.score_trend?.slice(-15)?.map((point, i) => {
+                                                const maxScore = Math.max(...(dashboard.score_trend?.map(p => p.score) || []), 200);
                                                 return (
                                                     <div key={i} className="flex-1 flex flex-col items-center gap-1">
                                                         <span className="text-xs font-medium">{point.score}</span>
@@ -290,7 +290,7 @@ export default function Review() {
                             )}
 
                             {/* Speed Analytics */}
-                            {speedAnalytics && speedAnalytics.topics.length > 0 && (
+                            {speedAnalytics?.topics?.length > 0 && (
                                 <Card>
                                     <CardHeader>
                                         <CardTitle className="flex items-center gap-2">
@@ -299,7 +299,7 @@ export default function Review() {
                                         <CardDescription>Avg time per topic vs target • Top {speedAnalytics.percentile_speed}% speed</CardDescription>
                                     </CardHeader>
                                     <CardContent className="space-y-3">
-                                        {speedAnalytics.topics.slice(0, 5).map((topic) => (
+                                        {speedAnalytics?.topics?.slice(0, 5)?.map((topic) => (
                                             <div key={topic.id} className="flex items-center gap-3">
                                                 <div className="flex-1">
                                                     <div className="flex justify-between mb-1">
@@ -486,7 +486,7 @@ export default function Review() {
                                         </CardTitle>
                                     </CardHeader>
                                     <CardContent className="space-y-3">
-                                        {aiAnalysis.strengths.map((s, i) => (
+                                        {aiAnalysis?.strengths?.map((s, i) => (
                                             <div key={i} className="p-3 rounded-lg bg-emerald-500/10">
                                                 <div className="flex items-center justify-between mb-1">
                                                     <span className="font-medium">{s.topic}</span>
@@ -508,7 +508,7 @@ export default function Review() {
                                         </CardTitle>
                                     </CardHeader>
                                     <CardContent className="space-y-3">
-                                        {aiAnalysis.weaknesses.map((w, i) => (
+                                        {aiAnalysis?.weaknesses?.map((w, i) => (
                                             <div key={i} className="p-3 rounded-lg bg-red-500/10">
                                                 <div className="flex items-center justify-between mb-1">
                                                     <span className="font-medium">{w.topic}</span>
@@ -551,11 +551,11 @@ export default function Review() {
                                     </CardHeader>
                                     <CardContent>
                                         <div className="grid md:grid-cols-7 gap-2">
-                                            {studyPlan.daily_plans.map((day, i) => (
+                                            {studyPlan?.daily_plans?.map((day, i) => (
                                                 <div key={i} className="p-3 rounded-lg bg-muted/50">
                                                     <p className="font-medium text-sm mb-2">{day.day}</p>
                                                     <div className="space-y-1">
-                                                        {day.tasks.slice(0, 3).map((task, j) => (
+                                                        {day.tasks?.slice(0, 3)?.map((task, j) => (
                                                             <div key={j} className="text-xs p-1.5 rounded bg-background">
                                                                 <Badge variant="outline" className="text-[10px] mb-1">
                                                                     {task.type}
@@ -574,7 +574,7 @@ export default function Review() {
                                             <div className="mt-4 p-3 rounded-lg bg-violet-500/10">
                                                 <p className="font-medium text-sm mb-2">Recommendations</p>
                                                 <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
-                                                    {studyPlan.recommendations.map((r, i) => (
+                                                    {studyPlan?.recommendations?.map((r, i) => (
                                                         <li key={i}>{r}</li>
                                                     ))}
                                                 </ul>
@@ -638,7 +638,7 @@ function RevisionGroup({
                     <p className="text-muted-foreground text-center py-4">{emptyMessage}</p>
                 ) : (
                     <div className="space-y-2">
-                        {revisions.map(r => (
+                        {revisions?.map((r) => (
                             <div key={r.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
                                 <div>
                                     <p className="font-medium">{r.topic?.title}</p>
