@@ -38,6 +38,7 @@ import { catApi } from '@/api/cat';
 import { CatNavigation } from '@/components/cat/CatNavigation';
 import { SectionTabs } from '@/components/cat/SectionTabs';
 import type { SessionType, StartPracticePayload, Mistake, MistakeType, Bookmark as BookmarkType, Problem, ProblemAttemptPayload, ProblemAttemptResponse } from '@/types/cat';
+import PracticeSession from './PracticeSession';
 
 const sessionTypes: { value: SessionType; label: string; desc: string; icon: typeof Timer }[] = [
     { value: 'timed', label: 'Timed Practice', desc: 'Standard practice with time limit', icon: Timer },
@@ -58,6 +59,7 @@ export default function Practice() {
     const [activeTab, setActiveTab] = useState('practice');
     const [startDialogOpen, setStartDialogOpen] = useState(false);
     const [reviewMistake, setReviewMistake] = useState<Mistake | null>(null);
+    const [activeSession, setActiveSession] = useState<{ session: any; questions: Problem[] } | null>(null);
     const queryClient = useQueryClient();
     const { toast } = useToast();
 
@@ -113,6 +115,22 @@ export default function Practice() {
             toast({ title: 'Bookmark removed' });
         },
     });
+
+    // If active session, show session view
+    if (activeSession) {
+        return (
+            <PracticeSession
+                session={activeSession.session}
+                questions={activeSession.questions}
+                onComplete={() => {
+                    queryClient.invalidateQueries({ queryKey: ['cat-practice-history'] });
+                    // Keep session view open for review or close it?
+                    // Session component handles "Return to Practice" which calls onExit
+                }}
+                onExit={() => setActiveSession(null)}
+            />
+        );
+    }
 
     return (
         <div className="space-y-6">
@@ -432,10 +450,13 @@ export default function Practice() {
                 open={startDialogOpen}
                 onOpenChange={setStartDialogOpen}
                 subjects={subjects || []}
-                onSuccess={() => {
+                onSuccess={(data) => {
                     queryClient.invalidateQueries({ queryKey: ['cat-practice'] });
                     setStartDialogOpen(false);
-                    toast({ title: 'Practice started!' });
+                    if (data && data.session) {
+                        setActiveSession({ session: data.session, questions: data.questions || [] });
+                        toast({ title: 'Practice started!' });
+                    }
                 }}
             />
 
@@ -461,7 +482,7 @@ function StartPracticeDialog({
     open: boolean;
     onOpenChange: (o: boolean) => void;
     subjects: any[];
-    onSuccess: () => void;
+    onSuccess: (data: any) => void;
 }) {
     const [sessionType, setSessionType] = useState<SessionType>('timed');
     const [subjectId, setSubjectId] = useState('all');
@@ -471,7 +492,7 @@ function StartPracticeDialog({
 
     const mutation = useMutation({
         mutationFn: (payload: StartPracticePayload) => catApi.startPractice(payload),
-        onSuccess: () => onSuccess(),
+        onSuccess: (data) => onSuccess(data),
         onError: () => toast({ title: 'Failed to start practice', variant: 'destructive' }),
     });
 
@@ -879,19 +900,19 @@ function ProblemAttemptDialog({
 
                     {!showResult ? (
                         <div className="space-y-2">
-                            {problem.options.map((option) => (
+                            {problem.options && Object.entries(problem.options).map(([key, value]) => (
                                 <button
-                                    key={option.key}
-                                    onClick={() => setSelectedAnswer(option.key)}
+                                    key={key}
+                                    onClick={() => setSelectedAnswer(key)}
                                     className={cn(
                                         "w-full p-3 rounded-lg border text-left transition-colors",
-                                        selectedAnswer === option.key
+                                        selectedAnswer === key
                                             ? 'border-primary bg-primary/10'
                                             : 'hover:bg-muted/50'
                                     )}
                                 >
-                                    <span className="font-semibold mr-2">{option.key}.</span>
-                                    {option.value}
+                                    <span className="font-semibold mr-2">{key}.</span>
+                                    {value}
                                 </button>
                             ))}
                         </div>

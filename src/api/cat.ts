@@ -751,8 +751,8 @@ export async function getLearnSubjects(): Promise<LearnSubjectsOverview> {
 // Learning APIs (Topic-based)
 // ========================
 
-export async function getTopicLessons(topicName: string): Promise<LessonWithProgress[]> {
-    return request<LessonWithProgress[]>(`/api/cat/learn/${encodeURIComponent(topicName)}/lessons`);
+export async function getTopicLessons(topicId: string): Promise<LessonWithProgress[]> {
+    return request<LessonWithProgress[]>(`/api/cat/learn/${encodeURIComponent(topicId)}/lessons`);
 }
 
 export async function getLesson(lessonId: string): Promise<LessonWithProgress> {
@@ -770,14 +770,14 @@ export async function updateLessonProgress(
 }
 
 export async function getTopicProblems(
-    topicName: string,
+    topicId: string,
     params?: ProblemsQueryParams
 ): Promise<Problem[]> {
     const searchParams = new URLSearchParams();
     if (params?.difficulty) searchParams.append('difficulty', params.difficulty.toString());
     if (params?.source) searchParams.append('source', params.source);
     const query = searchParams.toString();
-    return request<Problem[]>(`/api/cat/learn/${encodeURIComponent(topicName)}/problems${query ? `?${query}` : ''}`);
+    return request<Problem[]>(`/api/cat/learn/${encodeURIComponent(topicId)}/problems${query ? `?${query}` : ''}`);
 }
 
 export async function getTopicRealCatProblems(topicName: string): Promise<Problem[]> {

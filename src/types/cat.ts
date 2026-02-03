@@ -548,14 +548,16 @@ export interface Problem {
     id: string;
     topic_id: string;
     topic_name: string;
+    question_type: 'mcq' | 'tita';
     question_text: string;
-    options: { key: string; value: string }[];
+    options: Record<string, string> | null;
     correct_answer?: string; // Hidden until attempted
     explanation?: string;
     difficulty: ProblemDifficulty;
     is_real_cat: boolean;
     cat_year?: number;
     time_limit_seconds?: number;
+    time_estimate_seconds?: number;
     tags: string[];
     attempted?: boolean;
     user_answer?: string;

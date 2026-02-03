@@ -237,7 +237,7 @@ export default function Review() {
                                                         {goal.completed ? '✓' : format(new Date(goal.date), 'd')}
                                                     </div>
                                                     <span className="text-xs mt-1 text-muted-foreground">
-                                                        {format(new Date(goal.date), 'EEE')}
+                                                        {goal.date ? format(new Date(goal.date), 'EEE') : '--'}
                                                     </span>
                                                 </div>
                                             ))}
@@ -267,7 +267,7 @@ export default function Review() {
                                                             style={{ height: `${(point.score / maxScore) * 100}%` }}
                                                         />
                                                         <span className="text-xs text-muted-foreground">
-                                                            {format(new Date(point.date), 'M/d')}
+                                                            {point.date ? format(new Date(point.date), 'M/d') : ''}
                                                         </span>
                                                     </div>
                                                 );

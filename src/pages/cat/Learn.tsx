@@ -204,15 +204,15 @@ function TopicsSection({
 
     // Fetch lessons for selected topic
     const { data: lessons, isLoading: lessonsLoading } = useQuery({
-        queryKey: ['cat', 'lessons', selectedTopic?.topic_name],
-        queryFn: () => catApi.getTopicLessons(selectedTopic!.topic_name),
+        queryKey: ['cat', 'lessons', selectedTopic?.topic_id],
+        queryFn: () => catApi.getTopicLessons(selectedTopic!.topic_id),
         enabled: !!selectedTopic && viewMode === 'detail',
     });
 
     // Fetch problems for selected topic
     const { data: problems, isLoading: problemsLoading } = useQuery({
-        queryKey: ['cat', 'problems', selectedTopic?.topic_name],
-        queryFn: () => catApi.getTopicProblems(selectedTopic!.topic_name),
+        queryKey: ['cat', 'problems', selectedTopic?.topic_id],
+        queryFn: () => catApi.getTopicProblems(selectedTopic!.topic_id),
         enabled: !!selectedTopic && viewMode === 'detail' && activeDetailTab === 'practice',
     });
 
@@ -237,7 +237,7 @@ function TopicsSection({
         mutationFn: ({ lessonId, payload }: { lessonId: string; payload: LessonProgressPayload }) =>
             catApi.updateLessonProgress(lessonId, payload),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['cat', 'lessons', selectedTopic?.topic_name] });
+            queryClient.invalidateQueries({ queryKey: ['cat', 'lessons', selectedTopic?.topic_id] });
             toast({ title: 'Progress updated!' });
         },
     });

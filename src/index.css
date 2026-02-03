@@ -460,3 +460,8 @@
     background: hsl(var(--card));
   }
 }
+
+/* Fix for Dropdown/Popover visibility */
+[data-radix-popper-content-wrapper] {
+  z-index: 50 !important;
+}
