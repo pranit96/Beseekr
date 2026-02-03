@@ -18,6 +18,9 @@ import {
     RefreshCw,
     Brain,
     Plus,
+    Sparkles,
+    Pause,
+    StopCircle,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -32,7 +35,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { catApi } from '@/api/cat';
-import type { SessionType, StartPracticePayload, Mistake, MistakeType, Bookmark as BookmarkType } from '@/types/cat';
+import { CatNavigation } from '@/components/cat/CatNavigation';
+import { SectionTabs } from '@/components/cat/SectionTabs';
+import type { SessionType, StartPracticePayload, Mistake, MistakeType, Bookmark as BookmarkType, Problem, ProblemAttemptPayload, ProblemAttemptResponse } from '@/types/cat';
 
 const sessionTypes: { value: SessionType; label: string; desc: string; icon: typeof Timer }[] = [
     { value: 'timed', label: 'Timed Practice', desc: 'Standard practice with time limit', icon: Timer },
@@ -111,6 +116,9 @@ export default function Practice() {
 
     return (
         <div className="space-y-6">
+            {/* CAT Module Navigation */}
+            <CatNavigation />
+
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
@@ -181,24 +189,23 @@ export default function Practice() {
                 </Card>
             </div>
 
+            {/* Study Timer Widget */}
+            <StudyTimerWidget />
+
             {/* Tabs */}
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-                <TabsList className="bg-muted/50 p-1">
-                    <TabsTrigger value="practice" className="gap-2">
-                        <Target className="h-4 w-4" />Practice
-                    </TabsTrigger>
-                    <TabsTrigger value="mistakes" className="gap-2">
-                        <AlertCircle className="h-4 w-4" />Mistakes
-                        {mistakes.length > 0 && (
-                            <Badge variant="destructive" className="ml-1 h-5 w-5 p-0 flex items-center justify-center">
-                                {mistakes.length}
-                            </Badge>
-                        )}
-                    </TabsTrigger>
-                    <TabsTrigger value="saved" className="gap-2">
-                        <Bookmark className="h-4 w-4" />Saved
-                    </TabsTrigger>
-                </TabsList>
+            {/* Section Tabs */}
+            <SectionTabs
+                tabs={[
+                    { value: 'practice', label: 'Practice', description: 'Start a new session', icon: Target },
+                    { value: 'mistakes', label: 'Mistakes', description: 'Review & learn from errors', icon: AlertCircle, badge: mistakes.length > 0 ? mistakes.length : undefined, badgeVariant: 'destructive' },
+                    { value: 'saved', label: 'Saved', description: 'Bookmarked questions', icon: Bookmark, badge: bookmarks.length > 0 ? bookmarks.length : undefined },
+                ]}
+                value={activeTab}
+                onValueChange={setActiveTab}
+            />
+
+            {/* Tab Content */}
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-0">
 
                 {/* Practice Tab */}
                 <TabsContent value="practice" className="space-y-6">
@@ -286,6 +293,9 @@ export default function Practice() {
                             )}
                         </CardContent>
                     </Card>
+
+                    {/* Topic Practice Section */}
+                    <TopicPracticeSection />
                 </TabsContent>
 
                 {/* Mistakes Tab */}
@@ -572,10 +582,33 @@ function ReviewMistakeDialog({
     isLoading: boolean;
 }) {
     const [notes, setNotes] = useState('');
+    const [aiExplanation, setAiExplanation] = useState<string | null>(null);
+    const { toast } = useToast();
+
+    // AI Explain mutation
+    const explainMutation = useMutation({
+        mutationFn: () => catApi.explainWrong({
+            question_text: mistake?.question_text || '',
+            options: [],
+            user_answer: mistake?.user_answer || '',
+            correct_answer: mistake?.correct_answer || '',
+            topic: mistake?.topic?.title || '',
+        }),
+        onSuccess: (data) => {
+            setAiExplanation(data.explanation);
+        },
+        onError: () => toast({ title: 'Failed to get explanation', variant: 'destructive' }),
+    });
+
+    const handleClose = () => {
+        setNotes('');
+        setAiExplanation(null);
+        onOpenChange(false);
+    };
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent>
+        <Dialog open={open} onOpenChange={handleClose}>
+            <DialogContent className="max-w-lg">
                 <DialogHeader>
                     <DialogTitle>Review Mistake</DialogTitle>
                 </DialogHeader>
@@ -606,6 +639,31 @@ function ReviewMistakeDialog({
                                     <p className="text-sm">{mistake.explanation}</p>
                                 </div>
                             )}
+
+                            {/* AI Explanation Section */}
+                            {aiExplanation ? (
+                                <div className="p-3 rounded-lg bg-violet-500/10 border border-violet-500/20">
+                                    <p className="text-xs font-medium text-violet-500 mb-2 flex items-center gap-1">
+                                        <Sparkles className="h-3 w-3" /> AI Explanation
+                                    </p>
+                                    <p className="text-sm whitespace-pre-wrap">{aiExplanation}</p>
+                                </div>
+                            ) : (
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => explainMutation.mutate()}
+                                    disabled={explainMutation.isPending}
+                                    className="w-full"
+                                >
+                                    {explainMutation.isPending ? (
+                                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                    ) : (
+                                        <Sparkles className="h-4 w-4 mr-2" />
+                                    )}
+                                    Get AI Explanation
+                                </Button>
+                            )}
                         </>
                     )}
                     <div>
@@ -619,7 +677,7 @@ function ReviewMistakeDialog({
                     </div>
                 </div>
                 <DialogFooter>
-                    <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+                    <Button variant="outline" onClick={handleClose}>Cancel</Button>
                     <Button onClick={() => onSubmit(notes)} disabled={isLoading}>
                         {isLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                         <CheckCircle2 className="h-4 w-4 mr-2" />Mark as Reviewed
@@ -627,5 +685,363 @@ function ReviewMistakeDialog({
                 </DialogFooter>
             </DialogContent>
         </Dialog>
+    );
+}
+
+// Topic Practice Section
+function TopicPracticeSection() {
+    const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
+    const [selectedProblem, setSelectedProblem] = useState<Problem | null>(null);
+    const [showPyq, setShowPyq] = useState(false);
+    const queryClient = useQueryClient();
+    const { toast } = useToast();
+
+    // Get mastery to list topics
+    const { data: masteryData } = useQuery({
+        queryKey: ['cat', 'mastery'],
+        queryFn: () => catApi.getMastery(),
+    });
+
+    // Get problems for selected topic
+    const { data: problems, isLoading: problemsLoading } = useQuery({
+        queryKey: ['cat', 'topic-problems', selectedTopic, showPyq],
+        queryFn: () => showPyq
+            ? catApi.getTopicRealCatProblems(selectedTopic!)
+            : catApi.getTopicProblems(selectedTopic!),
+        enabled: !!selectedTopic,
+    });
+
+    const topics = masteryData?.topics || [];
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Practice by Topic</CardTitle>
+                <CardDescription>Select a topic to practice specific problems</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <div className="flex gap-4">
+                    <Select value={selectedTopic || ''} onValueChange={setSelectedTopic}>
+                        <SelectTrigger className="w-[200px]">
+                            <SelectValue placeholder="Select topic" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {topics.map(topic => (
+                                <SelectItem key={topic.topic_id} value={topic.topic_name}>
+                                    {topic.topic_name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    <Button
+                        variant={showPyq ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setShowPyq(!showPyq)}
+                    >
+                        {showPyq ? 'PYQ Mode' : 'Show PYQs'}
+                    </Button>
+                </div>
+
+                {selectedTopic && (
+                    problemsLoading ? (
+                        <div className="flex justify-center py-8">
+                            <Loader2 className="h-6 w-6 animate-spin" />
+                        </div>
+                    ) : problems && problems.length > 0 ? (
+                        <div className="grid md:grid-cols-2 gap-3">
+                            {problems.slice(0, 10).map((problem) => (
+                                <Card
+                                    key={problem.id}
+                                    className="cursor-pointer hover:border-primary/50 transition-colors"
+                                    onClick={() => setSelectedProblem(problem)}
+                                >
+                                    <CardContent className="pt-4">
+                                        <p className="text-sm line-clamp-2 mb-2">{problem.question_text}</p>
+                                        <div className="flex items-center gap-2">
+                                            <Badge variant="outline" className={cn(
+                                                problem.difficulty === 'easy' && 'text-green-400',
+                                                problem.difficulty === 'medium' && 'text-yellow-400',
+                                                problem.difficulty === 'hard' && 'text-orange-400',
+                                                problem.difficulty === 'cat_level' && 'text-red-400',
+                                            )}>
+                                                {problem.difficulty}
+                                            </Badge>
+                                            {problem.is_real_cat && (
+                                                <Badge className="bg-red-500/20 text-red-400">CAT {problem.cat_year}</Badge>
+                                            )}
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="text-center py-8 text-muted-foreground">
+                            No problems available for this topic
+                        </div>
+                    )
+                )}
+            </CardContent>
+
+            {/* Problem Attempt Dialog */}
+            <ProblemAttemptDialog
+                problem={selectedProblem}
+                open={!!selectedProblem}
+                onOpenChange={(open) => !open && setSelectedProblem(null)}
+                onSuccess={() => {
+                    queryClient.invalidateQueries({ queryKey: ['cat', 'topic-problems'] });
+                    setSelectedProblem(null);
+                }}
+            />
+        </Card>
+    );
+}
+
+// Problem Attempt Dialog
+function ProblemAttemptDialog({
+    problem,
+    open,
+    onOpenChange,
+    onSuccess,
+}: {
+    problem: Problem | null;
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    onSuccess: () => void;
+}) {
+    const [selectedAnswer, setSelectedAnswer] = useState<string>('');
+    const [showResult, setShowResult] = useState(false);
+    const [result, setResult] = useState<ProblemAttemptResponse | null>(null);
+    const [startTime] = useState(Date.now());
+    const { toast } = useToast();
+
+    const submitMutation = useMutation({
+        mutationFn: (payload: ProblemAttemptPayload) => catApi.submitProblemAttempt(problem!.id, payload),
+        onSuccess: (data) => {
+            setResult(data);
+            setShowResult(true);
+            toast({
+                title: data.is_correct ? '🎉 Correct!' : '❌ Incorrect',
+                description: data.is_correct
+                    ? `+${data.points_earned} points`
+                    : `Correct answer: ${data.correct_answer}`,
+            });
+        },
+        onError: () => toast({ title: 'Failed to submit', variant: 'destructive' }),
+    });
+
+    const reportMutation = useMutation({
+        mutationFn: () => catApi.reportQuestion(problem!.id, { reportType: 'wrong_answer', description: 'Reported by user' }),
+        onSuccess: () => toast({ title: 'Question reported', description: 'Thanks for your feedback!' }),
+        onError: () => toast({ title: 'Failed to report', variant: 'destructive' }),
+    });
+
+    const handleSubmit = () => {
+        if (!selectedAnswer) {
+            toast({ title: 'Select an answer', variant: 'destructive' });
+            return;
+        }
+        submitMutation.mutate({
+            answer: selectedAnswer,
+            time_spent_seconds: Math.floor((Date.now() - startTime) / 1000),
+        });
+    };
+
+    const handleClose = () => {
+        setSelectedAnswer('');
+        setShowResult(false);
+        setResult(null);
+        onOpenChange(false);
+        if (result) onSuccess();
+    };
+
+    if (!problem) return null;
+
+    return (
+        <Dialog open={open} onOpenChange={handleClose}>
+            <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                        Problem
+                        <Badge variant="outline" className={cn(
+                            problem.difficulty === 'easy' && 'text-green-400',
+                            problem.difficulty === 'medium' && 'text-yellow-400',
+                            problem.difficulty === 'hard' && 'text-orange-400',
+                            problem.difficulty === 'cat_level' && 'text-red-400',
+                        )}>
+                            {problem.difficulty}
+                        </Badge>
+                    </DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                    <div className="p-4 rounded-lg bg-muted/50">
+                        <p className="whitespace-pre-wrap">{problem.question_text}</p>
+                    </div>
+
+                    {!showResult ? (
+                        <div className="space-y-2">
+                            {problem.options.map((option) => (
+                                <button
+                                    key={option.key}
+                                    onClick={() => setSelectedAnswer(option.key)}
+                                    className={cn(
+                                        "w-full p-3 rounded-lg border text-left transition-colors",
+                                        selectedAnswer === option.key
+                                            ? 'border-primary bg-primary/10'
+                                            : 'hover:bg-muted/50'
+                                    )}
+                                >
+                                    <span className="font-semibold mr-2">{option.key}.</span>
+                                    {option.value}
+                                </button>
+                            ))}
+                        </div>
+                    ) : result && (
+                        <div className="space-y-4">
+                            <div className={cn(
+                                "p-4 rounded-lg",
+                                result.is_correct ? 'bg-green-500/10 border-green-500/30' : 'bg-red-500/10 border-red-500/30'
+                            )}>
+                                <p className="font-semibold mb-2">
+                                    {result.is_correct ? '✅ Correct!' : '❌ Incorrect'}
+                                </p>
+                                {!result.is_correct && (
+                                    <p className="text-sm">
+                                        Correct answer: <strong>{result.correct_answer}</strong>
+                                    </p>
+                                )}
+                            </div>
+                            {result.explanation && (
+                                <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                                    <p className="text-sm font-semibold mb-2">Explanation</p>
+                                    <p className="text-sm">{result.explanation}</p>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+                <DialogFooter>
+                    {!showResult ? (
+                        <>
+                            <Button variant="outline" onClick={handleClose}>Cancel</Button>
+                            <Button onClick={handleSubmit} disabled={submitMutation.isPending || !selectedAnswer}>
+                                {submitMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                                Submit Answer
+                            </Button>
+                        </>
+                    ) : (
+                        <>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => reportMutation.mutate()}
+                                disabled={reportMutation.isPending}
+                                className="mr-auto text-muted-foreground"
+                            >
+                                <AlertCircle className="h-4 w-4 mr-1" />
+                                Report Issue
+                            </Button>
+                            <Button onClick={handleClose}>
+                                Continue
+                            </Button>
+                        </>
+                    )}
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+// Study Timer Widget
+function StudyTimerWidget() {
+    const [isExpanded, setIsExpanded] = useState(false);
+    const [timerSession, setTimerSession] = useState<{ status: string; elapsed_seconds: number; session_type: string } | null>(null);
+    const queryClient = useQueryClient();
+    const { toast } = useToast();
+
+    const { data: timerStats } = useQuery({
+        queryKey: ['cat-timer-stats'],
+        queryFn: () => catApi.getTimerStats(),
+        staleTime: 60 * 1000,
+    });
+
+    const startMutation = useMutation({
+        mutationFn: () => catApi.startTimer({ sessionType: 'practice' }),
+        onSuccess: (data) => {
+            setTimerSession({ status: data.status, elapsed_seconds: data.elapsed_seconds, session_type: data.session_type });
+            toast({ title: 'Timer started' });
+        },
+    });
+
+    const pauseMutation = useMutation({
+        mutationFn: () => catApi.pauseTimer(),
+        onSuccess: (data) => {
+            setTimerSession({ status: data.status, elapsed_seconds: data.elapsed_seconds, session_type: data.session_type });
+        },
+    });
+
+    const stopMutation = useMutation({
+        mutationFn: () => catApi.stopTimer(),
+        onSuccess: () => {
+            setTimerSession(null);
+            queryClient.invalidateQueries({ queryKey: ['cat-timer-stats'] });
+            toast({ title: 'Session completed!' });
+        },
+    });
+
+    const formatTime = (seconds: number) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
+    };
+
+    return (
+        <Card>
+            <CardContent className="pt-4">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                            <Timer className="h-5 w-5 text-blue-400" />
+                        </div>
+                        <div>
+                            <p className="font-medium">Study Timer</p>
+                            <p className="text-xs text-muted-foreground">
+                                Today: {timerStats?.today_minutes || 0} min | Week: {timerStats?.this_week_minutes || 0} min
+                            </p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        {timerSession?.status === 'running' ? (
+                            <>
+                                <span className="font-mono text-lg font-bold text-emerald-500">
+                                    {formatTime(timerSession.elapsed_seconds)}
+                                </span>
+                                <Button size="icon" variant="ghost" onClick={() => pauseMutation.mutate()}>
+                                    <Pause className="h-4 w-4" />
+                                </Button>
+                                <Button size="icon" variant="ghost" onClick={() => stopMutation.mutate()}>
+                                    <StopCircle className="h-4 w-4 text-red-500" />
+                                </Button>
+                            </>
+                        ) : timerSession?.status === 'paused' ? (
+                            <>
+                                <span className="font-mono text-lg font-bold text-amber-500">
+                                    {formatTime(timerSession.elapsed_seconds)}
+                                </span>
+                                <Button size="icon" variant="ghost" onClick={() => startMutation.mutate()}>
+                                    <Play className="h-4 w-4" />
+                                </Button>
+                                <Button size="icon" variant="ghost" onClick={() => stopMutation.mutate()}>
+                                    <StopCircle className="h-4 w-4 text-red-500" />
+                                </Button>
+                            </>
+                        ) : (
+                            <Button size="sm" onClick={() => startMutation.mutate()} disabled={startMutation.isPending}>
+                                <Play className="h-4 w-4 mr-1" /> Start Timer
+                            </Button>
+                        )}
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
     );
 }

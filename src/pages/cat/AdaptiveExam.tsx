@@ -87,6 +87,13 @@ export default function AdaptiveExam() {
         queryFn: () => catApi.checkAbility(),
     });
 
+    // Get predicted CAT score based on ability
+    const { data: predictedScore } = useQuery({
+        queryKey: ['cat', 'adaptive', 'predict'],
+        queryFn: () => catApi.getScorePrediction(),
+        enabled: !abilityLoading && !abilityData?.needs_diagnostic,
+    });
+
     // Start diagnostic
     const startDiagnosticMutation = useMutation({
         mutationFn: () => catApi.startDiagnostic({ questions_per_subject: 10 }),
@@ -156,7 +163,7 @@ export default function AdaptiveExam() {
         submitMutation.mutate({ answer: selectedAnswer, timeSpent });
     };
 
-    const handleNextQuestion = () => {
+    const handleNextQuestion = async () => {
         if (examState.lastFeedback?.next_question) {
             setExamState((s) => ({
                 ...s,
@@ -166,6 +173,23 @@ export default function AdaptiveExam() {
             setSelectedAnswer(null);
             setStartTime(Date.now());
             setShowFeedback(false);
+        } else if (examState.examId) {
+            // Fallback: fetch next question directly if not in feedback
+            try {
+                const nextQ = await catApi.getAdaptiveNextQuestion(examState.examId);
+                if (nextQ) {
+                    setExamState((s) => ({
+                        ...s,
+                        currentQuestion: nextQ,
+                        lastFeedback: null,
+                    }));
+                    setSelectedAnswer(null);
+                    setStartTime(Date.now());
+                    setShowFeedback(false);
+                }
+            } catch (e) {
+                console.error('Failed to fetch next question:', e);
+            }
         }
     };
 
@@ -254,13 +278,13 @@ export default function AdaptiveExam() {
                                                         whileTap={{ scale: 0.99 }}
                                                         onClick={() => setSelectedAnswer(key)}
                                                         className={`w-full p-4 rounded-lg border text-left transition-all flex items-center gap-4 ${selectedAnswer === key
-                                                                ? 'bg-violet-500/20 border-violet-500/50'
-                                                                : 'bg-muted/10 border-border/50 hover:border-violet-500/30'
+                                                            ? 'bg-violet-500/20 border-violet-500/50'
+                                                            : 'bg-muted/10 border-border/50 hover:border-violet-500/30'
                                                             }`}
                                                     >
                                                         <span className={`w-8 h-8 rounded-full flex items-center justify-center font-semibold ${selectedAnswer === key
-                                                                ? 'bg-violet-500 text-white'
-                                                                : 'bg-muted/30'
+                                                            ? 'bg-violet-500 text-white'
+                                                            : 'bg-muted/30'
                                                             }`}>
                                                             {key}
                                                         </span>
@@ -431,6 +455,39 @@ export default function AdaptiveExam() {
                                     </CardContent>
                                 </Card>
                             ))}
+                        </motion.div>
+                    )}
+
+                    {/* Predicted CAT Score */}
+                    {predictedScore && (
+                        <motion.div variants={itemVariants}>
+                            <Card className="bg-gradient-to-br from-violet-500/10 to-purple-500/10 border-violet-500/30">
+                                <CardContent className="pt-6">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <div className="flex items-center gap-2 text-muted-foreground text-sm mb-1">
+                                                <Trophy className="w-4 h-4" />
+                                                Predicted CAT Score
+                                            </div>
+                                            <p className="text-4xl font-bold text-violet-400">
+                                                {predictedScore.predicted_score}
+                                            </p>
+                                            <p className="text-sm text-muted-foreground mt-1">
+                                                Percentile: {predictedScore.percentile}%
+                                            </p>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-sm text-muted-foreground">Score Range</p>
+                                            <p className="font-semibold">
+                                                {predictedScore.low_estimate} - {predictedScore.high_estimate}
+                                            </p>
+                                            <Badge variant="outline" className="mt-2">
+                                                {predictedScore.confidence}% confidence
+                                            </Badge>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
                         </motion.div>
                     )}
 
@@ -645,8 +702,8 @@ function ExamResults({ results, onRetake }: { results: AdaptiveExamResult; onRet
                     <div className="space-y-3">
                         {results.recommendations.map((rec, idx) => (
                             <div key={idx} className={`p-3 rounded-lg border ${rec.type === 'practice' ? 'bg-blue-500/10 border-blue-500/30' :
-                                    rec.type === 'review' ? 'bg-yellow-500/10 border-yellow-500/30' :
-                                        'bg-green-500/10 border-green-500/30'
+                                rec.type === 'review' ? 'bg-yellow-500/10 border-yellow-500/30' :
+                                    'bg-green-500/10 border-green-500/30'
                                 }`}>
                                 <div className="flex items-center justify-between">
                                     <span className="font-medium">{rec.topic}</span>

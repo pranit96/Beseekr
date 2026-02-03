@@ -40,6 +40,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { CatNavigation } from '@/components/cat/CatNavigation';
 import type { StudyTask, CreateTaskPayload, TaskType, TaskPriority } from '@/types/cat';
 
 const taskTypeConfig: Record<TaskType, { label: string; color: string; icon: typeof BookOpen }> = {
@@ -85,6 +86,20 @@ export default function CatDashboard() {
         staleTime: 5 * 60 * 1000,
     });
 
+    // AI Study Plan
+    const { data: aiStudyPlan } = useQuery({
+        queryKey: ['cat-ai-study-plan'],
+        queryFn: () => catApi.getAIStudyPlan(),
+        staleTime: 10 * 60 * 1000,
+    });
+
+    // Tutor Usage Stats
+    const { data: tutorUsage } = useQuery({
+        queryKey: ['cat-tutor-usage'],
+        queryFn: () => catApi.getTutorUsage(),
+        staleTime: 5 * 60 * 1000,
+    });
+
     const completeMutation = useMutation({
         mutationFn: (id: string) => catApi.completeTask(id),
         onSuccess: () => {
@@ -121,6 +136,9 @@ export default function CatDashboard() {
 
     return (
         <div className="space-y-6">
+            {/* CAT Module Navigation */}
+            <CatNavigation />
+
             {/* Header with Streak */}
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
@@ -302,9 +320,9 @@ export default function CatDashboard() {
                                         <Trophy className="h-3 w-3" /> Strong In
                                     </p>
                                     <div className="flex flex-wrap gap-1">
-                                        {aiAnalysis.strengths?.slice(0, 3).map((s: string, i: number) => (
+                                        {aiAnalysis.strengths?.slice(0, 3).map((s, i) => (
                                             <Badge key={i} variant="outline" className="text-xs bg-emerald-500/10">
-                                                {s}
+                                                {s.topic}
                                             </Badge>
                                         ))}
                                     </div>
@@ -316,9 +334,9 @@ export default function CatDashboard() {
                                         <Lightbulb className="h-3 w-3" /> Focus On
                                     </p>
                                     <div className="flex flex-wrap gap-1">
-                                        {aiAnalysis.weaknesses?.slice(0, 3).map((w: string, i: number) => (
+                                        {aiAnalysis.weaknesses?.slice(0, 3).map((w, i) => (
                                             <Badge key={i} variant="outline" className="text-xs bg-amber-500/10">
-                                                {w}
+                                                {w.topic}
                                             </Badge>
                                         ))}
                                     </div>
@@ -330,9 +348,33 @@ export default function CatDashboard() {
                                         <Brain className="h-3 w-3" /> Today's Focus
                                     </p>
                                     <p className="text-sm text-muted-foreground">
-                                        {aiAnalysis.recommendations?.[0] || 'Keep practicing consistently!'}
+                                        {aiAnalysis.improvement_roadmap?.[0] || 'Keep practicing consistently!'}
                                     </p>
                                 </div>
+
+                                {/* AI Study Plan Summary */}
+                                {aiStudyPlan && (
+                                    <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                                        <p className="text-xs font-medium text-blue-500 mb-2 flex items-center gap-1">
+                                            <Calendar className="h-3 w-3" /> Today's Plan
+                                        </p>
+                                        {aiStudyPlan.daily_plans?.[0]?.focus_areas?.slice(0, 2).map((area, i) => (
+                                            <Badge key={i} variant="outline" className="text-xs mr-1">
+                                                {area}
+                                            </Badge>
+                                        ))}
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                            {aiStudyPlan.daily_plans?.[0]?.estimated_hours || 0} hours planned
+                                        </p>
+                                    </div>
+                                )}
+
+                                {/* Tutor Usage */}
+                                {tutorUsage && (
+                                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                                        <span>AI Tutor: {tutorUsage.questions_today} queries today • {tutorUsage.streak_days} day streak</span>
+                                    </div>
+                                )}
 
                                 <Link to="/cat/review">
                                     <Button variant="outline" size="sm" className="w-full">
@@ -412,21 +454,21 @@ export default function CatDashboard() {
                             <>
                                 <GoalItem
                                     label="Study Hours"
-                                    current={todayGoals.study_hours?.completed || 0}
-                                    target={todayGoals.study_hours?.target || 4}
+                                    current={todayGoals.progress?.study_hours?.completed || 0}
+                                    target={todayGoals.progress?.study_hours?.target || 4}
                                     unit="hrs"
                                     icon={<Clock className="h-4 w-4" />}
                                 />
                                 <GoalItem
                                     label="Questions Practiced"
-                                    current={todayGoals.questions_practiced?.completed || 0}
-                                    target={todayGoals.questions_practiced?.target || 50}
+                                    current={todayGoals.progress?.questions_practiced?.completed || 0}
+                                    target={todayGoals.progress?.questions_practiced?.target || 50}
                                     icon={<Target className="h-4 w-4" />}
                                 />
                                 <GoalItem
                                     label="Topics Revised"
-                                    current={todayGoals.topics_revised?.completed || 0}
-                                    target={todayGoals.topics_revised?.target || 3}
+                                    current={todayGoals.progress?.topics_revised?.completed || 0}
+                                    target={todayGoals.progress?.topics_revised?.target || 3}
                                     icon={<RotateCcw className="h-4 w-4" />}
                                 />
                             </>
@@ -446,7 +488,7 @@ export default function CatDashboard() {
                                 <div className="flex flex-wrap gap-2">
                                     {weakAreas.map((area, idx) => (
                                         <Badge key={idx} variant="outline" className="bg-amber-500/10">
-                                            {area.topic || area.name}
+                                            {area.topic_name}
                                         </Badge>
                                     ))}
                                 </div>
@@ -460,6 +502,9 @@ export default function CatDashboard() {
                     </CardContent>
                 </Card>
             )}
+
+            {/* Leaderboard Section */}
+            <LeaderboardSection />
 
             {/* Quick Add Task Dialog */}
             <QuickTaskDialog
@@ -674,5 +719,109 @@ function QuickTaskDialog({
                 </form>
             </DialogContent>
         </Dialog>
+    );
+}
+
+// Leaderboard Section Component
+function LeaderboardSection() {
+    const [period, setPeriod] = useState<'weekly' | 'monthly'>('weekly');
+
+    const { data: leaderboard, isLoading } = useQuery({
+        queryKey: ['cat-leaderboard', period],
+        queryFn: () => catApi.getLeaderboard({ period, limit: 5 }),
+        staleTime: 5 * 60 * 1000,
+    });
+
+    const { data: myRanking } = useQuery({
+        queryKey: ['cat-my-ranking'],
+        queryFn: () => catApi.getMyRanking(),
+        staleTime: 5 * 60 * 1000,
+    });
+
+    return (
+        <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                    <CardTitle className="flex items-center gap-2">
+                        <Trophy className="h-5 w-5 text-amber-500" />
+                        Leaderboard
+                    </CardTitle>
+                    <CardDescription>Top performers this {period === 'weekly' ? 'week' : 'month'}</CardDescription>
+                </div>
+                <div className="flex items-center gap-2">
+                    <Button
+                        variant={period === 'weekly' ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setPeriod('weekly')}
+                    >
+                        Weekly
+                    </Button>
+                    <Button
+                        variant={period === 'monthly' ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setPeriod('monthly')}
+                    >
+                        Monthly
+                    </Button>
+                </div>
+            </CardHeader>
+            <CardContent>
+                {isLoading ? (
+                    <div className="flex justify-center py-8">
+                        <Loader2 className="h-6 w-6 animate-spin" />
+                    </div>
+                ) : leaderboard?.entries && leaderboard.entries.length > 0 ? (
+                    <div className="space-y-3">
+                        {leaderboard.entries.map((entry, idx) => (
+                            <div
+                                key={entry.user_id}
+                                className={cn(
+                                    "flex items-center gap-3 p-2 rounded-lg",
+                                    idx === 0 && "bg-amber-500/10",
+                                    idx === 1 && "bg-slate-500/10",
+                                    idx === 2 && "bg-orange-500/10"
+                                )}
+                            >
+                                <div className={cn(
+                                    "h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold",
+                                    idx === 0 ? "bg-amber-500 text-white" :
+                                        idx === 1 ? "bg-slate-400 text-white" :
+                                            idx === 2 ? "bg-orange-400 text-white" : "bg-muted"
+                                )}>
+                                    {entry.rank}
+                                </div>
+                                <div className="flex-1">
+                                    <p className="font-medium text-sm">{entry.name}</p>
+                                    <p className="text-xs text-muted-foreground">{entry.problems_solved} problems • {entry.streak_days}d streak</p>
+                                </div>
+                                <div className="text-right">
+                                    <p className="font-semibold">{entry.score}</p>
+                                    <p className="text-xs text-muted-foreground">points</p>
+                                </div>
+                            </div>
+                        ))}
+                        {myRanking && (
+                            <div className="mt-4 p-3 rounded-lg bg-primary/10 border border-primary/20">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-sm font-medium">Your Rank</p>
+                                        <p className="text-xs text-muted-foreground">Top {myRanking.percentile.toFixed(1)}%</p>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-2xl font-bold text-primary">#{myRanking.my_rank}</p>
+                                        <p className="text-xs text-muted-foreground">{myRanking.my_score} points</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                        <Trophy className="h-12 w-12 mx-auto mb-3 opacity-30" />
+                        <p className="text-sm">No leaderboard data available</p>
+                    </div>
+                )}
+            </CardContent>
+        </Card>
     );
 }

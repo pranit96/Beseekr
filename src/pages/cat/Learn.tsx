@@ -22,6 +22,7 @@ import {
     Trash2,
     Edit,
     Filter,
+    AlertCircle,
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -37,6 +38,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { cn } from '@/lib/utils';
 import { catApi } from '@/api/cat';
 import { useToast } from '@/hooks/use-toast';
+import { CatNavigation } from '@/components/cat/CatNavigation';
+import { SectionTabs } from '@/components/cat/SectionTabs';
 import type {
     MasteryOverview,
     TopicMastery,
@@ -47,6 +50,10 @@ import type {
     CreateNotePayload,
     Flashcard,
     CreateFlashcardPayload,
+    LessonWithProgress,
+    LessonProgressPayload,
+    LessonType,
+    Problem,
 } from '@/types/cat';
 import Subjects from './Subjects';
 
@@ -72,6 +79,9 @@ export default function Learn() {
 
     return (
         <div className="space-y-6">
+            {/* CAT Module Navigation */}
+            <CatNavigation />
+
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
@@ -85,26 +95,20 @@ export default function Learn() {
                 </div>
             </div>
 
-            {/* Tabs */}
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-                <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-flex">
-                    <TabsTrigger value="topics" className="gap-2">
-                        <BookOpen className="h-4 w-4" />
-                        <span className="hidden sm:inline">Topics</span>
-                    </TabsTrigger>
-                    <TabsTrigger value="syllabus" className="gap-2">
-                        <Target className="h-4 w-4" />
-                        <span className="hidden sm:inline">Syllabus</span>
-                    </TabsTrigger>
-                    <TabsTrigger value="notes" className="gap-2">
-                        <StickyNote className="h-4 w-4" />
-                        <span className="hidden sm:inline">Notes</span>
-                    </TabsTrigger>
-                    <TabsTrigger value="flashcards" className="gap-2">
-                        <Layers className="h-4 w-4" />
-                        <span className="hidden sm:inline">Flashcards</span>
-                    </TabsTrigger>
-                </TabsList>
+            {/* Section Tabs */}
+            <SectionTabs
+                tabs={[
+                    { value: 'topics', label: 'Topics', description: 'Master concepts by topic', icon: BookOpen },
+                    { value: 'syllabus', label: 'Syllabus', description: 'Track subject progress', icon: Target },
+                    { value: 'notes', label: 'Notes', description: 'Your study notes', icon: StickyNote },
+                    { value: 'flashcards', label: 'Flashcards', description: 'Quick revision cards', icon: Layers },
+                ]}
+                value={activeTab}
+                onValueChange={setActiveTab}
+            />
+
+            {/* Tab Content */}
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-0">
 
                 {/* Topics Tab */}
                 <TabsContent value="topics" className="space-y-6">
@@ -136,6 +140,8 @@ export default function Learn() {
 function TopicsSection() {
     const queryClient = useQueryClient();
     const [selectedTopic, setSelectedTopic] = useState<TopicMastery | null>(null);
+    const [viewMode, setViewMode] = useState<'grid' | 'detail'>('grid');
+    const [activeDetailTab, setActiveDetailTab] = useState<'lessons' | 'practice' | 'tips'>('lessons');
     const [sessionDialogOpen, setSessionDialogOpen] = useState(false);
     const [sessionType, setSessionType] = useState<'practice' | 'speed_drill' | 'revision'>('practice');
     const [problemCount, setProblemCount] = useState<number>(10);
@@ -144,6 +150,28 @@ function TopicsSection() {
     const { data: masteryData, isLoading: masteryLoading } = useQuery({
         queryKey: ['cat', 'mastery'],
         queryFn: () => catApi.getMastery(),
+    });
+
+    // Fetch lessons for selected topic
+    const { data: lessons, isLoading: lessonsLoading } = useQuery({
+        queryKey: ['cat', 'lessons', selectedTopic?.topic_name],
+        queryFn: () => catApi.getTopicLessons(selectedTopic!.topic_name),
+        enabled: !!selectedTopic && viewMode === 'detail',
+    });
+
+    // Fetch problems for selected topic
+    const { data: problems, isLoading: problemsLoading } = useQuery({
+        queryKey: ['cat', 'problems', selectedTopic?.topic_name],
+        queryFn: () => catApi.getTopicProblems(selectedTopic!.topic_name),
+        enabled: !!selectedTopic && viewMode === 'detail' && activeDetailTab === 'practice',
+    });
+
+    // Fetch AI tips for selected topic
+    const { data: aiTips, isLoading: aiTipsLoading } = useQuery({
+        queryKey: ['cat', 'ai-tips', selectedTopic?.topic_id],
+        queryFn: () => catApi.getAITopicTips(selectedTopic!.topic_id),
+        enabled: !!selectedTopic && viewMode === 'detail' && activeDetailTab === 'tips',
+        staleTime: 30 * 60 * 1000,
     });
 
     const startSession = useMutation({
@@ -155,6 +183,15 @@ function TopicsSection() {
         },
     });
 
+    const updateProgress = useMutation({
+        mutationFn: ({ lessonId, payload }: { lessonId: string; payload: LessonProgressPayload }) =>
+            catApi.updateLessonProgress(lessonId, payload),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['cat', 'lessons', selectedTopic?.topic_name] });
+            toast({ title: 'Progress updated!' });
+        },
+    });
+
     const handleStartSession = () => {
         if (!selectedTopic) return;
         startSession.mutate({
@@ -162,6 +199,17 @@ function TopicsSection() {
             sessionType: sessionType,
             problemCount: problemCount,
         });
+    };
+
+    const handleTopicClick = (topic: TopicMastery) => {
+        setSelectedTopic(topic);
+        setViewMode('detail');
+        setActiveDetailTab('lessons');
+    };
+
+    const handleBackToGrid = () => {
+        setViewMode('grid');
+        setSelectedTopic(null);
     };
 
     if (masteryLoading) {
@@ -175,6 +223,234 @@ function TopicsSection() {
     const subjectOverviews = masteryData?.by_subject || [];
     const allTopics = masteryData?.topics || [];
 
+    // Detail View
+    if (viewMode === 'detail' && selectedTopic) {
+        const mastery = masteryColors[selectedTopic.mastery_level];
+        return (
+            <>
+                {/* Header */}
+                <div className="flex items-center gap-4 mb-6">
+                    <Button variant="ghost" size="sm" onClick={handleBackToGrid}>
+                        <ChevronRight className="h-4 w-4 rotate-180 mr-1" />
+                        Back
+                    </Button>
+                    <div className="flex-1">
+                        <h2 className="text-xl font-bold">{selectedTopic.topic_name}</h2>
+                        <div className="flex items-center gap-3 mt-1">
+                            <Badge variant="outline" className={cn(mastery.bg, mastery.text)}>
+                                {mastery.label}
+                            </Badge>
+                            <span className="text-sm text-muted-foreground">
+                                {selectedTopic.problems_correct}/{selectedTopic.problems_attempted} correct ({selectedTopic.accuracy_percent}%)
+                            </span>
+                        </div>
+                    </div>
+                    <Button onClick={() => setSessionDialogOpen(true)} className="bg-gradient-to-r from-violet-500 to-purple-600">
+                        <Play className="h-4 w-4 mr-2" />
+                        Practice
+                    </Button>
+                </div>
+
+                {/* Tabs */}
+                <Tabs value={activeDetailTab} onValueChange={(v) => setActiveDetailTab(v as 'lessons' | 'practice' | 'tips')}>
+                    <TabsList className="mb-4">
+                        <TabsTrigger value="lessons" className="gap-2">
+                            <BookOpen className="h-4 w-4" />
+                            Lessons ({lessons?.length || 0})
+                        </TabsTrigger>
+                        <TabsTrigger value="practice" className="gap-2">
+                            <Target className="h-4 w-4" />
+                            Problems
+                        </TabsTrigger>
+                        <TabsTrigger value="tips" className="gap-2">
+                            <Sparkles className="h-4 w-4" />
+                            AI Tips
+                        </TabsTrigger>
+                    </TabsList>
+
+                    {/* Lessons Tab */}
+                    <TabsContent value="lessons" className="space-y-4">
+                        {lessonsLoading ? (
+                            <div className="flex justify-center py-8">
+                                <Loader2 className="h-6 w-6 animate-spin" />
+                            </div>
+                        ) : lessons && lessons.length > 0 ? (
+                            <div className="space-y-3">
+                                {lessons.map((lesson, idx) => (
+                                    <LessonCard
+                                        key={lesson.id}
+                                        lesson={lesson}
+                                        index={idx + 1}
+                                        onMarkComplete={() => {
+                                            updateProgress.mutate({
+                                                lessonId: lesson.id,
+                                                payload: {
+                                                    status: 'completed',
+                                                    progress_percent: 100,
+                                                    time_spent_seconds: 0,
+                                                },
+                                            });
+                                        }}
+                                    />
+                                ))}
+                            </div>
+                        ) : (
+                            <Card>
+                                <CardContent className="py-12 text-center">
+                                    <BookOpen className="h-12 w-12 mx-auto mb-3 text-muted-foreground opacity-50" />
+                                    <p className="text-muted-foreground">No lessons available for this topic yet.</p>
+                                </CardContent>
+                            </Card>
+                        )}
+                    </TabsContent>
+
+                    {/* Practice Tab */}
+                    <TabsContent value="practice" className="space-y-4">
+                        <div className="flex justify-between items-center">
+                            <p className="text-sm text-muted-foreground">
+                                {problems?.length || 0} problems available
+                            </p>
+                            <Button size="sm" onClick={() => setSessionDialogOpen(true)}>
+                                <Play className="h-4 w-4 mr-2" />
+                                Start Session
+                            </Button>
+                        </div>
+                        {problemsLoading ? (
+                            <div className="flex justify-center py-8">
+                                <Loader2 className="h-6 w-6 animate-spin" />
+                            </div>
+                        ) : problems && problems.length > 0 ? (
+                            <div className="grid md:grid-cols-2 gap-3">
+                                {problems.slice(0, 10).map((problem) => (
+                                    <ProblemCard key={problem.id} problem={problem} />
+                                ))}
+                            </div>
+                        ) : (
+                            <Card>
+                                <CardContent className="py-12 text-center">
+                                    <Target className="h-12 w-12 mx-auto mb-3 text-muted-foreground opacity-50" />
+                                    <p className="text-muted-foreground">No practice problems available.</p>
+                                </CardContent>
+                            </Card>
+                        )}
+                    </TabsContent>
+
+                    {/* AI Tips Tab */}
+                    <TabsContent value="tips" className="space-y-4">
+                        {aiTipsLoading ? (
+                            <div className="flex justify-center py-8">
+                                <Loader2 className="h-6 w-6 animate-spin" />
+                            </div>
+                        ) : aiTips ? (
+                            <div className="space-y-4">
+                                {/* Tips */}
+                                <Card className="bg-gradient-to-br from-violet-500/5 to-purple-500/5 border-violet-500/20">
+                                    <CardHeader>
+                                        <CardTitle className="flex items-center gap-2 text-lg">
+                                            <Sparkles className="h-5 w-5 text-violet-500" />
+                                            Tips for {aiTips.topic_title}
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="space-y-2">
+                                        {aiTips.tips.map((tip, i) => (
+                                            <div key={i} className="flex gap-2">
+                                                <CheckCircle2 className="h-4 w-4 text-emerald-500 mt-0.5 flex-shrink-0" />
+                                                <p className="text-sm">{tip}</p>
+                                            </div>
+                                        ))}
+                                    </CardContent>
+                                </Card>
+
+                                {/* Common Pitfalls */}
+                                {aiTips.common_pitfalls.length > 0 && (
+                                    <Card className="border-amber-500/20 bg-amber-500/5">
+                                        <CardHeader>
+                                            <CardTitle className="flex items-center gap-2 text-lg">
+                                                <AlertCircle className="h-5 w-5 text-amber-500" />
+                                                Common Pitfalls to Avoid
+                                            </CardTitle>
+                                        </CardHeader>
+                                        <CardContent className="space-y-2">
+                                            {aiTips.common_pitfalls.map((pitfall, i) => (
+                                                <div key={i} className="flex gap-2">
+                                                    <span className="text-amber-500">⚠</span>
+                                                    <p className="text-sm">{pitfall}</p>
+                                                </div>
+                                            ))}
+                                        </CardContent>
+                                    </Card>
+                                )}
+
+                                {/* Practice Strategy */}
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle className="flex items-center gap-2 text-lg">
+                                            <Target className="h-5 w-5 text-primary" />
+                                            Practice Strategy
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <p className="text-sm text-muted-foreground">{aiTips.practice_strategy}</p>
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        ) : (
+                            <Card>
+                                <CardContent className="py-12 text-center">
+                                    <Sparkles className="h-12 w-12 mx-auto mb-3 text-muted-foreground opacity-50" />
+                                    <p className="text-muted-foreground">AI tips not available for this topic.</p>
+                                </CardContent>
+                            </Card>
+                        )}
+                    </TabsContent>
+                </Tabs>
+
+                {/* Start Session Dialog */}
+                <Dialog open={sessionDialogOpen} onOpenChange={setSessionDialogOpen}>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Start Practice: {selectedTopic.topic_name}</DialogTitle>
+                            <DialogDescription>Configure your practice session</DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4 py-4">
+                            <div>
+                                <Label>Session Type</Label>
+                                <Select value={sessionType} onValueChange={(v) => setSessionType(v as typeof sessionType)}>
+                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="practice">Practice Problems</SelectItem>
+                                        <SelectItem value="speed_drill">Speed Drill</SelectItem>
+                                        <SelectItem value="revision">Revision</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div>
+                                <Label>Number of Problems</Label>
+                                <Select value={String(problemCount)} onValueChange={(v) => setProblemCount(Number(v))}>
+                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="5">5 problems</SelectItem>
+                                        <SelectItem value="10">10 problems</SelectItem>
+                                        <SelectItem value="20">20 problems</SelectItem>
+                                        <SelectItem value="30">30 problems</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+                        <DialogFooter>
+                            <Button variant="outline" onClick={() => setSessionDialogOpen(false)}>Cancel</Button>
+                            <Button onClick={handleStartSession} disabled={startSession.isPending}>
+                                {startSession.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Play className="h-4 w-4 mr-2" />}
+                                Start Session
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+            </>
+        );
+    }
+
+    // Grid View
     return (
         <>
             {/* Subject Overview */}
@@ -218,7 +494,7 @@ function TopicsSection() {
             <Card>
                 <CardHeader>
                     <CardTitle>All Topics</CardTitle>
-                    <CardDescription>Click on a topic to start learning</CardDescription>
+                    <CardDescription>Click on a topic to view lessons and practice</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <ScrollArea className="h-[400px]">
@@ -230,10 +506,7 @@ function TopicsSection() {
                                         key={topic.topic_id}
                                         whileHover={{ scale: 1.02 }}
                                         whileTap={{ scale: 0.98 }}
-                                        onClick={() => {
-                                            setSelectedTopic(topic);
-                                            setSessionDialogOpen(true);
-                                        }}
+                                        onClick={() => handleTopicClick(topic)}
                                         className={cn(
                                             "text-left p-4 rounded-lg border transition-colors",
                                             "hover:border-primary/50 hover:bg-muted/50",
@@ -252,10 +525,7 @@ function TopicsSection() {
                                             </Badge>
                                         </div>
                                         <div className="mt-2">
-                                            <Progress
-                                                value={topic.accuracy_percent}
-                                                className="h-1"
-                                            />
+                                            <Progress value={topic.accuracy_percent} className="h-1" />
                                         </div>
                                     </motion.button>
                                 );
@@ -264,63 +534,105 @@ function TopicsSection() {
                     </ScrollArea>
                 </CardContent>
             </Card>
-
-            {/* Start Session Dialog */}
-            <Dialog open={sessionDialogOpen} onOpenChange={setSessionDialogOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Start Learning: {selectedTopic?.topic_name}</DialogTitle>
-                        <DialogDescription>
-                            Configure your practice session
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4 py-4">
-                        <div>
-                            <Label>Session Type</Label>
-                            <Select value={sessionType} onValueChange={(v) => setSessionType(v as typeof sessionType)}>
-                                <SelectTrigger>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="practice">Practice Problems</SelectItem>
-                                    <SelectItem value="speed_drill">Speed Drill</SelectItem>
-                                    <SelectItem value="revision">Revision</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div>
-                            <Label>Number of Problems</Label>
-                            <Select value={String(problemCount)} onValueChange={(v) => setProblemCount(Number(v))}>
-                                <SelectTrigger>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="5">5 problems</SelectItem>
-                                    <SelectItem value="10">10 problems</SelectItem>
-                                    <SelectItem value="20">20 problems</SelectItem>
-                                    <SelectItem value="30">30 problems</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </div>
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setSessionDialogOpen(false)}>
-                            Cancel
-                        </Button>
-                        <Button onClick={handleStartSession} disabled={startSession.isPending}>
-                            {startSession.isPending ? (
-                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            ) : (
-                                <Play className="h-4 w-4 mr-2" />
-                            )}
-                            Start Session
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
         </>
     );
 }
+
+// Lesson Card Component
+function LessonCard({
+    lesson,
+    index,
+    onMarkComplete,
+}: {
+    lesson: LessonWithProgress;
+    index: number;
+    onMarkComplete: () => void;
+}) {
+    const isCompleted = lesson.status === 'completed';
+    const lessonTypeIcons: Record<LessonType, string> = {
+        concept: '📖',
+        formula: '📐',
+        shortcut: '⚡',
+        video: '🎥',
+        example: '💡',
+    };
+
+    return (
+        <Card className={cn("transition-colors", isCompleted && "border-green-500/30 bg-green-500/5")}>
+            <CardContent className="pt-4">
+                <div className="flex items-start gap-4">
+                    <div className={cn(
+                        "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium",
+                        isCompleted ? "bg-green-500 text-white" : "bg-muted text-muted-foreground"
+                    )}>
+                        {isCompleted ? <Check className="h-4 w-4" /> : index}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                            <span>{lessonTypeIcons[lesson.lesson_type] || '📄'}</span>
+                            <h4 className="font-medium truncate">{lesson.title}</h4>
+                        </div>
+                        <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
+                            <span className="capitalize">{lesson.lesson_type}</span>
+                            {lesson.duration_minutes && (
+                                <span className="flex items-center gap-1">
+                                    <Clock className="h-3 w-3" />
+                                    {lesson.duration_minutes} min
+                                </span>
+                            )}
+                        </div>
+                        {lesson.progress_percent > 0 && lesson.progress_percent < 100 && (
+                            <Progress value={lesson.progress_percent} className="h-1 mt-2" />
+                        )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                        {!isCompleted && (
+                            <Button size="sm" variant="outline" onClick={onMarkComplete}>
+                                <Check className="h-4 w-4 mr-1" />
+                                Complete
+                            </Button>
+                        )}
+                        {isCompleted && (
+                            <Badge variant="outline" className="bg-green-500/10 text-green-500">
+                                <CheckCircle2 className="h-3 w-3 mr-1" />
+                                Done
+                            </Badge>
+                        )}
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
+
+// Problem Card Component
+function ProblemCard({ problem }: { problem: Problem }) {
+    const difficultyColor = difficultyColors[problem.difficulty];
+
+    return (
+        <Card className="hover:border-primary/30 transition-colors cursor-pointer">
+            <CardContent className="pt-4">
+                <div className="flex items-start justify-between gap-2">
+                    <p className="text-sm line-clamp-2">{problem.question_text}</p>
+                    <Badge variant="outline" className={cn("text-xs flex-shrink-0", difficultyColor)}>
+                        {problem.difficulty}
+                    </Badge>
+                </div>
+                <div className="flex items-center gap-2 mt-3">
+                    {problem.is_real_cat && (
+                        <Badge className="bg-red-500/20 text-red-400 text-xs">PYQ {problem.cat_year}</Badge>
+                    )}
+                    {problem.attempted && (
+                        <Badge variant="outline" className={cn("text-xs", problem.is_correct ? "text-green-400" : "text-red-400")}>
+                            {problem.is_correct ? "Correct" : "Incorrect"}
+                        </Badge>
+                    )}
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
+
 
 // ========================
 // NOTES SECTION

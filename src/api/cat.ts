@@ -820,6 +820,34 @@ export async function getSessionHistory(params?: {
     return request<PaginatedResponse<LearnSession>>(`/api/cat/sessions/history?${searchParams}`);
 }
 
+export async function getLearnSession(sessionId: string): Promise<LearnSession> {
+    return request<LearnSession>(`/api/cat/learn/sessions/${sessionId}`);
+}
+
+export async function submitLearnSessionAnswer(
+    sessionId: string,
+    payload: { questionId: string; answer: string; timeSpent: number }
+): Promise<ProblemAttemptResponse> {
+    return request<ProblemAttemptResponse>(`/api/cat/learn/sessions/${sessionId}/answer`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+    });
+}
+
+export async function completeLearnSession(sessionId: string): Promise<LearnSession> {
+    return request<LearnSession>(`/api/cat/learn/sessions/${sessionId}/complete`, {
+        method: 'POST',
+    });
+}
+
+export async function getAttemptHistory(params?: {
+    limit?: number;
+}): Promise<ProblemAttemptResponse[]> {
+    const searchParams = new URLSearchParams();
+    if (params?.limit) searchParams.append('limit', params.limit.toString());
+    return request<ProblemAttemptResponse[]>(`/api/cat/learn/history?${searchParams}`);
+}
+
 export async function explainProblem(
     payload: ExplainProblemPayload
 ): Promise<ExplainProblemResponse> {
@@ -1183,6 +1211,10 @@ export const catApi = {
     getMastery,
     startLearnSession,
     getSessionHistory,
+    getLearnSession,
+    submitLearnSessionAnswer,
+    completeLearnSession,
+    getAttemptHistory,
     explainProblem,
     // Adaptive Exam
     checkAbility,

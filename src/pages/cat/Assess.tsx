@@ -32,7 +32,10 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { catApi } from '@/api/cat';
+import { CatNavigation } from '@/components/cat/CatNavigation';
+import { SectionTabs } from '@/components/cat/SectionTabs';
 import type { Mock, MockType, MockDifficulty, ExternalMock } from '@/types/cat';
+import AdaptiveExam from './AdaptiveExam';
 
 const mockTypes: { value: MockType; label: string; desc: string; duration: string; icon: React.ReactNode }[] = [
     { value: 'full', label: 'Full Mock', desc: 'Complete CAT simulation', duration: '180 min', icon: <FileQuestion className="h-5 w-5" /> },
@@ -84,17 +87,14 @@ export default function Assess() {
         staleTime: 10 * 60 * 1000,
     });
 
-    const { data: abilityData } = useQuery({
-        queryKey: ['cat-ability'],
-        queryFn: () => catApi.checkAbility(),
-        staleTime: 5 * 60 * 1000,
-    });
-
     const mocks = mocksData?.items || [];
     const inProgress = mocks.find(m => m.status === 'in_progress');
 
     return (
         <div className="space-y-6">
+            {/* CAT Module Navigation */}
+            <CatNavigation />
+
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
@@ -150,7 +150,7 @@ export default function Assess() {
                                 <Sparkles className="h-5 w-5 text-amber-400" />
                             </div>
                             <div>
-                                <p className="text-2xl font-bold">{scorePrediction?.predicted_percentile?.toFixed(0) || '--'}%</p>
+                                <p className="text-2xl font-bold">{scorePrediction?.overall_percentile?.toFixed(0) || '--'}%</p>
                                 <p className="text-xs text-muted-foreground">Predicted</p>
                             </div>
                         </div>
@@ -172,18 +172,19 @@ export default function Assess() {
             </div>
 
             {/* Tabs */}
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-                <TabsList className="bg-muted/50 p-1">
-                    <TabsTrigger value="mocks" className="gap-2">
-                        <FileQuestion className="h-4 w-4" />Mock Tests
-                    </TabsTrigger>
-                    <TabsTrigger value="adaptive" className="gap-2">
-                        <Brain className="h-4 w-4" />Adaptive
-                    </TabsTrigger>
-                    <TabsTrigger value="external" className="gap-2">
-                        <Trophy className="h-4 w-4" />External
-                    </TabsTrigger>
-                </TabsList>
+            {/* Section Tabs */}
+            <SectionTabs
+                tabs={[
+                    { value: 'mocks', label: 'Mock Tests', description: 'Full-length & sectional', icon: FileQuestion },
+                    { value: 'adaptive', label: 'Adaptive', description: 'AI-powered difficulty', icon: Brain },
+                    { value: 'external', label: 'External', description: 'Track other platforms', icon: Trophy },
+                ]}
+                value={activeTab}
+                onValueChange={setActiveTab}
+            />
+
+            {/* Tab Content */}
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-0">
 
                 {/* Mocks Tab */}
                 <TabsContent value="mocks" className="space-y-6">
@@ -252,82 +253,7 @@ export default function Assess() {
 
                 {/* Adaptive Tab */}
                 <TabsContent value="adaptive" className="space-y-6">
-                    {/* Ability Overview */}
-                    {abilityData?.ability_scores && (
-                        <div className="grid md:grid-cols-3 gap-4">
-                            {abilityData.ability_scores.map((score) => (
-                                <Card key={score.subject} className="bg-card/50">
-                                    <CardContent className="pt-6">
-                                        <div className="flex items-center justify-between mb-2">
-                                            <span className="font-medium capitalize">{score.subject}</span>
-                                            <Badge variant="outline">{score.confidence}% conf.</Badge>
-                                        </div>
-                                        <p className="text-3xl font-bold">{score.ability_score.toFixed(1)}</p>
-                                        <Progress value={(score.ability_score / 5) * 100} className="h-2 mt-2" />
-                                    </CardContent>
-                                </Card>
-                            ))}
-                        </div>
-                    )}
-
-                    {/* Adaptive Exam Types */}
-                    <div className="grid md:grid-cols-2 gap-4">
-                        {[
-                            { type: 'full', label: 'Full Mock', desc: 'Complete adaptive test', icon: Target, color: 'violet' },
-                            { type: 'sectional', label: 'Sectional', desc: 'Focus on one subject', icon: BarChart3, color: 'blue' },
-                            { type: 'topic_focus', label: 'Topic Focus', desc: 'Deep dive into topics', icon: Zap, color: 'amber' },
-                            { type: 'weakness_drill', label: 'Weakness Drill', desc: 'Practice weak areas', icon: Brain, color: 'rose' },
-                        ].map((exam) => (
-                            <motion.div key={exam.type} whileHover={{ scale: 1.01 }}>
-                                <Link to="/cat/adaptive-exam">
-                                    <Card className="hover:border-violet-500/30 transition-colors cursor-pointer">
-                                        <CardContent className="pt-6">
-                                            <div className="flex items-start gap-4">
-                                                <div className={`h-10 w-10 rounded-full bg-${exam.color}-500/20 flex items-center justify-center`}>
-                                                    <exam.icon className={`h-5 w-5 text-${exam.color}-400`} />
-                                                </div>
-                                                <div className="flex-1">
-                                                    <h3 className="font-semibold">{exam.label}</h3>
-                                                    <p className="text-sm text-muted-foreground">{exam.desc}</p>
-                                                </div>
-                                                <ChevronRight className="h-5 w-5 text-muted-foreground" />
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                </Link>
-                            </motion.div>
-                        ))}
-                    </div>
-
-                    {/* Score Prediction */}
-                    {scorePrediction && (
-                        <Card className="bg-gradient-to-br from-violet-500/10 to-purple-500/10 border-violet-500/30">
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <Sparkles className="h-5 w-5 text-violet-400" />
-                                    CAT Score Prediction
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-4xl font-bold text-violet-400">
-                                            {scorePrediction.predicted_percentile?.toFixed(1)}%ile
-                                        </p>
-                                        <p className="text-sm text-muted-foreground mt-1">
-                                            Score: {scorePrediction.predicted_score}
-                                        </p>
-                                    </div>
-                                    <Badge className={cn(
-                                        scorePrediction.readiness_level === 'high' ? 'bg-green-500' :
-                                            scorePrediction.readiness_level === 'medium' ? 'bg-amber-500' : 'bg-red-500'
-                                    )}>
-                                        {scorePrediction.readiness_level} readiness
-                                    </Badge>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    )}
+                    <AdaptiveExam />
                 </TabsContent>
 
                 {/* External Tab */}
@@ -389,14 +315,29 @@ export default function Assess() {
 function MockRow({ mock }: { mock: Mock }) {
     const typeLabel = mockTypes.find(t => t.value === mock.type)?.label || mock.type;
     const scorePercent = mock.score && mock.max_score ? (mock.score / mock.max_score) * 100 : 0;
+    const [showAnalysis, setShowAnalysis] = useState(false);
+    const [analysisData, setAnalysisData] = useState<{
+        mistakes: { question_text: string; explanation: string; mistake_type: string }[];
+        summary: { total_mistakes: number; practice_recommendation: string; weakest_topics: string[] };
+    } | null>(null);
+    const { toast } = useToast();
+
+    const explainMutation = useMutation({
+        mutationFn: () => catApi.explainMock({ mock_id: mock.id }),
+        onSuccess: (data) => {
+            setAnalysisData(data);
+            setShowAnalysis(true);
+        },
+        onError: () => toast({ title: 'Failed to get analysis', variant: 'destructive' }),
+    });
 
     return (
-        <Link to={`/cat/mocks/${mock.id}`}>
+        <>
             <motion.div
                 whileHover={{ x: 4 }}
                 className="flex items-center justify-between p-4 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
             >
-                <div className="flex items-center gap-4">
+                <Link to={`/cat/mocks/${mock.id}`} className="flex items-center gap-4 flex-1">
                     <div className={cn(
                         "h-10 w-10 rounded-lg flex items-center justify-center",
                         mock.status === 'completed' ? 'bg-emerald-500/10' :
@@ -413,7 +354,7 @@ function MockRow({ mock }: { mock: Mock }) {
                             {format(new Date(mock.started_at), 'MMM d, yyyy')}
                         </p>
                     </div>
-                </div>
+                </Link>
                 <div className="flex items-center gap-4">
                     {mock.status === 'completed' && mock.score !== undefined && (
                         <>
@@ -424,6 +365,21 @@ function MockRow({ mock }: { mock: Mock }) {
                             <div className="w-16 hidden md:block">
                                 <Progress value={scorePercent} className="h-2" />
                             </div>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    explainMutation.mutate();
+                                }}
+                                disabled={explainMutation.isPending}
+                            >
+                                {explainMutation.isPending ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                    <Sparkles className="h-4 w-4" />
+                                )}
+                            </Button>
                         </>
                     )}
                     <Badge variant={mock.status === 'completed' ? 'default' : mock.status === 'in_progress' ? 'secondary' : 'outline'}>
@@ -431,7 +387,48 @@ function MockRow({ mock }: { mock: Mock }) {
                     </Badge>
                 </div>
             </motion.div>
-        </Link>
+
+            {/* AI Analysis Dialog */}
+            <Dialog open={showAnalysis} onOpenChange={setShowAnalysis}>
+                <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <Sparkles className="h-5 w-5 text-violet-500" /> AI Mock Analysis
+                        </DialogTitle>
+                        <DialogDescription>
+                            AI-powered insights on your mock performance
+                        </DialogDescription>
+                    </DialogHeader>
+                    {analysisData && (
+                        <div className="space-y-4 py-2">
+                            <div className="p-3 rounded-lg bg-violet-500/10 border border-violet-500/20">
+                                <p className="text-sm font-medium">Recommendation</p>
+                                <p className="text-sm text-muted-foreground">{analysisData.summary.practice_recommendation}</p>
+                            </div>
+                            {analysisData.summary.weakest_topics.length > 0 && (
+                                <div>
+                                    <p className="text-sm font-medium mb-2">Weakest Topics</p>
+                                    <div className="flex flex-wrap gap-1">
+                                        {analysisData.summary.weakest_topics.map((t, i) => (
+                                            <Badge key={i} variant="outline">{t}</Badge>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                            {analysisData.mistakes.slice(0, 3).map((m, i) => (
+                                <div key={i} className="p-3 rounded-lg bg-muted/50 space-y-2">
+                                    <p className="text-sm line-clamp-2">{m.question_text}</p>
+                                    <p className="text-xs text-muted-foreground">{m.explanation}</p>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setShowAnalysis(false)}>Close</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </>
     );
 }
 
@@ -553,8 +550,10 @@ function AddExternalMockDialog({ open, onOpenChange, onSuccess }: {
 }) {
     const [formData, setFormData] = useState({
         platform: 'IMS',
+        mock_name: '',
         mock_date: format(new Date(), 'yyyy-MM-dd'),
         overall_score: '',
+        max_score: '300',
         percentile: '',
         varc_score: '',
         dilr_score: '',
@@ -565,8 +564,10 @@ function AddExternalMockDialog({ open, onOpenChange, onSuccess }: {
     const mutation = useMutation({
         mutationFn: () => catApi.createExternalMock({
             platform: formData.platform as any,
+            mock_name: formData.mock_name || `${formData.platform} Mock`,
             mock_date: formData.mock_date,
             overall_score: parseFloat(formData.overall_score),
+            max_score: parseFloat(formData.max_score) || 300,
             percentile: parseFloat(formData.percentile),
             varc_score: formData.varc_score ? parseFloat(formData.varc_score) : undefined,
             dilr_score: formData.dilr_score ? parseFloat(formData.dilr_score) : undefined,

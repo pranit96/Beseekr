@@ -31,6 +31,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { catApi } from '@/api/cat';
+import { CatNavigation } from '@/components/cat/CatNavigation';
+import { SectionTabs } from '@/components/cat/SectionTabs';
 import type { Revision } from '@/types/cat';
 
 export default function Review() {
@@ -62,6 +64,13 @@ export default function Review() {
         queryKey: ['cat-ai-study-plan'],
         queryFn: () => catApi.getAIStudyPlan(),
         staleTime: 30 * 60 * 1000,
+    });
+
+    // Speed Analytics
+    const { data: speedAnalytics } = useQuery({
+        queryKey: ['cat-speed-analytics'],
+        queryFn: () => catApi.getSpeedAnalytics(),
+        staleTime: 10 * 60 * 1000,
     });
 
     // Revisions data
@@ -114,6 +123,9 @@ export default function Review() {
 
     return (
         <div className="space-y-6">
+            {/* CAT Module Navigation */}
+            <CatNavigation />
+
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
@@ -186,20 +198,19 @@ export default function Review() {
                 </Card>
             </div>
 
-            {/* Tabs */}
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-                <TabsList className="bg-muted/50 p-1">
-                    <TabsTrigger value="analytics" className="gap-2">
-                        <TrendingUp className="h-4 w-4" />Analytics
-                    </TabsTrigger>
-                    <TabsTrigger value="revisions" className="gap-2">
-                        <RotateCcw className="h-4 w-4" />Revisions
-                        {dueCount > 0 && <Badge variant="destructive" className="ml-1 h-5 w-5 p-0 flex items-center justify-center">{dueCount}</Badge>}
-                    </TabsTrigger>
-                    <TabsTrigger value="insights" className="gap-2">
-                        <Sparkles className="h-4 w-4" />AI Insights
-                    </TabsTrigger>
-                </TabsList>
+            {/* Section Tabs */}
+            <SectionTabs
+                tabs={[
+                    { value: 'analytics', label: 'Analytics', description: 'Performance & trends', icon: TrendingUp },
+                    { value: 'revisions', label: 'Revisions', description: 'Spaced repetition schedule', icon: RotateCcw, badge: dueCount > 0 ? dueCount : undefined, badgeVariant: 'destructive' },
+                    { value: 'insights', label: 'AI Insights', description: 'Personalized recommendations', icon: Sparkles },
+                ]}
+                value={activeTab}
+                onValueChange={setActiveTab}
+            />
+
+            {/* Tab Content */}
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-0">
 
                 {/* Analytics Tab */}
                 <TabsContent value="analytics" className="space-y-6">
@@ -274,6 +285,36 @@ export default function Review() {
                                         <p className="text-5xl font-bold text-violet-400 mt-2">
                                             {aiAnalysis.predicted_percentile}%ile
                                         </p>
+                                    </CardContent>
+                                </Card>
+                            )}
+
+                            {/* Speed Analytics */}
+                            {speedAnalytics && speedAnalytics.topics.length > 0 && (
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle className="flex items-center gap-2">
+                                            <Clock className="h-5 w-5 text-blue-500" />Speed Analytics
+                                        </CardTitle>
+                                        <CardDescription>Avg time per topic vs target • Top {speedAnalytics.percentile_speed}% speed</CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="space-y-3">
+                                        {speedAnalytics.topics.slice(0, 5).map((topic) => (
+                                            <div key={topic.id} className="flex items-center gap-3">
+                                                <div className="flex-1">
+                                                    <div className="flex justify-between mb-1">
+                                                        <span className="text-sm font-medium">{topic.name}</span>
+                                                        <span className="text-xs text-muted-foreground">
+                                                            {Math.round(topic.avg_time_seconds / 60)}m avg / {Math.round(topic.target_time_seconds / 60)}m target
+                                                        </span>
+                                                    </div>
+                                                    <Progress value={Math.min((topic.target_time_seconds / Math.max(topic.avg_time_seconds, 1)) * 100, 100)} className="h-2" />
+                                                </div>
+                                                <Badge variant={topic.improvement_percent >= 0 ? 'default' : 'destructive'} className="text-xs">
+                                                    {topic.improvement_percent >= 0 ? '+' : ''}{topic.improvement_percent}%
+                                                </Badge>
+                                            </div>
+                                        ))}
                                     </CardContent>
                                 </Card>
                             )}
