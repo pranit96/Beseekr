@@ -284,7 +284,7 @@ function SubjectCard({
     onAddTopic: () => void;
     onEditTopic: (topic: Topic) => void;
     onDeleteTopic: (id: string) => void;
-    onLearnTopic?: (topicTitle: string) => void;
+    onLearnTopic?: (topicId: string) => void;
 }) {
     const progress = (subject.stats.done / subject.stats.total) * 100;
 
@@ -351,7 +351,7 @@ function SubjectCard({
                                         onStatusChange={(status) => onStatusChange(topic.id, status)}
                                         onEdit={() => onEditTopic(topic)}
                                         onDelete={() => onDeleteTopic(topic.id)}
-                                        onLearn={() => onLearnTopic?.(topic.title)}
+                                        onLearn={() => onLearnTopic?.(topic.id)}
                                     />
                                 ))}
                                 {subject.topics.length === 0 && (

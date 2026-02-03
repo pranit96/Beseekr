@@ -495,7 +495,7 @@ export default function Review() {
                                                 <p className="text-sm text-muted-foreground">{s.insight}</p>
                                             </div>
                                         ))}
-                                        {aiAnalysis.strengths.length === 0 && (
+                                        {(!aiAnalysis.strengths || aiAnalysis.strengths.length === 0) && (
                                             <p className="text-muted-foreground">Keep practicing to identify strengths</p>
                                         )}
                                     </CardContent>
@@ -517,7 +517,7 @@ export default function Review() {
                                                 <p className="text-sm text-muted-foreground">{w.suggestion}</p>
                                             </div>
                                         ))}
-                                        {aiAnalysis.weaknesses.length === 0 && (
+                                        {(!aiAnalysis.weaknesses || aiAnalysis.weaknesses.length === 0) && (
                                             <p className="text-muted-foreground">Great job! No major weak areas</p>
                                         )}
                                     </CardContent>
@@ -570,7 +570,7 @@ export default function Review() {
                                                 </div>
                                             ))}
                                         </div>
-                                        {studyPlan.recommendations.length > 0 && (
+                                        {studyPlan.recommendations && studyPlan.recommendations.length > 0 && (
                                             <div className="mt-4 p-3 rounded-lg bg-violet-500/10">
                                                 <p className="font-medium text-sm mb-2">Recommendations</p>
                                                 <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">

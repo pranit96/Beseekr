@@ -88,9 +88,9 @@ export default function Learn() {
         queryFn: () => catApi.getMastery(),
     });
 
-    const handleLearnTopic = (topicTitle: string) => {
+    const handleLearnTopic = (topicId: string) => {
         setActiveTab('topics');
-        const topic = masteryData?.topics.find(t => t.topic_name === topicTitle);
+        const topic = masteryData?.topics.find(t => t.topic_id === topicId);
         if (topic) {
             setSelectedTopic(topic);
             setViewMode('detail');
