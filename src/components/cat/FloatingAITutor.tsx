@@ -25,6 +25,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { cn } from '@/lib/utils';
 import { catApi } from '@/api/cat';
 import type { AskDoubtPayload, AskDoubtResponse } from '@/types/cat';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface ChatMessage {
     id: string;
@@ -325,12 +327,28 @@ export default function FloatingAITutor() {
                                                 )}
                                             </div>
                                             <div className={cn(
-                                                "max-w-[80%] rounded-2xl px-4 py-3",
+                                                "max-w-[85%] rounded-2xl px-4 py-3 shadow-md",
                                                 message.role === 'assistant'
                                                     ? "bg-muted/50 rounded-tl-sm"
-                                                    : "bg-violet-500/20 text-foreground rounded-tr-sm"
+                                                    : "bg-gradient-to-br from-violet-500/20 to-purple-500/20 text-foreground rounded-tr-sm"
                                             )}>
-                                                <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                                                <div className="prose prose-sm dark:prose-invert max-w-none prose-p:leading-relaxed prose-pre:bg-muted/50 prose-pre:p-2 prose-pre:rounded-lg">
+                                                    <ReactMarkdown
+                                                        remarkPlugins={[remarkGfm]}
+                                                        components={{
+                                                            p: ({ node, ...props }) => <p className="mb-2 last:mb-0" {...props} />,
+                                                            h1: ({ node, ...props }) => <h1 className="text-lg font-bold mb-2 mt-4" {...props} />,
+                                                            h2: ({ node, ...props }) => <h2 className="text-base font-bold mb-2 mt-3" {...props} />,
+                                                            h3: ({ node, ...props }) => <h3 className="text-sm font-bold mb-1 mt-2" {...props} />,
+                                                            ul: ({ node, ...props }) => <ul className="list-disc list-inside mb-2" {...props} />,
+                                                            ol: ({ node, ...props }) => <ol className="list-decimal list-inside mb-2" {...props} />,
+                                                            li: ({ node, ...props }) => <li className="mb-0.5" {...props} />,
+                                                            code: ({ node, ...props }) => <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono" {...props} />,
+                                                        }}
+                                                    >
+                                                        {message.content}
+                                                    </ReactMarkdown>
+                                                </div>
 
                                                 {/* Tips */}
                                                 {message.tips && message.tips.length > 0 && (
@@ -338,9 +356,12 @@ export default function FloatingAITutor() {
                                                         <p className="text-xs font-medium text-violet-400 mb-2 flex items-center gap-1">
                                                             <Lightbulb className="h-3 w-3" /> Tips
                                                         </p>
-                                                        <ul className="text-xs space-y-1 text-muted-foreground">
+                                                        <ul className="text-xs space-y-1 text-muted-foreground list-none">
                                                             {message.tips.slice(0, 3).map((tip, i) => (
-                                                                <li key={i}>• {tip}</li>
+                                                                <li key={i} className="flex gap-2">
+                                                                    <span className="text-violet-500">•</span>
+                                                                    <span>{tip}</span>
+                                                                </li>
                                                             ))}
                                                         </ul>
                                                     </div>
@@ -354,7 +375,7 @@ export default function FloatingAITutor() {
                                                         </p>
                                                         <div className="flex flex-wrap gap-1">
                                                             {message.formulas.map((formula, i) => (
-                                                                <Badge key={i} variant="outline" className="text-xs font-mono">
+                                                                <Badge key={i} variant="outline" className="text-xs font-mono bg-background/50">
                                                                     {formula}
                                                                 </Badge>
                                                             ))}

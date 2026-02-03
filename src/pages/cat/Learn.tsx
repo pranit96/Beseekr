@@ -55,6 +55,8 @@ import type {
     LessonType,
     Problem,
 } from '@/types/cat';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import Subjects from './Subjects';
 
 const difficultyColors: Record<ProblemDifficulty, string> = {
@@ -74,8 +76,29 @@ const masteryColors: Record<MasteryLevel, { bg: string; text: string; label: str
 
 export default function Learn() {
     const [activeTab, setActiveTab] = useState('topics');
+    const [selectedTopic, setSelectedTopic] = useState<TopicMastery | null>(null);
+    const [viewMode, setViewMode] = useState<'grid' | 'detail'>('grid');
+    const [activeDetailTab, setActiveDetailTab] = useState<'lessons' | 'practice' | 'tips'>('lessons');
+
     const queryClient = useQueryClient();
     const { toast } = useToast();
+
+    const { data: masteryData, isLoading: masteryLoading } = useQuery({
+        queryKey: ['cat', 'mastery'],
+        queryFn: () => catApi.getMastery(),
+    });
+
+    const handleLearnTopic = (topicTitle: string) => {
+        setActiveTab('topics');
+        const topic = masteryData?.topics.find(t => t.topic_name === topicTitle);
+        if (topic) {
+            setSelectedTopic(topic);
+            setViewMode('detail');
+            setActiveDetailTab('lessons');
+        } else {
+            toast({ title: 'Topic not found', variant: 'destructive' });
+        }
+    };
 
     return (
         <div className="space-y-6">
@@ -112,12 +135,21 @@ export default function Learn() {
 
                 {/* Topics Tab */}
                 <TabsContent value="topics" className="space-y-6">
-                    <TopicsSection />
+                    <TopicsSection
+                        masteryData={masteryData}
+                        masteryLoading={masteryLoading}
+                        selectedTopic={selectedTopic}
+                        setSelectedTopic={setSelectedTopic}
+                        viewMode={viewMode}
+                        setViewMode={setViewMode}
+                        activeDetailTab={activeDetailTab}
+                        setActiveDetailTab={setActiveDetailTab}
+                    />
                 </TabsContent>
 
                 {/* Syllabus Tab */}
                 <TabsContent value="syllabus" className="space-y-6">
-                    <Subjects />
+                    <Subjects onLearnTopic={handleLearnTopic} />
                 </TabsContent>
 
                 {/* Notes Tab */}
@@ -137,20 +169,38 @@ export default function Learn() {
 // ========================
 // TOPICS SECTION
 // ========================
-function TopicsSection() {
+interface TopicsSectionProps {
+    masteryData?: MasteryOverview;
+    masteryLoading: boolean;
+    selectedTopic: TopicMastery | null;
+    setSelectedTopic: (topic: TopicMastery | null) => void;
+    viewMode: 'grid' | 'detail';
+    setViewMode: (mode: 'grid' | 'detail') => void;
+    activeDetailTab: 'lessons' | 'practice' | 'tips';
+    setActiveDetailTab: (tab: 'lessons' | 'practice' | 'tips') => void;
+}
+
+function TopicsSection({
+    masteryData,
+    masteryLoading,
+    selectedTopic,
+    setSelectedTopic,
+    viewMode,
+    setViewMode,
+    activeDetailTab,
+    setActiveDetailTab,
+}: TopicsSectionProps) {
     const queryClient = useQueryClient();
-    const [selectedTopic, setSelectedTopic] = useState<TopicMastery | null>(null);
-    const [viewMode, setViewMode] = useState<'grid' | 'detail'>('grid');
-    const [activeDetailTab, setActiveDetailTab] = useState<'lessons' | 'practice' | 'tips'>('lessons');
     const [sessionDialogOpen, setSessionDialogOpen] = useState(false);
     const [sessionType, setSessionType] = useState<'practice' | 'speed_drill' | 'revision'>('practice');
     const [problemCount, setProblemCount] = useState<number>(10);
+    const [viewingLessonId, setViewingLessonId] = useState<string | null>(null);
     const { toast } = useToast();
 
-    const { data: masteryData, isLoading: masteryLoading } = useQuery({
-        queryKey: ['cat', 'mastery'],
-        queryFn: () => catApi.getMastery(),
-    });
+    // Effect to handle navigation from parent
+    useMemo(() => {
+        // Props are now handled directly
+    }, []);
 
     // Fetch lessons for selected topic
     const { data: lessons, isLoading: lessonsLoading } = useQuery({
@@ -281,6 +331,7 @@ function TopicsSection() {
                                         key={lesson.id}
                                         lesson={lesson}
                                         index={idx + 1}
+                                        onView={() => setViewingLessonId(lesson.id)}
                                         onMarkComplete={() => {
                                             updateProgress.mutate({
                                                 lessonId: lesson.id,
@@ -446,6 +497,13 @@ function TopicsSection() {
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>
+
+                {/* Lesson Viewer */}
+                <LessonViewer
+                    lessonId={viewingLessonId}
+                    isOpen={!!viewingLessonId}
+                    onClose={() => setViewingLessonId(null)}
+                />
             </>
         );
     }
@@ -542,10 +600,12 @@ function TopicsSection() {
 function LessonCard({
     lesson,
     index,
+    onView,
     onMarkComplete,
 }: {
     lesson: LessonWithProgress;
     index: number;
+    onView: () => void;
     onMarkComplete: () => void;
 }) {
     const isCompleted = lesson.status === 'completed';
@@ -586,6 +646,9 @@ function LessonCard({
                         )}
                     </div>
                     <div className="flex items-center gap-2">
+                        <Button size="sm" onClick={onView}>
+                            {isCompleted ? 'Review' : 'Start'}
+                        </Button>
                         {!isCompleted && (
                             <Button size="sm" variant="outline" onClick={onMarkComplete}>
                                 <Check className="h-4 w-4 mr-1" />
@@ -602,6 +665,130 @@ function LessonCard({
                 </div>
             </CardContent>
         </Card>
+    );
+}
+
+function LessonViewer({
+    lessonId,
+    isOpen,
+    onClose,
+}: {
+    lessonId: string | null;
+    isOpen: boolean;
+    onClose: () => void;
+}) {
+    const queryClient = useQueryClient();
+    const { toast } = useToast();
+
+    // Fetch full lesson content
+    const { data: lesson, isLoading } = useQuery({
+        queryKey: ['cat', 'lesson', lessonId],
+        queryFn: () => catApi.getLesson(lessonId!),
+        enabled: !!lessonId && isOpen,
+    });
+
+    const updateProgress = useMutation({
+        mutationFn: (payload: LessonProgressPayload) =>
+            catApi.updateLessonProgress(lessonId!, payload),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['cat', 'lessons'] });
+            toast({ title: 'Lesson marked as complete!' });
+            onClose();
+        },
+    });
+
+    const handleComplete = () => {
+        updateProgress.mutate({
+            status: 'completed',
+            progress_percent: 100,
+            time_spent_seconds: 0, // In a real app we'd track this
+            is_bookmarked: lesson?.is_bookmarked,
+        });
+    };
+
+    if (!isOpen) return null;
+
+    return (
+        <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+            <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 gap-0">
+                <DialogHeader className="p-6 pb-2">
+                    <DialogTitle className="flex items-center gap-2 text-xl">
+                        {isLoading ? 'Loading...' : lesson?.title}
+                    </DialogTitle>
+                    <DialogDescription>
+                        {lesson && `${lesson.topic_name} • ${lesson.lesson_type}`}
+                    </DialogDescription>
+                </DialogHeader>
+
+                <ScrollArea className="flex-1 p-6 pt-2">
+                    {isLoading ? (
+                        <div className="flex justify-center py-12">
+                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                        </div>
+                    ) : lesson ? (
+                        <div className="space-y-6">
+                            {lesson.video_url && (
+                                <div className="aspect-video bg-black rounded-lg overflow-hidden flex items-center justify-center">
+                                    {/* Handle various video sources if needed, for now assuming direct link or standard embed */}
+                                    {lesson.video_url.includes('youtube') || lesson.video_url.includes('vimeo') ? (
+                                        <iframe
+                                            src={lesson.video_url.replace('watch?v=', 'embed/')}
+                                            className="w-full h-full"
+                                            allowFullScreen
+                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                        />
+                                    ) : (
+                                        <video controls src={lesson.video_url} className="w-full h-full" />
+                                    )}
+                                </div>
+                            )}
+
+                            <div className="prose prose-sm dark:prose-invert max-w-none">
+                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                    {lesson.content}
+                                </ReactMarkdown>
+                            </div>
+
+                            {lesson.examples && lesson.examples.length > 0 && (
+                                <div className="space-y-4 pt-4 border-t">
+                                    <h3 className="font-semibold text-lg flex items-center gap-2">
+                                        <Sparkles className="h-5 w-5 text-amber-500" />
+                                        Examples
+                                    </h3>
+                                    {lesson.examples.map((ex, i) => (
+                                        <Card key={i} className="bg-muted/30">
+                                            <CardContent className="pt-4 space-y-3">
+                                                <div>
+                                                    <Badge variant="outline" className="mb-2">Problem</Badge>
+                                                    <p className="text-sm font-medium">{ex.problem}</p>
+                                                </div>
+                                                <div>
+                                                    <Badge variant="outline" className="mb-2 bg-emerald-500/10 text-emerald-500 border-emerald-500/20">Solution</Badge>
+                                                    <p className="text-sm text-muted-foreground">{ex.solution}</p>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    ) : (
+                        <div className="text-center py-12 text-muted-foreground">
+                            Failed to load lesson content.
+                        </div>
+                    )}
+                </ScrollArea>
+
+                <DialogFooter className="p-4 border-t bg-muted/20">
+                    <Button variant="outline" onClick={onClose}>Close</Button>
+                    <Button onClick={handleComplete} disabled={updateProgress.isPending || !lesson}>
+                        {updateProgress.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                        <CheckCircle2 className="h-4 w-4 mr-2" />
+                        Mark as Complete
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     );
 }
 

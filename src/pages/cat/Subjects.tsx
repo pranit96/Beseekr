@@ -61,7 +61,7 @@ const statusConfig: Record<TopicStatus, { label: string; icon: typeof Circle; co
     needs_revision: { label: 'Needs Revision', icon: AlertTriangle, color: 'text-orange-500' },
 };
 
-export default function Subjects() {
+export default function Subjects({ onLearnTopic }: { onLearnTopic?: (topicTitle: string) => void }) {
     const [searchParams, setSearchParams] = useSearchParams();
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState<TopicStatus | 'all'>('all');
@@ -240,6 +240,7 @@ export default function Subjects() {
                         }
                         onEditTopic={setEditTopicDialog}
                         onDeleteTopic={(id) => deleteTopicMutation.mutate(id)}
+                        onLearnTopic={onLearnTopic}
                     />
                 ))}
             </div>
@@ -274,6 +275,7 @@ function SubjectCard({
     onAddTopic,
     onEditTopic,
     onDeleteTopic,
+    onLearnTopic,
 }: {
     subject: Subject & { topics: Topic[] };
     expanded: boolean;
@@ -282,6 +284,7 @@ function SubjectCard({
     onAddTopic: () => void;
     onEditTopic: (topic: Topic) => void;
     onDeleteTopic: (id: string) => void;
+    onLearnTopic?: (topicTitle: string) => void;
 }) {
     const progress = (subject.stats.done / subject.stats.total) * 100;
 
@@ -348,6 +351,7 @@ function SubjectCard({
                                         onStatusChange={(status) => onStatusChange(topic.id, status)}
                                         onEdit={() => onEditTopic(topic)}
                                         onDelete={() => onDeleteTopic(topic.id)}
+                                        onLearn={() => onLearnTopic?.(topic.title)}
                                     />
                                 ))}
                                 {subject.topics.length === 0 && (
@@ -369,11 +373,13 @@ function TopicRow({
     onStatusChange,
     onEdit,
     onDelete,
+    onLearn,
 }: {
     topic: Topic;
     onStatusChange: (status: TopicStatus) => void;
     onEdit: () => void;
     onDelete: () => void;
+    onLearn?: () => void;
 }) {
     const config = statusConfig[topic.status];
 
@@ -436,6 +442,10 @@ function TopicRow({
                                 Delete
                             </DropdownMenuItem>
                         )}
+                        <DropdownMenuItem onClick={onLearn}>
+                            <BookOpen className="h-4 w-4 mr-2" />
+                            Start Learning
+                        </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
             </div>
