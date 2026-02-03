@@ -900,21 +900,33 @@ function ProblemAttemptDialog({
 
                     {!showResult ? (
                         <div className="space-y-2">
-                            {problem.options && Object.entries(problem.options).map(([key, value]) => (
-                                <button
-                                    key={key}
-                                    onClick={() => setSelectedAnswer(key)}
-                                    className={cn(
-                                        "w-full p-3 rounded-lg border text-left transition-colors",
-                                        selectedAnswer === key
-                                            ? 'border-primary bg-primary/10'
-                                            : 'hover:bg-muted/50'
-                                    )}
-                                >
-                                    <span className="font-semibold mr-2">{key}.</span>
-                                    {value}
-                                </button>
-                            ))}
+                            {problem.options && Object.keys(problem.options).length > 0 ? (
+                                Object.entries(problem.options).map(([key, value]) => (
+                                    <button
+                                        key={key}
+                                        onClick={() => setSelectedAnswer(key)}
+                                        className={cn(
+                                            "w-full p-3 rounded-lg border text-left transition-colors",
+                                            selectedAnswer === key
+                                                ? 'border-primary bg-primary/10'
+                                                : 'hover:bg-muted/50'
+                                        )}
+                                    >
+                                        <span className="font-semibold mr-2">{key}.</span>
+                                        {value}
+                                    </button>
+                                ))
+                            ) : (
+                                <div className="space-y-3">
+                                    <p className="text-sm text-muted-foreground">Enter your answer:</p>
+                                    <Input
+                                        placeholder="Type your answer here..."
+                                        value={selectedAnswer}
+                                        onChange={(e) => setSelectedAnswer(e.target.value)}
+                                        className="text-lg"
+                                    />
+                                </div>
+                            )}
                         </div>
                     ) : result && (
                         <div className="space-y-4">

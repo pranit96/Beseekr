@@ -207,13 +207,13 @@ export default function PracticeSession({ session, questions, onComplete, onExit
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="flex-1">
-                            {currentQuestion.question_type === 'mcq' ? (
+                            {currentQuestion.question_type === 'mcq' && currentQuestion.options && Object.keys(currentQuestion.options).length > 0 ? (
                                 <RadioGroup
                                     value={answers[currentQuestion.id] || ''}
                                     onValueChange={handleAnswer}
                                     className="space-y-3"
                                 >
-                                    {currentQuestion.options && Object.entries(currentQuestion.options as Record<string, string>).map(([key, value]) => (
+                                    {Object.entries(currentQuestion.options as Record<string, string>).map(([key, value]) => (
                                         <div key={key} className={cn(
                                             "flex items-center space-x-2 border rounded-lg p-4 cursor-pointer transition-colors",
                                             answers[currentQuestion.id] === key ? "border-primary bg-primary/5" : "hover:bg-muted"

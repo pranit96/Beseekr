@@ -35,6 +35,23 @@ import { CatNavigation } from '@/components/cat/CatNavigation';
 import { SectionTabs } from '@/components/cat/SectionTabs';
 import type { Revision } from '@/types/cat';
 
+// Safely parse dates - returns null for invalid dates instead of throwing
+const safeParseDate = (dateStr: string | null | undefined): Date | null => {
+    if (!dateStr) return null;
+    try {
+        const date = new Date(dateStr);
+        return isNaN(date.getTime()) ? null : date;
+    } catch {
+        return null;
+    }
+};
+
+// Safely format dates - returns fallback string for invalid dates
+const safeFormatDate = (dateStr: string | null | undefined, formatStr: string, fallback: string = '--'): string => {
+    const date = safeParseDate(dateStr);
+    return date ? format(date, formatStr) : fallback;
+};
+
 export default function Review() {
     const [activeTab, setActiveTab] = useState('analytics');
     const [revisionView, setRevisionView] = useState<'list' | 'calendar'>('list');
@@ -96,8 +113,14 @@ export default function Review() {
         if (!revisions || !Array.isArray(revisions)) return { overdue: [], today: [], upcoming: [], completed: [] };
         return {
             overdue: revisions.filter(r => r.status === 'overdue'),
-            today: revisions.filter(r => r.status === 'pending' && isToday(new Date(r.scheduled_date))),
-            upcoming: revisions.filter(r => r.status === 'pending' && isFuture(new Date(r.scheduled_date))),
+            today: revisions.filter(r => {
+                const date = safeParseDate(r.scheduled_date);
+                return r.status === 'pending' && date && isToday(date);
+            }),
+            upcoming: revisions.filter(r => {
+                const date = safeParseDate(r.scheduled_date);
+                return r.status === 'pending' && date && isFuture(date);
+            }),
             completed: revisions.filter(r => r.status === 'completed').slice(0, 10),
         };
     }, [revisions]);
@@ -112,7 +135,9 @@ export default function Review() {
         if (!revisions || !Array.isArray(revisions)) return {};
         const map: Record<string, Revision[]> = {};
         revisions.forEach(r => {
-            const key = format(new Date(r.scheduled_date), 'yyyy-MM-dd');
+            const date = safeParseDate(r.scheduled_date);
+            if (!date) return; // Skip revisions with invalid dates
+            const key = format(date, 'yyyy-MM-dd');
             if (!map[key]) map[key] = [];
             map[key].push(r);
         });
@@ -234,10 +259,10 @@ export default function Review() {
                                                         "w-8 h-8 rounded-lg flex items-center justify-center text-sm font-medium",
                                                         goal.completed ? "bg-emerald-500 text-white" : "bg-muted text-muted-foreground"
                                                     )}>
-                                                        {goal.completed ? '✓' : format(new Date(goal.date), 'd')}
+                                                        {goal.completed ? '✓' : safeFormatDate(goal.date, 'd')}
                                                     </div>
                                                     <span className="text-xs mt-1 text-muted-foreground">
-                                                        {goal.date ? format(new Date(goal.date), 'EEE') : '--'}
+                                                        {safeFormatDate(goal.date, 'EEE')}
                                                     </span>
                                                 </div>
                                             ))}
@@ -267,7 +292,7 @@ export default function Review() {
                                                             style={{ height: `${(point.score / maxScore) * 100}%` }}
                                                         />
                                                         <span className="text-xs text-muted-foreground">
-                                                            {point.date ? format(new Date(point.date), 'M/d') : ''}
+                                                            {safeFormatDate(point.date, 'M/d', '')}
                                                         </span>
                                                     </div>
                                                 );
@@ -546,7 +571,7 @@ export default function Review() {
                                             <Sparkles className="h-5 w-5 text-violet-500" />AI Study Plan
                                         </CardTitle>
                                         <CardDescription>
-                                            Week of {format(new Date(studyPlan.week_start), 'MMM d')} - {format(new Date(studyPlan.week_end), 'MMM d')}
+                                            Week of {safeFormatDate(studyPlan.week_start, 'MMM d')} - {safeFormatDate(studyPlan.week_end, 'MMM d')}
                                         </CardDescription>
                                     </CardHeader>
                                     <CardContent>
@@ -643,7 +668,7 @@ function RevisionGroup({
                                 <div>
                                     <p className="font-medium">{r.topic?.title}</p>
                                     <p className="text-sm text-muted-foreground">
-                                        Revision #{r.revision_number} • {format(new Date(r.scheduled_date), 'MMM d')}
+                                        Revision #{r.revision_number} • {safeFormatDate(r.scheduled_date, 'MMM d')}
                                     </p>
                                 </div>
                                 {r.status !== 'completed' && (

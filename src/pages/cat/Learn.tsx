@@ -90,7 +90,8 @@ export default function Learn() {
 
     const handleLearnTopic = (topicId: string) => {
         setActiveTab('topics');
-        const topic = masteryData?.topics.find(t => t.topic_id === topicId);
+        // Check both topic_id and id since Subjects.tsx passes id but mastery data uses topic_id
+        const topic = masteryData?.topics.find(t => t.topic_id === topicId || t.topic_id === topicId.toLowerCase() || (t as any).id === topicId);
         if (topic) {
             setSelectedTopic(topic);
             setViewMode('detail');

@@ -139,15 +139,21 @@ export default function MockTest() {
                     </CardHeader>
                     <CardContent className="space-y-6">
                         <p className="text-lg">{currentQuestion.question_text}</p>
-                        <RadioGroup value={selectedAnswer || ''} onValueChange={handleAnswer}>
-                            {currentQuestion.options.map(opt => (
-                                <div key={opt.key} className={cn("flex items-center space-x-3 p-3 rounded-lg border transition-colors",
-                                    selectedAnswer === opt.key ? 'border-primary bg-primary/5' : 'hover:bg-muted/50')}>
-                                    <RadioGroupItem value={opt.key} id={opt.key} />
-                                    <Label htmlFor={opt.key} className="flex-1 cursor-pointer">{opt.key}. {opt.value}</Label>
-                                </div>
-                            ))}
-                        </RadioGroup>
+                        {currentQuestion.options && currentQuestion.options.length > 0 ? (
+                            <RadioGroup value={selectedAnswer || ''} onValueChange={handleAnswer}>
+                                {currentQuestion.options.map(opt => (
+                                    <div key={opt.key} className={cn("flex items-center space-x-3 p-3 rounded-lg border transition-colors",
+                                        selectedAnswer === opt.key ? 'border-primary bg-primary/5' : 'hover:bg-muted/50')}>
+                                        <RadioGroupItem value={opt.key} id={opt.key} />
+                                        <Label htmlFor={opt.key} className="flex-1 cursor-pointer">{opt.key}. {opt.value}</Label>
+                                    </div>
+                                ))}
+                            </RadioGroup>
+                        ) : (
+                            <div className="p-4 rounded-lg bg-muted/50 text-center text-muted-foreground">
+                                No answer options available for this question
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
             )}
