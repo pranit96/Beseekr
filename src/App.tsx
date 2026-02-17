@@ -83,29 +83,27 @@ const Validate = lazyRetry(() => import("./pages/saas/Validate"), "Validate");
 const SaasWatchlist = lazyRetry(() => import("./pages/saas/Watchlist"), "Watchlist");
 const Pricing = lazyRetry(() => import("./pages/saas/Pricing"), "Pricing");
 
-// CAT Prep Dashboard - Layout loaded immediately, pages lazy loaded
-import { CatDashboardLayout } from "./layouts/CatDashboardLayout";
-
-// CAT pages with retry logic
-const CatDashboard = lazyRetry(() => import("./pages/cat/Dashboard"), "CatDashboard");
-const CatSubjects = lazyRetry(() => import("./pages/cat/Subjects"), "CatSubjects");
-const CatTasks = lazyRetry(() => import("./pages/cat/Tasks"), "CatTasks");
-const CatNotes = lazyRetry(() => import("./pages/cat/Notes"), "CatNotes");
-const CatFlashcards = lazyRetry(() => import("./pages/cat/Flashcards"), "CatFlashcards");
-const CatMocks = lazyRetry(() => import("./pages/cat/Mocks"), "CatMocks");
-const CatMockTest = lazyRetry(() => import("./pages/cat/MockTest"), "CatMockTest");
-const CatPractice = lazyRetry(() => import("./pages/cat/Practice"), "CatPractice");
-const CatExternalMocks = lazyRetry(() => import("./pages/cat/ExternalMocks"), "CatExternalMocks");
-const CatRevisions = lazyRetry(() => import("./pages/cat/Revisions"), "CatRevisions");
-const CatMistakes = lazyRetry(() => import("./pages/cat/Mistakes"), "CatMistakes");
-const CatBookmarks = lazyRetry(() => import("./pages/cat/Bookmarks"), "CatBookmarks");
-const CatResources = lazyRetry(() => import("./pages/cat/Resources"), "CatResources");
-const CatAnalytics = lazyRetry(() => import("./pages/cat/Analytics"), "CatAnalytics");
-const CatSettings = lazyRetry(() => import("./pages/cat/Settings"), "CatSettings");
-const CatLearn = lazyRetry(() => import("./pages/cat/Learn"), "CatLearn");
-const CatAdaptiveExam = lazyRetry(() => import("./pages/cat/AdaptiveExam"), "CatAdaptiveExam");
-const CatAssess = lazyRetry(() => import("./pages/cat/Assess"), "CatAssess");
-const CatReview = lazyRetry(() => import("./pages/cat/Review"), "CatReview");
+// CAT Prep Dashboard - HIDDEN (module disabled)
+// import { CatDashboardLayout } from "./layouts/CatDashboardLayout";
+// const CatDashboard = lazyRetry(() => import("./pages/cat/Dashboard"), "CatDashboard");
+// const CatSubjects = lazyRetry(() => import("./pages/cat/Subjects"), "CatSubjects");
+// const CatTasks = lazyRetry(() => import("./pages/cat/Tasks"), "CatTasks");
+// const CatNotes = lazyRetry(() => import("./pages/cat/Notes"), "CatNotes");
+// const CatFlashcards = lazyRetry(() => import("./pages/cat/Flashcards"), "CatFlashcards");
+// const CatMocks = lazyRetry(() => import("./pages/cat/Mocks"), "CatMocks");
+// const CatMockTest = lazyRetry(() => import("./pages/cat/MockTest"), "CatMockTest");
+// const CatPractice = lazyRetry(() => import("./pages/cat/Practice"), "CatPractice");
+// const CatExternalMocks = lazyRetry(() => import("./pages/cat/ExternalMocks"), "CatExternalMocks");
+// const CatRevisions = lazyRetry(() => import("./pages/cat/Revisions"), "CatRevisions");
+// const CatMistakes = lazyRetry(() => import("./pages/cat/Mistakes"), "CatMistakes");
+// const CatBookmarks = lazyRetry(() => import("./pages/cat/Bookmarks"), "CatBookmarks");
+// const CatResources = lazyRetry(() => import("./pages/cat/Resources"), "CatResources");
+// const CatAnalytics = lazyRetry(() => import("./pages/cat/Analytics"), "CatAnalytics");
+// const CatSettings = lazyRetry(() => import("./pages/cat/Settings"), "CatSettings");
+// const CatLearn = lazyRetry(() => import("./pages/cat/Learn"), "CatLearn");
+// const CatAdaptiveExam = lazyRetry(() => import("./pages/cat/AdaptiveExam"), "CatAdaptiveExam");
+// const CatAssess = lazyRetry(() => import("./pages/cat/Assess"), "CatAssess");
+// const CatReview = lazyRetry(() => import("./pages/cat/Review"), "CatReview");
 
 // Loading fallback for lazy components
 const PageLoader = () => (
@@ -222,32 +220,10 @@ const App = () => {
                   </Route>
 
                   {/* =============================================
-                      CAT PREP DASHBOARD - FULLY PUBLIC
-                      Auth is handled INSIDE each page component
-                      when accessing features
+                      CAT PREP DASHBOARD - HIDDEN (module disabled)
+                      Redirect any /cat/* URLs to main dashboard
                       ============================================= */}
-                  <Route path="/cat" element={<CatDashboardLayout />}>
-                    <Route index element={<Navigate to="dashboard" replace />} />
-                    <Route path="dashboard" element={<Suspense fallback={<PageLoader />}><CatDashboard /></Suspense>} />
-                    <Route path="subjects" element={<Suspense fallback={<PageLoader />}><CatSubjects /></Suspense>} />
-                    <Route path="tasks" element={<Suspense fallback={<PageLoader />}><CatTasks /></Suspense>} />
-                    <Route path="notes" element={<Suspense fallback={<PageLoader />}><CatNotes /></Suspense>} />
-                    <Route path="flashcards" element={<Suspense fallback={<PageLoader />}><CatFlashcards /></Suspense>} />
-                    <Route path="mocks" element={<Suspense fallback={<PageLoader />}><CatMocks /></Suspense>} />
-                    <Route path="mocks/:id" element={<Suspense fallback={<PageLoader />}><CatMockTest /></Suspense>} />
-                    <Route path="practice" element={<Suspense fallback={<PageLoader />}><CatPractice /></Suspense>} />
-                    <Route path="external-mocks" element={<Suspense fallback={<PageLoader />}><CatExternalMocks /></Suspense>} />
-                    <Route path="revisions" element={<Suspense fallback={<PageLoader />}><CatRevisions /></Suspense>} />
-                    <Route path="mistakes" element={<Suspense fallback={<PageLoader />}><CatMistakes /></Suspense>} />
-                    <Route path="bookmarks" element={<Suspense fallback={<PageLoader />}><CatBookmarks /></Suspense>} />
-                    <Route path="resources" element={<Suspense fallback={<PageLoader />}><CatResources /></Suspense>} />
-                    <Route path="analytics" element={<Suspense fallback={<PageLoader />}><CatAnalytics /></Suspense>} />
-                    <Route path="settings" element={<Suspense fallback={<PageLoader />}><CatSettings /></Suspense>} />
-                    <Route path="learn" element={<Suspense fallback={<PageLoader />}><CatLearn /></Suspense>} />
-                    <Route path="adaptive" element={<Suspense fallback={<PageLoader />}><CatAdaptiveExam /></Suspense>} />
-                    <Route path="assess" element={<Suspense fallback={<PageLoader />}><CatAssess /></Suspense>} />
-                    <Route path="review" element={<Suspense fallback={<PageLoader />}><CatReview /></Suspense>} />
-                  </Route>
+                  <Route path="/cat/*" element={<Navigate to="/dashboard/problems" replace />} />
 
                   {/* =============================================
                       PROTECTED ROUTES - Legacy routes requiring auth
