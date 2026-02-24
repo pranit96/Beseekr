@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Plus, Pencil, Trash2, Search, Folder, User, Copy, Sparkles, BarChart3, ChevronDown, ChevronRight, Loader2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, Folder, User, Copy, Sparkles, BarChart3, ChevronDown, ChevronRight, Loader2, Workflow } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -20,6 +20,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { useMyAgents, useCreateAgent, useUpdateAgent, useDeleteAgent } from '@/hooks/use-api-queries';
+import { WorkflowBuilder } from '@/components/WorkflowBuilder';
 
 const Agents = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -36,6 +37,9 @@ const Agents = () => {
 
   // Duplicate state
   const [duplicating, setDuplicating] = useState<string | null>(null);
+
+  // Workflow Builder state
+  const [workflowBuilderOpen, setWorkflowBuilderOpen] = useState(false);
 
   // React Query hooks
   const { data: agentsResponse, isLoading: loading, error, refetch } = useMyAgents();
@@ -254,6 +258,15 @@ const Agents = () => {
           </div>
           <div className="flex gap-2 w-full sm:w-auto">
             <Button
+              onClick={() => setWorkflowBuilderOpen(true)}
+              variant="outline"
+              className="gap-2 flex-1 sm:flex-initial"
+              disabled={agents.length === 0}
+            >
+              <Workflow className="w-4 h-4" />
+              Workflows
+            </Button>
+            <Button
               onClick={fetchTemplates}
               variant="outline"
               className="gap-2 flex-1 sm:flex-initial"
@@ -416,6 +429,18 @@ const Agents = () => {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        <WorkflowBuilder
+          open={workflowBuilderOpen}
+          onOpenChange={setWorkflowBuilderOpen}
+          agents={agents}
+          onExecute={(workflow) => {
+            toast({
+              title: 'Workflow started',
+              description: `Running "${workflow.name}" with ${workflow.nodes.length} agents...`,
+            });
+          }}
+        />
       </div>
     </>
   );

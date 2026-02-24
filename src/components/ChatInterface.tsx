@@ -1,11 +1,13 @@
 // src/components/ChatInterface.tsx
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Send, Workflow, Lock, LockOpen, X, Sparkles, WifiOff, Loader2 } from 'lucide-react';
+import { Send, Workflow, Lock, LockOpen, X, Sparkles, WifiOff, Loader2, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { AgentSelector } from './AgentSelector';
 import MessageList from './MessageList';
 import { AgentWorkflowDialog } from './AgentWorkflowDialog';
+import { WelcomeScreen } from './WelcomeScreen';
+import { ExportChatDialog } from './ExportChatDialog';
 import type { ChatMessage, ExecutionMode, Agent, AgentResponse, PerAgentSummary } from '@/types/agent';
 import { useToast } from '@/hooks/use-toast';
 import { useConversation } from '@/hooks/use-conversation';
@@ -71,6 +73,7 @@ export const ChatInterface: React.FC<{
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'connecting'>('connecting');
   const [preparingMessage, setPreparingMessage] = useState(false);
   const [orchestrationProgress, setOrchestrationProgress] = useState<{ step: number; total: number; agent_name?: string } | null>(null);
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
 
   const cancelRef = useRef<null | (() => void)>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -757,18 +760,12 @@ export const ChatInterface: React.FC<{
           <CancellingBanner />
           <ProgressBanner />
 
-          <div className="text-center space-y-3 max-w-2xl px-4">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
-              <Sparkles className="w-4 h-4" />
-              Multi-Agent Orchestration
-            </div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              How can I help you today?
-            </h1>
-            <p className="text-muted-foreground text-lg">
-              Select your agents and start a conversation
-            </p>
-          </div>
+          <WelcomeScreen
+            onPromptSelect={(prompt) => {
+              setInput(prompt);
+              textareaRef.current?.focus();
+            }}
+          />
 
           <div className="flex flex-col items-center gap-4 w-full max-w-4xl px-4">
             <SelectedAgentsDisplay />
@@ -871,6 +868,20 @@ export const ChatInterface: React.FC<{
         <>
           <div className="flex-1 overflow-y-auto px-2 md:px-6 py-4">
             <div className="max-w-5xl 2xl:max-w-6xl mx-auto w-full">
+              {/* Chat header with export */}
+              <div className="flex items-center justify-end mb-3">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setExportDialogOpen(true)}
+                  className="gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+                  disabled={messages.length === 0}
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  Export
+                </Button>
+              </div>
+
               <ConnectionBanner />
               <PreparingBanner />
               <CancellingBanner />
@@ -1027,6 +1038,13 @@ export const ChatInterface: React.FC<{
         agents={agents}
         selectedAgents={selectedAgents}
         onConfirm={handleWorkflowConfirm}
+      />
+
+      <ExportChatDialog
+        open={exportDialogOpen}
+        onOpenChange={setExportDialogOpen}
+        messages={messages}
+        conversationTitle={undefined}
       />
     </div>
   );

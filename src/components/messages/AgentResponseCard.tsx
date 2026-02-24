@@ -28,7 +28,7 @@ interface Props {
 const AgentResponseCard: React.FC<Props> = ({ response, index, onForkAgent, onRegenerate, onCancel }) => {
   const [copied, setCopied] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
-  
+
   const modelUsed = response.metadata?.model_used;
   const tokenCount = response.metadata?.usage?.total_tokens || response.metadata?.token_count;
   const confidence = response.metadata?.confidence;
@@ -61,8 +61,8 @@ const AgentResponseCard: React.FC<Props> = ({ response, index, onForkAgent, onRe
 
   const handleRegenerate = () => {
     try {
-      window.dispatchEvent(new CustomEvent('regenerate-from-response', { 
-        detail: { prompt: response.content } 
+      window.dispatchEvent(new CustomEvent('regenerate-from-response', {
+        detail: { prompt: response.content }
       }));
       logger.info('Regenerate triggered', { agentId: response.agentId });
     } catch (err) {
@@ -96,8 +96,8 @@ const AgentResponseCard: React.FC<Props> = ({ response, index, onForkAgent, onRe
   return (
     <div className={cn(
       'w-full rounded-xl p-4 border shadow-sm transition-all',
-      response.status === 'error' 
-        ? 'border-destructive/40 bg-destructive/5' 
+      response.status === 'error'
+        ? 'border-destructive/40 bg-destructive/5'
         : 'border-border/60 bg-background/80'
     )}>
       {/* Header */}
@@ -129,12 +129,12 @@ const AgentResponseCard: React.FC<Props> = ({ response, index, onForkAgent, onRe
               <span className="text-xs text-muted-foreground">Streaming...</span>
             </div>
           )}
-          
+
           {response.content && response.status !== 'pending' && (
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={handleCopy} 
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleCopy}
               className="h-8 w-8 hover:bg-muted"
               title="Copy response"
             >
@@ -145,24 +145,24 @@ const AgentResponseCard: React.FC<Props> = ({ response, index, onForkAgent, onRe
               )}
             </Button>
           )}
-          
+
           {response.status === 'success' && (
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={handleRegenerate} 
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleRegenerate}
               className="h-8 w-8 hover:bg-muted"
               title="Regenerate"
             >
               <RefreshCw className="w-4 h-4 text-muted-foreground" />
             </Button>
           )}
-          
+
           {response.status === 'pending' && (
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={handleCancel} 
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleCancel}
               className="h-8 w-8 hover:bg-destructive/10 text-destructive"
               title="Cancel"
             >
@@ -177,13 +177,21 @@ const AgentResponseCard: React.FC<Props> = ({ response, index, onForkAgent, onRe
         {response.status === 'pending' ? (
           <div className="space-y-2">
             {response.content ? (
-              // Show streaming content as plain text (faster rendering)
-              <div className="whitespace-pre-wrap text-sm text-foreground/90 leading-relaxed font-sans">
-                {response.content}
-                <span className="inline-block w-2 h-4 ml-1 bg-primary animate-pulse" />
+              // Streaming content — render markdown incrementally for premium feel
+              <div className="relative">
+                <div className="text-sm">
+                  <MarkdownRenderer
+                    content={response.content}
+                    className="leading-relaxed"
+                    showToc={false}
+                    enableCopy={false}
+                    maxHeight="none"
+                  />
+                </div>
+                <span className="inline-block w-1.5 h-4 ml-0.5 bg-primary rounded-sm animate-pulse align-text-bottom" />
               </div>
             ) : (
-              // Waiting for response
+              // Waiting for first token
               <div className="flex items-center gap-2 py-3">
                 <Loader2 className="w-4 h-4 animate-spin text-primary" />
                 <span className="text-sm text-muted-foreground">
@@ -205,15 +213,14 @@ const AgentResponseCard: React.FC<Props> = ({ response, index, onForkAgent, onRe
             </p>
           </div>
         ) : (
-          // Success - render markdown
-          // Success - render markdown
-          <div className="bg-muted/10 rounded-lg p-4 text-sm">
+          // Success — full markdown render
+          <div className="rounded-lg text-sm">
             <MarkdownRenderer
               content={response.content || ''}
               className="leading-relaxed"
-              showToc={false}     // disable ToC for chat (optional)
-              enableCopy={true}   // keep copy buttons for code
-              maxHeight="none"    // allow full scroll-free render
+              showToc={false}
+              enableCopy={true}
+              maxHeight="none"
             />
           </div>
         )}
