@@ -359,6 +359,43 @@ class ApiClient {
     });
   }
 
+  async duplicateAgent(id: string) {
+    this.invalidateCache('/api/agents');
+    return this.request<any>(`/api/agents/${id}/duplicate`, {
+      method: 'POST',
+    });
+  }
+
+  async bulkAgentAction(payload: { action: 'activate' | 'deactivate' | 'delete'; agent_ids: string[] }) {
+    this.invalidateCache('/api/agents');
+    return this.request<any>('/api/agents/bulk', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async testAgent(id: string, payload: { message: string; system_prompt_override?: string }) {
+    return this.request<any>(`/api/agents/${id}/test`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async getAgentTemplates() {
+    return this.request<any>('/api/agents/templates');
+  }
+
+  async getAgentStats(id: string) {
+    return this.request<any>(`/api/agents/${id}/stats`);
+  }
+
+  async enhanceAgentPrompt(id: string, payload: { current_prompt: string; description?: string }) {
+    return this.request<any>(`/api/agents/${id}/enhance-prompt`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+
   // Orchestration endpoints
   async executeOrchestration(payload: {
     agent_ids: string[];

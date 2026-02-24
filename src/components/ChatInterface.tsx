@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { AgentSelector } from './AgentSelector';
 import MessageList from './MessageList';
 import { AgentWorkflowDialog } from './AgentWorkflowDialog';
-import type { ChatMessage, ExecutionMode, Agent, AgentResponse } from '@/types/agent';
+import type { ChatMessage, ExecutionMode, Agent, AgentResponse, PerAgentSummary } from '@/types/agent';
 import { useToast } from '@/hooks/use-toast';
 import { useConversation } from '@/hooks/use-conversation';
 import useOrchestration from '@/hooks/use-orchestration';
@@ -32,6 +32,7 @@ export const ChatInterface: React.FC<{
   const [isCancelling, setIsCancelling] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'connecting'>('connecting');
   const [preparingMessage, setPreparingMessage] = useState(false);
+  const [orchestrationProgress, setOrchestrationProgress] = useState<{ step: number; total: number; agent_name?: string } | null>(null);
 
   const cancelRef = useRef<null | (() => void)>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -412,8 +413,21 @@ export const ChatInterface: React.FC<{
         onCancelReady: (cancelFn: () => void) => {
           cancelRef.current = cancelFn;
         },
+        onProgress: (progressData) => {
+          logger.debug('Orchestration progress', progressData);
+          setOrchestrationProgress({
+            step: progressData.step,
+            total: progressData.total,
+            agent_name: progressData.agent_name,
+          });
+        },
+        onCancelled: (data) => {
+          logger.info('Orchestration cancelled confirmed', data);
+          setOrchestrationProgress(null);
+        },
         onDone: (doneData: any) => {
           logger.info('Orchestration completed', { data: doneData });
+          setOrchestrationProgress(null);
           setMessages(prev => prev.map(m => {
             if (m.id !== agentMessageId) return m;
             const updatedResponses = m.agentResponses?.map(ar =>
@@ -424,7 +438,8 @@ export const ChatInterface: React.FC<{
               agentResponses: updatedResponses,
               markdownOutput: doneData.final_markdown || m.markdownOutput,
               finalOutput: doneData.final_markdown || m.finalOutput,
-              content: doneData.final_markdown || m.content
+              content: doneData.final_markdown || m.content,
+              perAgentSummary: doneData.per_agent_summary || undefined,
             } as ChatMessage;
           }));
         },
@@ -470,6 +485,7 @@ export const ChatInterface: React.FC<{
       setIsExecuting(false);
       setIsLoadingLocal(false);
       setPreparingMessage(false);
+      setOrchestrationProgress(null);
       cancelRef.current = null;
 
       // Mark orchestration as complete
@@ -646,6 +662,36 @@ export const ChatInterface: React.FC<{
     );
   };
 
+  // Progress Banner for sequential orchestration
+  const ProgressBanner = () => {
+    if (!orchestrationProgress || !isExecuting) return null;
+
+    const percentage = Math.round((orchestrationProgress.step / orchestrationProgress.total) * 100);
+
+    return (
+      <div className="mb-4 p-3 rounded-lg border bg-blue-500/10 border-blue-500/20 flex items-center gap-3">
+        <Loader2 className="w-4 h-4 animate-spin text-blue-600 dark:text-blue-400" />
+        <div className="flex-1">
+          <div className="flex items-center justify-between mb-1">
+            <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
+              Step {orchestrationProgress.step} of {orchestrationProgress.total}
+              {orchestrationProgress.agent_name && (
+                <span className="ml-1 font-normal opacity-80">— {orchestrationProgress.agent_name}</span>
+              )}
+            </p>
+            <span className="text-xs text-blue-600/70 dark:text-blue-400/70">{percentage}%</span>
+          </div>
+          <div className="w-full bg-blue-500/20 rounded-full h-1.5">
+            <div
+              className="bg-blue-500 h-1.5 rounded-full transition-all duration-500 ease-out"
+              style={{ width: `${percentage}%` }}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // Selected Agents Display Component
   const SelectedAgentsDisplay = () => {
     if (selectedAgents.length === 0) return null;
@@ -676,6 +722,7 @@ export const ChatInterface: React.FC<{
           <ConnectionBanner />
           <PreparingBanner />
           <CancellingBanner />
+          <ProgressBanner />
 
           <div className="text-center space-y-3 max-w-2xl px-4">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
@@ -759,8 +806,8 @@ export const ChatInterface: React.FC<{
                       key={mode}
                       onClick={() => setExecutionMode(mode)}
                       className={`px-2 py-1.5 rounded-md text-xs font-medium transition whitespace-nowrap ${executionMode === mode
-                          ? 'bg-primary text-primary-foreground shadow-sm'
-                          : 'text-muted-foreground hover:text-foreground'
+                        ? 'bg-primary text-primary-foreground shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground'
                         }`}
                     >
                       {mode === 'sequential' ? 'Seq' : 'Par'}
@@ -771,8 +818,8 @@ export const ChatInterface: React.FC<{
                 <button
                   onClick={togglePrivateChat}
                   className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-xs font-medium transition whitespace-nowrap ${saveToConversation
-                      ? 'bg-background border-border hover:bg-muted/50 text-muted-foreground'
-                      : 'bg-primary text-primary-foreground border-primary shadow-sm hover:bg-primary/90'
+                    ? 'bg-background border-border hover:bg-muted/50 text-muted-foreground'
+                    : 'bg-primary text-primary-foreground border-primary shadow-sm hover:bg-primary/90'
                     }`}
                   aria-label={saveToConversation ? "Private mode off - messages will be saved" : "Private mode on - messages will not be saved"}
                   aria-pressed={!saveToConversation}
@@ -794,6 +841,7 @@ export const ChatInterface: React.FC<{
               <ConnectionBanner />
               <PreparingBanner />
               <CancellingBanner />
+              <ProgressBanner />
 
               <MessageList
                 messages={messages}
@@ -888,8 +936,8 @@ export const ChatInterface: React.FC<{
                         key={mode}
                         onClick={() => setExecutionMode(mode)}
                         className={`px-2 py-1.5 rounded-md text-xs font-medium transition whitespace-nowrap ${executionMode === mode
-                            ? 'bg-primary text-primary-foreground shadow-sm'
-                            : 'text-muted-foreground hover:text-foreground'
+                          ? 'bg-primary text-primary-foreground shadow-sm'
+                          : 'text-muted-foreground hover:text-foreground'
                           }`}
                       >
                         {mode === 'sequential' ? 'Seq' : 'Par'}
@@ -900,8 +948,8 @@ export const ChatInterface: React.FC<{
                   <button
                     onClick={togglePrivateChat}
                     className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-xs font-medium transition whitespace-nowrap ${saveToConversation
-                        ? 'bg-background border-border hover:bg-muted/50 text-muted-foreground'
-                        : 'bg-primary text-primary-foreground border-primary shadow-sm hover:bg-primary/90'
+                      ? 'bg-background border-border hover:bg-muted/50 text-muted-foreground'
+                      : 'bg-primary text-primary-foreground border-primary shadow-sm hover:bg-primary/90'
                       }`}
                   >
                     {saveToConversation ? <LockOpen className="w-3 h-3" /> : <Lock className="w-3 h-3" />}

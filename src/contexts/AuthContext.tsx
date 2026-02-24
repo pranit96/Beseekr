@@ -410,7 +410,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           description: 'Successfully logged in.',
         });
 
-        navigate('/dashboard/problems');
+        // Redirect to intended page or default to dashboard
+        const redirectUrl = sessionStorage.getItem('auth-redirect') || '/dashboard/problems';
+        sessionStorage.removeItem('auth-redirect');
+        navigate(redirectUrl);
       }
     } catch (error: any) {
       toast({
@@ -443,7 +446,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           description: 'Welcome to beseekr.',
         });
 
-        navigate('/dashboard/problems');
+        // Redirect to intended page or default to dashboard
+        const redirectUrl = sessionStorage.getItem('auth-redirect') || '/dashboard/problems';
+        sessionStorage.removeItem('auth-redirect');
+        navigate(redirectUrl);
       }
     } catch (error: any) {
       // Only show toast for ACTUAL errors, not email verification pending

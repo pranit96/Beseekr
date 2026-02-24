@@ -19,6 +19,8 @@ interface OrchestrationCallbacks {
   onError?: (data: any) => void;
   onWarning?: (data: any) => void;
   onRateLimit?: (data: any) => void;
+  onProgress?: (data: { step: number; total: number; agent_id?: string; agent_name?: string }) => void;
+  onCancelled?: (data: any) => void;
 }
 
 interface OrchestrationPayload {
@@ -28,6 +30,10 @@ interface OrchestrationPayload {
   conversation_id?: string | null;
   save_to_conversation?: boolean;
   requestId?: string;
+  variables?: Record<string, string>;
+  model_override?: string;
+  system_prompt_override?: string;
+  include_history?: boolean;
   [key: string]: any;
 }
 
@@ -45,7 +51,7 @@ class SocketService {
   private activeRequests: Map<string, OrchestrationControl> = new Map();
   private heartbeatInterval: number | null = null;
   private connectionTimeout: number | null = null;
-  private autoConnect : false;
+  private autoConnect: false;
   withCredentials: true;
   private onTokensRefreshed: ((tokens: { access_token: string; refresh_token: string }) => void) | null = null;
 
@@ -59,35 +65,35 @@ class SocketService {
   /**
    * Connect to socket server with enhanced security
    */
-connect(): Socket {
-  if (this.socket?.connected) return this.socket;
+  connect(): Socket {
+    if (this.socket?.connected) return this.socket;
 
-  const SOCKET_URL = import.meta.env.VITE_API_BASE_URL;
+    const SOCKET_URL = import.meta.env.VITE_API_BASE_URL;
 
-  if (!SOCKET_URL || !this.isValidUrl(SOCKET_URL)) {
-    throw new Error('Invalid socket URL configuration');
+    if (!SOCKET_URL || !this.isValidUrl(SOCKET_URL)) {
+      throw new Error('Invalid socket URL configuration');
+    }
+
+    const opts: any = {
+      withCredentials: true, // ✅ this sends HttpOnly cookies automatically
+      transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      reconnectionAttempts: this.maxReconnectAttempts,
+      timeout: 10000,
+      upgrade: true,
+      rememberUpgrade: true,
+      secure: SOCKET_URL.startsWith('https'),
+      rejectUnauthorized: true,
+    };
+
+    this.socket = io(SOCKET_URL, opts);
+    this.setupEventHandlers();
+    this.startHeartbeat();
+
+    return this.socket;
   }
-
-  const opts: any = {
-    withCredentials: true, // ✅ this sends HttpOnly cookies automatically
-    transports: ['websocket', 'polling'],
-    reconnection: true,
-    reconnectionDelay: 1000,
-    reconnectionDelayMax: 5000,
-    reconnectionAttempts: this.maxReconnectAttempts,
-    timeout: 10000,
-    upgrade: true,
-    rememberUpgrade: true,
-    secure: SOCKET_URL.startsWith('https'),
-    rejectUnauthorized: true,
-  };
-
-  this.socket = io(SOCKET_URL, opts);
-  this.setupEventHandlers();
-  this.startHeartbeat();
-
-  return this.socket;
-}
 
 
   /**
@@ -100,22 +106,22 @@ connect(): Socket {
       this.connected = true;
       this.reconnectAttempts = 0;
       this.clearConnectionTimeout();
-      
-      this._emitLocal('connection_status', { 
-        connected: true, 
-        socketId: this.socket?.id 
+
+      this._emitLocal('connection_status', {
+        connected: true,
+        socketId: this.socket?.id
       });
     });
 
     // Handle token refresh from server
     this.socket.on('auth:tokens_refreshed', (data: { access_token: string; refresh_token: string }) => {
       logger.info('Received refreshed tokens from server');
-      
+
       // Update cookies via callback (e.g., auth context)
       if (this.onTokensRefreshed) {
         this.onTokensRefreshed(data);
       }
-      
+
       // Emit event for other listeners
       this._emitLocal('tokens_refreshed', data);
     });
@@ -123,9 +129,9 @@ connect(): Socket {
     this.socket.on('disconnect', (reason: string) => {
       this.connected = false;
       this.stopHeartbeat();
-      
+
       this._emitLocal('connection_status', { connected: false, reason });
-      
+
       // Handle abnormal disconnects
       if (reason === 'io server disconnect') {
         this.handleForcedDisconnect();
@@ -134,24 +140,24 @@ connect(): Socket {
 
     this.socket.on('connect_error', (error: Error) => {
       this.reconnectAttempts++;
-      
+
       // Check if it's an auth error
       if (error.message === 'Unauthorized' || error.message.includes('token')) {
         logger.error('Authentication error', { error: error.message });
         this._emitLocal('auth_error', { error: error.message });
-        
+
         // Stop reconnecting on auth errors
         this.disconnect();
         return;
       }
-      
+
       if (this.reconnectAttempts >= this.maxReconnectAttempts) {
         this.handleMaxReconnectAttempts();
       }
-      
-      this._emitLocal('connection_error', { 
+
+      this._emitLocal('connection_error', {
         error: error?.message || error,
-        attempts: this.reconnectAttempts 
+        attempts: this.reconnectAttempts
       });
     });
 
@@ -196,7 +202,7 @@ connect(): Socket {
    */
   private startHeartbeat(): void {
     this.stopHeartbeat();
-    
+
     this.heartbeatInterval = window.setInterval(() => {
       if (this.socket?.connected) {
         this.socket.emit('ping');
@@ -252,8 +258,8 @@ connect(): Socket {
    */
   private handleForcedDisconnect(): void {
     this.cancelAllRequests();
-    this._emitLocal('forced_disconnect', { 
-      message: 'Server disconnected the connection. Please refresh and login again.' 
+    this._emitLocal('forced_disconnect', {
+      message: 'Server disconnected the connection. Please refresh and login again.'
     });
   }
 
@@ -262,8 +268,8 @@ connect(): Socket {
    */
   private handleMaxReconnectAttempts(): void {
     this.disconnect();
-    this._emitLocal('max_reconnect_attempts', { 
-      message: 'Failed to connect after multiple attempts. Please check your connection.' 
+    this._emitLocal('max_reconnect_attempts', {
+      message: 'Failed to connect after multiple attempts. Please check your connection.'
     });
   }
 
@@ -273,11 +279,11 @@ connect(): Socket {
   disconnect(): void {
     this.stopHeartbeat();
     this.cancelAllRequests();
-    
+
     if (this.socket) {
-      try { 
+      try {
         this.socket.removeAllListeners();
-        this.socket.disconnect(); 
+        this.socket.disconnect();
       } catch (e) {
         logger.error('Error during disconnect', { error: e });
       }
@@ -306,20 +312,20 @@ connect(): Socket {
    */
   private sanitizePayload(payload: any): any {
     const sanitized: any = {};
-    
+
     for (const [key, value] of Object.entries(payload)) {
       if (value === null || value === undefined) {
         sanitized[key] = value;
         continue;
       }
-      
+
       if (typeof value === 'string') {
         sanitized[key] = value.replace(/<script[^>]*>.*?<\/script>/gi, '')
-                              .replace(/javascript:/gi, '')
-                              .replace(/on\w+\s*=/gi, '');
-      } 
+          .replace(/javascript:/gi, '')
+          .replace(/on\w+\s*=/gi, '');
+      }
       else if (Array.isArray(value)) {
-        sanitized[key] = value.map(item => 
+        sanitized[key] = value.map(item =>
           typeof item === 'string' ? this.sanitizePayload({ item }).item : item
         );
       }
@@ -330,7 +336,7 @@ connect(): Socket {
         sanitized[key] = this.sanitizePayload(value);
       }
     }
-    
+
     return sanitized;
   }
 
@@ -338,7 +344,7 @@ connect(): Socket {
    * Execute orchestration with enhanced error handling and security
    */
   executeOrchestration(
-    payload: OrchestrationPayload, 
+    payload: OrchestrationPayload,
     callbacks: OrchestrationCallbacks = {}
   ): OrchestrationControl {
     if (!this.socket) {
@@ -350,7 +356,7 @@ connect(): Socket {
     }
 
     const sanitizedPayload = this.sanitizePayload(payload);
-    
+
     const requestId = sanitizedPayload.requestId || `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const fullPayload = { ...sanitizedPayload, requestId };
 
@@ -363,52 +369,52 @@ connect(): Socket {
     }
 
     // Setup per-request listeners
-    const onAck = (data: any) => { 
+    const onAck = (data: any) => {
       if (data.requestId === requestId) {
-        callbacks.onAck?.(data); 
+        callbacks.onAck?.(data);
       }
     };
-    
-    const onToken = (data: any) => { 
+
+    const onToken = (data: any) => {
       if (data.requestId === requestId) {
         if (data.agent_id && typeof data.token === 'string') {
           callbacks.onToken?.(data.agent_id, data.token, data);
         }
       }
     };
-    
-    const onAgentDone = (data: any) => { 
+
+    const onAgentDone = (data: any) => {
       if (data.requestId === requestId) {
-        callbacks.onAgentDone?.(data.agent_id, data.usage, data); 
+        callbacks.onAgentDone?.(data.agent_id, data.usage, data);
       }
     };
-    
-    const onAgentError = (data: any) => { 
+
+    const onAgentError = (data: any) => {
       if (data.requestId === requestId) {
-        callbacks.onAgentError?.(data.agent_id, data.error, data); 
+        callbacks.onAgentError?.(data.agent_id, data.error, data);
       }
     };
-    
-    const onDone = (data: any) => { 
-      if (data.requestId === requestId) { 
-        callbacks.onDone?.(data); 
-        cleanup(); 
-      } 
-    };
-    
-    const onError = (data: any) => { 
-      if (data.requestId === requestId) { 
-        callbacks.onError?.(data); 
-        cleanup(); 
-      } 
-    };
-    
-    const onWarning = (data: any) => { 
+
+    const onDone = (data: any) => {
       if (data.requestId === requestId) {
-        callbacks.onWarning?.(data); 
+        callbacks.onDone?.(data);
+        cleanup();
       }
     };
-    
+
+    const onError = (data: any) => {
+      if (data.requestId === requestId) {
+        callbacks.onError?.(data);
+        cleanup();
+      }
+    };
+
+    const onWarning = (data: any) => {
+      if (data.requestId === requestId) {
+        callbacks.onWarning?.(data);
+      }
+    };
+
     const onRateLimit = (data: any) => {
       // Only trigger when server explicitly says you're blocked
       if (
@@ -428,7 +434,22 @@ connect(): Socket {
       this.socket?.off('orchestration:error', onError);
       this.socket?.off('orchestration:warning', onWarning);
       this.socket?.off('orchestration:rate_limit', onRateLimit);
+      this.socket?.off('orchestration:progress', onProgress);
+      this.socket?.off('orchestration:cancelled', onCancelled);
       this.activeRequests.delete(requestId);
+    };
+
+    const onProgress = (data: any) => {
+      if (data.requestId === requestId) {
+        callbacks.onProgress?.(data);
+      }
+    };
+
+    const onCancelled = (data: any) => {
+      if (data.requestId === requestId) {
+        callbacks.onCancelled?.(data);
+        cleanup();
+      }
     };
 
     // Attach listeners
@@ -440,12 +461,14 @@ connect(): Socket {
     this.socket.on('orchestration:error', onError);
     this.socket.on('orchestration:warning', onWarning);
     this.socket.on('orchestration:rate_limit', onRateLimit);
+    this.socket.on('orchestration:progress', onProgress);
+    this.socket.on('orchestration:cancelled', onCancelled);
 
     // Emit request with timeout
     const emitTimeout = setTimeout(() => {
-      callbacks.onError?.({ 
+      callbacks.onError?.({
         error: 'Request timeout - no response from server',
-        requestId 
+        requestId
       });
       cleanup();
     }, 120000); // 2 minute timeout
@@ -458,8 +481,8 @@ connect(): Socket {
       }
     });
 
-    const control: OrchestrationControl = { 
-      requestId, 
+    const control: OrchestrationControl = {
+      requestId,
       cancel: () => {
         try {
           this.socket?.emit('orchestration:cancel', { requestId });
@@ -482,7 +505,7 @@ connect(): Socket {
       this.listeners.set(event, []);
     }
     this.listeners.get(event)!.push(cb);
-    
+
     if (this.socket) {
       this.socket.on(event, cb as any);
     }
@@ -495,7 +518,7 @@ connect(): Socket {
     const arr = this.listeners.get(event) || [];
     const idx = arr.indexOf(cb);
     if (idx > -1) arr.splice(idx, 1);
-    
+
     if (this.socket) {
       this.socket.off(event, cb as any);
     }
@@ -507,8 +530,8 @@ connect(): Socket {
   private _emitLocal(event: string, data: any): void {
     const arr = this.listeners.get(event) || [];
     arr.forEach(cb => {
-      try { 
-        cb(data); 
+      try {
+        cb(data);
       } catch (e) {
         logger.error('Error in event listener', { event, error: e });
       }
@@ -537,6 +560,68 @@ connect(): Socket {
    */
   getActiveRequestCount(): number {
     return this.activeRequests.size;
+  }
+
+  /**
+   * Test an agent with one-shot streaming (no conversation save)
+   */
+  testAgent(
+    agentId: string,
+    message: string,
+    callbacks: {
+      onToken?: (token: string) => void;
+      onDone?: (data: any) => void;
+      onError?: (error: any) => void;
+    } = {}
+  ): { cancel: () => void } {
+    if (!this.socket || !this.socket.connected) {
+      throw new Error('Socket not connected.');
+    }
+
+    const requestId = `test_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+    const onTestToken = (data: any) => {
+      if (data.requestId === requestId) {
+        callbacks.onToken?.(data.token);
+      }
+    };
+
+    const onTestDone = (data: any) => {
+      if (data.requestId === requestId) {
+        callbacks.onDone?.(data);
+        cleanupTest();
+      }
+    };
+
+    const onTestError = (data: any) => {
+      if (data.requestId === requestId) {
+        callbacks.onError?.(data);
+        cleanupTest();
+      }
+    };
+
+    const cleanupTest = () => {
+      this.socket?.off('agent:test_token', onTestToken);
+      this.socket?.off('agent:test_done', onTestDone);
+      this.socket?.off('orchestration:error', onTestError);
+    };
+
+    this.socket.on('agent:test_token', onTestToken);
+    this.socket.on('agent:test_done', onTestDone);
+    this.socket.on('orchestration:error', onTestError);
+
+    this.socket.emit('agent:test', {
+      agent_id: agentId,
+      message,
+      requestId,
+    });
+
+    return {
+      cancel: () => {
+        this.socket?.emit('orchestration:cancel', { requestId });
+        cleanupTest();
+      },
+    };
   }
 }
 

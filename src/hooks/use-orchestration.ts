@@ -24,6 +24,8 @@ interface OrchestrationCallbacks {
   onWarning?: (data: any) => void;
   onRateLimit?: (data: any) => void;
   onCancelReady?: (cancelFn: () => void) => void;
+  onProgress?: (data: { step: number; total: number; agent_id?: string; agent_name?: string }) => void;
+  onCancelled?: (data: any) => void;
 }
 
 const useOrchestration = () => {
@@ -33,7 +35,7 @@ const useOrchestration = () => {
   const ensureConnected = useCallback(() => {
     if (!socketService.isConnected()) {
       logger.warn('Socket not connected, attempting to reconnect');
-      
+
       // Try to get token from cookies
       const getAccessToken = (): string | null => {
         const cookies = document.cookie.split(';');
@@ -101,6 +103,12 @@ const useOrchestration = () => {
             callbacks.onError?.(error);
             reject(error);
           },
+          onProgress: (data) => {
+            callbacks.onProgress?.(data);
+          },
+          onCancelled: (data) => {
+            callbacks.onCancelled?.(data);
+          },
         });
 
         // Provide cancel function to callback
@@ -137,12 +145,29 @@ const useOrchestration = () => {
     return socketService.isConnected();
   }, []);
 
+  /**
+   * Test an agent with one-shot streaming (no conversation save)
+   */
+  const testAgent = useCallback((
+    agentId: string,
+    message: string,
+    callbacks: {
+      onToken?: (token: string) => void;
+      onDone?: (data: any) => void;
+      onError?: (error: any) => void;
+    } = {}
+  ) => {
+    ensureConnected();
+    return socketService.testAgent(agentId, message, callbacks);
+  }, [ensureConnected]);
+
   return {
     execute,
     ensureConnected,
     getStatus,
     getActiveRequestCount,
     isConnected,
+    testAgent,
   };
 };
 

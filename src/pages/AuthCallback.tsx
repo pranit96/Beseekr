@@ -16,6 +16,13 @@ export default function AuthCallback() {
     const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
     const [errorMessage, setErrorMessage] = useState('');
 
+    // Get the intended redirect URL (saved by ProtectedRoute) or fall back to dashboard
+    const getRedirectUrl = () => {
+        const saved = sessionStorage.getItem('auth-redirect');
+        sessionStorage.removeItem('auth-redirect');
+        return saved || '/dashboard/problems';
+    };
+
     useEffect(() => {
         let authListener: { data: { subscription: { unsubscribe: () => void } } } | null = null;
 
@@ -114,12 +121,13 @@ export default function AuthCallback() {
                         setStatus('success');
 
                         // SAFARI FIX: Use hard navigation for Safari to ensure UI state sync
+                        const redirectUrl = getRedirectUrl();
                         setTimeout(() => {
                             if (isSafari) {
-                                console.log('Safari detected - using hard navigation to ensure dashboard UI sync');
-                                window.location.href = '/dashboard/problems';
+                                console.log('Safari detected - using hard navigation to ensure UI sync');
+                                window.location.href = redirectUrl;
                             } else {
-                                navigate('/dashboard/problems', { replace: true });
+                                navigate(redirectUrl, { replace: true });
                             }
                         }, 1000);
                     } else {
@@ -179,12 +187,13 @@ export default function AuthCallback() {
                         setStatus('success');
 
                         // SAFARI FIX: Use hard navigation for Safari to ensure UI state sync
+                        const redirectUrl = getRedirectUrl();
                         setTimeout(() => {
                             if (isSafari) {
-                                console.log('Safari detected - using hard navigation to ensure dashboard UI sync');
-                                window.location.href = '/dashboard/problems';
+                                console.log('Safari detected - using hard navigation to ensure UI sync');
+                                window.location.href = redirectUrl;
                             } else {
-                                navigate('/dashboard/problems', { replace: true });
+                                navigate(redirectUrl, { replace: true });
                             }
                         }, 1000);
                     } else {
