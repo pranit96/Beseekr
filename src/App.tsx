@@ -20,6 +20,7 @@ import PaymentSuccess from "./pages/PaymentSuccess";
 import PaymentFailed from "./pages/PaymentFailed";
 import Contact from "./pages/Contact";
 import About from "./pages/About";
+import Home from "./pages/Home";
 
 /**
  * Wrapper for lazy imports that handles chunk loading failures after deployments.
@@ -171,9 +172,9 @@ const App = () => {
               <AuthProvider>
                 <Routes>
                   {/* =============================================
-                      ROOT - Redirect to dashboard (NO AUTH CHECK)
+                      ROOT - Public homepage (no auth required)
                       ============================================= */}
-                  <Route path="/" element={<Navigate to="/dashboard/problems" replace />} />
+                  <Route path="/" element={<Home />} />
 
                   {/* =============================================
                       PUBLIC ROUTES - No auth required

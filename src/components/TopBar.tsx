@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Moon, Sun, User, LogOut, Settings, Menu, X, HelpCircle } from 'lucide-react';
+import { Moon, Sun, User, LogOut, Settings, Menu, X, HelpCircle, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import {
@@ -15,7 +15,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 
 const navigation = [
-  { name: 'Chat', href: '/' },
+  { name: 'Home', href: '/' },
+  { name: 'Chat', href: '/chat' },
   { name: 'Agents', href: '/agents' },
   { name: 'Analytics', href: '/analytics' },
   { name: 'MetaLayer', href: '/metaLayer' },
@@ -54,7 +55,9 @@ export const TopBar = ({ sidebarOpen, onToggleSidebar, showSidebarToggle }: TopB
           )}
 
           <Link to="/" className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-accent" />
+            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-sm">
+              <Sparkles className="h-4 w-4 text-white" />
+            </div>
             <span className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
               beseekr
             </span>
@@ -140,7 +143,7 @@ export const TopBar = ({ sidebarOpen, onToggleSidebar, showSidebarToggle }: TopB
               )}
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
-                <Link to="/profile" className="flex items-center w-full cursor-pointer">
+                <Link to="/dashboard/profile" className="flex items-center w-full cursor-pointer">
                   <Settings className="mr-2 h-4 w-4" />
                   Profile Settings
                 </Link>
