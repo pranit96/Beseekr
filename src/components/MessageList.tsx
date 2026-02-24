@@ -6,15 +6,13 @@ import {
   Check,
   User,
   Bot,
-  Clock,
-  CheckCircle2,
-  XCircle,
   Loader2,
+  Sparkles,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ChatMessage } from '@/types/agent';
 import { useToast } from '@/hooks/use-toast';
-import MarkdownRenderer from './messages/MarkdownRenderer';
+import AgentResponseCard from './messages/AgentResponseCard';
 
 interface MessageListProps {
   messages: ChatMessage[];
@@ -65,192 +63,102 @@ const MessageList: React.FC<MessageListProps> = ({
       hour12: true,
     }).format(new Date(date));
 
-  const getStatusIcon = (status?: string) => {
-    switch (status) {
-      case 'success':
-        return <CheckCircle2 className="w-4 h-4 text-green-500" />;
-      case 'error':
-        return <XCircle className="w-4 h-4 text-destructive" />;
-      case 'pending':
-        return <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />;
-      default:
-        return <Clock className="w-4 h-4 text-muted-foreground" />;
-    }
-  };
-
-  const getAgentColor = (agentId: string) => {
-    const colors = [
-      'bg-blue-500',
-      'bg-purple-500',
-      'bg-pink-500',
-      'bg-amber-500',
-      'bg-green-500',
-      'bg-cyan-500',
-      'bg-rose-500',
-      'bg-indigo-500',
-    ];
-    const hash = agentId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    return colors[hash % colors.length];
-  };
-
   return (
-    <div className="space-y-6 pb-4">
+    <div className="space-y-1 pb-6">
       {messages.map((message) => (
         <div key={message.id}>
-          {/* User Message */}
+          {/* ─── User Message ─── */}
           {message.type === 'user' && (
-            <div className="flex gap-4 justify-end mb-6">
-              <div className="flex flex-col gap-2 max-w-[85%] items-end">
-                <div className="rounded-2xl px-4 py-3 bg-primary text-primary-foreground shadow-sm">
-                  <p className="text-sm whitespace-pre-wrap break-words leading-relaxed font-sans">
+            <div className="flex justify-end mb-5 px-2 animate-fade-in">
+              <div className="flex flex-col items-end gap-1.5 max-w-[80%] sm:max-w-[70%] md:max-w-[65%]">
+                <div className="rounded-2xl rounded-br-lg px-5 py-3.5 bg-primary text-primary-foreground shadow-sm">
+                  <p className="text-[15px] leading-relaxed whitespace-pre-wrap break-words">
                     {message.content}
                   </p>
                 </div>
-
-                <div className="flex items-center gap-2 px-2">
-                  <span className="text-xs text-muted-foreground">
+                <div className="flex items-center gap-2 px-1">
+                  <span className="text-[11px] text-muted-foreground/70">
                     {formatTimestamp(message.timestamp)}
                   </span>
-
-                  <div className="flex items-center gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 w-7 p-0 hover:bg-muted"
-                      onClick={() => handleCopy(message.content, message.id)}
-                    >
-                      {copiedId === message.id ? (
-                        <Check className="w-3.5 h-3.5 text-green-500" />
-                      ) : (
-                        <Copy className="w-3.5 h-3.5" />
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
-                  <User className="w-5 h-5 text-foreground" />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 hover:bg-muted/50 transition-opacity"
+                    onClick={() => handleCopy(message.content, message.id)}
+                  >
+                    {copiedId === message.id ? (
+                      <Check className="w-3 h-3 text-green-500" />
+                    ) : (
+                      <Copy className="w-3 h-3 text-muted-foreground" />
+                    )}
+                  </Button>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Agent Responses */}
+          {/* ─── Agent Responses ─── */}
           {message.type === 'agent' &&
             message.agentResponses &&
             message.agentResponses.length > 0 && (
-              <div className="space-y-5">
-                {message.agentResponses.map((response, idx) => (
-                  <div
-                    key={`${message.id}-agent-${idx}`}
-                    className="flex gap-4 justify-start"
-                  >
-                    <div className="flex-shrink-0">
-                      <div
-                        className={`w-8 h-8 rounded-full flex items-center justify-center shadow-sm ${getAgentColor(
-                          response.agentId
-                        )}`}
-                      >
-                        <Bot className="w-5 h-5 text-white" />
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col gap-2 max-w-[85%] items-start flex-1">
-                      {/* Name & status */}
-                      <div className="flex items-center gap-2 px-2">
-                        <span className="text-xs font-semibold text-foreground">
-                          {response.agentName}
-                        </span>
-                        {getStatusIcon(response.status)}
-                        {response.metadata?.usage && (
-                          <span className="text-xs text-muted-foreground">
-                            {response.metadata.usage.total_tokens || 0} tokens
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Message bubble */}
-                      <div className="rounded-2xl px-4 py-3 bg-muted border border-border shadow-sm w-full">
-                        {response.content ? (
-                          // Render markdown using shared MarkdownRenderer (ensures consistent typography & code handling)
-                          <div className="font-sans">
-                            <div className="bg-transparent">
-                              <MarkdownRenderer
-                                content={response.content || ''}
-                                className="leading-relaxed"
-                                showToc={false}
-                                enableCopy={true}
-                                maxHeight="none"
-                              />
-                            </div>
-                          </div>
-                        ) : response.status === 'pending' ? (
-                          // Pending — keep same visual container
-                          <div className="flex items-center gap-2 py-2">
-                            <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
-                            <span className="text-sm text-muted-foreground">
-                              Generating response...
-                            </span>
-                          </div>
-                        ) : response.status === 'error' ? (
-                          <div className="text-sm text-destructive">
-                            Error generating response
-                          </div>
-                        ) : null}
-                      </div>
-
-                      {/* Metadata & actions */}
-                      <div className="flex items-center gap-2 px-2">
-                        <span className="text-xs text-muted-foreground">
-                          {formatTimestamp(response.timestamp)}
-                        </span>
-
-                        {message.isFromCache && idx === 0 && (
-                          <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-                            Cached
-                          </span>
-                        )}
-
-                        <div className="flex items-center gap-1">
-                          {response.content && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-7 w-7 p-0 hover:bg-muted transition-all"
-                              onClick={() =>
-                                handleCopy(response.content, `${message.id}-${idx}`)
-                              }
-                              aria-label={copiedId === `${message.id}-${idx}` ? "Copied to clipboard" : "Copy agent response to clipboard"}
-                              title={copiedId === `${message.id}-${idx}` ? "Copied!" : "Copy response"}
-                            >
-                              {copiedId === `${message.id}-${idx}` ? (
-                                <Check className="w-3.5 h-3.5 text-green-500" />
-                              ) : (
-                                <Copy className="w-3.5 h-3.5" />
-                              )}
-                            </Button>
-                          )}
-
-                          {idx === message.agentResponses.length - 1 && onRetryMessage && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-7 w-7 p-0 hover:bg-muted transition-all"
-                              onClick={() => handleRetry(message.id)}
-                              disabled={isLoading}
-                              aria-label="Retry this message"
-                              title="Retry message"
-                            >
-                              <RotateCw className="w-3.5 h-3.5" />
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
+              <div className="mb-6 px-2 animate-fade-in">
+                {/* Parallel mode: side-by-side grid */}
+                {message.executionMode === 'parallel' ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {message.agentResponses.map((response, idx) => (
+                      <AgentResponseCard
+                        key={`${message.id}-agent-${idx}`}
+                        response={response as any}
+                        index={idx}
+                      />
+                    ))}
                   </div>
-                ))}
+                ) : (
+                  /* Sequential mode: stacked full-width */
+                  <div className="flex flex-col gap-4 max-w-[90%] sm:max-w-[85%] md:max-w-[80%]">
+                    {message.agentResponses.map((response, idx) => (
+                      <AgentResponseCard
+                        key={`${message.id}-agent-${idx}`}
+                        response={response as any}
+                        index={idx}
+                      />
+                    ))}
+                  </div>
+                )}
+
+                {/* Per-agent execution summary */}
+                {message.perAgentSummary && message.perAgentSummary.length > 0 && (
+                  <div className="mt-3 ml-0 flex flex-wrap gap-2">
+                    {message.perAgentSummary.map((summary) => (
+                      <div
+                        key={summary.agent_id}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-muted/60 border border-border/40 text-[11px] text-muted-foreground"
+                      >
+                        <span className="font-medium text-foreground/80">{summary.agent_name}</span>
+                        <span>·</span>
+                        <span>{summary.tokens_used} tokens</span>
+                        <span>·</span>
+                        <span>{(summary.execution_time_ms / 1000).toFixed(1)}s</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Retry button for last message */}
+                {onRetryMessage && message.agentResponses.every(r => r.status !== 'pending') && (
+                  <div className="mt-2 ml-0">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-xs text-muted-foreground hover:text-foreground gap-1.5"
+                      onClick={() => handleRetry(message.id)}
+                      disabled={isLoading}
+                    >
+                      <RotateCw className="w-3 h-3" />
+                      Retry
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
         </div>
@@ -258,19 +166,17 @@ const MessageList: React.FC<MessageListProps> = ({
 
       {/* Global loading indicator */}
       {isLoading && (
-        <div className="flex gap-4 justify-start" role="status" aria-live="polite" aria-label="Agents are processing your request">
-          <div className="flex-shrink-0">
-            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center animate-pulse">
-              <Bot className="w-5 h-5 text-primary" />
+        <div className="flex gap-3 px-2 animate-fade-in" role="status" aria-live="polite">
+          <div className="flex-shrink-0 mt-1">
+            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
+              <Sparkles className="w-4 h-4 text-primary animate-pulse" />
             </div>
           </div>
-          <div className="flex flex-col gap-2">
-            <div className="rounded-2xl px-4 py-3 bg-muted border border-border shadow-sm animate-fade-in">
-              <div className="flex items-center gap-2">
+          <div className="flex flex-col gap-2 flex-1 max-w-[80%]">
+            <div className="rounded-2xl rounded-tl-lg px-5 py-4 bg-muted/50 border border-border/30">
+              <div className="flex items-center gap-3">
                 <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                <span className="text-sm text-muted-foreground">
-                  Agents are thinking...
-                </span>
+                <span className="text-sm text-muted-foreground">Thinking...</span>
               </div>
             </div>
           </div>

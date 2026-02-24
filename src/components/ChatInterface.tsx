@@ -16,6 +16,44 @@ import { createLogger } from '@/services/logging';
 
 const logger = createLogger('ChatInterface');
 
+/**
+ * Generate a ChatGPT-style conversation title from the user's first message.
+ * Strips filler phrases, capitalizes, and truncates at word boundary.
+ */
+function generateConversationTitle(message: string, agents: Agent[]): string {
+  const text = message.trim();
+  if (!text) {
+    return `Chat with ${agents.map(a => a.name).join(', ')}`;
+  }
+
+  // Strip common filler phrases
+  let clean = text
+    .replace(/^(hey|hi|hello|can you|could you|please|I want to|I need to|I'd like to|help me|tell me|show me|explain|write|create|make|generate)\s+/i, '')
+    .replace(/[.!?,;]+$/, '')
+    .trim();
+
+  if (!clean) clean = text;
+
+  // Capitalize first letter of each significant word
+  const title = clean
+    .split(/\s+/)
+    .map((w, i) => {
+      // Don't capitalize small words in the middle
+      if (i > 0 && ['a', 'an', 'the', 'in', 'on', 'at', 'to', 'for', 'of', 'and', 'or', 'but', 'is', 'with'].includes(w.toLowerCase())) {
+        return w.toLowerCase();
+      }
+      return w.charAt(0).toUpperCase() + w.slice(1);
+    })
+    .join(' ');
+
+  // Truncate at word boundary, max 50 chars
+  if (title.length <= 50) return title;
+
+  const truncated = title.substring(0, 50);
+  const lastSpace = truncated.lastIndexOf(' ');
+  return (lastSpace > 20 ? truncated.substring(0, lastSpace) : truncated) + '...';
+}
+
 export const ChatInterface: React.FC<{
   agents: Agent[];
   activeConversationId?: string;
@@ -228,13 +266,8 @@ export const ChatInterface: React.FC<{
         try {
           const { apiClient } = await import('@/lib/api');
 
-          let title = messageText.trim();
-          if (!title) {
-            title = `Chat with ${selectedAgents.map(a => a.name).join(', ')}`;
-          }
-          if (title.length > 50) {
-            title = title.substring(0, 47) + '...';
-          }
+          let title = generateConversationTitle(messageText, selectedAgents);
+
 
           logger.info('Creating new conversation (background creation may have failed)', {
             title,
