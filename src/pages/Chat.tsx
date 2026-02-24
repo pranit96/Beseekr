@@ -77,53 +77,82 @@ const Chat = () => {
 
     try {
       logger.info('Fetching conversations', { attempt: fetchAttemptRef.current + 1 });
-      
+
       // Clear cache before fetching to ensure fresh data
       if (fetchAttemptRef.current === 0) {
         apiClient.invalidateCache('/api/conversations');
       }
-      
+
       const response = await apiClient.getConversations({
         status: 'active',
         page: 1,
         limit: 30,
       });
-      
+
+      console.log('[Chat] getConversations raw response:', JSON.stringify(response).substring(0, 500));
+
+      // Handle different response shapes:
+      // Backend might return { success, data: [...] } or { success, data: { conversations: [...] } }
+      let rawConversations: any[] = [];
       if (response.success && response.data) {
+        if (Array.isArray(response.data)) {
+          rawConversations = response.data;
+        } else if (Array.isArray(response.data.conversations)) {
+          rawConversations = response.data.conversations;
+        } else if (Array.isArray(response.data.data)) {
+          rawConversations = response.data.data;
+        }
+      }
+
+      console.log('[Chat] Parsed conversations count:', rawConversations.length);
+
+      if (rawConversations.length > 0 || response.success) {
         // Fetch last messages for each conversation
         const conversationsWithMessages = await Promise.all(
-          response.data.map(async (conv: any) => {
+          rawConversations.map(async (conv: any) => {
             try {
               // Fetch more messages (up to 5) to ensure we get a user message
               const messagesRes = await apiClient.getMessages(conv.id, 1, 5);
-              
-              logger.debug('Messages fetched for conversation', { 
-                conversationId: conv.id, 
-                title: conv.title, 
-                messageCount: messagesRes.data?.length || 0 
+
+              // Handle messages response shape too
+              let messagesArray: any[] = [];
+              if (messagesRes.data) {
+                if (Array.isArray(messagesRes.data)) {
+                  messagesArray = messagesRes.data;
+                } else if (Array.isArray(messagesRes.data.messages)) {
+                  messagesArray = messagesRes.data.messages;
+                } else if (Array.isArray(messagesRes.data.data)) {
+                  messagesArray = messagesRes.data.data;
+                }
+              }
+
+              logger.debug('Messages fetched for conversation', {
+                conversationId: conv.id,
+                title: conv.title,
+                messageCount: messagesArray.length
               });
-              
-              if (messagesRes.data && messagesRes.data.length > 0) {
+
+              if (messagesArray.length > 0) {
                 // Sort messages by created_at (most recent first)
-                const sortedMessages = [...messagesRes.data].sort((a: any, b: any) => {
+                const sortedMessages = [...messagesArray].sort((a: any, b: any) => {
                   const dateA = new Date(a.created_at).getTime();
                   const dateB = new Date(b.created_at).getTime();
                   return dateB - dateA;
                 });
-                
+
                 // Find the most recent user message
                 const lastUserMsg = sortedMessages.find((m: any) => m.role === 'user');
-                
+
                 if (lastUserMsg?.content) {
                   return {
                     ...conv,
                     last_message: lastUserMsg.content.substring(0, 100)
                   };
                 }
-                
+
                 // If no user message, try to find any message with content
                 const anyMessageWithContent = sortedMessages.find((m: any) => m.content && m.content.trim());
-                
+
                 if (anyMessageWithContent?.content) {
                   const rolePrefix = anyMessageWithContent.role === 'assistant' ? '🤖 ' : '';
                   return {
@@ -132,7 +161,7 @@ const Chat = () => {
                   };
                 }
               }
-              
+
               return conv;
             } catch (err) {
               logger.error('Failed to fetch messages for conversation', { conversationId: conv.id, error: err });
@@ -140,7 +169,7 @@ const Chat = () => {
             }
           })
         );
-        
+
         setConversations(conversationsWithMessages);
         setAuthError(false);
         fetchAttemptRef.current = 0;
@@ -150,9 +179,9 @@ const Chat = () => {
       }
     } catch (error: any) {
       logger.error('Failed to fetch conversations', { error: error.message, attempt: fetchAttemptRef.current });
-      
+
       fetchAttemptRef.current++;
-      
+
       if (error.message?.includes('Session expired') || error.message?.includes('401')) {
         setAuthError(true);
       } else if (fetchAttemptRef.current < maxRetries) {
@@ -170,18 +199,18 @@ const Chat = () => {
   const handleRetryAuth = useCallback(async () => {
     setRetrying(true);
     setAuthError(false);
-    
+
     try {
       logger.info('Manual auth refresh triggered');
       await refreshAuth();
       await reload();
-      
+
       // Clear API cache to force fresh data
       apiClient.invalidateCache();
-      
+
       // Refetch conversations with fresh session
       await fetchConversations();
-      
+
       toast({
         title: 'Session refreshed',
         description: 'You can continue using the app',
@@ -189,7 +218,7 @@ const Chat = () => {
     } catch (error: any) {
       logger.error('Auth refresh failed', { error: error.message });
       setAuthError(true);
-      
+
       toast({
         title: 'Refresh failed',
         description: 'Please try logging in again',
@@ -213,22 +242,22 @@ const Chat = () => {
     if (currentConversationId) {
       const currentConv = conversations.find(c => c.id === currentConversationId);
       const isCurrentEmpty = !currentConv?.last_message || currentConv.last_message.trim() === '';
-      
+
       if (isCurrentEmpty) {
-        logger.info('Current conversation is empty, focusing on it instead of creating new', { 
-          conversationId: currentConversationId 
+        logger.info('Current conversation is empty, focusing on it instead of creating new', {
+          conversationId: currentConversationId
         });
-        
+
         // Just ensure it's selected and show a subtle message
         setCurrentConversationId(currentConversationId);
         sessionStorage.setItem('lastActiveConversation', currentConversationId);
         setKey(prev => prev + 1);
-        
+
         toast({
           title: 'Ready to chat',
           description: 'Start typing your message below.',
         });
-        
+
         return; // Don't create a new conversation
       }
     }
@@ -258,13 +287,13 @@ const Chat = () => {
     // Create conversation in background with retry logic
     let attempts = 0;
     const maxAttempts = 3;
-    
+
     const createWithRetry = async (): Promise<void> => {
       attempts++;
-      
+
       try {
         logger.info('Creating new conversation in background', { attempt: attempts, tempId });
-        
+
         const response = await apiClient.createConversation({
           agent_id: null,
           title: 'New Conversation',
@@ -272,25 +301,25 @@ const Chat = () => {
 
         if (response.success && response.data?.id) {
           const realId = response.data.id;
-          
-          logger.info('Background conversation created successfully', { 
-            tempId, 
+
+          logger.info('Background conversation created successfully', {
+            tempId,
             realId,
-            attempt: attempts 
+            attempt: attempts
           });
-          
+
           // Store the mapping in sessionStorage so ChatInterface can use it
           sessionStorage.setItem(`conv_mapping_${tempId}`, realId);
-          
+
           // Replace temp conversation with real one
-          setConversations(prev => 
-            prev.map(conv => 
-              conv.id === tempId 
+          setConversations(prev =>
+            prev.map(conv =>
+              conv.id === tempId
                 ? { ...conv, id: realId }
                 : conv
             )
           );
-          
+
           // Update current conversation ID if it's still the temp one
           setCurrentConversationId(prevId => {
             if (prevId === tempId) {
@@ -299,19 +328,19 @@ const Chat = () => {
             }
             return prevId;
           });
-          
+
           // Refresh conversation list in background
           setTimeout(() => fetchConversations(), 1000);
         } else {
           throw new Error('Could not create a new session');
         }
       } catch (error: any) {
-        logger.error('Failed to create conversation in background', { 
-          attempt: attempts, 
+        logger.error('Failed to create conversation in background', {
+          attempt: attempts,
           error: error.message,
           tempId
         });
-        
+
         // Check for auth errors
         if (error.message?.includes('Session expired') || error.message?.includes('401')) {
           setAuthError(true);
@@ -326,17 +355,17 @@ const Chat = () => {
           });
           return;
         }
-        
+
         // Retry logic
         if (attempts < maxAttempts) {
           const delay = Math.min(1000 * Math.pow(2, attempts), 5000);
-          logger.info('Retrying background conversation creation', { 
-            delay, 
+          logger.info('Retrying background conversation creation', {
+            delay,
             attempt: attempts,
             nextAttempt: attempts + 1,
             tempId
           });
-          
+
           setTimeout(() => createWithRetry(), delay);
         } else {
           // All retries failed - ChatInterface will create it when user sends first message
@@ -352,19 +381,19 @@ const Chat = () => {
   const handleConversationCreated = useCallback(
     async (conversationId: string) => {
       logger.info('Conversation created callback', { conversationId, currentId: currentConversationId });
-      
+
       // Replace temporary conversation with real one, or add if not exists
       setConversations(prev => {
         // Check if we have a temp conversation to replace
         const tempIndex = prev.findIndex(conv => conv.id.startsWith('temp-'));
-        
+
         if (tempIndex >= 0) {
           // Replace temp conversation with real one
-          logger.info('Replacing temp conversation with real one', { 
-            tempId: prev[tempIndex].id, 
-            realId: conversationId 
+          logger.info('Replacing temp conversation with real one', {
+            tempId: prev[tempIndex].id,
+            realId: conversationId
           });
-          
+
           const updated = [...prev];
           updated[tempIndex] = {
             ...updated[tempIndex],
@@ -372,14 +401,14 @@ const Chat = () => {
           };
           return updated;
         }
-        
+
         // Check if conversation already exists
         const exists = prev.some(conv => conv.id === conversationId);
         if (exists) {
           logger.debug('Conversation already exists in list', { conversationId });
           return prev;
         }
-        
+
         // Add new conversation to the list
         logger.info('Adding new conversation to list', { conversationId });
         return [{
@@ -390,10 +419,10 @@ const Chat = () => {
           last_message: undefined,
         }, ...prev];
       });
-      
+
       setCurrentConversationId(conversationId);
       sessionStorage.setItem('lastActiveConversation', conversationId);
-      
+
       // Fetch full conversation list in background to get updated data
       setTimeout(() => {
         fetchConversations();
@@ -414,19 +443,19 @@ const Chat = () => {
 
   const handleConversationDeleted = useCallback((deletedId?: string) => {
     const deletedConvId = deletedId || currentConversationId;
-    
+
     if (deletedConvId) {
       logger.info('Clearing cache for deleted conversation', { conversationId: deletedConvId });
-      
+
       if (currentConversationId === deletedConvId) {
         setCurrentConversationId(undefined);
         sessionStorage.removeItem('lastActiveConversation');
         setKey(prev => prev + 1);
       }
     }
-    
+
     fetchConversations();
-    
+
     toast({
       title: 'Conversation deleted',
       description: 'The conversation has been removed.',
@@ -451,16 +480,16 @@ const Chat = () => {
     const handleConversationNotFound = (event: CustomEvent) => {
       const { conversationId: notFoundId } = event.detail;
       logger.warn('Removing conversation that was not found', { conversationId: notFoundId });
-      
+
       // Remove from conversation list
       setConversations(prev => prev.filter(conv => conv.id !== notFoundId));
-      
+
       // If it was the current conversation, clear it
       if (currentConversationId === notFoundId) {
         setCurrentConversationId(undefined);
         sessionStorage.removeItem('lastActiveConversation');
         setKey(prev => prev + 1);
-        
+
         toast({
           title: 'Conversation not found',
           description: 'This conversation may have been deleted. Starting fresh.',
@@ -480,7 +509,7 @@ const Chat = () => {
         e.preventDefault();
         setSidebarOpen(prev => !prev);
       }
-      
+
       if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
         e.preventDefault();
         handleNewSession();
@@ -560,9 +589,8 @@ const Chat = () => {
       <div className="flex-1 flex overflow-hidden">
         {/* Sidebar */}
         <aside
-          className={`transition-all duration-300 ease-in-out border-r border-border bg-muted/30 flex-shrink-0 ${
-            sidebarOpen ? 'w-80 2xl:w-96 opacity-100' : 'w-0 opacity-0'
-          } overflow-hidden`}
+          className={`transition-all duration-300 ease-in-out border-r border-border bg-muted/30 flex-shrink-0 ${sidebarOpen ? 'w-80 2xl:w-96 opacity-100' : 'w-0 opacity-0'
+            } overflow-hidden`}
         >
           <ConversationHistory
             conversations={conversations}

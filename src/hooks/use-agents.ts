@@ -10,7 +10,7 @@ export const useAgents = () => {
   const [agents, setAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   const { user } = useAuth();
   const fetchingRef = useRef(false);
   const retryCountRef = useRef(0);
@@ -32,20 +32,37 @@ export const useAgents = () => {
     }
 
     fetchingRef.current = true;
-    
+
     if (!isRetry) {
       setLoading(true);
       retryCountRef.current = 0;
     }
-    
+
     setError(null);
 
     try {
-     
+
       const res = await apiClient.getMyAgents();
-      
-      if (res.success && Array.isArray(res.data)) {
-        setAgents(res.data);
+
+      console.log('[useAgents] getMyAgents raw response:', JSON.stringify(res).substring(0, 500));
+
+      // Handle different response shapes:
+      // Backend might return { success, data: [...] } or { success, data: { agents: [...] } }
+      let agentList: Agent[] = [];
+      if (res.success && res.data) {
+        if (Array.isArray(res.data)) {
+          agentList = res.data;
+        } else if (Array.isArray(res.data.agents)) {
+          agentList = res.data.agents;
+        } else if (Array.isArray(res.data.data)) {
+          agentList = res.data.data;
+        }
+      }
+
+      console.log('[useAgents] Parsed agents count:', agentList.length);
+
+      if (agentList.length > 0 || res.success) {
+        setAgents(agentList);
         setError(null);
         retryCountRef.current = 0;
       } else {
@@ -53,9 +70,9 @@ export const useAgents = () => {
       }
     } catch (err: any) {
       logger.error("Error fetching agents", { error: err.message, attempt: retryCountRef.current });
-      
+
       retryCountRef.current++;
-      
+
       // Check if it's an auth error
       if (err.message?.includes('Session expired') || err.message?.includes('401')) {
         setError('Session expired. Please refresh.');
@@ -64,7 +81,7 @@ export const useAgents = () => {
         // Retry with exponential backoff
         const delay = Math.min(1000 * Math.pow(2, retryCountRef.current), 5000);
         logger.info('Retrying agent fetch', { delay, attempt: retryCountRef.current });
-        
+
         setTimeout(() => {
           fetchingRef.current = false;
           fetchAgents(true);
@@ -86,10 +103,10 @@ export const useAgents = () => {
     logger.info('Manual reload requested');
     retryCountRef.current = 0;
     fetchingRef.current = false;
-    
+
     // Invalidate cache before reloading
     apiClient.invalidateCache('/api/agents');
-    
+
     await fetchAgents(false);
   }, [fetchAgents]);
 
@@ -126,10 +143,10 @@ export const useAgents = () => {
     return () => window.removeEventListener('focus', handleFocus);
   }, [user, agents.length, loading, error, reload]);
 
-  return { 
-    agents, 
-    loading, 
-    error, 
-    reload 
+  return {
+    agents,
+    loading,
+    error,
+    reload
   };
 };
