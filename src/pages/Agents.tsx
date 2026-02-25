@@ -169,41 +169,48 @@ const Agents = () => {
     setIsDialogOpen(true);
   };
 
-  // Agent card color schemes
-  const CARD_ACCENTS = [
-    { gradient: 'from-violet-500 to-purple-600', bg: 'bg-violet-500/10', text: 'text-violet-500', border: 'border-violet-500/20' },
-    { gradient: 'from-blue-500 to-cyan-500', bg: 'bg-blue-500/10', text: 'text-blue-500', border: 'border-blue-500/20' },
-    { gradient: 'from-emerald-500 to-teal-500', bg: 'bg-emerald-500/10', text: 'text-emerald-500', border: 'border-emerald-500/20' },
-    { gradient: 'from-amber-500 to-orange-500', bg: 'bg-amber-500/10', text: 'text-amber-500', border: 'border-amber-500/20' },
-    { gradient: 'from-pink-500 to-rose-500', bg: 'bg-pink-500/10', text: 'text-pink-500', border: 'border-pink-500/20' },
-    { gradient: 'from-indigo-500 to-blue-600', bg: 'bg-indigo-500/10', text: 'text-indigo-500', border: 'border-indigo-500/20' },
-    { gradient: 'from-teal-500 to-green-500', bg: 'bg-teal-500/10', text: 'text-teal-500', border: 'border-teal-500/20' },
-    { gradient: 'from-red-500 to-pink-500', bg: 'bg-red-500/10', text: 'text-red-500', border: 'border-red-500/20' },
+  // Agent card color schemes — Using inline styles because Tailwind purges dynamic class names
+  const CARD_COLORS = [
+    { gradient: 'linear-gradient(135deg, #8b5cf6, #7c3aed)', bg: 'rgba(139,92,246,0.1)', text: '#8b5cf6', border: 'rgba(139,92,246,0.2)' },
+    { gradient: 'linear-gradient(135deg, #3b82f6, #06b6d4)', bg: 'rgba(59,130,246,0.1)', text: '#3b82f6', border: 'rgba(59,130,246,0.2)' },
+    { gradient: 'linear-gradient(135deg, #10b981, #14b8a6)', bg: 'rgba(16,185,129,0.1)', text: '#10b981', border: 'rgba(16,185,129,0.2)' },
+    { gradient: 'linear-gradient(135deg, #f59e0b, #f97316)', bg: 'rgba(245,158,11,0.1)', text: '#f59e0b', border: 'rgba(245,158,11,0.2)' },
+    { gradient: 'linear-gradient(135deg, #ec4899, #f43f5e)', bg: 'rgba(236,72,153,0.1)', text: '#ec4899', border: 'rgba(236,72,153,0.2)' },
+    { gradient: 'linear-gradient(135deg, #6366f1, #2563eb)', bg: 'rgba(99,102,241,0.1)', text: '#6366f1', border: 'rgba(99,102,241,0.2)' },
+    { gradient: 'linear-gradient(135deg, #14b8a6, #22c55e)', bg: 'rgba(20,184,166,0.1)', text: '#14b8a6', border: 'rgba(20,184,166,0.2)' },
+    { gradient: 'linear-gradient(135deg, #ef4444, #ec4899)', bg: 'rgba(239,68,68,0.1)', text: '#ef4444', border: 'rgba(239,68,68,0.2)' },
   ];
 
-  const getCardAccent = (index: number) => CARD_ACCENTS[index % CARD_ACCENTS.length];
+  const getCardColor = (index: number) => CARD_COLORS[index % CARD_COLORS.length];
 
   const AgentCard = ({ agent, index }: { agent: Agent; index: number }) => {
-    const accent = getCardAccent(index);
+    const color = getCardColor(index);
     const initial = agent.name?.charAt(0)?.toUpperCase() || 'A';
 
     return (
       <Card className="group relative overflow-hidden border-border/40 hover:border-border/80 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5">
         {/* Gradient accent bar */}
-        <div className={`h-1.5 bg-gradient-to-r ${accent.gradient}`} />
+        <div className="h-1.5" style={{ background: color.gradient }} />
 
         <div className="p-5">
           {/* Header: Avatar + Name + Actions */}
           <div className="flex items-start gap-3.5 mb-4">
             {/* Avatar with initial */}
-            <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${accent.gradient} flex items-center justify-center text-white text-lg font-bold shadow-sm flex-shrink-0`}>
+            <div
+              className="w-12 h-12 rounded-xl flex items-center justify-center text-white text-lg font-bold shadow-sm flex-shrink-0"
+              style={{ background: color.gradient }}
+            >
               {initial}
             </div>
 
             <div className="flex-1 min-w-0">
               <h3 className="font-semibold text-[15px] truncate leading-tight">{agent.name}</h3>
               <div className="flex items-center gap-2 mt-1.5">
-                <Badge variant="secondary" className={`text-[10px] px-2 py-0 ${accent.bg} ${accent.text} border ${accent.border}`}>
+                <Badge
+                  variant="secondary"
+                  className="text-[10px] px-2 py-0"
+                  style={{ backgroundColor: color.bg, color: color.text, borderColor: color.border, borderWidth: '1px' }}
+                >
                   {agent.domain || 'General'}
                 </Badge>
                 {agent.is_default && (
@@ -252,7 +259,10 @@ const Agents = () => {
 
           {/* System prompt preview */}
           {agent.system_prompt && (
-            <div className={`p-3 rounded-lg ${accent.bg} border ${accent.border}`}>
+            <div
+              className="p-3 rounded-lg"
+              style={{ backgroundColor: color.bg, borderColor: color.border, borderWidth: '1px', borderStyle: 'solid' }}
+            >
               <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">System Prompt</p>
               <p className="text-[12px] text-foreground/70 line-clamp-2 leading-relaxed font-mono">
                 {agent.system_prompt}
