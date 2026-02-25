@@ -27,26 +27,64 @@ export function useConversation(initialConversationId?: string): UseConversation
   const [isLoading, setIsLoading] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
   const { toast } = useToast();
-  
+
   // Track if we're currently in an active orchestration
   const isActiveOrchestrationRef = useRef(false);
 
+  // Abort controller to cancel in-flight message fetches when switching conversations
+  const abortControllerRef = useRef<AbortController | null>(null);
+
   const loadConversationMessages = useCallback(async (convId: string, force: boolean = false) => {
-    // Don't load messages if we're in the middle of an orchestration
-    if (isActiveOrchestrationRef.current && !force) {
-      logger.debug('Skipping load - active orchestration in progress', { conversationId: convId });
-      return;
+    // Cancel any in-flight message fetch
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
     }
+
+    // Reset stale orchestration ref when explicitly loading a conversation
+    // This prevents a stuck ref from blocking loads permanently
+    if (!force) {
+      isActiveOrchestrationRef.current = false;
+    }
+
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
 
     try {
       setIsLoading(true);
+      // Clear messages immediately when switching conversations
+      setMessages([]);
+      setHasStarted(false);
+
       logger.info('Loading messages for conversation', { conversationId: convId });
-      
+
       const res = await apiClient.getMessages(convId, 1, 50);
-      
+
+      console.log('[useConversation] getMessages raw response:', JSON.stringify(res).substring(0, 500));
+
+      // Handle different response shapes:
+      // Backend might return { success, data: [...] } or { success, data: { data: [...], pagination: {...} } }
+      let rawMessages: any[] = [];
       if (res.success && res.data) {
+        if (Array.isArray(res.data)) {
+          rawMessages = res.data;
+        } else if (Array.isArray(res.data.data)) {
+          rawMessages = res.data.data;
+        } else if (Array.isArray(res.data.messages)) {
+          rawMessages = res.data.messages;
+        }
+      }
+
+      console.log('[useConversation] Parsed messages count:', rawMessages.length);
+
+      // Check if this load was cancelled (user switched to another conversation)
+      if (controller.signal.aborted) {
+        logger.debug('Load cancelled - conversation switched', { conversationId: convId });
+        return;
+      }
+
+      if (res.success) {
         // BACKEND RETURNS: Array of message objects with role: 'user' | 'assistant'
-        const apiMessages: ChatMessage[] = res.data.map((msg: any) => {
+        const apiMessages: ChatMessage[] = rawMessages.map((msg: any) => {
           const base = {
             id: msg.id,
             content: msg.content || '', // Backend already decrypted this
@@ -56,9 +94,9 @@ export function useConversation(initialConversationId?: string): UseConversation
 
           // USER MESSAGE
           if (msg.role === 'user') {
-            return { 
-              ...base, 
-              type: 'user' 
+            return {
+              ...base,
+              type: 'user'
             } as ChatMessage;
           }
 
@@ -127,21 +165,17 @@ export function useConversation(initialConversationId?: string): UseConversation
           return { ...base, type: 'user' } as ChatMessage;
         });
 
-        // Only set messages if we got actual data OR if forced
-        if (apiMessages.length > 0 || force) {
-          logger.info('Loaded messages', { conversationId: convId, messageCount: apiMessages.length });
-          setMessages(apiMessages);
-          setHasStarted(apiMessages.length > 0);
-          messageCache.set(convId, apiMessages);
-        } else {
-          logger.debug('No messages loaded, keeping current state', { conversationId: convId });
-        }
+        // Always set messages (even empty for new conversations)
+        logger.info('Loaded messages', { conversationId: convId, messageCount: apiMessages.length });
+        setMessages(apiMessages);
+        setHasStarted(apiMessages.length > 0);
+        messageCache.set(convId, apiMessages);
       } else {
-        logger.debug('Load failed or no data, keeping current messages', { conversationId: convId });
+        logger.warn('Load failed, API returned unsuccessful', { conversationId: convId, error: res.error });
       }
     } catch (err: any) {
       logger.error('Error loading messages', { conversationId: convId, error: err.message });
-      
+
       // If conversation not found (404), emit event to remove it from list
       if (err.message?.includes('not found') || err.message?.includes('404') || err.message?.includes('unauthorized')) {
         logger.warn('Conversation not found or unauthorized, emitting removal event', { conversationId: convId });
@@ -160,27 +194,9 @@ export function useConversation(initialConversationId?: string): UseConversation
     }
   }, [toast, messageCache]);
 
-  useEffect(() => {
-    if (!conversationId) return;
-    
-    // Skip loading for temporary conversations (optimistic UI)
-    const isTempConversation = conversationId.startsWith('temp-');
-    if (isTempConversation) {
-      logger.debug('Skipping load for temporary conversation', { conversationId });
-      return;
-    }
-    
-    const cached = messageCache.get(conversationId);
-    if (cached && cached.length > 0) {
-      logger.debug('Using cached messages', { conversationId, messageCount: cached.length });
-      setMessages(cached);
-      setHasStarted(cached.length > 0);
-    } else if (messages.length === 0) {
-      // Only load if we don't have messages
-      logger.debug('No cached messages, loading', { conversationId });
-      loadConversationMessages(conversationId);
-    }
-  }, [conversationId]);
+  // NOTE: We intentionally do NOT auto-load messages on conversationId change here.
+  // ChatInterface.tsx is the single source of truth for triggering loads.
+  // This avoids the double-loading race condition that was causing messages to disappear.
 
   return {
     messages,

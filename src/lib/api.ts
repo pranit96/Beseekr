@@ -481,8 +481,9 @@ class ApiClient {
 
   async updateConversationStatus(conversationId: string, status: 'active' | 'archived') {
     this.invalidateCache('/api/conversations');
-    return this.request<any>(`/api/conversations/${conversationId}/status?status=${status}`, {
-      method: 'PATCH',
+    return this.request<any>(`/api/conversations/${conversationId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ status }),
     });
   }
 
@@ -491,6 +492,9 @@ class ApiClient {
     const queryParams = new URLSearchParams();
     queryParams.append('page', (page || 1).toString());
     queryParams.append('limit', (limit || 50).toString());
+
+    // Always invalidate messages cache to ensure fresh data when switching conversations
+    this.invalidateCache(`/api/messages/conversation/${conversation_id}`);
 
     return this.request<any>(
       `/api/messages/conversation/${conversation_id}?${queryParams.toString()}`

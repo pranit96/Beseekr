@@ -151,10 +151,12 @@ export const ChatInterface: React.FC<{
     });
   }, [messages.length, isExecuting, preparingMessage, hasStarted]);
 
-  // sync prop -> internal conversationId
+  // sync prop -> internal conversationId (SINGLE source of truth for loading)
   useEffect(() => {
+    if (!activeConversationId) return;
+
     // Skip loading for temporary conversations (optimistic UI)
-    const isTempConversation = activeConversationId?.startsWith('temp-');
+    const isTempConversation = activeConversationId.startsWith('temp-');
 
     if (isTempConversation) {
       logger.debug('Skipping message load for temporary conversation', { conversationId: activeConversationId });
@@ -162,17 +164,14 @@ export const ChatInterface: React.FC<{
       return;
     }
 
-    // Only load messages if switching to a different conversation
-    // Don't load if we just created this conversation
-    if (activeConversationId && activeConversationId !== conversationId) {
-      logger.info('Switching to conversation', { conversationId: activeConversationId });
-      setConversationId(activeConversationId);
-      loadConversationMessages(activeConversationId);
-    } else if (activeConversationId === conversationId && messages.length === 0) {
-      // Only load if we have no messages yet
-      logger.debug('Loading messages for current conversation', { conversationId: activeConversationId });
-      loadConversationMessages(activeConversationId);
-    }
+    // Always update the internal conversation ID
+    setConversationId(activeConversationId);
+
+    // Load messages for this conversation
+    // This is the ONLY place that triggers loadConversationMessages on conversation switch.
+    // The useConversation hook no longer auto-loads on conversationId change.
+    logger.info('Loading messages for conversation', { conversationId: activeConversationId });
+    loadConversationMessages(activeConversationId);
   }, [activeConversationId]);
 
   const startRateLimitCountdown = (retryAfterSeconds: number) => {

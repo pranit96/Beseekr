@@ -231,6 +231,7 @@ const Chat = () => {
 
   // Handlers
   const handleSelectConversation = useCallback((conversationId: string) => {
+    console.log('[Chat] handleSelectConversation called:', conversationId);
     setCurrentConversationId(conversationId);
     sessionStorage.setItem('lastActiveConversation', conversationId);
   }, []);

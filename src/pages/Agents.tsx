@@ -379,44 +379,47 @@ const Agents = () => {
           </div>
         )}
 
-        <div className="space-y-8">
-          {/* Custom Agents Section */}
-          {categorizedAgents.custom.length > 0 && (
-            <div>
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <User className="w-4 h-4 text-primary" />
-                </div>
-                <h2 className="text-lg font-semibold">My Custom Agents</h2>
-                <Badge variant="secondary" className="text-xs">{categorizedAgents.custom.length}</Badge>
-              </div>
+        <div>
+          {/* All agents in a single flat grid */}
+          {(() => {
+            const filtered = agents.filter((agent) => {
+              if (!searchQuery) return true;
+              const q = searchQuery.toLowerCase();
+              return (
+                agent.name.toLowerCase().includes(q) ||
+                (agent.domain && agent.domain.toLowerCase().includes(q)) ||
+                agent.description.toLowerCase().includes(q)
+              );
+            });
 
+            // Sort: custom agents first, then default agents
+            const sorted = [...filtered].sort((a, b) => {
+              if (a.is_default && !b.is_default) return 1;
+              if (!a.is_default && b.is_default) return -1;
+              return 0;
+            });
+
+            if (sorted.length === 0 && searchQuery) {
+              return (
+                <div className="text-center py-16">
+                  <p className="text-muted-foreground mb-4">
+                    No agents found matching "{searchQuery}"
+                  </p>
+                  <Button onClick={() => setSearchQuery('')} variant="outline">
+                    Clear Search
+                  </Button>
+                </div>
+              );
+            }
+
+            return (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {categorizedAgents.custom.map((agent, index) => (
+                {sorted.map((agent, index) => (
                   <AgentCard key={agent.id} agent={agent} index={index} />
                 ))}
               </div>
-            </div>
-          )}
-
-          {/* Domain-based Agent Categories */}
-          {Object.entries(categorizedAgents.domains).map(([domain, domainAgents]) => (
-            <div key={domain}>
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center">
-                  <Folder className="w-4 h-4 text-accent" />
-                </div>
-                <h2 className="text-lg font-semibold">{domain}</h2>
-                <Badge variant="secondary" className="text-xs">{domainAgents.length}</Badge>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {domainAgents.map((agent, index) => (
-                  <AgentCard key={agent.id} agent={agent} index={index} />
-                ))}
-              </div>
-            </div>
-          ))}
+            );
+          })()}
         </div>
 
         {agents.length === 0 && (
