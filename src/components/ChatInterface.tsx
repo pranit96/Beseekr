@@ -1,7 +1,8 @@
 // src/components/ChatInterface.tsx
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Send, Workflow, Lock, LockOpen, X, Sparkles, WifiOff, Loader2, Download } from 'lucide-react';
+import { Send, Workflow, Lock, LockOpen, X, Sparkles, WifiOff, Loader2, Download, Paperclip } from 'lucide-react';
 import { ToolExecutionIndicator } from '@/components/ToolExecutionIndicator';
+import { ChatFileUpload } from '@/components/ChatFileUpload';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { AgentSelector } from './AgentSelector';
@@ -76,6 +77,7 @@ export const ChatInterface: React.FC<{
   const [orchestrationProgress, setOrchestrationProgress] = useState<{ step: number; total: number; agent_name?: string } | null>(null);
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [toolExecutions, setToolExecutions] = useState<Array<{ callId: string; toolName: string; status: 'running' | 'success' | 'error'; executionTimeMs?: number }>>([]);
+  const [attachedFiles, setAttachedFiles] = useState<Array<{ id: string; name: string; type: string; size: number; size_readable: string; storage_path: string; url: string | null }>>([]);
 
   const cancelRef = useRef<null | (() => void)>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -381,6 +383,17 @@ export const ChatInterface: React.FC<{
 
       if (saveToConversation && convId) payload.conversation_id = convId;
 
+      // Attach file references if any
+      if (attachedFiles.length > 0) {
+        payload.attached_files = attachedFiles.map(f => ({
+          name: f.name,
+          type: f.type,
+          size: f.size,
+          storage_path: f.storage_path,
+          url: f.url,
+        }));
+      }
+
       ensureConnected();
       cancelRef.current = null;
 
@@ -542,6 +555,7 @@ export const ChatInterface: React.FC<{
       setPreparingMessage(false);
       setOrchestrationProgress(null);
       setToolExecutions([]);
+      setAttachedFiles([]);
       cancelRef.current = null;
 
       // Mark orchestration as complete
@@ -795,6 +809,12 @@ export const ChatInterface: React.FC<{
 
             <div className="w-full">
               <div className="relative flex items-center gap-3 rounded-xl bg-muted/50 border border-border/50 focus-within:border-primary transition px-4 py-3">
+                <ChatFileUpload
+                  onFilesUploaded={(files) => setAttachedFiles(prev => [...prev, ...files])}
+                  attachedFiles={attachedFiles}
+                  onRemoveFile={(id) => setAttachedFiles(prev => prev.filter(f => f.id !== id))}
+                  disabled={sendDisabled}
+                />
                 <Textarea
                   ref={textareaRef}
                   value={input}
@@ -814,7 +834,7 @@ export const ChatInterface: React.FC<{
                 />
                 <Button
                   onClick={handleSubmit}
-                  disabled={!input.trim() || sendDisabled}
+                  disabled={(!input.trim() && attachedFiles.length === 0) || sendDisabled}
                   size="icon"
                   className="h-10 w-10 rounded-lg bg-primary hover:bg-primary/90 transition flex-shrink-0"
                   aria-label={preparingMessage ? "Preparing message" : "Send message"}
@@ -923,6 +943,12 @@ export const ChatInterface: React.FC<{
               <SelectedAgentsDisplay />
 
               <div className="relative flex items-center gap-2 sm:gap-3 rounded-xl bg-muted/50 border border-border/50 focus-within:border-primary transition px-3 sm:px-4 py-2 sm:py-3">
+                <ChatFileUpload
+                  onFilesUploaded={(files) => setAttachedFiles(prev => [...prev, ...files])}
+                  attachedFiles={attachedFiles}
+                  onRemoveFile={(id) => setAttachedFiles(prev => prev.filter(f => f.id !== id))}
+                  disabled={sendDisabled || isExecuting}
+                />
                 <Textarea
                   ref={textareaRef}
                   value={input}
@@ -960,7 +986,7 @@ export const ChatInterface: React.FC<{
                   ) : (
                     <Button
                       onClick={handleSubmit}
-                      disabled={!input.trim() || sendDisabled}
+                      disabled={(!input.trim() && attachedFiles.length === 0) || sendDisabled}
                       size="icon"
                       className="h-9 w-9 sm:h-10 sm:w-10 rounded-lg bg-primary hover:bg-primary/90 transition"
                       title={!socketConnected ? 'Waiting for connection...' : preparingMessage ? 'Preparing message...' : undefined}

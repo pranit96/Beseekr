@@ -401,6 +401,25 @@ class ApiClient {
     return this.request<any>('/api/tools');
   }
 
+  // Chat file upload
+  async uploadChatFiles(files: File[]) {
+    const formData = new FormData();
+    files.forEach((file) => formData.append('files', file));
+
+    const response = await fetch(`${this.baseUrl}/api/chat/upload`, {
+      method: 'POST',
+      credentials: 'include',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      throw new Error(errData.error || `Upload failed: ${response.status}`);
+    }
+
+    return response.json();
+  }
+
   // Orchestration endpoints
   async executeOrchestration(payload: {
     agent_ids: string[];

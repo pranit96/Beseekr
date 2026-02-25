@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Plus, Pencil, Trash2, Search, Folder, User, Copy, Sparkles, BarChart3, ChevronDown, ChevronRight, Loader2, Workflow, Wrench, FileText, Mail, Globe, MessageSquare, Database, FileOutput } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, Folder, User, Copy, Sparkles, BarChart3, ChevronDown, ChevronRight, Loader2, Workflow, Wrench, FileText, Mail, Globe, MessageSquare, Database, FileOutput, FileType, FileSpreadsheet, AlignLeft, Languages } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -270,6 +270,12 @@ const Agents = () => {
                     web_search: Globe,
                     search_reddit: MessageSquare,
                     search_knowledge: Database,
+                    generate_docx: FileType,
+                    generate_spreadsheet: FileSpreadsheet,
+                    scrape_url: Globe,
+                    analyze_data: BarChart3,
+                    summarize_text: AlignLeft,
+                    translate_text: Languages,
                   };
                   const TOOL_COLOR_MAP: Record<string, string> = {
                     parse_document: '#3b82f6',
@@ -278,6 +284,12 @@ const Agents = () => {
                     web_search: '#a855f7',
                     search_reddit: '#f97316',
                     search_knowledge: '#06b6d4',
+                    generate_docx: '#6366f1',
+                    generate_spreadsheet: '#10b981',
+                    scrape_url: '#8b5cf6',
+                    analyze_data: '#f59e0b',
+                    summarize_text: '#0ea5e9',
+                    translate_text: '#f43f5e',
                   };
                   const Icon = TOOL_ICON_MAP[toolName] || Wrench;
                   const iconColor = TOOL_COLOR_MAP[toolName] || '#888';

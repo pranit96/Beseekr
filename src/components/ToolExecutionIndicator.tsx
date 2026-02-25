@@ -10,6 +10,12 @@ import {
     Loader2,
     CheckCircle2,
     XCircle,
+    FileType,
+    FileSpreadsheet,
+    Globe,
+    BarChart3,
+    AlignLeft,
+    Languages,
 } from 'lucide-react';
 
 const TOOL_ICONS: Record<string, React.ElementType> = {
@@ -19,6 +25,12 @@ const TOOL_ICONS: Record<string, React.ElementType> = {
     web_search: Search,
     search_reddit: MessageSquare,
     search_knowledge: Database,
+    generate_docx: FileType,
+    generate_spreadsheet: FileSpreadsheet,
+    scrape_url: Globe,
+    analyze_data: BarChart3,
+    summarize_text: AlignLeft,
+    translate_text: Languages,
 };
 
 const TOOL_LABELS: Record<string, string> = {
@@ -28,6 +40,12 @@ const TOOL_LABELS: Record<string, string> = {
     web_search: 'Searching the web',
     search_reddit: 'Searching Reddit',
     search_knowledge: 'Searching knowledge base',
+    generate_docx: 'Creating Word document',
+    generate_spreadsheet: 'Creating spreadsheet',
+    scrape_url: 'Scraping webpage',
+    analyze_data: 'Analyzing data',
+    summarize_text: 'Summarizing text',
+    translate_text: 'Translating text',
 };
 
 const TOOL_COLORS: Record<string, string> = {
@@ -37,6 +55,12 @@ const TOOL_COLORS: Record<string, string> = {
     web_search: 'text-purple-400',
     search_reddit: 'text-orange-400',
     search_knowledge: 'text-cyan-400',
+    generate_docx: 'text-indigo-400',
+    generate_spreadsheet: 'text-emerald-400',
+    scrape_url: 'text-violet-400',
+    analyze_data: 'text-amber-400',
+    summarize_text: 'text-sky-400',
+    translate_text: 'text-rose-400',
 };
 
 interface ToolExecution {
@@ -61,7 +85,7 @@ export function ToolExecutionIndicator({ executions }: ToolExecutionIndicatorPro
             </div>
             {executions.map((exec) => {
                 const Icon = TOOL_ICONS[exec.toolName] || Wrench;
-                const label = TOOL_LABELS[exec.toolName] || exec.toolName;
+                const label = TOOL_LABELS[exec.toolName] || exec.toolName.replace(/_/g, ' ');
                 const color = TOOL_COLORS[exec.toolName] || 'text-muted-foreground';
 
                 return (
