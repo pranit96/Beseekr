@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Plus, Pencil, Trash2, Search, Folder, User, Copy, Sparkles, BarChart3, ChevronDown, ChevronRight, Loader2, Workflow } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, Folder, User, Copy, Sparkles, BarChart3, ChevronDown, ChevronRight, Loader2, Workflow, Wrench, FileText, Mail, Globe, MessageSquare, Database, FileOutput } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -256,6 +256,46 @@ const Agents = () => {
           <p className="text-[13px] text-muted-foreground leading-relaxed line-clamp-2 mb-3">
             {agent.description || 'No description provided.'}
           </p>
+
+          {/* Tool badges */}
+          {agent.tools && agent.tools.length > 0 && (
+            <div className="flex items-center gap-1.5 mb-3">
+              <Wrench className="w-3 h-3 text-muted-foreground" />
+              <div className="flex flex-wrap gap-1">
+                {agent.tools.map((toolName) => {
+                  const TOOL_ICON_MAP: Record<string, React.ElementType> = {
+                    parse_document: FileText,
+                    generate_pdf: FileOutput,
+                    send_email: Mail,
+                    web_search: Globe,
+                    search_reddit: MessageSquare,
+                    search_knowledge: Database,
+                  };
+                  const TOOL_COLOR_MAP: Record<string, string> = {
+                    parse_document: '#3b82f6',
+                    generate_pdf: '#ef4444',
+                    send_email: '#22c55e',
+                    web_search: '#a855f7',
+                    search_reddit: '#f97316',
+                    search_knowledge: '#06b6d4',
+                  };
+                  const Icon = TOOL_ICON_MAP[toolName] || Wrench;
+                  const iconColor = TOOL_COLOR_MAP[toolName] || '#888';
+                  const label = toolName.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase());
+                  return (
+                    <span
+                      key={toolName}
+                      title={label}
+                      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-muted/50 border border-border/50"
+                    >
+                      <Icon className="w-3 h-3" style={{ color: iconColor }} />
+                      <span className="text-[10px] text-muted-foreground">{label.split(' ')[0]}</span>
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* System prompt preview */}
           {agent.system_prompt && (

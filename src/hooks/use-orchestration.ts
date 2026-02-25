@@ -26,6 +26,8 @@ interface OrchestrationCallbacks {
   onCancelReady?: (cancelFn: () => void) => void;
   onProgress?: (data: { step: number; total: number; agent_id?: string; agent_name?: string }) => void;
   onCancelled?: (data: any) => void;
+  onToolStart?: (data: { call_id: string; tool_name: string; agent_id: string }) => void;
+  onToolResult?: (data: { call_id: string; tool_name: string; agent_id: string; success: boolean; execution_time_ms?: number }) => void;
 }
 
 const useOrchestration = () => {
@@ -108,6 +110,12 @@ const useOrchestration = () => {
           },
           onCancelled: (data) => {
             callbacks.onCancelled?.(data);
+          },
+          onToolStart: (data) => {
+            callbacks.onToolStart?.(data);
+          },
+          onToolResult: (data) => {
+            callbacks.onToolResult?.(data);
           },
         });
 

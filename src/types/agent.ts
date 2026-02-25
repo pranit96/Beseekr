@@ -12,8 +12,31 @@ export interface Agent {
   is_active?: boolean;
   is_public?: boolean;
   metadata?: any;
+  tools?: string[];
   created_at?: string;
   updated_at?: string;
+}
+
+// Tool definition from GET /api/tools
+export interface ToolDefinition {
+  name: string;
+  description: string;
+  parameters: {
+    type: string;
+    properties: Record<string, any>;
+    required?: string[];
+  };
+  requiresApproval?: boolean;
+}
+
+// Tool execution events from socket
+export interface ToolExecutionEvent {
+  requestId: string;
+  agent_id: string;
+  tool_name: string;
+  call_id: string;
+  success?: boolean;
+  execution_time_ms?: number;
 }
 
 export interface AgentResponse {

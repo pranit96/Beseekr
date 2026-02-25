@@ -14,6 +14,7 @@ import { apiClient } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import useOrchestration from '@/hooks/use-orchestration';
 import { Sparkles, Play, Square, Loader2 } from 'lucide-react';
+import { ToolPicker } from '@/components/ToolPicker';
 
 interface AgentDialogProps {
   open: boolean;
@@ -32,6 +33,7 @@ export const AgentDialog = ({
   const [description, setDescription] = useState('');
   const [domain, setDomain] = useState('');
   const [systemPrompt, setSystemPrompt] = useState('');
+  const [tools, setTools] = useState<string[]>([]);
 
   // Enhance prompt state
   const [isEnhancing, setIsEnhancing] = useState(false);
@@ -52,11 +54,13 @@ export const AgentDialog = ({
       setDescription(agent.description);
       setDomain(agent.domain || '');
       setSystemPrompt(agent.system_prompt || '');
+      setTools(agent.tools || []);
     } else {
       setName('');
       setDescription('');
       setDomain('');
       setSystemPrompt('');
+      setTools([]);
     }
     // Reset test state when switching agents
     setTestOutput('');
@@ -75,6 +79,7 @@ export const AgentDialog = ({
       system_prompt: systemPrompt,
       color: agent?.color || 'hsl(var(--primary))',
       is_default: false,
+      tools,
     });
   };
 
@@ -231,6 +236,9 @@ export const AgentDialog = ({
               rows={3}
             />
           </div>
+
+          {/* Tool Picker */}
+          <ToolPicker selectedTools={tools} onChange={setTools} />
 
           {/* Test Agent Panel */}
           {agent?.id && (

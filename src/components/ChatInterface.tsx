@@ -1,6 +1,7 @@
 // src/components/ChatInterface.tsx
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Send, Workflow, Lock, LockOpen, X, Sparkles, WifiOff, Loader2, Download } from 'lucide-react';
+import { ToolExecutionIndicator } from '@/components/ToolExecutionIndicator';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { AgentSelector } from './AgentSelector';
@@ -74,6 +75,7 @@ export const ChatInterface: React.FC<{
   const [preparingMessage, setPreparingMessage] = useState(false);
   const [orchestrationProgress, setOrchestrationProgress] = useState<{ step: number; total: number; agent_name?: string } | null>(null);
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
+  const [toolExecutions, setToolExecutions] = useState<Array<{ callId: string; toolName: string; status: 'running' | 'success' | 'error'; executionTimeMs?: number }>>([]);
 
   const cancelRef = useRef<null | (() => void)>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -459,6 +461,24 @@ export const ChatInterface: React.FC<{
         onCancelled: (data) => {
           logger.info('Orchestration cancelled confirmed', data);
           setOrchestrationProgress(null);
+          setToolExecutions([]);
+        },
+        onToolStart: (data) => {
+          logger.info('Tool started', { tool: data.tool_name, callId: data.call_id });
+          setToolExecutions(prev => [
+            ...prev,
+            { callId: data.call_id, toolName: data.tool_name, status: 'running' },
+          ]);
+        },
+        onToolResult: (data) => {
+          logger.info('Tool result', { tool: data.tool_name, success: data.success, time: data.execution_time_ms });
+          setToolExecutions(prev =>
+            prev.map(te =>
+              te.callId === data.call_id
+                ? { ...te, status: data.success ? 'success' : 'error', executionTimeMs: data.execution_time_ms }
+                : te
+            )
+          );
         },
         onDone: (doneData: any) => {
           logger.info('Orchestration completed', { data: doneData });
@@ -521,6 +541,7 @@ export const ChatInterface: React.FC<{
       setIsLoadingLocal(false);
       setPreparingMessage(false);
       setOrchestrationProgress(null);
+      setToolExecutions([]);
       cancelRef.current = null;
 
       // Mark orchestration as complete
@@ -758,6 +779,9 @@ export const ChatInterface: React.FC<{
           <PreparingBanner />
           <CancellingBanner />
           <ProgressBanner />
+          {isExecuting && toolExecutions.length > 0 && (
+            <ToolExecutionIndicator executions={toolExecutions} />
+          )}
 
           <WelcomeScreen
             onPromptSelect={(prompt) => {

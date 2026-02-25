@@ -396,6 +396,11 @@ class ApiClient {
     });
   }
 
+  // Tools endpoints
+  async getTools() {
+    return this.request<any>('/api/tools');
+  }
+
   // Orchestration endpoints
   async executeOrchestration(payload: {
     agent_ids: string[];

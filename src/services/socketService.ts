@@ -21,6 +21,8 @@ interface OrchestrationCallbacks {
   onRateLimit?: (data: any) => void;
   onProgress?: (data: { step: number; total: number; agent_id?: string; agent_name?: string }) => void;
   onCancelled?: (data: any) => void;
+  onToolStart?: (data: { call_id: string; tool_name: string; agent_id: string }) => void;
+  onToolResult?: (data: { call_id: string; tool_name: string; agent_id: string; success: boolean; execution_time_ms?: number }) => void;
 }
 
 interface OrchestrationPayload {
@@ -425,6 +427,18 @@ class SocketService {
       }
     };
 
+    const onToolStart = (data: any) => {
+      if (data.requestId === requestId) {
+        callbacks.onToolStart?.(data);
+      }
+    };
+
+    const onToolResult = (data: any) => {
+      if (data.requestId === requestId) {
+        callbacks.onToolResult?.(data);
+      }
+    };
+
     const cleanup = () => {
       this.socket?.off('orchestration:ack', onAck);
       this.socket?.off('orchestration:token', onToken);
@@ -436,6 +450,8 @@ class SocketService {
       this.socket?.off('orchestration:rate_limit', onRateLimit);
       this.socket?.off('orchestration:progress', onProgress);
       this.socket?.off('orchestration:cancelled', onCancelled);
+      this.socket?.off('orchestration:tool_start', onToolStart);
+      this.socket?.off('orchestration:tool_result', onToolResult);
       this.activeRequests.delete(requestId);
     };
 
@@ -463,6 +479,8 @@ class SocketService {
     this.socket.on('orchestration:rate_limit', onRateLimit);
     this.socket.on('orchestration:progress', onProgress);
     this.socket.on('orchestration:cancelled', onCancelled);
+    this.socket.on('orchestration:tool_start', onToolStart);
+    this.socket.on('orchestration:tool_result', onToolResult);
 
     // Emit request with timeout
     const emitTimeout = setTimeout(() => {
