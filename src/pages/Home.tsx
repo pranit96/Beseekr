@@ -84,6 +84,26 @@ const cards: Card[] = [
         available: true,
     },
     {
+        id: 'stocks',
+        icon: TrendingUp,
+        title: 'Stock Strategy Signals',
+        badge: 'AI-Powered',
+        badgeColor: 'bg-blue-500/15 text-blue-400 border border-blue-500/20',
+        description:
+            'High-probability trading setups identified by AI. Mean reversion, breakouts, and event-driven plays with defined entry, target, and stop loss.',
+        features: [
+            'Strategy-based signals',
+            'Risk/reward analysis',
+            'Trade journal & performance',
+        ],
+        gradient: 'from-blue-600/20 via-indigo-500/10 to-purple-500/10',
+        borderGlow: 'hover:border-blue-500/50 hover:shadow-blue-500/10',
+        iconBg: 'from-blue-500 to-indigo-500',
+        cta: 'View Signals',
+        route: '/dashboard/stocks',
+        available: true,
+    },
+    {
         id: 'coming-soon',
         icon: Plus,
         title: 'More Tools Coming Soon',

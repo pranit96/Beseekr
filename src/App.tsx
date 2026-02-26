@@ -83,6 +83,11 @@ const ProblemDetails = lazyRetry(() => import("./pages/saas/ProblemDetails"), "P
 const Validate = lazyRetry(() => import("./pages/saas/Validate"), "Validate");
 const SaasWatchlist = lazyRetry(() => import("./pages/saas/Watchlist"), "Watchlist");
 const Pricing = lazyRetry(() => import("./pages/saas/Pricing"), "Pricing");
+const StockStrategyDashboard = lazyRetry(() => import("./pages/saas/StockStrategyDashboard"), "StockStrategyDashboard");
+const SignalDetails = lazyRetry(() => import("./pages/saas/SignalDetails"), "SignalDetails");
+const BudgetPortfolio = lazyRetry(() => import("./pages/saas/BudgetPortfolio"), "BudgetPortfolio");
+const AdvancedAnalysis = lazyRetry(() => import("./pages/saas/AdvancedAnalysis"), "AdvancedAnalysis");
+const MarketDashboard = lazyRetry(() => import("./pages/saas/MarketDashboard"), "MarketDashboard");
 
 // CAT Prep Dashboard - HIDDEN (module disabled)
 // import { CatDashboardLayout } from "./layouts/CatDashboardLayout";
@@ -221,6 +226,11 @@ const App = () => {
                     <Route path="watchlist" element={<Suspense fallback={<PageLoader />}><SaasWatchlist /></Suspense>} />
                     <Route path="pricing" element={<Suspense fallback={<PageLoader />}><Pricing /></Suspense>} />
                     <Route path="profile" element={<Suspense fallback={<PageLoader />}><Profile /></Suspense>} />
+                    <Route path="stocks" element={<Suspense fallback={<PageLoader />}><StockStrategyDashboard /></Suspense>} />
+                    <Route path="stocks/signal/:signalId" element={<Suspense fallback={<PageLoader />}><SignalDetails /></Suspense>} />
+                    <Route path="stocks/budget" element={<Suspense fallback={<PageLoader />}><BudgetPortfolio /></Suspense>} />
+                    <Route path="stocks/advanced/:symbol" element={<Suspense fallback={<PageLoader />}><AdvancedAnalysis /></Suspense>} />
+                    <Route path="stocks/market" element={<Suspense fallback={<PageLoader />}><MarketDashboard /></Suspense>} />
                   </Route>
 
                   {/* =============================================
