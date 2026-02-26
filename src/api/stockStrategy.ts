@@ -1,4 +1,4 @@
-import { api } from '@/lib/api';
+import { api } from '@/lib/apiWrapper';
 
 export interface Stock {
   id: string;
