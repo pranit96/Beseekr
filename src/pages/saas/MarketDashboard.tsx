@@ -17,6 +17,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { stockStrategyApi } from '@/api/stockStrategy';
 
 interface MarketRegime {
   regime: string;
@@ -68,47 +69,24 @@ export default function MarketDashboard() {
   }, [isAuthenticated]);
 
   const checkAuth = () => {
-    const token = localStorage.getItem('authToken');
-    if (!token) {
-      toast.error('Please login to access market dashboard');
-      navigate('/login');
-      return;
-    }
+    // Auth is handled by apiClient automatically via cookies
     setIsAuthenticated(true);
   };
 
   const loadData = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('authToken');
-      const headers = {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      };
-
-      const [regimeRes, drawdownRes, correlationRes] = await Promise.all([
-        fetch(`${import.meta.env.VITE_API_URL}/api/stock-strategy/advanced/market-regime`, { headers }),
-        fetch(`${import.meta.env.VITE_API_URL}/api/stock-strategy/advanced/drawdown-status`, { headers }),
-        fetch(`${import.meta.env.VITE_API_URL}/api/stock-strategy/advanced/portfolio/correlation`, { headers })
-      ]);
-
-      if (regimeRes.status === 401 || drawdownRes.status === 401 || correlationRes.status === 401) {
-        toast.error('Session expired. Please login again.');
-        navigate('/login');
-        return;
-      }
-
       const [regimeData, drawdownData, correlationData] = await Promise.all([
-        regimeRes.json(),
-        drawdownRes.json(),
-        correlationRes.json()
+        stockStrategyApi.getMarketRegime(),
+        stockStrategyApi.getDrawdownStatus(),
+        stockStrategyApi.getPortfolioCorrelation()
       ]);
 
-      if (regimeData.success) setRegime(regimeData.data.regime);
-      if (drawdownData.success) setDrawdown(drawdownData.data);
-      if (correlationData.success) setCorrelation(correlationData.data);
-    } catch (error) {
-      toast.error('Failed to load market data');
+      setRegime(regimeData.regime);
+      setDrawdown(drawdownData);
+      setCorrelation(correlationData);
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to load market data');
       console.error(error);
     } finally {
       setLoading(false);

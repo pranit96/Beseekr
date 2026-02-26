@@ -723,6 +723,156 @@ class ApiClient {
     return this.request<any>('/api/deck-to-model/metrics');
   }
 
+  // ========== STOCK STRATEGY ENDPOINTS ==========
+
+  // Signals
+  async getStockSignals(filters?: { strategy?: string; min_confidence?: number }) {
+    const params = new URLSearchParams();
+    if (filters?.strategy) params.append('strategy', filters.strategy);
+    if (filters?.min_confidence) params.append('min_confidence', filters.min_confidence.toString());
+    
+    return this.request<any>(`/api/stock-strategy/signals?${params}`);
+  }
+
+  async getStockSignalDetails(signalId: string) {
+    return this.request<any>(`/api/stock-strategy/signals/${signalId}`);
+  }
+
+  async getStockSignalsWithEvents(filters?: { has_event?: boolean; days?: number }) {
+    const params = new URLSearchParams();
+    if (filters?.has_event !== undefined) params.append('has_event', filters.has_event.toString());
+    if (filters?.days) params.append('days', filters.days.toString());
+    
+    return this.request<any>(`/api/stock-strategy/signals/with-events?${params}`);
+  }
+
+  async triggerStockScan() {
+    this.invalidateCache('/api/stock-strategy/signals');
+    return this.request<any>('/api/stock-strategy/signals/scan', {
+      method: 'POST',
+    });
+  }
+
+  // Analysis
+  async analyzeStock(symbol: string) {
+    return this.request<any>(`/api/stock-strategy/analysis/stock/${symbol}`, {
+      method: 'POST',
+    });
+  }
+
+  async getAdvancedTechnicalAnalysis(symbol: string) {
+    return this.request<any>(`/api/stock-strategy/analysis/technical/${symbol}`);
+  }
+
+  async getAdvancedFundamentalAnalysis(symbol: string) {
+    return this.request<any>(`/api/stock-strategy/analysis/fundamental/${symbol}`);
+  }
+
+  async getComprehensiveAnalysis(symbol: string) {
+    return this.request<any>(`/api/stock-strategy/analysis/comprehensive/${symbol}`);
+  }
+
+  // Strategies
+  async getStockStrategies() {
+    return this.request<any>('/api/stock-strategy/strategies');
+  }
+
+  // Trades
+  async recordStockTrade(data: {
+    signal_id: string;
+    entry_price: number;
+    shares: number;
+    notes?: string;
+  }) {
+    this.invalidateCache('/api/stock-strategy/trades');
+    return this.request<any>('/api/stock-strategy/trades', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async closeStockTrade(tradeId: string, data: { exit_price: number; notes?: string }) {
+    this.invalidateCache('/api/stock-strategy/trades');
+    return this.request<any>(`/api/stock-strategy/trades/${tradeId}/close`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getStockTrades(filters?: { status?: string; page?: number; limit?: number }) {
+    const params = new URLSearchParams();
+    if (filters?.status) params.append('status', filters.status);
+    if (filters?.page) params.append('page', filters.page.toString());
+    if (filters?.limit) params.append('limit', filters.limit.toString());
+    
+    return this.request<any>(`/api/stock-strategy/trades?${params}`);
+  }
+
+  // Portfolio
+  async getStockPerformanceStats() {
+    return this.request<any>('/api/stock-strategy/portfolio/performance');
+  }
+
+  async getPortfolioCorrelation() {
+    return this.request<any>('/api/stock-strategy/portfolio/correlation');
+  }
+
+  async calculatePositionSize(data: {
+    account_size: number;
+    risk_percent?: number;
+    entry_price: number;
+    stop_loss: number;
+  }) {
+    return this.request<any>('/api/stock-strategy/portfolio/position', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  // Market
+  async getMarketRegime() {
+    return this.request<any>('/api/stock-strategy/market/regime');
+  }
+
+  async getUpcomingEvents(filters?: { days?: number; type?: string }) {
+    const params = new URLSearchParams();
+    if (filters?.days) params.append('days', filters.days.toString());
+    if (filters?.type) params.append('type', filters.type);
+    
+    return this.request<any>(`/api/stock-strategy/market/events?${params}`);
+  }
+
+  async getDrawdownStatus() {
+    return this.request<any>('/api/stock-strategy/market/drawdown');
+  }
+
+  // Budget Portfolio
+  async generateBudgetPortfolio(data: {
+    budget: number;
+    risk_profile: 'conservative' | 'moderate' | 'aggressive';
+    timeframe: 'day' | 'week' | 'month' | 'year';
+  }) {
+    return this.request<any>('/api/stock-strategy/budget-portfolio/generate', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  // Validation
+  async validateSignalWithClaude(signalId: string) {
+    return this.request<any>('/api/stock-strategy/validate/claude', {
+      method: 'POST',
+      body: JSON.stringify({ signalId }),
+    });
+  }
+
+  // Config
+  async getStockLLMConfig() {
+    return this.request<any>('/api/stock-strategy/llm/config');
+  }
+
+  // ========== END STOCK STRATEGY ENDPOINTS ==========
+
   // Notification preferences endpoints
   async getNotificationPreferences() {
     return this.request<{

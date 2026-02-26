@@ -3,14 +3,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { TrendingUp, TrendingDown, Activity, AlertCircle, RefreshCw } from 'lucide-react';
+import { TrendingUp, Activity, AlertCircle, RefreshCw, DollarSign } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
+import { stockStrategyApi } from '@/api/stockStrategy';
 
 export default function StockStrategyDashboard() {
   const navigate = useNavigate();
   const [signals, setSignals] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [marketRegime, setMarketRegime] = useState(null);
+  const [marketRegime, setMarketRegime] = useState<any>(null);
 
   useEffect(() => {
     fetchData();
@@ -19,15 +21,25 @@ export default function StockStrategyDashboard() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Fetch signals and market regime
-      // TODO: Implement API calls
-      setSignals([]);
-      setMarketRegime(null);
-    } catch (error) {
+      // Fetch signals using API
+      const signalsData = await stockStrategyApi.getSignals();
+      setSignals(signalsData);
+
+      // Fetch market regime using API
+      const regimeData = await stockStrategyApi.getMarketRegime();
+      setMarketRegime(regimeData.regime);
+    } catch (error: any) {
       console.error('Error fetching data:', error);
+      toast.error(error.message || 'Failed to load dashboard data');
     } finally {
       setLoading(false);
     }
+  };
+
+  const getRegimeColor = (regime: string) => {
+    if (regime?.includes('BULL')) return 'text-green-500';
+    if (regime?.includes('BEAR')) return 'text-red-500';
+    return 'text-blue-500';
   };
 
   return (
@@ -53,11 +65,11 @@ export default function StockStrategyDashboard() {
           <div className="flex items-center gap-4">
             <Activity className="h-8 w-8 text-blue-500" />
             <div>
-              <p className="text-2xl font-bold">
+              <p className={`text-2xl font-bold ${marketRegime ? getRegimeColor(marketRegime.regime) : ''}`}>
                 {marketRegime?.regime || 'Loading...'}
               </p>
               <p className="text-sm text-muted-foreground">
-                Recommended: {marketRegime?.recommended_strategy || 'N/A'}
+                Confidence: {marketRegime?.confidence || 'N/A'}%
               </p>
             </div>
           </div>
@@ -84,7 +96,7 @@ export default function StockStrategyDashboard() {
                 <div className="text-center">
                   <AlertCircle className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
                   <p className="text-muted-foreground">No active signals</p>
-                  <Button className="mt-4" onClick={() => navigate('/saas/stocks/budget')}>
+                  <Button className="mt-4" onClick={() => navigate('/dashboard/stocks/budget')}>
                     Generate Budget Portfolio
                   </Button>
                 </div>
@@ -93,14 +105,17 @@ export default function StockStrategyDashboard() {
           ) : (
             signals.map((signal: any) => (
               <Card key={signal.id} className="cursor-pointer hover:shadow-lg transition-shadow"
-                onClick={() => navigate(`/saas/stocks/signal/${signal.id}`)}>
+                onClick={() => navigate(`/dashboard/stocks/signal/${signal.id}`)}>
                 <CardContent className="p-6">
                   <div className="flex justify-between items-start">
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">
-                        <h3 className="text-xl font-bold">{signal.symbol}</h3>
+                        <h3 className="text-xl font-bold">{signal.stocks?.symbol || signal.symbol}</h3>
                         <Badge variant={signal.action === 'BUY' ? 'default' : 'destructive'}>
                           {signal.action}
+                        </Badge>
+                        <Badge variant="outline">
+                          {signal.confidence || signal.confidence_score}% confidence
                         </Badge>
                       </div>
                       <p className="text-sm text-muted-foreground">{signal.strategy}</p>
@@ -109,6 +124,9 @@ export default function StockStrategyDashboard() {
                       <p className="text-2xl font-bold">₹{signal.entry_price}</p>
                       <p className="text-sm text-muted-foreground">
                         Target: ₹{signal.target_price}
+                      </p>
+                      <p className="text-sm text-red-500">
+                        Stop: ₹{signal.stop_loss}
                       </p>
                     </div>
                   </div>
@@ -130,7 +148,7 @@ export default function StockStrategyDashboard() {
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="cursor-pointer hover:shadow-lg transition-shadow"
-          onClick={() => navigate('/saas/stocks/advanced-analysis')}>
+          onClick={() => navigate('/dashboard/stocks/advanced/RELIANCE')}>
           <CardContent className="p-6">
             <TrendingUp className="h-8 w-8 text-green-500 mb-2" />
             <h3 className="font-bold">Advanced Analysis</h3>
@@ -139,7 +157,7 @@ export default function StockStrategyDashboard() {
         </Card>
 
         <Card className="cursor-pointer hover:shadow-lg transition-shadow"
-          onClick={() => navigate('/saas/stocks/market')}>
+          onClick={() => navigate('/dashboard/stocks/market')}>
           <CardContent className="p-6">
             <Activity className="h-8 w-8 text-blue-500 mb-2" />
             <h3 className="font-bold">Market Dashboard</h3>
@@ -148,9 +166,9 @@ export default function StockStrategyDashboard() {
         </Card>
 
         <Card className="cursor-pointer hover:shadow-lg transition-shadow"
-          onClick={() => navigate('/saas/stocks/budget')}>
+          onClick={() => navigate('/dashboard/stocks/budget')}>
           <CardContent className="p-6">
-            <TrendingDown className="h-8 w-8 text-purple-500 mb-2" />
+            <DollarSign className="h-8 w-8 text-yellow-500 mb-2" />
             <h3 className="font-bold">Budget Portfolio</h3>
             <p className="text-sm text-muted-foreground">AI-Generated</p>
           </CardContent>

@@ -19,6 +19,7 @@ import {
   Info
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { stockStrategyApi } from '@/api/stockStrategy';
 
 export default function BudgetPortfolio() {
   const navigate = useNavigate();
@@ -36,30 +37,21 @@ export default function BudgetPortfolio() {
 
     setLoading(true);
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/stock-strategy/generate-portfolio`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            budget: parseFloat(budget),
-            risk_profile: riskProfile,
-            timeframe
-          })
-        }
-      );
+      const result = await stockStrategyApi.generateBudgetPortfolio({
+        budget: parseFloat(budget),
+        risk_profile: riskProfile as 'conservative' | 'moderate' | 'aggressive',
+        timeframe: timeframe as 'day' | 'week' | 'month' | 'year'
+      });
 
-      const result = await response.json();
-      
       if (result.success) {
-        setPortfolio(result.data);
+        setPortfolio(result);
         toast.success('Portfolio generated successfully!');
       } else {
-        toast.error(result.data?.message || 'Failed to generate portfolio');
-        setPortfolio(result.data);
+        toast.error(result.message || 'Failed to generate portfolio');
+        setPortfolio(result);
       }
-    } catch (error) {
-      toast.error('Failed to generate portfolio');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to generate portfolio');
     } finally {
       setLoading(false);
     }

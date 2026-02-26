@@ -23,6 +23,7 @@ import {
   LineChart
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { stockStrategyApi } from '@/api/stockStrategy';
 
 interface AdvancedAnalysisData {
   symbol: string;
@@ -52,54 +53,30 @@ export default function AdvancedAnalysis() {
   }, [symbol, isAuthenticated, activeTab]);
 
   const checkAuth = () => {
-    const token = localStorage.getItem('authToken');
-    if (!token) {
-      toast.error('Please login to access advanced analysis');
-      navigate('/login');
-      return;
-    }
+    // Auth is handled by apiClient automatically via cookies
     setIsAuthenticated(true);
   };
 
   const loadAnalysis = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('authToken');
-      let endpoint = '';
+      let data;
 
       switch (activeTab) {
         case 'comprehensive':
-          endpoint = `/api/stock-strategy/advanced/comprehensive/${symbol}`;
+          data = await stockStrategyApi.getComprehensiveAnalysis(symbol!);
           break;
         case 'technical':
-          endpoint = `/api/stock-strategy/advanced/technical/${symbol}`;
+          data = await stockStrategyApi.getAdvancedTechnicalAnalysis(symbol!);
           break;
         case 'fundamental':
-          endpoint = `/api/stock-strategy/advanced/fundamental/${symbol}`;
+          data = await stockStrategyApi.getAdvancedFundamentalAnalysis(symbol!);
           break;
       }
 
-      const response = await fetch(`${import.meta.env.VITE_API_URL}${endpoint}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.status === 401) {
-        toast.error('Session expired. Please login again.');
-        navigate('/login');
-        return;
-      }
-
-      const result = await response.json();
-      if (result.success) {
-        setAnalysis(result.data);
-      } else {
-        toast.error(result.error || 'Failed to load analysis');
-      }
-    } catch (error) {
-      toast.error('Failed to load advanced analysis');
+      setAnalysis(data);
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to load analysis');
       console.error(error);
     } finally {
       setLoading(false);
