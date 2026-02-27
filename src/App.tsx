@@ -77,6 +77,9 @@ const AuthCallback = lazyRetry(() => import("./pages/AuthCallback"), "AuthCallba
 // SaaS Dashboard - Layout loaded immediately, pages lazy loaded
 import { SaasDashboardLayout } from "./layouts/SaasDashboardLayout";
 
+// Trading System - Layout loaded immediately, pages lazy loaded
+import { TradingLayout } from "./layouts/TradingLayout";
+
 // Dashboard pages with retry logic
 const ProblemsList = lazyRetry(() => import("./pages/saas/ProblemsList"), "ProblemsList");
 const ProblemDetails = lazyRetry(() => import("./pages/saas/ProblemDetails"), "ProblemDetails");
@@ -92,6 +95,18 @@ const LiveTradingDashboard = lazyRetry(() => import("./pages/saas/LiveTradingDas
 const AdvancedFilters = lazyRetry(() => import("./pages/saas/AdvancedFilters"), "AdvancedFilters");
 const MyPositions = lazyRetry(() => import("./pages/saas/MyPositions"), "MyPositions");
 const SystemMonitoring = lazyRetry(() => import("./pages/saas/SystemMonitoring"), "SystemMonitoring");
+
+// Trading System pages with retry logic
+const TradingOverview = lazyRetry(() => import("./pages/trading/Overview"), "TradingOverview");
+const TradingLive = lazyRetry(() => import("./pages/trading/LiveTrading"), "TradingLive");
+const TradingPositions = lazyRetry(() => import("./pages/trading/Positions"), "TradingPositions");
+const TradingHistory = lazyRetry(() => import("./pages/trading/TradeHistory"), "TradingHistory");
+const TradingSignals = lazyRetry(() => import("./pages/trading/Signals"), "TradingSignals");
+const TradingAnalytics = lazyRetry(() => import("./pages/trading/Analytics"), "TradingAnalytics");
+const TradingMarket = lazyRetry(() => import("./pages/trading/Market"), "TradingMarket");
+const TradingSystem = lazyRetry(() => import("./pages/trading/System"), "TradingSystem");
+const TradingAlerts = lazyRetry(() => import("./pages/trading/Alerts"), "TradingAlerts");
+const TradingSettings = lazyRetry(() => import("./pages/trading/Settings"), "TradingSettings");
 
 // CAT Prep Dashboard - HIDDEN (module disabled)
 // import { CatDashboardLayout } from "./layouts/CatDashboardLayout";
@@ -239,6 +254,24 @@ const App = () => {
                     <Route path="stocks/analysis/:symbol" element={<Suspense fallback={<PageLoader />}><AdvancedAnalysis /></Suspense>} />
                     <Route path="stocks/market" element={<Suspense fallback={<PageLoader />}><MarketDashboard /></Suspense>} />
                     <Route path="monitoring" element={<Suspense fallback={<PageLoader />}><SystemMonitoring /></Suspense>} />
+                  </Route>
+
+                  {/* =============================================
+                      TRADING SYSTEM - NEW PROFESSIONAL INTERFACE
+                      Complete from-scratch implementation
+                      ============================================= */}
+                  <Route path="/trading" element={<TradingLayout />}>
+                    <Route index element={<Navigate to="overview" replace />} />
+                    <Route path="overview" element={<Suspense fallback={<PageLoader />}><TradingOverview /></Suspense>} />
+                    <Route path="live" element={<Suspense fallback={<PageLoader />}><TradingLive /></Suspense>} />
+                    <Route path="positions" element={<Suspense fallback={<PageLoader />}><TradingPositions /></Suspense>} />
+                    <Route path="history" element={<Suspense fallback={<PageLoader />}><TradingHistory /></Suspense>} />
+                    <Route path="signals" element={<Suspense fallback={<PageLoader />}><TradingSignals /></Suspense>} />
+                    <Route path="analytics" element={<Suspense fallback={<PageLoader />}><TradingAnalytics /></Suspense>} />
+                    <Route path="market" element={<Suspense fallback={<PageLoader />}><TradingMarket /></Suspense>} />
+                    <Route path="system" element={<Suspense fallback={<PageLoader />}><TradingSystem /></Suspense>} />
+                    <Route path="alerts" element={<Suspense fallback={<PageLoader />}><TradingAlerts /></Suspense>} />
+                    <Route path="settings" element={<Suspense fallback={<PageLoader />}><TradingSettings /></Suspense>} />
                   </Route>
 
                   {/* =============================================
