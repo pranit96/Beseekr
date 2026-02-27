@@ -245,14 +245,20 @@ const App = () => {
                     <Route path="watchlist" element={<Suspense fallback={<PageLoader />}><SaasWatchlist /></Suspense>} />
                     <Route path="pricing" element={<Suspense fallback={<PageLoader />}><Pricing /></Suspense>} />
                     <Route path="profile" element={<Suspense fallback={<PageLoader />}><Profile /></Suspense>} />
-                    <Route path="stocks" element={<Suspense fallback={<PageLoader />}><StockStrategyDashboard /></Suspense>} />
-                    <Route path="stocks/live" element={<Suspense fallback={<PageLoader />}><LiveTradingDashboard /></Suspense>} />
-                    <Route path="stocks/positions" element={<Suspense fallback={<PageLoader />}><MyPositions /></Suspense>} />
-                    <Route path="stocks/filters" element={<Suspense fallback={<PageLoader />}><AdvancedFilters /></Suspense>} />
-                    <Route path="stocks/signal/:signalId" element={<Suspense fallback={<PageLoader />}><SignalDetails /></Suspense>} />
-                    <Route path="stocks/budget" element={<Suspense fallback={<PageLoader />}><BudgetPortfolio /></Suspense>} />
-                    <Route path="stocks/analysis/:symbol" element={<Suspense fallback={<PageLoader />}><AdvancedAnalysis /></Suspense>} />
-                    <Route path="stocks/market" element={<Suspense fallback={<PageLoader />}><MarketDashboard /></Suspense>} />
+                    
+                    {/* OLD STOCK ROUTES - Redirect to new trading system */}
+                    <Route path="stocks" element={<Navigate to="/trading/overview" replace />} />
+                    <Route path="stocks/*" element={<Navigate to="/trading/overview" replace />} />
+                    
+                    {/* Keep old routes for backward compatibility but show redirect banner */}
+                    <Route path="stocks-old" element={<Suspense fallback={<PageLoader />}><StockStrategyDashboard /></Suspense>} />
+                    <Route path="stocks-old/live" element={<Suspense fallback={<PageLoader />}><LiveTradingDashboard /></Suspense>} />
+                    <Route path="stocks-old/positions" element={<Suspense fallback={<PageLoader />}><MyPositions /></Suspense>} />
+                    <Route path="stocks-old/filters" element={<Suspense fallback={<PageLoader />}><AdvancedFilters /></Suspense>} />
+                    <Route path="stocks-old/signal/:signalId" element={<Suspense fallback={<PageLoader />}><SignalDetails /></Suspense>} />
+                    <Route path="stocks-old/budget" element={<Suspense fallback={<PageLoader />}><BudgetPortfolio /></Suspense>} />
+                    <Route path="stocks-old/analysis/:symbol" element={<Suspense fallback={<PageLoader />}><AdvancedAnalysis /></Suspense>} />
+                    <Route path="stocks-old/market" element={<Suspense fallback={<PageLoader />}><MarketDashboard /></Suspense>} />
                     <Route path="monitoring" element={<Suspense fallback={<PageLoader />}><SystemMonitoring /></Suspense>} />
                   </Route>
 

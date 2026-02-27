@@ -44,6 +44,26 @@ export default function StockStrategyDashboard() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
+      {/* Redirect Notice to New Trading System */}
+      <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
+        <div className="flex items-start gap-3">
+          <TrendingUp className="h-5 w-5 text-blue-400 flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <div className="font-medium text-blue-400 mb-1">🎉 New Professional Trading System Available!</div>
+            <div className="text-sm text-slate-300 mb-3">
+              We've launched a completely redesigned trading system with real-time updates, advanced analytics, 
+              and 10 professional pages. Click below to access the new system.
+            </div>
+            <Button 
+              onClick={() => navigate('/trading/overview')}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              Go to New Trading System →
+            </Button>
+          </div>
+        </div>
+      </div>
+
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">Stock Trading Dashboard</h1>

@@ -100,7 +100,7 @@ const cards: Card[] = [
         borderGlow: 'hover:border-blue-500/50 hover:shadow-blue-500/10',
         iconBg: 'from-blue-500 to-indigo-500',
         cta: 'View Signals',
-        route: '/dashboard/stocks',
+        route: '/trading/overview',
         available: true,
     },
     {
