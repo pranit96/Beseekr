@@ -126,22 +126,22 @@ export default function Positions() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                   <div>
                     <div className="text-sm text-slate-400 mb-1">Entry Price</div>
-                    <div className="text-lg font-bold text-white">₹{position.entry_price.toFixed(2)}</div>
+                    <div className="text-lg font-bold text-white">₹{position.entry_price?.toFixed(2) || '0.00'}</div>
                   </div>
                   <div>
                     <div className="text-sm text-slate-400 mb-1">Current Price</div>
                     <div className="text-lg font-bold text-white">
-                      ₹{position.current_price?.toFixed(2) || position.entry_price.toFixed(2)}
+                      ₹{(position.current_price || position.entry_price)?.toFixed(2) || '0.00'}
                     </div>
                   </div>
                   <div>
                     <div className="text-sm text-slate-400 mb-1">Shares</div>
-                    <div className="text-lg font-bold text-white">{position.shares}</div>
+                    <div className="text-lg font-bold text-white">{position.shares || 0}</div>
                   </div>
                   <div>
                     <div className="text-sm text-slate-400 mb-1">Position Value</div>
                     <div className="text-lg font-bold text-white">
-                      ₹{((position.current_price || position.entry_price) * position.shares).toFixed(2)}
+                      ₹{(((position.current_price || position.entry_price) || 0) * (position.shares || 0)).toFixed(2)}
                     </div>
                   </div>
                 </div>

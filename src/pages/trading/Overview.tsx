@@ -1,14 +1,17 @@
 import { useEffect, useState } from 'react';
 import { tradingApi, isTradingError } from '@/api/trading';
 import { useTradingWebSocket } from '@/hooks/useTradingWebSocket';
-import { TrendingUp, TrendingDown, Briefcase, Target, AlertCircle } from 'lucide-react';
+import { TrendingUp, TrendingDown, Briefcase, Target, AlertCircle, Newspaper } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { NewsCard } from '@/components/trading/NewsCard';
 import type { PortfolioMetrics, Position } from '@/types/trading';
 
 export default function Overview() {
   const { realtimePnL, subscribeToPnL } = useTradingWebSocket();
   const [metrics, setMetrics] = useState<PortfolioMetrics | null>(null);
   const [positions, setPositions] = useState<Position[]>([]);
+  const [trendingNews, setTrendingNews] = useState<any[]>([]);
+  const [marketSentiment, setMarketSentiment] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -22,13 +25,17 @@ export default function Overview() {
       setLoading(true);
       setError(null);
       
-      const [metricsData, positionsData] = await Promise.all([
+      const [metricsData, positionsData, newsData, sentimentData] = await Promise.all([
         tradingApi.getPortfolioMetrics(),
         tradingApi.getOpenPositions(),
+        tradingApi.getTrendingNews(5).catch(() => ({ data: [] })),
+        tradingApi.getMarketSentiment().catch(() => null),
       ]);
       
       setMetrics(metricsData);
       setPositions(positionsData);
+      setTrendingNews(newsData?.data || []);
+      setMarketSentiment(sentimentData?.data || null);
     } catch (err: any) {
       if (isTradingError(err, 'ZERODHA_NOT_CONNECTED')) {
         setError('Zerodha not connected. Please authenticate via Telegram to access live data.');
@@ -179,6 +186,70 @@ export default function Overview() {
           </div>
         )}
       </div>
+
+      {/* Market News & Sentiment */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Market Sentiment */}
+        {marketSentiment && (
+          <div className="bg-slate-900 rounded-lg border border-slate-800 p-6">
+            <h3 className="text-lg font-bold text-white mb-4">Market Sentiment</h3>
+            <div className="text-center">
+              <div className={cn(
+                'text-4xl font-bold mb-2',
+                marketSentiment.label === 'positive' ? 'text-green-500' :
+                marketSentiment.label === 'negative' ? 'text-red-500' :
+                'text-slate-400'
+              )}>
+                {marketSentiment.label === 'positive' ? '😊' : 
+                 marketSentiment.label === 'negative' ? '😟' : '😐'}
+              </div>
+              <div className="text-2xl font-bold text-white mb-1">
+                {marketSentiment.label.toUpperCase()}
+              </div>
+              <div className="text-sm text-slate-400 mb-4">
+                Based on {marketSentiment.count} news articles
+              </div>
+              <div className="grid grid-cols-3 gap-2 text-xs">
+                <div>
+                  <div className="text-green-500 font-bold">{marketSentiment.positive || 0}</div>
+                  <div className="text-slate-500">Positive</div>
+                </div>
+                <div>
+                  <div className="text-slate-400 font-bold">{marketSentiment.neutral || 0}</div>
+                  <div className="text-slate-500">Neutral</div>
+                </div>
+                <div>
+                  <div className="text-red-500 font-bold">{marketSentiment.negative || 0}</div>
+                  <div className="text-slate-500">Negative</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Trending News */}
+        <div className="lg:col-span-2 bg-slate-900 rounded-lg border border-slate-800 p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Newspaper className="h-5 w-5 text-blue-400" />
+            <h3 className="text-lg font-bold text-white">Latest Market News</h3>
+          </div>
+          {trendingNews.length === 0 ? (
+            <div className="text-center py-8 text-slate-400">
+              No news available
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {trendingNews.map((news) => (
+                <NewsCard
+                  key={news.id}
+                  news={news}
+                  onClick={() => window.open(news.url, '_blank')}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
@@ -205,7 +276,7 @@ function StatCard({
         <Icon className={cn('h-5 w-5', positive ? 'text-green-500' : 'text-red-500')} />
       </div>
       <div className="text-2xl font-bold text-white mb-1">{value}</div>
-      {change !== undefined && (
+      {change !== undefined && change !== null && !isNaN(change) && (
         <div className={cn('text-sm font-medium', positive ? 'text-green-500' : 'text-red-500')}>
           {change >= 0 ? '+' : ''}{change.toFixed(2)}%
         </div>

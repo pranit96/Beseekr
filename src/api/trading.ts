@@ -160,6 +160,24 @@ export const tradingApi = {
     return request<SystemHealth>('/api/stock-strategy/system/health');
   },
 
+  // ==================== NEWS ====================
+  
+  async getStockNews(symbol: string, limit: number = 10): Promise<any> {
+    return request(`/api/stock-strategy/news/stock/${symbol}?limit=${limit}`);
+  },
+
+  async getMarketSentiment(): Promise<any> {
+    return request('/api/stock-strategy/news/market-sentiment');
+  },
+
+  async getTrendingNews(limit: number = 10): Promise<any> {
+    return request(`/api/stock-strategy/news/trending?limit=${limit}`);
+  },
+
+  async searchNews(query: string, limit: number = 20): Promise<any> {
+    return request(`/api/stock-strategy/news/search?q=${encodeURIComponent(query)}&limit=${limit}`);
+  },
+
   // ==================== ANALYSIS ====================
   
   async analyzeStock(symbol: string): Promise<any> {
