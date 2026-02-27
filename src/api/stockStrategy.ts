@@ -1,287 +1,227 @@
-import { apiClient } from '@/lib/api';
+// Stock Strategy API Client
+const API_BASE = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL;
 
-export interface Stock {
+export interface Signal {
   id: string;
-  symbol: string;
-  name: string;
-  exchange: string;
-  sector: string;
-  market_cap: number;
-}
-
-export interface TradingStrategy {
-  id: string;
-  name: string;
-  description: string;
-  criteria: Record<string, any>;
-  active: boolean;
-}
-
-export interface StrategySignal {
-  id: string;
-  stock_id: string;
-  strategy_id: string;
-  signal_type: 'BUY' | 'SELL';
-  action: 'BUY' | 'SELL';
+  stocks: { symbol: string; name: string };
+  trading_strategies: { name: string };
   entry_price: number;
   target_price: number;
   stop_loss: number;
   risk_reward: number;
   confidence_score: number;
-  confidence: number;
-  criteria_met: Record<string, boolean>;
-  status: 'ACTIVE' | 'EXPIRED' | 'TRIGGERED';
-  created_at: string;
-  expires_at: string;
-  stocks: Stock;
-  trading_strategies: TradingStrategy;
-  strategy: string;
-}
-
-export interface Trade {
-  id: string;
-  signal_id: string;
-  stock_id: string;
-  entry_date: string;
-  entry_price: number;
-  shares: number;
-  exit_date?: string;
-  exit_price?: number;
-  pnl?: number;
-  pnl_percent?: number;
-  outcome?: 'WIN' | 'LOSS' | 'BREAKEVEN';
-  status: 'OPEN' | 'CLOSED';
-  notes?: string;
-  stocks: Stock;
-  strategy_signals?: StrategySignal;
-}
-
-export interface PerformanceStats {
-  total_trades: number;
-  wins: number;
-  losses: number;
-  win_rate: number;
-  total_pnl: number;
-  avg_win: number;
-  avg_loss: number;
-  best_trade: number;
-  worst_trade: number;
-  avg_hold_time: number;
-}
-
-export interface MarketRegime {
-  regime: string;
-  confidence: number;
-  description: string;
-  volatility: string;
-  trend: string;
-  recommendedStrategies?: string[];
-}
-
-export interface DrawdownStatus {
-  canTrade: boolean;
-  dailyDrawdown: number;
-  weeklyDrawdown: number;
-  monthlyDrawdown: number;
-  consecutiveLosses: number;
-  positionSizeMultiplier: number;
   status: string;
-  reason?: string;
+  created_at: string;
 }
 
-export interface CorrelationMatrix {
-  positions: number;
-  matrix: any;
-  avgCorrelation: number;
-  diversificationScore: number;
-  analysis: {
-    rating: string;
-    message: string;
-    recommendation?: string;
-  };
+export interface BudgetPortfolioRequest {
+  budget: number;
+  risk_profile: 'conservative' | 'moderate' | 'aggressive';
+  timeframe: 'day' | 'week' | 'month' | 'year';
 }
 
-export interface BudgetPortfolio {
-  success: boolean;
-  portfolio?: {
-    stocks: any[];
-    summary: {
-      total_stocks: number;
-      total_allocated: number;
-      remaining_budget: number;
-      avg_risk_reward: number;
-      portfolio_risk: string;
-    };
-  };
-  message?: string;
-}
+// Base request helper
+async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  const url = `${API_BASE}${endpoint}`;
+  
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+    credentials: 'include',
+  });
 
-export interface AdvancedAnalysis {
-  symbol: string;
-  timestamp: string;
-  technical?: any;
-  fundamental?: any;
-  aiValidation?: any;
-  finalRecommendation?: any;
-  analysis?: any;
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || errorData.message || `Request failed: ${response.status}`);
+  }
+
+  const json = await response.json();
+  
+  // Backend wraps responses in {success: true, data: {...}}
+  if (json && typeof json === 'object' && 'success' in json && 'data' in json) {
+    return json.data as T;
+  }
+
+  return json;
 }
 
 export const stockStrategyApi = {
-  // ========== SIGNALS ==========
-  
-  // Get active signals
-  getSignals: async (filters?: { strategy?: string; min_confidence?: number }) => {
-    const response = await apiClient.getStockSignals(filters);
-    return response.data;
+  // Signals
+  async getSignals(params?: { strategy?: string; min_confidence?: number }) {
+    const queryParams = new URLSearchParams();
+    if (params?.strategy) queryParams.append('strategy', params.strategy);
+    if (params?.min_confidence) queryParams.append('min_confidence', String(params.min_confidence));
+    
+    const endpoint = `/api/stock-strategy/signals${queryParams.toString() ? `?${queryParams}` : ''}`;
+    return request<Signal[]>(endpoint);
   },
 
-  // Get signal details
-  getSignalDetails: async (signalId: string) => {
-    const response = await apiClient.getStockSignalDetails(signalId);
-    return response.data as StrategySignal & { current_price: number; price_change: number };
+  async getSignalDetails(signalId: string) {
+    return request<any>(`/api/stock-strategy/signals/${signalId}`);
   },
 
-  // Get signals with events
-  getSignalsWithEvents: async (filters?: { has_event?: boolean; days?: number }) => {
-    const response = await apiClient.getStockSignalsWithEvents(filters);
-    return response.data;
+  async getSignalsWithEvents() {
+    return request<any[]>('/api/stock-strategy/signals/with-events');
   },
 
-  // ========== ANALYSIS ==========
-  
-  // Analyze specific stock
-  analyzeStock: async (symbol: string) => {
-    const response = await apiClient.analyzeStock(symbol);
-    return response.data;
+  async triggerScan() {
+    return request<any>('/api/stock-strategy/signals/scan', { method: 'POST' });
   },
 
-  // Get advanced technical analysis
-  getAdvancedTechnicalAnalysis: async (symbol: string) => {
-    const response = await apiClient.getAdvancedTechnicalAnalysis(symbol);
-    return response.data as AdvancedAnalysis;
+  // Trades
+  async recordTrade(tradeData: any) {
+    return request<any>('/api/stock-strategy/trades', { 
+      method: 'POST',
+      body: JSON.stringify(tradeData)
+    });
   },
 
-  // Get advanced fundamental analysis
-  getAdvancedFundamentalAnalysis: async (symbol: string) => {
-    const response = await apiClient.getAdvancedFundamentalAnalysis(symbol);
-    return response.data as AdvancedAnalysis;
+  async getUserTrades() {
+    return request<any[]>('/api/stock-strategy/trades');
   },
 
-  // Get comprehensive analysis
-  getComprehensiveAnalysis: async (symbol: string) => {
-    const response = await apiClient.getComprehensiveAnalysis(symbol);
-    return response.data as AdvancedAnalysis;
+  async closeTrade(tradeId: string, closeData: any) {
+    return request<any>(`/api/stock-strategy/trades/${tradeId}/close`, {
+      method: 'POST',
+      body: JSON.stringify(closeData)
+    });
   },
 
-  // ========== STRATEGIES ==========
-  
-  // Get trading strategies
-  getStrategies: async () => {
-    const response = await apiClient.getStockStrategies();
-    return response.data as TradingStrategy[];
+  // Portfolio
+  async getPerformanceStats() {
+    return request<any>('/api/stock-strategy/portfolio/performance');
   },
 
-  // Trigger manual scan
-  triggerScan: async () => {
-    const response = await apiClient.triggerStockScan();
-    return response.data;
+  async getPortfolioCorrelation() {
+    return request<any>('/api/stock-strategy/portfolio/correlation');
   },
 
-  // ========== TRADES ==========
-  
-  // Record trade
-  recordTrade: async (data: {
-    signal_id: string;
-    entry_price: number;
-    shares: number;
-    notes?: string;
-  }) => {
-    const response = await apiClient.recordStockTrade(data);
-    return response.data as Trade;
+  async calculatePosition(positionData: any) {
+    return request<any>('/api/stock-strategy/portfolio/position', {
+      method: 'POST',
+      body: JSON.stringify(positionData)
+    });
   },
 
-  // Close trade
-  closeTrade: async (tradeId: string, data: { exit_price: number; notes?: string }) => {
-    const response = await apiClient.closeStockTrade(tradeId, data);
-    return response.data as Trade;
+  // Market
+  async getMarketRegime() {
+    return request<any>('/api/stock-strategy/market/regime');
   },
 
-  // Get user trades
-  getUserTrades: async (filters?: { status?: string; page?: number; limit?: number }) => {
-    const response = await apiClient.getStockTrades(filters);
-    return response.data as { data: Trade[]; pagination: { page: number; limit: number; total: number } };
+  async getUpcomingEvents() {
+    return request<any[]>('/api/stock-strategy/market/events');
   },
 
-  // ========== PORTFOLIO ==========
-  
-  // Get performance stats
-  getPerformanceStats: async () => {
-    const response = await apiClient.getStockPerformanceStats();
-    return response.data as PerformanceStats;
+  async getDrawdownStatus() {
+    return request<any>('/api/stock-strategy/market/drawdown');
   },
 
-  // Get portfolio correlation
-  getPortfolioCorrelation: async () => {
-    const response = await apiClient.getPortfolioCorrelation();
-    return response.data as CorrelationMatrix;
+  // Analysis
+  async analyzeStock(symbol: string) {
+    return request<any>(`/api/stock-strategy/analysis/stock/${symbol}`, { method: 'POST' });
   },
 
-  // Calculate position size
-  calculatePosition: async (data: {
-    account_size: number;
-    risk_percent?: number;
-    entry_price: number;
-    stop_loss: number;
-  }) => {
-    const response = await apiClient.calculatePositionSize(data);
-    return response.data;
+  async getAdvancedTechnicalAnalysis(symbol: string) {
+    return request<any>(`/api/stock-strategy/analysis/technical/${symbol}`);
   },
 
-  // ========== MARKET ==========
-  
-  // Get market regime
-  getMarketRegime: async () => {
-    const response = await apiClient.getMarketRegime();
-    return response.data as { regime: MarketRegime; recommendedStrategies: string[]; marketContext: any };
+  async getAdvancedFundamentalAnalysis(symbol: string) {
+    return request<any>(`/api/stock-strategy/analysis/fundamental/${symbol}`);
   },
 
-  // Get upcoming events
-  getUpcomingEvents: async (filters?: { days?: number; type?: string }) => {
-    const response = await apiClient.getUpcomingEvents(filters);
-    return response.data;
+  async getComprehensiveAnalysis(symbol: string) {
+    return request<any>(`/api/stock-strategy/analysis/comprehensive/${symbol}`);
   },
 
-  // Get drawdown status
-  getDrawdownStatus: async () => {
-    const response = await apiClient.getDrawdownStatus();
-    return response.data as DrawdownStatus;
+  // Validation
+  async validateSignalWithClaude(signalData: any) {
+    return request<any>('/api/stock-strategy/validate/claude', {
+      method: 'POST',
+      body: JSON.stringify(signalData)
+    });
   },
 
-  // ========== BUDGET PORTFOLIO ==========
-  
-  // Generate budget portfolio
-  generateBudgetPortfolio: async (data: {
-    budget: number;
-    risk_profile: 'conservative' | 'moderate' | 'aggressive';
-    timeframe: 'day' | 'week' | 'month' | 'year';
-  }) => {
-    const response = await apiClient.generateBudgetPortfolio(data);
-    return response.data as BudgetPortfolio;
+  // Budget Portfolio
+  async generateBudgetPortfolio(requestData: BudgetPortfolioRequest) {
+    return request<any>('/api/stock-strategy/budget-portfolio/generate', {
+      method: 'POST',
+      body: JSON.stringify(requestData)
+    });
   },
 
-  // ========== VALIDATION ==========
-  
-  // Validate signal with Claude
-  validateSignalWithClaude: async (signalId: string) => {
-    const response = await apiClient.validateSignalWithClaude(signalId);
-    return response.data;
+  // Strategies
+  async getStrategies() {
+    return request<any[]>('/api/stock-strategy/strategies');
   },
 
-  // ========== CONFIG ==========
-  
-  // Get LLM configuration
-  getLLMConfig: async () => {
-    const response = await apiClient.getStockLLMConfig();
-    return response.data;
+  // LLM Config
+  async getLLMConfig() {
+    return request<any>('/api/stock-strategy/llm/config');
+  },
+
+  // Backtesting
+  async runBacktest(backtestData: { strategy: string; symbols: string[]; start_date: string; end_date: string }) {
+    return request<any>('/api/stock-strategy/backtest/run', {
+      method: 'POST',
+      body: JSON.stringify(backtestData)
+    });
+  },
+
+  async getBacktestResults(strategy: string) {
+    return request<any>(`/api/stock-strategy/backtest/results/${strategy}`);
+  },
+
+  // Trade Validation
+  async validateTradeViability(tradeData: { entry_price: number; target_price: number; stop_loss: number; quantity: number; trade_type?: string }) {
+    return request<any>('/api/stock-strategy/validate/trade-viability', {
+      method: 'POST',
+      body: JSON.stringify(tradeData)
+    });
+  },
+
+  // Advanced Analytics (USER-SPECIFIC)
+  async getStrategyPerformance() {
+    return request<any>('/api/stock-strategy/analytics/strategy-performance');
+  },
+
+  async getCorrelationHeatmap() {
+    return request<any>('/api/stock-strategy/analytics/correlation-heatmap');
+  },
+
+  async getRiskAttribution() {
+    return request<any>('/api/stock-strategy/analytics/risk-attribution');
+  },
+
+  async getRealtimePnL() {
+    return request<any>('/api/stock-strategy/analytics/realtime-pnl');
+  },
+
+  async getPortfolioMetrics() {
+    return request<any>('/api/stock-strategy/analytics/portfolio-metrics');
+  },
+
+  // System Health
+  async getSystemHealth() {
+    return request<any>('/api/stock-strategy/system/health');
+  },
+
+  // Legacy monitoring endpoints (keeping for backward compatibility)
+  async getSystemMetrics() {
+    return request<any>('/api/monitoring/metrics');
+  },
+
+  async getSystemAlerts() {
+    return request<any[]>('/api/monitoring/alerts');
+  },
+
+  async testAlerts() {
+    return request<any>('/api/monitoring/alerts/test', { method: 'POST' });
+  },
+
+  async resetMetrics() {
+    return request<any>('/api/monitoring/metrics/reset', { method: 'POST' });
   },
 };

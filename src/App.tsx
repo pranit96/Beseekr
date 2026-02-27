@@ -88,6 +88,10 @@ const SignalDetails = lazyRetry(() => import("./pages/saas/SignalDetails"), "Sig
 const BudgetPortfolio = lazyRetry(() => import("./pages/saas/BudgetPortfolio"), "BudgetPortfolio");
 const AdvancedAnalysis = lazyRetry(() => import("./pages/saas/AdvancedAnalysis"), "AdvancedAnalysis");
 const MarketDashboard = lazyRetry(() => import("./pages/saas/MarketDashboard"), "MarketDashboard");
+const LiveTradingDashboard = lazyRetry(() => import("./pages/saas/LiveTradingDashboard"), "LiveTradingDashboard");
+const AdvancedFilters = lazyRetry(() => import("./pages/saas/AdvancedFilters"), "AdvancedFilters");
+const MyPositions = lazyRetry(() => import("./pages/saas/MyPositions"), "MyPositions");
+const SystemMonitoring = lazyRetry(() => import("./pages/saas/SystemMonitoring"), "SystemMonitoring");
 
 // CAT Prep Dashboard - HIDDEN (module disabled)
 // import { CatDashboardLayout } from "./layouts/CatDashboardLayout";
@@ -227,10 +231,14 @@ const App = () => {
                     <Route path="pricing" element={<Suspense fallback={<PageLoader />}><Pricing /></Suspense>} />
                     <Route path="profile" element={<Suspense fallback={<PageLoader />}><Profile /></Suspense>} />
                     <Route path="stocks" element={<Suspense fallback={<PageLoader />}><StockStrategyDashboard /></Suspense>} />
+                    <Route path="stocks/live" element={<Suspense fallback={<PageLoader />}><LiveTradingDashboard /></Suspense>} />
+                    <Route path="stocks/positions" element={<Suspense fallback={<PageLoader />}><MyPositions /></Suspense>} />
+                    <Route path="stocks/filters" element={<Suspense fallback={<PageLoader />}><AdvancedFilters /></Suspense>} />
                     <Route path="stocks/signal/:signalId" element={<Suspense fallback={<PageLoader />}><SignalDetails /></Suspense>} />
                     <Route path="stocks/budget" element={<Suspense fallback={<PageLoader />}><BudgetPortfolio /></Suspense>} />
-                    <Route path="stocks/advanced/:symbol" element={<Suspense fallback={<PageLoader />}><AdvancedAnalysis /></Suspense>} />
+                    <Route path="stocks/analysis/:symbol" element={<Suspense fallback={<PageLoader />}><AdvancedAnalysis /></Suspense>} />
                     <Route path="stocks/market" element={<Suspense fallback={<PageLoader />}><MarketDashboard /></Suspense>} />
+                    <Route path="monitoring" element={<Suspense fallback={<PageLoader />}><SystemMonitoring /></Suspense>} />
                   </Route>
 
                   {/* =============================================
