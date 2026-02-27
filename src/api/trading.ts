@@ -11,6 +11,9 @@ import type {
   SystemHealth,
   MarketRegime,
   PerformanceStats,
+  WatchlistItem,
+  PaperTrade,
+  PaperTradingStats,
 } from '@/types/trading';
 
 const API_BASE = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
@@ -75,6 +78,70 @@ export const tradingApi = {
 
   async triggerScan(): Promise<{ message: string }> {
     return request<{ message: string }>('/api/stock-strategy/signals/scan', { method: 'POST' });
+  },
+
+  // ==================== WATCHLIST ====================
+  
+  async getWatchlist(): Promise<WatchlistItem[]> {
+    return request<WatchlistItem[]>('/api/stock-strategy/watchlist');
+  },
+
+  async addToWatchlist(data: {
+    symbol: string;
+    alert_price_above?: number;
+    alert_price_below?: number;
+    notes?: string;
+  }): Promise<WatchlistItem> {
+    return request<WatchlistItem>('/api/stock-strategy/watchlist', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async removeFromWatchlist(watchlistId: string): Promise<{ message: string }> {
+    return request<{ message: string }>(`/api/stock-strategy/watchlist/${watchlistId}`, {
+      method: 'DELETE',
+    });
+  },
+
+  async updateWatchlistAlerts(watchlistId: string, data: {
+    alert_price_above?: number;
+    alert_price_below?: number;
+  }): Promise<WatchlistItem> {
+    return request<WatchlistItem>(`/api/stock-strategy/watchlist/${watchlistId}/alerts`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+
+  // ==================== PAPER TRADING ====================
+  
+  async getPaperTrades(status?: 'OPEN' | 'CLOSED'): Promise<PaperTrade[]> {
+    const endpoint = status ? `/api/stock-strategy/paper-trades?status=${status}` : '/api/stock-strategy/paper-trades';
+    return request<PaperTrade[]>(endpoint);
+  },
+
+  async startPaperTrade(data: {
+    symbol: string;
+    quantity: number;
+    target_price?: number;
+    stop_loss?: number;
+    notes?: string;
+  }): Promise<PaperTrade> {
+    return request<PaperTrade>('/api/stock-strategy/paper-trades', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async closePaperTrade(tradeId: string): Promise<PaperTrade> {
+    return request<PaperTrade>(`/api/stock-strategy/paper-trades/${tradeId}/close`, {
+      method: 'PUT',
+    });
+  },
+
+  async getPaperTradingStats(): Promise<PaperTradingStats> {
+    return request<PaperTradingStats>('/api/stock-strategy/paper-trades/stats');
   },
 
   // ==================== POSITIONS ====================

@@ -259,3 +259,64 @@ export interface TradingContextType {
   subscribeToHealth: () => void;
   requestAnalytics: (type: string) => void;
 }
+
+// Watchlist Types
+export interface WatchlistItem {
+  id: string;
+  user_id: string;
+  stock_id: string;
+  stocks: Stock;
+  notes?: string;
+  alert_price_above?: number;
+  alert_price_below?: number;
+  current_price?: number;
+  change_percent?: number;
+  created_at: string;
+}
+
+// Paper Trading Types
+export interface PaperTrade {
+  id: string;
+  user_id: string;
+  stock_id: string;
+  stocks: Stock;
+  entry_price: number;
+  entry_date: string;
+  exit_price?: number;
+  exit_date?: string;
+  quantity: number;
+  target_price?: number;
+  stop_loss?: number;
+  status: 'OPEN' | 'CLOSED' | 'STOPPED';
+  pnl?: number;
+  pnl_percent?: number;
+  notes?: string;
+  current_price?: number;
+  current_pnl?: number;
+  current_pnl_percent?: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PaperTradingStats {
+  total_trades: number;
+  open_trades: number;
+  closed_trades: number;
+  winning_trades: number;
+  losing_trades: number;
+  win_rate: number;
+  total_pnl: number;
+  avg_pnl: number;
+  best_trade: {
+    pnl: number;
+    pnl_percent: number;
+    symbol: string;
+  };
+  worst_trade: {
+    pnl: number;
+    pnl_percent: number;
+    symbol: string;
+  };
+  total_investment: number;
+  current_value: number;
+}
