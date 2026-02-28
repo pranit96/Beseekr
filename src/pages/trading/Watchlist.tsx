@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { tradingApi } from '@/api/trading';
 import { Plus, Trash2, Bell, TrendingUp, TrendingDown, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { DataQualityBadge } from '@/components/trading/DataQualityBadge';
 import type { WatchlistItem } from '@/types/trading';
 
 export default function Watchlist() {
@@ -190,8 +191,17 @@ function WatchlistCard({
       {/* Price */}
       {item.current_price && (
         <div className="mb-3">
-          <div className="text-2xl font-bold text-gray-900">
-            ₹{item.current_price.toFixed(2)}
+          <div className="flex items-center justify-between">
+            <div className="text-2xl font-bold text-gray-900">
+              ₹{item.current_price.toFixed(2)}
+            </div>
+            {item.data_quality_score !== undefined && (
+              <DataQualityBadge 
+                score={item.data_quality_score} 
+                warnings={item.validation_warnings}
+                size="sm"
+              />
+            )}
           </div>
           <div className={cn(
             "flex items-center gap-1 text-sm font-medium",

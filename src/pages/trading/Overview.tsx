@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { tradingApi, isTradingError } from '@/api/trading';
 import { useTradingWebSocket } from '@/hooks/useTradingWebSocket';
-import { TrendingUp, TrendingDown, Briefcase, Target, AlertCircle, Newspaper } from 'lucide-react';
+import { TrendingUp, TrendingDown, Briefcase, Target, AlertCircle, Newspaper, Shield, Activity } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { NewsCard } from '@/components/trading/NewsCard';
+import { MarketStatusIndicator } from '@/components/trading/DataQualityBadge';
 import type { PortfolioMetrics, Position } from '@/types/trading';
 
 export default function Overview() {
@@ -12,30 +13,46 @@ export default function Overview() {
   const [positions, setPositions] = useState<Position[]>([]);
   const [trendingNews, setTrendingNews] = useState<any[]>([]);
   const [marketSentiment, setMarketSentiment] = useState<any>(null);
+  const [marketStatus, setMarketStatus] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     subscribeToPnL();
     loadData();
+    
+    // Refresh market status every 30 seconds
+    const interval = setInterval(loadMarketStatus, 30000);
+    return () => clearInterval(interval);
   }, [subscribeToPnL]);
+
+  const loadMarketStatus = async () => {
+    try {
+      const status = await tradingApi.getMarketStatus();
+      setMarketStatus(status);
+    } catch (err) {
+      console.error('Failed to load market status:', err);
+    }
+  };
 
   const loadData = async () => {
     try {
       setLoading(true);
       setError(null);
       
-      const [metricsData, positionsData, newsData, sentimentData] = await Promise.all([
+      const [metricsData, positionsData, newsData, sentimentData, statusData] = await Promise.all([
         tradingApi.getPortfolioMetrics(),
         tradingApi.getOpenPositions(),
         tradingApi.getTrendingNews(5).catch(() => ({ data: [] })),
         tradingApi.getMarketSentiment().catch(() => null),
+        tradingApi.getMarketStatus().catch(() => null),
       ]);
       
       setMetrics(metricsData);
       setPositions(positionsData);
       setTrendingNews(newsData?.data || []);
       setMarketSentiment(sentimentData?.data || null);
+      setMarketStatus(statusData);
     } catch (err: any) {
       if (isTradingError(err, 'ZERODHA_NOT_CONNECTED')) {
         setError('Zerodha not connected. Please authenticate via Telegram to access live data.');
@@ -75,9 +92,33 @@ export default function Overview() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-white">Portfolio Overview</h1>
-        <p className="text-slate-400 mt-1">Real-time portfolio performance and metrics</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-white">Portfolio Overview</h1>
+          <p className="text-slate-400 mt-1">Real-time portfolio performance and metrics</p>
+        </div>
+        {marketStatus && (
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Activity className="h-4 w-4 text-slate-400" />
+              <span className="text-sm text-slate-400">Market:</span>
+              <MarketStatusIndicator
+                isOpen={marketStatus.market.is_open}
+                canTrade={marketStatus.validation.canTrade}
+                reason={marketStatus.validation.reason}
+                warning={marketStatus.validation.warning}
+              />
+            </div>
+            {marketStatus.circuit_breaker.state !== 'CLOSED' && (
+              <div className="flex items-center gap-2">
+                <Shield className="h-4 w-4 text-yellow-500" />
+                <span className="text-sm text-yellow-500">
+                  Circuit Breaker: {marketStatus.circuit_breaker.state}
+                </span>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Real-time P&L Cards */}

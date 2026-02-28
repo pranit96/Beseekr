@@ -107,6 +107,9 @@ const TradingMarket = lazyRetry(() => import("./pages/trading/Market"), "Trading
 const TradingSystem = lazyRetry(() => import("./pages/trading/System"), "TradingSystem");
 const TradingAlerts = lazyRetry(() => import("./pages/trading/Alerts"), "TradingAlerts");
 const TradingSettings = lazyRetry(() => import("./pages/trading/Settings"), "TradingSettings");
+const TradingWatchlist = lazyRetry(() => import("./pages/trading/Watchlist"), "TradingWatchlist");
+const TradingPaperTrading = lazyRetry(() => import("./pages/trading/PaperTrading"), "TradingPaperTrading");
+const TradingDataValidation = lazyRetry(() => import("./pages/trading/DataValidation"), "TradingDataValidation");
 
 // CAT Prep Dashboard - HIDDEN (module disabled)
 // import { CatDashboardLayout } from "./layouts/CatDashboardLayout";
@@ -278,6 +281,9 @@ const App = () => {
                     <Route path="system" element={<Suspense fallback={<PageLoader />}><TradingSystem /></Suspense>} />
                     <Route path="alerts" element={<Suspense fallback={<PageLoader />}><TradingAlerts /></Suspense>} />
                     <Route path="settings" element={<Suspense fallback={<PageLoader />}><TradingSettings /></Suspense>} />
+                    <Route path="watchlist" element={<Suspense fallback={<PageLoader />}><TradingWatchlist /></Suspense>} />
+                    <Route path="paper-trading" element={<Suspense fallback={<PageLoader />}><TradingPaperTrading /></Suspense>} />
+                    <Route path="data-validation" element={<Suspense fallback={<PageLoader />}><TradingDataValidation /></Suspense>} />
                   </Route>
 
                   {/* =============================================

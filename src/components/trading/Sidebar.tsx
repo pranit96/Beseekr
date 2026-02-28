@@ -9,7 +9,10 @@ import {
   Globe, 
   Activity,
   Bell,
-  Settings
+  Settings,
+  Eye,
+  PlayCircle,
+  Shield
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -19,8 +22,11 @@ const navItems = [
   { to: '/trading/positions', icon: Briefcase, label: 'Positions' },
   { to: '/trading/history', icon: History, label: 'Trade History' },
   { to: '/trading/signals', icon: Signal, label: 'Signals' },
+  { to: '/trading/watchlist', icon: Eye, label: 'Watchlist' },
+  { to: '/trading/paper-trading', icon: PlayCircle, label: 'Paper Trading' },
   { to: '/trading/analytics', icon: BarChart3, label: 'Analytics' },
   { to: '/trading/market', icon: Globe, label: 'Market' },
+  { to: '/trading/data-validation', icon: Shield, label: 'Data Quality' },
   { to: '/trading/system', icon: Activity, label: 'System' },
   { to: '/trading/alerts', icon: Bell, label: 'Alerts' },
   { to: '/trading/settings', icon: Settings, label: 'Settings' },

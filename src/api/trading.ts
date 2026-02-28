@@ -274,6 +274,46 @@ export const tradingApi = {
       body: JSON.stringify(data),
     });
   },
+
+  // ==================== DATA VALIDATION ====================
+  
+  async getValidationMetrics(days: number = 7): Promise<{
+    summary: {
+      total_validations: number;
+      total_failures: number;
+      failure_rate: string;
+      avg_quality_score: string;
+    };
+    daily_metrics: any[];
+    recent_failures: any[];
+    period_days: number;
+  }> {
+    return request(`/api/stock-strategy/validation/metrics?days=${days}`);
+  },
+
+  async getMarketStatus(): Promise<{
+    market: {
+      is_open: boolean;
+      current_time: string;
+      market_hours: string;
+      status: string;
+    };
+    validation: {
+      canTrade: boolean;
+      reason?: string;
+      warning?: string;
+      optimal?: boolean;
+    };
+    circuit_breaker: {
+      state: string;
+      failures: number;
+      lastFailureTime: string | null;
+      timeSinceFailure: number | null;
+    };
+    timestamp: string;
+  }> {
+    return request('/api/stock-strategy/market/status');
+  },
 };
 
 // Export error types for handling

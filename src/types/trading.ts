@@ -271,6 +271,8 @@ export interface WatchlistItem {
   alert_price_below?: number;
   current_price?: number;
   change_percent?: number;
+  data_quality_score?: number;
+  validation_warnings?: string[];
   created_at: string;
 }
 
@@ -294,6 +296,8 @@ export interface PaperTrade {
   current_price?: number;
   current_pnl?: number;
   current_pnl_percent?: number;
+  data_quality_score?: number;
+  validation_warnings?: string[];
   created_at: string;
   updated_at: string;
 }
