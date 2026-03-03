@@ -21,7 +21,7 @@ const API_BASE = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_U
 // Base request helper with error handling
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const url = `${API_BASE}${endpoint}`;
-  
+
   try {
     const response = await fetch(url, {
       ...options,
@@ -34,17 +34,17 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      
+
       // Handle specific error cases
       if (response.status === 503 && errorData.action_required === 'zerodha_login') {
         throw new Error('ZERODHA_NOT_CONNECTED');
       }
-      
+
       throw new Error(errorData.error || errorData.message || `Request failed: ${response.status}`);
     }
 
     const json = await response.json();
-    
+
     // Backend wraps responses in {success: true, data: {...}}
     if (json && typeof json === 'object' && 'success' in json && 'data' in json) {
       return json.data as T;
@@ -62,12 +62,12 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
 
 export const tradingApi = {
   // ==================== SIGNALS ====================
-  
+
   async getSignals(params?: { strategy?: string; min_confidence?: number }): Promise<Signal[]> {
     const queryParams = new URLSearchParams();
     if (params?.strategy) queryParams.append('strategy', params.strategy);
     if (params?.min_confidence) queryParams.append('min_confidence', String(params.min_confidence));
-    
+
     const endpoint = `/api/stock-strategy/signals${queryParams.toString() ? `?${queryParams}` : ''}`;
     return request<Signal[]>(endpoint);
   },
@@ -81,7 +81,7 @@ export const tradingApi = {
   },
 
   // ==================== WATCHLIST ====================
-  
+
   async getWatchlist(): Promise<WatchlistItem[]> {
     return request<WatchlistItem[]>('/api/stock-strategy/watchlist');
   },
@@ -115,7 +115,7 @@ export const tradingApi = {
   },
 
   // ==================== PAPER TRADING ====================
-  
+
   async getPaperTrades(status?: 'OPEN' | 'CLOSED'): Promise<PaperTrade[]> {
     const endpoint = status ? `/api/stock-strategy/paper-trades?status=${status}` : '/api/stock-strategy/paper-trades';
     return request<PaperTrade[]>(endpoint);
@@ -145,7 +145,7 @@ export const tradingApi = {
   },
 
   // ==================== POSITIONS ====================
-  
+
   async getPositions(status: 'OPEN' | 'CLOSED' | 'all' = 'OPEN'): Promise<Position[]> {
     const endpoint = `/api/stock-strategy/trades${status !== 'all' ? `?status=${status}` : ''}`;
     return request<Position[]>(endpoint);
@@ -160,7 +160,7 @@ export const tradingApi = {
   },
 
   // ==================== TRADES ====================
-  
+
   async recordTrade(tradeData: {
     signal_id: string;
     entry_price: number;
@@ -184,7 +184,7 @@ export const tradingApi = {
   },
 
   // ==================== ANALYTICS ====================
-  
+
   async getRealtimePnL(): Promise<RealtimePnL> {
     return request<RealtimePnL>('/api/stock-strategy/analytics/realtime-pnl');
   },
@@ -206,13 +206,13 @@ export const tradingApi = {
   },
 
   // ==================== PERFORMANCE ====================
-  
+
   async getPerformanceStats(): Promise<PerformanceStats> {
     return request<PerformanceStats>('/api/stock-strategy/portfolio/performance');
   },
 
   // ==================== MARKET ====================
-  
+
   async getMarketRegime(): Promise<{ regime: MarketRegime; recommendedStrategies: string[] }> {
     return request('/api/stock-strategy/market/regime');
   },
@@ -222,13 +222,13 @@ export const tradingApi = {
   },
 
   // ==================== SYSTEM ====================
-  
+
   async getSystemHealth(): Promise<SystemHealth> {
     return request<SystemHealth>('/api/stock-strategy/system/health');
   },
 
   // ==================== NEWS ====================
-  
+
   async getStockNews(symbol: string, limit: number = 10): Promise<any> {
     return request(`/api/stock-strategy/news/stock/${symbol}?limit=${limit}`);
   },
@@ -246,7 +246,7 @@ export const tradingApi = {
   },
 
   // ==================== ANALYSIS ====================
-  
+
   async analyzeStock(symbol: string): Promise<any> {
     return request(`/api/stock-strategy/analysis/stock/${symbol}`, { method: 'POST' });
   },
@@ -256,13 +256,13 @@ export const tradingApi = {
   },
 
   // ==================== STRATEGIES ====================
-  
+
   async getStrategies(): Promise<any[]> {
     return request('/api/stock-strategy/strategies');
   },
 
   // ==================== POSITION SIZING ====================
-  
+
   async calculatePosition(data: {
     account_size: number;
     risk_percent: number;
@@ -276,7 +276,7 @@ export const tradingApi = {
   },
 
   // ==================== DATA VALIDATION ====================
-  
+
   async getValidationMetrics(days: number = 7): Promise<{
     summary: {
       total_validations: number;
@@ -313,6 +313,19 @@ export const tradingApi = {
     timestamp: string;
   }> {
     return request('/api/stock-strategy/market/status');
+  },
+
+  // ==================== DAILY PICKS ====================
+
+  async generateDailyPicks(data: {
+    budget: number;
+    risk_profile: 'conservative' | 'moderate' | 'aggressive';
+    timeframe: 'day' | 'week' | 'month' | 'year';
+  }): Promise<any> {
+    return request('/api/stock-strategy/budget-portfolio/generate', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
   },
 };
 
