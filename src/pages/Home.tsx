@@ -14,7 +14,7 @@ import {
     Activity,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { HealthHomeCard } from '@/components/health/HealthHomeCard';
+
 
 interface ToolCard {
     id: string;
@@ -231,8 +231,7 @@ export default function Home() {
 
                     {/* ── Tool Cards Grid + Health ───────────────────────────── */}
                     <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
-                        {/* Health card is always visible in first position on all devices */}
-                        <HealthHomeCard />
+
                         {cards.map((card, i) => {
                             const Icon = card.icon;
 
