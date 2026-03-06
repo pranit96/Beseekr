@@ -11,6 +11,7 @@ import {
     Zap,
     Plus,
     ChevronRight,
+    Activity,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { HealthHomeCard } from '@/components/health/HealthHomeCard';
@@ -102,6 +103,25 @@ const cards: Card[] = [
         iconBg: 'from-blue-500 to-indigo-500',
         cta: 'View Signals',
         route: '/trading/overview',
+        available: true,
+    },
+    {
+        id: 'wellness',
+        icon: Activity,
+        title: 'Mind & Body Wellness',
+        badge: 'Health',
+        badgeColor: 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20',
+        description: 'Track your nutrition, training, and habits in one unified dashboard. AI-powered food logging and custom plans.',
+        features: [
+            'AI food photo analysis',
+            'Custom training plans',
+            'Daily habit tracking',
+        ],
+        gradient: 'from-emerald-600/20 via-sky-500/10 to-violet-500/10',
+        borderGlow: 'hover:border-emerald-500/50 hover:shadow-emerald-500/10',
+        iconBg: 'from-emerald-500 to-sky-500',
+        cta: 'Open Dashboard',
+        route: '/wellness',
         available: true,
     },
     {

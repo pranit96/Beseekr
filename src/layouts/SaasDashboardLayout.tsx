@@ -17,6 +17,7 @@ import {
     Zap,
     CreditCard,
     Clock,
+    Activity,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -31,6 +32,7 @@ import { TrialWelcomeBanner } from '@/components/TrialWelcomeBanner';
 
 const baseNavigation = [
     { name: 'AI Chat', href: '/chat', icon: Sparkles, color: 'from-violet-500 to-purple-600' },
+    { name: 'Wellness', href: '/wellness', icon: Activity, color: 'from-emerald-500 to-sky-500' },
     { name: 'Discover', href: 'problems', icon: Compass, color: 'from-violet-500 to-purple-600' },
     { name: 'Research', href: 'validate', icon: Zap, color: 'from-emerald-500 to-cyan-500' },
     { name: 'Watchlist', href: 'watchlist', icon: Bookmark, color: 'from-amber-500 to-orange-500' },

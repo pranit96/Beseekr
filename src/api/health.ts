@@ -1,4 +1,4 @@
-import { apiClient } from "@/lib/apiWrapper";
+import { api as apiClient } from "@/lib/apiWrapper";
 
 export interface HealthProfilePayload {
   gender?: string;

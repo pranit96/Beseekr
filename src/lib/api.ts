@@ -730,7 +730,7 @@ class ApiClient {
     const params = new URLSearchParams();
     if (filters?.strategy) params.append('strategy', filters.strategy);
     if (filters?.min_confidence) params.append('min_confidence', filters.min_confidence.toString());
-    
+
     return this.request<any>(`/api/stock-strategy/signals?${params}`);
   }
 
@@ -742,7 +742,7 @@ class ApiClient {
     const params = new URLSearchParams();
     if (filters?.has_event !== undefined) params.append('has_event', filters.has_event.toString());
     if (filters?.days) params.append('days', filters.days.toString());
-    
+
     return this.request<any>(`/api/stock-strategy/signals/with-events?${params}`);
   }
 
@@ -804,7 +804,7 @@ class ApiClient {
     if (filters?.status) params.append('status', filters.status);
     if (filters?.page) params.append('page', filters.page.toString());
     if (filters?.limit) params.append('limit', filters.limit.toString());
-    
+
     return this.request<any>(`/api/stock-strategy/trades?${params}`);
   }
 
@@ -838,7 +838,7 @@ class ApiClient {
     const params = new URLSearchParams();
     if (filters?.days) params.append('days', filters.days.toString());
     if (filters?.type) params.append('type', filters.type);
-    
+
     return this.request<any>(`/api/stock-strategy/market/events?${params}`);
   }
 
@@ -898,6 +898,49 @@ class ApiClient {
     }>('/api/user/notifications', {
       method: 'PUT',
       body: JSON.stringify(preferences),
+    });
+  }
+
+  // Generic HTTP methods to support modular API files
+  public async get<T = any>(endpoint: string, options?: { params?: Record<string, any>; headers?: HeadersInit }) {
+    let url = endpoint;
+    if (options?.params) {
+      const cleanParams = Object.fromEntries(
+        Object.entries(options.params).filter(([_, v]) => v !== undefined && v !== null)
+      );
+      const query = new URLSearchParams(cleanParams as Record<string, string>).toString();
+      if (query) {
+        url += `${url.includes('?') ? '&' : '?'}${query}`;
+      }
+    }
+    return this.request<T>(url, { method: 'GET', headers: options?.headers });
+  }
+
+  public async post<T = any>(endpoint: string, body?: any, options?: { headers?: HeadersInit }) {
+    return this.request<T>(endpoint, {
+      method: 'POST',
+      headers: options?.headers,
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  }
+
+  public async put<T = any>(endpoint: string, body?: any, options?: { headers?: HeadersInit }) {
+    return this.request<T>(endpoint, {
+      method: 'PUT',
+      headers: options?.headers,
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  }
+
+  public async delete<T = any>(endpoint: string, options?: { headers?: HeadersInit }) {
+    return this.request<T>(endpoint, { method: 'DELETE', headers: options?.headers });
+  }
+
+  public async patch<T = any>(endpoint: string, body?: any, options?: { headers?: HeadersInit }) {
+    return this.request<T>(endpoint, {
+      method: 'PATCH',
+      headers: options?.headers,
+      body: body ? JSON.stringify(body) : undefined,
     });
   }
 }
