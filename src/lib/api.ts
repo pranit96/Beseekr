@@ -121,7 +121,8 @@ class ApiClient {
     const requestPromise = (async () => {
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+        // Increased from 30s to 120s to support slow LLM generations (like Health Plan or Financial Models)
+        const timeoutId = setTimeout(() => controller.abort(), 120000);
 
         const response = await fetch(`${this.baseUrl}${endpoint}`, {
           ...options,
