@@ -50,6 +50,16 @@ export const useHealthProfile = () => {
 export const useHealthPlan = () => {
   const queryClient = useQueryClient();
 
+  // Load existing plan from DB on mount
+  const planQuery = useQuery({
+    queryKey: ["health", "plan"],
+    queryFn: async () => {
+      const res = await healthApi.getLatestPlan();
+      return res.data as HealthPlan | null;
+    },
+  });
+
+  // Regenerate plan via Claude
   const planMutation = useMutation({
     mutationFn: async (overrides?: {
       primaryGoalOverride?: string;
@@ -59,11 +69,18 @@ export const useHealthPlan = () => {
       return res.data as HealthPlan;
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["health", "plan"] });
       queryClient.invalidateQueries({ queryKey: ["health", "dashboard"] });
     },
   });
 
-  return planMutation;
+  return {
+    plan: planMutation.data ?? planQuery.data ?? null,
+    isLoading: planQuery.isLoading,
+    isGenerating: planMutation.isPending,
+    generate: planMutation.mutateAsync,
+    error: planMutation.error,
+  };
 };
 
 export const useWorkoutSessions = () => {
@@ -88,7 +105,15 @@ export const useWorkoutSessions = () => {
     },
   });
 
-  return { ...list, logSession };
+  const deleteSession = useMutation({
+    mutationFn: async (id: string) => healthApi.deleteWorkoutSession(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["health", "workouts"] });
+      queryClient.invalidateQueries({ queryKey: ["health", "dashboard"] });
+    },
+  });
+
+  return { ...list, logSession, deleteSession };
 };
 
 export const useHabits = () => {
@@ -128,11 +153,27 @@ export const useHabits = () => {
     },
   });
 
-  return { ...list, createHabit, logHabit };
+  const deleteHabit = useMutation({
+    mutationFn: async (id: string) => healthApi.deleteHabit(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["health", "habits"] });
+    },
+  });
+
+  return { ...list, createHabit, logHabit, deleteHabit };
 };
 
 export const useFood = () => {
   const queryClient = useQueryClient();
+
+  const logsQuery = useQuery({
+    queryKey: ["health", "food", "logs"],
+    queryFn: async () => {
+      const today = new Date().toISOString().slice(0, 10);
+      const res = await healthApi.getFoodLogs(today, today);
+      return res.data;
+    },
+  });
 
   const analyzeImage = useMutation({
     mutationFn: async (payload: FoodImagePayload) => {
@@ -140,6 +181,7 @@ export const useFood = () => {
       return res;
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["health", "food"] });
       queryClient.invalidateQueries({ queryKey: ["health", "dashboard"] });
     },
   });
@@ -150,10 +192,18 @@ export const useFood = () => {
       return res;
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["health", "food"] });
       queryClient.invalidateQueries({ queryKey: ["health", "dashboard"] });
     },
   });
 
-  return { analyzeImage, logManual };
-};
+  const deleteFoodLog = useMutation({
+    mutationFn: async (id: string) => healthApi.deleteFoodLog(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["health", "food"] });
+      queryClient.invalidateQueries({ queryKey: ["health", "dashboard"] });
+    },
+  });
 
+  return { ...logsQuery, analyzeImage, logManual, deleteFoodLog };
+};

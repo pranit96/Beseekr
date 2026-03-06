@@ -118,53 +118,47 @@ export interface FoodManualPayload {
   notes?: string;
 }
 
+export interface FoodLog {
+  id: string;
+  food_name: string;
+  calories: number;
+  protein_g: number | null;
+  carbs_g: number | null;
+  fat_g: number | null;
+  serving_size: string | null;
+  meal_type: string | null;
+  food_image_url: string | null;
+  ai_confidence: number | null;
+  consumed_at: string;
+}
+
 export const healthApi = {
   getProfile: () =>
-    apiClient.get<{ success: boolean; data: HealthProfile | null }>(
-      "/api/health/profile",
-    ),
+    apiClient.get<{ success: boolean; data: HealthProfile | null }>("/api/health/profile"),
 
   upsertProfile: (payload: HealthProfilePayload) =>
-    apiClient.put<{ success: boolean; data: HealthProfile }>(
-      "/api/health/profile",
-      payload,
-    ),
+    apiClient.put<{ success: boolean; data: HealthProfile }>("/api/health/profile", payload),
 
   getDashboard: () =>
-    apiClient.get<{ success: boolean; data: HealthDashboard }>(
-      "/api/health/dashboard",
-    ),
+    apiClient.get<{ success: boolean; data: HealthDashboard }>("/api/health/dashboard"),
 
-  generatePlan: (overrides?: {
-    primaryGoalOverride?: string;
-    weeklyTrainingDaysOverride?: number;
-  }) =>
-    apiClient.post<{ success: boolean; data: HealthPlan; source: string }>(
-      "/api/health/plan",
-      overrides ?? {},
-    ),
+  getLatestPlan: () =>
+    apiClient.get<{ success: boolean; data: HealthPlan | null; generated_at: string | null; source: string }>("/api/health/plan"),
+
+  generatePlan: (overrides?: { primaryGoalOverride?: string; weeklyTrainingDaysOverride?: number }) =>
+    apiClient.post<{ success: boolean; data: HealthPlan; source: string }>("/api/health/plan", overrides ?? {}),
 
   logWorkoutSession: (payload: WorkoutSessionPayload) =>
-    apiClient.post<{ success: boolean; data: any }>(
-      "/api/health/workouts/sessions",
-      payload,
-    ),
+    apiClient.post<{ success: boolean; data: any }>("/api/health/workouts/sessions", payload),
 
-  listWorkoutSessions: (params?: {
-    from?: string;
-    to?: string;
-    limit?: number;
-  }) =>
-    apiClient.get<{ success: boolean; data: any[] }>(
-      "/api/health/workouts/sessions",
-      { params },
-    ),
+  listWorkoutSessions: (params?: { from?: string; to?: string; limit?: number }) =>
+    apiClient.get<{ success: boolean; data: any[] }>("/api/health/workouts/sessions", { params }),
+
+  deleteWorkoutSession: (id: string) =>
+    apiClient.delete<{ success: boolean }>(`/api/health/workouts/sessions/${id}`),
 
   createHabit: (payload: HabitPayload) =>
-    apiClient.post<{ success: boolean; data: any }>(
-      "/api/health/habits",
-      payload,
-    ),
+    apiClient.post<{ success: boolean; data: any }>("/api/health/habits", payload),
 
   listHabits: (includeInactive?: boolean) =>
     apiClient.get<{ success: boolean; data: any[] }>("/api/health/habits", {
@@ -172,29 +166,25 @@ export const healthApi = {
     }),
 
   logHabit: (habitId: string, payload: HabitLogPayload) =>
-    apiClient.post<{ success: boolean; data: any }>(
-      `/api/health/habits/${habitId}/logs`,
-      payload,
-    ),
+    apiClient.post<{ success: boolean; data: any }>(`/api/health/habits/${habitId}/logs`, payload),
+
+  deleteHabit: (id: string) =>
+    apiClient.delete<{ success: boolean }>(`/api/health/habits/${id}`),
 
   analyzeFoodImage: (payload: FoodImagePayload) =>
-    apiClient.post<{ success: boolean; data: any; ai: any }>(
-      "/api/health/food/analyze-image",
-      payload,
-    ),
+    apiClient.post<{ success: boolean; data: FoodLog; ai: any }>("/api/health/food/analyze-image", payload),
 
   logFoodManual: (payload: FoodManualPayload) =>
-    apiClient.post<{ success: boolean; data: any; ai: any }>(
-      "/api/health/food/manual",
-      payload,
-    ),
+    apiClient.post<{ success: boolean; data: FoodLog; ai: any }>("/api/health/food/manual", payload),
+
+  getFoodLogs: (from?: string, to?: string) =>
+    apiClient.get<{ success: boolean; data: { logs: FoodLog[]; totals: any } }>("/api/health/food/logs", {
+      params: { from, to },
+    }),
 
   getFoodSummary: (from?: string, to?: string) =>
-    apiClient.get<{ success: boolean; data: any }>(
-      "/api/health/food/summary",
-      {
-        params: { from, to },
-      },
-    ),
-};
+    apiClient.get<{ success: boolean; data: any }>("/api/health/food/summary", { params: { from, to } }),
 
+  deleteFoodLog: (id: string) =>
+    apiClient.delete<{ success: boolean }>(`/api/health/food/logs/${id}`),
+};
