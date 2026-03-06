@@ -79,6 +79,9 @@ const WellnessPlan = lazyRetry(() => import("./pages/health/WellnessPlan"), "Wel
 const WellnessNutrition = lazyRetry(() => import("./pages/health/WellnessNutrition"), "WellnessNutrition");
 const WellnessTraining = lazyRetry(() => import("./pages/health/WellnessTraining"), "WellnessTraining");
 const WellnessHabits = lazyRetry(() => import("./pages/health/WellnessHabits"), "WellnessHabits");
+const WellnessMind = lazyRetry(() => import("./pages/health/WellnessMind"), "WellnessMind");
+const WellnessWeekly = lazyRetry(() => import("./pages/health/WellnessWeekly"), "WellnessWeekly");
+const WellnessWeight = lazyRetry(() => import("./pages/health/WellnessWeight"), "WellnessWeight");
 
 // SaaS Dashboard - Layout loaded immediately, pages lazy loaded
 import { SaasDashboardLayout } from "./layouts/SaasDashboardLayout";
@@ -255,6 +258,21 @@ const App = () => {
                   <Route path="/wellness/habits" element={
                     <Suspense fallback={<PageLoader />}>
                       <WellnessHabits />
+                    </Suspense>
+                  } />
+                  <Route path="/wellness/mind" element={
+                    <Suspense fallback={<PageLoader />}>
+                      <WellnessMind />
+                    </Suspense>
+                  } />
+                  <Route path="/wellness/weekly" element={
+                    <Suspense fallback={<PageLoader />}>
+                      <WellnessWeekly />
+                    </Suspense>
+                  } />
+                  <Route path="/wellness/weight" element={
+                    <Suspense fallback={<PageLoader />}>
+                      <WellnessWeight />
                     </Suspense>
                   } />
 

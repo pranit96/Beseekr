@@ -9,8 +9,19 @@ import {
   HealthProfile,
   HealthProfilePayload,
   WorkoutSessionPayload,
+  MoodLogPayload,
+  MoodLog,
+  SleepLogPayload,
+  SleepLog,
+  WeightLogPayload,
+  WeightLog,
+  JournalPayload,
+  JournalEntry,
+  WeeklyReview,
   healthApi,
 } from "@/api/health";
+
+// ─── Dashboard ───────────────────────────────────────────────────────────────
 
 export const useHealthDashboard = () => {
   return useQuery({
@@ -21,6 +32,8 @@ export const useHealthDashboard = () => {
     },
   });
 };
+
+// ─── Profile ─────────────────────────────────────────────────────────────────
 
 export const useHealthProfile = () => {
   const queryClient = useQueryClient();
@@ -47,10 +60,11 @@ export const useHealthProfile = () => {
   return { ...profileQuery, saveProfile };
 };
 
+// ─── Plan ────────────────────────────────────────────────────────────────────
+
 export const useHealthPlan = () => {
   const queryClient = useQueryClient();
 
-  // Load existing plan from DB on mount
   const planQuery = useQuery({
     queryKey: ["health", "plan"],
     queryFn: async () => {
@@ -59,7 +73,6 @@ export const useHealthPlan = () => {
     },
   });
 
-  // Regenerate plan via Claude
   const planMutation = useMutation({
     mutationFn: async (overrides?: {
       primaryGoalOverride?: string;
@@ -82,6 +95,8 @@ export const useHealthPlan = () => {
     error: planMutation.error,
   };
 };
+
+// ─── Workouts ────────────────────────────────────────────────────────────────
 
 export const useWorkoutSessions = () => {
   const queryClient = useQueryClient();
@@ -115,6 +130,8 @@ export const useWorkoutSessions = () => {
 
   return { ...list, logSession, deleteSession };
 };
+
+// ─── Habits ──────────────────────────────────────────────────────────────────
 
 export const useHabits = () => {
   const queryClient = useQueryClient();
@@ -163,6 +180,8 @@ export const useHabits = () => {
   return { ...list, createHabit, logHabit, deleteHabit };
 };
 
+// ─── Food ────────────────────────────────────────────────────────────────────
+
 export const useFood = () => {
   const queryClient = useQueryClient();
 
@@ -206,4 +225,178 @@ export const useFood = () => {
   });
 
   return { ...logsQuery, analyzeImage, logManual, deleteFoodLog };
+};
+
+// ═════════════════════════════════════════════════════════════════════════════
+// MIND HOOKS
+// ═════════════════════════════════════════════════════════════════════════════
+
+// ─── Mood ────────────────────────────────────────────────────────────────────
+
+export const useMood = () => {
+  const queryClient = useQueryClient();
+
+  const history = useQuery({
+    queryKey: ["health", "mind", "mood"],
+    queryFn: async () => {
+      const res = await healthApi.getMoodHistory(30);
+      return (res.data ?? []) as MoodLog[];
+    },
+  });
+
+  const logMood = useMutation({
+    mutationFn: async (payload: MoodLogPayload) => {
+      const res = await healthApi.logMood(payload);
+      return res.data as MoodLog;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["health", "mind", "mood"] });
+      queryClient.invalidateQueries({ queryKey: ["health", "dashboard"] });
+    },
+  });
+
+  const deleteMood = useMutation({
+    mutationFn: async (id: string) => healthApi.deleteMoodLog(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["health", "mind", "mood"] });
+      queryClient.invalidateQueries({ queryKey: ["health", "dashboard"] });
+    },
+  });
+
+  return { history: history.data ?? [], isLoading: history.isLoading, logMood, deleteMood };
+};
+
+// ─── Sleep ───────────────────────────────────────────────────────────────────
+
+export const useSleep = () => {
+  const queryClient = useQueryClient();
+
+  const history = useQuery({
+    queryKey: ["health", "mind", "sleep"],
+    queryFn: async () => {
+      const res = await healthApi.getSleepHistory(30);
+      return (res.data ?? []) as SleepLog[];
+    },
+  });
+
+  const logSleep = useMutation({
+    mutationFn: async (payload: SleepLogPayload) => {
+      const res = await healthApi.logSleep(payload);
+      return res.data as SleepLog;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["health", "mind", "sleep"] });
+      queryClient.invalidateQueries({ queryKey: ["health", "dashboard"] });
+    },
+  });
+
+  const deleteSleep = useMutation({
+    mutationFn: async (id: string) => healthApi.deleteSleepLog(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["health", "mind", "sleep"] });
+      queryClient.invalidateQueries({ queryKey: ["health", "dashboard"] });
+    },
+  });
+
+  return { history: history.data ?? [], isLoading: history.isLoading, logSleep, deleteSleep };
+};
+
+// ─── Weight ──────────────────────────────────────────────────────────────────
+
+export const useWeight = () => {
+  const queryClient = useQueryClient();
+
+  const history = useQuery({
+    queryKey: ["health", "mind", "weight"],
+    queryFn: async () => {
+      const res = await healthApi.getWeightHistory(90);
+      return (res.data ?? []) as WeightLog[];
+    },
+  });
+
+  const logWeight = useMutation({
+    mutationFn: async (payload: WeightLogPayload) => {
+      const res = await healthApi.logWeight(payload);
+      return res.data as WeightLog;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["health", "mind", "weight"] });
+      queryClient.invalidateQueries({ queryKey: ["health", "dashboard"] });
+    },
+  });
+
+  const deleteWeight = useMutation({
+    mutationFn: async (id: string) => healthApi.deleteWeightLog(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["health", "mind", "weight"] });
+      queryClient.invalidateQueries({ queryKey: ["health", "dashboard"] });
+    },
+  });
+
+  return { history: history.data ?? [], isLoading: history.isLoading, logWeight, deleteWeight };
+};
+
+// ─── Journal ─────────────────────────────────────────────────────────────────
+
+export const useJournal = () => {
+  const queryClient = useQueryClient();
+
+  const entries = useQuery({
+    queryKey: ["health", "mind", "journal"],
+    queryFn: async () => {
+      const res = await healthApi.listJournals(30);
+      return (res.data ?? []) as JournalEntry[];
+    },
+  });
+
+  const createJournal = useMutation({
+    mutationFn: async (payload: JournalPayload) => {
+      const res = await healthApi.createJournal(payload);
+      return res.data as JournalEntry;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["health", "mind", "journal"] });
+    },
+  });
+
+  const deleteJournal = useMutation({
+    mutationFn: async (id: string) => healthApi.deleteJournal(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["health", "mind", "journal"] });
+    },
+  });
+
+  return { entries: entries.data ?? [], isLoading: entries.isLoading, createJournal, deleteJournal };
+};
+
+// ─── Weekly Review ───────────────────────────────────────────────────────────
+
+export const useWeeklyReview = () => {
+  const queryClient = useQueryClient();
+
+  const reviews = useQuery({
+    queryKey: ["health", "mind", "weekly-review"],
+    queryFn: async () => {
+      const res = await healthApi.getWeeklyReviews();
+      return (res.data ?? []) as WeeklyReview[];
+    },
+  });
+
+  const generate = useMutation({
+    mutationFn: async () => {
+      const res = await healthApi.generateWeeklyReview();
+      return res;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["health", "mind", "weekly-review"] });
+      queryClient.invalidateQueries({ queryKey: ["health", "dashboard"] });
+    },
+  });
+
+  return {
+    reviews: reviews.data ?? [],
+    isLoading: reviews.isLoading,
+    generate: generate.mutateAsync,
+    isGenerating: generate.isPending,
+  };
 };
