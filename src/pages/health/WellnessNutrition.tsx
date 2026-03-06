@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFood, useHealthPlan } from "@/hooks/use-health";
@@ -6,6 +6,39 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Camera, Salad, Trash2, ImageIcon } from "lucide-react";
 
 const MEAL_TYPES = ["breakfast", "lunch", "dinner", "snack", "unspecified"];
+
+// Detect mobile to conditionally use camera capture
+const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+
+/**
+ * Compress + resize an image File to a JPEG base64 string.
+ * Caps the longest side at maxPx (default 1024) and quality at 0.82.
+ * This keeps payloads small on both mobile and desktop.
+ */
+const compressImage = (file: File, maxPx = 1024, quality = 0.82): Promise<{ base64: string; mimeType: string }> =>
+  new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+
+      const scale = Math.min(1, maxPx / Math.max(img.width, img.height));
+      const w = Math.round(img.width * scale);
+      const h = Math.round(img.height * scale);
+
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      canvas.getContext("2d")!.drawImage(img, 0, 0, w, h);
+
+      const dataUrl = canvas.toDataURL("image/jpeg", quality);
+      resolve({ base64: dataUrl.split(",")[1], mimeType: "image/jpeg" });
+    };
+
+    img.onerror = reject;
+    img.src = url;
+  });
 
 export default function WellnessNutrition() {
   const { user, loading } = useAuth();
@@ -17,6 +50,7 @@ export default function WellnessNutrition() {
   const [manualForm, setManualForm] = useState({ name: "", serving: "", mealType: "lunch" });
   const [showManual, setShowManual] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!loading && !user) navigate("/auth");
@@ -36,31 +70,39 @@ export default function WellnessNutrition() {
   const handleCamera = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    try {
-      const dataUrl = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-      setPreviewUrl(dataUrl);
 
-      const base64 = dataUrl.split(",")[1];
+    // Show a local preview immediately so the user sees feedback on desktop too
+    const localPreview = URL.createObjectURL(file);
+    setPreviewUrl(localPreview);
+
+    try {
       toast({ title: "Analysing meal…", description: "AI is estimating calories and macros." });
+
+      // Compress before sending — critical for large desktop photos
+      const { base64, mimeType } = await compressImage(file);
 
       const res = await analyzeImage.mutateAsync({
         imageData: base64,
-        mimeType: file.type || "image/jpeg",
+        mimeType,
         mealType: "unspecified",
       });
-      setPreviewUrl(null);
+
       await refetch();
-      toast({ title: "Meal logged ✓", description: `${res.ai?.name ?? "Food"} · ${Math.round(res.ai?.calories ?? 0)} kcal` });
+      toast({
+        title: "Meal logged ✓",
+        description: `${res.ai?.name ?? "Food"} · ${Math.round(res.ai?.calories ?? 0)} kcal`,
+      });
     } catch (err: any) {
-      setPreviewUrl(null);
-      toast({ title: "Could not analyse food", description: err.message ?? "Please try again.", variant: "destructive" });
+      toast({
+        title: "Could not analyse food",
+        description: err.message ?? "Please try again.",
+        variant: "destructive",
+      });
     } finally {
-      e.target.value = "";
+      URL.revokeObjectURL(localPreview);
+      setPreviewUrl(null);
+      // Reset via ref so the input reliably clears on all browsers
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
@@ -76,9 +118,16 @@ export default function WellnessNutrition() {
       setManualForm({ name: "", serving: "", mealType: "lunch" });
       setShowManual(false);
       await refetch();
-      toast({ title: "Meal logged ✓", description: `${res.ai?.name ?? manualForm.name} · ${Math.round(res.ai?.calories ?? 0)} kcal` });
+      toast({
+        title: "Meal logged ✓",
+        description: `${res.ai?.name ?? manualForm.name} · ${Math.round(res.ai?.calories ?? 0)} kcal`,
+      });
     } catch (err: any) {
-      toast({ title: "Could not log meal", description: err.message ?? "Please try again.", variant: "destructive" });
+      toast({
+        title: "Could not log meal",
+        description: err.message ?? "Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -143,8 +192,16 @@ export default function WellnessNutrition() {
           <div className="flex flex-wrap gap-2">
             <label className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-foreground text-background text-xs font-medium active:scale-[0.97] transition cursor-pointer">
               <Camera className="h-4 w-4" />
-              <span>Use camera</span>
-              <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handleCamera} />
+              <span>{isMobile ? "Use camera" : "Upload photo"}</span>
+              {/* capture only on mobile — desktop browsers handle it poorly */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                {...(isMobile ? { capture: "environment" } : {})}
+                className="hidden"
+                onChange={handleCamera}
+              />
             </label>
             <button
               onClick={() => setShowManual(v => !v)}
@@ -206,7 +263,10 @@ export default function WellnessNutrition() {
               </button>
             </div>
           )}
-          <p className="text-[11px] text-muted-foreground">iOS tip: choose "Camera" when prompted. Limit: 10 image analyses/hour.</p>
+
+          <p className="text-[11px] text-muted-foreground">
+            {isMobile ? 'iOS tip: choose "Camera" when prompted. ' : ''}Limit: 10 image analyses/hour.
+          </p>
         </section>
 
         {/* Today's food log */}
