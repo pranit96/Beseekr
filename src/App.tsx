@@ -73,6 +73,12 @@ const Landing = lazyRetry(() => import("./pages/Landing"), "Landing");
 const DeepAnalytics = lazyRetry(() => import("./pages/DeepAnalytics"), "DeepAnalytics");
 const Deck = lazyRetry(() => import("./pages/Deck"), "Deck");
 const AuthCallback = lazyRetry(() => import("./pages/AuthCallback"), "AuthCallback");
+const WellnessDashboard = lazyRetry(() => import("./pages/health/WellnessDashboard"), "WellnessDashboard");
+const WellnessOnboarding = lazyRetry(() => import("./pages/health/WellnessOnboarding"), "WellnessOnboarding");
+const WellnessPlan = lazyRetry(() => import("./pages/health/WellnessPlan"), "WellnessPlan");
+const WellnessNutrition = lazyRetry(() => import("./pages/health/WellnessNutrition"), "WellnessNutrition");
+const WellnessTraining = lazyRetry(() => import("./pages/health/WellnessTraining"), "WellnessTraining");
+const WellnessHabits = lazyRetry(() => import("./pages/health/WellnessHabits"), "WellnessHabits");
 
 // SaaS Dashboard - Layout loaded immediately, pages lazy loaded
 import { SaasDashboardLayout } from "./layouts/SaasDashboardLayout";
@@ -219,6 +225,38 @@ const App = () => {
 
                   {/* About page */}
                   <Route path="/about" element={<About />} />
+
+                  {/* Wellness (health) */}
+                  <Route path="/wellness" element={
+                    <Suspense fallback={<PageLoader />}>
+                      <WellnessDashboard />
+                    </Suspense>
+                  } />
+                  <Route path="/wellness/onboarding" element={
+                    <Suspense fallback={<PageLoader />}>
+                      <WellnessOnboarding />
+                    </Suspense>
+                  } />
+                  <Route path="/wellness/plan" element={
+                    <Suspense fallback={<PageLoader />}>
+                      <WellnessPlan />
+                    </Suspense>
+                  } />
+                  <Route path="/wellness/nutrition" element={
+                    <Suspense fallback={<PageLoader />}>
+                      <WellnessNutrition />
+                    </Suspense>
+                  } />
+                  <Route path="/wellness/training" element={
+                    <Suspense fallback={<PageLoader />}>
+                      <WellnessTraining />
+                    </Suspense>
+                  } />
+                  <Route path="/wellness/habits" element={
+                    <Suspense fallback={<PageLoader />}>
+                      <WellnessHabits />
+                    </Suspense>
+                  } />
 
                   {/* Payment success - Razorpay redirect */}
                   <Route path="/payment/success" element={<PaymentSuccess />} />

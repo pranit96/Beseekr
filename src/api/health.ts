@@ -1,0 +1,199 @@
+import { apiClient } from "@/lib/apiWrapper";
+
+export interface HealthProfilePayload {
+  gender?: string;
+  dateOfBirth?: string;
+  heightCm?: number;
+  currentWeightKg?: number;
+  targetWeightKg?: number;
+  activityLevel?: string;
+  primaryGoal?: string;
+  trainingExperience?: string;
+  weeklyTrainingDays?: number;
+  dietaryPreference?: string;
+  medicalConditions?: string[];
+  injuries?: string;
+  timezone?: string;
+  notes?: string;
+}
+
+export interface HealthProfile extends HealthProfilePayload {
+  id: string;
+  user_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface HealthDashboard {
+  profile: HealthProfile | null;
+  range: { start: string; end: string };
+  today: {
+    calories: number;
+    protein_g: number;
+    workout_completed: boolean;
+    workout: any | null;
+    habits_completed: number;
+  };
+  aggregates: {
+    food_logs: number;
+    workouts: number;
+    habit_logs: number;
+  };
+}
+
+export interface HealthPlan {
+  overview: {
+    primary_goal: string;
+    timeframe_weeks: number;
+    key_focus_areas: string[];
+    summary: string;
+  };
+  training: {
+    weekly_frequency: number;
+    split: string;
+    sessions: any[];
+  };
+  nutrition: {
+    estimated_tdee: number;
+    calorie_target: number;
+    protein_target_g: number;
+    carb_target_g: number;
+    fat_target_g: number;
+    strategy: string;
+    meal_structure: any[];
+    example_meals: any[];
+  };
+  habits: {
+    daily: any[];
+    weekly: any[];
+  };
+  mindset: {
+    checkins: any[];
+    guidelines: string[];
+  };
+}
+
+export interface WorkoutSessionPayload {
+  sessionDate?: string;
+  startTime?: string;
+  endTime?: string;
+  type?: string;
+  focus?: string;
+  source?: string;
+  plan?: any;
+  completedExercises?: any;
+  durationMinutes?: number;
+  perceivedIntensity?: string;
+  caloriesBurned?: number;
+  notes?: string;
+}
+
+export interface HabitPayload {
+  name: string;
+  category?: string;
+  description?: string;
+  targetPerDay?: number;
+  unit?: string;
+  schedule?: any;
+}
+
+export interface HabitLogPayload {
+  logDate?: string;
+  value?: number;
+  completed?: boolean;
+  notes?: string;
+}
+
+export interface FoodImagePayload {
+  imageUrl: string;
+  mealType?: string;
+  notes?: string;
+}
+
+export interface FoodManualPayload {
+  foodName: string;
+  serving: string;
+  mealType?: string;
+  notes?: string;
+}
+
+export const healthApi = {
+  getProfile: () =>
+    apiClient.get<{ success: boolean; data: HealthProfile | null }>(
+      "/api/health/profile",
+    ),
+
+  upsertProfile: (payload: HealthProfilePayload) =>
+    apiClient.put<{ success: boolean; data: HealthProfile }>(
+      "/api/health/profile",
+      payload,
+    ),
+
+  getDashboard: () =>
+    apiClient.get<{ success: boolean; data: HealthDashboard }>(
+      "/api/health/dashboard",
+    ),
+
+  generatePlan: (overrides?: {
+    primaryGoalOverride?: string;
+    weeklyTrainingDaysOverride?: number;
+  }) =>
+    apiClient.post<{ success: boolean; data: HealthPlan; source: string }>(
+      "/api/health/plan",
+      overrides ?? {},
+    ),
+
+  logWorkoutSession: (payload: WorkoutSessionPayload) =>
+    apiClient.post<{ success: boolean; data: any }>(
+      "/api/health/workouts/sessions",
+      payload,
+    ),
+
+  listWorkoutSessions: (params?: {
+    from?: string;
+    to?: string;
+    limit?: number;
+  }) =>
+    apiClient.get<{ success: boolean; data: any[] }>(
+      "/api/health/workouts/sessions",
+      { params },
+    ),
+
+  createHabit: (payload: HabitPayload) =>
+    apiClient.post<{ success: boolean; data: any }>(
+      "/api/health/habits",
+      payload,
+    ),
+
+  listHabits: (includeInactive?: boolean) =>
+    apiClient.get<{ success: boolean; data: any[] }>("/api/health/habits", {
+      params: includeInactive ? { includeInactive: true } : {},
+    }),
+
+  logHabit: (habitId: string, payload: HabitLogPayload) =>
+    apiClient.post<{ success: boolean; data: any }>(
+      `/api/health/habits/${habitId}/logs`,
+      payload,
+    ),
+
+  analyzeFoodImage: (payload: FoodImagePayload) =>
+    apiClient.post<{ success: boolean; data: any; ai: any }>(
+      "/api/health/food/analyze-image",
+      payload,
+    ),
+
+  logFoodManual: (payload: FoodManualPayload) =>
+    apiClient.post<{ success: boolean; data: any; ai: any }>(
+      "/api/health/food/manual",
+      payload,
+    ),
+
+  getFoodSummary: (from?: string, to?: string) =>
+    apiClient.get<{ success: boolean; data: any }>(
+      "/api/health/food/summary",
+      {
+        params: { from, to },
+      },
+    ),
+};
+
