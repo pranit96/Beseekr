@@ -25,13 +25,25 @@ export default function WellnessNutrition() {
     const file = e.target.files?.[0];
     if (!file) return;
     try {
-      const url = URL.createObjectURL(file);
+      // Convert file to base64 — blob:// URLs can't be fetched server-side
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const result = reader.result as string;
+          // Strip the data:image/jpeg;base64, prefix — send only the raw base64
+          resolve(result.split(",")[1]);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
       toast({
         title: "Analyzing meal...",
         description: "Using AI to estimate calories and macros.",
       });
       const res = await analyzeImage.mutateAsync({
-        imageUrl: url,
+        imageData: base64,
+        mimeType: file.type || "image/jpeg",
         mealType: "unspecified",
       });
       await dashboard.refetch();

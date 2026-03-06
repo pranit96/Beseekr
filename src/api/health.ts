@@ -105,7 +105,8 @@ export interface HabitLogPayload {
 }
 
 export interface FoodImagePayload {
-  imageUrl: string;
+  imageData: string;  // raw base64 (no data: prefix)
+  mimeType?: string;  // e.g. "image/jpeg"
   mealType?: string;
   notes?: string;
 }
