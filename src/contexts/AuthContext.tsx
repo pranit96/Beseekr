@@ -410,8 +410,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           description: 'Successfully logged in.',
         });
 
-        // Redirect to intended page or default to dashboard
-        const redirectUrl = sessionStorage.getItem('auth-redirect') || '/dashboard/problems';
+        // Redirect to intended page or default to home
+        const redirectUrl = sessionStorage.getItem('auth-redirect') || '/';
         sessionStorage.removeItem('auth-redirect');
         navigate(redirectUrl);
       }
@@ -446,8 +446,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           description: 'Welcome to beseekr.',
         });
 
-        // Redirect to intended page or default to dashboard
-        const redirectUrl = sessionStorage.getItem('auth-redirect') || '/dashboard/problems';
+        // Redirect to intended page or default to home
+        const redirectUrl = sessionStorage.getItem('auth-redirect') || '/';
         sessionStorage.removeItem('auth-redirect');
         navigate(redirectUrl);
       }

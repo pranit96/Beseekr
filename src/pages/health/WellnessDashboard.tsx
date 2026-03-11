@@ -7,6 +7,7 @@ import {
   Activity, ArrowLeft, BarChart3, Brain, Camera, CheckCircle2, Dumbbell,
   Flame, Moon, Salad, Scale, Smile, Sparkles, TrendingUp, ChevronRight,
 } from "lucide-react";
+import { GlobalHeader } from "@/components/GlobalHeader";
 
 /* ─────────────────────────────────────────────────────────────────────────────
    WELLNESS DASHBOARD — Complete redesign
@@ -263,26 +264,7 @@ export default function WellnessDashboard() {
       <div className="wd">
 
         {/* ═══ HEADER ══════════════════════════════════════════════ */}
-        <header className="wd-hdr">
-          <div className="wd-hdr-inner">
-            <button className="back-btn" onClick={() => navigate(-1)}>
-              <ArrowLeft size={15} />
-            </button>
-
-            <div style={{ flex: 1 }}>
-              <p style={{ fontSize: 10, color: "var(--green)", fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", marginBottom: 1 }}>
-                {greeting}
-              </p>
-              <h1 className="syne" style={{ fontSize: 15, fontWeight: 700, color: "var(--t1)", lineHeight: 1 }}>
-                Mind & Body Dashboard
-              </h1>
-            </div>
-
-            <div className="chip" style={{ width: 34, height: 34, background: "var(--g-dim)", border: "1px solid var(--g-glow)" }}>
-              <Activity size={16} color="var(--green)" />
-            </div>
-          </div>
-        </header>
+        <GlobalHeader />
 
         <main className="wd-main">
 

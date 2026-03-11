@@ -248,7 +248,7 @@ export default function AuthCallback() {
                     // Redirect to dashboard (public page) instead of /auth to avoid confusion
                     // This prevents the Google button from disappearing issue
                     setTimeout(() => {
-                        navigate('/dashboard/problems', { replace: true });
+                        navigate('/', { replace: true });
                     }, 3000);
                 }
             }
@@ -302,8 +302,8 @@ export default function AuthCallback() {
                             <Button variant="outline" onClick={() => navigate('/auth')}>
                                 Try Again
                             </Button>
-                            <Button onClick={() => navigate('/dashboard/problems')}>
-                                Go to Dashboard
+                            <Button onClick={() => navigate('/')}>
+                                Go to Home
                             </Button>
                         </div>
                     </>
