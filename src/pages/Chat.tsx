@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { ChatInterface } from '@/components/ChatInterface';
 import { ConversationHistory } from '@/components/ConversationHistory';
-import { TopBar } from '@/components/TopBar';
+import { GlobalHeader } from '@/components/GlobalHeader';
 import { apiClient } from '@/lib/api';
 import { useAgents } from '@/hooks/use-agents';
 import { useAuth } from '@/contexts/AuthContext';
@@ -581,11 +581,7 @@ const Chat = () => {
 
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-background">
-      <TopBar
-        sidebarOpen={sidebarOpen}
-        onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-        showSidebarToggle
-      />
+      <GlobalHeader />
 
       <div className="flex-1 flex overflow-hidden">
         {/* Sidebar */}

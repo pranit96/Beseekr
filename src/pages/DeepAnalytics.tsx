@@ -6,7 +6,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
-import { TopBar } from '@/components/TopBar';
+import { GlobalHeader } from '@/components/GlobalHeader';
 import { useToast } from '@/hooks/use-toast';
 import MarkdownRenderer from '@/components/messages/MarkdownRenderer';
 import { useDownload } from '@/hooks/use-download';
@@ -80,7 +80,7 @@ const DeepAnalytics = () => {
   const [isPreviewing, setIsPreviewing] = useState(false);
   const [fileContent, setFileContent] = useState<{ [fileId: string]: string }>({});
   const [isExecuting, setIsExecuting] = useState(false);
-  
+
   // Low confidence state
   const [lowConfidenceKPIs, setLowConfidenceKPIs] = useState<LowConfidenceKPI[]>([]);
   const [showLowConfidenceBanner, setShowLowConfidenceBanner] = useState(false);
@@ -159,7 +159,7 @@ const DeepAnalytics = () => {
   if (authLoading) {
     return (
       <div className="min-h-screen bg-background flex flex-col">
-        <TopBar />
+        <GlobalHeader />
         <div className="flex-1 flex items-center justify-center">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </div>
@@ -726,7 +726,7 @@ const DeepAnalytics = () => {
     setFileContent({});
     setIsExecuting(false);
     loadedSessionRef.current = null;
-    
+
     // Disconnect from any active session
     unsubscribeFromSession();
 
@@ -892,11 +892,7 @@ const DeepAnalytics = () => {
   if (isProcessing) {
     return (
       <div className="h-screen flex flex-col overflow-hidden bg-background">
-        <TopBar
-          sidebarOpen={sidebarOpen}
-          onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-          showSidebarToggle
-        />
+        <GlobalHeader />
 
         <div className="flex-1 flex overflow-hidden">
           <aside
@@ -1008,11 +1004,7 @@ const DeepAnalytics = () => {
   if (showResult) {
     return (
       <div className="h-screen flex flex-col overflow-hidden bg-background">
-        <TopBar
-          sidebarOpen={sidebarOpen}
-          onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-          showSidebarToggle
-        />
+        <GlobalHeader />
 
         <div className="flex-1 flex overflow-hidden">
           <aside
@@ -1123,11 +1115,7 @@ const DeepAnalytics = () => {
   // INPUT VIEW
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-background">
-      <TopBar
-        sidebarOpen={sidebarOpen}
-        onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-        showSidebarToggle
-      />
+      <GlobalHeader />
 
       {!isConnected && (isProcessing || currentSessionId) && (
         <div className="bg-destructive/10 border-b border-destructive/20 px-4 py-2">

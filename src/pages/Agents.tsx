@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { AgentDialog } from '@/components/AgentDialog';
 import { Agent, AgentTemplate } from '@/types/agent';
 import { useToast } from '@/hooks/use-toast';
-import { TopBar } from '@/components/TopBar';
+import { GlobalHeader } from '@/components/GlobalHeader';
 import { apiClient } from '@/lib/api';
 import {
   AlertDialog,
@@ -329,7 +329,7 @@ const Agents = () => {
   if (loading) {
     return (
       <>
-        <TopBar />
+        <GlobalHeader />
         <div className="h-full flex items-center justify-center">
           <div className="animate-pulse text-muted-foreground">Loading agents...</div>
         </div>
@@ -339,7 +339,7 @@ const Agents = () => {
 
   return (
     <>
-      <TopBar />
+      <GlobalHeader />
       <div className="mx-auto p-4 sm:p-6 md:p-8 max-w-[2200px]">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
           <div>

@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Outlet, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { TopBar } from '@/components/TopBar';
+import { GlobalHeader } from '@/components/GlobalHeader';
 
 type LayoutContextType = {
   sidebarOpen: boolean;
@@ -37,15 +37,9 @@ export const ProtectedLayout: React.FC = () => {
   return (
     <LayoutContext.Provider value={{ sidebarOpen, setSidebarOpen }}>
       <div className="min-h-screen bg-background text-foreground">
-        {/* TopBar lives here (single source of truth) */}
-        <TopBar
-          sidebarOpen={sidebarOpen}
-          onToggleSidebar={() => setSidebarOpen((s) => !s)}
-          showSidebarToggle
-        />
+        <GlobalHeader />
 
-        {/* make room if TopBar is fixed; adjust pt-16 to your TopBar height */}
-        <main className="pt-16 min-h-[calc(100vh-4rem)]">
+        <main className="min-h-[calc(100vh-4rem)]">
           <Outlet />
         </main>
       </div>

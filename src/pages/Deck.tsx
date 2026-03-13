@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { TopBar } from '@/components/TopBar';
+import { GlobalHeader } from '@/components/GlobalHeader';
 import { DeckUploadZone } from '@/components/DeckUploadZone';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -47,7 +47,7 @@ export default function Deck() {
     try {
       const formData = new FormData();
       formData.append('pdf', selectedFile);
-      
+
       if (companyName.trim()) {
         formData.append('company_name', companyName.trim());
       }
@@ -91,8 +91,8 @@ export default function Deck() {
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-background">
-      <TopBar />
-      
+      <GlobalHeader />
+
       <div className="flex flex-1 overflow-hidden">
         {/* Main Content */}
         <main className="flex-1 overflow-y-auto">

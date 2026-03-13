@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { NavLink, useLocation, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
@@ -8,16 +8,24 @@ import { paymentsApi } from '@/api/payments';
 import {
     Compass,
     Sparkles,
-    Bookmark,
     Moon,
     Sun,
     User,
     LogOut,
     Settings,
-    Zap,
+    TrendingUp,
     CreditCard,
     Clock,
     Activity,
+    MessageSquare,
+    BookOpen,
+    Home,
+    Menu,
+    X,
+    Search,
+    Bookmark,
+    Zap,
+    ChevronDown,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -29,237 +37,381 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const baseNavigation = [
-    { name: 'AI Chat', href: '/chat', icon: Sparkles, color: 'from-violet-500 to-purple-600' },
-    { name: 'Wellness', href: '/wellness', icon: Activity, color: 'from-emerald-500 to-sky-500' },
+/* ─── Primary nav items (always visible on desktop) ─── */
+const primaryNavigation = [
+    { name: 'Home', href: '/', icon: Home, color: 'from-slate-500 to-zinc-600', exact: true },
     { name: 'Discover', href: '/dashboard/problems', icon: Compass, color: 'from-violet-500 to-purple-600' },
-    { name: 'Research', href: '/dashboard/validate', icon: Zap, color: 'from-emerald-500 to-cyan-500' },
-    { name: 'Watchlist', href: '/dashboard/watchlist', icon: Bookmark, color: 'from-amber-500 to-orange-500' },
-    { name: 'Pricing', href: '/dashboard/pricing', icon: CreditCard, color: 'from-pink-500 to-rose-500', premiumHide: true },
+    { name: 'Trading', href: '/trading', icon: TrendingUp, color: 'from-blue-500 to-indigo-500' },
+    { name: 'Wellness', href: '/wellness', icon: Activity, color: 'from-emerald-500 to-sky-500' },
+    { name: 'AI Chat', href: '/chat', icon: MessageSquare, color: 'from-violet-500 to-fuchsia-500' },
+    { name: 'Blogs', href: '/blogs', icon: BookOpen, color: 'from-amber-500 to-orange-500' },
 ];
+
+/* ─── Secondary items shown in "More" dropdown on desktop, always in mobile menu ─── */
+const secondaryNavigation = [
+    { name: 'Research', href: '/dashboard/validate', icon: Zap },
+    { name: 'Watchlist', href: '/dashboard/watchlist', icon: Bookmark },
+    { name: 'Pricing', href: '/dashboard/pricing', icon: CreditCard, premiumHide: true },
+];
+
+function isPathActive(pathname: string, href: string, exact?: boolean) {
+    if (exact) return pathname === href;
+    return pathname === href || pathname.startsWith(href + '/');
+}
 
 export function GlobalHeader() {
     const location = useLocation();
     const { theme, setTheme } = useTheme();
     const { user, logout } = useAuth();
+    const [mobileOpen, setMobileOpen] = useState(false);
 
     // Fetch plans to get user subscription status
     const { data: plansData } = useQuery({
         queryKey: ['subscription-plans'],
         queryFn: () => paymentsApi.getPlans(),
-        staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+        staleTime: 5 * 60 * 1000,
         gcTime: 10 * 60 * 1000,
     });
 
-    // Filter navigation - hide Pricing for premium users
-    const navigation = useMemo(() => {
+    // Filter secondary nav — hide Pricing for premium users
+    const secondaryItems = useMemo(() => {
         const isPremium = plansData?.user?.is_premium === true;
-
-        // If user is premium, hide items marked with premiumHide
-        if (isPremium) {
-            return baseNavigation.filter(item => !item.premiumHide);
-        }
-
-        return baseNavigation;
+        if (isPremium) return secondaryNavigation.filter(item => !item.premiumHide);
+        return secondaryNavigation;
     }, [plansData?.user?.is_premium]);
 
-    return (
-        <header className="sticky top-0 z-50 px-2 sm:px-4 pt-2 sm:pt-4">
-            <motion.div
-                initial={{ y: -20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.5, ease: 'easeOut' }}
-                className="mx-auto max-w-6xl"
-            >
-                <div className="flex items-center justify-between rounded-xl sm:rounded-2xl border border-border/50 bg-background/80 backdrop-blur-xl px-3 sm:px-6 py-2 sm:py-3 shadow-lg shadow-black/5">
-                    {/* Logo */}
-                    <Link to="/" className="flex items-center gap-2 sm:gap-3 group shrink-0">
-                        <motion.div
-                            whileHover={{ scale: 1.05, rotate: 5 }}
-                            className="h-8 w-8 sm:h-9 sm:w-9 rounded-lg sm:rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg"
-                        >
-                            <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
-                        </motion.div>
-                        <span className="hidden sm:block text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent group-hover:opacity-80 transition-opacity">
-                            beseekr
-                        </span>
-                    </Link>
+    const anySecondaryActive = secondaryItems.some(item =>
+        isPathActive(location.pathname, item.href)
+    );
 
-                    {/* Desktop Nav Pills - Hidden on mobile */}
-                    <nav className="hidden md:flex items-center gap-1 p-1 rounded-xl bg-muted/50">
-                        {navigation.map((item) => {
-                            // Check if current path matches item.href exactly or is nested under it
-                            // Except for root /chat, etc.
-                            const isActive = 
-                                location.pathname === item.href || 
-                                (item.href !== '/' && location.pathname.startsWith(item.href + '/'));
-                                
-                            return (
-                                <NavLink
-                                    key={item.href}
-                                    to={item.href}
-                                >
-                                    <motion.div
-                                        whileHover={{ scale: 1.02 }}
-                                        whileTap={{ scale: 0.98 }}
-                                        className={cn(
-                                            'relative px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 flex items-center gap-2',
-                                            isActive
-                                                ? 'text-foreground'
-                                                : 'text-muted-foreground hover:text-foreground'
-                                        )}
-                                    >
-                                        {isActive && (
-                                            <motion.div
-                                                layoutId="activeTab"
-                                                className="absolute inset-0 bg-background rounded-lg shadow-sm border border-border/50"
-                                                transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
-                                            />
-                                        )}
-                                        <span className="relative z-10 flex items-center gap-2">
+    return (
+        <>
+            <header className="sticky top-0 z-50 px-2 sm:px-4 pt-2 sm:pt-3">
+                <motion.div
+                    initial={{ y: -20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ duration: 0.5, ease: 'easeOut' }}
+                    className="mx-auto max-w-7xl"
+                >
+                    <div className="flex items-center justify-between rounded-xl sm:rounded-2xl border border-border/50 bg-background/80 backdrop-blur-xl px-3 sm:px-5 py-2 sm:py-2.5 shadow-lg shadow-black/5">
+                        {/* ── Logo ── */}
+                        <Link to="/" className="flex items-center gap-2 sm:gap-2.5 group shrink-0">
+                            <motion.div
+                                whileHover={{ scale: 1.05, rotate: 5 }}
+                                className="h-8 w-8 sm:h-9 sm:w-9 rounded-lg sm:rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg"
+                            >
+                                <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+                            </motion.div>
+                            <span className="hidden sm:block text-lg font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent group-hover:opacity-80 transition-opacity">
+                                beseekr
+                            </span>
+                        </Link>
+
+                        {/* ── Desktop Nav Pills ── */}
+                        <nav className="hidden lg:flex items-center gap-0.5 p-1 rounded-xl bg-muted/50">
+                            {primaryNavigation.map((item) => {
+                                const isActive = isPathActive(location.pathname, item.href, item.exact);
+                                return (
+                                    <NavLink key={item.href} to={item.href}>
+                                        <motion.div
+                                            whileHover={{ scale: 1.02 }}
+                                            whileTap={{ scale: 0.98 }}
+                                            className={cn(
+                                                'relative px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-300 flex items-center gap-1.5',
+                                                isActive
+                                                    ? 'text-foreground'
+                                                    : 'text-muted-foreground hover:text-foreground'
+                                            )}
+                                        >
+                                            {isActive && (
+                                                <motion.div
+                                                    layoutId="activeTab"
+                                                    className="absolute inset-0 bg-background rounded-lg shadow-sm border border-border/50"
+                                                    transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
+                                                />
+                                            )}
+                                            <span className="relative z-10 flex items-center gap-1.5">
+                                                <item.icon
+                                                    className={cn(
+                                                        "h-3.5 w-3.5 transition-colors",
+                                                        isActive ? "text-primary" : "text-muted-foreground"
+                                                    )}
+                                                />
+                                                {item.name}
+                                            </span>
+                                        </motion.div>
+                                    </NavLink>
+                                );
+                            })}
+
+                            {/* More dropdown for secondary items */}
+                            {secondaryItems.length > 0 && (
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <button
+                                            className={cn(
+                                                'relative px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-300 flex items-center gap-1 outline-none',
+                                                anySecondaryActive
+                                                    ? 'text-foreground bg-background shadow-sm border border-border/50'
+                                                    : 'text-muted-foreground hover:text-foreground'
+                                            )}
+                                        >
+                                            More
+                                            <ChevronDown className="h-3 w-3" />
+                                        </button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" className="w-48 rounded-xl">
+                                        {secondaryItems.map((item) => {
+                                            const isActive = isPathActive(location.pathname, item.href);
+                                            return (
+                                                <DropdownMenuItem key={item.href} asChild className="rounded-lg cursor-pointer">
+                                                    <Link to={item.href} className={cn(
+                                                        "flex items-center gap-2 w-full",
+                                                        isActive && "text-primary font-medium"
+                                                    )}>
+                                                        <item.icon className="h-4 w-4" />
+                                                        {item.name}
+                                                    </Link>
+                                                </DropdownMenuItem>
+                                            );
+                                        })}
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            )}
+                        </nav>
+
+                        {/* ── Tablet Nav (icons only, md–lg) ── */}
+                        <nav className="hidden md:flex lg:hidden items-center gap-0.5 p-0.5 rounded-lg bg-muted/50">
+                            {primaryNavigation.map((item) => {
+                                const isActive = isPathActive(location.pathname, item.href, item.exact);
+                                return (
+                                    <NavLink key={item.href} to={item.href} className="relative" title={item.name}>
+                                        <motion.div
+                                            whileTap={{ scale: 0.95 }}
+                                            className={cn(
+                                                'relative p-2 rounded-md transition-all duration-200',
+                                                isActive
+                                                    ? 'bg-background shadow-sm border border-border/50'
+                                                    : 'hover:bg-muted/50'
+                                            )}
+                                        >
                                             <item.icon
                                                 className={cn(
                                                     "h-4 w-4 transition-colors",
-                                                    isActive
-                                                        ? "text-primary"
-                                                        : "text-muted-foreground"
+                                                    isActive ? "text-primary" : "text-muted-foreground"
                                                 )}
                                             />
-                                            {item.name}
-                                        </span>
-                                    </motion.div>
-                                </NavLink>
-                            );
-                        })}
-                    </nav>
+                                        </motion.div>
+                                    </NavLink>
+                                );
+                            })}
+                        </nav>
 
-                    {/* Mobile Nav - Icon only */}
-                    <nav className="flex md:hidden items-center gap-0.5 p-0.5 rounded-lg bg-muted/50">
-                        {navigation.map((item) => {
-                            const isActive = 
-                                location.pathname === item.href || 
-                                (item.href !== '/' && location.pathname.startsWith(item.href + '/'));
-                            return (
-                                <NavLink
-                                    key={item.href}
-                                    to={item.href}
-                                    className="relative"
+                        {/* ── Right Controls ── */}
+                        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+                            {/* Trial Badge */}
+                            {user?.trial?.active && (
+                                <motion.div
+                                    initial={{ opacity: 0, scale: 0.8 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    whileHover={{ scale: 1.05 }}
+                                    className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 border border-primary/20"
                                 >
-                                    <motion.div
-                                        whileTap={{ scale: 0.95 }}
-                                        className={cn(
-                                            'relative p-2 rounded-md transition-all duration-200',
-                                            isActive
-                                                ? 'bg-background shadow-sm border border-border/50'
-                                                : 'hover:bg-muted/50'
-                                        )}
-                                    >
-                                        <item.icon
-                                            className={cn(
-                                                "h-4 w-4 transition-colors",
-                                                isActive
-                                                    ? "text-primary"
-                                                    : "text-muted-foreground"
+                                    <Clock className="h-3 w-3 text-primary" />
+                                    <span className="text-xs font-medium text-primary">
+                                        {user.trial.days_remaining} {user.trial.days_remaining === 1 ? 'day' : 'days'} left
+                                    </span>
+                                </motion.div>
+                            )}
+
+                            {/* Theme Toggle */}
+                            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                                    className="rounded-lg sm:rounded-xl h-8 w-8 sm:h-9 sm:w-9"
+                                    aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+                                >
+                                    <AnimatePresence mode="wait">
+                                        <motion.div
+                                            key={theme}
+                                            initial={{ rotate: -90, opacity: 0 }}
+                                            animate={{ rotate: 0, opacity: 1 }}
+                                            exit={{ rotate: 90, opacity: 0 }}
+                                            transition={{ duration: 0.2 }}
+                                        >
+                                            {theme === 'dark' ? <Sun className="h-4 w-4 sm:h-5 sm:w-5" /> : <Moon className="h-4 w-4 sm:h-5 sm:w-5" />}
+                                        </motion.div>
+                                    </AnimatePresence>
+                                </Button>
+                            </motion.div>
+
+                            {/* Profile / Login */}
+                            {user ? (
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                                            <Button variant="ghost" size="icon" className="rounded-lg sm:rounded-xl h-8 w-8 sm:h-9 sm:w-9" aria-label="User menu">
+                                                <User className="h-4 w-4 sm:h-5 sm:w-5" />
+                                            </Button>
+                                        </motion.div>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" className="w-56 rounded-xl">
+                                        <div className="px-3 py-3">
+                                            <p className="font-medium">{user.full_name || user.name || 'User'}</p>
+                                            <p className="text-xs text-muted-foreground">{user.email}</p>
+                                            {user.trial?.active && (
+                                                <div className="flex items-center gap-1.5 mt-2 px-2 py-1 rounded-md bg-primary/10 border border-primary/20 w-fit">
+                                                    <Clock className="h-3 w-3 text-primary" />
+                                                    <span className="text-xs font-medium text-primary">
+                                                        Trial: {user.trial.days_remaining} {user.trial.days_remaining === 1 ? 'day' : 'days'} left
+                                                    </span>
+                                                </div>
                                             )}
-                                        />
-                                    </motion.div>
-                                </NavLink>
-                            );
-                        })}
-                    </nav>
-
-                    {/* Right Controls */}
-                    <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-                        {/* Trial Badge */}
-                        {user?.trial?.active && (
-                            <motion.div
-                                initial={{ opacity: 0, scale: 0.8 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                whileHover={{ scale: 1.05 }}
-                                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20"
-                            >
-                                <Clock className="h-3.5 w-3.5 text-primary" />
-                                <span className="text-xs font-medium text-primary">
-                                    {user.trial.days_remaining} {user.trial.days_remaining === 1 ? 'day' : 'days'} left
-                                </span>
-                            </motion.div>
-                        )}
-                        {/* Theme Toggle */}
-                        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                                className="rounded-lg sm:rounded-xl h-8 w-8 sm:h-9 sm:w-9"
-                                aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-                            >
-                                <AnimatePresence mode="wait">
-                                    <motion.div
-                                        key={theme}
-                                        initial={{ rotate: -90, opacity: 0 }}
-                                        animate={{ rotate: 0, opacity: 1 }}
-                                        exit={{ rotate: 90, opacity: 0 }}
-                                        transition={{ duration: 0.2 }}
-                                    >
-                                        {theme === 'dark' ? <Sun className="h-4 w-4 sm:h-5 sm:w-5" /> : <Moon className="h-4 w-4 sm:h-5 sm:w-5" />}
-                                    </motion.div>
-                                </AnimatePresence>
-                            </Button>
-                        </motion.div>
-
-                        {/* Profile - show for logged users, Login for guests */}
-                        {user ? (
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                                        <Button variant="ghost" size="icon" className="rounded-lg sm:rounded-xl h-8 w-8 sm:h-9 sm:w-9" aria-label="User menu">
-                                            <User className="h-4 w-4 sm:h-5 sm:w-5" />
+                                        </div>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
+                                            <Link to="/dashboard/profile" className="flex items-center w-full">
+                                                <Settings className="mr-2 h-4 w-4" />
+                                                Settings
+                                            </Link>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem onClick={logout} className="rounded-lg cursor-pointer text-destructive focus:text-destructive">
+                                            <LogOut className="mr-2 h-4 w-4" />
+                                            Sign Out
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            ) : (
+                                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="hidden sm:block">
+                                    <Link to="/auth">
+                                        <Button
+                                            size="sm"
+                                            className="rounded-lg sm:rounded-xl bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity text-xs sm:text-sm px-3 sm:px-4 h-8 sm:h-9"
+                                        >
+                                            Login / Sign Up
                                         </Button>
-                                    </motion.div>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-56 rounded-xl">
-                                    <div className="px-3 py-3">
-                                        <p className="font-medium">{user.full_name || user.name || 'User'}</p>
-                                        <p className="text-xs text-muted-foreground">{user.email}</p>
-                                        {user.trial?.active && (
-                                            <div className="flex items-center gap-1.5 mt-2 px-2 py-1 rounded-md bg-primary/10 border border-primary/20 w-fit">
-                                                <Clock className="h-3 w-3 text-primary" />
-                                                <span className="text-xs font-medium text-primary">
-                                                    Trial: {user.trial.days_remaining} {user.trial.days_remaining === 1 ? 'day' : 'days'} left
-                                                </span>
-                                            </div>
-                                        )}
-                                    </div>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
-                                        <Link to="/dashboard/profile" className="flex items-center w-full">
-                                            <Settings className="mr-2 h-4 w-4" />
-                                            Settings
-                                        </Link>
-                                    </DropdownMenuItem>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={logout} className="rounded-lg cursor-pointer text-destructive focus:text-destructive">
-                                        <LogOut className="mr-2 h-4 w-4" />
-                                        Sign Out
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        ) : (
-                            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                                <Link to="/auth">
-                                    <Button
-                                        size="sm"
-                                        className="rounded-lg sm:rounded-xl bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity text-xs sm:text-sm px-3 sm:px-4 h-8 sm:h-9"
-                                    >
-                                        <span className="hidden sm:inline">Login / Sign Up</span>
-                                        <span className="sm:hidden">Login</span>
-                                    </Button>
-                                </Link>
+                                    </Link>
+                                </motion.div>
+                            )}
+
+                            {/* Mobile Hamburger */}
+                            <motion.div whileTap={{ scale: 0.95 }} className="md:hidden">
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => setMobileOpen(prev => !prev)}
+                                    className="rounded-lg h-8 w-8"
+                                    aria-label="Toggle menu"
+                                >
+                                    {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+                                </Button>
                             </motion.div>
-                        )}
+                        </div>
                     </div>
-                </div>
-            </motion.div>
-        </header>
+                </motion.div>
+            </header>
+
+            {/* ── Mobile Full-Screen Menu ── */}
+            <AnimatePresence>
+                {mobileOpen && (
+                    <motion.div
+                        key="mobile-nav-overlay"
+                        initial={{ opacity: 0, y: -8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
+                        transition={{ duration: 0.25, ease: 'easeInOut' }}
+                        className="fixed inset-x-0 top-[56px] z-40 md:hidden border-b border-border/50 bg-background/95 backdrop-blur-xl shadow-xl max-h-[calc(100vh-56px)] overflow-y-auto"
+                    >
+                        <nav className="px-4 py-3 space-y-1">
+                            {/* Primary items */}
+                            {primaryNavigation.map((item) => {
+                                const isActive = isPathActive(location.pathname, item.href, item.exact);
+                                return (
+                                    <Link
+                                        key={item.href}
+                                        to={item.href}
+                                        onClick={() => setMobileOpen(false)}
+                                        className={cn(
+                                            'flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200',
+                                            isActive
+                                                ? 'bg-primary/10 text-primary border border-primary/20'
+                                                : 'text-foreground hover:bg-muted'
+                                        )}
+                                    >
+                                        <div className={cn(
+                                            'h-8 w-8 rounded-lg flex items-center justify-center',
+                                            isActive
+                                                ? `bg-gradient-to-br ${item.color} shadow-md`
+                                                : 'bg-muted'
+                                        )}>
+                                            <item.icon className={cn("h-4 w-4", isActive ? "text-white" : "text-muted-foreground")} />
+                                        </div>
+                                        {item.name}
+                                        {isActive && (
+                                            <div className="ml-auto h-1.5 w-1.5 rounded-full bg-primary" />
+                                        )}
+                                    </Link>
+                                );
+                            })}
+
+                            {/* Divider */}
+                            <div className="border-t border-border/50 my-2" />
+
+                            {/* Secondary items */}
+                            {secondaryItems.map((item) => {
+                                const isActive = isPathActive(location.pathname, item.href);
+                                return (
+                                    <Link
+                                        key={item.href}
+                                        to={item.href}
+                                        onClick={() => setMobileOpen(false)}
+                                        className={cn(
+                                            'flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200',
+                                            isActive
+                                                ? 'bg-primary/10 text-primary'
+                                                : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                                        )}
+                                    >
+                                        <item.icon className="h-4 w-4" />
+                                        {item.name}
+                                    </Link>
+                                );
+                            })}
+
+                            {/* Login button for mobile guests */}
+                            {!user && (
+                                <>
+                                    <div className="border-t border-border/50 my-2" />
+                                    <Link
+                                        to="/auth"
+                                        onClick={() => setMobileOpen(false)}
+                                        className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold bg-gradient-to-r from-primary to-accent text-white shadow-md"
+                                    >
+                                        Login / Sign Up
+                                    </Link>
+                                </>
+                            )}
+
+                            {/* Logout for mobile users */}
+                            {user && (
+                                <>
+                                    <div className="border-t border-border/50 my-2" />
+                                    <button
+                                        onClick={() => { logout(); setMobileOpen(false); }}
+                                        className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-destructive hover:bg-destructive/10 w-full transition-colors"
+                                    >
+                                        <LogOut className="h-4 w-4" />
+                                        Sign Out
+                                    </button>
+                                </>
+                            )}
+                        </nav>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </>
     );
 }

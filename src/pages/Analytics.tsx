@@ -2,7 +2,7 @@ import { useMemo, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Activity, MessageSquare, Zap, DollarSign } from 'lucide-react';
-import { TopBar } from '@/components/TopBar';
+import { GlobalHeader } from '@/components/GlobalHeader';
 import { useUsageStats } from '@/hooks/use-api-queries';
 
 const Analytics = () => {
@@ -34,7 +34,7 @@ const Analytics = () => {
   if (loading) {
     return (
       <>
-        <TopBar />
+        <GlobalHeader />
         <div className="h-full flex items-center justify-center">
           <div className="animate-pulse text-muted-foreground">Loading analytics...</div>
         </div>
@@ -71,7 +71,7 @@ const Analytics = () => {
 
   return (
     <>
-      <TopBar />
+      <GlobalHeader />
       <div className="mx-auto p-4 sm:p-6 md:p-8 max-w-[2200px]">
         <div className="mb-6 sm:mb-8">
           <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">

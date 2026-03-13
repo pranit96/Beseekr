@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Sidebar } from '@/components/Sidebar';
-import { TopBar } from '@/components/TopBar';
+import { GlobalHeader } from '@/components/GlobalHeader';
 import { apiClient } from '@/lib/api';
 import { toast } from 'sonner';
 import { CheckCircle2, Clock, FileSpreadsheet, Info } from 'lucide-react';
@@ -71,7 +71,7 @@ export default function DeckUpload() {
     try {
       const formData = new FormData();
       formData.append('pdf', selectedFile);
-      
+
       if (companyName.trim()) {
         formData.append('company_name', companyName.trim());
       }
@@ -137,7 +137,7 @@ export default function DeckUpload() {
       <div className="flex h-screen overflow-hidden bg-background">
         <Sidebar />
         <div className="flex-1 flex flex-col overflow-hidden">
-          <TopBar />
+          <GlobalHeader />
           <main className="flex-1 overflow-y-auto p-6">
             <div className="max-w-2xl mx-auto">
               <Card className="border-green-500/20 bg-green-500/5">
@@ -201,7 +201,7 @@ export default function DeckUpload() {
     <div className="flex h-screen overflow-hidden bg-background">
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <TopBar />
+        <GlobalHeader />
         <div className="flex-1 flex overflow-hidden">
           <main className="flex-1 overflow-y-auto p-6">
             <div className="max-w-4xl mx-auto space-y-8">
@@ -272,9 +272,9 @@ export default function DeckUpload() {
                       {/* Industry */}
                       <div className="space-y-2">
                         <Label htmlFor="industry">Industry (Optional)</Label>
-                        <Select 
-                          value={industry} 
-                          onValueChange={(value) => setIndustry(value as IndustryType)} 
+                        <Select
+                          value={industry}
+                          onValueChange={(value) => setIndustry(value as IndustryType)}
                           disabled={isUploading}
                         >
                           <SelectTrigger id="industry">
@@ -302,9 +302,9 @@ export default function DeckUpload() {
                       {/* Stage */}
                       <div className="space-y-2">
                         <Label htmlFor="stage">Stage (Optional)</Label>
-                        <Select 
-                          value={stage} 
-                          onValueChange={(value) => setStage(value as StageType)} 
+                        <Select
+                          value={stage}
+                          onValueChange={(value) => setStage(value as StageType)}
                           disabled={isUploading}
                         >
                           <SelectTrigger id="stage">
