@@ -484,23 +484,23 @@ export default function BlogPost() {
                         <ReactMarkdown
                             remarkPlugins={[remarkGfm, remarkBreaks]}
                             components={{
-                                h1: ({ children, node, ...props }) => <h1 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700 }} {...props}>{children}</h1>,
-                                h2: ({ children, node, ...props }) => {
-                                    const text = String(children).replace(/[*_`~\[\]]/g, '').trim();
+                                h1: ({ children }) => <h1 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700 }}>{children}</h1>,
+                                h2: ({ children }) => {
+                                    const text = typeof children === 'string' ? children : '';
                                     const id = text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-                                    return <h2 id={id} style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, scrollMarginTop: '5rem' }} {...props}>{children}</h2>;
+                                    return <h2 id={id} style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, scrollMarginTop: '5rem' }}>{children}</h2>;
                                 },
-                                h3: ({ children, node, ...props }) => {
-                                    const text = String(children).replace(/[*_`~\[\]]/g, '').trim();
+                                h3: ({ children }) => {
+                                    const text = typeof children === 'string' ? children : '';
                                     const id = text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-                                    return <h3 id={id} style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 600, scrollMarginTop: '5rem' }} {...props}>{children}</h3>;
+                                    return <h3 id={id} style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 600, scrollMarginTop: '5rem' }}>{children}</h3>;
                                 },
-                                h4: ({ children, node, ...props }) => <h4 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 600 }} {...props}>{children}</h4>,
-                                blockquote: ({ children, node, ...props }) => <blockquote style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: "italic", fontSize: '1.15rem' }} {...props}>{children}</blockquote>,
-                                p: ({ children, node, ...props }) => <p style={{ marginBottom: '1.6em' }} {...props}>{children}</p>,
-                                img: ({ src, alt, node, ...props }) => (
-                                    <span style={{ display: 'block', margin: '2.5rem -10%', maxWidth: '120%' }}>
-                                        <img src={src} alt={alt} style={{ width: '100%', borderRadius: '1rem' }} {...props} />
+                                h4: ({ children }) => <h4 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 600 }}>{children}</h4>,
+                                blockquote: ({ children }) => <blockquote style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: "italic", fontSize: '1.15rem' }}>{children}</blockquote>,
+                                p: ({ children }) => <p style={{ marginBottom: '1.6em' }}>{children}</p>,
+                                img: ({ src, alt }) => (
+                                    <span style={{ display: 'block', margin: '2.5rem 0', maxWidth: '100%' }}>
+                                        <img src={src || ''} alt={alt || ''} style={{ width: '100%', borderRadius: '1rem' }} />
                                     </span>
                                 ),
                             }}
