@@ -480,8 +480,6 @@ export default function BlogPost() {
                             letterSpacing: '0.01em',
                         }}
                     >
-                        {/* Mobile TOC */}
-                        <TableOfContents items={tocItems} />
 
                         <ReactMarkdown
                             remarkPlugins={[remarkGfm, remarkBreaks]}
