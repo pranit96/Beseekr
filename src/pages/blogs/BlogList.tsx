@@ -24,7 +24,7 @@ function HeroSection({ blog }: { blog: Blog }) {
         <motion.section
             ref={ref}
             className="relative overflow-hidden"
-            style={{ height: "min(90vh, 680px)" }}
+            style={{ height: "min(100vh, 800px)" }}
         >
             {/* Parallax image */}
             <motion.div className="absolute inset-0 z-0" style={{ y }}>
@@ -57,7 +57,7 @@ function HeroSection({ blog }: { blog: Blog }) {
                         </span>
                     </div>
 
-                    <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-white leading-[0.95] tracking-tight max-w-4xl mb-6">
+                    <h1 className="text-6xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-white leading-[0.95] tracking-tight max-w-6xl mb-6">
                         {blog.title}
                     </h1>
 

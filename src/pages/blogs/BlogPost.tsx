@@ -142,7 +142,7 @@ export default function BlogPost() {
 
             {/* ── ARTICLE CONTENT ────────────────────────────── */}
             <main
-                className="mx-auto max-w-[680px] px-4 sm:px-8 pb-32"
+                className="mx-auto max-w-[1000px] px-4 sm:px-8 pb-32"
                 style={{ marginTop: (blog.image_url_full || blog.image_url) ? "-4rem" : "7rem" }}
             >
                 {/* Header */}
@@ -167,7 +167,7 @@ export default function BlogPost() {
                     </div>
 
                     {/* Title */}
-                    <h1 className="text-4xl sm:text-5xl md:text-6xl font-black leading-[0.95] tracking-tight mb-8">
+                    <h1 className="text-6xl sm:text-5xl md:text-6xl font-black leading-[0.95] tracking-tight mb-8">
                         {blog.title}
                     </h1>
 
