@@ -98,7 +98,7 @@ export default function BlogPost() {
 
             {/* ── TOPBAR ─────────────────────────────────────── */}
             <header className="fixed top-0.5 inset-x-0 z-50 bg-black/70 backdrop-blur-xl border-b border-white/5">
-                <div className="mx-auto max-w-5xl px-4 sm:px-8 py-4 flex items-center justify-between">
+                <div className="mx-auto max-w-7xl px-6 sm:px-10 lg:px-16 py-4 flex items-center justify-between">
                     <Link
                         to="/blogs"
                         className="group flex items-center gap-2 text-white/50 hover:text-white transition-colors text-sm font-semibold"
@@ -120,7 +120,7 @@ export default function BlogPost() {
 
             {/* ── HERO IMAGE ─────────────────────────────────── */}
             {(blog.image_url_full || blog.image_url) && (
-                <div className="relative w-full" style={{ height: "min(55vh, 520px)", marginTop: 0 }}>
+                <div className="relative w-full" style={{ height: "min(70vh, 600px)", marginTop: 0 }}>
                     <img
                         src={blog.image_url_full || blog.image_url || ""}
                         alt={blog.image_alt || blog.title}
@@ -141,26 +141,26 @@ export default function BlogPost() {
             )}
 
             {/* ── ARTICLE CONTENT ────────────────────────────── */}
-            <main
-                className="mx-auto px-4 sm:px-8 pb-32"
+            <div
+                className="mx-auto px-6 sm:px-10 lg:px-16 pb-32"
                 style={{
-                    maxWidth: 860,
-                    marginTop: (blog.image_url_full || blog.image_url) ? "-4rem" : "7rem",
+                    maxWidth: 1200,
+                    marginTop: (blog.image_url_full || blog.image_url) ? "-5rem" : "7rem",
                     fontFamily: "'DM Sans', 'Inter', system-ui, sans-serif"
                 }}
             >
-                {/* Header */}
+                {/* Header — full-width within container */}
                 <motion.div
                     initial={{ opacity: 0, y: 32 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-                    className="mb-12"
+                    className="mb-14"
                 >
                     {/* Topic + Tags */}
                     <div className="flex flex-wrap items-center gap-3 mb-6">
                         {blog.topic && (
-                            <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.2em] text-primary" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-                                <Tag className="w-3 h-3" /> {blog.topic}
+                            <span className="inline-flex items-center gap-1.5 text-sm font-bold uppercase tracking-[0.2em] text-primary" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+                                <Tag className="w-3.5 h-3.5" /> {blog.topic}
                             </span>
                         )}
                         {tags.map((tag) => (
@@ -170,9 +170,9 @@ export default function BlogPost() {
                         ))}
                     </div>
 
-                    {/* Title */}
+                    {/* Title — spans full container width */}
                     <h1
-                        className="text-4xl sm:text-5xl md:text-[3.5rem] font-bold leading-[1.08] tracking-tight mb-8"
+                        className="text-4xl sm:text-5xl md:text-6xl lg:text-[4rem] font-bold leading-[1.1] tracking-tight mb-8"
                         style={{ fontFamily: "'Playfair Display', Georgia, 'Times New Roman', serif" }}
                     >
                         {blog.title}
@@ -181,7 +181,7 @@ export default function BlogPost() {
                     {/* Excerpt */}
                     {blog.excerpt && (
                         <p
-                            className="text-xl text-white/50 leading-[1.7] mb-8 border-l-2 border-primary/50 pl-6"
+                            className="text-xl md:text-2xl text-white/50 leading-[1.6] mb-10 border-l-[3px] border-primary/50 pl-7 max-w-4xl"
                             style={{ fontFamily: "'Source Serif 4', Georgia, 'Times New Roman', serif", fontStyle: "italic" }}
                         >
                             {blog.excerpt}
@@ -211,21 +211,22 @@ export default function BlogPost() {
                     </div>
                 </motion.div>
 
-                {/* Body */}
+                {/* Body — centered readable column */}
                 <motion.article
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.7, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
                     className="
-            prose prose-invert prose-lg max-w-none
+            mx-auto
+            prose prose-invert prose-xl max-w-none
 
             /* Headings */
             prose-headings:tracking-tight
-            prose-h1:text-4xl prose-h2:text-[1.75rem] prose-h2:mt-16 prose-h2:mb-6
-            prose-h3:text-[1.35rem] prose-h3:mt-12 prose-h3:mb-4
+            prose-h1:text-4xl prose-h2:text-3xl prose-h2:mt-16 prose-h2:mb-6
+            prose-h3:text-2xl prose-h3:mt-12 prose-h3:mb-4
 
             /* Body text */
-            prose-p:text-white/80 prose-p:leading-[1.85] prose-p:text-[1.125rem] prose-p:mb-6
+            prose-p:text-white/80 prose-p:mb-7
 
             /* Links */
             prose-a:text-primary prose-a:no-underline hover:prose-a:underline
@@ -235,7 +236,7 @@ export default function BlogPost() {
             prose-em:text-white/65
 
             /* Lists */
-            prose-li:text-white/80 prose-li:leading-[1.8] prose-li:mb-2
+            prose-li:text-white/80 prose-li:mb-2
             prose-ul:my-7 prose-ol:my-7
 
             /* Code */
@@ -243,7 +244,7 @@ export default function BlogPost() {
             prose-pre:bg-white/5 prose-pre:border prose-pre:border-white/10 prose-pre:rounded-2xl prose-pre:p-6
 
             /* Blockquote */
-            prose-blockquote:border-l-primary prose-blockquote:bg-white/3 prose-blockquote:rounded-r-2xl prose-blockquote:py-2 prose-blockquote:px-5 prose-blockquote:not-italic
+            prose-blockquote:border-l-primary prose-blockquote:bg-white/3 prose-blockquote:rounded-r-2xl prose-blockquote:py-3 prose-blockquote:px-6 prose-blockquote:not-italic
             prose-blockquote:text-white/60
 
             /* Images */
@@ -258,9 +259,11 @@ export default function BlogPost() {
             prose-td:text-white/60 prose-td:border-white/5
           "
                     style={{
+                        maxWidth: 780,
                         fontFamily: "'Source Serif 4', Georgia, 'Times New Roman', serif",
-                        fontSize: '1.125rem',
-                        lineHeight: 1.85,
+                        fontSize: '1.2rem',
+                        lineHeight: 1.9,
+                        letterSpacing: '0.01em',
                     }}
                 >
                     <ReactMarkdown
@@ -270,7 +273,13 @@ export default function BlogPost() {
                             h2: ({ children, ...props }) => <h2 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700 }} {...props}>{children}</h2>,
                             h3: ({ children, ...props }) => <h3 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 600 }} {...props}>{children}</h3>,
                             h4: ({ children, ...props }) => <h4 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 600 }} {...props}>{children}</h4>,
-                            blockquote: ({ children, ...props }) => <blockquote style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: "italic", fontSize: '1.1rem' }} {...props}>{children}</blockquote>,
+                            blockquote: ({ children, ...props }) => <blockquote style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: "italic", fontSize: '1.15rem' }} {...props}>{children}</blockquote>,
+                            p: ({ children, ...props }) => <p style={{ marginBottom: '1.6em' }} {...props}>{children}</p>,
+                            img: ({ src, alt, ...props }) => (
+                                <span style={{ display: 'block', margin: '2.5rem -10%', maxWidth: '120%' }}>
+                                    <img src={src} alt={alt} style={{ width: '100%', borderRadius: '1rem' }} {...props} />
+                                </span>
+                            ),
                         }}
                     >
                         {blog.body || "*No content available.*"}
@@ -278,7 +287,7 @@ export default function BlogPost() {
                 </motion.article>
 
                 {/* Footer CTA */}
-                <div className="mt-24 pt-12 border-t border-white/5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+                <div className="mt-24 pt-12 border-t border-white/5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6" style={{ maxWidth: 780, margin: '6rem auto 0' }}>
                     <div>
                         <p className="text-white/20 text-sm mb-1">More articles</p>
                         <Link
@@ -297,7 +306,7 @@ export default function BlogPost() {
                         {copied ? "Link copied!" : "Share article"}
                     </button>
                 </div>
-            </main>
+            </div>
         </div>
     );
 }
