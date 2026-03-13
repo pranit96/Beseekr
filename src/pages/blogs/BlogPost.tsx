@@ -97,7 +97,7 @@ function TableOfContents({ items }: { items: TocItem[] }) {
         <>
             {/* Desktop TOC — sticky sidebar */}
             <nav
-                className="hidden xl:block sticky top-24 self-start w-56 flex-shrink-0"
+                className="hidden xl:block sticky top-24 self-start w-56 flex-shrink-0 order-2"
                 style={{ fontFamily: "'DM Sans', sans-serif" }}
             >
                 <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/30 mb-4 flex items-center gap-2">
@@ -122,7 +122,7 @@ function TableOfContents({ items }: { items: TocItem[] }) {
             </nav>
 
             {/* Mobile TOC — collapsible */}
-            <div className="xl:hidden mb-8" style={{ maxWidth: 780, margin: '0 auto 2rem', fontFamily: "'DM Sans', sans-serif" }}>
+            <div className="xl:hidden w-full order-first mb-4" style={{ maxWidth: 780, fontFamily: "'DM Sans', sans-serif" }}>
                 <button
                     onClick={() => setMobileOpen(o => !o)}
                     className="flex items-center gap-2 w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm font-semibold text-white/60 hover:text-white/80 hover:bg-white/8 transition-all"
@@ -311,24 +311,24 @@ export default function BlogPost() {
             {/* ── TOPBAR ─────────────────────────────────────── */}
             <header className="fixed top-0 inset-x-0 z-50">
                 <div className="mx-auto max-w-7xl px-6 sm:px-10 lg:px-16 py-4 flex items-center justify-between">
-                <Link
-                to="/blogs"
-                className="group flex items-center gap-2 text-white/70 hover:text-white transition-colors text-sm font-semibold"
-                >
-                <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
-                All articles
-                </Link>
+                    <Link
+                        to="/blogs"
+                        className="group flex items-center gap-2 text-white/70 hover:text-white transition-colors text-sm font-semibold"
+                    >
+                        <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
+                        All articles
+                    </Link>
 
-                <div className="flex items-center gap-2">
-                <button
-                    onClick={share}
-                    className="flex items-center gap-2 text-sm font-semibold text-white/70 hover:text-white px-3 py-1.5 rounded-full hover:bg-white/10 transition-all"
-                >
-                    <Share2 className="w-4 h-4" />
-                    {copied ? "Copied!" : "Share"}
-                </button>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={share}
+                            className="flex items-center gap-2 text-sm font-semibold text-white/70 hover:text-white px-3 py-1.5 rounded-full hover:bg-white/10 transition-all"
+                        >
+                            <Share2 className="w-4 h-4" />
+                            {copied ? "Copied!" : "Share"}
+                        </button>
+                    </div>
                 </div>
-            </div>
             </header>
 
             {/* ── HERO IMAGE ─────────────────────────────────── */}
@@ -385,7 +385,7 @@ export default function BlogPost() {
 
                     {/* Title — spans full container width */}
                     <h1
-                        className="text-4xl sm:text-5xl md:text-6xl lg:text-[4rem] font-bold leading-[1.1] tracking-tight mb-8"
+                        className="text-3xl sm:text-4xl md:text-5xl lg:text-[4rem] font-bold leading-[1.1] tracking-tight mb-8 break-words"
                         style={{ fontFamily: "'Playfair Display', Georgia, 'Times New Roman', serif" }}
                     >
                         {blog.title}
@@ -425,7 +425,7 @@ export default function BlogPost() {
                 </motion.div>
 
                 {/* Two-column layout: TOC sidebar + article body */}
-                <div className="flex gap-12 items-start">
+                <div className="flex flex-col xl:flex-row gap-8 xl:gap-12 items-start w-full">
                     {/* Body — centered readable column */}
                     <motion.article
                         initial={{ opacity: 0, y: 20 }}
@@ -433,7 +433,7 @@ export default function BlogPost() {
                         transition={{ duration: 0.7, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
                         className="
                 flex-1 min-w-0
-                prose prose-invert prose-xl max-w-none
+                prose prose-invert prose-base sm:prose-lg lg:prose-xl max-w-none
 
                 /* Headings */
                 prose-headings:tracking-tight
@@ -476,8 +476,6 @@ export default function BlogPost() {
                         style={{
                             maxWidth: 780,
                             fontFamily: "'Source Serif 4', Georgia, 'Times New Roman', serif",
-                            fontSize: '1.2rem',
-                            lineHeight: 1.9,
                             letterSpacing: '0.01em',
                         }}
                     >

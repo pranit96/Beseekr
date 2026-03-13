@@ -24,7 +24,7 @@ function HeroSection({ blog }: { blog: Blog }) {
         <motion.section
             ref={ref}
             className="relative overflow-hidden"
-            style={{ height: "min(100vh, 800px)" }}
+            style={{ height: "min(100svh, 800px)" }}
         >
             {/* Parallax image */}
             <motion.div className="absolute inset-0 z-0" style={{ y }}>
@@ -58,7 +58,7 @@ function HeroSection({ blog }: { blog: Blog }) {
                     </div>
 
                     <h1
-                        className="text-5xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-[1.05] tracking-tight max-w-6xl mb-6"
+                        className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-[1.05] tracking-tight max-w-6xl mb-6 break-words"
                         style={{ fontFamily: "'Playfair Display', Georgia, 'Times New Roman', serif" }}
                     >
                         {blog.title}
@@ -73,7 +73,7 @@ function HeroSection({ blog }: { blog: Blog }) {
                     <div className="flex flex-wrap items-center gap-5">
                         <Link
                             to={`/blogs/${blog.slug}`}
-                            className="group inline-flex items-center gap-3 bg-white text-black font-bold px-7 py-3.5 rounded-full hover:bg-primary hover:text-white transition-all duration-300 hover:gap-4"
+                            className="group flex sm:inline-flex justify-center items-center gap-3 bg-white text-black font-bold px-7 py-3.5 rounded-full hover:bg-primary hover:text-white transition-all duration-300 hover:gap-4 w-full sm:w-auto text-center"
                         >
                             Read article
                             <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5" />
@@ -358,7 +358,7 @@ export default function BlogList() {
 
             {/* ── TOPIC FILTER ───────────────────────────────── */}
             {topics.length > 0 && (
-                <div className="sticky top-0 z-40 bg-black/80 backdrop-blur-2xl border-b border-white/5">
+                <div className="sticky top-[76px] z-40 bg-black/80 backdrop-blur-2xl border-b border-white/5">
                     <div className="mx-auto max-w-7xl px-4 sm:px-8 py-4 overflow-x-auto scrollbar-hide">
                         <div className="flex items-center gap-2 w-max">
                             {["All", ...topics.map((t) => t.topic)].map((topic) => (

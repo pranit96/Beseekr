@@ -213,6 +213,7 @@ const App = () => {
                   {/* =============================================
                       BLOG - Fully public, no auth required
                       ============================================= */}
+                  <Route path="/blog" element={<Navigate to="/blogs" replace />} />
                   <Route
                     path="/blogs"
                     element={<Suspense fallback={<PageLoader />}><BlogList /></Suspense>}
