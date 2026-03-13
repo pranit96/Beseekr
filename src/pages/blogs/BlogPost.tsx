@@ -355,7 +355,7 @@ export default function BlogPost() {
 
             {/* ── ARTICLE CONTENT ────────────────────────────── */}
             <div
-                className="mx-auto px-6 sm:px-10 lg:px-16 pb-16"
+                className="relative z-10 mx-auto px-6 sm:px-10 lg:px-16 pb-16"
                 style={{
                     maxWidth: 1200,
                     marginTop: (blog.image_url_full || blog.image_url) ? "-5rem" : "7rem",
