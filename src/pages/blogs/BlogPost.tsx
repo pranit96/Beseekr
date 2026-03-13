@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
-import { ArrowLeft, Clock, Calendar, Tag, Share2, BookOpen } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ArrowLeft, Clock, Calendar, Tag, Share2, BookOpen, List, ChevronDown, Mail, User } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
@@ -31,6 +31,213 @@ function ReadingProgress() {
                 style={{ scaleX: progress / 100 }}
                 transition={{ duration: 0 }}
             />
+        </div>
+    );
+}
+
+/* ─── TOC types & extraction ──────────────────────────────── */
+interface TocItem {
+    id: string;
+    text: string;
+    level: number;
+}
+
+function extractToc(markdown: string): TocItem[] {
+    const lines = markdown.split('\n');
+    const items: TocItem[] = [];
+    let inCodeBlock = false;
+    for (const line of lines) {
+        if (line.trim().startsWith('```')) { inCodeBlock = !inCodeBlock; continue; }
+        if (inCodeBlock) continue;
+        const match = line.match(/^(#{2,3})\s+(.+)$/);
+        if (match) {
+            const level = match[1].length;
+            const text = match[2].replace(/[*_`~\[\]]/g, '').trim();
+            const id = text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+            items.push({ id, text, level });
+        }
+    }
+    return items;
+}
+
+/* ─── Table of Contents ───────────────────────────────────── */
+function TableOfContents({ items }: { items: TocItem[] }) {
+    const [activeId, setActiveId] = useState('');
+    const [mobileOpen, setMobileOpen] = useState(false);
+
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            (entries) => {
+                for (const entry of entries) {
+                    if (entry.isIntersecting) {
+                        setActiveId(entry.target.id);
+                    }
+                }
+            },
+            { rootMargin: '-80px 0px -70% 0px', threshold: 0.1 }
+        );
+        items.forEach(item => {
+            const el = document.getElementById(item.id);
+            if (el) observer.observe(el);
+        });
+        return () => observer.disconnect();
+    }, [items]);
+
+    const scrollTo = (id: string) => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            setMobileOpen(false);
+        }
+    };
+
+    if (items.length < 2) return null;
+
+    return (
+        <>
+            {/* Desktop TOC — sticky sidebar */}
+            <nav
+                className="hidden xl:block sticky top-24 self-start w-56 flex-shrink-0"
+                style={{ fontFamily: "'DM Sans', sans-serif" }}
+            >
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/30 mb-4 flex items-center gap-2">
+                    <List className="w-3.5 h-3.5" /> Contents
+                </p>
+                <ul className="space-y-1 border-l border-white/8">
+                    {items.map(item => (
+                        <li key={item.id}>
+                            <button
+                                onClick={() => scrollTo(item.id)}
+                                className={`block w-full text-left text-sm leading-snug py-1.5 transition-all duration-200 border-l-2 -ml-px ${item.level === 3 ? 'pl-6' : 'pl-4'
+                                    } ${activeId === item.id
+                                        ? 'text-primary border-primary font-medium'
+                                        : 'text-white/35 border-transparent hover:text-white/60 hover:border-white/20'
+                                    }`}
+                            >
+                                {item.text}
+                            </button>
+                        </li>
+                    ))}
+                </ul>
+            </nav>
+
+            {/* Mobile TOC — collapsible */}
+            <div className="xl:hidden mb-8" style={{ maxWidth: 780, margin: '0 auto 2rem', fontFamily: "'DM Sans', sans-serif" }}>
+                <button
+                    onClick={() => setMobileOpen(o => !o)}
+                    className="flex items-center gap-2 w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm font-semibold text-white/60 hover:text-white/80 hover:bg-white/8 transition-all"
+                >
+                    <List className="w-4 h-4" />
+                    Table of Contents
+                    <ChevronDown className={`w-4 h-4 ml-auto transition-transform duration-200 ${mobileOpen ? 'rotate-180' : ''}`} />
+                </button>
+                <AnimatePresence>
+                    {mobileOpen && (
+                        <motion.ul
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.25 }}
+                            className="overflow-hidden mt-1 bg-white/5 border border-white/10 rounded-xl"
+                        >
+                            {items.map(item => (
+                                <li key={item.id}>
+                                    <button
+                                        onClick={() => scrollTo(item.id)}
+                                        className={`block w-full text-left text-sm py-2.5 px-4 text-white/50 hover:text-white hover:bg-white/5 transition-colors ${item.level === 3 ? 'pl-8' : ''
+                                            } ${activeId === item.id ? 'text-primary font-medium' : ''}`}
+                                    >
+                                        {item.text}
+                                    </button>
+                                </li>
+                            ))}
+                        </motion.ul>
+                    )}
+                </AnimatePresence>
+            </div>
+        </>
+    );
+}
+
+/* ─── Author Bio ──────────────────────────────────────────── */
+function AuthorBio({ author, publishDate }: { author: string; publishDate?: string }) {
+    const initial = author.charAt(0).toUpperCase();
+    return (
+        <div
+            className="flex items-start gap-5 bg-white/[0.03] border border-white/8 rounded-2xl p-6 sm:p-8"
+            style={{ maxWidth: 780, margin: '4rem auto', fontFamily: "'DM Sans', sans-serif" }}
+        >
+            <div className="w-14 h-14 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center flex-shrink-0">
+                <span className="text-primary text-xl font-bold" style={{ fontFamily: "'Playfair Display', serif" }}>{initial}</span>
+            </div>
+            <div>
+                <p className="text-white font-semibold text-lg mb-1">{author}</p>
+                <p className="text-white/40 text-sm leading-relaxed">
+                    Writer at beseekr · Exploring ideas at the intersection of technology, business, and culture.
+                    {publishDate && <> · Published {fmt(publishDate)}</>}
+                </p>
+            </div>
+        </div>
+    );
+}
+
+/* ─── Newsletter CTA ──────────────────────────────────────── */
+function NewsletterCTA() {
+    const [email, setEmail] = useState('');
+    const [submitted, setSubmitted] = useState(false);
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (email.trim()) {
+            setSubmitted(true);
+            setEmail('');
+        }
+    };
+
+    return (
+        <div
+            className="relative overflow-hidden rounded-2xl border border-white/8"
+            style={{ maxWidth: 780, margin: '3rem auto', fontFamily: "'DM Sans', sans-serif" }}
+        >
+            {/* Subtle gradient bg */}
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.06] via-transparent to-primary/[0.03]" />
+            <div className="relative px-6 sm:px-10 py-10 sm:py-12 text-center">
+                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/15 mb-5">
+                    <Mail className="w-5 h-5 text-primary" />
+                </div>
+                <h3 className="text-2xl font-bold text-white mb-2" style={{ fontFamily: "'Playfair Display', serif" }}>
+                    Stay in the loop
+                </h3>
+                <p className="text-white/40 text-sm mb-6 max-w-md mx-auto">
+                    Get the latest articles, insights, and updates delivered straight to your inbox. No spam, unsubscribe anytime.
+                </p>
+                {submitted ? (
+                    <motion.p
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="text-primary font-semibold text-sm"
+                    >
+                        ✓ Thanks! You're on the list.
+                    </motion.p>
+                ) : (
+                    <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row items-center gap-3 max-w-md mx-auto">
+                        <input
+                            type="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            placeholder="your@email.com"
+                            required
+                            className="flex-1 w-full bg-white/5 border border-white/15 rounded-full px-5 py-3 text-sm text-white placeholder:text-white/30 outline-none focus:border-primary/50 transition-colors"
+                        />
+                        <button
+                            type="submit"
+                            className="w-full sm:w-auto bg-primary text-black font-bold px-7 py-3 rounded-full hover:bg-primary/90 transition-colors text-sm flex-shrink-0"
+                        >
+                            Subscribe
+                        </button>
+                    </form>
+                )}
+            </div>
         </div>
     );
 }
@@ -92,6 +299,9 @@ export default function BlogPost() {
 
     const tags: string[] = Array.isArray(blog.tags) ? blog.tags as string[] : [];
 
+    // Extract table of contents from markdown body
+    const tocItems = useMemo(() => blog.body ? extractToc(blog.body) : [], [blog.body]);
+
     return (
         <div className="min-h-screen bg-black text-white">
             <ReadingProgress />
@@ -142,7 +352,7 @@ export default function BlogPost() {
 
             {/* ── ARTICLE CONTENT ────────────────────────────── */}
             <div
-                className="mx-auto px-6 sm:px-10 lg:px-16 pb-32"
+                className="mx-auto px-6 sm:px-10 lg:px-16 pb-16"
                 style={{
                     maxWidth: 1200,
                     marginTop: (blog.image_url_full || blog.image_url) ? "-5rem" : "7rem",
@@ -211,83 +421,108 @@ export default function BlogPost() {
                     </div>
                 </motion.div>
 
-                {/* Body — centered readable column */}
-                <motion.article
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.7, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-                    className="
-            mx-auto
-            prose prose-invert prose-xl max-w-none
+                {/* Two-column layout: TOC sidebar + article body */}
+                <div className="flex gap-12 items-start">
+                    {/* Body — centered readable column */}
+                    <motion.article
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.7, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                        className="
+                flex-1 min-w-0
+                prose prose-invert prose-xl max-w-none
 
-            /* Headings */
-            prose-headings:tracking-tight
-            prose-h1:text-4xl prose-h2:text-3xl prose-h2:mt-16 prose-h2:mb-6
-            prose-h3:text-2xl prose-h3:mt-12 prose-h3:mb-4
+                /* Headings */
+                prose-headings:tracking-tight
+                prose-h1:text-4xl prose-h2:text-3xl prose-h2:mt-16 prose-h2:mb-6
+                prose-h3:text-2xl prose-h3:mt-12 prose-h3:mb-4
 
-            /* Body text */
-            prose-p:text-white/80 prose-p:mb-7
+                /* Body text */
+                prose-p:text-white/80 prose-p:mb-7
 
-            /* Links */
-            prose-a:text-primary prose-a:no-underline hover:prose-a:underline
+                /* Links */
+                prose-a:text-primary prose-a:no-underline hover:prose-a:underline
 
-            /* Emphasis */
-            prose-strong:text-white prose-strong:font-semibold
-            prose-em:text-white/65
+                /* Emphasis */
+                prose-strong:text-white prose-strong:font-semibold
+                prose-em:text-white/65
 
-            /* Lists */
-            prose-li:text-white/80 prose-li:mb-2
-            prose-ul:my-7 prose-ol:my-7
+                /* Lists */
+                prose-li:text-white/80 prose-li:mb-2
+                prose-ul:my-7 prose-ol:my-7
 
-            /* Code */
-            prose-code:bg-white/5 prose-code:text-primary prose-code:px-2 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:before:content-none prose-code:after:content-none
-            prose-pre:bg-white/5 prose-pre:border prose-pre:border-white/10 prose-pre:rounded-2xl prose-pre:p-6
+                /* Code */
+                prose-code:bg-white/5 prose-code:text-primary prose-code:px-2 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:before:content-none prose-code:after:content-none
+                prose-pre:bg-white/5 prose-pre:border prose-pre:border-white/10 prose-pre:rounded-2xl prose-pre:p-6
 
-            /* Blockquote */
-            prose-blockquote:border-l-primary prose-blockquote:bg-white/3 prose-blockquote:rounded-r-2xl prose-blockquote:py-3 prose-blockquote:px-6 prose-blockquote:not-italic
-            prose-blockquote:text-white/60
+                /* Blockquote */
+                prose-blockquote:border-l-primary prose-blockquote:bg-white/3 prose-blockquote:rounded-r-2xl prose-blockquote:py-3 prose-blockquote:px-6 prose-blockquote:not-italic
+                prose-blockquote:text-white/60
 
-            /* Images */
-            prose-img:rounded-2xl prose-img:shadow-2xl prose-img:my-12
+                /* Images */
+                prose-img:rounded-2xl prose-img:shadow-2xl prose-img:my-12
 
-            /* HR */
-            prose-hr:border-white/10 prose-hr:my-14
+                /* HR */
+                prose-hr:border-white/10 prose-hr:my-14
 
-            /* Tables */
-            prose-table:text-sm
-            prose-th:text-white/80 prose-th:font-bold prose-th:border-white/10
-            prose-td:text-white/60 prose-td:border-white/5
-          "
-                    style={{
-                        maxWidth: 780,
-                        fontFamily: "'Source Serif 4', Georgia, 'Times New Roman', serif",
-                        fontSize: '1.2rem',
-                        lineHeight: 1.9,
-                        letterSpacing: '0.01em',
-                    }}
-                >
-                    <ReactMarkdown
-                        remarkPlugins={[remarkGfm, remarkBreaks]}
-                        components={{
-                            h1: ({ children, ...props }) => <h1 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700 }} {...props}>{children}</h1>,
-                            h2: ({ children, ...props }) => <h2 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700 }} {...props}>{children}</h2>,
-                            h3: ({ children, ...props }) => <h3 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 600 }} {...props}>{children}</h3>,
-                            h4: ({ children, ...props }) => <h4 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 600 }} {...props}>{children}</h4>,
-                            blockquote: ({ children, ...props }) => <blockquote style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: "italic", fontSize: '1.15rem' }} {...props}>{children}</blockquote>,
-                            p: ({ children, ...props }) => <p style={{ marginBottom: '1.6em' }} {...props}>{children}</p>,
-                            img: ({ src, alt, ...props }) => (
-                                <span style={{ display: 'block', margin: '2.5rem -10%', maxWidth: '120%' }}>
-                                    <img src={src} alt={alt} style={{ width: '100%', borderRadius: '1rem' }} {...props} />
-                                </span>
-                            ),
+                /* Tables */
+                prose-table:text-sm
+                prose-th:text-white/80 prose-th:font-bold prose-th:border-white/10
+                prose-td:text-white/60 prose-td:border-white/5
+              "
+                        style={{
+                            maxWidth: 780,
+                            fontFamily: "'Source Serif 4', Georgia, 'Times New Roman', serif",
+                            fontSize: '1.2rem',
+                            lineHeight: 1.9,
+                            letterSpacing: '0.01em',
                         }}
                     >
-                        {blog.body || "*No content available.*"}
-                    </ReactMarkdown>
-                </motion.article>
+                        {/* Mobile TOC */}
+                        <TableOfContents items={tocItems} />
+
+                        <ReactMarkdown
+                            remarkPlugins={[remarkGfm, remarkBreaks]}
+                            components={{
+                                h1: ({ children, ...props }) => <h1 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700 }} {...props}>{children}</h1>,
+                                h2: ({ children, ...props }) => {
+                                    const text = String(children).replace(/[*_`~\[\]]/g, '').trim();
+                                    const id = text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+                                    return <h2 id={id} style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, scrollMarginTop: '5rem' }} {...props}>{children}</h2>;
+                                },
+                                h3: ({ children, ...props }) => {
+                                    const text = String(children).replace(/[*_`~\[\]]/g, '').trim();
+                                    const id = text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+                                    return <h3 id={id} style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 600, scrollMarginTop: '5rem' }} {...props}>{children}</h3>;
+                                },
+                                h4: ({ children, ...props }) => <h4 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 600 }} {...props}>{children}</h4>,
+                                blockquote: ({ children, ...props }) => <blockquote style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: "italic", fontSize: '1.15rem' }} {...props}>{children}</blockquote>,
+                                p: ({ children, ...props }) => <p style={{ marginBottom: '1.6em' }} {...props}>{children}</p>,
+                                img: ({ src, alt, ...props }) => (
+                                    <span style={{ display: 'block', margin: '2.5rem -10%', maxWidth: '120%' }}>
+                                        <img src={src} alt={alt} style={{ width: '100%', borderRadius: '1rem' }} {...props} />
+                                    </span>
+                                ),
+                            }}
+                        >
+                            {blog.body || "*No content available.*"}
+                        </ReactMarkdown>
+                    </motion.article>
+
+                    {/* Desktop TOC sidebar */}
+                    <TableOfContents items={tocItems} />
+                </div>
+
+                {/* ── AUTHOR BIO ───────────────────────────────── */}
+                {blog.author && (
+                    <AuthorBio author={blog.author} publishDate={blog.publish_date} />
+                )}
+
+                {/* ── NEWSLETTER CTA ───────────────────────────── */}
+                <NewsletterCTA />
 
                 {/* Footer CTA */}
-                <div className="mt-24 pt-12 border-t border-white/5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6" style={{ maxWidth: 780, margin: '6rem auto 0' }}>
+                <div className="pt-12 border-t border-white/5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6" style={{ maxWidth: 780, margin: '3rem auto 0' }}>
                     <div>
                         <p className="text-white/20 text-sm mb-1">More articles</p>
                         <Link

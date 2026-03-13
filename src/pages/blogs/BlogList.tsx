@@ -263,8 +263,10 @@ export default function BlogList() {
         load();
     }, [page, selectedTopic, debouncedSearch]);
 
-    const heroBlog = useMemo(() => blogs[0] || null, [blogs]);
-    const filteredBlogs = useMemo(() => blogs.slice(1), [blogs]);
+    // Only show hero when: 3+ articles, "All" tab, and no search query
+    const showHero = useMemo(() => blogs.length >= 3 && selectedTopic === "All" && !debouncedSearch, [blogs.length, selectedTopic, debouncedSearch]);
+    const heroBlog = useMemo(() => showHero ? blogs[0] : null, [showHero, blogs]);
+    const gridBlogs = useMemo(() => showHero ? blogs.slice(1) : blogs, [showHero, blogs]);
 
     if (loading) {
         return (
@@ -338,13 +340,22 @@ export default function BlogList() {
             {/* ── HERO ───────────────────────────────────────── */}
             {heroBlog ? (
                 <HeroSection blog={heroBlog} />
-            ) : (
+            ) : blogs.length === 0 ? (
                 <div
                     className="flex flex-col items-center justify-center text-center"
-                    style={{ minHeight: 400, background: "linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%)" }}
+                    style={{ minHeight: 400, paddingTop: 80, background: "linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%)" }}
                 >
                     <h1 className="text-5xl font-bold text-white mb-4" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>beseekr blog</h1>
                     <p className="text-white/40 text-lg max-w-md" style={{ fontFamily: "'Source Serif 4', Georgia, serif" }}>No articles published yet. Stay tuned!</p>
+                </div>
+            ) : (
+                /* Minimal header when we have articles but no hero */
+                <div className="pt-24 pb-4 bg-black">
+                    <div className="mx-auto max-w-7xl px-4 sm:px-8">
+                        <h1 className="text-4xl font-bold text-white" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
+                            {selectedTopic !== "All" ? selectedTopic : debouncedSearch ? `Results for "${debouncedSearch}"` : "Latest Articles"}
+                        </h1>
+                    </div>
                 </div>
             )}
 
@@ -386,7 +397,7 @@ export default function BlogList() {
                         <h2 className="text-3xl font-black text-white mb-3">No articles yet</h2>
                         <p className="text-white/40 text-lg">Check back soon for fresh content.</p>
                     </div>
-                ) : filteredBlogs.length === 0 ? (
+                ) : gridBlogs.length === 0 ? (
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
@@ -398,12 +409,23 @@ export default function BlogList() {
                     </motion.div>
                 ) : (
                     <>
-                        <div className="flex items-baseline justify-between mb-10">
-                            <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-white/30">
-                                {selectedTopic === "All" ? "Latest" : selectedTopic}
-                            </h2>
-                            <span className="text-white/20 text-sm">{filteredBlogs.length} articles</span>
-                        </div>
+                        {showHero && (
+                            <div className="flex items-baseline justify-between mb-10">
+                                <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-white/30">
+                                    Latest
+                                </h2>
+                                <span className="text-white/20 text-sm">{gridBlogs.length} articles</span>
+                            </div>
+                        )}
+
+                        {!showHero && blogs.length > 0 && (
+                            <div className="flex items-baseline justify-between mb-10">
+                                <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-white/30">
+                                    {selectedTopic === "All" ? "All Articles" : selectedTopic}
+                                </h2>
+                                <span className="text-white/20 text-sm">{gridBlogs.length} {gridBlogs.length === 1 ? 'article' : 'articles'}</span>
+                            </div>
+                        )}
 
                         {/* Standard grid */}
                         <AnimatePresence mode="popLayout">
@@ -411,7 +433,7 @@ export default function BlogList() {
                                 key={selectedTopic + debouncedSearch + "grid"}
                                 className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
                             >
-                                {filteredBlogs.map((blog, i) => (
+                                {gridBlogs.map((blog, i) => (
                                     <BlogCard
                                         key={blog.id}
                                         blog={blog}
