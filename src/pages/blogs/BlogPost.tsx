@@ -309,25 +309,26 @@ export default function BlogPost() {
             <ReadingProgress />
 
             {/* ── TOPBAR ─────────────────────────────────────── */}
-            <header className="fixed top-0.5 inset-x-0 z-50 bg-black/70 backdrop-blur-xl border-b border-white/5">
+            <header className="fixed top-0 inset-x-0 z-50 bg-black/20 backdrop-blur-md border-b border-white/10 supports-[backdrop-filter]:bg-black/10">
                 <div className="mx-auto max-w-7xl px-6 sm:px-10 lg:px-16 py-4 flex items-center justify-between">
-                    <Link
-                        to="/blogs"
-                        className="group flex items-center gap-2 text-white/50 hover:text-white transition-colors text-sm font-semibold"
-                    >
-                        <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
-                        All articles
-                    </Link>
-                    <div className="flex items-center gap-2">
-                        <button
-                            onClick={share}
-                            className="flex items-center gap-2 text-sm font-semibold text-white/50 hover:text-white transition-colors px-3 py-1.5 rounded-full hover:bg-white/10"
-                        >
-                            <Share2 className="w-4 h-4" />
-                            {copied ? "Copied!" : "Share"}
-                        </button>
-                    </div>
+                <Link
+                to="/blogs"
+                className="group flex items-center gap-2 text-white/70 hover:text-white transition-colors text-sm font-semibold"
+                >
+                <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
+                All articles
+                </Link>
+
+                <div className="flex items-center gap-2">
+                <button
+                    onClick={share}
+                    className="flex items-center gap-2 text-sm font-semibold text-white/70 hover:text-white px-3 py-1.5 rounded-full hover:bg-white/10 transition-all"
+                >
+                    <Share2 className="w-4 h-4" />
+                    {copied ? "Copied!" : "Share"}
+                </button>
                 </div>
+            </div>
             </header>
 
             {/* ── HERO IMAGE ─────────────────────────────────── */}
