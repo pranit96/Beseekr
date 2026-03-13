@@ -297,10 +297,13 @@ export default function BlogPost() {
         );
     }
 
-    const tags: string[] = Array.isArray(blog.tags) ? blog.tags as string[] : [];
+    const tags: string[] = Array.isArray(blog?.tags) ? blog.tags as string[] : [];
 
     // Extract table of contents from markdown body
-    const tocItems = useMemo(() => blog.body ? extractToc(blog.body) : [], [blog.body]);
+    const tocItems = useMemo(
+        () => blog?.body ? extractToc(blog.body) : [],
+        [blog?.body]
+    );
 
     return (
         <div className="min-h-screen bg-black text-white">
