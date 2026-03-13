@@ -83,6 +83,10 @@ const WellnessMind = lazyRetry(() => import("./pages/health/WellnessMind"), "Wel
 const WellnessWeekly = lazyRetry(() => import("./pages/health/WellnessWeekly"), "WellnessWeekly");
 const WellnessWeight = lazyRetry(() => import("./pages/health/WellnessWeight"), "WellnessWeight");
 
+// Blog Pages - Public routes at /blogs
+const BlogList = lazyRetry(() => import("./pages/blogs/BlogList"), "BlogList");
+const BlogPost = lazyRetry(() => import("./pages/blogs/BlogPost"), "BlogPost");
+
 // SaaS Dashboard - Layout loaded immediately, pages lazy loaded
 import { SaasDashboardLayout } from "./layouts/SaasDashboardLayout";
 
@@ -191,6 +195,7 @@ const App = () => {
     }).catch(() => { });
   }, []);
 
+
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
@@ -202,17 +207,28 @@ const App = () => {
             <BrowserRouter>
               <AuthProvider>
                 <Routes>
-                  {/* =============================================
-                      ROOT - Public homepage (no auth required)
-                      ============================================= */}
+                  {/* ROOT */}
                   <Route path="/" element={<Home />} />
 
                   {/* =============================================
-                      PUBLIC ROUTES - No auth required
+                      BLOG - Fully public, no auth required
                       ============================================= */}
+                  <Route
+                    path="/blogs"
+                    element={<Suspense fallback={<PageLoader />}><BlogList /></Suspense>}
+                  />
+                  <Route
+                    path="/blogs/:slug"
+                    element={<Suspense fallback={<PageLoader />}><BlogPost /></Suspense>}
+                  />
+
+                  {/* =============================================
+                    PUBLIC ROUTES - No auth required
+                    ============================================= */}
 
                   {/* Auth page - anyone can access */}
                   <Route path="/auth" element={<Auth />} />
+
 
                   {/* OAuth callback - handles Google redirect */}
                   <Route path="/auth/callback" element={<Suspense fallback={<PageLoader />}><AuthCallback /></Suspense>} />
