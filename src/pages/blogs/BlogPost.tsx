@@ -270,6 +270,13 @@ export default function BlogPost() {
         } catch { }
     };
 
+    const tags: string[] = Array.isArray(blog?.tags) ? blog.tags as string[] : [];
+
+    const tocItems = useMemo(
+        () => blog?.body ? extractToc(blog.body) : [],
+        [blog?.body]
+    );
+
     if (loading) {
         return (
             <div className="min-h-screen bg-black flex items-center justify-center">
@@ -296,14 +303,6 @@ export default function BlogPost() {
             </div>
         );
     }
-
-    const tags: string[] = Array.isArray(blog?.tags) ? blog.tags as string[] : [];
-
-    // Extract table of contents from markdown body
-    const tocItems = useMemo(
-        () => blog?.body ? extractToc(blog.body) : [],
-        [blog?.body]
-    );
 
     return (
         <div className="min-h-screen bg-black text-white">
