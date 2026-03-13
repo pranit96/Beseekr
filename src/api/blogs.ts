@@ -59,8 +59,42 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
     return json;
 }
 
-export async function getBlogs(): Promise<Blog[]> {
-    return request<Blog[]>("/api/blogs");
+export interface PaginatedBlogs {
+    data: Blog[];
+    meta: {
+        total: number;
+        page: number;
+        limit: number;
+        totalPages: number;
+    };
+}
+
+export async function getBlogs(params?: { page?: number; limit?: number; topic?: string; search?: string }): Promise<PaginatedBlogs> {
+    const query = new URLSearchParams();
+    if (params?.page) query.append("page", params.page.toString());
+    if (params?.limit) query.append("limit", params.limit.toString());
+    if (params?.topic && params.topic !== "All") query.append("topic", params.topic);
+    if (params?.search) query.append("search", params.search);
+
+    const url = `${API_BASE}/api/blogs${query.toString() ? `?${query.toString()}` : ""}`;
+    const response = await fetch(url, {
+        headers: { "Content-Type": "application/json" },
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new ApiError(
+            errorData.message || errorData.error || `Request failed: ${response.status}`,
+            errorData,
+            response.status
+        );
+    }
+
+    const json = await response.json();
+    if (json && json.success) {
+        return { data: json.data as Blog[], meta: json.meta };
+    }
+    return json;
 }
 
 export async function getBlog(slugOrId: string): Promise<Blog> {

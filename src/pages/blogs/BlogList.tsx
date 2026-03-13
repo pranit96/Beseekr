@@ -200,44 +200,68 @@ export default function BlogList() {
     const [blogs, setBlogs] = useState<Blog[]>([]);
     const [topics, setTopics] = useState<Topic[]>([]);
     const [loading, setLoading] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [selectedTopic, setSelectedTopic] = useState("All");
     const [searchOpen, setSearchOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
+    const [debouncedSearch, setDebouncedSearch] = useState("");
+    const [page, setPage] = useState(1);
+    const [hasMore, setHasMore] = useState(false);
+    const LIMIT = 12;
 
+    // Debounce search
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            setDebouncedSearch(searchQuery);
+            setPage(1); // Reset to page 1 on new search
+        }, 400);
+        return () => clearTimeout(handler);
+    }, [searchQuery]);
+
+    // Reset page on topic change
+    useEffect(() => {
+        setPage(1);
+    }, [selectedTopic]);
+
+    // Initial load topics
+    useEffect(() => {
+        getTopics().then((res) => setTopics(res || [])).catch(() => { });
+    }, []);
+
+    // Load blogs based on filters and page
     useEffect(() => {
         async function load() {
             try {
-                setLoading(true);
-                const [blogsData, topicsData] = await Promise.allSettled([getBlogs(), getTopics()]);
-                setBlogs(blogsData.status === "fulfilled" ? blogsData.value || [] : []);
-                setTopics(topicsData.status === "fulfilled" ? topicsData.value || [] : []);
+                if (page === 1) setLoading(true);
+                else setLoadingMore(true);
+
+                const res = await getBlogs({
+                    page,
+                    limit: LIMIT,
+                    topic: selectedTopic,
+                    search: debouncedSearch
+                });
+
+                if (page === 1) {
+                    setBlogs(res.data || []);
+                } else {
+                    setBlogs((prev) => [...prev, ...(res.data || [])]);
+                }
+
+                setHasMore(res.meta && res.meta.page < res.meta.totalPages);
             } catch (err: any) {
-                setError(err?.message || "Failed to load");
+                if (page === 1) setError(err?.message || "Failed to load");
             } finally {
                 setLoading(false);
+                setLoadingMore(false);
             }
         }
         load();
-    }, []);
+    }, [page, selectedTopic, debouncedSearch]);
 
-    const matchingBlogs = useMemo(() => {
-        let list = blogs;
-        if (selectedTopic !== "All") list = list.filter((b) => b.topic === selectedTopic);
-        if (searchQuery.trim()) {
-            const q = searchQuery.toLowerCase();
-            list = list.filter(
-                (b) =>
-                    b.title.toLowerCase().includes(q) ||
-                    (b.excerpt || "").toLowerCase().includes(q) ||
-                    (b.topic || "").toLowerCase().includes(q)
-            );
-        }
-        return list;
-    }, [blogs, selectedTopic, searchQuery]);
-
-    const heroBlog = useMemo(() => matchingBlogs[0] || null, [matchingBlogs]);
-    const filteredBlogs = useMemo(() => matchingBlogs.slice(1), [matchingBlogs]);
+    const heroBlog = useMemo(() => blogs[0] || null, [blogs]);
+    const filteredBlogs = useMemo(() => blogs.slice(1), [blogs]);
 
     if (loading) {
         return (
@@ -381,18 +405,38 @@ export default function BlogList() {
                         {/* Standard grid */}
                         <AnimatePresence mode="popLayout">
                             <motion.div
-                                key={selectedTopic + searchQuery}
+                                key={selectedTopic + debouncedSearch + "grid"}
                                 className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
                             >
                                 {filteredBlogs.map((blog, i) => (
                                     <BlogCard
                                         key={blog.id}
                                         blog={blog}
-                                        index={i}
+                                        index={i % LIMIT}
                                     />
                                 ))}
                             </motion.div>
                         </AnimatePresence>
+
+                        {/* Load More Button */}
+                        {hasMore && (
+                            <div className="mt-14 flex justify-center">
+                                <button
+                                    onClick={() => setPage((p) => p + 1)}
+                                    disabled={loadingMore}
+                                    className="px-8 py-3 rounded-full bg-white/5 border border-white/10 text-white font-semibold hover:bg-white/10 hover:border-white/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                >
+                                    {loadingMore ? (
+                                        <>
+                                            <span className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                                            Loading...
+                                        </>
+                                    ) : (
+                                        "Load more articles"
+                                    )}
+                                </button>
+                            </div>
+                        )}
                     </>
                 )}
             </main>
