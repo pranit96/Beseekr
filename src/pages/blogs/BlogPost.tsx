@@ -142,7 +142,7 @@ export default function BlogPost() {
 
             {/* ── ARTICLE CONTENT ────────────────────────────── */}
             <main
-                className="mx-auto max-w-3xl px-4 sm:px-8 pb-32"
+                className="mx-auto max-w-[680px] px-4 sm:px-8 pb-32"
                 style={{ marginTop: (blog.image_url_full || blog.image_url) ? "-4rem" : "7rem" }}
             >
                 {/* Header */}

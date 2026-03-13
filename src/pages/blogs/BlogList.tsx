@@ -92,7 +92,7 @@ function HeroSection({ blog }: { blog: Blog }) {
 }
 
 /* ─── blog card ───────────────────────────────────────────── */
-function BlogCard({ blog, big = false, index = 0 }: { blog: Blog; big?: boolean; index?: number }) {
+function BlogCard({ blog, index = 0 }: { blog: Blog; index?: number }) {
     const [hovered, setHovered] = useState(false);
 
     return (
@@ -101,8 +101,8 @@ function BlogCard({ blog, big = false, index = 0 }: { blog: Blog; big?: boolean;
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96 }}
             transition={{ duration: 0.5, delay: index * 0.05, ease: [0.16, 1, 0.3, 1] }}
-            className={`relative overflow-hidden rounded-3xl cursor-pointer ${big ? "row-span-2" : ""}`}
-            style={{ minHeight: big ? 520 : 360 }}
+            className="relative overflow-hidden rounded-3xl cursor-pointer w-full"
+            style={{ minHeight: 400 }}
             onMouseEnter={() => setHovered(true)}
             onMouseLeave={() => setHovered(false)}
         >
@@ -148,7 +148,7 @@ function BlogCard({ blog, big = false, index = 0 }: { blog: Blog; big?: boolean;
 
                     {/* Title */}
                     <h3
-                        className={`font-black text-white leading-tight transition-all duration-400 ${big ? "text-2xl md:text-3xl" : "text-xl"}`}
+                        className="font-black text-white leading-tight transition-all duration-400 text-xl md:text-2xl"
                         style={{ transform: hovered ? "translateY(-4px)" : "translateY(0)" }}
                     >
                         {blog.title}
@@ -221,10 +221,8 @@ export default function BlogList() {
         load();
     }, []);
 
-    const heroBlog = useMemo(() => blogs[0] || null, [blogs]);
-
-    const filteredBlogs = useMemo(() => {
-        let list = blogs.slice(1);
+    const matchingBlogs = useMemo(() => {
+        let list = blogs;
         if (selectedTopic !== "All") list = list.filter((b) => b.topic === selectedTopic);
         if (searchQuery.trim()) {
             const q = searchQuery.toLowerCase();
@@ -237,6 +235,9 @@ export default function BlogList() {
         }
         return list;
     }, [blogs, selectedTopic, searchQuery]);
+
+    const heroBlog = useMemo(() => matchingBlogs[0] || null, [matchingBlogs]);
+    const filteredBlogs = useMemo(() => matchingBlogs.slice(1), [matchingBlogs]);
 
     if (loading) {
         return (
@@ -377,17 +378,16 @@ export default function BlogList() {
                             <span className="text-white/20 text-sm">{filteredBlogs.length} articles</span>
                         </div>
 
-                        {/* Wix masonry-style grid */}
+                        {/* Standard grid */}
                         <AnimatePresence mode="popLayout">
                             <motion.div
                                 key={selectedTopic + searchQuery}
-                                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 auto-rows-auto"
+                                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
                             >
                                 {filteredBlogs.map((blog, i) => (
                                     <BlogCard
                                         key={blog.id}
                                         blog={blog}
-                                        big={i === 0 && filteredBlogs.length > 2}
                                         index={i}
                                     />
                                 ))}
