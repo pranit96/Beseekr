@@ -52,17 +52,20 @@ function HeroSection({ blog }: { blog: Blog }) {
                     {/* Label */}
                     <div className="flex items-center gap-3 mb-5">
                         <span className="h-px w-8 bg-white/40" />
-                        <span className="text-xs font-bold uppercase tracking-[0.2em] text-white/60">
+                        <span className="text-xs font-bold uppercase tracking-[0.2em] text-white/60" style={{ fontFamily: "'DM Sans', sans-serif" }}>
                             {blog.topic || "Featured"}
                         </span>
                     </div>
 
-                    <h1 className="text-6xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-white leading-[0.95] tracking-tight max-w-6xl mb-6">
+                    <h1
+                        className="text-5xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-[1.05] tracking-tight max-w-6xl mb-6"
+                        style={{ fontFamily: "'Playfair Display', Georgia, 'Times New Roman', serif" }}
+                    >
                         {blog.title}
                     </h1>
 
                     {blog.excerpt && (
-                        <p className="text-white/65 text-lg max-w-2xl leading-relaxed mb-10">
+                        <p className="text-white/65 text-lg max-w-2xl leading-[1.7] mb-10" style={{ fontFamily: "'Source Serif 4', Georgia, serif" }}>
                             {blog.excerpt}
                         </p>
                     )}
@@ -140,7 +143,7 @@ function BlogCard({ blog, index = 0 }: { blog: Blog; index?: number }) {
                     {blog.topic && (
                         <div className="flex items-center gap-2 mb-3">
                             <Tag className="w-3 h-3 text-primary" />
-                            <span className="text-xs font-bold uppercase tracking-widest text-primary">
+                            <span className="text-xs font-bold uppercase tracking-[0.15em] text-primary" style={{ fontFamily: "'DM Sans', sans-serif" }}>
                                 {blog.topic}
                             </span>
                         </div>
@@ -148,8 +151,8 @@ function BlogCard({ blog, index = 0 }: { blog: Blog; index?: number }) {
 
                     {/* Title */}
                     <h3
-                        className="font-black text-white leading-tight transition-all duration-400 text-xl md:text-2xl"
-                        style={{ transform: hovered ? "translateY(-4px)" : "translateY(0)" }}
+                        className="font-bold text-white leading-[1.15] transition-all duration-400 text-xl md:text-2xl"
+                        style={{ transform: hovered ? "translateY(-4px)" : "translateY(0)", fontFamily: "'Playfair Display', Georgia, serif" }}
                     >
                         {blog.title}
                     </h3>
@@ -340,8 +343,8 @@ export default function BlogList() {
                     className="flex flex-col items-center justify-center text-center"
                     style={{ minHeight: 400, background: "linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%)" }}
                 >
-                    <h1 className="text-5xl font-black text-white mb-4">beseekr blog</h1>
-                    <p className="text-white/40 text-lg max-w-md">No articles published yet. Stay tuned!</p>
+                    <h1 className="text-5xl font-bold text-white mb-4" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>beseekr blog</h1>
+                    <p className="text-white/40 text-lg max-w-md" style={{ fontFamily: "'Source Serif 4', Georgia, serif" }}>No articles published yet. Stay tuned!</p>
                 </div>
             )}
 

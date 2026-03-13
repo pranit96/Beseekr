@@ -98,7 +98,7 @@ export default function BlogPost() {
 
             {/* ── TOPBAR ─────────────────────────────────────── */}
             <header className="fixed top-0.5 inset-x-0 z-50 bg-black/70 backdrop-blur-xl border-b border-white/5">
-                <div className="mx-auto max-w-4xl px-4 sm:px-8 py-4 flex items-center justify-between">
+                <div className="mx-auto max-w-5xl px-4 sm:px-8 py-4 flex items-center justify-between">
                     <Link
                         to="/blogs"
                         className="group flex items-center gap-2 text-white/50 hover:text-white transition-colors text-sm font-semibold"
@@ -142,8 +142,12 @@ export default function BlogPost() {
 
             {/* ── ARTICLE CONTENT ────────────────────────────── */}
             <main
-                className="mx-auto max-w-[1000px] px-4 sm:px-8 pb-32"
-                style={{ marginTop: (blog.image_url_full || blog.image_url) ? "-4rem" : "7rem" }}
+                className="mx-auto px-4 sm:px-8 pb-32"
+                style={{
+                    maxWidth: 860,
+                    marginTop: (blog.image_url_full || blog.image_url) ? "-4rem" : "7rem",
+                    fontFamily: "'DM Sans', 'Inter', system-ui, sans-serif"
+                }}
             >
                 {/* Header */}
                 <motion.div
@@ -153,35 +157,41 @@ export default function BlogPost() {
                     className="mb-12"
                 >
                     {/* Topic + Tags */}
-                    <div className="flex flex-wrap items-center gap-2 mb-6">
+                    <div className="flex flex-wrap items-center gap-3 mb-6">
                         {blog.topic && (
-                            <span className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-primary">
+                            <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.2em] text-primary" style={{ fontFamily: "'DM Sans', sans-serif" }}>
                                 <Tag className="w-3 h-3" /> {blog.topic}
                             </span>
                         )}
                         {tags.map((tag) => (
-                            <span key={tag} className="text-xs text-white/30 bg-white/5 border border-white/10 px-2.5 py-1 rounded-full">
+                            <span key={tag} className="text-xs text-white/30 bg-white/5 border border-white/10 px-3 py-1 rounded-full" style={{ fontFamily: "'DM Sans', sans-serif" }}>
                                 #{tag}
                             </span>
                         ))}
                     </div>
 
                     {/* Title */}
-                    <h1 className="text-6xl sm:text-5xl md:text-6xl font-black leading-[0.95] tracking-tight mb-8">
+                    <h1
+                        className="text-4xl sm:text-5xl md:text-[3.5rem] font-bold leading-[1.08] tracking-tight mb-8"
+                        style={{ fontFamily: "'Playfair Display', Georgia, 'Times New Roman', serif" }}
+                    >
                         {blog.title}
                     </h1>
 
                     {/* Excerpt */}
                     {blog.excerpt && (
-                        <p className="text-xl text-white/50 leading-relaxed mb-8 border-l-2 border-primary/50 pl-5">
+                        <p
+                            className="text-xl text-white/50 leading-[1.7] mb-8 border-l-2 border-primary/50 pl-6"
+                            style={{ fontFamily: "'Source Serif 4', Georgia, 'Times New Roman', serif", fontStyle: "italic" }}
+                        >
                             {blog.excerpt}
                         </p>
                     )}
 
                     {/* Meta */}
-                    <div className="flex flex-wrap items-center gap-6 text-sm text-white/30 border-t border-b border-white/5 py-5">
+                    <div className="flex flex-wrap items-center gap-6 text-sm text-white/35 border-t border-b border-white/8 py-5" style={{ fontFamily: "'DM Sans', sans-serif" }}>
                         {blog.author && (
-                            <span className="font-bold text-white/70">{blog.author}</span>
+                            <span className="font-semibold text-white/70">{blog.author}</span>
                         )}
                         {blog.publish_date && (
                             <span className="flex items-center gap-1.5">
@@ -210,45 +220,59 @@ export default function BlogPost() {
             prose prose-invert prose-lg max-w-none
 
             /* Headings */
-            prose-headings:font-black prose-headings:tracking-tight
-            prose-h1:text-4xl prose-h2:text-3xl prose-h2:mt-14 prose-h2:mb-6
-            prose-h3:text-2xl prose-h3:mt-10 prose-h3:mb-4
+            prose-headings:tracking-tight
+            prose-h1:text-4xl prose-h2:text-[1.75rem] prose-h2:mt-16 prose-h2:mb-6
+            prose-h3:text-[1.35rem] prose-h3:mt-12 prose-h3:mb-4
 
             /* Body text */
-            prose-p:text-white/75 prose-p:leading-[1.8] prose-p:text-lg
+            prose-p:text-white/80 prose-p:leading-[1.85] prose-p:text-[1.125rem] prose-p:mb-6
 
             /* Links */
             prose-a:text-primary prose-a:no-underline hover:prose-a:underline
 
             /* Emphasis */
-            prose-strong:text-white prose-strong:font-bold
-            prose-em:text-white/60
+            prose-strong:text-white prose-strong:font-semibold
+            prose-em:text-white/65
 
             /* Lists */
-            prose-li:text-white/75 prose-li:leading-[1.7] prose-li:mb-1
-            prose-ul:my-6 prose-ol:my-6
+            prose-li:text-white/80 prose-li:leading-[1.8] prose-li:mb-2
+            prose-ul:my-7 prose-ol:my-7
 
             /* Code */
             prose-code:bg-white/5 prose-code:text-primary prose-code:px-2 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:before:content-none prose-code:after:content-none
             prose-pre:bg-white/5 prose-pre:border prose-pre:border-white/10 prose-pre:rounded-2xl prose-pre:p-6
 
             /* Blockquote */
-            prose-blockquote:border-l-primary prose-blockquote:bg-white/3 prose-blockquote:rounded-r-2xl prose-blockquote:py-1 prose-blockquote:not-italic
+            prose-blockquote:border-l-primary prose-blockquote:bg-white/3 prose-blockquote:rounded-r-2xl prose-blockquote:py-2 prose-blockquote:px-5 prose-blockquote:not-italic
             prose-blockquote:text-white/60
 
             /* Images */
-            prose-img:rounded-2xl prose-img:shadow-2xl prose-img:my-10
+            prose-img:rounded-2xl prose-img:shadow-2xl prose-img:my-12
 
             /* HR */
-            prose-hr:border-white/10 prose-hr:my-12
+            prose-hr:border-white/10 prose-hr:my-14
 
             /* Tables */
             prose-table:text-sm
             prose-th:text-white/80 prose-th:font-bold prose-th:border-white/10
             prose-td:text-white/60 prose-td:border-white/5
           "
+                    style={{
+                        fontFamily: "'Source Serif 4', Georgia, 'Times New Roman', serif",
+                        fontSize: '1.125rem',
+                        lineHeight: 1.85,
+                    }}
                 >
-                    <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
+                    <ReactMarkdown
+                        remarkPlugins={[remarkGfm, remarkBreaks]}
+                        components={{
+                            h1: ({ children, ...props }) => <h1 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700 }} {...props}>{children}</h1>,
+                            h2: ({ children, ...props }) => <h2 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700 }} {...props}>{children}</h2>,
+                            h3: ({ children, ...props }) => <h3 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 600 }} {...props}>{children}</h3>,
+                            h4: ({ children, ...props }) => <h4 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 600 }} {...props}>{children}</h4>,
+                            blockquote: ({ children, ...props }) => <blockquote style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: "italic", fontSize: '1.1rem' }} {...props}>{children}</blockquote>,
+                        }}
+                    >
                         {blog.body || "*No content available.*"}
                     </ReactMarkdown>
                 </motion.article>
