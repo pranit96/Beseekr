@@ -309,7 +309,7 @@ export default function BlogPost() {
             <ReadingProgress />
 
             {/* ── TOPBAR ─────────────────────────────────────── */}
-            <header className="fixed top-0 inset-x-0 z-50 bg-black/20 backdrop-blur-md border-b border-white/10 supports-[backdrop-filter]:bg-black/10">
+            <header className="fixed top-0 inset-x-0 z-50">
                 <div className="mx-auto max-w-7xl px-6 sm:px-10 lg:px-16 py-4 flex items-center justify-between">
                 <Link
                 to="/blogs"
@@ -339,7 +339,7 @@ export default function BlogPost() {
                         alt={blog.image_alt || blog.title}
                         className="w-full h-full object-cover"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/20 to-black" />
                     {blog.image_credit && (
                         <a
                             href={blog.image_credit_url || "#"}
