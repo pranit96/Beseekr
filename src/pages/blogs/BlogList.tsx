@@ -266,13 +266,10 @@ export default function BlogList() {
     // Hero shows on "All" tab with no search when articles exist
     const showHero = useMemo(() => blogs.length > 0 && selectedTopic === "All" && !debouncedSearch, [blogs.length, selectedTopic, debouncedSearch]);
     const heroBlog = useMemo(() => showHero ? blogs[0] : null, [showHero, blogs]);
-    // With 1-2 articles: show ALL in grid (hero article included so it's filterable)
-    // With 3+: hero is separate, grid shows the rest
+    // Always show all articles in the grid, even if one is featured in the hero
     const gridBlogs = useMemo(() => {
-        if (!showHero) return blogs; // filtering/searching: show all
-        if (blogs.length <= 2) return blogs; // few articles: show all in grid too
-        return blogs.slice(1); // many articles: hero is separate
-    }, [showHero, blogs]);
+        return blogs;
+    }, [blogs]);
 
     if (loading) {
         return (
@@ -358,7 +355,7 @@ export default function BlogList() {
 
             {/* ── TOPIC FILTER ───────────────────────────────── */}
             {topics.length > 0 && (
-                <div className="sticky top-[76px] z-40 bg-black/80 backdrop-blur-2xl border-b border-white/5">
+                <div className="relative z-40 bg-black/80 backdrop-blur-2xl border-b border-white/5">
                     <div className="mx-auto max-w-7xl px-4 sm:px-8 py-4 overflow-x-auto scrollbar-hide">
                         <div className="flex items-center gap-2 w-max">
                             {["All", ...topics.map((t) => t.topic)].map((topic) => (
