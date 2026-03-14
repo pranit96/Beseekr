@@ -355,7 +355,7 @@ export default function BlogList() {
 
             {/* ── TOPIC FILTER ───────────────────────────────── */}
             {topics.length > 0 && (
-                <div className="relative z-40 bg-black/80 backdrop-blur-2xl border-b border-white/5">
+                <div className={`relative z-40 bg-black/80 backdrop-blur-2xl border-b border-white/5 ${!heroBlog && blogs.length > 0 ? "pt-[80px]" : ""}`}>
                     <div className="mx-auto max-w-7xl px-4 sm:px-8 py-4 overflow-x-auto scrollbar-hide">
                         <div className="flex items-center gap-2 w-max">
                             {["All", ...topics.map((t) => t.topic)].map((topic) => (
