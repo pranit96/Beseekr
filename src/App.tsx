@@ -71,17 +71,17 @@ const Profile = lazyRetry(() => import("./pages/Profile"), "Profile");
 const ResetPassword = lazyRetry(() => import("./pages/ResetPassword"), "ResetPassword");
 const Landing = lazyRetry(() => import("./pages/Landing"), "Landing");
 const DeepAnalytics = lazyRetry(() => import("./pages/DeepAnalytics"), "DeepAnalytics");
-const Deck = lazyRetry(() => import("./pages/Deck"), "Deck");
+// const Deck = lazyRetry(() => import("./pages/Deck"), "Deck");
 const AuthCallback = lazyRetry(() => import("./pages/AuthCallback"), "AuthCallback");
-const WellnessDashboard = lazyRetry(() => import("./pages/health/WellnessDashboard"), "WellnessDashboard");
-const WellnessOnboarding = lazyRetry(() => import("./pages/health/WellnessOnboarding"), "WellnessOnboarding");
-const WellnessPlan = lazyRetry(() => import("./pages/health/WellnessPlan"), "WellnessPlan");
-const WellnessNutrition = lazyRetry(() => import("./pages/health/WellnessNutrition"), "WellnessNutrition");
-const WellnessTraining = lazyRetry(() => import("./pages/health/WellnessTraining"), "WellnessTraining");
-const WellnessHabits = lazyRetry(() => import("./pages/health/WellnessHabits"), "WellnessHabits");
-const WellnessMind = lazyRetry(() => import("./pages/health/WellnessMind"), "WellnessMind");
-const WellnessWeekly = lazyRetry(() => import("./pages/health/WellnessWeekly"), "WellnessWeekly");
-const WellnessWeight = lazyRetry(() => import("./pages/health/WellnessWeight"), "WellnessWeight");
+// const WellnessDashboard = lazyRetry(() => import("./pages/health/WellnessDashboard"), "WellnessDashboard");
+// const WellnessOnboarding = lazyRetry(() => import("./pages/health/WellnessOnboarding"), "WellnessOnboarding");
+// const WellnessPlan = lazyRetry(() => import("./pages/health/WellnessPlan"), "WellnessPlan");
+// const WellnessNutrition = lazyRetry(() => import("./pages/health/WellnessNutrition"), "WellnessNutrition");
+// const WellnessTraining = lazyRetry(() => import("./pages/health/WellnessTraining"), "WellnessTraining");
+// const WellnessHabits = lazyRetry(() => import("./pages/health/WellnessHabits"), "WellnessHabits");
+// const WellnessMind = lazyRetry(() => import("./pages/health/WellnessMind"), "WellnessMind");
+// const WellnessWeekly = lazyRetry(() => import("./pages/health/WellnessWeekly"), "WellnessWeekly");
+// const WellnessWeight = lazyRetry(() => import("./pages/health/WellnessWeight"), "WellnessWeight");
 
 // Blog Pages - Public routes at /blogs
 const BlogList = lazyRetry(() => import("./pages/blogs/BlogList"), "BlogList");
@@ -91,7 +91,7 @@ const BlogPost = lazyRetry(() => import("./pages/blogs/BlogPost"), "BlogPost");
 import { SaasDashboardLayout } from "./layouts/SaasDashboardLayout";
 
 // Trading System - Layout loaded immediately, pages lazy loaded
-import { TradingLayout } from "./layouts/TradingLayout";
+// import { TradingLayout } from "./layouts/TradingLayout";
 
 // Dashboard pages with retry logic
 const ProblemsList = lazyRetry(() => import("./pages/saas/ProblemsList"), "ProblemsList");
@@ -101,20 +101,20 @@ const SaasWatchlist = lazyRetry(() => import("./pages/saas/Watchlist"), "Watchli
 const Pricing = lazyRetry(() => import("./pages/saas/Pricing"), "Pricing");
 
 // Trading System pages with retry logic
-const TradingOverview = lazyRetry(() => import("./pages/trading/Overview"), "TradingOverview");
-const TradingLive = lazyRetry(() => import("./pages/trading/LiveTrading"), "TradingLive");
-const TradingPositions = lazyRetry(() => import("./pages/trading/Positions"), "TradingPositions");
-const TradingHistory = lazyRetry(() => import("./pages/trading/TradeHistory"), "TradingHistory");
-const TradingSignals = lazyRetry(() => import("./pages/trading/Signals"), "TradingSignals");
-const TradingAnalytics = lazyRetry(() => import("./pages/trading/Analytics"), "TradingAnalytics");
-const TradingMarket = lazyRetry(() => import("./pages/trading/Market"), "TradingMarket");
-const TradingSystem = lazyRetry(() => import("./pages/trading/System"), "TradingSystem");
-const TradingAlerts = lazyRetry(() => import("./pages/trading/Alerts"), "TradingAlerts");
-const TradingSettings = lazyRetry(() => import("./pages/trading/Settings"), "TradingSettings");
-const TradingWatchlist = lazyRetry(() => import("./pages/trading/Watchlist"), "TradingWatchlist");
-const TradingPaperTrading = lazyRetry(() => import("./pages/trading/PaperTrading"), "TradingPaperTrading");
-const TradingDataValidation = lazyRetry(() => import("./pages/trading/DataValidation"), "TradingDataValidation");
-const TradingDailyPicks = lazyRetry(() => import("./pages/trading/DailyPicks"), "TradingDailyPicks");
+// const TradingOverview = lazyRetry(() => import("./pages/trading/Overview"), "TradingOverview");
+// const TradingLive = lazyRetry(() => import("./pages/trading/LiveTrading"), "TradingLive");
+// const TradingPositions = lazyRetry(() => import("./pages/trading/Positions"), "TradingPositions");
+// const TradingHistory = lazyRetry(() => import("./pages/trading/TradeHistory"), "TradingHistory");
+// const TradingSignals = lazyRetry(() => import("./pages/trading/Signals"), "TradingSignals");
+// const TradingAnalytics = lazyRetry(() => import("./pages/trading/Analytics"), "TradingAnalytics");
+// const TradingMarket = lazyRetry(() => import("./pages/trading/Market"), "TradingMarket");
+// const TradingSystem = lazyRetry(() => import("./pages/trading/System"), "TradingSystem");
+// const TradingAlerts = lazyRetry(() => import("./pages/trading/Alerts"), "TradingAlerts");
+// const TradingSettings = lazyRetry(() => import("./pages/trading/Settings"), "TradingSettings");
+// const TradingWatchlist = lazyRetry(() => import("./pages/trading/Watchlist"), "TradingWatchlist");
+// const TradingPaperTrading = lazyRetry(() => import("./pages/trading/PaperTrading"), "TradingPaperTrading");
+// const TradingDataValidation = lazyRetry(() => import("./pages/trading/DataValidation"), "TradingDataValidation");
+// const TradingDailyPicks = lazyRetry(() => import("./pages/trading/DailyPicks"), "TradingDailyPicks");
 
 // CAT Prep Dashboard - HIDDEN (module disabled)
 // import { CatDashboardLayout } from "./layouts/CatDashboardLayout";
@@ -247,7 +247,7 @@ const App = () => {
                   <Route path="/about" element={<About />} />
 
                   {/* Wellness (health) */}
-                  <Route path="/wellness" element={
+                  {/* <Route path="/wellness" element={
                     <Suspense fallback={<PageLoader />}>
                       <WellnessDashboard />
                     </Suspense>
@@ -291,7 +291,7 @@ const App = () => {
                     <Suspense fallback={<PageLoader />}>
                       <WellnessWeight />
                     </Suspense>
-                  } />
+                  } /> */}
 
                   {/* Payment success - Razorpay redirect */}
                   <Route path="/payment/success" element={<PaymentSuccess />} />
@@ -323,7 +323,7 @@ const App = () => {
                       TRADING SYSTEM - NEW PROFESSIONAL INTERFACE
                       Complete from-scratch implementation
                       ============================================= */}
-                  <Route path="/trading" element={<TradingLayout />}>
+                  {/* <Route path="/trading" element={<TradingLayout />}>
                     <Route index element={<Navigate to="picks" replace />} />
                     <Route path="picks" element={<Suspense fallback={<PageLoader />}><TradingDailyPicks /></Suspense>} />
                     <Route path="overview" element={<Suspense fallback={<PageLoader />}><TradingOverview /></Suspense>} />
@@ -339,7 +339,7 @@ const App = () => {
                     <Route path="watchlist" element={<Suspense fallback={<PageLoader />}><TradingWatchlist /></Suspense>} />
                     <Route path="paper-trading" element={<Suspense fallback={<PageLoader />}><TradingPaperTrading /></Suspense>} />
                     <Route path="data-validation" element={<Suspense fallback={<PageLoader />}><TradingDataValidation /></Suspense>} />
-                  </Route>
+                  </Route> */}
 
                   {/* =============================================
                       CAT PREP DASHBOARD - HIDDEN (module disabled)
@@ -362,18 +362,18 @@ const App = () => {
                     path="/analytics"
                     element={<ProtectedRoute><Suspense fallback={<PageLoader />}><Analytics /></Suspense></ProtectedRoute>}
                   />
-                  <Route
+                  {/* <Route
                     path="/metaLayer"
                     element={<ProtectedRoute><Suspense fallback={<PageLoader />}><DeepAnalytics /></Suspense></ProtectedRoute>}
-                  />
+                  /> */}
                   <Route
                     path="/profile"
                     element={<Navigate to="/dashboard/profile" replace />}
                   />
-                  <Route
+                  {/* <Route
                     path="/deck"
                     element={<ProtectedRoute><Suspense fallback={<PageLoader />}><Deck /></Suspense></ProtectedRoute>}
-                  />
+                  /> */}
 
                   {/* 404 */}
                   <Route path="*" element={<NotFound />} />

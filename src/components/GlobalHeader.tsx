@@ -41,8 +41,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 const primaryNavigation = [
     { name: 'Home', href: '/', icon: Home, color: 'from-slate-500 to-zinc-600', exact: true },
     { name: 'Discover', href: '/dashboard/problems', icon: Compass, color: 'from-violet-500 to-purple-600' },
-    { name: 'Trading', href: '/trading', icon: TrendingUp, color: 'from-blue-500 to-indigo-500' },
-    { name: 'Wellness', href: '/wellness', icon: Activity, color: 'from-emerald-500 to-sky-500' },
+    // { name: 'Trading', href: '/trading', icon: TrendingUp, color: 'from-blue-500 to-indigo-500' },
+    // { name: 'Wellness', href: '/wellness', icon: Activity, color: 'from-emerald-500 to-sky-500' },
     { name: 'AI Chat', href: '/chat', icon: MessageSquare, color: 'from-violet-500 to-fuchsia-500' },
     { name: 'Blogs', href: '/blogs', icon: BookOpen, color: 'from-amber-500 to-orange-500' },
 ];

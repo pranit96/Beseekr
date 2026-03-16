@@ -18,9 +18,9 @@ const navigation = [
   { name: 'Home', href: '/' },
   { name: 'Chat', href: '/chat' },
   { name: 'Agents', href: '/agents' },
-  { name: 'Analytics', href: '/analytics' },
-  { name: 'MetaLayer', href: '/metaLayer' },
-  { name: 'Deck', href: '/deck' },
+  { name: 'Analytics', href: '/analytics' }
+  // { name: 'MetaLayer', href: '/metaLayer' },
+  // { name: 'Deck', href: '/deck' },
 ];
 
 interface TopBarProps {
