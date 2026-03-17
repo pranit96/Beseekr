@@ -7,7 +7,7 @@ import { useAgents } from '@/hooks/use-agents';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
-import { AlertCircle, RefreshCw } from 'lucide-react';
+import { AlertCircle, RefreshCw, Menu, PanelLeftClose } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Agent } from '@/types/agent';
 import { createLogger } from '@/services/logging';
@@ -601,6 +601,22 @@ const Chat = () => {
 
         {/* Chat Interface */}
         <main className="flex-1 flex justify-center overflow-hidden relative">
+          {/* Sidebar toggle button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setSidebarOpen(prev => !prev)}
+            className="absolute top-3 left-3 z-20 h-8 w-8 rounded-lg hover:bg-muted transition-all duration-300"
+            aria-label={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
+            title={sidebarOpen ? 'Hide conversations' : 'Show conversations'}
+          >
+            {sidebarOpen ? (
+              <PanelLeftClose className="h-4 w-4" />
+            ) : (
+              <Menu className="h-4 w-4" />
+            )}
+          </Button>
+
           {/* Subtle background pattern */}
           <div className="absolute inset-0 opacity-[0.02] pointer-events-none">
             <div className="absolute inset-0" style={{

@@ -171,6 +171,17 @@ export const ChatInterface: React.FC<{
     // Always update the internal conversation ID
     setConversationId(activeConversationId);
 
+    // CRITICAL: Do NOT reload messages if an orchestration is actively running.
+    // When a conversation is created mid-orchestration, the activeConversationId
+    // prop changes — but reloading would wipe the in-flight streaming messages
+    // (API returns 0 messages since they haven't been persisted yet).
+    if (isActiveOrchestrationRef?.current) {
+      logger.debug('Skipping message load during active orchestration', {
+        conversationId: activeConversationId,
+      });
+      return;
+    }
+
     // Load messages for this conversation
     // This is the ONLY place that triggers loadConversationMessages on conversation switch.
     // The useConversation hook no longer auto-loads on conversationId change.
