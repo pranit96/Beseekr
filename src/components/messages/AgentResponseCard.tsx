@@ -1,5 +1,5 @@
 // src/components/messages/AgentResponseCard.tsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Loader2, Copy, Check, RefreshCw, X } from 'lucide-react';
 import MarkdownRenderer from './MarkdownRenderer';
@@ -28,6 +28,8 @@ interface Props {
 const AgentResponseCard: React.FC<Props> = ({ response, index, onForkAgent, onRegenerate, onCancel }) => {
   const [copied, setCopied] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   const modelUsed = response.metadata?.model_used;
   const tokenCount = response.metadata?.usage?.total_tokens || response.metadata?.token_count;
@@ -42,6 +44,24 @@ const AgentResponseCard: React.FC<Props> = ({ response, index, onForkAgent, onRe
       setIsStreaming(false);
     }
   }, [response.status, response.content]);
+
+  // Elapsed time counter for pending state
+  useEffect(() => {
+    if (response.status === 'pending') {
+      setElapsedSeconds(0);
+      timerRef.current = setInterval(() => {
+        setElapsedSeconds(prev => prev + 1);
+      }, 1000);
+    } else {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    }
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [response.status]);
 
   useEffect(() => {
     if (!copied) return;
@@ -98,14 +118,31 @@ const AgentResponseCard: React.FC<Props> = ({ response, index, onForkAgent, onRe
       'w-full rounded-xl p-4 border shadow-sm transition-all',
       response.status === 'error'
         ? 'border-destructive/40 bg-destructive/5'
-        : 'border-border/60 bg-background/80'
-    )}>
+        : response.status === 'pending'
+          ? 'border-primary/30 bg-background/80'
+          : 'border-border/60 bg-background/80'
+    )}
+      style={response.status === 'pending' ? {
+        animation: 'shimmer-border 2s ease-in-out infinite',
+      } : undefined}
+    >
+      {/* Shimmer keyframe injection */}
+      {response.status === 'pending' && (
+        <style>{`
+          @keyframes shimmer-border {
+            0%, 100% { border-color: hsl(var(--primary) / 0.15); }
+            50% { border-color: hsl(var(--primary) / 0.4); }
+          }
+        `}</style>
+      )}
+
       {/* Header */}
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="flex items-center gap-3">
           <div className={cn(
             'h-9 w-9 rounded-full flex items-center justify-center text-white font-semibold text-sm shadow-sm',
-            agentColor
+            agentColor,
+            response.status === 'pending' && 'ring-2 ring-primary/30 ring-offset-2 ring-offset-background'
           )}>
             {response.agentName?.charAt(0)?.toUpperCase() || 'A'}
           </div>
@@ -113,11 +150,18 @@ const AgentResponseCard: React.FC<Props> = ({ response, index, onForkAgent, onRe
             <div className="font-semibold text-sm text-foreground">
               {response.agentName}
             </div>
-            {domain && (
-              <div className="text-xs text-muted-foreground mt-0.5">
-                {domain}
-              </div>
-            )}
+            <div className="flex items-center gap-2 mt-0.5">
+              {domain && (
+                <span className="text-xs text-muted-foreground">
+                  {domain}
+                </span>
+              )}
+              {response.status === 'pending' && elapsedSeconds > 0 && (
+                <span className="text-xs text-primary/70 font-medium tabular-nums">
+                  {elapsedSeconds}s
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
@@ -191,11 +235,18 @@ const AgentResponseCard: React.FC<Props> = ({ response, index, onForkAgent, onRe
                 <span className="inline-block w-1.5 h-4 ml-0.5 bg-primary rounded-sm animate-pulse align-text-bottom" />
               </div>
             ) : (
-              // Waiting for first token
-              <div className="flex items-center gap-2 py-3">
-                <Loader2 className="w-4 h-4 animate-spin text-primary" />
+              // Waiting for first token — animated thinking indicator
+              <div className="flex items-center gap-3 py-3">
+                <div className="flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-primary/60 animate-bounce" style={{ animationDelay: '0ms', animationDuration: '0.8s' }} />
+                  <span className="w-2 h-2 rounded-full bg-primary/60 animate-bounce" style={{ animationDelay: '150ms', animationDuration: '0.8s' }} />
+                  <span className="w-2 h-2 rounded-full bg-primary/60 animate-bounce" style={{ animationDelay: '300ms', animationDuration: '0.8s' }} />
+                </div>
                 <span className="text-sm text-muted-foreground">
-                  Waiting for response...
+                  {elapsedSeconds < 3 ? 'Thinking...' :
+                    elapsedSeconds < 8 ? 'Generating response...' :
+                      elapsedSeconds < 15 ? 'Still working on it...' :
+                        'Almost there...'}
                 </span>
               </div>
             )}

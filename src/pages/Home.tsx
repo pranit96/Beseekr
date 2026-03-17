@@ -164,6 +164,8 @@ export default function Home() {
     const handleToolClick = (route: string) => {
         if (loading) return;
         if (!user) {
+            // Save intended destination so auth flow redirects back here after login
+            sessionStorage.setItem('auth-redirect', route);
             navigate('/auth');
         } else {
             navigate(route);

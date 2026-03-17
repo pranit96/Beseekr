@@ -26,6 +26,7 @@ import {
     Bookmark,
     Zap,
     ChevronDown,
+    Bot,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -44,6 +45,7 @@ const primaryNavigation = [
     // { name: 'Trading', href: '/trading', icon: TrendingUp, color: 'from-blue-500 to-indigo-500' },
     // { name: 'Wellness', href: '/wellness', icon: Activity, color: 'from-emerald-500 to-sky-500' },
     { name: 'AI Chat', href: '/chat', icon: MessageSquare, color: 'from-violet-500 to-fuchsia-500' },
+    { name: 'Agents', href: '/agents', icon: Bot, color: 'from-cyan-500 to-blue-500' },
     { name: 'Blogs', href: '/blogs', icon: BookOpen, color: 'from-amber-500 to-orange-500' },
 ];
 
@@ -64,6 +66,14 @@ export function GlobalHeader() {
     const { theme, setTheme } = useTheme();
     const { user, logout } = useAuth();
     const [mobileOpen, setMobileOpen] = useState(false);
+
+    // Save current path so auth flow redirects back after login
+    const saveAuthRedirect = () => {
+        const currentPath = location.pathname + location.search;
+        if (currentPath !== '/auth' && !currentPath.startsWith('/auth/')) {
+            sessionStorage.setItem('auth-redirect', currentPath);
+        }
+    };
 
     // Fetch plans to get user subscription status
     const { data: plansData } = useQuery({
@@ -286,7 +296,7 @@ export function GlobalHeader() {
                                 </DropdownMenu>
                             ) : (
                                 <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="hidden sm:block">
-                                    <Link to="/auth">
+                                    <Link to="/auth" onClick={saveAuthRedirect}>
                                         <Button
                                             size="sm"
                                             className="rounded-lg sm:rounded-xl bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity text-xs sm:text-sm px-3 sm:px-4 h-8 sm:h-9"
@@ -387,7 +397,7 @@ export function GlobalHeader() {
                                     <div className="border-t border-border/50 my-2" />
                                     <Link
                                         to="/auth"
-                                        onClick={() => setMobileOpen(false)}
+                                        onClick={() => { saveAuthRedirect(); setMobileOpen(false); }}
                                         className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold bg-gradient-to-r from-primary to-accent text-white shadow-md"
                                     >
                                         Login / Sign Up

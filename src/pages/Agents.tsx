@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useMyAgents, useCreateAgent, useUpdateAgent, useDeleteAgent } from '@/hooks/use-api-queries';
 import { WorkflowBuilder } from '@/components/WorkflowBuilder';
+import { AgentQuickChat } from '@/components/AgentQuickChat';
 
 const Agents = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -40,6 +41,9 @@ const Agents = () => {
 
   // Workflow Builder state
   const [workflowBuilderOpen, setWorkflowBuilderOpen] = useState(false);
+
+  // Quick Chat state
+  const [quickChatAgent, setQuickChatAgent] = useState<Agent | null>(null);
 
   // React Query hooks
   const { data: agentsResponse, isLoading: loading, error, refetch } = useMyAgents();
@@ -223,6 +227,13 @@ const Agents = () => {
 
             {/* Quick action dots — visible on hover */}
             <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex-shrink-0">
+              <button
+                onClick={() => setQuickChatAgent(agent)}
+                className="p-1.5 rounded-lg hover:bg-primary/10 transition-colors"
+                title="Chat with agent"
+              >
+                <MessageSquare className="w-3.5 h-3.5 text-primary" />
+              </button>
               <button
                 onClick={() => handleEditAgent(agent)}
                 className="p-1.5 rounded-lg hover:bg-muted transition-colors"
@@ -546,6 +557,15 @@ const Agents = () => {
           }}
         />
       </div>
+
+      {/* Quick Chat Drawer */}
+      {quickChatAgent && (
+        <AgentQuickChat
+          agent={quickChatAgent}
+          open={!!quickChatAgent}
+          onClose={() => setQuickChatAgent(null)}
+        />
+      )}
     </>
   );
 };
