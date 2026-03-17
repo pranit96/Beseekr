@@ -394,7 +394,7 @@ export const ChatInterface: React.FC<{
 
       if (saveToConversation && convId) payload.conversation_id = convId;
 
-      // Attach file references if any
+      // Attach file references with extracted content
       if (attachedFiles.length > 0) {
         payload.attached_files = attachedFiles.map(f => ({
           name: f.name,
@@ -402,6 +402,8 @@ export const ChatInterface: React.FC<{
           size: f.size,
           storage_path: f.storage_path,
           url: f.url,
+          extracted_content: (f as any).extracted_content || null,
+          word_count: (f as any).word_count || 0,
         }));
       }
 
