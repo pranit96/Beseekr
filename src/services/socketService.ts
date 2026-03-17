@@ -172,8 +172,8 @@ class SocketService {
       this._emitLocal('rate_limit_exceeded', data);
     });
 
-    // Heartbeat response
-    this.socket.on('pong', () => {
+    // Heartbeat response — backend emits 'orchestration:heartbeat'
+    this.socket.on('orchestration:heartbeat', () => {
       this.resetConnectionTimeout();
     });
   }
@@ -207,10 +207,10 @@ class SocketService {
 
     this.heartbeatInterval = window.setInterval(() => {
       if (this.socket?.connected) {
-        this.socket.emit('ping');
+        this.socket.emit('orchestration:ping');
         this.setConnectionTimeout();
       }
-    }, 25000);
+    }, 30000);
   }
 
   /**
@@ -235,7 +235,7 @@ class SocketService {
         this.socket.disconnect();
         this.socket.connect();
       }
-    }, 10000);
+    }, 30000);
   }
 
   /**
