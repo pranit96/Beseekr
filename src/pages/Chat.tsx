@@ -599,14 +599,13 @@ const Chat = () => {
           />
         </aside>
 
-        {/* Chat Interface */}
-        <main className="flex-1 flex justify-center overflow-hidden relative">
-          {/* Sidebar toggle button */}
+        {/* Sidebar toggle button — always visible between sidebar and content */}
+        <div className="flex-shrink-0 flex items-start pt-3 relative z-20">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setSidebarOpen(prev => !prev)}
-            className="absolute top-3 left-3 z-20 h-8 w-8 rounded-lg hover:bg-muted transition-all duration-300"
+            className="h-8 w-8 rounded-lg hover:bg-muted/80 border border-border/50 bg-background/80 backdrop-blur-sm transition-all duration-300 shadow-sm"
             aria-label={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
             title={sidebarOpen ? 'Hide conversations' : 'Show conversations'}
           >
@@ -616,7 +615,10 @@ const Chat = () => {
               <Menu className="h-4 w-4" />
             )}
           </Button>
+        </div>
 
+        {/* Chat Interface */}
+        <main className="flex-1 flex justify-center overflow-hidden relative">
           {/* Subtle background pattern */}
           <div className="absolute inset-0 opacity-[0.02] pointer-events-none">
             <div className="absolute inset-0" style={{
