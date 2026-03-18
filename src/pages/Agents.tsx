@@ -134,8 +134,16 @@ const Agents = () => {
 
   const handleDeleteAgent = async () => {
     if (!deleteAgentId) return;
-    await deleteAgentMutation.mutateAsync(deleteAgentId);
-    setDeleteAgentId(null);
+    try {
+      await deleteAgentMutation.mutateAsync(deleteAgentId);
+      // Force clear apiClient internal cache and refetch
+      apiClient.invalidateCache('/api/agents');
+      refetch();
+    } catch (err) {
+      // Error toast is handled by useDeleteAgent onError
+    } finally {
+      setDeleteAgentId(null);
+    }
   };
 
   const handleEditAgent = (agent: Agent) => {
