@@ -216,7 +216,7 @@ const Agents = () => {
             </div>
 
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-[15px] truncate leading-tight">{agent.name}</h3>
+              <h3 className="font-bold text-[16px] truncate leading-tight">{agent.name}</h3>
               <div className="flex items-center gap-2 mt-1.5">
                 <Badge
                   variant="secondary"
@@ -335,7 +335,7 @@ const Agents = () => {
               style={{ backgroundColor: color.bg, borderColor: color.border, borderWidth: '1px', borderStyle: 'solid' }}
             >
               <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">System Prompt</p>
-              <p className="text-[12px] text-foreground/70 line-clamp-2 leading-relaxed font-mono">
+              <p className="text-[12px] text-foreground/70 line-clamp-2 leading-relaxed">
                 {agent.system_prompt}
               </p>
             </div>
