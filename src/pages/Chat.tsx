@@ -114,10 +114,13 @@ const Chat = () => {
         setInitialLoadComplete(true);
         setLoadingConversations(false);
 
-        // Fetch last messages for each conversation in the background
-        Promise.all(
-          rawConversations.map(async (conv: any) => {
+        // Fetch last messages sequentially in the background to avoid 429 rate limit errors
+        (async () => {
+          for (const conv of rawConversations) {
             try {
+              // Small delay between requests to not hammer the server
+              await new Promise(resolve => setTimeout(resolve, 200));
+
               // Fetch more messages (up to 5) to ensure we get a user message
               const messagesRes = await apiClient.getMessages(conv.id, 1, 5);
 
@@ -171,9 +174,14 @@ const Chat = () => {
               }
             } catch (err) {
               logger.error('Failed to fetch messages for conversation', { conversationId: conv.id, error: err });
+              // If we hit a rate limit error mid-loop, we should stop trying to fetch previews to be safe
+              const msg = err instanceof Error ? err.message : String(err);
+              if (msg.includes('429') || msg.includes('Too many') || msg.toLowerCase().includes('rate limit')) {
+                break;
+              }
             }
-          })
-        );
+          }
+        })();
       } else {
         throw new Error(response.error || 'Failed to fetch conversations');
       }
