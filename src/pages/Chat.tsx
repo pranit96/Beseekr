@@ -107,8 +107,15 @@ const Chat = () => {
       console.log('[Chat] Parsed conversations count:', rawConversations.length);
 
       if (rawConversations.length > 0 || response.success) {
-        // Fetch last messages for each conversation
-        const conversationsWithMessages = await Promise.all(
+        // Immediately set the raw conversations so the UI displays instantly
+        setConversations(rawConversations);
+        setAuthError(false);
+        fetchAttemptRef.current = 0;
+        setInitialLoadComplete(true);
+        setLoadingConversations(false);
+
+        // Fetch last messages for each conversation in the background
+        Promise.all(
           rawConversations.map(async (conv: any) => {
             try {
               // Fetch more messages (up to 5) to ensure we get a user message
@@ -142,38 +149,31 @@ const Chat = () => {
 
                 // Find the most recent user message
                 const lastUserMsg = sortedMessages.find((m: any) => m.role === 'user');
+                let lastMsgText = undefined;
 
                 if (lastUserMsg?.content) {
-                  return {
-                    ...conv,
-                    last_message: lastUserMsg.content.substring(0, 100)
-                  };
+                  lastMsgText = lastUserMsg.content.substring(0, 100);
+                } else {
+                  // If no user message, try to find any message with content
+                  const anyMessageWithContent = sortedMessages.find((m: any) => m.content && m.content.trim());
+
+                  if (anyMessageWithContent?.content) {
+                    const rolePrefix = anyMessageWithContent.role === 'assistant' ? '🤖 ' : '';
+                    lastMsgText = `${rolePrefix}${anyMessageWithContent.content.substring(0, 100)}`;
+                  }
                 }
 
-                // If no user message, try to find any message with content
-                const anyMessageWithContent = sortedMessages.find((m: any) => m.content && m.content.trim());
-
-                if (anyMessageWithContent?.content) {
-                  const rolePrefix = anyMessageWithContent.role === 'assistant' ? '🤖 ' : '';
-                  return {
-                    ...conv,
-                    last_message: `${rolePrefix}${anyMessageWithContent.content.substring(0, 100)}`
-                  };
+                if (lastMsgText) {
+                  setConversations(prev => prev.map(c => 
+                    c.id === conv.id ? { ...c, last_message: lastMsgText } : c
+                  ));
                 }
               }
-
-              return conv;
             } catch (err) {
               logger.error('Failed to fetch messages for conversation', { conversationId: conv.id, error: err });
-              return conv;
             }
           })
         );
-
-        setConversations(conversationsWithMessages);
-        setAuthError(false);
-        fetchAttemptRef.current = 0;
-        setInitialLoadComplete(true);
       } else {
         throw new Error(response.error || 'Failed to fetch conversations');
       }
