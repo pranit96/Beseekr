@@ -821,7 +821,7 @@ export const ChatInterface: React.FC<{
             <SelectedAgentsDisplay />
 
             <div className="w-full">
-              <div className="relative flex items-center gap-3 rounded-xl bg-muted/50 border border-border/50 focus-within:border-primary transition px-4 py-3">
+              <div className="relative flex items-center gap-3 rounded-3xl bg-muted/50 border border-border/50 focus-within:border-primary transition px-4 py-3">
                 <ChatFileUpload
                   onFilesUploaded={(files) => setAttachedFiles(prev => [...prev, ...files])}
                   attachedFiles={attachedFiles}
@@ -849,7 +849,7 @@ export const ChatInterface: React.FC<{
                   onClick={handleSubmit}
                   disabled={(!input.trim() && attachedFiles.length === 0) || sendDisabled}
                   size="icon"
-                  className="h-10 w-10 rounded-lg bg-primary hover:bg-primary/90 transition flex-shrink-0"
+                  className="h-10 w-10 rounded-xl bg-primary hover:bg-primary/90 transition flex-shrink-0"
                   aria-label={preparingMessage ? "Preparing message" : "Send message"}
                   title={preparingMessage ? "Preparing..." : "Send message (Enter)"}
                 >
@@ -950,12 +950,12 @@ export const ChatInterface: React.FC<{
               />
             </div>
           </div>
-
-          <div className="sticky bottom-0 bg-background/95 backdrop-blur-sm p-3 sm:p-4 border-t border-border/50 space-y-3">
+          {/* New Message Input Area - Fixed at bottom */}
+          <div className="flex-shrink-0 p-2 sm:p-4 bg-background/80 backdrop-blur-sm border-t border-border/40 relative z-20">
             <div className="max-w-5xl 2xl:max-w-6xl mx-auto w-full space-y-3">
               <SelectedAgentsDisplay />
 
-              <div className="relative flex items-center gap-2 sm:gap-3 rounded-xl bg-muted/50 border border-border/50 focus-within:border-primary transition px-3 sm:px-4 py-2 sm:py-3">
+              <div className="relative flex items-center gap-2 sm:gap-3 rounded-3xl bg-muted/50 border border-border/50 focus-within:border-primary transition px-3 sm:px-4 py-2 sm:py-3">
                 <ChatFileUpload
                   onFilesUploaded={(files) => setAttachedFiles(prev => [...prev, ...files])}
                   attachedFiles={attachedFiles}
@@ -1001,7 +1001,7 @@ export const ChatInterface: React.FC<{
                       onClick={handleSubmit}
                       disabled={(!input.trim() && attachedFiles.length === 0) || sendDisabled}
                       size="icon"
-                      className="h-9 w-9 sm:h-10 sm:w-10 rounded-lg bg-primary hover:bg-primary/90 transition"
+                      className="h-8 w-8 sm:h-10 sm:w-10 rounded-xl bg-primary hover:bg-primary/90 transition flex-shrink-0"
                       title={!socketConnected ? 'Waiting for connection...' : preparingMessage ? 'Preparing message...' : undefined}
                     >
                       {preparingMessage ? (
