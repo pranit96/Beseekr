@@ -181,52 +181,30 @@ const Agents = () => {
     setIsDialogOpen(true);
   };
 
-  // Agent card color schemes — Using inline styles because Tailwind purges dynamic class names
-  const CARD_COLORS = [
-    { gradient: 'linear-gradient(135deg, #8b5cf6, #7c3aed)', bg: 'rgba(139,92,246,0.1)', text: '#8b5cf6', border: 'rgba(139,92,246,0.2)' },
-    { gradient: 'linear-gradient(135deg, #3b82f6, #06b6d4)', bg: 'rgba(59,130,246,0.1)', text: '#3b82f6', border: 'rgba(59,130,246,0.2)' },
-    { gradient: 'linear-gradient(135deg, #10b981, #14b8a6)', bg: 'rgba(16,185,129,0.1)', text: '#10b981', border: 'rgba(16,185,129,0.2)' },
-    { gradient: 'linear-gradient(135deg, #f59e0b, #f97316)', bg: 'rgba(245,158,11,0.1)', text: '#f59e0b', border: 'rgba(245,158,11,0.2)' },
-    { gradient: 'linear-gradient(135deg, #ec4899, #f43f5e)', bg: 'rgba(236,72,153,0.1)', text: '#ec4899', border: 'rgba(236,72,153,0.2)' },
-    { gradient: 'linear-gradient(135deg, #6366f1, #2563eb)', bg: 'rgba(99,102,241,0.1)', text: '#6366f1', border: 'rgba(99,102,241,0.2)' },
-    { gradient: 'linear-gradient(135deg, #14b8a6, #22c55e)', bg: 'rgba(20,184,166,0.1)', text: '#14b8a6', border: 'rgba(20,184,166,0.2)' },
-    { gradient: 'linear-gradient(135deg, #ef4444, #ec4899)', bg: 'rgba(239,68,68,0.1)', text: '#ef4444', border: 'rgba(239,68,68,0.2)' },
-  ];
-
-  const getCardColor = (index: number) => CARD_COLORS[index % CARD_COLORS.length];
-
   const AgentCard = ({ agent, index }: { agent: Agent; index: number }) => {
-    const color = getCardColor(index);
     const initial = agent.name?.charAt(0)?.toUpperCase() || 'A';
 
     return (
-      <Card className="group relative overflow-hidden border-border/40 hover:border-border/80 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5">
-        {/* Gradient accent bar */}
-        <div className="h-1.5" style={{ background: color.gradient }} />
-
+      <Card className="group relative overflow-hidden border-border/40 bg-background/40 hover:bg-muted/40 backdrop-blur-sm transition-all duration-300 hover:border-border/80 hover:shadow-soft">
         <div className="p-5">
           {/* Header: Avatar + Name + Actions */}
-          <div className="flex items-start gap-3.5 mb-4">
+          <div className="flex items-start gap-4 mb-4">
             {/* Avatar with initial */}
-            <div
-              className="w-12 h-12 rounded-xl flex items-center justify-center text-white text-lg font-bold shadow-sm flex-shrink-0"
-              style={{ background: color.gradient }}
-            >
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-muted/50 border border-border/40 text-muted-foreground/80 font-semibold text-lg shadow-sm flex-shrink-0 transition-colors duration-300 group-hover:bg-primary/10 group-hover:text-primary group-hover:border-primary/20">
               {initial}
             </div>
 
             <div className="flex-1 min-w-0">
-              <h3 className="font-bold text-[16px] truncate leading-tight">{agent.name}</h3>
-              <div className="flex items-center gap-2 mt-1.5">
+              <h3 className="font-semibold text-[16px] text-foreground/90 group-hover:text-foreground transition-colors truncate leading-tight">{agent.name}</h3>
+              <div className="flex items-center gap-2 mt-1.5 text-[11px]">
                 <Badge
                   variant="secondary"
-                  className="text-[10px] px-2 py-0"
-                  style={{ backgroundColor: color.bg, color: color.text, borderColor: color.border, borderWidth: '1px' }}
+                  className="px-2 py-0 bg-muted/40 text-muted-foreground border border-border/40 font-medium hover:bg-muted/60"
                 >
                   {agent.domain || 'General'}
                 </Badge>
                 {agent.is_default && (
-                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-muted-foreground">
+                  <Badge variant="outline" className="px-1.5 py-0 text-muted-foreground/70 border-border/40 font-medium">
                     Default
                   </Badge>
                 )}
@@ -240,25 +218,25 @@ const Agents = () => {
                 className="p-1.5 rounded-lg hover:bg-primary/10 transition-colors"
                 title="Chat with agent"
               >
-                <MessageSquare className="w-3.5 h-3.5 text-primary" />
+                <MessageSquare className="w-3.5 h-3.5 text-primary/70 hover:text-primary" />
               </button>
               <button
                 onClick={() => handleEditAgent(agent)}
-                className="p-1.5 rounded-lg hover:bg-muted transition-colors"
+                className="p-1.5 rounded-lg hover:bg-muted/80 transition-colors"
                 title="Edit agent"
               >
-                <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
+                <Pencil className="w-3.5 h-3.5 text-muted-foreground hover:text-foreground" />
               </button>
               <button
                 onClick={() => handleDuplicate(agent.id)}
                 disabled={duplicating === agent.id}
-                className="p-1.5 rounded-lg hover:bg-muted transition-colors"
+                className="p-1.5 rounded-lg hover:bg-muted/80 transition-colors"
                 title="Duplicate agent"
               >
                 {duplicating === agent.id ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground" />
                 ) : (
-                  <Copy className="w-3.5 h-3.5 text-muted-foreground" />
+                  <Copy className="w-3.5 h-3.5 text-muted-foreground hover:text-foreground" />
                 )}
               </button>
               <button
@@ -272,15 +250,15 @@ const Agents = () => {
           </div>
 
           {/* Description */}
-          <p className="text-[13px] text-muted-foreground leading-relaxed line-clamp-2 mb-3">
+          <p className="text-[13px] text-muted-foreground/80 leading-relaxed line-clamp-2 mb-4">
             {agent.description || 'No description provided.'}
           </p>
 
           {/* Tool badges */}
           {agent.tools && agent.tools.length > 0 && (
-            <div className="flex items-center gap-1.5 mb-3">
-              <Wrench className="w-3 h-3 text-muted-foreground" />
-              <div className="flex flex-wrap gap-1">
+            <div className="flex items-center gap-2 mb-4">
+              <Wrench className="w-3.5 h-3.5 text-muted-foreground/60" />
+              <div className="flex flex-wrap gap-1.5">
                 {agent.tools.map((toolName) => {
                   const TOOL_ICON_MAP: Record<string, React.ElementType> = {
                     parse_document: FileText,
@@ -296,31 +274,16 @@ const Agents = () => {
                     summarize_text: AlignLeft,
                     translate_text: Languages,
                   };
-                  const TOOL_COLOR_MAP: Record<string, string> = {
-                    parse_document: '#3b82f6',
-                    generate_pdf: '#ef4444',
-                    send_email: '#22c55e',
-                    web_search: '#a855f7',
-                    search_reddit: '#f97316',
-                    search_knowledge: '#06b6d4',
-                    generate_docx: '#6366f1',
-                    generate_spreadsheet: '#10b981',
-                    scrape_url: '#8b5cf6',
-                    analyze_data: '#f59e0b',
-                    summarize_text: '#0ea5e9',
-                    translate_text: '#f43f5e',
-                  };
                   const Icon = TOOL_ICON_MAP[toolName] || Wrench;
-                  const iconColor = TOOL_COLOR_MAP[toolName] || '#888';
                   const label = toolName.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase());
                   return (
                     <span
                       key={toolName}
                       title={label}
-                      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-muted/50 border border-border/50"
+                      className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-muted/40 border border-border/40 text-[10px] font-medium text-muted-foreground/80 transition-colors duration-300 group-hover:bg-muted/60 group-hover:text-muted-foreground group-hover:border-border/60"
                     >
-                      <Icon className="w-3 h-3" style={{ color: iconColor }} />
-                      <span className="text-[10px] text-muted-foreground">{label.split(' ')[0]}</span>
+                      <Icon className="w-3 h-3 text-muted-foreground/60" />
+                      {label.split(' ')[0]}
                     </span>
                   );
                 })}
@@ -330,12 +293,9 @@ const Agents = () => {
 
           {/* System prompt preview */}
           {agent.system_prompt && (
-            <div
-              className="p-3 rounded-lg"
-              style={{ backgroundColor: color.bg, borderColor: color.border, borderWidth: '1px', borderStyle: 'solid' }}
-            >
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">System Prompt</p>
-              <p className="text-[12px] text-foreground/70 line-clamp-2 leading-relaxed">
+            <div className="p-3 rounded-lg bg-muted/30 border border-border/40 transition-colors duration-300 group-hover:border-border/60 group-hover:bg-muted/40">
+              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70 mb-1.5 flex items-center gap-1.5"><Sparkles className="w-3 h-3 opacity-50"/> System Prompt</p>
+              <p className="text-[12px] text-muted-foreground line-clamp-2 leading-relaxed font-sans">
                 {agent.system_prompt}
               </p>
             </div>
@@ -362,10 +322,10 @@ const Agents = () => {
       <div className="mx-auto p-4 sm:p-6 md:p-8 max-w-[2200px]">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
+            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">
               AI Agents
             </h1>
-            <p className="text-muted-foreground mt-1 text-sm">
+            <p className="text-muted-foreground mt-2 text-sm">
               {agents.length} agent{agents.length !== 1 ? 's' : ''} ready to work for you
             </p>
           </div>
