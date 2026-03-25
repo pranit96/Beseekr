@@ -2,7 +2,7 @@
 // Redesigned autonomous workflow with circular animation and dialog flow
 
 import React, { useState } from 'react';
-import { X, Sparkles, Loader2, CheckCircle2, AlertCircle, Send, ArrowRight } from 'lucide-react';
+import { X, Sparkles, Loader2, CheckCircle2, AlertCircle, Send, ArrowRight, Copy, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -10,6 +10,8 @@ import { cn } from '@/lib/utils';
 import useAutonomousWorkflow from '@/hooks/use-autonomous-workflow';
 import { useToast } from '@/hooks/use-toast';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
 
 interface Agent {
   id: string;
@@ -32,9 +34,16 @@ export const AutonomousWorkflowInterface: React.FC = () => {
   const [finalAnswer, setFinalAnswer] = useState<string>('');
   const [isComplete, setIsComplete] = useState(false);
   const [hasError, setHasError] = useState(false);
+  const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
   const { toast } = useToast();
   const { execute } = useAutonomousWorkflow();
+
+  const handleCopyCode = async (code: string) => {
+    await navigator.clipboard.writeText(code);
+    setCopiedCode(code);
+    setTimeout(() => setCopiedCode(null), 2000);
+  };
 
   const handleStartWorkflow = () => {
     if (!prompt.trim()) {
@@ -344,8 +353,115 @@ export const AutonomousWorkflowInterface: React.FC = () => {
                 </div>
 
                 {/* Result Content */}
-                <div className="prose prose-sm max-w-none dark:prose-invert mb-6">
-                  <ReactMarkdown>{finalAnswer}</ReactMarkdown>
+                <div className="prose prose-sm sm:prose-base max-w-none dark:prose-invert mb-6 
+                  prose-headings:font-bold prose-headings:text-foreground
+                  prose-h1:text-2xl prose-h1:mb-4 prose-h1:mt-6
+                  prose-h2:text-xl prose-h2:mb-3 prose-h2:mt-5
+                  prose-h3:text-lg prose-h3:mb-2 prose-h3:mt-4
+                  prose-p:text-foreground/90 prose-p:leading-relaxed prose-p:mb-4
+                  prose-a:text-primary prose-a:no-underline hover:prose-a:underline
+                  prose-strong:text-foreground prose-strong:font-semibold
+                  prose-code:text-primary prose-code:bg-muted prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:before:content-none prose-code:after:content-none
+                  prose-pre:bg-muted prose-pre:border prose-pre:border-border/50 prose-pre:rounded-lg prose-pre:p-4 prose-pre:overflow-x-auto
+                  prose-blockquote:border-l-4 prose-blockquote:border-primary/30 prose-blockquote:pl-4 prose-blockquote:italic prose-blockquote:text-foreground/80
+                  prose-ul:list-disc prose-ul:pl-6 prose-ul:mb-4 prose-ul:text-foreground/90
+                  prose-ol:list-decimal prose-ol:pl-6 prose-ol:mb-4 prose-ol:text-foreground/90
+                  prose-li:mb-1 prose-li:text-foreground/90
+                  prose-table:w-full prose-table:border-collapse prose-table:my-4
+                  prose-thead:border-b-2 prose-thead:border-border
+                  prose-th:px-4 prose-th:py-2 prose-th:text-left prose-th:font-semibold prose-th:text-foreground
+                  prose-td:px-4 prose-td:py-2 prose-td:border-t prose-td:border-border/50 prose-td:text-foreground/90
+                  prose-img:rounded-lg prose-img:shadow-md prose-img:my-4 prose-img:mx-auto prose-img:max-w-full
+                  prose-hr:border-border/50 prose-hr:my-6
+                ">
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    rehypePlugins={[rehypeRaw]}
+                    components={{
+                      // Custom image rendering with loading and error handling
+                      img: ({ node, ...props }) => (
+                        <img
+                          {...props}
+                          className="rounded-lg shadow-md my-4 mx-auto max-w-full"
+                          loading="lazy"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                          }}
+                        />
+                      ),
+                      // Custom code block rendering with copy button
+                      code: ({ node, className, children, ...props }: any) => {
+                        const match = /language-(\w+)/.exec(className || '');
+                        const codeString = String(children).replace(/\n$/, '');
+                        const inline = !match;
+                        
+                        return !inline ? (
+                          <div className="relative group my-4">
+                            {match && (
+                              <div className="flex items-center justify-between bg-muted/50 border-b border-border/50 px-4 py-2 rounded-t-lg">
+                                <span className="text-xs font-medium text-muted-foreground">
+                                  {match[1]}
+                                </span>
+                                <button
+                                  onClick={() => handleCopyCode(codeString)}
+                                  className="text-xs flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
+                                >
+                                  {copiedCode === codeString ? (
+                                    <>
+                                      <Check className="w-3 h-3" />
+                                      Copied
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Copy className="w-3 h-3" />
+                                      Copy
+                                    </>
+                                  )}
+                                </button>
+                              </div>
+                            )}
+                            <pre className={cn(
+                              "bg-muted border border-border/50 p-4 overflow-x-auto",
+                              match ? "rounded-b-lg" : "rounded-lg"
+                            )}>
+                              <code className={className} {...props}>
+                                {children}
+                              </code>
+                            </pre>
+                          </div>
+                        ) : (
+                          <code className="text-primary bg-muted px-1.5 py-0.5 rounded text-sm" {...props}>
+                            {children}
+                          </code>
+                        );
+                      },
+                      // Custom table rendering
+                      table: ({ node, ...props }) => (
+                        <div className="overflow-x-auto my-4 border border-border/50 rounded-lg">
+                          <table className="w-full border-collapse" {...props} />
+                        </div>
+                      ),
+                      // Custom link rendering
+                      a: ({ node, ...props }) => (
+                        <a
+                          {...props}
+                          className="text-primary hover:underline"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        />
+                      ),
+                      // Custom blockquote rendering
+                      blockquote: ({ node, ...props }) => (
+                        <blockquote
+                          className="border-l-4 border-primary/30 pl-4 py-2 my-4 italic text-foreground/80 bg-muted/30 rounded-r-lg"
+                          {...props}
+                        />
+                      ),
+                    }}
+                  >
+                    {finalAnswer}
+                  </ReactMarkdown>
                 </div>
 
                 {/* Actions */}
