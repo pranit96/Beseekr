@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { AgentSelector } from './AgentSelector';
 import MessageList from './MessageList';
-import { AgentWorkflowDialog } from './AgentWorkflowDialog';
+import { WorkflowBuilder, type WorkflowDefinition } from './WorkflowBuilder';
 import { WelcomeScreen } from './WelcomeScreen';
 import { ExportChatDialog } from './ExportChatDialog';
 import type { ChatMessage, ExecutionMode, Agent, AgentResponse } from '@/types/agent';
@@ -59,6 +59,7 @@ export const ChatInterface: React.FC<{
 }> = ({ agents, activeConversationId, onConversationChange, onConversationCreated }) => {
   const [input, setInput] = useState('');
   const [selectedAgents, setSelectedAgents] = useState<Agent[]>([]);
+  const [selectedWorkflow, setSelectedWorkflow] = useState<WorkflowDefinition | null>(null);
   const [executionMode, setExecutionMode] = useState<ExecutionMode>('sequential');
   const [workflowDialogOpen, setWorkflowDialogOpen] = useState(false);
   const [saveToConversation, setSaveToConversation] = useState(true);
@@ -123,9 +124,15 @@ export const ChatInterface: React.FC<{
     }, 500);
   };
 
-  const handleSubmit = async () => {
-    if (!input.trim()) return;
-    if (selectedAgents.length === 0) { toast({ title: 'No agents selected', description: 'Select at least one agent.', variant: 'destructive' }); return; }
+  const handleSubmit = async (overrideWorkflow?: WorkflowDefinition) => {
+    const activeWorkflow = overrideWorkflow || selectedWorkflow;
+    const isWorkflowExecution = !!activeWorkflow;
+    const finalAgents = isWorkflowExecution 
+      ? activeWorkflow.nodes.map(n => agents.find(a => a.id === n.agentId)).filter(Boolean) as Agent[]
+      : selectedAgents;
+
+    if (!input.trim() && attachedFiles.length === 0) return;
+    if (finalAgents.length === 0) { toast({ title: 'No agents selected', description: 'Select at least one agent.', variant: 'destructive' }); return; }
     if (!socketConnected) { toast({ title: 'Not connected', description: 'Waiting for connection…', variant: 'destructive' }); return; }
     if (rateLimitedUntil && Date.now() < rateLimitedUntil) { toast({ title: 'Rate limited', description: 'Please wait before sending.', variant: 'destructive' }); return; }
 
@@ -155,8 +162,8 @@ export const ChatInterface: React.FC<{
         isCreatingConversationRef.current = true;
         try {
           const { apiClient } = await import('@/lib/api');
-          const title = generateConversationTitle(messageText, selectedAgents);
-          const res = await apiClient.createConversation({ agent_id: selectedAgents[0]?.id || null, title });
+          const title = generateConversationTitle(messageText, finalAgents);
+          const res = await apiClient.createConversation({ agent_id: finalAgents[0]?.id || null, title });
           if (res.success && res.data?.id) {
             convId = res.data.id; setConversationId(convId);
             setTimeout(() => { onConversationChange?.(convId); onConversationCreated?.(convId); }, 200);
@@ -168,9 +175,9 @@ export const ChatInterface: React.FC<{
       await new Promise(r => setTimeout(r, 50));
 
       const userMessage: ChatMessage = { id: `msg-${Date.now()}`, type: 'user', content: messageText, timestamp: new Date(), isFromCache: false };
-      const agentResponsesInitial: AgentResponse[] = selectedAgents.map(a => ({ agentId: a.id, agentName: a.name, content: '', timestamp: new Date(), status: 'pending', metadata: { domain: a.domain } }));
+      const agentResponsesInitial: AgentResponse[] = finalAgents.map(a => ({ agentId: a.id, agentName: a.name, content: '', timestamp: new Date(), status: 'pending', metadata: { domain: a.domain } }));
       const agentMessageId = `msg-${Date.now()}-agents`;
-      const agentMessage: ChatMessage = { id: agentMessageId, type: 'agent', content: '', timestamp: new Date(), agentResponses: agentResponsesInitial, executionMode, markdownOutput: '', finalOutput: '', isFromCache: false };
+      const agentMessage: ChatMessage = { id: agentMessageId, type: 'agent', content: '', timestamp: new Date(), agentResponses: agentResponsesInitial, executionMode: isWorkflowExecution ? 'sequential' : executionMode, markdownOutput: '', finalOutput: '', isFromCache: false };
 
       setMessages(prev => [...prev, userMessage, agentMessage]);
       setPreparingMessage(false);
@@ -179,7 +186,13 @@ export const ChatInterface: React.FC<{
 
       await new Promise(r => setTimeout(r, 100));
 
-      const payload: any = { agent_ids: selectedAgents.map(a => a.id), message: messageText, mode: executionMode, save_to_conversation: saveToConversation };
+      const payload: any = { 
+        agent_ids: finalAgents.map(a => a.id), 
+        workflow_nodes: isWorkflowExecution ? activeWorkflow.nodes : undefined,
+        message: messageText, 
+        mode: isWorkflowExecution ? 'sequential' : executionMode, 
+        save_to_conversation: saveToConversation 
+      };
       if (saveToConversation && convId) payload.conversation_id = convId;
       if (attachedFiles.length > 0) {
         payload.attached_files = attachedFiles.map(f => ({ name: f.name, type: f.type, size: f.size, storage_path: f.storage_path, url: f.url, extracted_content: (f as any).extracted_content || null, word_count: (f as any).word_count || 0 }));
@@ -255,7 +268,14 @@ export const ChatInterface: React.FC<{
     setTimeout(() => { cancelRef.current = null; setIsExecuting(false); setIsLoadingLocal(false); setPreparingMessage(false); setIsCancelling(false); if (isActiveOrchestrationRef) isActiveOrchestrationRef.current = false; }, 300);
   };
 
-  const handleWorkflowConfirm = (ordered: Agent[]) => setSelectedAgents(ordered);
+  const handleExecuteWorkflow = (workflow: WorkflowDefinition) => {
+    setSelectedWorkflow(workflow);
+    if (!input.trim() && attachedFiles.length === 0) {
+      toast({ title: 'Message saved with workflow', description: 'Type a message and press send to run ' + workflow.name });
+      return;
+    }
+    handleSubmit(workflow);
+  };
 
   const handleRetryMessage = useCallback(async (messageId: string) => {
     const idx = messages.findIndex(m => m.id === messageId);
@@ -313,8 +333,18 @@ export const ChatInterface: React.FC<{
     <div className="input-area-root">
       {/* Agent selector & toolbar row */}
       <div className="input-toolbar">
-        <div className="flex-1 min-w-0">
-          <AgentSelector agents={agents} selectedAgents={selectedAgents} onAgentsChange={setSelectedAgents} />
+        <div className="flex-1 min-w-0 flex items-center gap-2">
+          {selectedWorkflow ? (
+             <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-md">
+               <Workflow className="w-4 h-4 text-primary" />
+               <span className="text-sm font-medium text-primary truncate">{selectedWorkflow.name}</span>
+               <button onClick={() => setSelectedWorkflow(null)} className="ml-2 hover:bg-primary/20 rounded p-0.5" title="Clear workflow">
+                 <X className="w-3.5 h-3.5 text-primary" />
+               </button>
+             </div>
+          ) : (
+             <AgentSelector agents={agents} selectedAgents={selectedAgents} onAgentsChange={setSelectedAgents} />
+          )}
         </div>
         <div className="flex items-center gap-1.5 flex-shrink-0">
           {/* Mode toggle */}
@@ -377,7 +407,7 @@ export const ChatInterface: React.FC<{
             </button>
           ) : (
             <button
-              onClick={handleSubmit}
+              onClick={() => handleSubmit()}
               disabled={(!input.trim() && attachedFiles.length === 0) || sendDisabled}
               className="send-btn"
               aria-label="Send"
@@ -426,7 +456,7 @@ export const ChatInterface: React.FC<{
         </div>
       </div>
 
-      <AgentWorkflowDialog open={workflowDialogOpen} onOpenChange={setWorkflowDialogOpen} agents={agents} selectedAgents={selectedAgents} onConfirm={handleWorkflowConfirm} />
+      <WorkflowBuilder open={workflowDialogOpen} onOpenChange={setWorkflowDialogOpen} agents={agents} onExecute={handleExecuteWorkflow} />
       <ExportChatDialog open={exportDialogOpen} onOpenChange={setExportDialogOpen} messages={messages} conversationTitle={undefined} />
     </div>
   );

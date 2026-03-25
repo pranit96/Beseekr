@@ -345,6 +345,13 @@ class ApiClient {
     });
   }
 
+  async generateAgent(description: string) {
+    return this.request<any>('/api/agents/generate', {
+      method: 'POST',
+      body: JSON.stringify({ description }),
+    });
+  }
+
   async updateAgent(id: string, agent: any) {
     this.invalidateCache('/api/agents');
     return this.request<any>(`/api/agents/${id}`, {

@@ -38,6 +38,10 @@ export const AgentDialog = ({
   // Enhance prompt state
   const [isEnhancing, setIsEnhancing] = useState(false);
 
+  // Generate agent state
+  const [generateDescription, setGenerateDescription] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+
   // Test agent state
   const [testMessage, setTestMessage] = useState('');
   const [testOutput, setTestOutput] = useState('');
@@ -112,6 +116,31 @@ export const AgentDialog = ({
     }
   };
 
+  const handleGenerateAgent = async () => {
+    if (!generateDescription.trim()) {
+      toast({ title: 'Input required', description: 'Please describe the agent you want to generate.', variant: 'destructive' });
+      return;
+    }
+    setIsGenerating(true);
+    try {
+      const response = await apiClient.generateAgent(generateDescription);
+      if (response.success && response.data) {
+        setName(response.data.name || '');
+        setDomain(response.data.domain || '');
+        setDescription(response.data.description || '');
+        setSystemPrompt(response.data.system_prompt || '');
+        setTools(response.data.tools || []);
+        toast({ title: 'Agent Generated', description: 'AI has configured your agent successfully.' });
+      } else {
+        throw new Error(response.error || 'Generation failed');
+      }
+    } catch (err: any) {
+      toast({ title: 'Generation failed', description: err.message, variant: 'destructive' });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   const handleTestAgent = () => {
     if (!agent?.id || !testMessage.trim()) return;
     if (!isConnected()) {
@@ -159,6 +188,31 @@ export const AgentDialog = ({
           </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 mt-4 px-4 md:px-6 pb-6">
+          {!agent && (
+            <div className="bg-primary/5 p-4 rounded-xl border border-primary/20 mb-6 space-y-3">
+              <Label className="text-primary font-semibold flex items-center gap-2">
+                <Sparkles className="w-4 h-4" />
+                Auto-Generate Agent
+              </Label>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="E.g., A fitness expert who searches the web for workouts..."
+                  value={generateDescription}
+                  onChange={(e) => setGenerateDescription(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleGenerateAgent();
+                    }
+                  }}
+                />
+                <Button type="button" onClick={handleGenerateAgent} disabled={isGenerating}>
+                  {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Generate'}
+                </Button>
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="name">
