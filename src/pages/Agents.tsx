@@ -1,57 +1,46 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Plus, Pencil, Trash2, Search, Folder, User, Copy, Sparkles, BarChart3, ChevronDown, ChevronRight, Loader2, Workflow, Wrench, FileText, Mail, Globe, MessageSquare, Database, FileOutput, FileType, FileSpreadsheet, AlignLeft, Languages } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, Copy, Sparkles, Loader2, Workflow, Wrench, FileText, Mail, Globe, MessageSquare, Database, FileOutput, FileType, FileSpreadsheet, AlignLeft, Languages, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
 import { AgentDialog } from '@/components/AgentDialog';
 import { Agent, AgentTemplate } from '@/types/agent';
 import { useToast } from '@/hooks/use-toast';
 import { GlobalHeader } from '@/components/GlobalHeader';
 import { apiClient } from '@/lib/api';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { useMyAgents, useCreateAgent, useUpdateAgent, useDeleteAgent } from '@/hooks/use-api-queries';
 import { WorkflowBuilder } from '@/components/WorkflowBuilder';
 import { AgentQuickChat } from '@/components/AgentQuickChat';
+import React from 'react';
+
+const TOOL_ICON_MAP: Record<string, React.ElementType> = {
+  parse_document: FileText, generate_pdf: FileOutput, send_email: Mail,
+  web_search: Globe, search_reddit: MessageSquare, search_knowledge: Database,
+  generate_docx: FileType, generate_spreadsheet: FileSpreadsheet, scrape_url: Globe,
+  analyze_data: BarChart3, summarize_text: AlignLeft, translate_text: Languages,
+};
 
 const Agents = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingAgent, setEditingAgent] = useState<Agent | undefined>();
   const [deleteAgentId, setDeleteAgentId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [openCategories, setOpenCategories] = useState<Set<string>>(new Set(['My Agents']));
-  const { toast } = useToast();
-
-  // Templates state
   const [templates, setTemplates] = useState<AgentTemplate[]>([]);
   const [loadingTemplates, setLoadingTemplates] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
-
-  // Duplicate state
   const [duplicating, setDuplicating] = useState<string | null>(null);
-
-  // Workflow Builder state
   const [workflowBuilderOpen, setWorkflowBuilderOpen] = useState(false);
-
-  // Quick Chat state
   const [quickChatAgent, setQuickChatAgent] = useState<Agent | null>(null);
+  const { toast } = useToast();
 
-  // React Query hooks
   const { data: agentsResponse, isLoading: loading, error, refetch } = useMyAgents();
   const createAgentMutation = useCreateAgent();
   const updateAgentMutation = useUpdateAgent();
   const deleteAgentMutation = useDeleteAgent();
 
-  // Extract agents from various possible response shapes
   const agents = useMemo(() => {
     if (!agentsResponse) return [];
     const d = agentsResponse.data;
@@ -61,247 +50,135 @@ const Agents = () => {
     return [];
   }, [agentsResponse]);
 
-  // Show error toast if query fails (only once)
-  useEffect(() => {
-    if (error) {
-      toast({
-        title: 'Failed to load agents',
-        description: (error as any).message,
-        variant: 'destructive',
-      });
-    }
-  }, [error, toast]);
+  useEffect(() => { if (error) toast({ title: 'Failed to load agents', description: (error as any).message, variant: 'destructive' }); }, [error, toast]);
 
-  // Fetch templates
   const fetchTemplates = async () => {
-    if (templates.length > 0) {
-      setShowTemplates(!showTemplates);
-      return;
-    }
-    setLoadingTemplates(true);
-    setShowTemplates(true);
+    if (templates.length > 0) { setShowTemplates(p => !p); return; }
+    setLoadingTemplates(true); setShowTemplates(true);
     try {
-      const response = await apiClient.getAgentTemplates();
-      if (response.success && response.data) {
-        setTemplates(Array.isArray(response.data) ? response.data : response.data.templates || []);
-      }
-    } catch (err: any) {
-      toast({ title: 'Failed to load templates', description: err.message, variant: 'destructive' });
-    } finally {
-      setLoadingTemplates(false);
-    }
+      const res = await apiClient.getAgentTemplates();
+      if (res.success && res.data) setTemplates(Array.isArray(res.data) ? res.data : res.data.templates || []);
+    } catch (err: any) { toast({ title: 'Failed to load templates', description: err.message, variant: 'destructive' }); }
+    finally { setLoadingTemplates(false); }
   };
 
-  const categorizedAgents = useMemo(() => {
-    const filtered = agents.filter((agent) => {
-      const searchLower = searchQuery.toLowerCase();
-      return (
-        agent.name.toLowerCase().includes(searchLower) ||
-        (agent.domain && agent.domain.toLowerCase().includes(searchLower)) ||
-        agent.description.toLowerCase().includes(searchLower)
-      );
-    });
-
-    // Separate custom agents from default agents
-    const customAgents = filtered.filter(agent => !agent.is_default);
-    const defaultAgents = filtered.filter(agent => agent.is_default);
-
-    // Group default agents by domain
-    const domainGroups: Record<string, Agent[]> = {};
-    defaultAgents.forEach(agent => {
-      const domain = agent.domain || 'General';
-      if (!domainGroups[domain]) {
-        domainGroups[domain] = [];
-      }
-      domainGroups[domain].push(agent);
-    });
-
-    return {
-      custom: customAgents,
-      domains: domainGroups,
-    };
-  }, [agents, searchQuery]);
-
   const handleSaveAgent = async (agent: Agent) => {
-    if (agent.id && editingAgent) {
-      await updateAgentMutation.mutateAsync({ id: agent.id, agent });
-    } else {
-      await createAgentMutation.mutateAsync(agent);
-    }
-    setIsDialogOpen(false);
-    setEditingAgent(undefined);
+    if (agent.id && editingAgent) await updateAgentMutation.mutateAsync({ id: agent.id, agent });
+    else await createAgentMutation.mutateAsync(agent);
+    setIsDialogOpen(false); setEditingAgent(undefined);
   };
 
   const handleDeleteAgent = async () => {
     if (!deleteAgentId) return;
-    try {
-      await deleteAgentMutation.mutateAsync(deleteAgentId);
-      // Force clear apiClient internal cache and refetch
-      apiClient.invalidateCache('/api/agents');
-      refetch();
-    } catch (err) {
-      // Error toast is handled by useDeleteAgent onError
-    } finally {
-      setDeleteAgentId(null);
-    }
-  };
-
-  const handleEditAgent = (agent: Agent) => {
-    setEditingAgent(agent);
-    setIsDialogOpen(true);
+    try { await deleteAgentMutation.mutateAsync(deleteAgentId); apiClient.invalidateCache('/api/agents'); refetch(); }
+    catch { /* handled by hook */ } finally { setDeleteAgentId(null); }
   };
 
   const handleDuplicate = async (agentId: string) => {
     setDuplicating(agentId);
     try {
-      const response = await apiClient.duplicateAgent(agentId);
-      if (response.success) {
-        toast({ title: 'Agent duplicated', description: 'A copy has been created.' });
-        refetch();
-      } else {
-        throw new Error(response.error || 'Duplicate failed');
-      }
-    } catch (err: any) {
-      toast({ title: 'Duplicate failed', description: err.message, variant: 'destructive' });
-    } finally {
-      setDuplicating(null);
-    }
+      const res = await apiClient.duplicateAgent(agentId);
+      if (res.success) { toast({ title: 'Agent duplicated' }); refetch(); }
+      else throw new Error(res.error || 'Failed');
+    } catch (err: any) { toast({ title: 'Duplicate failed', description: err.message, variant: 'destructive' }); }
+    finally { setDuplicating(null); }
   };
 
-  const handleCreateFromTemplate = (template: AgentTemplate) => {
-    setEditingAgent({
-      id: '',
-      name: template.name,
-      description: template.description,
-      domain: template.domain || '',
-      system_prompt: template.system_prompt,
-      color: template.color || 'hsl(var(--primary))',
-      is_default: false,
-    } as Agent);
+  const handleCreateFromTemplate = (t: AgentTemplate) => {
+    setEditingAgent({ id: '', name: t.name, description: t.description, domain: t.domain || '', system_prompt: t.system_prompt, color: t.color || 'hsl(var(--primary))', is_default: false } as Agent);
     setIsDialogOpen(true);
   };
 
-  const AgentCard = ({ agent, index }: { agent: Agent; index: number }) => {
-    const initial = agent.name?.charAt(0)?.toUpperCase() || 'A';
+  const filtered = useMemo(() => {
+    if (!searchQuery) return agents;
+    const q = searchQuery.toLowerCase();
+    return agents.filter(a => a.name.toLowerCase().includes(q) || (a.domain || '').toLowerCase().includes(q) || a.description.toLowerCase().includes(q));
+  }, [agents, searchQuery]);
 
+  const sorted = useMemo(() => [...filtered].sort((a, b) => (a.is_default && !b.is_default ? 1 : !a.is_default && b.is_default ? -1 : 0)), [filtered]);
+
+  // ── Agent Card ────────────────────────────────────────────────────────────────
+  const AgentCard = ({ agent }: { agent: Agent }) => {
+    const initial = agent.name?.charAt(0)?.toUpperCase() || 'A';
+    const domainColor = agent.color || 'hsl(var(--primary))';
     return (
-      <Card className="group relative overflow-hidden border-border/40 bg-background/40 hover:bg-muted/40 backdrop-blur-sm transition-all duration-300 hover:border-border/80 hover:shadow-soft">
+      <div className="agent-card group">
+        {/* Top accent strip */}
+        <div className="agent-card-accent" style={{ background: `linear-gradient(90deg, ${domainColor}22, transparent)`, borderTopColor: `${domainColor}44` }} />
+
         <div className="p-5">
-          {/* Header: Avatar + Name + Actions */}
-          <div className="flex items-start gap-4 mb-4">
-            {/* Avatar with initial */}
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-muted/50 border border-border/40 text-muted-foreground/80 font-semibold text-lg shadow-sm flex-shrink-0 transition-colors duration-300 group-hover:bg-primary/10 group-hover:text-primary group-hover:border-primary/20">
+          {/* Header */}
+          <div className="flex items-start gap-3 mb-3">
+            <div
+              className="agent-avatar"
+              style={{ background: `${domainColor}18`, borderColor: `${domainColor}30`, color: domainColor }}
+            >
               {initial}
             </div>
-
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-[16px] text-foreground/90 group-hover:text-foreground transition-colors truncate leading-tight">{agent.name}</h3>
-              <div className="flex items-center gap-2 mt-1.5 text-[11px]">
-                <Badge
-                  variant="secondary"
-                  className="px-2 py-0 bg-muted/40 text-muted-foreground border border-border/40 font-medium hover:bg-muted/60"
-                >
+              <h3 className="text-[14px] font-semibold text-foreground/90 truncate leading-snug group-hover:text-foreground transition-colors">
+                {agent.name}
+              </h3>
+              <div className="flex items-center gap-1.5 mt-1">
+                <span className="text-[10px] font-medium text-muted-foreground/50 bg-muted/40 px-2 py-0.5 rounded-full border border-border/30">
                   {agent.domain || 'General'}
-                </Badge>
+                </span>
                 {agent.is_default && (
-                  <Badge variant="outline" className="px-1.5 py-0 text-muted-foreground/70 border-border/40 font-medium">
-                    Default
-                  </Badge>
+                  <span className="text-[9px] font-medium text-muted-foreground/35 uppercase tracking-wider">default</span>
                 )}
               </div>
             </div>
-
-            {/* Quick action dots — visible on hover */}
-            <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex-shrink-0">
-              <button
-                onClick={() => setQuickChatAgent(agent)}
-                className="p-1.5 rounded-lg hover:bg-primary/10 transition-colors"
-                title="Chat with agent"
-              >
-                <MessageSquare className="w-3.5 h-3.5 text-primary/70 hover:text-primary" />
+            {/* Hover actions */}
+            <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button onClick={() => setQuickChatAgent(agent)} className="agent-action-btn" title="Quick chat">
+                <MessageSquare className="w-3.5 h-3.5" />
               </button>
-              <button
-                onClick={() => handleEditAgent(agent)}
-                className="p-1.5 rounded-lg hover:bg-muted/80 transition-colors"
-                title="Edit agent"
-              >
-                <Pencil className="w-3.5 h-3.5 text-muted-foreground hover:text-foreground" />
+              <button onClick={() => { setEditingAgent(agent); setIsDialogOpen(true); }} className="agent-action-btn" title="Edit">
+                <Pencil className="w-3.5 h-3.5" />
               </button>
-              <button
-                onClick={() => handleDuplicate(agent.id)}
-                disabled={duplicating === agent.id}
-                className="p-1.5 rounded-lg hover:bg-muted/80 transition-colors"
-                title="Duplicate agent"
-              >
-                {duplicating === agent.id ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground" />
-                ) : (
-                  <Copy className="w-3.5 h-3.5 text-muted-foreground hover:text-foreground" />
-                )}
+              <button onClick={() => handleDuplicate(agent.id)} disabled={duplicating === agent.id} className="agent-action-btn" title="Duplicate">
+                {duplicating === agent.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Copy className="w-3.5 h-3.5" />}
               </button>
-              <button
-                onClick={() => setDeleteAgentId(agent.id)}
-                className="p-1.5 rounded-lg hover:bg-destructive/10 transition-colors"
-                title="Delete agent"
-              >
-                <Trash2 className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive" />
+              <button onClick={() => setDeleteAgentId(agent.id)} className="agent-action-btn agent-action-btn-danger" title="Delete">
+                <Trash2 className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
 
           {/* Description */}
-          <p className="text-[13px] text-muted-foreground/80 leading-relaxed line-clamp-2 mb-4">
-            {agent.description || 'No description provided.'}
+          <p className="text-[12px] text-muted-foreground/60 leading-relaxed line-clamp-2 mb-3">
+            {agent.description || 'No description.'}
           </p>
 
-          {/* Tool badges */}
+          {/* Tools */}
           {agent.tools && agent.tools.length > 0 && (
-            <div className="flex items-center gap-2 mb-4">
-              <Wrench className="w-3.5 h-3.5 text-muted-foreground/60" />
-              <div className="flex flex-wrap gap-1.5">
-                {agent.tools.map((toolName) => {
-                  const TOOL_ICON_MAP: Record<string, React.ElementType> = {
-                    parse_document: FileText,
-                    generate_pdf: FileOutput,
-                    send_email: Mail,
-                    web_search: Globe,
-                    search_reddit: MessageSquare,
-                    search_knowledge: Database,
-                    generate_docx: FileType,
-                    generate_spreadsheet: FileSpreadsheet,
-                    scrape_url: Globe,
-                    analyze_data: BarChart3,
-                    summarize_text: AlignLeft,
-                    translate_text: Languages,
-                  };
-                  const Icon = TOOL_ICON_MAP[toolName] || Wrench;
-                  const label = toolName.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase());
-                  return (
-                    <span
-                      key={toolName}
-                      title={label}
-                      className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-muted/40 border border-border/40 text-[10px] font-medium text-muted-foreground/80 transition-colors duration-300 group-hover:bg-muted/60 group-hover:text-muted-foreground group-hover:border-border/60"
-                    >
-                      <Icon className="w-3 h-3 text-muted-foreground/60" />
-                      {label.split(' ')[0]}
-                    </span>
-                  );
-                })}
-              </div>
+            <div className="flex flex-wrap gap-1.5 mb-3">
+              {agent.tools.slice(0, 4).map((toolName) => {
+                const Icon = TOOL_ICON_MAP[toolName] || Wrench;
+                return (
+                  <span key={toolName} className="tool-pill">
+                    <Icon className="w-2.5 h-2.5" />
+                    {toolName.replace(/_/g, ' ').split(' ')[0]}
+                  </span>
+                );
+              })}
+              {agent.tools.length > 4 && (
+                <span className="tool-pill">+{agent.tools.length - 4}</span>
+              )}
             </div>
           )}
 
           {/* System prompt preview */}
           {agent.system_prompt && (
-            <div className="p-3 rounded-lg bg-muted/30 border border-border/40 transition-colors duration-300 group-hover:border-border/60 group-hover:bg-muted/40">
-              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70 mb-1.5 flex items-center gap-1.5"><Sparkles className="w-3 h-3 opacity-50"/> System Prompt</p>
-              <p className="text-[12px] text-muted-foreground line-clamp-2 leading-relaxed font-sans">
+            <div className="system-prompt-preview">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/35 mb-1">System Prompt</p>
+              <p className="text-[11px] text-muted-foreground/50 line-clamp-2 leading-relaxed">
                 {agent.system_prompt}
               </p>
             </div>
           )}
         </div>
-      </Card>
+      </div>
     );
   };
 
@@ -310,7 +187,10 @@ const Agents = () => {
       <>
         <GlobalHeader />
         <div className="h-full flex items-center justify-center">
-          <div className="animate-pulse text-muted-foreground">Loading agents...</div>
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-8 h-8 rounded-full border-2 border-primary/20 border-t-primary animate-spin" />
+            <p className="text-xs text-muted-foreground/50">Loading agents…</p>
+          </div>
         </div>
       </>
     );
@@ -319,221 +199,133 @@ const Agents = () => {
   return (
     <>
       <GlobalHeader />
-      <div className="mx-auto p-4 sm:p-6 md:p-8 max-w-[2200px]">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+
+      {/* Ambient background */}
+      <div aria-hidden className="pointer-events-none fixed inset-0 overflow-hidden -z-10">
+        <div className="ambient-blob ambient-blob-1" style={{ opacity: 0.04 }} />
+        <div className="ambient-blob ambient-blob-2" style={{ opacity: 0.03 }} />
+      </div>
+
+      <div className="mx-auto px-4 sm:px-6 md:px-8 py-8 max-w-[2200px] animate-fade-in">
+        {/* Page header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-10">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">
+            <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/40 mb-2 select-none">
+              Workspace
+            </p>
+            <h1 className="text-[2rem] font-semibold tracking-[-0.03em] text-foreground">
               AI Agents
             </h1>
-            <p className="text-muted-foreground mt-2 text-sm">
-              {agents.length} agent{agents.length !== 1 ? 's' : ''} ready to work for you
+            <p className="text-sm text-muted-foreground/50 mt-1">
+              {agents.length} agent{agents.length !== 1 ? 's' : ''} in your workspace
             </p>
           </div>
-          <div className="flex gap-2 w-full sm:w-auto">
-            <Button
-              onClick={() => setWorkflowBuilderOpen(true)}
-              variant="outline"
-              className="gap-2 flex-1 sm:flex-initial"
-              disabled={agents.length === 0}
-            >
-              <Workflow className="w-4 h-4" />
-              Workflows
-            </Button>
-            <Button
-              onClick={fetchTemplates}
-              variant="outline"
-              className="gap-2 flex-1 sm:flex-initial"
-            >
-              <Sparkles className="w-4 h-4" />
-              Templates
-            </Button>
-            <Button
-              onClick={() => {
-                setEditingAgent(undefined);
-                setIsDialogOpen(true);
-              }}
-              className="gap-2 shadow-medium hover:shadow-glow transition-smooth flex-1 sm:flex-initial"
-            >
-              <Plus className="w-4 h-4" />
-              Create Agent
-            </Button>
+          <div className="flex gap-2">
+            <button onClick={() => setWorkflowBuilderOpen(true)} disabled={agents.length === 0} className="agents-toolbar-btn">
+              <Workflow className="w-3.5 h-3.5" /> Workflows
+            </button>
+            <button onClick={fetchTemplates} className="agents-toolbar-btn">
+              <Sparkles className="w-3.5 h-3.5" /> Templates
+            </button>
+            <button onClick={() => { setEditingAgent(undefined); setIsDialogOpen(true); }} className="agents-cta-btn">
+              <Plus className="w-3.5 h-3.5" /> New Agent
+            </button>
           </div>
         </div>
 
-        {/* Templates Gallery */}
+        {/* Templates section */}
         {showTemplates && (
-          <div className="mb-8">
+          <div className="mb-10 animate-fade-in">
             <div className="flex items-center gap-2 mb-4">
-              <Sparkles className="w-5 h-5 text-primary" />
-              <h2 className="text-lg font-semibold">Starter Templates</h2>
-              <Badge variant="secondary" className="text-xs">{templates.length}</Badge>
+              <Sparkles className="w-4 h-4 text-primary/60" />
+              <h2 className="text-sm font-semibold text-foreground/80">Starter Templates</h2>
+              <span className="text-[10px] text-muted-foreground/40">({templates.length})</span>
             </div>
             {loadingTemplates ? (
-              <div className="flex items-center gap-2 text-muted-foreground py-4">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Loading templates...
+              <div className="flex items-center gap-2 text-muted-foreground/50 text-xs py-4">
+                <Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading…
               </div>
             ) : templates.length === 0 ? (
-              <p className="text-muted-foreground text-sm py-4">No templates available.</p>
+              <p className="text-xs text-muted-foreground/40 py-4">No templates available.</p>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                {templates.map((template) => (
-                  <Card
-                    key={template.id}
-                    className="p-4 glass hover:shadow-glow transition-smooth cursor-pointer border-dashed border-primary/30 hover:border-primary/60"
-                    onClick={() => handleCreateFromTemplate(template)}
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                {templates.map((t) => (
+                  <button
+                    key={t.id}
+                    onClick={() => handleCreateFromTemplate(t)}
+                    className="template-card text-left"
                   >
-                    <div className="flex items-center gap-2 mb-2">
-                      {template.icon && <span className="text-lg">{template.icon}</span>}
-                      <h3 className="font-semibold text-sm">{template.name}</h3>
-                    </div>
-                    <p className="text-xs text-muted-foreground line-clamp-2">{template.description}</p>
-                    <p className="text-xs text-primary mt-2 font-medium">Click to use →</p>
-                  </Card>
+                    {t.icon && <span className="text-lg mb-2 block">{t.icon}</span>}
+                    <p className="text-[13px] font-semibold text-foreground/80 mb-1">{t.name}</p>
+                    <p className="text-[11px] text-muted-foreground/50 line-clamp-2 leading-relaxed">{t.description}</p>
+                    <p className="text-[10px] text-primary/50 mt-2 font-medium">Use template →</p>
+                  </button>
                 ))}
               </div>
             )}
           </div>
         )}
 
+        {/* Search */}
         {agents.length > 0 && (
-          <div className="mb-8">
-            <div className="relative max-w-sm">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search agents by name, domain..."
+          <div className="mb-6 max-w-xs">
+            <div className="relative">
+              <Search className="absolute left-0 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/30" />
+              <input
+                placeholder="Search agents…"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 h-10 rounded-xl bg-muted/30 border-border/50 focus:border-primary/50"
+                className="agents-search"
               />
             </div>
           </div>
         )}
 
-        <div>
-          {/* All agents in a single flat grid */}
-          {(() => {
-            const filtered = agents.filter((agent) => {
-              if (!searchQuery) return true;
-              const q = searchQuery.toLowerCase();
-              return (
-                agent.name.toLowerCase().includes(q) ||
-                (agent.domain && agent.domain.toLowerCase().includes(q)) ||
-                agent.description.toLowerCase().includes(q)
-              );
-            });
-
-            // Sort: custom agents first, then default agents
-            const sorted = [...filtered].sort((a, b) => {
-              if (a.is_default && !b.is_default) return 1;
-              if (!a.is_default && b.is_default) return -1;
-              return 0;
-            });
-
-            if (sorted.length === 0 && searchQuery) {
-              return (
-                <div className="text-center py-16">
-                  <p className="text-muted-foreground mb-4">
-                    No agents found matching "{searchQuery}"
-                  </p>
-                  <Button onClick={() => setSearchQuery('')} variant="outline">
-                    Clear Search
-                  </Button>
-                </div>
-              );
-            }
-
-            return (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {sorted.map((agent, index) => (
-                  <AgentCard key={agent.id} agent={agent} index={index} />
-                ))}
-              </div>
-            );
-          })()}
-        </div>
-
-        {agents.length === 0 && (
-          <div className="text-center py-20">
-            <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
-              <Sparkles className="w-8 h-8 text-primary" />
-            </div>
-            <h3 className="text-lg font-semibold mb-2">No agents yet</h3>
-            <p className="text-muted-foreground text-sm mb-6 max-w-sm mx-auto">
-              Create your first AI agent to start having intelligent conversations.
-            </p>
-            <Button
-              onClick={() => setIsDialogOpen(true)}
-              className="gap-2 bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity"
-            >
-              <Plus className="w-4 h-4" />
-              Create Your First Agent
-            </Button>
+        {/* Agent grid */}
+        {sorted.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {sorted.map((agent) => <AgentCard key={agent.id} agent={agent} />)}
           </div>
-        )}
-
-        {agents.length > 0 && categorizedAgents.custom.length === 0 && Object.keys(categorizedAgents.domains).length === 0 && searchQuery && (
+        ) : searchQuery ? (
           <div className="text-center py-16">
-            <p className="text-muted-foreground mb-4">
-              No agents found matching "{searchQuery}"
+            <p className="text-sm text-muted-foreground/50 mb-3">No agents match "{searchQuery}"</p>
+            <button onClick={() => setSearchQuery('')} className="text-xs text-primary/60 hover:text-primary transition-colors">Clear search</button>
+          </div>
+        ) : (
+          /* Empty state */
+          <div className="text-center py-24">
+            <div className="w-14 h-14 rounded-2xl bg-primary/8 border border-primary/10 flex items-center justify-center mx-auto mb-5">
+              <Sparkles className="w-6 h-6 text-primary/40" />
+            </div>
+            <h3 className="text-base font-semibold text-foreground/70 mb-2">No agents yet</h3>
+            <p className="text-sm text-muted-foreground/40 mb-6 max-w-xs mx-auto leading-relaxed">
+              Create your first AI agent to start orchestrating intelligent conversations.
             </p>
-            <Button
-              onClick={() => setSearchQuery('')}
-              variant="outline"
-            >
-              Clear Search
-            </Button>
+            <button onClick={() => setIsDialogOpen(true)} className="agents-cta-btn">
+              <Plus className="w-3.5 h-3.5" /> Create your first agent
+            </button>
           </div>
         )}
-
-        <AgentDialog
-          open={isDialogOpen}
-          onOpenChange={setIsDialogOpen}
-          agent={editingAgent}
-          onSave={handleSaveAgent}
-        />
-
-        <AlertDialog open={!!deleteAgentId} onOpenChange={() => setDeleteAgentId(null)}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Delete Agent</AlertDialogTitle>
-              <AlertDialogDescription>
-                Are you sure you want to delete this agent? This action cannot be undone.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleDeleteAgent}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              >
-                Delete
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-
-        <WorkflowBuilder
-          open={workflowBuilderOpen}
-          onOpenChange={setWorkflowBuilderOpen}
-          agents={agents}
-          onExecute={(workflow) => {
-            toast({
-              title: 'Workflow started',
-              description: `Running "${workflow.name}" with ${workflow.nodes.length} agents...`,
-            });
-          }}
-        />
       </div>
 
-      {/* Quick Chat Drawer */}
-      {quickChatAgent && (
-        <AgentQuickChat
-          agent={quickChatAgent}
-          open={!!quickChatAgent}
-          onClose={() => setQuickChatAgent(null)}
-        />
-      )}
+      <AgentDialog open={isDialogOpen} onOpenChange={setIsDialogOpen} agent={editingAgent} onSave={handleSaveAgent} />
+
+      <AlertDialog open={!!deleteAgentId} onOpenChange={() => setDeleteAgentId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Agent</AlertDialogTitle>
+            <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteAgent} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <WorkflowBuilder open={workflowBuilderOpen} onOpenChange={setWorkflowBuilderOpen} agents={agents} onExecute={(workflow) => toast({ title: 'Workflow started', description: `Running "${workflow.name}"…` })} />
+
+      {quickChatAgent && <AgentQuickChat agent={quickChatAgent} open={!!quickChatAgent} onClose={() => setQuickChatAgent(null)} />}
     </>
   );
 };
