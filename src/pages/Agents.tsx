@@ -63,7 +63,7 @@ const Agents = () => {
   };
 
   const handleSaveAgent = async (agent: Agent) => {
-    if (agent.id && editingAgent) await updateAgentMutation.mutateAsync({ id: agent.id, agent });
+    if (editingAgent?.id) await updateAgentMutation.mutateAsync({ id: editingAgent.id, agent });
     else await createAgentMutation.mutateAsync(agent);
     setIsDialogOpen(false); setEditingAgent(undefined);
   };
