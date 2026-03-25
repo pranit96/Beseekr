@@ -136,15 +136,27 @@ export const WorkflowBuilder: React.FC<WorkflowBuilderProps> = ({
             toast({ title: 'Need at least 2 agents', description: 'Add more agents to create a workflow.', variant: 'destructive' });
             return;
         }
+        
+        if (!workflowName.trim()) {
+            toast({ title: 'Workflow name required', description: 'Please enter a name for your workflow.', variant: 'destructive' });
+            return;
+        }
+        
         const workflow = buildWorkflow();
-        onSave?.(workflow);
-
+        
         // Save to localStorage
         const stored = JSON.parse(localStorage.getItem('beseekr-workflows') || '[]');
         stored.push(workflow);
         localStorage.setItem('beseekr-workflows', JSON.stringify(stored));
 
         toast({ title: 'Workflow saved', description: `"${workflow.name}" saved successfully.` });
+        
+        // Call parent callback
+        onSave?.(workflow);
+        
+        // Reset and close
+        handleReset();
+        onOpenChange(false);
     };
 
     const handleExecute = () => {
@@ -154,6 +166,7 @@ export const WorkflowBuilder: React.FC<WorkflowBuilderProps> = ({
         }
         const workflow = buildWorkflow();
         onExecute?.(workflow);
+        handleReset();
         onOpenChange(false);
     };
 

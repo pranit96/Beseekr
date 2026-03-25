@@ -543,6 +543,21 @@ class SocketService {
   }
 
   /**
+   * Emit event to server
+   */
+  emit(event: string, data?: any): void {
+    if (!this.socket) {
+      throw new Error('Socket not connected. Call connect() first.');
+    }
+
+    if (!this.socket.connected) {
+      throw new Error('Socket is not in connected state.');
+    }
+
+    this.socket.emit(event, data);
+  }
+
+  /**
    * Emit local event to registered listeners
    */
   private _emitLocal(event: string, data: any): void {

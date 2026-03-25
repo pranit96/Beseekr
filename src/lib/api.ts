@@ -881,6 +881,26 @@ class ApiClient {
 
   // ========== END STOCK STRATEGY ENDPOINTS ==========
 
+  // ========== AUTONOMOUS WORKFLOW ENDPOINTS ==========
+
+  async getWorkflowHistory(params?: { page?: number; limit?: number; status?: string }) {
+    const query = new URLSearchParams(params as any).toString();
+    return this.request<any>(`/api/autonomous-workflow/history${query ? `?${query}` : ''}`);
+  }
+
+  async getWorkflowExecution(id: string) {
+    return this.request<any>(`/api/autonomous-workflow/executions/${id}`);
+  }
+
+  async deleteWorkflowExecution(id: string) {
+    this.invalidateCache('/api/autonomous-workflow');
+    return this.request<any>(`/api/autonomous-workflow/executions/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // ========== END AUTONOMOUS WORKFLOW ENDPOINTS ==========
+
   // Notification preferences endpoints
   async getNotificationPreferences() {
     return this.request<{

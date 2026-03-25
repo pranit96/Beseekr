@@ -71,6 +71,7 @@ const Profile = lazyRetry(() => import("./pages/Profile"), "Profile");
 const ResetPassword = lazyRetry(() => import("./pages/ResetPassword"), "ResetPassword");
 const Landing = lazyRetry(() => import("./pages/Landing"), "Landing");
 const DeepAnalytics = lazyRetry(() => import("./pages/DeepAnalytics"), "DeepAnalytics");
+const AutonomousWorkflow = lazyRetry(() => import("./pages/AutonomousWorkflow"), "AutonomousWorkflow");
 // const Deck = lazyRetry(() => import("./pages/Deck"), "Deck");
 const AuthCallback = lazyRetry(() => import("./pages/AuthCallback"), "AuthCallback");
 // const WellnessDashboard = lazyRetry(() => import("./pages/health/WellnessDashboard"), "WellnessDashboard");
@@ -357,6 +358,10 @@ const App = () => {
                   <Route
                     path="/agents"
                     element={<ProtectedRoute><Suspense fallback={<PageLoader />}><Agents /></Suspense></ProtectedRoute>}
+                  />
+                  <Route
+                    path="/workflow"
+                    element={<ProtectedRoute><Suspense fallback={<PageLoader />}><AutonomousWorkflow /></Suspense></ProtectedRoute>}
                   />
                   <Route
                     path="/analytics"

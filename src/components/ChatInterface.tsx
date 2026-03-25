@@ -1,6 +1,6 @@
 // src/components/ChatInterface.tsx
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Send, Workflow, Lock, LockOpen, X, WifiOff, Loader2, Download, Paperclip } from 'lucide-react';
+import { Send, Workflow, Lock, LockOpen, X, WifiOff, Loader2, Download, Sparkles } from 'lucide-react';
 import { ToolExecutionIndicator } from '@/components/ToolExecutionIndicator';
 import { ChatFileUpload } from '@/components/ChatFileUpload';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,8 @@ import { useConversation } from '@/hooks/use-conversation';
 import useOrchestration from '@/hooks/use-orchestration';
 import { useAuth } from '@/contexts/AuthContext';
 import { createLogger } from '@/services/logging';
+import { WorkflowModeOverlay } from './WorkflowModeOverlay';
+import useAutonomousWorkflow from '@/hooks/use-autonomous-workflow';
 
 const logger = createLogger('ChatInterface');
 
@@ -73,6 +75,8 @@ export const ChatInterface: React.FC<{
   const [toolExecutions, setToolExecutions] = useState<Array<{ callId: string; toolName: string; status: 'running' | 'success' | 'error'; executionTimeMs?: number }>>([]);
   const [attachedFiles, setAttachedFiles] = useState<Array<{ id: string; name: string; type: string; size: number; size_readable: string; storage_path: string; url: string | null }>>([]);
   const [rateLimitedUntil, setRateLimitedUntil] = useState<number | null>(null);
+  const [workflowMode, setWorkflowMode] = useState(false);
+  const [workflowModeActive, setWorkflowModeActive] = useState(false);
 
   const cancelRef = useRef<null | (() => void)>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -82,6 +86,7 @@ export const ChatInterface: React.FC<{
 
   const { toast } = useToast();
   const { socketConnected } = useAuth();
+  const { execute: executeWorkflowMode } = useAutonomousWorkflow();
 
   const {
     messages, setMessages, conversationId, setConversationId,
@@ -124,7 +129,58 @@ export const ChatInterface: React.FC<{
     }, 500);
   };
 
+  const handleWorkflowModeSubmit = () => {
+    if (!input.trim()) return;
+    
+    const messageText = input;
+    setInput('');
+    setWorkflowModeActive(true);
+    
+    // Add user message to chat
+    const userMessage: ChatMessage = { 
+      id: `msg-${Date.now()}`, 
+      type: 'user', 
+      content: messageText, 
+      timestamp: new Date(), 
+      isFromCache: false 
+    };
+    setMessages(prev => [...prev, userMessage]);
+  };
+
+  const handleWorkflowModeClose = (finalAnswer?: string) => {
+    setWorkflowModeActive(false);
+    
+    // Add workflow result to chat if available
+    if (finalAnswer) {
+      const agentMessage: ChatMessage = {
+        id: `msg-${Date.now()}-workflow`,
+        type: 'agent',
+        content: finalAnswer,
+        timestamp: new Date(),
+        agentResponses: [{
+          agentId: 'workflow',
+          agentName: 'Autonomous Workflow',
+          content: finalAnswer,
+          timestamp: new Date(),
+          status: 'success',
+          metadata: { domain: 'workflow' }
+        }],
+        executionMode: 'sequential',
+        markdownOutput: finalAnswer,
+        finalOutput: finalAnswer,
+        isFromCache: false
+      };
+      setMessages(prev => [...prev, agentMessage]);
+    }
+  };
+
   const handleSubmit = async (overrideWorkflow?: WorkflowDefinition) => {
+    // Check if workflow mode is enabled
+    if (workflowMode) {
+      handleWorkflowModeSubmit();
+      return;
+    }
+
     const activeWorkflow = overrideWorkflow || selectedWorkflow;
     const isWorkflowExecution = !!activeWorkflow;
     const finalAgents = isWorkflowExecution 
@@ -347,6 +403,15 @@ export const ChatInterface: React.FC<{
           )}
         </div>
         <div className="flex items-center gap-1.5 flex-shrink-0">
+          {/* Workflow Mode Toggle */}
+          <button
+            onClick={() => setWorkflowMode(!workflowMode)}
+            className={`toolbar-icon-btn ${workflowMode ? 'toolbar-icon-btn-active' : ''}`}
+            title={workflowMode ? 'Disable workflow mode' : 'Enable workflow mode'}
+            aria-label="Toggle workflow mode"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+          </button>
           {/* Mode toggle */}
           <div className="mode-toggle">
             {(['sequential', 'parallel'] as const).map(mode => (
@@ -458,6 +523,14 @@ export const ChatInterface: React.FC<{
 
       <WorkflowBuilder open={workflowDialogOpen} onOpenChange={setWorkflowDialogOpen} agents={agents} onExecute={handleExecuteWorkflow} />
       <ExportChatDialog open={exportDialogOpen} onOpenChange={setExportDialogOpen} messages={messages} conversationTitle={undefined} />
+      
+      {/* Workflow Mode Overlay */}
+      {workflowModeActive && (
+        <WorkflowModeOverlay
+          prompt={messages[messages.length - 1]?.content || ''}
+          onClose={handleWorkflowModeClose}
+        />
+      )}
     </div>
   );
 };
