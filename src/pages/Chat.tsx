@@ -591,10 +591,10 @@ const Chat = () => {
     <div className="h-screen flex flex-col overflow-hidden bg-background">
       <GlobalHeader />
 
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden relative">
         {/* Sidebar */}
         <aside
-          className={`transition-all duration-300 ease-in-out border-r border-border bg-muted/30 flex-shrink-0 relative ${sidebarOpen ? 'w-80 2xl:w-96 opacity-100' : 'w-0 opacity-0'
+          className={`transition-all duration-300 ease-in-out border-r border-border bg-muted/30 flex-shrink-0 relative z-20 ${sidebarOpen ? 'w-80 2xl:w-96 opacity-100' : 'w-0 opacity-0'
             } overflow-hidden`}
         >
           <ConversationHistory
@@ -608,12 +608,12 @@ const Chat = () => {
         </aside>
 
         {/* Sidebar toggle button — positioned absolutely so it doesn't disturb chat flex layout */}
-        <div className={`absolute top-3 z-30 transition-all duration-300 ${sidebarOpen ? 'left-80 2xl:left-96 ml-3' : 'left-3'}`}>
+        <div className={`absolute top-3 z-30 pointer-events-none transition-all duration-300 ${sidebarOpen ? 'left-80 2xl:left-96 ml-3' : 'left-3'}`}>
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setSidebarOpen(prev => !prev)}
-            className="h-8 w-8 rounded-lg hover:bg-muted/80 border border-border/50 bg-background/80 backdrop-blur-sm shadow-sm"
+            className="h-8 w-8 rounded-lg pointer-events-auto hover:bg-muted/80 border border-border/50 bg-background/80 backdrop-blur-sm shadow-sm"
             aria-label={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
             title={sidebarOpen ? 'Hide conversations' : 'Show conversations'}
           >
