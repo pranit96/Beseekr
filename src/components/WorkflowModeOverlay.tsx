@@ -257,17 +257,19 @@ export const WorkflowModeOverlay: React.FC<WorkflowModeOverlayProps> = ({ prompt
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
-                className="bg-primary/5 border border-primary/20 rounded-xl sm:rounded-2xl p-4 sm:p-5"
+                className="bg-primary/5 border border-primary/20 rounded-xl sm:rounded-2xl p-4 sm:p-5 backdrop-blur-sm"
               >
-                <h3 className="text-sm sm:text-base font-semibold mb-2 sm:mb-3 flex items-center gap-2">
+                <h3 className="text-sm sm:text-base font-semibold mb-2 sm:mb-3 flex items-center gap-2 text-foreground">
                   <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
                   Execution Plan
                 </h3>
-                <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">{executionPlan}</p>
+                <p className="text-xs sm:text-sm text-foreground/80 leading-relaxed">{executionPlan}</p>
                 {expectedOutcome && (
-                  <p className="text-[10px] sm:text-xs text-muted-foreground/70 mt-2 sm:mt-3">
-                    <span className="font-medium">Expected outcome:</span> {expectedOutcome}
-                  </p>
+                  <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-primary/10">
+                    <p className="text-[10px] sm:text-xs text-foreground/70 leading-relaxed">
+                      <span className="font-semibold text-primary">Expected outcome:</span> {expectedOutcome}
+                    </p>
+                  </div>
                 )}
               </motion.div>
             )}
@@ -310,12 +312,12 @@ export const WorkflowModeOverlay: React.FC<WorkflowModeOverlayProps> = ({ prompt
                       </motion.div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5 sm:gap-2 mb-0.5 sm:mb-1">
-                          <h4 className="font-semibold text-xs sm:text-sm truncate">{agent.name}</h4>
+                          <h4 className="font-semibold text-xs sm:text-sm truncate text-foreground">{agent.name}</h4>
                           {getStatusIcon(agent.status)}
                         </div>
-                        <p className="text-[10px] sm:text-xs text-muted-foreground line-clamp-2 leading-relaxed">{agent.role}</p>
+                        <p className="text-[10px] sm:text-xs text-foreground/70 line-clamp-2 leading-relaxed">{agent.role}</p>
                         <div className="flex items-center gap-1 mt-1 sm:mt-1.5">
-                          <span className="text-[9px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">
+                          <span className="text-[9px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
                             {agent.domain}
                           </span>
                         </div>
@@ -324,8 +326,10 @@ export const WorkflowModeOverlay: React.FC<WorkflowModeOverlayProps> = ({ prompt
 
                     {/* Reasoning */}
                     {agent.reasoning && (
-                      <div className="mb-2 sm:mb-3 text-[10px] sm:text-xs text-muted-foreground/80 italic leading-relaxed">
-                        "{agent.reasoning}"
+                      <div className="mb-2 sm:mb-3 p-2 sm:p-2.5 bg-muted/30 rounded-lg border-l-2 border-primary/30">
+                        <p className="text-[10px] sm:text-xs text-foreground/70 italic leading-relaxed">
+                          "{agent.reasoning}"
+                        </p>
                       </div>
                     )}
 
@@ -352,9 +356,9 @@ export const WorkflowModeOverlay: React.FC<WorkflowModeOverlayProps> = ({ prompt
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: 'auto' }}
                         transition={{ duration: 0.3 }}
-                        className="bg-muted/30 rounded-lg p-2 sm:p-2.5 text-[10px] sm:text-xs max-h-32 sm:max-h-40 overflow-y-auto"
+                        className="bg-muted/40 border border-border/30 rounded-lg p-2 sm:p-3 text-[10px] sm:text-xs max-h-32 sm:max-h-40 overflow-y-auto"
                       >
-                        <ReactMarkdown className="prose prose-xs max-w-none dark:prose-invert [&>*]:text-[10px] sm:[&>*]:text-xs [&>*]:leading-relaxed">
+                        <ReactMarkdown className="prose prose-xs max-w-none dark:prose-invert [&>*]:text-[10px] sm:[&>*]:text-xs [&>*]:leading-relaxed [&>*]:text-foreground/80">
                           {agent.output}
                         </ReactMarkdown>
                       </motion.div>
@@ -362,18 +366,18 @@ export const WorkflowModeOverlay: React.FC<WorkflowModeOverlayProps> = ({ prompt
 
                     {/* Tool Executions */}
                     {toolExecutions.filter(t => t.agent_id === agent.id).length > 0 && (
-                      <div className="mt-2 space-y-0.5 sm:space-y-1">
+                      <div className="mt-2 p-2 bg-muted/20 rounded-lg border border-border/20 space-y-0.5 sm:space-y-1">
                         {toolExecutions.filter(t => t.agent_id === agent.id).map((tool) => (
                           <motion.div
                             key={tool.call_id}
                             initial={{ opacity: 0, x: -10 }}
                             animate={{ opacity: 1, x: 0 }}
-                            className="text-[9px] sm:text-[10px] flex items-center gap-1 text-muted-foreground"
+                            className="text-[9px] sm:text-[10px] flex items-center gap-1.5 text-foreground/70"
                           >
-                            {tool.status === 'running' && <Loader2 className="w-2 h-2 sm:w-2.5 sm:h-2.5 animate-spin" />}
+                            {tool.status === 'running' && <Loader2 className="w-2 h-2 sm:w-2.5 sm:h-2.5 animate-spin text-primary" />}
                             {tool.status === 'success' && <CheckCircle2 className="w-2 h-2 sm:w-2.5 sm:h-2.5 text-green-500" />}
                             {tool.status === 'error' && <AlertCircle className="w-2 h-2 sm:w-2.5 sm:h-2.5 text-destructive" />}
-                            <span className="truncate">{tool.tool_name}</span>
+                            <span className="truncate font-medium">{tool.tool_name.replace(/_/g, ' ')}</span>
                           </motion.div>
                         ))}
                       </div>
@@ -388,9 +392,9 @@ export const WorkflowModeOverlay: React.FC<WorkflowModeOverlayProps> = ({ prompt
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="border border-primary/30 rounded-xl sm:rounded-2xl p-4 sm:p-5 bg-primary/5"
+                className="border border-primary/30 rounded-xl sm:rounded-2xl p-4 sm:p-5 bg-primary/5 backdrop-blur-sm"
               >
-                <h3 className="text-sm sm:text-base font-semibold mb-3 sm:mb-4 flex items-center gap-2">
+                <h3 className="text-sm sm:text-base font-semibold mb-3 sm:mb-4 flex items-center gap-2 text-foreground">
                   <motion.div
                     animate={{ rotate: 360 }}
                     transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
@@ -399,7 +403,7 @@ export const WorkflowModeOverlay: React.FC<WorkflowModeOverlayProps> = ({ prompt
                   </motion.div>
                   Synthesizing Final Answer...
                 </h3>
-                <div className="prose prose-xs sm:prose-sm max-w-none dark:prose-invert [&>*]:text-xs sm:[&>*]:text-sm">
+                <div className="prose prose-xs sm:prose-sm max-w-none dark:prose-invert [&>*]:text-xs sm:[&>*]:text-sm [&>*]:text-foreground/80">
                   <ReactMarkdown>{synthesisOutput}</ReactMarkdown>
                 </div>
               </motion.div>
@@ -426,7 +430,7 @@ export const WorkflowModeOverlay: React.FC<WorkflowModeOverlayProps> = ({ prompt
                     Workflow Complete!
                   </h3>
                 </motion.div>
-                <div className="prose prose-xs sm:prose-sm max-w-none dark:prose-invert mb-5 sm:mb-6 [&>*]:text-xs sm:[&>*]:text-sm">
+                <div className="prose prose-xs sm:prose-sm max-w-none dark:prose-invert mb-5 sm:mb-6 [&>*]:text-xs sm:[&>*]:text-sm [&>*]:text-foreground/90">
                   <ReactMarkdown>{finalAnswer}</ReactMarkdown>
                 </div>
                 <motion.div

@@ -403,23 +403,30 @@ export const ChatInterface: React.FC<{
           )}
         </div>
         <div className="flex items-center gap-1.5 flex-shrink-0">
-          {/* Workflow Mode Toggle */}
+          {/* Workflow Mode Toggle - More Prominent */}
           <button
             onClick={() => setWorkflowMode(!workflowMode)}
-            className={`toolbar-icon-btn ${workflowMode ? 'toolbar-icon-btn-active' : ''}`}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              workflowMode 
+                ? 'bg-gradient-to-r from-primary to-accent text-white shadow-md' 
+                : 'bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground'
+            }`}
             title={workflowMode ? 'Disable workflow mode' : 'Enable workflow mode'}
             aria-label="Toggle workflow mode"
           >
             <Sparkles className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Workflow</span>
           </button>
-          {/* Mode toggle */}
-          <div className="mode-toggle">
-            {(['sequential', 'parallel'] as const).map(mode => (
-              <button key={mode} onClick={() => setExecutionMode(mode)} className={`mode-btn ${executionMode === mode ? 'mode-btn-active' : ''}`}>
-                {mode === 'sequential' ? 'Seq' : 'Par'}
-              </button>
-            ))}
-          </div>
+          {/* Mode toggle - only show when workflow mode is off */}
+          {!workflowMode && (
+            <div className="mode-toggle">
+              {(['sequential', 'parallel'] as const).map(mode => (
+                <button key={mode} onClick={() => setExecutionMode(mode)} className={`mode-btn ${executionMode === mode ? 'mode-btn-active' : ''}`}>
+                  {mode === 'sequential' ? 'Seq' : 'Par'}
+                </button>
+              ))}
+            </div>
+          )}
           {/* Design Flow */}
           <button
             onClick={() => setWorkflowDialogOpen(true)}
@@ -444,6 +451,14 @@ export const ChatInterface: React.FC<{
 
       {/* Textarea row */}
       <div className="input-row">
+        {workflowMode && (
+          <div className="absolute -top-8 left-0 right-0 flex items-center justify-center">
+            <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 text-xs">
+              <Sparkles className="w-3 h-3 text-primary animate-pulse" />
+              <span className="font-medium text-primary">Workflow Mode Active</span>
+            </div>
+          </div>
+        )}
         <ChatFileUpload
           onFilesUploaded={(files) => setAttachedFiles(prev => [...prev, ...files])}
           attachedFiles={attachedFiles}
