@@ -594,7 +594,7 @@ const Chat = () => {
       <div className="flex-1 flex overflow-hidden">
         {/* Sidebar */}
         <aside
-          className={`transition-all duration-300 ease-in-out border-r border-border bg-muted/30 flex-shrink-0 ${sidebarOpen ? 'w-80 2xl:w-96 opacity-100' : 'w-0 opacity-0'
+          className={`transition-all duration-300 ease-in-out border-r border-border bg-muted/30 flex-shrink-0 relative ${sidebarOpen ? 'w-80 2xl:w-96 opacity-100' : 'w-0 opacity-0'
             } overflow-hidden`}
         >
           <ConversationHistory
@@ -607,13 +607,13 @@ const Chat = () => {
           />
         </aside>
 
-        {/* Sidebar toggle button — always visible between sidebar and content */}
-        <div className="flex-shrink-0 flex items-start pt-3 relative z-20">
+        {/* Sidebar toggle button — positioned absolutely so it doesn't disturb chat flex layout */}
+        <div className={`absolute top-3 z-30 transition-all duration-300 ${sidebarOpen ? 'left-80 2xl:left-96 ml-3' : 'left-3'}`}>
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setSidebarOpen(prev => !prev)}
-            className="h-8 w-8 rounded-lg hover:bg-muted/80 border border-border/50 bg-background/80 backdrop-blur-sm transition-all duration-300 shadow-sm"
+            className="h-8 w-8 rounded-lg hover:bg-muted/80 border border-border/50 bg-background/80 backdrop-blur-sm shadow-sm"
             aria-label={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
             title={sidebarOpen ? 'Hide conversations' : 'Show conversations'}
           >
@@ -635,7 +635,7 @@ const Chat = () => {
             }} />
           </div>
 
-          <div className="w-full max-w-[1400px] 2xl:max-w-[1800px] relative z-10">
+          <div className="w-full h-full max-w-[1400px] 2xl:max-w-[1800px] relative z-10">
             <ChatInterface
               key={key}
               agents={agents}

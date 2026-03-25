@@ -88,11 +88,12 @@ export const AgentSelector = ({
           aria-haspopup="dialog"
         >
           <Users className="w-4 h-4" aria-hidden="true" />
-          <span>Agents</span>
-          {selectedCount > 0 && (
-            <Badge variant="secondary" className="ml-1 h-5 px-2 animate-scale-in" aria-label={`${selectedCount} selected`}>
-              {selectedCount}
-            </Badge>
+          {selectedCount === 0 ? (
+            <span>Select Agents</span>
+          ) : selectedCount === 1 ? (
+            <span className="truncate max-w-[120px]">{selectedAgents[0].name}</span>
+          ) : (
+            <span>{selectedCount} Agents</span>
           )}
         </Button>
       </PopoverTrigger>

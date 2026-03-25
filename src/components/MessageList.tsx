@@ -164,24 +164,6 @@ const MessageList: React.FC<MessageListProps> = ({
         </div>
       ))}
 
-      {/* Global loading indicator */}
-      {isLoading && (
-        <div className="flex gap-3 px-2 animate-fade-in" role="status" aria-live="polite">
-          <div className="flex-shrink-0 mt-1">
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
-              <Sparkles className="w-4 h-4 text-primary animate-pulse" />
-            </div>
-          </div>
-          <div className="flex flex-col gap-2 flex-1 max-w-[80%]">
-            <div className="rounded-2xl rounded-tl-lg px-5 py-4 bg-muted/50 border border-border/30">
-              <div className="flex items-center gap-3">
-                <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                <span className="text-sm text-muted-foreground">Thinking...</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

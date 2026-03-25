@@ -136,6 +136,8 @@ export const ChatInterface: React.FC<{
     setPreparingMessage(true);
     setHasStarted(true);
 
+    let errorHandled = false;
+
     try {
       let convId = conversationId;
       const isTempConversation = convId?.startsWith('temp-');
@@ -216,6 +218,7 @@ export const ChatInterface: React.FC<{
           }));
         },
         onError: (err) => {
+          errorHandled = true;
           if (err?.error?.includes('rate') || err?.error?.includes('Too many')) return;
           setMessages(prev => prev.map(m => {
             if (m.id !== agentMessageId) return m;
@@ -226,7 +229,7 @@ export const ChatInterface: React.FC<{
       });
     } catch (err: any) {
       setPreparingMessage(false);
-      if (!err?.message?.includes('rate') && !err?.message?.includes('Too many')) {
+      if (!errorHandled && !err?.message?.includes('rate') && !err?.message?.includes('Too many')) {
         toast({ title: 'Error', description: err?.message || 'Failed to execute agents.', variant: 'destructive' });
       }
     } finally {
@@ -278,37 +281,35 @@ export const ChatInterface: React.FC<{
   const isActive = isExecuting || preparingMessage;
 
   // ── Inline status line ───────────────────────────────────────────────────────
-  const StatusLine = () => {
-    if (connectionStatus === 'disconnected') {
-      return (
-        <div className="status-line status-line-error">
-          <WifiOff className="w-3 h-3" />
-          <span>Reconnecting…</span>
-        </div>
-      );
-    }
-    if (rateLimitedUntil && Date.now() < rateLimitedUntil) {
-      return <div className="status-line status-line-warn">Rate limited — wait {Math.ceil((rateLimitedUntil - Date.now()) / 1000)}s</div>;
-    }
-    if (isCancelling) return <div className="status-line"><Loader2 className="w-3 h-3 animate-spin" /><span>Cancelling…</span></div>;
-    if (preparingMessage) return <div className="status-line"><Loader2 className="w-3 h-3 animate-spin" /><span>Preparing message…</span></div>;
-    if (isExecuting) {
-      return (
-        <div className="status-line">
-          <TypingDots />
-          {orchestrationProgress ? (
-            <span>Step {orchestrationProgress.step}/{orchestrationProgress.total}{orchestrationProgress.agent_name ? ` · ${orchestrationProgress.agent_name}` : ''}</span>
-          ) : (
-            <span>Running <span className="text-foreground/70">{selectedAgents.map(a => a.name).join(', ')}</span></span>
-          )}
-        </div>
-      );
-    }
-    return null;
-  };
+  let statusLineNode = null;
+  if (connectionStatus === 'disconnected') {
+    statusLineNode = (
+      <div className="status-line status-line-error">
+        <WifiOff className="w-3 h-3" />
+        <span>Reconnecting…</span>
+      </div>
+    );
+  } else if (rateLimitedUntil && Date.now() < rateLimitedUntil) {
+    statusLineNode = <div className="status-line status-line-warn">Rate limited — wait {Math.ceil((rateLimitedUntil - Date.now()) / 1000)}s</div>;
+  } else if (isCancelling) {
+    statusLineNode = <div className="status-line"><Loader2 className="w-3 h-3 animate-spin" /><span>Cancelling…</span></div>;
+  } else if (preparingMessage) {
+    statusLineNode = <div className="status-line"><Loader2 className="w-3 h-3 animate-spin" /><span>Preparing message…</span></div>;
+  } else if (isExecuting) {
+    statusLineNode = (
+      <div className="status-line">
+        <TypingDots />
+        {orchestrationProgress ? (
+          <span>Step {orchestrationProgress.step}/{orchestrationProgress.total}{orchestrationProgress.agent_name ? ` · ${orchestrationProgress.agent_name}` : ''}</span>
+        ) : (
+          <span>Running <span className="text-foreground/70">{selectedAgents.map(a => a.name).join(', ')}</span></span>
+        )}
+      </div>
+    );
+  }
 
   // ── Bottom input ─────────────────────────────────────────────────────────────
-  const InputArea = () => (
+  const inputAreaNode = (
     <div className="input-area-root">
       {/* Agent selector & toolbar row */}
       <div className="input-toolbar">
@@ -388,7 +389,7 @@ export const ChatInterface: React.FC<{
       </div>
 
       {/* Status line */}
-      <StatusLine />
+      {statusLineNode}
     </div>
   );
 
@@ -421,7 +422,7 @@ export const ChatInterface: React.FC<{
       {/* Bottom input area — always rendered */}
       <div className="flex-shrink-0 border-t border-border/30 bg-background/80 backdrop-blur-md">
         <div className={`max-w-${messages.length === 0 ? '2xl' : '5xl'} 2xl:max-w-${messages.length === 0 ? '3xl' : '6xl'} mx-auto w-full`}>
-          <InputArea />
+          {inputAreaNode}
         </div>
       </div>
 
