@@ -17,6 +17,7 @@ import { useConversation } from '@/hooks/use-conversation';
 import useOrchestration from '@/hooks/use-orchestration';
 import { useAuth } from '@/contexts/AuthContext';
 import { createLogger } from '@/services/logging';
+import { AutonomousWorkflowInterface } from './AutonomousWorkflowInterface';
 
 const logger = createLogger('ChatInterface');
 
