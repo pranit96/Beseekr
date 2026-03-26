@@ -13,7 +13,7 @@ import { Agent } from '@/types/agent';
 import { apiClient } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import useOrchestration from '@/hooks/use-orchestration';
-import { Sparkles, Play, Square, Loader2 } from 'lucide-react';
+import { Sparkles, Play, Square, Loader2, X } from 'lucide-react';
 import { ToolPicker } from '@/components/ToolPicker';
 
 interface AgentDialogProps {
@@ -41,6 +41,7 @@ export const AgentDialog = ({
   // Generate agent state
   const [generateDescription, setGenerateDescription] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generateProvider, setGenerateProvider] = useState<string | null>(null);
 
   // Test agent state
   const [testMessage, setTestMessage] = useState('');
@@ -66,7 +67,9 @@ export const AgentDialog = ({
       setSystemPrompt('');
       setTools([]);
     }
-    // Reset test state when switching agents
+    // Reset generate & test state when dialog opens/switches agent
+    setGenerateDescription('');
+    setGenerateProvider(null);
     setTestOutput('');
     setIsTesting(false);
     setShowTestPanel(false);
@@ -130,7 +133,9 @@ export const AgentDialog = ({
         setDescription(response.data.description || '');
         setSystemPrompt(response.data.system_prompt || '');
         setTools(response.data.tools || []);
-        toast({ title: 'Agent Generated', description: 'AI has configured your agent successfully.' });
+        const provider = (response as any).chat_provider || 'AI';
+        setGenerateProvider(provider);
+        toast({ title: 'Agent Generated', description: `Configured by ${provider.toUpperCase()}. Review and save.` });
       } else {
         throw new Error(response.error || 'Generation failed');
       }
@@ -190,10 +195,29 @@ export const AgentDialog = ({
         <form onSubmit={handleSubmit} className="space-y-4 mt-4 px-4 md:px-6 pb-6">
           {!agent && (
             <div className="bg-primary/5 p-4 rounded-xl border border-primary/20 mb-6 space-y-3">
-              <Label className="text-primary font-semibold flex items-center gap-2">
-                <Sparkles className="w-4 h-4" />
-                Auto-Generate Agent
-              </Label>
+              <div className="flex items-center justify-between">
+                <Label className="text-primary font-semibold flex items-center gap-2">
+                  <Sparkles className="w-4 h-4" />
+                  Auto-Generate Agent
+                  {generateProvider && (
+                    <span className="ml-1 text-[10px] font-normal uppercase tracking-widest text-muted-foreground bg-muted px-2 py-0.5 rounded">{generateProvider}</span>
+                  )}
+                </Label>
+                {(name || systemPrompt) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setName(''); setDescription(''); setDomain('');
+                      setSystemPrompt(''); setTools([]);
+                      setGenerateDescription(''); setGenerateProvider(null);
+                    }}
+                    className="text-xs text-muted-foreground hover:text-destructive flex items-center gap-1 transition-colors"
+                    title="Discard generated values"
+                  >
+                    <X className="w-3 h-3" /> Discard
+                  </button>
+                )}
+              </div>
               <div className="flex gap-2">
                 <Input
                   placeholder="E.g., A fitness expert who searches the web for workouts..."
