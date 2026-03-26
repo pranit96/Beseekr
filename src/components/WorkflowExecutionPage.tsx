@@ -3,7 +3,7 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X, Send, CheckCircle2, Loader2, AlertCircle,
-  Sparkles, Play, ArrowLeft, Wrench, ChevronDown, ChevronUp,
+  Sparkles, Play, ArrowLeft, Wrench, ChevronDown, Download,
 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { ChatFileUpload } from '@/components/ChatFileUpload';
@@ -50,48 +50,151 @@ const Cursor = () => (
 
 // ── Central animated orb shown while running ─────────────────────────────────
 const RunningOrb: React.FC<{ hue: number; name: string; step: number; total: number }> = ({ hue, name, step, total }) => (
-  <div className="flex flex-col items-center gap-5 py-12">
-    {/* Layered glow rings */}
-    <div className="relative">
+  <div className="flex flex-col items-center gap-8 py-12">
+    {/* Orb container — fixed size so nothing bleeds into text */}
+    <div className="relative flex items-center justify-center" style={{ width: 200, height: 200 }}>
+
+      {/* Aurora background — large soft bloom */}
       <motion.div
-        animate={{ scale: [1, 1.6, 1], opacity: [0.15, 0, 0.15] }}
-        transition={{ duration: 2.8, repeat: Infinity, ease: 'easeInOut' }}
-        className="absolute inset-0 rounded-full -m-8"
-        style={{ background: `hsl(${hue},70%,55%)` }}
+        animate={{ scale: [1, 1.18, 1], opacity: [0.18, 0.32, 0.18] }}
+        transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+        className="absolute rounded-full"
+        style={{
+          width: 200, height: 200,
+          background: `radial-gradient(circle, hsl(${hue},80%,60%) 0%, transparent 70%)`,
+          filter: 'blur(28px)',
+        }}
       />
+
+      {/* Outer pulse ring */}
       <motion.div
-        animate={{ scale: [1, 1.35, 1], opacity: [0.25, 0.05, 0.25] }}
-        transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut', delay: 0.4 }}
-        className="absolute inset-0 rounded-full -m-4"
-        style={{ background: `hsl(${hue},72%,55%)` }}
+        animate={{ scale: [1, 1.22, 1], opacity: [0.08, 0, 0.08] }}
+        transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut', delay: 0.6 }}
+        className="absolute rounded-full border"
+        style={{
+          width: 178, height: 178,
+          borderColor: `hsla(${hue},70%,60%,0.4)`,
+        }}
       />
-      {/* Main orb */}
+
+      {/* Mid ring */}
       <motion.div
-        animate={{ scale: [1, 1.04, 1] }}
-        transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
-        className="relative w-28 h-28 rounded-full flex items-center justify-center"
-        style={{ background: hueGradient(hue), boxShadow: hueShadow(hue) }}
+        animate={{ scale: [1, 1.12, 1], opacity: [0.12, 0, 0.12] }}
+        transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut', delay: 0.2 }}
+        className="absolute rounded-full border"
+        style={{
+          width: 152, height: 152,
+          borderColor: `hsla(${hue},70%,65%,0.35)`,
+        }}
+      />
+
+      {/* Outer arc track (faint) */}
+      <div
+        className="absolute rounded-full"
+        style={{
+          width: 136, height: 136,
+          border: `1.5px solid hsla(${hue},60%,60%,0.12)`,
+        }}
+      />
+
+      {/* Spinning arc — primary */}
+      <motion.div
+        animate={{ rotate: 360 }}
+        transition={{ duration: 2.2, repeat: Infinity, ease: 'linear' }}
+        className="absolute rounded-full"
+        style={{
+          width: 136, height: 136,
+          border: '2px solid transparent',
+          borderTopColor: `hsl(${hue},80%,65%)`,
+          borderRightColor: `hsla(${hue},80%,65%,0.3)`,
+          filter: `drop-shadow(0 0 6px hsl(${hue},80%,60%))`,
+        }}
+      />
+
+      {/* Counter-spinning arc — secondary */}
+      <motion.div
+        animate={{ rotate: -360 }}
+        transition={{ duration: 3.6, repeat: Infinity, ease: 'linear' }}
+        className="absolute rounded-full"
+        style={{
+          width: 112, height: 112,
+          border: '1.5px solid transparent',
+          borderBottomColor: `hsla(${hue + 30},75%,65%,0.6)`,
+          borderLeftColor: `hsla(${hue + 30},75%,65%,0.2)`,
+        }}
+      />
+
+      {/* Glassmorphic orb — center */}
+      <motion.div
+        animate={{ scale: [1, 1.03, 1] }}
+        transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+        className="relative flex items-center justify-center rounded-full"
+        style={{
+          width: 88, height: 88,
+          background: `linear-gradient(135deg, hsla(${hue},70%,60%,0.9) 0%, hsla(${hue + 28},75%,45%,0.95) 100%)`,
+          boxShadow: `0 0 0 1px hsla(${hue},60%,70%,0.25), 0 8px 32px hsla(${hue},70%,50%,0.5), inset 0 1px 0 rgba(255,255,255,0.25)`,
+        }}
       >
-        {/* Spinning ring */}
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 2.5, repeat: Infinity, ease: 'linear' }}
-          className="absolute inset-2 rounded-full border-2 border-white/20 border-t-white/70"
+        {/* Inner gloss */}
+        <div
+          className="absolute top-2 left-3 w-8 h-4 rounded-full opacity-30"
+          style={{ background: 'linear-gradient(135deg, white, transparent)' }}
         />
-        <Sparkles className="w-10 h-10 text-white drop-shadow-lg" />
+        <motion.div
+          animate={{ rotate: [0, 15, -15, 0] }}
+          transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+        >
+          <Sparkles className="w-9 h-9 text-white drop-shadow-lg" />
+        </motion.div>
       </motion.div>
     </div>
 
-    {/* Agent name + step */}
-    <div className="text-center space-y-1">
-      <motion.p
-        initial={{ opacity: 0, y: 4 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="text-lg font-semibold tracking-tight text-foreground"
-      >
-        {name}
-      </motion.p>
-      <p className="text-xs font-medium tracking-widest uppercase text-muted-foreground/60">
+    {/* Label block — fully outside the orb container */}
+    <div className="text-center space-y-3">
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={name}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -6 }}
+          transition={{ duration: 0.35, ease: 'easeOut' }}
+          className="space-y-1"
+        >
+          <p className="text-sm font-medium tracking-widest uppercase"
+            style={{ color: `hsl(${hue},65%,62%)` }}>
+            Running
+          </p>
+          <p className="text-xl font-bold tracking-tight text-foreground">
+            {name}
+          </p>
+        </motion.div>
+      </AnimatePresence>
+
+      {/* Step progress dots */}
+      <div className="flex items-center justify-center gap-2">
+        {Array.from({ length: total }).map((_, i) => (
+          <motion.div
+            key={i}
+            animate={i + 1 === step
+              ? { scale: [1, 1.4, 1], opacity: [0.9, 1, 0.9] }
+              : {}}
+            transition={{ duration: 1, repeat: Infinity, ease: 'easeInOut' }}
+            className="rounded-full transition-all duration-500"
+            style={{
+              width: i + 1 === step ? 20 : 6,
+              height: 6,
+              background: i + 1 < step
+                ? `hsl(${hue},60%,55%)`
+                : i + 1 === step
+                  ? `hsl(${hue},75%,62%)`
+                  : `hsla(${hue},30%,60%,0.2)`,
+              boxShadow: i + 1 === step ? `0 0 8px hsla(${hue},70%,60%,0.7)` : undefined,
+            }}
+          />
+        ))}
+      </div>
+
+      <p className="text-xs font-medium" style={{ color: `hsla(${hue},50%,65%,0.6)` }}>
         Step {step} of {total}
       </p>
     </div>
@@ -280,17 +383,28 @@ export const WorkflowExecutionPage: React.FC<WorkflowExecutionPageProps> = ({
   const runningSlot = agentSlots.find(s => s.status === 'running');
   const runningIndex = agentSlots.findIndex(s => s.status === 'running');
 
+  // Export handler — downloads the final markdown as a .md file
+  const handleExport = () => {
+    if (!finalMarkdown) return;
+    const blob = new Blob([finalMarkdown], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${workflow.name.replace(/\s+/g, '_')}_result.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <AnimatePresence>
       <motion.div
         key="wf-exec"
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: 8 }}
-        transition={{ duration: 0.2, ease: 'easeOut' }}
-        className="fixed inset-0 z-[200] flex flex-col"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.18, ease: 'easeOut' }}
+        className="fixed inset-0 z-[200] flex flex-col bg-background"
         style={{
-          background: 'var(--background)',
           paddingTop: 'env(safe-area-inset-top)',
           paddingBottom: 'env(safe-area-inset-bottom)',
         }}
@@ -304,68 +418,96 @@ export const WorkflowExecutionPage: React.FC<WorkflowExecutionPageProps> = ({
         </div>
 
         {/* ── Top bar ──────────────────────────────────────────────────────────── */}
-        <header className="relative shrink-0 flex items-center gap-3 px-4 h-14 border-b border-white/[0.06]"
-          style={{ background: 'rgba(var(--background-raw,0,0,0),0.85)', backdropFilter: 'blur(20px)' }}>
+        <header
+          className="relative shrink-0 flex items-center gap-3 px-4 h-14 border-b"
+          style={{
+            borderColor: 'rgba(255,255,255,0.07)',
+            background: 'rgba(10,10,15,0.9)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+          }}
+        >
           <motion.button
             whileTap={{ scale: 0.9 }}
             onClick={onClose}
-            className="w-8 h-8 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-white/5 transition-colors"
+            className="w-8 h-8 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-white/5 transition-colors shrink-0"
           >
             <ArrowLeft className="w-4 h-4" />
           </motion.button>
 
           {/* Workflow identity */}
           <div className="flex-1 min-w-0 flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg shrink-0 flex items-center justify-center"
-              style={{ background: hueGradient(getHue(0)), boxShadow: hueShadow(getHue(0)) }}>
+            <div
+              className="w-7 h-7 rounded-lg shrink-0 flex items-center justify-center"
+              style={{ background: hueGradient(getHue(0)), boxShadow: hueShadow(getHue(0)) }}
+            >
               <Sparkles className="w-3.5 h-3.5 text-white" />
             </div>
             <div className="min-w-0">
               <h1 className="text-sm font-semibold text-foreground truncate leading-tight">{workflow.name}</h1>
-              <p className="text-[10px] text-muted-foreground/50 font-medium tracking-wide">
-                {workflow.nodes.length} AGENTS · SEQUENTIAL
+              <p className="text-[10px] text-muted-foreground/50 font-medium tracking-wide uppercase">
+                {workflow.nodes.length} Agents · Sequential
               </p>
             </div>
           </div>
 
-          {/* Status pill */}
-          <AnimatePresence mode="wait">
-            {isRunning ? (
-              <motion.div key="running" initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.85 }}
-                className="flex items-center gap-2">
-                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium"
-                  style={{ background: 'hsla(258,70%,60%,0.12)', color: 'hsl(258,70%,70%)', border: '1px solid hsla(258,70%,60%,0.2)' }}>
-                  <Loader2 className="w-3 h-3 animate-spin" />
-                  <span>Running</span>
-                </div>
-                <motion.button
-                  whileTap={{ scale: 0.95 }}
-                  onClick={handleCancel}
-                  disabled={isCancelling}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors"
-                  style={{ background: 'hsla(0,70%,55%,0.12)', color: 'hsl(0,70%,65%)', border: '1px solid hsla(0,70%,55%,0.2)' }}
-                >
-                  {isCancelling ? <Loader2 className="w-3 h-3 animate-spin" /> : <X className="w-3 h-3" />}
-                  Stop
-                </motion.button>
-              </motion.div>
-            ) : isDone ? (
-              <motion.div key="done" initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: 1, scale: 1 }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium"
-                style={{ background: 'hsla(158,60%,45%,0.12)', color: 'hsl(158,60%,55%)', border: '1px solid hsla(158,60%,45%,0.2)' }}>
-                <CheckCircle2 className="w-3 h-3" />
-                <span>Complete</span>
-              </motion.div>
-            ) : null}
-          </AnimatePresence>
+          {/* Right side: status + actions */}
+          <div className="flex items-center gap-2 shrink-0">
+            <AnimatePresence mode="wait">
+              {isRunning ? (
+                <motion.div key="running" initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.85 }}
+                  className="flex items-center gap-2">
+                  <div
+                    className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium"
+                    style={{ background: 'hsla(258,70%,60%,0.12)', color: 'hsl(258,70%,70%)', border: '1px solid hsla(258,70%,60%,0.2)' }}
+                  >
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    <span>Running</span>
+                  </div>
+                  <motion.button
+                    whileTap={{ scale: 0.95 }}
+                    onClick={handleCancel}
+                    disabled={isCancelling}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors"
+                    style={{ background: 'hsla(0,70%,55%,0.12)', color: 'hsl(0,70%,65%)', border: '1px solid hsla(0,70%,55%,0.2)' }}
+                  >
+                    {isCancelling ? <Loader2 className="w-3 h-3 animate-spin" /> : <X className="w-3 h-3" />}
+                    Stop
+                  </motion.button>
+                </motion.div>
+              ) : isDone ? (
+                <motion.div key="done" initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: 1, scale: 1 }}
+                  className="flex items-center gap-2">
+                  <div
+                    className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium"
+                    style={{ background: 'hsla(158,60%,45%,0.12)', color: 'hsl(158,60%,55%)', border: '1px solid hsla(158,60%,45%,0.2)' }}
+                  >
+                    <CheckCircle2 className="w-3 h-3" />
+                    <span>Complete</span>
+                  </div>
+                  {finalMarkdown && (
+                    <motion.button
+                      whileTap={{ scale: 0.95 }}
+                      onClick={handleExport}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors"
+                      style={{ background: 'hsla(258,70%,60%,0.10)', color: 'hsl(258,70%,70%)', border: '1px solid hsla(258,70%,60%,0.2)' }}
+                    >
+                      <Download className="w-3 h-3" />
+                      Export
+                    </motion.button>
+                  )}
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
+          </div>
         </header>
 
         {/* ── Scrollable body ───────────────────────────────────────────────────── */}
         <div className="flex-1 overflow-y-auto overscroll-contain">
           <div className="max-w-2xl mx-auto w-full px-5 py-8 space-y-8">
 
-            {/* Pre-run: workflow chain overview */}
-            {!hasRun && (
+            {/* Pre-run: workflow chain overview — hidden as soon as we start */}
+            {!hasRun && !isRunning && (
               <motion.div
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -560,26 +702,40 @@ export const WorkflowExecutionPage: React.FC<WorkflowExecutionPageProps> = ({
                   background: 'hsla(158,60%,45%,0.04)',
                 }}
               >
-                <button
-                  className="w-full flex items-center gap-3 px-4 py-4 hover:bg-white/[0.02] transition-colors text-left"
-                  onClick={() => setExpandedFinal(v => !v)}
-                >
-                  <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white shrink-0"
-                    style={{ background: 'linear-gradient(135deg,hsl(158,60%,45%),hsl(187,60%,40%))' }}>
-                    <CheckCircle2 className="w-5 h-5" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-bold" style={{ color: 'hsl(158,60%,55%)' }}>
-                      Workflow Complete
-                    </p>
-                    <p className="text-xs text-muted-foreground/50 mt-0.5">
-                      {workflow.nodes.length} agents · tap to {expandedFinal ? 'collapse' : 'expand'}
-                    </p>
-                  </div>
-                  <motion.div animate={{ rotate: expandedFinal ? 0 : -90 }} transition={{ duration: 0.2 }}>
-                    <ChevronDown className="w-4 h-4 text-muted-foreground/40" />
-                  </motion.div>
-                </button>
+                {/* Card header */}
+                <div className="flex items-center gap-3 px-4 py-4">
+                  <button
+                    className="flex-1 flex items-center gap-3 text-left"
+                    onClick={() => setExpandedFinal(v => !v)}
+                  >
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white shrink-0"
+                      style={{ background: 'linear-gradient(135deg,hsl(158,60%,45%),hsl(187,60%,40%))' }}>
+                      <CheckCircle2 className="w-5 h-5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold" style={{ color: 'hsl(158,60%,55%)' }}>
+                        Workflow Complete
+                      </p>
+                      <p className="text-xs text-muted-foreground/50 mt-0.5">
+                        {workflow.nodes.length} agents collaborated · tap to {expandedFinal ? 'collapse' : 'expand'}
+                      </p>
+                    </div>
+                    <motion.div animate={{ rotate: expandedFinal ? 0 : -90 }} transition={{ duration: 0.2 }}>
+                      <ChevronDown className="w-4 h-4 text-muted-foreground/40" />
+                    </motion.div>
+                  </button>
+                  {/* Export inline */}
+                  <motion.button
+                    whileTap={{ scale: 0.93 }}
+                    onClick={handleExport}
+                    title="Export as Markdown"
+                    className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-colors"
+                    style={{ background: 'hsla(258,70%,60%,0.10)', color: 'hsl(258,70%,70%)', border: '1px solid hsla(258,70%,60%,0.2)' }}
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Export</span>
+                  </motion.button>
+                </div>
 
                 <AnimatePresence initial={false}>
                   {expandedFinal && (
