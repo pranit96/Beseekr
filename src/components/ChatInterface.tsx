@@ -347,8 +347,8 @@ export const ChatInterface: React.FC<{
           )}
         </div>
         <div className="flex items-center gap-1.5 flex-shrink-0">
-          {/* Execution Mode Toggle (only if multiple agents and not in a structured workflow) */}
-          {!selectedWorkflow && selectedAgents.length > 1 && (
+          {/* Execution Mode Toggle */}
+          {!selectedWorkflow && (
             <div className="flex bg-muted/50 p-0.5 rounded-lg border border-border/50 hidden sm:flex">
               <button
                 onClick={() => setExecutionMode('sequential')}
