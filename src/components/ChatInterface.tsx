@@ -347,6 +347,33 @@ export const ChatInterface: React.FC<{
           )}
         </div>
         <div className="flex items-center gap-1.5 flex-shrink-0">
+          {/* Execution Mode Toggle (only if multiple agents and not in a structured workflow) */}
+          {!selectedWorkflow && selectedAgents.length > 1 && (
+            <div className="flex bg-muted/50 p-0.5 rounded-lg border border-border/50 hidden sm:flex">
+              <button
+                onClick={() => setExecutionMode('sequential')}
+                className={`flex px-2.5 py-1 text-[11px] font-semibold rounded-md transition-all ${
+                  executionMode === 'sequential' 
+                    ? 'bg-background text-foreground shadow-sm' 
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+                aria-label="Sequential Mode"
+              >
+                Sequential
+              </button>
+              <button
+                onClick={() => setExecutionMode('parallel')}
+                className={`flex px-2.5 py-1 text-[11px] font-semibold rounded-md transition-all ${
+                  executionMode === 'parallel' 
+                    ? 'bg-background text-foreground shadow-sm' 
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+                aria-label="Parallel Mode"
+              >
+                Parallel
+              </button>
+            </div>
+          )}
           {/* Workflow Button — opens builder to design & run */}
           <button
             onClick={() => setWorkflowDialogOpen(true)}

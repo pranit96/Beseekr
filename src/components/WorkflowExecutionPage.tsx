@@ -174,6 +174,8 @@ export const WorkflowExecutionPage: React.FC<WorkflowExecutionPageProps> = ({
   const { execute, ensureConnected } = useOrchestration();
   const { toast } = useToast();
 
+  const runLockRef = useRef(false);
+
   useEffect(() => {
     if (!open) return;
     setAgentSlots(workflow.nodes.map((node, i) => {
@@ -183,6 +185,7 @@ export const WorkflowExecutionPage: React.FC<WorkflowExecutionPageProps> = ({
     setPrompt(''); setAttachedFiles([]); setIsRunning(false);
     setHasRun(false); setFinalMarkdown(''); setIsDone(false); setErrorMsg('');
     cancelRef.current = null;
+    runLockRef.current = false;
     setTimeout(() => textareaRef.current?.focus(), 200);
   }, [open, workflow, agents]);
 
@@ -192,6 +195,7 @@ export const WorkflowExecutionPage: React.FC<WorkflowExecutionPageProps> = ({
   }, [agentSlots, isRunning]);
 
   const handleRun = useCallback(async () => {
+    if (runLockRef.current || isCancelling) return;
     if (!prompt.trim() && attachedFiles.length === 0) {
       toast({ title: 'Type a message first', variant: 'destructive' }); return;
     }
@@ -199,6 +203,7 @@ export const WorkflowExecutionPage: React.FC<WorkflowExecutionPageProps> = ({
       toast({ title: 'Not connected', description: 'Waiting for connection…', variant: 'destructive' }); return;
     }
 
+    runLockRef.current = true;
     setAgentSlots(prev => prev.map(s => ({ ...s, status: 'pending', content: '', toolsRunning: [] })));
     setFinalMarkdown(''); setIsDone(false); setErrorMsg('');
     setIsRunning(true); setHasRun(true); setExpandedFinal(true);
@@ -244,26 +249,30 @@ export const WorkflowExecutionPage: React.FC<WorkflowExecutionPageProps> = ({
         onDone: (data) => {
           setFinalMarkdown(data.final_markdown || '');
           setIsDone(true); setIsRunning(false);
+          runLockRef.current = false;
           setAgentSlots(prev => prev.map(s => ({ ...s, status: s.status === 'error' ? 'error' : 'done' })));
         },
         onError: (err) => {
           setErrorMsg(err?.error || 'Workflow execution failed');
           setIsRunning(false);
+          runLockRef.current = false;
           toast({ title: 'Workflow failed', description: err?.error, variant: 'destructive' });
         },
         onCancelReady: (fn) => { cancelRef.current = fn; },
-        onRateLimit: (rl) => { toast({ title: 'Rate limited', description: `Retry in ${rl?.retryAfter ?? 30}s` }); setIsRunning(false); },
+        onRateLimit: (rl) => { toast({ title: 'Rate limited', description: `Retry in ${rl?.retryAfter ?? 30}s` }); setIsRunning(false); runLockRef.current = false; },
         onWarning: () => {},
-        onCancelled: () => { setIsRunning(false); setIsCancelling(false); cancelRef.current = null; },
+        onCancelled: () => { setIsRunning(false); setIsCancelling(false); cancelRef.current = null; runLockRef.current = false; },
       });
     } catch (e: any) {
-      setErrorMsg(e.message || 'Unexpected error'); setIsRunning(false);
+      setErrorMsg(e.message || 'Unexpected error'); setIsRunning(false); runLockRef.current = false;
     }
-  }, [prompt, attachedFiles, workflow, socketConnected, execute, ensureConnected, toast]);
+  }, [prompt, attachedFiles, workflow, socketConnected, execute, ensureConnected, toast, isCancelling]);
 
   const handleCancel = () => {
-    cancelRef.current?.(); setIsCancelling(true);
-    setTimeout(() => { setIsRunning(false); setIsCancelling(false); }, 800);
+    if (!cancelRef.current) return;
+    setIsCancelling(true);
+    cancelRef.current();
+    setTimeout(() => { setIsRunning(false); setIsCancelling(false); runLockRef.current = false; }, 800);
   };
 
   if (!open) return null;
@@ -527,7 +536,7 @@ export const WorkflowExecutionPage: React.FC<WorkflowExecutionPageProps> = ({
                           className="overflow-hidden"
                         >
                           <div className="px-5 pb-5 pt-1 border-t border-white/[0.04]">
-                            <div className="prose prose-sm max-w-none dark:prose-invert [&_code]:text-[12px] [&_pre]:rounded-xl [&_pre]:border [&_pre]:border-white/10 [&_table]:border-collapse [&_td]:border [&_td]:border-white/10 [&_td]:px-3 [&_td]:py-1.5 [&_th]:border [&_th]:border-white/10 [&_th]:px-3 [&_th]:py-1.5">
+                            <div className="prose prose-sm max-w-none dark:prose-invert [&_code]:text-[12px] [&_pre]:rounded-xl [&_pre]:border [&_pre]:border-white/10 [&_table]:border-collapse [&_table]:w-full [&_table]:my-4 [&_td]:border [&_td]:border-white/10 [&_td]:px-3 [&_td]:py-2 [&_th]:border [&_th]:border-white/10 [&_th]:px-3 [&_th]:py-2 [&_th]:bg-white/5 [&_th]:text-left">
                               <ReactMarkdown remarkPlugins={[remarkGfm]}>{s.content}</ReactMarkdown>
                             </div>
                           </div>
@@ -582,7 +591,7 @@ export const WorkflowExecutionPage: React.FC<WorkflowExecutionPageProps> = ({
                       className="overflow-hidden"
                     >
                       <div className="px-5 pb-6 pt-2 border-t" style={{ borderColor: 'hsla(158,60%,45%,0.12)' }}>
-                        <div className="prose prose-sm max-w-none dark:prose-invert [&_code]:text-[12px] [&_pre]:rounded-xl [&_pre]:border [&_pre]:border-white/10 [&_table]:border-collapse [&_td]:border [&_td]:border-white/10 [&_td]:px-3 [&_td]:py-1.5 [&_th]:border [&_th]:border-white/10 [&_th]:px-3 [&_th]:py-1.5">
+                        <div className="prose prose-sm max-w-none dark:prose-invert [&_code]:text-[12px] [&_pre]:rounded-xl [&_pre]:border [&_pre]:border-white/10 [&_table]:border-collapse [&_table]:w-full [&_table]:my-4 [&_td]:border [&_td]:border-white/10 [&_td]:px-3 [&_td]:py-2 [&_th]:border [&_th]:border-white/10 [&_th]:px-3 [&_th]:py-2 [&_th]:bg-white/5 [&_th]:text-left">
                           <ReactMarkdown remarkPlugins={[remarkGfm]}>{finalMarkdown}</ReactMarkdown>
                         </div>
                       </div>
