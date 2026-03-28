@@ -24,7 +24,11 @@ interface Agent {
   reasoning?: string;
 }
 
-export const AutonomousWorkflowInterface: React.FC = () => {
+interface AutonomousWorkflowInterfaceProps {
+  onClose?: () => void;
+}
+
+export const AutonomousWorkflowInterface: React.FC<AutonomousWorkflowInterfaceProps> = ({ onClose }) => {
   const [showPromptDialog, setShowPromptDialog] = useState(true);
   const [prompt, setPrompt] = useState('');
   const [isExecuting, setIsExecuting] = useState(false);
@@ -125,6 +129,9 @@ export const AutonomousWorkflowInterface: React.FC = () => {
     setFinalAnswer('');
     setIsComplete(false);
     setHasError(false);
+    if (onClose) {
+      onClose();
+    }
   };
 
   const getAgentColor = (index: number) => {

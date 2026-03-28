@@ -46,7 +46,6 @@ const primaryNavigation = [
     // { name: 'Wellness', href: '/wellness', icon: Activity, color: 'from-emerald-500 to-sky-500' },
     { name: 'AI Chat', href: '/chat', icon: MessageSquare, color: 'from-violet-500 to-fuchsia-500' },
     { name: 'Agents', href: '/agents', icon: Bot, color: 'from-cyan-500 to-blue-500' },
-    { name: 'Workflow', href: '/workflow', icon: Sparkles, color: 'from-pink-500 to-rose-500' },
     { name: 'Blogs', href: '/blogs', icon: BookOpen, color: 'from-amber-500 to-orange-500' },
 ];
 

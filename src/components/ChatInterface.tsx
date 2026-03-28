@@ -7,8 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { AgentSelector } from './AgentSelector';
 import MessageList from './MessageList';
-import { WorkflowBuilder, type WorkflowDefinition } from './WorkflowBuilder';
-import { WorkflowExecutionPage } from './WorkflowExecutionPage';
+import { AutonomousWorkflowInterface } from './AutonomousWorkflowInterface';
 import { WelcomeScreen } from './WelcomeScreen';
 import { ExportChatDialog } from './ExportChatDialog';
 import type { ChatMessage, ExecutionMode, Agent, AgentResponse } from '@/types/agent';
@@ -17,7 +16,7 @@ import { useConversation } from '@/hooks/use-conversation';
 import useOrchestration from '@/hooks/use-orchestration';
 import { useAuth } from '@/contexts/AuthContext';
 import { createLogger } from '@/services/logging';
-import { AutonomousWorkflowInterface } from './AutonomousWorkflowInterface';
+
 
 const logger = createLogger('ChatInterface');
 
@@ -61,8 +60,6 @@ export const ChatInterface: React.FC<{
 }> = ({ agents, activeConversationId, onConversationChange, onConversationCreated }) => {
   const [input, setInput] = useState('');
   const [selectedAgents, setSelectedAgents] = useState<Agent[]>([]);
-  const [selectedWorkflow, setSelectedWorkflow] = useState<WorkflowDefinition | null>(null);
-  const [workflowExecOpen, setWorkflowExecOpen] = useState(false);
   const [executionMode, setExecutionMode] = useState<ExecutionMode>('sequential');
   const [workflowDialogOpen, setWorkflowDialogOpen] = useState(false);
   const [saveToConversation, setSaveToConversation] = useState(true);
@@ -127,12 +124,8 @@ export const ChatInterface: React.FC<{
     }, 500);
   };
 
-  const handleSubmit = async (overrideWorkflow?: WorkflowDefinition) => {
-    const activeWorkflow = overrideWorkflow || selectedWorkflow;
-    const isWorkflowExecution = !!activeWorkflow;
-    const finalAgents = isWorkflowExecution 
-      ? activeWorkflow.nodes.map(n => agents.find(a => a.id === n.agentId)).filter(Boolean) as Agent[]
-      : selectedAgents;
+  const handleSubmit = async () => {
+    const finalAgents = selectedAgents;
 
     if (!input.trim() && attachedFiles.length === 0) return;
     if (finalAgents.length === 0) { toast({ title: 'No agents selected', description: 'Select at least one agent.', variant: 'destructive' }); return; }
@@ -180,7 +173,7 @@ export const ChatInterface: React.FC<{
       const userMessage: ChatMessage = { id: `msg-${Date.now()}`, type: 'user', content: messageText, timestamp: new Date(), isFromCache: false };
       const agentResponsesInitial: AgentResponse[] = finalAgents.map(a => ({ agentId: a.id, agentName: a.name, content: '', timestamp: new Date(), status: 'pending', metadata: { domain: a.domain } }));
       const agentMessageId = `msg-${Date.now()}-agents`;
-      const agentMessage: ChatMessage = { id: agentMessageId, type: 'agent', content: '', timestamp: new Date(), agentResponses: agentResponsesInitial, executionMode: isWorkflowExecution ? 'sequential' : executionMode, markdownOutput: '', finalOutput: '', isFromCache: false };
+      const agentMessage: ChatMessage = { id: agentMessageId, type: 'agent', content: '', timestamp: new Date(), agentResponses: agentResponsesInitial, executionMode, markdownOutput: '', finalOutput: '', isFromCache: false };
 
       setMessages(prev => [...prev, userMessage, agentMessage]);
       setPreparingMessage(false);
@@ -191,9 +184,8 @@ export const ChatInterface: React.FC<{
 
       const payload: any = { 
         agent_ids: finalAgents.map(a => a.id), 
-        workflow_nodes: isWorkflowExecution ? activeWorkflow.nodes : undefined,
         message: messageText, 
-        mode: isWorkflowExecution ? 'sequential' : executionMode, 
+        mode: executionMode, 
         save_to_conversation: saveToConversation 
       };
       if (saveToConversation && convId) payload.conversation_id = convId;
@@ -271,12 +263,7 @@ export const ChatInterface: React.FC<{
     setTimeout(() => { cancelRef.current = null; setIsExecuting(false); setIsLoadingLocal(false); setPreparingMessage(false); setIsCancelling(false); if (isActiveOrchestrationRef) isActiveOrchestrationRef.current = false; }, 300);
   };
 
-  const handleExecuteWorkflow = (workflow: WorkflowDefinition) => {
-    // Open the dedicated full-screen execution page instead of folding into chat
-    setSelectedWorkflow(workflow);
-    setWorkflowDialogOpen(false);
-    setWorkflowExecOpen(true);
-  };
+
 
   const handleRetryMessage = useCallback(async (messageId: string) => {
     const idx = messages.findIndex(m => m.id === messageId);
@@ -335,21 +322,10 @@ export const ChatInterface: React.FC<{
       {/* Agent selector & toolbar row */}
       <div className="input-toolbar">
         <div className="flex-1 min-w-0 flex items-center gap-2">
-          {selectedWorkflow ? (
-             <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-md">
-               <Workflow className="w-4 h-4 text-primary" />
-               <span className="text-sm font-medium text-primary truncate">{selectedWorkflow.name}</span>
-               <button onClick={() => setSelectedWorkflow(null)} className="ml-2 hover:bg-primary/20 rounded p-0.5" title="Clear workflow">
-                 <X className="w-3.5 h-3.5 text-primary" />
-               </button>
-             </div>
-          ) : (
-             <AgentSelector agents={agents} selectedAgents={selectedAgents} onAgentsChange={setSelectedAgents} />
-          )}
+           <AgentSelector agents={agents} selectedAgents={selectedAgents} onAgentsChange={setSelectedAgents} />
         </div>
         <div className="flex items-center gap-1.5 flex-shrink-0">
           {/* Execution Mode Toggle */}
-          {!selectedWorkflow && (
             <div className="flex bg-muted/50 p-0.5 rounded-lg border border-border/50 hidden sm:flex">
               <button
                 onClick={() => setExecutionMode('sequential')}
@@ -374,13 +350,12 @@ export const ChatInterface: React.FC<{
                 Parallel
               </button>
             </div>
-          )}
-          {/* Workflow Button — opens builder to design & run */}
+          {/* Autonomous Workflow Button — opens intelligent workflow agent modal */}
           <button
             onClick={() => setWorkflowDialogOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
-            title="Open Workflow Builder"
-            aria-label="Open workflow"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 text-primary hover:bg-primary/20"
+            title="Open Autonomous Workflow"
+            aria-label="Open autonomous workflow"
           >
             <Workflow className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Workflow</span>
@@ -476,18 +451,15 @@ export const ChatInterface: React.FC<{
         </div>
       </div>
 
-      <WorkflowBuilder open={workflowDialogOpen} onOpenChange={setWorkflowDialogOpen} agents={agents} onExecute={handleExecuteWorkflow} />
       <ExportChatDialog open={exportDialogOpen} onOpenChange={setExportDialogOpen} messages={messages} conversationTitle={undefined} />
 
-      {/* Full-screen Workflow Execution Page */}
-      {selectedWorkflow && (
-        <WorkflowExecutionPage
-          workflow={selectedWorkflow}
-          agents={agents}
-          open={workflowExecOpen}
-          onClose={() => setWorkflowExecOpen(false)}
-          socketConnected={socketConnected}
-        />
+      {/* Full-screen Autonomous Workflow Modal */}
+      {workflowDialogOpen && (
+        <div className="fixed inset-0 z-[60]">
+          <AutonomousWorkflowInterface 
+            onClose={() => setWorkflowDialogOpen(false)}
+          />
+        </div>
       )}
     </div>
   );
