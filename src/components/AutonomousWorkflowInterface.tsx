@@ -774,9 +774,7 @@ export const AutonomousWorkflowInterface: React.FC<AutonomousWorkflowInterfacePr
                 <Button onClick={() => { resetState(); setPhase('prompt'); }} variant="outline" className="gap-2">
                   <ArrowRight className="w-4 h-4" /> Try Again
                 </Button>
-                <Button onClick={handleDismiss}
-                  className="absolute top-4 right-4 z-50 p-2 rounded-xl bg-background/60 hover:bg-background/90 border border-border/40"
-                > <X className="w-4 h-4" /> Close</Button>
+                <Button onClick={handleDismiss} variant="ghost">Close</Button>
               </div>
             </div>
           </motion.div>
