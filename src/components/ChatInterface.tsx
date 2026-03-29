@@ -455,12 +455,10 @@ export const ChatInterface: React.FC<{
 
       {/* Full-screen Autonomous Workflow Modal */}
       {workflowDialogOpen && (
-        <div className="fixed inset-0 z-[60]">
-          <AutonomousWorkflowInterface 
-            onClose={() => setWorkflowDialogOpen(false)}
-          />
-        </div>
-      )}
+        <AutonomousWorkflowInterface 
+          onClose={() => setWorkflowDialogOpen(false)}
+        />
+      )}  
     </div>
   );
 };

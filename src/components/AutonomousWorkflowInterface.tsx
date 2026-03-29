@@ -432,7 +432,7 @@ export const AutonomousWorkflowInterface: React.FC<AutonomousWorkflowInterfacePr
         {/* ════════════════ PHASE: executing / cancelling ════════════════ */}
         {(phase === 'executing' || phase === 'cancelling') && (
           <motion.div
-            key="executing"
+            key={phase}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
