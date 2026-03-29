@@ -345,7 +345,7 @@ export const AutonomousWorkflowInterface: React.FC<AutonomousWorkflowInterfacePr
             animate={{ opacity: 1 }}
             exit={{ opacity: 0, scale: 0.97 }}
             transition={{ duration: 0.25 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-background p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center relative bg-background p-4"
           >
             <ParticleField />
 
@@ -762,7 +762,7 @@ export const AutonomousWorkflowInterface: React.FC<AutonomousWorkflowInterfacePr
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-background p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center relative bg-background p-4"
           >
             <div className="text-center max-w-sm">
               <div className="w-16 h-16 rounded-2xl bg-destructive/10 flex items-center justify-center mx-auto mb-4">
@@ -774,7 +774,9 @@ export const AutonomousWorkflowInterface: React.FC<AutonomousWorkflowInterfacePr
                 <Button onClick={() => { resetState(); setPhase('prompt'); }} variant="outline" className="gap-2">
                   <ArrowRight className="w-4 h-4" /> Try Again
                 </Button>
-                <Button onClick={handleDismiss} variant="ghost">Close</Button>
+                <Button onClick={handleDismiss}
+                  className="absolute top-4 right-4 z-50 p-2 rounded-xl bg-background/60 hover:bg-background/90 border border-border/40"
+                > <X className="w-4 h-4" /> Close</Button>
               </div>
             </div>
           </motion.div>
