@@ -18,6 +18,8 @@ interface WorkflowCallbacks {
   onSynthesisToken?: (data: any) => void;
   onDone?: (data: any) => void;
   onError?: (data: any) => void;
+  onCancelReady?: (fn: () => void) => void;
+  onCancelled?: () => void;
 }
 
 interface WorkflowPayload {
@@ -40,6 +42,9 @@ const useAutonomousWorkflow = () => {
 
     const { requestId } = payload;
 
+    const cancel = () => {
+      socketService.emit('autonomous_workflow:cancel', { requestId });
+    };
     // Setup listeners
     const onAck = (data: any) => {
       if (data.requestId === requestId) {
