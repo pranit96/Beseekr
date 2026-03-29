@@ -345,7 +345,7 @@ export const AutonomousWorkflowInterface: React.FC<AutonomousWorkflowInterfacePr
             animate={{ opacity: 1 }}
             exit={{ opacity: 0, scale: 0.97 }}
             transition={{ duration: 0.25 }}
-            className="fixed inset-0 z-50 flex items-center justify-center relative bg-background p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center  bg-background p-4"
           >
             <ParticleField />
 
@@ -762,7 +762,7 @@ export const AutonomousWorkflowInterface: React.FC<AutonomousWorkflowInterfacePr
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center relative bg-background p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center  bg-background p-4"
           >
             <div className="text-center max-w-sm">
               <div className="w-16 h-16 rounded-2xl bg-destructive/10 flex items-center justify-center mx-auto mb-4">
