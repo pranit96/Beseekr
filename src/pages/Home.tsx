@@ -1,7 +1,8 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { MessageSquare, TrendingUp, ArrowRight, LogIn } from 'lucide-react';
+import { MessageSquare, TrendingUp, ArrowRight } from 'lucide-react';
 import { GlobalHeader } from '@/components/GlobalHeader';
+import { motion } from 'framer-motion';
 
 export default function Home() {
     const navigate = useNavigate();
@@ -31,13 +32,15 @@ export default function Home() {
                 </p>
             </section>
 
-            {/* LAYOUT (asymmetrical) */}
+            {/* LAYOUT */}
             <section className="max-w-5xl mx-auto px-6 pb-20 grid md:grid-cols-3 gap-6">
 
                 {/* MAIN CARD */}
-                <div
+                <motion.div
                     onClick={() => go('/chat')}
-                    className="md:col-span-2 border rounded-xl p-8 cursor-pointer hover:shadow-sm transition"
+                    whileHover={{ scale: 1.015 }}
+                    transition={{ type: 'spring', stiffness: 200, damping: 18 }}
+                    className="md:col-span-2 border rounded-xl p-8 cursor-pointer transition bg-card hover:bg-muted/30"
                 >
                     <MessageSquare className="w-6 h-6 mb-4" />
 
@@ -53,12 +56,17 @@ export default function Home() {
                         {user ? 'Open Chat' : 'Sign in'}
                         <ArrowRight className="w-4 h-4" />
                     </button>
-                </div>
+                </motion.div>
 
-                {/* SIDE CARD */}
-                <div
+                {/* SECONDARY CARD */}
+                <motion.div
                     onClick={() => go('/dashboard/problems')}
-                    className="border rounded-xl p-6 cursor-pointer hover:shadow-sm transition"
+                    whileHover={{ scale: 1.06 }}
+                    transition={{ type: 'spring', stiffness: 220, damping: 16 }}
+                    className="border rounded-xl p-6 cursor-pointer transition
+                               bg-card
+                               hover:bg-blue-500/5
+                               hover:border-blue-400/40"
                 >
                     <TrendingUp className="w-5 h-5 mb-3" />
 
@@ -74,9 +82,9 @@ export default function Home() {
                         Explore
                         <ArrowRight className="w-3 h-3" />
                     </button>
-                </div>
+                </motion.div>
 
-                {/* EMPTY / FUTURE */}
+                {/* COMING SOON */}
                 <div className="border border-dashed rounded-xl p-6 text-sm text-muted-foreground flex items-center justify-center">
                     More tools coming soon
                 </div>
