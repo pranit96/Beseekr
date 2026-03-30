@@ -338,25 +338,21 @@ export const AutonomousWorkflowInterface: React.FC<AutonomousWorkflowInterfacePr
       <AnimatePresence mode="wait">
 
         {/* ════════════════════════ PHASE: prompt ════════════════════════ */}
-        {phase === 'prompt' && (
-          <motion.div
-            key="prompt"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0, scale: 0.97 }}
-            transition={{ duration: 0.25 }}
-            className="fixed inset-0 z-50 flex items-center justify-center  bg-background p-4"
-          >
-            <ParticleField />
+      <motion.div className="fixed inset-0 z-50 flex items-center justify-center bg-background p-4">
+        <ParticleField />
 
-            {/* Dismiss entire modal */}
-            <button
-              onClick={handleDismiss}
-              className="absolute top-4 right-4 p-2 rounded-xl bg-background/60 hover:bg-background/90 border border-border/40 transition-colors z-20"
-              aria-label="Close"
-            >
-              <X className="w-4 h-4" />
-            </button>
+  <motion.div
+    className="w-full max-w-xl relative z-10"
+  >
+    <div className="relative bg-background/80 backdrop-blur-xl border border-border/60 rounded-2xl shadow-2xl p-7 sm:p-9">
+
+      {/* ✅ CLOSE BUTTON HERE */}
+      <button
+        onClick={handleDismiss}
+        className="absolute top-4 right-4 z-50 p-2 rounded-xl bg-background/60 hover:bg-background/90 border border-border/40"
+      >
+        <X className="w-4 h-4" />
+          </button> 
 
             <motion.div
               initial={{ scale: 0.92, y: 24 }}
