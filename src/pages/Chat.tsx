@@ -592,9 +592,18 @@ const Chat = () => {
       <GlobalHeader />
 
       <div className="flex-1 flex overflow-hidden relative">
+        {/* Mobile Sidebar Overlay */}
+        {sidebarOpen && (
+          <div 
+            className="md:hidden fixed inset-0 bg-background/80 backdrop-blur-sm z-30"
+            onClick={() => setSidebarOpen(false)}
+            aria-hidden="true"
+          />
+        )}
+        
         {/* Sidebar */}
         <aside
-          className={`transition-all duration-300 ease-in-out border-r border-border bg-muted/30 flex-shrink-0 relative z-20 ${sidebarOpen ? 'w-80 2xl:w-96 opacity-100' : 'w-0 opacity-0'
+          className={`transition-all duration-300 ease-in-out border-r border-border bg-muted/30 flex-shrink-0 absolute md:relative z-40 md:z-20 h-full ${sidebarOpen ? 'w-[85vw] max-w-[320px] md:w-80 2xl:w-96 opacity-100 translate-x-0' : 'w-0 md:w-0 opacity-0 -translate-x-full md:translate-x-0'
             } overflow-hidden`}
         >
           <ConversationHistory
@@ -608,7 +617,7 @@ const Chat = () => {
         </aside>
 
         {/* Sidebar toggle button — positioned absolutely so it doesn't disturb chat flex layout */}
-        <div className={`absolute top-3 z-30 pointer-events-none transition-all duration-300 ${sidebarOpen ? 'left-80 2xl:left-96 ml-3' : 'left-3'}`}>
+        <div className={`absolute top-3 z-50 pointer-events-none transition-all duration-300 ${sidebarOpen ? 'left-[calc(min(85vw,320px))] md:left-80 2xl:left-96 ml-3' : 'left-3'}`}>
           <Button
             variant="ghost"
             size="icon"

@@ -186,7 +186,7 @@ export const AgentDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-3xl w-full glass max-h-[90vh] overflow-y-auto rounded-2xl">
+      <DialogContent className="sm:max-w-3xl w-full glass h-[100dvh] sm:h-auto max-h-[100dvh] sm:max-h-[90vh] overflow-y-auto rounded-none sm:rounded-2xl">
         <DialogHeader>
           <DialogTitle className="text-lg md:text-xl">
             {agent ? 'Edit Agent' : 'Create New Agent'}

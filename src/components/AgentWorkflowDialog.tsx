@@ -98,7 +98,7 @@ export const AgentWorkflowDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-3xl w-full max-h-[85vh] flex flex-col">
+      <DialogContent className="sm:max-w-3xl w-full h-[100dvh] sm:h-auto max-h-[100dvh] sm:max-h-[85vh] rounded-none sm:rounded-lg flex flex-col">
         <DialogHeader>
           <DialogTitle>Design Agent Workflow</DialogTitle>
           <DialogDescription>
