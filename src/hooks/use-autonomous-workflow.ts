@@ -26,6 +26,7 @@ interface WorkflowPayload {
   prompt: string;
   requestId: string;
   save_to_history?: boolean;
+  attached_files?: Array<{ name: string; type: string; size: number; storage_path: string; url: string | null }>;
 }
 
 const useAutonomousWorkflow = () => {

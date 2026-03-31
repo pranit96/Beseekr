@@ -11,6 +11,7 @@ import { motion, AnimatePresence, useAnimationFrame } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
+import { ChatFileUpload } from '@/components/ChatFileUpload';
 import useAutonomousWorkflow from '@/hooks/use-autonomous-workflow';
 import { useToast } from '@/hooks/use-toast';
 import ReactMarkdown from 'react-markdown';
@@ -107,7 +108,7 @@ const AgentNode: React.FC<AgentNodeProps> = ({
     <motion.div
       initial={{ scale: 0, opacity: 0 }}
       animate={{ scale: 1, opacity: dimmed ? 0.35 : 1 }}
-      transition={{ delay: index * 0.15, type: 'spring', stiffness: 200 }}
+      transition={{ delay: index * 0.08, type: 'spring', stiffness: 200 }}
       className="absolute"
       style={{
         left: '50%',
@@ -181,6 +182,7 @@ export const AutonomousWorkflowInterface: React.FC<AutonomousWorkflowInterfacePr
   const [agents, setAgents] = useState<Agent[]>([]);
   const [finalAnswer, setFinalAnswer] = useState<string>('');
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const [attachedFiles, setAttachedFiles] = useState<Array<{ id: string; name: string; type: string; size: number; size_readable: string; storage_path: string; url: string | null }>>([]);
 
   /**
    * cancelRef holds the cancel fn provided by the workflow hook via onCancelReady.
@@ -205,6 +207,7 @@ export const AutonomousWorkflowInterface: React.FC<AutonomousWorkflowInterfacePr
     setAgents([]);
     setFinalAnswer('');
     setOrbitAngle(0);
+    setAttachedFiles([]);
     cancelRef.current = null;
   };
 
@@ -263,8 +266,12 @@ export const AutonomousWorkflowInterface: React.FC<AutonomousWorkflowInterfacePr
 
     const requestId = `wf_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
 
+    const filesPayload = attachedFiles.length > 0
+      ? attachedFiles.map(f => ({ name: f.name, type: f.type, size: f.size, storage_path: f.storage_path, url: f.url }))
+      : undefined;
+
     execute(
-      { prompt: currentPrompt, requestId, save_to_history: false },
+      { prompt: currentPrompt, requestId, save_to_history: false, attached_files: filesPayload },
       {
         // The hook calls this once the socket is wired up and cancellation is possible
         onCancelReady: (fn) => { cancelRef.current = fn; },
@@ -344,7 +351,7 @@ export const AutonomousWorkflowInterface: React.FC<AutonomousWorkflowInterfacePr
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0, scale: 0.97 }}
-            transition={{ duration: 0.25 }}
+            transition={{ duration: 0.15 }}
             className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4"
           >
             <ParticleField />
@@ -395,6 +402,15 @@ export const AutonomousWorkflowInterface: React.FC<AutonomousWorkflowInterfacePr
                   autoFocus
                 />
 
+                <div className="mb-4">
+                  <ChatFileUpload
+                    onFilesUploaded={(files) => setAttachedFiles(prev => [...prev, ...files])}
+                    attachedFiles={attachedFiles}
+                    onRemoveFile={(id) => setAttachedFiles(prev => prev.filter(f => f.id !== id))}
+                    disabled={false}
+                  />
+                </div>
+
                 <Button
                   onClick={handleStartWorkflow}
                   disabled={!prompt.trim()}
@@ -412,7 +428,7 @@ export const AutonomousWorkflowInterface: React.FC<AutonomousWorkflowInterfacePr
         {/* ════════════════ PHASE: executing / cancelling ════════════════ */}
         {(phase === 'executing' || phase === 'cancelling') && (
           <motion.div
-            key={phase}
+            key="executing"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -479,17 +495,14 @@ export const AutonomousWorkflowInterface: React.FC<AutonomousWorkflowInterfacePr
                   </motion.div>
                 </div>
 
-                <motion.p
-                  key={isCancelling ? '__cancelling__' : status}
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
+                <p
                   className={cn(
-                    'text-lg font-semibold text-center mb-2',
+                    'text-lg font-semibold text-center mb-2 transition-colors duration-300',
                     isCancelling ? 'text-muted-foreground' : 'text-foreground'
                   )}
                 >
                   {isCancelling ? 'Stopping workflow…' : status}
-                </motion.p>
+                </p>
 
                 {executionPlan && !isCancelling && (
                   <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-xs text-muted-foreground text-center max-w-[400px]">
@@ -516,7 +529,7 @@ export const AutonomousWorkflowInterface: React.FC<AutonomousWorkflowInterfacePr
               <motion.div
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.8 }}
+                transition={{ delay: 0.3 }}
                 className="mt-6 w-full max-w-lg mx-auto flex justify-center"
               >
                 <button
