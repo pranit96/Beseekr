@@ -24,6 +24,7 @@ import {
     MessageSquare,
     FileText,
     Eye,
+    Loader2,
 } from "lucide-react";
 
 const fadeInUp = {
@@ -61,21 +62,17 @@ export default function About() {
                             variants={fadeInUp}
                             className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-6"
                         >
-                            Stop Guessing.{" "}
+                            Your Ultimate AI Co-Pilot.{" "}
                             <span className="bg-gradient-to-r from-primary via-cyan-400 to-emerald-400 bg-clip-text text-transparent">
-                                Start Building
-                            </span>{" "}
-                            What People Actually Need.
+                                Discover, Weave, & Build.
+                            </span>
                         </motion.h1>
 
                         <motion.p
                             variants={fadeInUp}
                             className="text-lg sm:text-xl text-muted-foreground max-w-3xl mx-auto mb-10 leading-relaxed"
                         >
-                            90% of startups fail because they solve problems nobody has. Beseekr scans thousands of
-                            Reddit threads, Hacker News posts, and online communities to find{" "}
-                            <span className="text-foreground font-medium">real problems</span> people are
-                            desperate to pay for — so you build with confidence, not hope.
+                            Beseekr is a comprehensive, multi-agent AI platform built for ambitious founders. From crafting complex prompts in our Orchestrator Desk to mining thousands of Reddit threads for <span className="text-foreground font-medium">real, validated problems</span> — we compress weeks of product development into minutes.
                         </motion.p>
 
                         <motion.div variants={fadeInUp} className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -84,7 +81,7 @@ export default function About() {
                                     size="lg"
                                     className="h-12 px-8 rounded-xl bg-primary hover:bg-primary/90 font-semibold text-base shadow-lg shadow-primary/25 transition-all hover:scale-[1.02]"
                                 >
-                                    Start Finding Problems
+                                    Launch AI Workspace
                                     <ArrowRight className="ml-2 h-5 w-5" />
                                 </Button>
                             </Link>
@@ -102,8 +99,83 @@ export default function About() {
                 </div>
             </section>
 
-            {/* What We Do - With Reddit Analysis Screenshot */}
+            {/* The Orchestrator - AI Chat Section */}
             <section className="py-20 lg:py-28 border-t border-border/30">
+                <div className="container px-4 md:px-6 max-w-6xl mx-auto">
+                    <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+                        <motion.div
+                            initial={{ opacity: 0, x: -30 }}
+                            whileInView={{ opacity: 1, x: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ duration: 0.6 }}
+                            className="order-2 lg:order-1"
+                        >
+                            <div className="relative rounded-2xl overflow-hidden border border-border/50 shadow-2xl p-8 bg-muted/20">
+                                <div className="space-y-4">
+                                    <div className="flex gap-4 items-start">
+                                        <div className="w-8 h-8 rounded-full bg-primary/20 flex-shrink-0 flex items-center justify-center"><BrainCircuit className="w-4 h-4 text-primary" /></div>
+                                        <div className="bg-background border border-border/50 p-4 rounded-2xl rounded-tl-sm text-sm w-full shadow-sm">
+                                            "Research the CRM market, draft an architecture document for a new entrant, and generate the boilerplate codebase."
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-4 items-start justify-end flex-row-reverse">
+                                        <div className="w-8 h-8 rounded-full bg-blue-500/20 flex-shrink-0 flex items-center justify-center"><Rocket className="w-4 h-4 text-blue-500" /></div>
+                                        <div className="bg-primary/5 border border-primary/20 p-4 rounded-2xl rounded-tr-sm text-sm w-full shadow-sm">
+                                            <p className="font-semibold text-primary mb-2">Executing multi-agent workflow...</p>
+                                            <ul className="space-y-2 text-muted-foreground text-xs">
+                                                <li className="flex items-center gap-2"><CheckCircle2 className="w-3 h-3 text-emerald-500" /> Analyst Agent fetching market data</li>
+                                                <li className="flex items-center gap-2"><CheckCircle2 className="w-3 h-3 text-emerald-500" /> Architect Agent designing schema</li>
+                                                <li className="flex items-center gap-2 animate-pulse"><Loader2 className="w-3 h-3 text-primary animate-spin" /> Coding Agent generating repository...</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <p className="text-xs text-muted-foreground text-center mt-3">
+                                Connect multiple AI models to perform complex strategic workflows.
+                            </p>
+                        </motion.div>
+
+                        <motion.div
+                            initial={{ opacity: 0, x: 30 }}
+                            whileInView={{ opacity: 1, x: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ duration: 0.6, delay: 0.2 }}
+                            className="order-1 lg:order-2"
+                        >
+                            <h2 className="text-3xl sm:text-4xl font-bold mb-6">
+                                The <span className="text-primary">Prompt Weaving</span> Orchestrator
+                            </h2>
+                            <p className="text-lg text-muted-foreground mb-6 leading-relaxed">
+                                Our AI Chat isn't just a basic interface — it's a comprehensive multi-turn orchestration desk.
+                                Connect to OpenAI, Anthropic, or Groq, and command specialized agents to brainstorm, write code, or perform strategic research at scale.
+                            </p>
+
+                            <div className="grid sm:grid-cols-2 gap-4">
+                                {[
+                                    { icon: BrainCircuit, text: "Multi-Agent Workflows", desc: "Agents collaborating to solve tasks" },
+                                    { icon: Zap, text: "Model Agnostic", desc: "GPT-4o, Claude 3.5, Gemini & more" },
+                                    { icon: MessageSquare, text: "Advanced Context", desc: "Bulk operations & file injections" },
+                                    { icon: Sparkles, text: "Template Library", desc: "Pre-crafted strategic prompts" },
+                                ].map((item, i) => (
+                                    <div key={i} className="flex items-start gap-3 p-4 rounded-xl bg-muted/30 border border-border/30">
+                                        <div className="p-2 rounded-lg bg-primary/10">
+                                            <item.icon className="h-5 w-5 text-primary" />
+                                        </div>
+                                        <div>
+                                            <p className="font-medium text-sm">{item.text}</p>
+                                            <p className="text-xs text-muted-foreground">{item.desc}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </motion.div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Problem Discovery - What We Do */}
+            <section className="py-20 lg:py-28 border-t border-border/30 bg-muted/10">
                 <div className="container px-4 md:px-6 max-w-6xl mx-auto">
                     <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
                         <motion.div
