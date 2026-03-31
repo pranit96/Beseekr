@@ -419,45 +419,65 @@ export const AutonomousWorkflowInterface: React.FC<AutonomousWorkflowInterfacePr
             transition={{ duration: 0.3 }}
             className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background/95 backdrop-blur-sm overflow-hidden p-4"
           >
-            <div className="w-full max-w-2xl relative flex flex-col items-center">
-              <button
-                onClick={handleDismiss}
-                className="absolute -top-4 right-0 sm:-top-12 sm:-right-4 p-2 rounded-xl bg-muted/60 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors z-20"
-                aria-label="Close workflow"
-                title="Close"
-              >
-                <X className="w-4 h-4" />
-              </button>
+            <button
+              onClick={handleDismiss}
+              className="fixed top-4 right-4 p-2 rounded-xl bg-background/60 hover:bg-background/90 border border-border/40 transition-colors z-50 cursor-pointer"
+              aria-label="Close workflow"
+              title="Close"
+            >
+              <X className="w-4 h-4" />
+            </button>
 
+            <div className="w-full max-w-2xl relative flex flex-col items-center mt-12">
               {/* ── Sleek Central Hub ── */}
-              <div className="flex flex-col items-center justify-center w-full mx-auto mb-8 relative z-10 px-4 mt-8">
-                <motion.div
-                  animate={isCancelling ? { rotate: 0, scale: 0.95 } : { rotate: 360, scale: [1, 1.05, 1] }}
-                  transition={isCancelling ? {} : { duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-                  className="w-24 h-24 rounded-full flex items-center justify-center mb-6 relative"
-                  style={{
-                    background: isCancelling
-                      ? 'conic-gradient(from 0deg, hsl(var(--muted-foreground)/0.3), hsl(var(--muted-foreground)/0.3))'
-                      : 'conic-gradient(from 0deg, hsl(var(--primary)/0.8), hsl(var(--accent)/0.8), hsl(var(--primary)/0.8))',
-                    padding: 3,
-                    boxShadow: isCancelling ? 'none' : '0 0 40px rgba(var(--primary-glow), 0.3)',
-                  }}
-                >
-                  <div className="w-full h-full rounded-full bg-background flex items-center justify-center relative z-10">
-                    {isCancelling
-                      ? <Loader2 className="w-10 h-10 animate-spin text-muted-foreground" />
-                      : <Sparkles className="w-10 h-10" style={{ color: 'hsl(var(--primary))' }} />
-                    }
+              <div className="flex flex-col items-center justify-center w-full mx-auto mb-16 relative z-10 px-4 mt-8">
+                <div className="relative flex items-center justify-center mb-6 w-24 h-24">
+                  {/* Orbital Nodes */}
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <AnimatePresence>
+                      {agents.map((agent, i) => (
+                        <AgentNode
+                          key={agent.id || i}
+                          agent={agent}
+                          index={i}
+                          total={agents.length}
+                          orbitRadius={ORBIT_RADIUS}
+                          orbitAngleOffset={orbitAngle}
+                          dimmed={isCancelling}
+                        />
+                      ))}
+                    </AnimatePresence>
                   </div>
-                  {/* Glowing ring effect */}
-                  {!isCancelling && (
-                    <motion.div
-                      className="absolute -inset-4 rounded-full border border-primary/20 pointer-events-none"
-                      animate={{ scale: [1, 1.3, 1], opacity: [0.3, 0, 0.3] }}
-                      transition={{ duration: 2.5, repeat: Infinity, ease: 'easeOut' }}
-                    />
-                  )}
-                </motion.div>
+
+                  {/* Central Orb */}
+                  <motion.div
+                    animate={isCancelling ? { rotate: 0, scale: 0.95 } : { rotate: 360, scale: [1, 1.05, 1] }}
+                    transition={isCancelling ? {} : { duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+                    className="w-full h-full rounded-full flex items-center justify-center relative z-20"
+                    style={{
+                      background: isCancelling
+                        ? 'conic-gradient(from 0deg, hsl(var(--muted-foreground)/0.3), hsl(var(--muted-foreground)/0.3))'
+                        : 'conic-gradient(from 0deg, hsl(var(--primary)/0.8), hsl(var(--accent)/0.8), hsl(var(--primary)/0.8))',
+                      padding: 3,
+                      boxShadow: isCancelling ? 'none' : '0 0 40px rgba(var(--primary-glow), 0.3)',
+                    }}
+                  >
+                    <div className="w-full h-full rounded-full bg-background flex items-center justify-center relative z-10">
+                      {isCancelling
+                        ? <Loader2 className="w-10 h-10 animate-spin text-muted-foreground" />
+                        : <Sparkles className="w-10 h-10" style={{ color: 'hsl(var(--primary))' }} />
+                      }
+                    </div>
+                    {/* Glowing ring effect */}
+                    {!isCancelling && (
+                      <motion.div
+                        className="absolute -inset-4 rounded-full border border-primary/20 pointer-events-none"
+                        animate={{ scale: [1, 1.3, 1], opacity: [0.3, 0, 0.3] }}
+                        transition={{ duration: 2.5, repeat: Infinity, ease: 'easeOut' }}
+                      />
+                    )}
+                  </motion.div>
+                </div>
 
                 <motion.p
                   key={isCancelling ? '__cancelling__' : status}
@@ -478,50 +498,7 @@ export const AutonomousWorkflowInterface: React.FC<AutonomousWorkflowInterfacePr
                 )}
               </div>
 
-              {/* Structured Agent List */}
-              {agents.length > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, y: 16 }}
-                  animate={{ opacity: isCancelling ? 0.35 : 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
-                  className="w-full max-w-lg px-4 mb-4 grid gap-2.5 z-10 relative"
-                >
-                  {agents.map((agent, i) => {
-                    const palette = AGENT_PALETTES[i % AGENT_PALETTES.length];
-                    return (
-                      <div
-                        key={agent.id || i}
-                        className="flex items-center justify-between p-3 rounded-xl border bg-background/50 backdrop-blur-sm"
-                        style={{
-                          borderColor: agent.status === 'running' ? palette.from : 'var(--border)',
-                          boxShadow: agent.status === 'running' ? `0 0 12px ${palette.glow}20` : 'none',
-                        }}
-                      >
-                        <div className="flex items-center gap-3">
-                           <div 
-                             className="w-8 h-8 rounded-full flex items-center justify-center text-white"
-                             style={{ background: `linear-gradient(135deg, ${palette.from}, ${palette.to})` }}
-                           >
-                             {React.createElement(AGENT_ICONS[i % AGENT_ICONS.length], { className: "w-4 h-4" })}
-                           </div>
-                           <div className="flex flex-col">
-                             <span className="text-sm font-semibold">{agent.name}</span>
-                             <span className="text-[10px] text-muted-foreground uppercase tracking-widest">
-                               {agent.status}
-                             </span>
-                           </div>
-                        </div>
-                        <div className="flex-shrink-0">
-                          {agent.status === 'running' && <Loader2 className="w-4 h-4 animate-spin text-primary" />}
-                          {agent.status === 'done' && <CheckCircle2 className="w-5 h-5 text-emerald-500" />}
-                          {agent.status === 'pending' && <div className="w-2 h-2 rounded-full bg-muted-foreground opacity-30" />}
-                          {agent.status === 'error' && <AlertCircle className="w-5 h-5 text-destructive" />}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </motion.div>
-              )}
+
 
               {/* Live output preview */}
               {!isCancelling && runningAgent?.output && (
