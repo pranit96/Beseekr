@@ -16,6 +16,7 @@ import { useConversation } from '@/hooks/use-conversation';
 import useOrchestration from '@/hooks/use-orchestration';
 import { useAuth } from '@/contexts/AuthContext';
 import { createLogger } from '@/services/logging';
+import { useQueryClient } from '@tanstack/react-query';
 
 
 const logger = createLogger('ChatInterface');
@@ -82,6 +83,7 @@ export const ChatInterface: React.FC<{
 
   const { toast } = useToast();
   const { socketConnected } = useAuth();
+  const queryClient = useQueryClient();
 
   const {
     messages, setMessages, conversationId, setConversationId,
@@ -162,7 +164,11 @@ export const ChatInterface: React.FC<{
           const res = await apiClient.createConversation({ agent_id: finalAgents[0]?.id || null, title });
           if (res.success && res.data?.id) {
             convId = res.data.id; setConversationId(convId);
-            setTimeout(() => { onConversationChange?.(convId); onConversationCreated?.(convId); }, 200);
+            setTimeout(() => { 
+              onConversationChange?.(convId); 
+              onConversationCreated?.(convId);
+              queryClient.invalidateQueries({ queryKey: ['conversations'] });
+            }, 200);
           }
         } catch (err) { logger.error('Failed to create conversation', { error: err }); }
         finally { isCreatingConversationRef.current = false; }

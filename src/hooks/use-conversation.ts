@@ -22,10 +22,19 @@ interface UseConversationReturn {
 }
 
 export function useConversation(initialConversationId?: string): UseConversationReturn {
-  const [conversationId, setConversationId] = useState<string | null>(initialConversationId || null);
+  const [conversationId, _setConversationId] = useState<string | null>(initialConversationId || null);
+  const activeConvIdRef = useRef<string | null>(initialConversationId || null);
   const [hasStarted, setHasStarted] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  const setConversationId = useCallback((id: string | null | ((prev: string | null) => string | null)) => {
+    _setConversationId(prev => {
+      const nextId = typeof id === 'function' ? id(prev) : id;
+      activeConvIdRef.current = nextId;
+      return nextId;
+    });
+  }, []);
 
   // Track if we're currently in an active orchestration
   const isActiveOrchestrationRef = useRef(false);
@@ -121,12 +130,15 @@ export function useConversation(initialConversationId?: string): UseConversation
 
   // Provide a setter that mutates the React Query cache so streaming agents can append logic
   const setMessages = useCallback((updater: ChatMessage[] | ((prev: ChatMessage[]) => ChatMessage[])) => {
-    queryClient.setQueryData(['messages', conversationId], (old: ChatMessage[] = []) => {
+    const targetId = activeConvIdRef.current;
+    if (!targetId) return;
+
+    queryClient.setQueryData(['messages', targetId], (old: ChatMessage[] = []) => {
       const newMessages = typeof updater === 'function' ? updater(old) : updater;
       if (newMessages.length > 0) setHasStarted(true);
       return newMessages;
     });
-  }, [queryClient, conversationId]);
+  }, [queryClient]);
 
   const loadConversationMessages = useCallback(async (convId: string, force: boolean = false) => {
     if (!force) isActiveOrchestrationRef.current = false;
