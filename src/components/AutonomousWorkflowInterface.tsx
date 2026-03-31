@@ -158,7 +158,8 @@ const AgentNode: React.FC<AgentNodeProps> = ({
         {agent.status === 'pending' && <Icon className="w-5 h-5 opacity-80" />}
       </motion.div>
 
-      {/* Label */}
+      {/* Label — hidden to keep UI clean */}
+      {false && (
       <div className="mt-2 text-center" style={{ width: 80, marginLeft: -12 }}>
         <p className="text-[10px] font-semibold leading-tight text-foreground/80 truncate">{agent.name}</p>
         <p
@@ -168,6 +169,7 @@ const AgentNode: React.FC<AgentNodeProps> = ({
           {isRunning ? 'Running' : isDone ? 'Done' : isError ? 'Error' : 'Waiting'}
         </p>
       </div>
+      )}
     </motion.div>
   );
 };
@@ -182,7 +184,7 @@ export const AutonomousWorkflowInterface: React.FC<AutonomousWorkflowInterfacePr
   const [agents, setAgents] = useState<Agent[]>([]);
   const [finalAnswer, setFinalAnswer] = useState<string>('');
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
-  const [attachedFiles, setAttachedFiles] = useState<Array<{ id: string; name: string; type: string; size: number; size_readable: string; storage_path: string; url: string | null }>>([]);
+  const [attachedFiles, setAttachedFiles] = useState<Array<{ id: string; name: string; type: string; size: number; size_readable: string; storage_path: string; url: string | null; extracted_content?: string | null }>>([]);
 
   /**
    * cancelRef holds the cancel fn provided by the workflow hook via onCancelReady.
@@ -267,7 +269,7 @@ export const AutonomousWorkflowInterface: React.FC<AutonomousWorkflowInterfacePr
     const requestId = `wf_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
 
     const filesPayload = attachedFiles.length > 0
-      ? attachedFiles.map(f => ({ name: f.name, type: f.type, size: f.size, storage_path: f.storage_path, url: f.url }))
+      ? attachedFiles.map(f => ({ name: f.name, type: f.type, size: f.size, storage_path: f.storage_path, url: f.url, extracted_content: f.extracted_content || null }))
       : undefined;
 
     execute(
@@ -447,9 +449,9 @@ export const AutonomousWorkflowInterface: React.FC<AutonomousWorkflowInterfacePr
             <div className="w-full max-w-2xl relative flex flex-col items-center mt-12">
               {/* ── Sleek Central Hub ── */}
               <div className="flex flex-col items-center justify-center w-full mx-auto mb-16 relative z-10 px-4 mt-8">
-                <div className="relative flex items-center justify-center mb-6 w-24 h-24">
+               <div className="relative flex items-center justify-center" style={{ width: agents.length > 0 ? ORBIT_RADIUS * 2 + 80 : 96, height: agents.length > 0 ? ORBIT_RADIUS * 2 + 80 : 96, minHeight: 96 }}>
                   {/* Orbital Nodes */}
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
                     <AnimatePresence>
                       {agents.map((agent, i) => (
                         <AgentNode
@@ -495,6 +497,7 @@ export const AutonomousWorkflowInterface: React.FC<AutonomousWorkflowInterfacePr
                   </motion.div>
                 </div>
 
+                <div className="mt-6">
                 <p
                   className={cn(
                     'text-lg font-semibold text-center mb-2 transition-colors duration-300',
@@ -509,6 +512,7 @@ export const AutonomousWorkflowInterface: React.FC<AutonomousWorkflowInterfacePr
                     {executionPlan.length > 100 ? executionPlan.slice(0, 100) + '…' : executionPlan}
                   </motion.p>
                 )}
+                </div>
               </div>
 
 
