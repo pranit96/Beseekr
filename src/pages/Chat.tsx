@@ -25,7 +25,7 @@ interface Conversation {
 const Chat = () => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [currentConversationId, setCurrentConversationId] = useState<string>();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loadingConversations, setLoadingConversations] = useState(false); // Start as false to prevent flash
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
   const [key, setKey] = useState(0);
@@ -43,7 +43,7 @@ const Chat = () => {
   // Load sidebar and conversation preferences
   useEffect(() => {
     const savedSidebarState = sessionStorage.getItem('sidebarOpen');
-    setSidebarOpen(savedSidebarState !== 'false');
+    setSidebarOpen(savedSidebarState === 'true');
 
     const lastConversationId = sessionStorage.getItem('lastActiveConversation');
     if (lastConversationId) setCurrentConversationId(lastConversationId);
@@ -616,20 +616,32 @@ const Chat = () => {
           />
         </aside>
 
-        {/* Sidebar toggle button — positioned absolutely so it doesn't disturb chat flex layout */}
-        <div className={`absolute top-3 z-50 pointer-events-none transition-all duration-300 ${sidebarOpen ? 'left-[calc(min(85vw,320px))] md:left-80 2xl:left-96 ml-3' : 'left-3'}`}>
+        {/* Sidebar toggle button — positioned vertically centered for a unique, sleek handle feel */}
+        <div 
+          className={`absolute top-1/2 -translate-y-1/2 z-50 pointer-events-none transition-all duration-300 ${
+            sidebarOpen ? 'left-[calc(min(85vw,320px))] md:left-80 2xl:left-96 ml-0 -translate-x-1/2' : 'left-0'
+          }`}
+        >
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setSidebarOpen(prev => !prev)}
-            className="h-8 w-8 rounded-lg pointer-events-auto hover:bg-muted/80 border border-border/50 bg-background/80 backdrop-blur-sm shadow-sm"
+            className={`pointer-events-auto flex items-center justify-center transition-all duration-300 shadow-xl border bg-background/80 backdrop-blur-md group
+              ${sidebarOpen 
+                  ? 'h-10 w-10 rounded-full border-border hover:bg-muted' 
+                  : 'h-24 w-6 rounded-r-xl rounded-l-none border-border border-l-0 hover:w-8 hover:bg-muted/50 bg-gradient-to-b from-background via-muted/30 to-background hover:from-primary/10 hover:to-primary/5 hover:border-primary/30'
+              }`}
             aria-label={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
             title={sidebarOpen ? 'Hide conversations' : 'Show conversations'}
           >
             {sidebarOpen ? (
-              <PanelLeftClose className="h-4 w-4" />
+              <PanelLeftClose className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
             ) : (
-              <Menu className="h-4 w-4" />
+              <div className="flex flex-col items-center justify-center gap-1.5 opacity-60 group-hover:opacity-100 transition-opacity">
+                <div className="w-1 h-1 rounded-full bg-foreground/60 group-hover:bg-primary transition-colors" />
+                <div className="w-1 h-1 rounded-full bg-foreground/60 group-hover:bg-primary transition-colors" />
+                <div className="w-1 h-1 rounded-full bg-foreground/60 group-hover:bg-primary transition-colors" />
+              </div>
             )}
           </Button>
         </div>
