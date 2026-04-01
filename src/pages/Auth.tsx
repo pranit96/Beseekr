@@ -10,6 +10,7 @@ import { apiClient } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { supabase, isSupabaseConfigured, isSafariBrowser } from "@/lib/supabase";
 import { analytics } from "@/lib/analytics";
+import { Logo } from '@/components/Logo'
 
 const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -400,12 +401,7 @@ const Auth = () => {
                           bg-white/95 text-slate-900 dark:bg-card/90 dark:text-foreground">
           <div className="text-center mb-6">
             <div className="mb-4">
-              <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-primary to-accent mx-auto mb-3 flex items-center justify-center shadow-glow">
-                <Sparkles className="w-8 h-8 text-white animate-pulse" />
-              </div>
-              <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                beseekr
-              </h1>
+              <Logo />
             </div>
             <h2 className="text-lg sm:text-xl font-semibold mb-2 text-slate-700 dark:text-foreground">
               Start discovering validated opportunities
