@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import { Clock, ArrowRight, Tag, Bookmark, Search, X } from "lucide-react";
 import { type Blog, type Topic } from "@/api/blogs";
+import { Logo } from "@/components/Logo";
 
 /* ─── helpers ─────────────────────────────────────────────── */
 function fmt(d?: string) {
@@ -271,9 +272,7 @@ export default function BlogList() {
             {/* ── NAVBAR ─────────────────────────────────────── */}
             <header className="fixed top-0 inset-x-0 z-50 mix-blend-normal">
                 <div className="mx-auto max-w-7xl px-4 sm:px-8 py-5 flex items-center justify-between">
-                    <Link to="/blogs" className="font-black text-xl tracking-tighter text-white">
-                        beseekr<span className="text-primary">.</span>
-                    </Link>
+                    <Logo className="text-white text-xl" to="/blogs" />
 
                     <div className="flex items-center gap-4">
                         <AnimatePresence>

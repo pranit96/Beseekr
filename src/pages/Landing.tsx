@@ -1,5 +1,6 @@
 // src/pages/Landing.tsx
 import { useNavigate } from 'react-router-dom';
+import { Logo } from '@/components/Logo';
 import {
   Sparkles, Users, Zap, Brain, ArrowRight,
   Target, DollarSign, TrendingUp, Lightbulb, Rocket,
@@ -86,14 +87,7 @@ const Landing = () => {
       {/* Navigation */}
       <nav className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur-sm">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-              <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-            </div>
-            <span className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              beseekr
-            </span>
-          </div>
+          <Logo className="text-2xl sm:text-3xl" />
           <div className="hidden md:flex items-center gap-6">
             <a href="#discover" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               Discover
@@ -391,14 +385,7 @@ const Landing = () => {
       {/* Footer */}
       <footer className="border-t border-border py-8 px-4 sm:px-6">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-              <Sparkles className="w-4 h-4 text-white" />
-            </div>
-            <span className="text-lg font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              beseekr
-            </span>
-          </div>
+          <Logo className="text-xl" />
           <div className="flex items-center gap-6">
             <button
               onClick={() => navigate('/privacy')}

@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { NavLink, useLocation, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
+import { Logo } from '@/components/Logo';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/contexts/AuthContext';
 import { paymentsApi } from '@/api/payments';
@@ -105,17 +106,7 @@ export function GlobalHeader() {
                 >
                     <div className="flex items-center justify-between rounded-xl sm:rounded-2xl border border-border/50 bg-background/80 backdrop-blur-xl px-3 sm:px-5 py-2 sm:py-2.5 shadow-lg shadow-black/5">
                         {/* ── Logo ── */}
-                        <Link to="/" className="flex items-center gap-2 sm:gap-2.5 group shrink-0">
-                            <motion.div
-                                whileHover={{ scale: 1.05, rotate: 5 }}
-                                className="h-8 w-8 sm:h-9 sm:w-9 rounded-lg sm:rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg"
-                            >
-                                <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
-                            </motion.div>
-                            <span className="hidden sm:block text-lg font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent group-hover:opacity-80 transition-opacity">
-                                beseekr
-                            </span>
-                        </Link>
+                        <Logo className="text-xl sm:text-2xl" linkClassName="shrink-0" />
 
                         {/* ── Desktop Nav Pills ── */}
                         <nav className="hidden lg:flex items-center gap-0.5 p-1 rounded-xl bg-muted/50">
