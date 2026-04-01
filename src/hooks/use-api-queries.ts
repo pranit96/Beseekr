@@ -295,7 +295,7 @@ export function useInfiniteBlogs(topic?: string, search?: string, limit: number 
     },
     initialPageParam: 1,
     getNextPageParam: (lastPage) => lastPage.nextPage,
-    staleTime: 5 * 60 * 1000, // 5 minutes cache to prevent unnecessary refetches
+    staleTime: 500 * 60 * 1000, // 500 minutes cache to prevent unnecessary refetches
     placeholderData: keepPreviousData, // Keeps old data visible while fetching new filters/pages
   });
 }
