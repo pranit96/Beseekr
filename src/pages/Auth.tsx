@@ -399,18 +399,25 @@ const Auth = () => {
       <div className="flex-1 lg:w-[40%] flex items-center justify-center p-4 sm:p-8 relative">
         <Card className="w-full max-w-md p-6 sm:p-8 glass shadow-strong border border-primary/20 transition-all
                           bg-white/95 text-slate-900 dark:bg-card/90 dark:text-foreground">
-          <div className="text-center mb-6">
-            <div className="mb-4 flex justify-center">
-              <div className="w-32 sm:w-40">
-                <Logo />
-              </div>
-            </div>
+    <div className="text-center px-6 py-12">
+      
+      {/* Logo */}
+      <div className="mb-6 flex justify-center">
+        <div className="w-28 sm:w-32 opacity-90">
+          <Logo />
+        </div>
+      </div>
 
-            <h1 className="text-base sm:text-lg font-medium text-slate-700 dark:text-foreground">
-              Start discovering validated opportunities.
-            </h1>
-          </div>
+      {/* Headline */}
+      <h1 className="text-2xl sm:text-4xl font-semibold tracking-tight text-slate-900 dark:text-foreground">
+        Discover opportunities that already work.
+      </h1>
 
+      {/* Subheading */}
+      <p className="mt-3 text-sm sm:text-base text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+        Skip the guesswork. Explore ideas backed by real validation, traction, and demand.
+      </p>
+    </div>
           {verificationPending ? (
             <div className="space-y-6 text-center">
               <div className="mx-auto w-16 h-16 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center animate-bounce-slow">
