@@ -400,14 +400,15 @@ const Auth = () => {
         <Card className="w-full max-w-md p-6 sm:p-8 glass shadow-strong border border-primary/20 transition-all
                           bg-white/95 text-slate-900 dark:bg-card/90 dark:text-foreground">
           <div className="text-center mb-6">
-            <div className="mb-4">
-              <h2 >
+            <div className="mb-4 flex justify-center">
+              <div className="w-32 sm:w-40">
                 <Logo />
-              </h2>
+              </div>
             </div>
-            <small className="text-lg sm:text-xl font-semibold mb-2 text-slate-700 dark:text-foreground">
+
+            <h1 className="text-base sm:text-lg font-medium text-slate-700 dark:text-foreground">
               Start discovering validated opportunities.
-            </small>
+            </h1>
           </div>
 
           {verificationPending ? (
