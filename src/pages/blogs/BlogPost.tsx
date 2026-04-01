@@ -1,11 +1,12 @@
 import React, { useEffect, useState, useMemo } from "react";
+import { useBlog } from "@/hooks/use-api-queries";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Clock, Calendar, Tag, Share2, BookOpen, List, ChevronDown, Mail, User } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
-import { getBlog, type Blog } from "@/api/blogs";
+import { type Blog } from "@/api/blogs";
 
 function fmt(d?: string) {
     if (!d) return "";
@@ -245,22 +246,11 @@ function NewsletterCTA() {
 export default function BlogPost() {
     const { slug } = useParams<{ slug: string }>();
     const navigate = useNavigate();
-    const [blog, setBlog] = useState<Blog | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
     const [copied, setCopied] = useState(false);
 
-    useEffect(() => {
-        if (!slug) return;
-        let cancelled = false;
-        setLoading(true);
-        setError(null);
-        getBlog(slug)
-            .then((d) => { if (!cancelled) setBlog(d); })
-            .catch((err) => { if (!cancelled) setError(err?.message || "Article not found"); })
-            .finally(() => { if (!cancelled) setLoading(false); });
-        return () => { cancelled = true; };
-    }, [slug]);
+    const { data: blog, isLoading: loading, error: queryError } = useBlog(slug);
+
+    const error = queryError ? queryError.message : null;
 
     const share = async () => {
         try {

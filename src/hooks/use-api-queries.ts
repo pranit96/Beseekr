@@ -1,6 +1,6 @@
-// React Query hooks for API calls with caching
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, useInfiniteQuery, keepPreviousData } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api';
+import { getBlogs, getBlog, getTopics } from '@/api/blogs';
 import { useToast } from '@/hooks/use-toast';
 
 // Query Keys
@@ -14,6 +14,9 @@ export const queryKeys = {
   sessionDetails: (sessionId: string) => ['thinkers', 'sessions', sessionId] as const,
   sessions: (params?: any) => ['thinkers', 'sessions', params] as const,
   currentUser: ['auth', 'me'] as const,
+  blogs: (topic?: string, search?: string) => ['blogs', topic, search] as const,
+  blog: (slug: string) => ['blog', slug] as const,
+  blogTopics: ['blogTopics'] as const,
 };
 
 // ============= AGENTS =============
@@ -259,3 +262,57 @@ export function useCurrentUser() {
     retry: false, // Don't retry on 401
   });
 }
+
+// ============= BLOGS =============
+
+export function useBlogTopics() {
+  return useQuery({
+    queryKey: queryKeys.blogTopics,
+    queryFn: async () => {
+      const res = await getTopics();
+      return res || [];
+    },
+    staleTime: 5 * 60 * 1000, // 5 min
+    gcTime: 10 * 60 * 1000,
+    placeholderData: keepPreviousData,
+  });
+}
+
+export function useInfiniteBlogs(topic?: string, search?: string, limit: number = 12) {
+  return useInfiniteQuery({
+    queryKey: queryKeys.blogs(topic, search),
+    queryFn: async ({ pageParam = 1 }) => {
+      const res = await getBlogs({
+        page: pageParam,
+        limit,
+        topic,
+        search,
+      });
+      return {
+        data: res.data || [],
+        nextPage: res.meta && res.meta.page < res.meta.totalPages ? pageParam + 1 : undefined
+      };
+    },
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => lastPage.nextPage,
+    staleTime: 5 * 60 * 1000, // 5 minutes cache to prevent unnecessary refetches
+    placeholderData: keepPreviousData, // Keeps old data visible while fetching new filters/pages
+  });
+}
+
+export function useBlog(slug?: string) {
+  return useQuery({
+    queryKey: queryKeys.blog(slug!),
+    queryFn: async () => {
+      if (!slug) throw new Error("No slug provided");
+      const d = await getBlog(slug);
+      if (!d) throw new Error("Article not found");
+      return d;
+    },
+    enabled: !!slug,
+    staleTime: 5 * 60 * 1000, // 5 min
+    gcTime: 10 * 60 * 1000,
+    placeholderData: keepPreviousData,
+  });
+}
+

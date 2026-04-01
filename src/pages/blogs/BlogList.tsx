@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useMemo, useRef } from "react";
+import { useBlogTopics, useInfiniteBlogs } from "@/hooks/use-api-queries";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import { Clock, ArrowRight, Tag, Bookmark, Search, X } from "lucide-react";
-import { getBlogs, getTopics, type Blog, type Topic } from "@/api/blogs";
+import { type Blog, type Topic } from "@/api/blogs";
 
 /* ─── helpers ─────────────────────────────────────────────── */
 function fmt(d?: string) {
@@ -200,68 +201,38 @@ function BlogCard({ blog, index = 0 }: { blog: Blog; index?: number }) {
 
 /* ─── main page ───────────────────────────────────────────── */
 export default function BlogList() {
-    const [blogs, setBlogs] = useState<Blog[]>([]);
-    const [topics, setTopics] = useState<Topic[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [loadingMore, setLoadingMore] = useState(false);
-    const [error, setError] = useState<string | null>(null);
     const [selectedTopic, setSelectedTopic] = useState("All");
     const [searchOpen, setSearchOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const [debouncedSearch, setDebouncedSearch] = useState("");
-    const [page, setPage] = useState(1);
-    const [hasMore, setHasMore] = useState(false);
     const LIMIT = 12;
 
     // Debounce search
     useEffect(() => {
         const handler = setTimeout(() => {
             setDebouncedSearch(searchQuery);
-            setPage(1); // Reset to page 1 on new search
         }, 400);
         return () => clearTimeout(handler);
     }, [searchQuery]);
 
-    // Reset page on topic change
-    useEffect(() => {
-        setPage(1);
-    }, [selectedTopic]);
+    // Query for Topics
+    const { data: topics = [] } = useBlogTopics();
 
-    // Initial load topics
-    useEffect(() => {
-        getTopics().then((res) => setTopics(res || [])).catch(() => { });
-    }, []);
+    // Infinite Query for Blogs
+    const {
+        data,
+        fetchNextPage,
+        hasNextPage,
+        isFetchingNextPage,
+        status,
+        error: queryError
+    } = useInfiniteBlogs(selectedTopic === "All" ? undefined : selectedTopic, debouncedSearch, LIMIT);
 
-    // Load blogs based on filters and page
-    useEffect(() => {
-        async function load() {
-            try {
-                if (page === 1) setLoading(true);
-                else setLoadingMore(true);
-
-                const res = await getBlogs({
-                    page,
-                    limit: LIMIT,
-                    topic: selectedTopic,
-                    search: debouncedSearch
-                });
-
-                if (page === 1) {
-                    setBlogs(res.data || []);
-                } else {
-                    setBlogs((prev) => [...prev, ...(res.data || [])]);
-                }
-
-                setHasMore(res.meta && res.meta.page < res.meta.totalPages);
-            } catch (err: any) {
-                if (page === 1) setError(err?.message || "Failed to load");
-            } finally {
-                setLoading(false);
-                setLoadingMore(false);
-            }
-        }
-        load();
-    }, [page, selectedTopic, debouncedSearch]);
+    const blogs = useMemo(() => data ? data.pages.flatMap((page) => page.data) : [], [data]);
+    const loading = status === "pending";
+    const loadingMore = isFetchingNextPage;
+    const error = queryError ? queryError.message : null;
+    const hasMore = !!hasNextPage;
 
     // Hero shows on "All" tab with no search when articles exist
     const showHero = useMemo(() => blogs.length > 0 && selectedTopic === "All" && !debouncedSearch, [blogs.length, selectedTopic, debouncedSearch]);
@@ -430,7 +401,7 @@ export default function BlogList() {
                         {hasMore && (
                             <div className="mt-14 flex justify-center">
                                 <button
-                                    onClick={() => setPage((p) => p + 1)}
+                                    onClick={() => fetchNextPage()}
                                     disabled={loadingMore}
                                     className="px-8 py-3 rounded-full bg-white/5 border border-white/10 text-white font-semibold hover:bg-white/10 hover:border-white/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                                 >
