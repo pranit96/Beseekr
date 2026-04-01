@@ -401,13 +401,13 @@ const Auth = () => {
                           bg-white/95 text-slate-900 dark:bg-card/90 dark:text-foreground">
           <div className="text-center mb-6">
             <div className="mb-4">
-              <h2 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+              <h2 >
                 <Logo />
               </h2>
             </div>
-            <h1 className="text-lg sm:text-xl font-semibold mb-2 text-slate-700 dark:text-foreground">
-              Start discovering validated opportunities
-            </h1>
+            <small className="text-lg sm:text-xl font-semibold mb-2 text-slate-700 dark:text-foreground">
+              Start discovering validated opportunities.
+            </small>
           </div>
 
           {verificationPending ? (
