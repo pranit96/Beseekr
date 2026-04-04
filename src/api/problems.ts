@@ -548,9 +548,7 @@ export async function rateProblem(
  * Remove rating from a problem
  * Requires authentication
  */
-export async function removeRating(
-  problemId: string,
-): Promise<{
+export async function removeRating(problemId: string): Promise<{
   success: boolean;
   upvotes: number;
   downvotes: number;
