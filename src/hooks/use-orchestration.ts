@@ -17,6 +17,8 @@ interface OrchestrationPayload {
 interface OrchestrationCallbacks {
   onAck?: (data: any) => void;
   onToken?: (agentId: string, token: string) => void;
+  onAgentStart?: (agentId: string, agentName: string) => void;
+  onAgentToken?: (agentId: string, token: string) => void;
   onAgentDone?: (agentId: string, usage: any) => void;
   onAgentError?: (agentId: string, error: any) => void;
   onDone?: (data: any) => void;
@@ -102,6 +104,12 @@ const useOrchestration = () => {
             },
             onToken: (agentId, token, raw) => {
               callbacks.onToken?.(agentId, token);
+            },
+            onAgentStart: (agentId, agentName, raw) => {
+              callbacks.onAgentStart?.(agentId, agentName);
+            },
+            onAgentToken: (agentId, token, raw) => {
+              callbacks.onAgentToken?.(agentId, token);
             },
             onAgentDone: (agentId, usage, raw) => {
               callbacks.onAgentDone?.(agentId, usage);

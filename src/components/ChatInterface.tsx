@@ -323,24 +323,23 @@ export const ChatInterface: React.FC<{
         timestamp: new Date(),
         isFromCache: false,
       };
-      const agentResponsesInitial: AgentResponse[] = finalAgents.map((a) => ({
-        agentId: a.id,
-        agentName: a.name,
-        content: "",
-        timestamp: new Date(),
-        status: "pending",
-        metadata: { domain: a.domain },
-      }));
       const agentMessageId = `msg-${Date.now()}-agents`;
       const agentMessage: ChatMessage = {
         id: agentMessageId,
         type: "agent",
         content: "",
         timestamp: new Date(),
-        agentResponses: agentResponsesInitial,
+        agentResponses: [],
+        agentTraces: finalAgents.map((a) => ({
+          agentId: a.id,
+          agentName: a.name,
+          domain: a.domain,
+          status: "pending",
+        })),
         executionMode,
         markdownOutput: "",
         finalOutput: "",
+        workflowStatus: "executing",
         isFromCache: false,
       };
 
@@ -375,40 +374,45 @@ export const ChatInterface: React.FC<{
 
       await execute(payload, {
         onAck: () => {},
-        onToken: (agentId, token) =>
+        onToken: (agentId, token) => {
+          if (agentId === "synthesis") {
+            setMessages((prev) =>
+              prev.map((m) => {
+                if (m.id !== agentMessageId) return m;
+                return {
+                  ...m,
+                  content: (m.content || "") + token,
+                  workflowStatus: "synthesizing",
+                } as ChatMessage;
+              }),
+            );
+          }
+        },
+        onAgentStart: (agentId, agentName) => {
           setMessages((prev) =>
             prev.map((m) => {
               if (m.id !== agentMessageId) return m;
               return {
                 ...m,
-                agentResponses:
-                  m.agentResponses?.map((ar) =>
-                    ar.agentId !== agentId
-                      ? ar
-                      : {
-                          ...ar,
-                          content: (ar.content || "") + token,
-                          status: "pending",
-                        },
+                agentTraces:
+                  m.agentTraces?.map((at) =>
+                    at.agentId === agentId ? { ...at, status: "running" } : at,
                   ) || [],
               } as ChatMessage;
             }),
-          ),
+          );
+        },
         onAgentDone: (agentId, usage) =>
           setMessages((prev) =>
             prev.map((m) => {
               if (m.id !== agentMessageId) return m;
               return {
                 ...m,
-                agentResponses:
-                  m.agentResponses?.map((ar) =>
-                    ar.agentId === agentId
-                      ? {
-                          ...ar,
-                          status: "success",
-                          metadata: { ...ar.metadata, usage },
-                        }
-                      : ar,
+                agentTraces:
+                  m.agentTraces?.map((at) =>
+                    at.agentId === agentId
+                      ? { ...at, status: "success", tokens: usage?.total_tokens || 0 }
+                      : at,
                   ) || [],
               } as ChatMessage;
             }),
@@ -419,15 +423,11 @@ export const ChatInterface: React.FC<{
               if (m.id !== agentMessageId) return m;
               return {
                 ...m,
-                agentResponses:
-                  m.agentResponses?.map((ar) =>
-                    ar.agentId === agentId
-                      ? {
-                          ...ar,
-                          status: "error",
-                          content: String(errorMsg || "Error"),
-                        }
-                      : ar,
+                agentTraces:
+                  m.agentTraces?.map((at) =>
+                    at.agentId === agentId
+                      ? { ...at, status: "error", error: String(errorMsg || "Error") }
+                      : at,
                   ) || [],
               } as ChatMessage;
             }),
@@ -473,13 +473,10 @@ export const ChatInterface: React.FC<{
           setMessages((prev) =>
             prev.map((m) => {
               if (m.id !== agentMessageId) return m;
-              const updatedResponses =
-                m.agentResponses?.map((ar) =>
-                  ar.status === "pending" ? { ...ar, status: "success" } : ar,
-                ) || [];
               return {
                 ...m,
-                agentResponses: updatedResponses,
+                workflowStatus: "completed",
+                agentTraces: m.agentTraces?.map(at => at.status === "pending" || at.status === "running" ? { ...at, status: "success" } : at),
                 markdownOutput: doneData.final_markdown || m.markdownOutput,
                 finalOutput: doneData.final_markdown || m.finalOutput,
                 content: doneData.final_markdown || m.content,
@@ -497,15 +494,16 @@ export const ChatInterface: React.FC<{
               if (m.id !== agentMessageId) return m;
               return {
                 ...m,
-                agentResponses:
-                  m.agentResponses?.map((ar) =>
-                    ar.status === "pending"
+                workflowStatus: "error",
+                agentTraces:
+                  m.agentTraces?.map((at) =>
+                    at.status === "pending" || at.status === "running"
                       ? {
-                          ...ar,
+                          ...at,
                           status: "error",
-                          content: err?.error || "Failed",
+                          error: err?.error || "Failed",
                         }
-                      : ar,
+                      : at,
                   ) || [],
               } as ChatMessage;
             }),

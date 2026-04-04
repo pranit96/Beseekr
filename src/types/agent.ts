@@ -55,7 +55,19 @@ export interface AgentResponse {
   };
 }
 
-export type ExecutionMode = "sequential" | "parallel";
+export type ExecutionMode = "sequential" | "parallel" | "autonomous";
+
+export interface AgentTrace {
+  agentId?: string;
+  agentName: string;
+  agentRole?: string;
+  domain?: string;
+  status: "pending" | "running" | "success" | "error";
+  toolsUsed?: string[];
+  tokens?: number;
+  timeMs?: number;
+  error?: string;
+}
 
 export interface ChatMessage {
   id: string;
@@ -68,6 +80,12 @@ export interface ChatMessage {
   finalOutput?: string;
   isFromCache?: boolean;
   perAgentSummary?: PerAgentSummary[];
+  
+  // New unified orchestration fields
+  workflowStatus?: "planning" | "creating_agents" | "executing" | "synthesizing" | "completed" | "error" | "cancelled";
+  workflowMessage?: string;
+  agentTraces?: AgentTrace[];
+  synthesisOutput?: string;
 }
 
 // Per-agent execution summary returned in orchestration:done

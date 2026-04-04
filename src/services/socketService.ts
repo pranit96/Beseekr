@@ -13,6 +13,8 @@ interface ConnectionStatusData {
 interface OrchestrationCallbacks {
   onAck?: (data: any) => void;
   onToken?: (agentId: string, token: string, raw: any) => void;
+  onAgentStart?: (agentId: string, agentName: string, raw: any) => void;
+  onAgentToken?: (agentId: string, token: string, raw: any) => void;
   onAgentDone?: (agentId: string, usage: any, raw: any) => void;
   onAgentError?: (agentId: string, error: any, raw: any) => void;
   onDone?: (data: any) => void;
@@ -413,6 +415,20 @@ class SocketService {
       }
     };
 
+    const onAgentStart = (data: any) => {
+      if (data.requestId === requestId) {
+        callbacks.onAgentStart?.(data.agent_id, data.agent_name, data);
+      }
+    };
+
+    const onAgentToken = (data: any) => {
+      if (data.requestId === requestId) {
+        if (data.agent_id && typeof data.token === "string") {
+          callbacks.onAgentToken?.(data.agent_id, data.token, data);
+        }
+      }
+    };
+
     const onAgentDone = (data: any) => {
       if (data.requestId === requestId) {
         callbacks.onAgentDone?.(data.agent_id, data.usage, data);
@@ -471,6 +487,8 @@ class SocketService {
     const cleanup = () => {
       this.socket?.off("orchestration:ack", onAck);
       this.socket?.off("orchestration:token", onToken);
+      this.socket?.off("orchestration:agent_start", onAgentStart);
+      this.socket?.off("orchestration:agent_token", onAgentToken);
       this.socket?.off("orchestration:agent_done", onAgentDone);
       this.socket?.off("orchestration:agent_error", onAgentError);
       this.socket?.off("orchestration:done", onDone);
@@ -500,6 +518,8 @@ class SocketService {
     // Attach listeners
     this.socket.on("orchestration:ack", onAck);
     this.socket.on("orchestration:token", onToken);
+    this.socket.on("orchestration:agent_start", onAgentStart);
+    this.socket.on("orchestration:agent_token", onAgentToken);
     this.socket.on("orchestration:agent_done", onAgentDone);
     this.socket.on("orchestration:agent_error", onAgentError);
     this.socket.on("orchestration:done", onDone);
