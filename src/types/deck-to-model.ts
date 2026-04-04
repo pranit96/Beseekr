@@ -6,7 +6,7 @@ export interface DeckOrder {
   industry: string | null;
   stage: string | null;
   additional_notes: string | null;
-  status: 'pending' | 'processing' | 'delivered' | 'failed' | 'expired';
+  status: "pending" | "processing" | "delivered" | "failed" | "expired";
   pdf_filename: string;
   pdf_file_size: number;
   excel_filename: string | null;
@@ -62,6 +62,23 @@ export interface UserMetrics {
   averageProcessingTime: number;
 }
 
-export type OrderStatus = 'pending' | 'processing' | 'delivered' | 'failed' | 'expired';
-export type IndustryType = 'SaaS' | 'FinTech' | 'E-commerce' | 'Healthcare' | 'Other';
-export type StageType = 'Pre-seed' | 'Seed' | 'Series A' | 'Series B' | 'Series C' | 'Growth' | 'Other';
+export type OrderStatus =
+  | "pending"
+  | "processing"
+  | "delivered"
+  | "failed"
+  | "expired";
+export type IndustryType =
+  | "SaaS"
+  | "FinTech"
+  | "E-commerce"
+  | "Healthcare"
+  | "Other";
+export type StageType =
+  | "Pre-seed"
+  | "Seed"
+  | "Series A"
+  | "Series B"
+  | "Series C"
+  | "Growth"
+  | "Other";

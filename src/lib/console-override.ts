@@ -13,7 +13,7 @@ const originalConsole = {
 };
 
 // No-op function for production
-const noop = () => { };
+const noop = () => {};
 
 // DISABLED: Override console methods in production
 // Console logs are now handled by the logging service

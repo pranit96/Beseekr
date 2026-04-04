@@ -27,10 +27,10 @@ class PerformanceBudget {
   check() {
     this.violations = [];
 
-    if (typeof window === 'undefined') return;
+    if (typeof window === "undefined") return;
 
     // Check Web Vitals
-    if ('PerformanceObserver' in window) {
+    if ("PerformanceObserver" in window) {
       this.checkFCP();
       this.checkLCP();
       this.checkFID();
@@ -42,16 +42,18 @@ class PerformanceBudget {
 
     // Report violations
     if (this.violations.length > 0) {
-      console.warn('Performance budget violations:', this.violations);
+      console.warn("Performance budget violations:", this.violations);
     }
 
     return this.violations;
   }
 
   private checkFCP() {
-    const entry = performance.getEntriesByName('first-contentful-paint')[0];
+    const entry = performance.getEntriesByName("first-contentful-paint")[0];
     if (entry && entry.startTime > this.budget.fcp) {
-      this.violations.push(`FCP: ${entry.startTime.toFixed(0)}ms > ${this.budget.fcp}ms`);
+      this.violations.push(
+        `FCP: ${entry.startTime.toFixed(0)}ms > ${this.budget.fcp}ms`,
+      );
     }
   }
 
@@ -60,10 +62,12 @@ class PerformanceBudget {
       const entries = list.getEntries();
       const lastEntry = entries[entries.length - 1] as any;
       if (lastEntry.renderTime > this.budget.lcp) {
-        this.violations.push(`LCP: ${lastEntry.renderTime.toFixed(0)}ms > ${this.budget.lcp}ms`);
+        this.violations.push(
+          `LCP: ${lastEntry.renderTime.toFixed(0)}ms > ${this.budget.lcp}ms`,
+        );
       }
     });
-    observer.observe({ entryTypes: ['largest-contentful-paint'] });
+    observer.observe({ entryTypes: ["largest-contentful-paint"] });
   }
 
   private checkFID() {
@@ -71,11 +75,13 @@ class PerformanceBudget {
       const entries = list.getEntries();
       entries.forEach((entry: any) => {
         if (entry.processingStart - entry.startTime > this.budget.fid) {
-          this.violations.push(`FID: ${(entry.processingStart - entry.startTime).toFixed(0)}ms > ${this.budget.fid}ms`);
+          this.violations.push(
+            `FID: ${(entry.processingStart - entry.startTime).toFixed(0)}ms > ${this.budget.fid}ms`,
+          );
         }
       });
     });
-    observer.observe({ entryTypes: ['first-input'] });
+    observer.observe({ entryTypes: ["first-input"] });
   }
 
   private checkCLS() {
@@ -87,18 +93,24 @@ class PerformanceBudget {
         }
       }
       if (clsValue > this.budget.cls) {
-        this.violations.push(`CLS: ${clsValue.toFixed(3)} > ${this.budget.cls}`);
+        this.violations.push(
+          `CLS: ${clsValue.toFixed(3)} > ${this.budget.cls}`,
+        );
       }
     });
-    observer.observe({ entryTypes: ['layout-shift'] });
+    observer.observe({ entryTypes: ["layout-shift"] });
   }
 
   private checkTTFB() {
-    const navTiming = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
+    const navTiming = performance.getEntriesByType(
+      "navigation",
+    )[0] as PerformanceNavigationTiming;
     if (navTiming) {
       const ttfb = navTiming.responseStart - navTiming.requestStart;
       if (ttfb > this.budget.ttfb) {
-        this.violations.push(`TTFB: ${ttfb.toFixed(0)}ms > ${this.budget.ttfb}ms`);
+        this.violations.push(
+          `TTFB: ${ttfb.toFixed(0)}ms > ${this.budget.ttfb}ms`,
+        );
       }
     }
   }

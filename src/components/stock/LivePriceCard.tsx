@@ -1,9 +1,9 @@
 // Live Price Card Component with Real-Time Updates
-import { useEffect, useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { TrendingUp, TrendingDown, Activity } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { useEffect, useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { TrendingUp, TrendingDown, Activity } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface LivePriceCardProps {
   symbol: string;
@@ -22,16 +22,18 @@ export function LivePriceCard({
   change,
   changePercent,
   volume,
-  onClick
+  onClick,
 }: LivePriceCardProps) {
-  const [priceAnimation, setPriceAnimation] = useState<'up' | 'down' | null>(null);
+  const [priceAnimation, setPriceAnimation] = useState<"up" | "down" | null>(
+    null,
+  );
   const [prevPrice, setPrevPrice] = useState(price);
 
   useEffect(() => {
     if (price !== prevPrice) {
-      setPriceAnimation(price > prevPrice ? 'up' : 'down');
+      setPriceAnimation(price > prevPrice ? "up" : "down");
       setPrevPrice(price);
-      
+
       const timer = setTimeout(() => setPriceAnimation(null), 500);
       return () => clearTimeout(timer);
     }
@@ -40,11 +42,11 @@ export function LivePriceCard({
   const isPositive = change >= 0;
 
   return (
-    <Card 
+    <Card
       className={cn(
         "cursor-pointer transition-all hover:shadow-lg",
-        priceAnimation === 'up' && "bg-green-500/5 border-green-500/20",
-        priceAnimation === 'down' && "bg-red-500/5 border-red-500/20"
+        priceAnimation === "up" && "bg-green-500/5 border-green-500/20",
+        priceAnimation === "down" && "bg-red-500/5 border-red-500/20",
       )}
       onClick={onClick}
     >
@@ -57,27 +59,39 @@ export function LivePriceCard({
             </div>
             {name && <p className="text-sm text-muted-foreground">{name}</p>}
           </div>
-          
-          <Badge variant={isPositive ? "default" : "destructive"} className="gap-1">
-            {isPositive ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+
+          <Badge
+            variant={isPositive ? "default" : "destructive"}
+            className="gap-1"
+          >
+            {isPositive ? (
+              <TrendingUp className="h-3 w-3" />
+            ) : (
+              <TrendingDown className="h-3 w-3" />
+            )}
             {changePercent.toFixed(2)}%
           </Badge>
         </div>
 
         <div className="mt-4 space-y-2">
           <div className="flex items-baseline gap-2">
-            <span className={cn(
-              "text-2xl font-bold transition-colors",
-              priceAnimation === 'up' && "text-green-500",
-              priceAnimation === 'down' && "text-red-500"
-            )}>
+            <span
+              className={cn(
+                "text-2xl font-bold transition-colors",
+                priceAnimation === "up" && "text-green-500",
+                priceAnimation === "down" && "text-red-500",
+              )}
+            >
               ₹{price.toFixed(2)}
             </span>
-            <span className={cn(
-              "text-sm font-medium",
-              isPositive ? "text-green-500" : "text-red-500"
-            )}>
-              {isPositive ? '+' : ''}{change.toFixed(2)}
+            <span
+              className={cn(
+                "text-sm font-medium",
+                isPositive ? "text-green-500" : "text-red-500",
+              )}
+            >
+              {isPositive ? "+" : ""}
+              {change.toFixed(2)}
             </span>
           </div>
 

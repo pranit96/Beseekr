@@ -1,9 +1,9 @@
 // Low Confidence Banner - Prompts user to provide supplemental data
-import React, { useState } from 'react';
-import { AlertTriangle, Upload, Edit3, X, TrendingUp } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { cn } from '@/lib/utils';
+import React, { useState } from "react";
+import { AlertTriangle, Upload, Edit3, X, TrendingUp } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 interface LowConfidenceKPI {
   kpi: string;
@@ -24,21 +24,24 @@ interface LowConfidenceBannerProps {
 
 const formatKPIName = (kpi: string): string => {
   const names: Record<string, string> = {
-    mrr: 'Monthly Recurring Revenue',
-    arr: 'Annual Recurring Revenue',
-    cac: 'Customer Acquisition Cost',
-    ltv: 'Lifetime Value',
-    customers: 'Total Customers',
-    churn_rate: 'Churn Rate',
-    conversion_rate: 'Conversion Rate'
+    mrr: "Monthly Recurring Revenue",
+    arr: "Annual Recurring Revenue",
+    cac: "Customer Acquisition Cost",
+    ltv: "Lifetime Value",
+    customers: "Total Customers",
+    churn_rate: "Churn Rate",
+    conversion_rate: "Conversion Rate",
   };
   return names[kpi] || kpi.toUpperCase();
 };
 
-const formatValue = (value: number | undefined, unit: string | undefined): string => {
-  if (value === undefined) return 'Not found';
-  if (unit === 'USD') return `$${value.toLocaleString()}`;
-  if (unit === 'percent') return `${(value * 100).toFixed(1)}%`;
+const formatValue = (
+  value: number | undefined,
+  unit: string | undefined,
+): string => {
+  if (value === undefined) return "Not found";
+  if (unit === "USD") return `$${value.toLocaleString()}`;
+  if (unit === "percent") return `${(value * 100).toFixed(1)}%`;
   return value.toLocaleString();
 };
 
@@ -47,7 +50,7 @@ export const LowConfidenceBanner: React.FC<LowConfidenceBannerProps> = ({
   lowConfidenceKPIs,
   onUploadFiles,
   onEnterValues,
-  onDismiss
+  onDismiss,
 }) => {
   const [isExpanded, setIsExpanded] = useState(true);
 
@@ -83,11 +86,13 @@ export const LowConfidenceBanner: React.FC<LowConfidenceBannerProps> = ({
                 <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
                   Low Confidence Detected
                   <span className="text-xs font-normal text-muted-foreground">
-                    ({lowConfidenceKPIs.length} metric{lowConfidenceKPIs.length > 1 ? 's' : ''})
+                    ({lowConfidenceKPIs.length} metric
+                    {lowConfidenceKPIs.length > 1 ? "s" : ""})
                   </span>
                 </h3>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Providing accurate data will significantly improve analysis quality
+                  Providing accurate data will significantly improve analysis
+                  quality
                 </p>
               </div>
               <Button
@@ -125,7 +130,10 @@ export const LowConfidenceBanner: React.FC<LowConfidenceBannerProps> = ({
                       </p>
                     </div>
                     <div className="w-12 h-12 flex-shrink-0">
-                      <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
+                      <svg
+                        className="w-full h-full -rotate-90"
+                        viewBox="0 0 36 36"
+                      >
                         <circle
                           cx="18"
                           cy="18"
@@ -183,7 +191,8 @@ export const LowConfidenceBanner: React.FC<LowConfidenceBannerProps> = ({
             <div className="mt-3 pt-3 border-t border-border/50">
               <p className="text-xs text-muted-foreground flex items-center gap-1.5">
                 <TrendingUp className="w-3.5 h-3.5" />
-                Providing accurate data can improve analysis quality by up to 40%
+                Providing accurate data can improve analysis quality by up to
+                40%
               </p>
             </div>
           </div>

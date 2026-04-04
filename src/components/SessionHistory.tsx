@@ -1,10 +1,10 @@
 // src/components/SessionHistory.tsx
-import { useEffect } from 'react';
-import { Card } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
-import { Clock, FileText, Brain } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
-import { useSessions } from '@/hooks/use-api-queries';
+import { useEffect } from "react";
+import { Card } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
+import { Clock, FileText, Brain } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
+import { useSessions } from "@/hooks/use-api-queries";
 
 // Session summary from list endpoint (doesn't include full content)
 export interface SessionSummary {
@@ -50,31 +50,35 @@ interface SessionHistoryProps {
 
 export const SessionHistory = ({
   onSelectSession,
-  currentSessionId
+  currentSessionId,
 }: SessionHistoryProps) => {
   const { toast } = useToast();
 
   // React Query hook
-  const { data: sessionsResponse, isLoading: loading, error } = useSessions({ limit: 10 });
+  const {
+    data: sessionsResponse,
+    isLoading: loading,
+    error,
+  } = useSessions({ limit: 10 });
   const sessions = sessionsResponse?.data?.sessions || [];
 
   // Show error toast if query fails (only once)
   useEffect(() => {
     if (error) {
       toast({
-        title: 'Error',
-        description: 'Failed to load session history',
-        variant: 'destructive'
+        title: "Error",
+        description: "Failed to load session history",
+        variant: "destructive",
       });
     }
   }, [error, toast]);
 
   const handleSelect = (session: SessionSummary) => {
-    if (session.status !== 'completed') {
+    if (session.status !== "completed") {
       toast({
-        title: 'Session not ready',
-        description: 'This session is still processing or failed',
-        variant: 'destructive'
+        title: "Session not ready",
+        description: "This session is still processing or failed",
+        variant: "destructive",
       });
       return;
     }
@@ -100,7 +104,7 @@ export const SessionHistory = ({
         </h3>
         {sessions.length > 0 && (
           <span className="text-xs text-muted-foreground">
-            {sessions.length} session{sessions.length !== 1 ? 's' : ''}
+            {sessions.length} session{sessions.length !== 1 ? "s" : ""}
           </span>
         )}
       </div>
@@ -114,23 +118,32 @@ export const SessionHistory = ({
         </div>
       ) : (
         <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1 custom-scrollbar">
-          {sessions.map(session => (
+          {sessions.map((session) => (
             <button
               key={session.id}
-              className={`w-full text-left p-3 rounded-lg border transition-all ${currentSessionId === session.id
-                ? 'border-primary bg-primary/10 shadow-sm'
-                : 'border-border hover:bg-muted/50 hover:border-border/80'
-                }`}
+              className={`w-full text-left p-3 rounded-lg border transition-all ${
+                currentSessionId === session.id
+                  ? "border-primary bg-primary/10 shadow-sm"
+                  : "border-border hover:bg-muted/50 hover:border-border/80"
+              }`}
               onClick={() => handleSelect(session)}
             >
               <div className="flex items-start gap-3">
                 <div className="mt-1 flex-shrink-0">
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${session.status === 'completed'
-                    ? 'bg-success/10'
-                    : 'bg-muted'
-                    }`}>
-                    <Brain className={`w-4 h-4 ${session.status === 'completed' ? 'text-success' : 'text-muted-foreground'
-                      }`} />
+                  <div
+                    className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                      session.status === "completed"
+                        ? "bg-success/10"
+                        : "bg-muted"
+                    }`}
+                  >
+                    <Brain
+                      className={`w-4 h-4 ${
+                        session.status === "completed"
+                          ? "text-success"
+                          : "text-muted-foreground"
+                      }`}
+                    />
                   </div>
                 </div>
                 <div className="flex-1 min-w-0">
@@ -140,11 +153,17 @@ export const SessionHistory = ({
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <span className="flex items-center gap-1">
                       <Clock className="w-3 h-3" />
-                      {formatDistanceToNow(new Date(session.created_at), { addSuffix: true })}
+                      {formatDistanceToNow(new Date(session.created_at), {
+                        addSuffix: true,
+                      })}
                     </span>
                     {session.execution_metrics && (
                       <span className="flex items-center gap-1">
-                        • {Math.round(session.execution_metrics.execution_time_ms / 1000)}s
+                        •{" "}
+                        {Math.round(
+                          session.execution_metrics.execution_time_ms / 1000,
+                        )}
+                        s
                       </span>
                     )}
                   </div>

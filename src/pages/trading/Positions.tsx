@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react';
-import { tradingApi, isTradingError } from '@/api/trading';
-import { useTradingWebSocket } from '@/hooks/useTradingWebSocket';
-import { AlertCircle, Briefcase, TrendingUp, TrendingDown } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import type { Position } from '@/types/trading';
+import { useEffect, useState } from "react";
+import { tradingApi, isTradingError } from "@/api/trading";
+import { useTradingWebSocket } from "@/hooks/useTradingWebSocket";
+import { AlertCircle, Briefcase, TrendingUp, TrendingDown } from "lucide-react";
+import { cn } from "@/lib/utils";
+import type { Position } from "@/types/trading";
 
 export default function Positions() {
   const { realtimePnL, subscribeToPnL } = useTradingWebSocket();
@@ -23,10 +23,10 @@ export default function Positions() {
       const data = await tradingApi.getOpenPositions();
       setPositions(data);
     } catch (err: any) {
-      if (isTradingError(err, 'ZERODHA_NOT_CONNECTED')) {
-        setError('Zerodha not connected. Please authenticate via Telegram.');
+      if (isTradingError(err, "ZERODHA_NOT_CONNECTED")) {
+        setError("Zerodha not connected. Please authenticate via Telegram.");
       } else {
-        setError(err.message || 'Failed to load positions');
+        setError(err.message || "Failed to load positions");
       }
     } finally {
       setLoading(false);
@@ -71,10 +71,14 @@ export default function Positions() {
             <>
               <div className="text-right">
                 <div className="text-sm text-slate-400">Total P&L</div>
-                <div className={cn(
-                  'text-xl font-bold',
-                  realtimePnL.total_pnl >= 0 ? 'text-green-500' : 'text-red-500'
-                )}>
+                <div
+                  className={cn(
+                    "text-xl font-bold",
+                    realtimePnL.total_pnl >= 0
+                      ? "text-green-500"
+                      : "text-red-500",
+                  )}
+                >
                   ₹{realtimePnL.total_pnl.toFixed(2)}
                 </div>
               </div>
@@ -93,7 +97,9 @@ export default function Positions() {
         <div className="bg-slate-900 rounded-lg border border-slate-800 p-12 text-center">
           <Briefcase className="h-16 w-16 text-slate-600 mx-auto mb-4" />
           <div className="text-slate-400 mb-2">No open positions</div>
-          <div className="text-sm text-slate-500">Your active trades will appear here</div>
+          <div className="text-sm text-slate-500">
+            Your active trades will appear here
+          </div>
         </div>
       ) : (
         <div className="space-y-4">
@@ -103,45 +109,76 @@ export default function Positions() {
             const isProfit = pnl >= 0;
 
             return (
-              <div key={position.id} className="bg-slate-900 rounded-lg border border-slate-800 p-6">
+              <div
+                key={position.id}
+                className="bg-slate-900 rounded-lg border border-slate-800 p-6"
+              >
                 <div className="flex items-start justify-between mb-4">
                   <div>
-                    <div className="text-2xl font-bold text-white">{position.stocks.symbol}</div>
-                    <div className="text-sm text-slate-400">{position.stocks.name}</div>
+                    <div className="text-2xl font-bold text-white">
+                      {position.stocks.symbol}
+                    </div>
+                    <div className="text-sm text-slate-400">
+                      {position.stocks.name}
+                    </div>
                   </div>
-                  <div className={cn(
-                    'text-right',
-                    isProfit ? 'text-green-500' : 'text-red-500'
-                  )}>
+                  <div
+                    className={cn(
+                      "text-right",
+                      isProfit ? "text-green-500" : "text-red-500",
+                    )}
+                  >
                     <div className="flex items-center gap-2 text-2xl font-bold">
-                      {isProfit ? <TrendingUp className="h-6 w-6" /> : <TrendingDown className="h-6 w-6" />}
+                      {isProfit ? (
+                        <TrendingUp className="h-6 w-6" />
+                      ) : (
+                        <TrendingDown className="h-6 w-6" />
+                      )}
                       ₹{pnl.toFixed(2)}
                     </div>
                     <div className="text-lg font-medium">
-                      {pnlPercent >= 0 ? '+' : ''}{pnlPercent.toFixed(2)}%
+                      {pnlPercent >= 0 ? "+" : ""}
+                      {pnlPercent.toFixed(2)}%
                     </div>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                   <div>
-                    <div className="text-sm text-slate-400 mb-1">Entry Price</div>
-                    <div className="text-lg font-bold text-white">₹{position.entry_price?.toFixed(2) || '0.00'}</div>
+                    <div className="text-sm text-slate-400 mb-1">
+                      Entry Price
+                    </div>
+                    <div className="text-lg font-bold text-white">
+                      ₹{position.entry_price?.toFixed(2) || "0.00"}
+                    </div>
                   </div>
                   <div>
-                    <div className="text-sm text-slate-400 mb-1">Current Price</div>
+                    <div className="text-sm text-slate-400 mb-1">
+                      Current Price
+                    </div>
                     <div className="text-lg font-bold text-white">
-                      ₹{(position.current_price || position.entry_price)?.toFixed(2) || '0.00'}
+                      ₹
+                      {(
+                        position.current_price || position.entry_price
+                      )?.toFixed(2) || "0.00"}
                     </div>
                   </div>
                   <div>
                     <div className="text-sm text-slate-400 mb-1">Shares</div>
-                    <div className="text-lg font-bold text-white">{position.shares || 0}</div>
+                    <div className="text-lg font-bold text-white">
+                      {position.shares || 0}
+                    </div>
                   </div>
                   <div>
-                    <div className="text-sm text-slate-400 mb-1">Position Value</div>
+                    <div className="text-sm text-slate-400 mb-1">
+                      Position Value
+                    </div>
                     <div className="text-lg font-bold text-white">
-                      ₹{(((position.current_price || position.entry_price) || 0) * (position.shares || 0)).toFixed(2)}
+                      ₹
+                      {(
+                        (position.current_price || position.entry_price || 0) *
+                        (position.shares || 0)
+                      ).toFixed(2)}
                     </div>
                   </div>
                 </div>

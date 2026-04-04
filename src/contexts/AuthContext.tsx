@@ -1,12 +1,20 @@
 // src/contexts/AuthContext.tsx - COMPLETE FILE WITH FIXES
-import { createContext, useContext, useState, useEffect, ReactNode, useCallback, useRef } from 'react';
-import { apiClient } from '@/lib/api';
-import { useToast, toast } from '@/hooks/use-toast';
-import { useNavigate } from 'react-router-dom';
-import socketService from '@/services/socketService';
-import { createLogger } from '@/services/logging';
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+  useCallback,
+  useRef,
+} from "react";
+import { apiClient } from "@/lib/api";
+import { useToast, toast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
+import socketService from "@/services/socketService";
+import { createLogger } from "@/services/logging";
 
-const logger = createLogger('AuthContext');
+const logger = createLogger("AuthContext");
 
 interface User {
   id: string;
@@ -66,14 +74,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }, 500);
     };
 
-    const events = ['mousedown', 'keydown', 'scroll', 'touchstart', 'click', 'mousemove'];
-    events.forEach(event => {
+    const events = [
+      "mousedown",
+      "keydown",
+      "scroll",
+      "touchstart",
+      "click",
+      "mousemove",
+    ];
+    events.forEach((event) => {
       window.addEventListener(event, updateActivity, { passive: true });
     });
 
     return () => {
       clearTimeout(debounceTimer);
-      events.forEach(event => {
+      events.forEach((event) => {
         window.removeEventListener(event, updateActivity);
       });
     };
@@ -81,7 +96,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // DEFINE handleAuthError FIRST (before it's used in other callbacks)
   const handleAuthError = useCallback(() => {
-    logger.info('Handling auth error - clearing all state and caches');
+    logger.info("Handling auth error - clearing all state and caches");
 
     // Clear API client cache and state
     apiClient.clearAllState();
@@ -90,8 +105,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (socketService.isConnected()) socketService.disconnect();
 
     // Clear intervals
-    if (sessionCheckIntervalRef.current) clearInterval(sessionCheckIntervalRef.current);
-    if (tokenRefreshIntervalRef.current) clearInterval(tokenRefreshIntervalRef.current);
+    if (sessionCheckIntervalRef.current)
+      clearInterval(sessionCheckIntervalRef.current);
+    if (tokenRefreshIntervalRef.current)
+      clearInterval(tokenRefreshIntervalRef.current);
 
     // Clear local state
     setUser(null);
@@ -99,33 +116,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     refreshingRef.current = false;
 
     // Clear localStorage
-    localStorage.setItem('auth_logout', Date.now().toString());
-    setTimeout(() => localStorage.removeItem('auth_logout'), 1000);
+    localStorage.setItem("auth_logout", Date.now().toString());
+    setTimeout(() => localStorage.removeItem("auth_logout"), 1000);
 
     // Dashboard routes are PUBLIC - don't redirect to auth
     // Only redirect for truly protected routes like /chat, /profile, etc.
     const currentPath = window.location.pathname;
     const isPublicPath =
-      currentPath === '/' ||
-      currentPath === '/auth' ||
-      currentPath.startsWith('/auth/') || // OAuth callbacks like /auth/callback
-      currentPath === '/privacy' ||
-      currentPath === '/contact' ||
-      currentPath.startsWith('/dashboard') ||
-      currentPath.startsWith('/pricing') ||
-      currentPath.startsWith('/payment') ||
-      currentPath.startsWith('/blog');
+      currentPath === "/" ||
+      currentPath === "/auth" ||
+      currentPath.startsWith("/auth/") || // OAuth callbacks like /auth/callback
+      currentPath === "/privacy" ||
+      currentPath === "/contact" ||
+      currentPath.startsWith("/dashboard") ||
+      currentPath.startsWith("/pricing") ||
+      currentPath.startsWith("/payment") ||
+      currentPath.startsWith("/blog");
 
     // Only redirect to auth for protected routes
     if (!isPublicPath) {
-      window.location.href = '/auth';
+      window.location.href = "/auth";
 
       if (!authErrorShownRef.current) {
         authErrorShownRef.current = true;
         toast({
-          title: 'Session expired',
-          description: 'Please log in again.',
-          variant: 'destructive',
+          title: "Session expired",
+          description: "Please log in again.",
+          variant: "destructive",
         });
       }
     }
@@ -139,59 +156,76 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [user]);
 
   // ENHANCED: Refresh authentication state with retry logic
-  const refreshAuth = useCallback(async (silent: boolean = false, retries: number = 3) => {
-    if (refreshingRef.current) {
-      logger.debug('Refresh already in progress, skipping');
-      return;
-    }
+  const refreshAuth = useCallback(
+    async (silent: boolean = false, retries: number = 3) => {
+      if (refreshingRef.current) {
+        logger.debug("Refresh already in progress, skipping");
+        return;
+      }
 
-    refreshingRef.current = true;
+      refreshingRef.current = true;
 
-    try {
-      logger.info('Refreshing authentication state', { silent, retries });
-      const response = await apiClient.getCurrentUser();
+      try {
+        logger.info("Refreshing authentication state", { silent, retries });
+        const response = await apiClient.getCurrentUser();
 
-      if (response.success && response.data) {
-        setUser(response.data.user);
-        setCachedUser(response.data.user); // SAFARI FIX: Update cache so dashboard sees logged-in state
-        lastActivityRef.current = Date.now();
-        authErrorShownRef.current = false;
-        logger.info('Auth refresh successful', { userId: response.data.user.id });
-
-        if (!silent) {
-          toast({
-            title: 'Session refreshed',
-            description: 'Your session has been updated.',
-            duration: 2000,
+        if (response.success && response.data) {
+          setUser(response.data.user);
+          setCachedUser(response.data.user); // SAFARI FIX: Update cache so dashboard sees logged-in state
+          lastActivityRef.current = Date.now();
+          authErrorShownRef.current = false;
+          logger.info("Auth refresh successful", {
+            userId: response.data.user.id,
           });
+
+          if (!silent) {
+            toast({
+              title: "Session refreshed",
+              description: "Your session has been updated.",
+              duration: 2000,
+            });
+          }
+        } else {
+          throw new Error("Failed to refresh session");
         }
-      } else {
-        throw new Error('Failed to refresh session');
-      }
-    } catch (error: any) {
-      logger.error('Session refresh failed', { error: error.message, retries });
+      } catch (error: any) {
+        logger.error("Session refresh failed", {
+          error: error.message,
+          retries,
+        });
 
-      // Retry logic for network errors
-      if (retries > 0 && !error.message?.includes('401') && !error.message?.includes('Unauthorized')) {
-        logger.info('Retrying refresh', { retriesLeft: retries });
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        // Retry logic for network errors
+        if (
+          retries > 0 &&
+          !error.message?.includes("401") &&
+          !error.message?.includes("Unauthorized")
+        ) {
+          logger.info("Retrying refresh", { retriesLeft: retries });
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+          refreshingRef.current = false;
+          return refreshAuth(silent, retries - 1);
+        }
+
+        if (
+          error.message?.includes("401") ||
+          error.message?.includes("Unauthorized")
+        ) {
+          handleAuthError();
+        }
+      } finally {
         refreshingRef.current = false;
-        return refreshAuth(silent, retries - 1);
       }
-
-      if (error.message?.includes('401') || error.message?.includes('Unauthorized')) {
-        handleAuthError();
-      }
-    } finally {
-      refreshingRef.current = false;
-    }
-  }, [handleAuthError]);
+    },
+    [handleAuthError],
+  );
 
   // ENHANCED: Proactive session maintenance
   useEffect(() => {
     if (!user) {
-      if (sessionCheckIntervalRef.current) clearInterval(sessionCheckIntervalRef.current);
-      if (tokenRefreshIntervalRef.current) clearInterval(tokenRefreshIntervalRef.current);
+      if (sessionCheckIntervalRef.current)
+        clearInterval(sessionCheckIntervalRef.current);
+      if (tokenRefreshIntervalRef.current)
+        clearInterval(tokenRefreshIntervalRef.current);
       return;
     }
 
@@ -200,13 +234,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const inactiveTime = Date.now() - lastActivityRef.current;
 
       if (inactiveTime > ACTIVITY_TIMEOUT) {
-        logger.warn('Session expired due to inactivity', { inactiveTime });
+        logger.warn("Session expired due to inactivity", { inactiveTime });
         if (!authErrorShownRef.current) {
           authErrorShownRef.current = true;
           handleAuthError();
         }
       } else if (inactiveTime > SESSION_CHECK_INTERVAL) {
-        logger.debug('Proactive session check after inactivity', { inactiveTime });
+        logger.debug("Proactive session check after inactivity", {
+          inactiveTime,
+        });
         refreshAuth(true);
       }
     }, SESSION_CHECK_INTERVAL);
@@ -214,29 +250,34 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Proactive token refresh
     tokenRefreshIntervalRef.current = setInterval(() => {
       if (isSessionValid()) {
-        logger.debug('Proactive token refresh');
+        logger.debug("Proactive token refresh");
         refreshAuth(true);
       }
     }, TOKEN_REFRESH_INTERVAL);
 
     return () => {
-      if (sessionCheckIntervalRef.current) clearInterval(sessionCheckIntervalRef.current);
-      if (tokenRefreshIntervalRef.current) clearInterval(tokenRefreshIntervalRef.current);
+      if (sessionCheckIntervalRef.current)
+        clearInterval(sessionCheckIntervalRef.current);
+      if (tokenRefreshIntervalRef.current)
+        clearInterval(tokenRefreshIntervalRef.current);
     };
   }, [user, refreshAuth, isSessionValid]);
 
   // Socket token refresh callback
-  const handleTokensRefreshed = useCallback((tokens: { access_token: string; refresh_token: string }) => {
-    logger.info('Socket tokens refreshed, updating auth state');
-    lastActivityRef.current = Date.now();
-    refreshAuth(true);
-  }, [refreshAuth]);
+  const handleTokensRefreshed = useCallback(
+    (tokens: { access_token: string; refresh_token: string }) => {
+      logger.info("Socket tokens refreshed, updating auth state");
+      lastActivityRef.current = Date.now();
+      refreshAuth(true);
+    },
+    [refreshAuth],
+  );
 
   // ENHANCED: Socket initialization with better error handling
   useEffect(() => {
     if (!user) {
       if (socketService.isConnected()) {
-        logger.info('User logged out, disconnecting socket');
+        logger.info("User logged out, disconnecting socket");
         socketService.disconnect();
         setSocketConnected(false);
       }
@@ -245,44 +286,43 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const initializeSocket = async () => {
       try {
-        logger.info('Initializing socket connection', { userId: user.id });
+        logger.info("Initializing socket connection", { userId: user.id });
 
         socketService.setTokenRefreshCallback(handleTokensRefreshed);
 
-        socketService.on('connection_status', (data: any) => {
+        socketService.on("connection_status", (data: any) => {
           setSocketConnected(data.connected);
 
           if (data.connected) {
-            logger.info('Socket connected', { socketId: data.socketId });
+            logger.info("Socket connected", { socketId: data.socketId });
             lastActivityRef.current = Date.now();
           } else {
-            logger.warn('Socket disconnected', { reason: data.reason });
+            logger.warn("Socket disconnected", { reason: data.reason });
           }
         });
 
-        socketService.on('auth_error', (data: any) => {
-          logger.error('Socket authentication failed', { error: data.error });
+        socketService.on("auth_error", (data: any) => {
+          logger.error("Socket authentication failed", { error: data.error });
           if (!authErrorShownRef.current) {
             authErrorShownRef.current = true;
             handleAuthError();
           }
         });
 
-        socketService.on('forced_disconnect', (data: any) => {
-          logger.warn('Socket force disconnected', { message: data.message });
+        socketService.on("forced_disconnect", (data: any) => {
+          logger.warn("Socket force disconnected", { message: data.message });
           toast({
-            title: 'Connection Lost',
-            description: data.message || 'Please refresh and log in again.',
-            variant: 'destructive',
+            title: "Connection Lost",
+            description: data.message || "Please refresh and log in again.",
+            variant: "destructive",
           });
           handleAuthError();
         });
 
         socketService.connect();
-        logger.info('Socket connection initiated');
-
+        logger.info("Socket connection initiated");
       } catch (error) {
-        logger.error('Socket initialization error', { error });
+        logger.error("Socket initialization error", { error });
       }
     };
 
@@ -298,8 +338,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // Initial auth check with retry
   // OPTIMISTIC AUTH: Cache user in localStorage for instant page loads
-  const CACHED_USER_KEY = 'beseekr_cached_user';
-  const CACHE_EXPIRY_KEY = 'beseekr_cache_expiry';
+  const CACHED_USER_KEY = "beseekr_cached_user";
+  const CACHE_EXPIRY_KEY = "beseekr_cache_expiry";
   const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
 
   const getCachedUser = (): User | null => {
@@ -335,19 +375,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const initAuth = async () => {
       try {
-        logger.info('Checking initial authentication state');
+        logger.info("Checking initial authentication state");
 
         // 1. OPTIMISTIC: Immediately show cached user (instant UI)
         const cachedUser = getCachedUser();
         if (cachedUser) {
-          logger.info('Using cached user for instant load', { userId: cachedUser.id });
+          logger.info("Using cached user for instant load", {
+            userId: cachedUser.id,
+          });
           setUser(cachedUser);
           setLoading(false); // Show content immediately
         }
 
         // Set up API client unauthorized handler
         apiClient.setUnauthorizedHandler(() => {
-          logger.warn('API client detected unauthorized request');
+          logger.warn("API client detected unauthorized request");
           if (!authErrorShownRef.current) {
             authErrorShownRef.current = true;
             handleAuthError();
@@ -358,7 +400,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         // 2. VERIFY: API check in background (updates if different)
         await fetchCurrentUser();
       } catch (error) {
-        logger.error('Initial auth check failed', { error });
+        logger.error("Initial auth check failed", { error });
         setLoading(false);
       }
     };
@@ -367,15 +409,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     // Multi-tab logout sync
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'auth_logout' && e.newValue) {
-        logger.info('Logout detected in another tab');
+      if (e.key === "auth_logout" && e.newValue) {
+        logger.info("Logout detected in another tab");
         handleAuthError();
         setCachedUser(null);
       }
     };
 
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
   }, [handleAuthError]);
 
   const fetchCurrentUser = async () => {
@@ -390,7 +432,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setCachedUser(null);
       }
     } catch (error) {
-      logger.error('Failed to fetch user', { error });
+      logger.error("Failed to fetch user", { error });
       setUser(null);
       setCachedUser(null);
     } finally {
@@ -407,20 +449,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         authErrorShownRef.current = false;
 
         toast({
-          title: 'Welcome back!',
-          description: 'Successfully logged in.',
+          title: "Welcome back!",
+          description: "Successfully logged in.",
         });
 
         // Redirect to intended page or default to home
-        const redirectUrl = sessionStorage.getItem('auth-redirect') || '/';
-        sessionStorage.removeItem('auth-redirect');
+        const redirectUrl = sessionStorage.getItem("auth-redirect") || "/";
+        sessionStorage.removeItem("auth-redirect");
         navigate(redirectUrl);
       }
     } catch (error: any) {
       toast({
-        title: 'Login failed',
-        description: error.message || 'Invalid credentials',
-        variant: 'destructive',
+        title: "Login failed",
+        description: error.message || "Invalid credentials",
+        variant: "destructive",
       });
       throw error;
     }
@@ -434,7 +476,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (response.data.user && !response.data.user.email_confirmed_at) {
           // Email confirmation required - throw special error WITHOUT toast
           // Auth.tsx will catch this and show verification pending screen
-          const error: any = new Error('Please verify your email to continue. Check your inbox for the verification link.');
+          const error: any = new Error(
+            "Please verify your email to continue. Check your inbox for the verification link.",
+          );
           error.isEmailVerificationRequired = true;
           throw error;
         }
@@ -443,22 +487,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         lastActivityRef.current = Date.now();
 
         toast({
-          title: 'Account created!',
-          description: 'Welcome to beseekr.',
+          title: "Account created!",
+          description: "Welcome to beseekr.",
         });
 
         // Redirect to intended page or default to home
-        const redirectUrl = sessionStorage.getItem('auth-redirect') || '/';
-        sessionStorage.removeItem('auth-redirect');
+        const redirectUrl = sessionStorage.getItem("auth-redirect") || "/";
+        sessionStorage.removeItem("auth-redirect");
         navigate(redirectUrl);
       }
     } catch (error: any) {
       // Only show toast for ACTUAL errors, not email verification pending
       if (!error.isEmailVerificationRequired) {
         toast({
-          title: 'Signup failed',
-          description: error.message || 'Could not create account',
-          variant: 'destructive',
+          title: "Signup failed",
+          description: error.message || "Could not create account",
+          variant: "destructive",
         });
       }
       // Always re-throw so Auth.tsx can handle it
@@ -473,28 +517,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setSocketConnected(false);
       }
 
-      if (sessionCheckIntervalRef.current) clearInterval(sessionCheckIntervalRef.current);
-      if (tokenRefreshIntervalRef.current) clearInterval(tokenRefreshIntervalRef.current);
+      if (sessionCheckIntervalRef.current)
+        clearInterval(sessionCheckIntervalRef.current);
+      if (tokenRefreshIntervalRef.current)
+        clearInterval(tokenRefreshIntervalRef.current);
 
       await apiClient.logout();
 
       setUser(null);
       refreshingRef.current = false;
 
-      localStorage.setItem('auth_logout', Date.now().toString());
-      setTimeout(() => localStorage.removeItem('auth_logout'), 1000);
+      localStorage.setItem("auth_logout", Date.now().toString());
+      setTimeout(() => localStorage.removeItem("auth_logout"), 1000);
 
-      navigate('/');
+      navigate("/");
 
       toast({
-        title: 'Logged out',
-        description: 'You have been successfully logged out.',
+        title: "Logged out",
+        description: "You have been successfully logged out.",
       });
     } catch (error) {
-      logger.error('Logout error', { error });
+      logger.error("Logout error", { error });
       setUser(null);
       setSocketConnected(false);
-      navigate('/');
+      navigate("/");
     }
   };
 
@@ -506,9 +552,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     } catch (error: any) {
       toast({
-        title: 'Export failed',
+        title: "Export failed",
         description: error.message,
-        variant: 'destructive',
+        variant: "destructive",
       });
       throw error;
     }
@@ -521,8 +567,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setSocketConnected(false);
       }
 
-      if (sessionCheckIntervalRef.current) clearInterval(sessionCheckIntervalRef.current);
-      if (tokenRefreshIntervalRef.current) clearInterval(tokenRefreshIntervalRef.current);
+      if (sessionCheckIntervalRef.current)
+        clearInterval(sessionCheckIntervalRef.current);
+      if (tokenRefreshIntervalRef.current)
+        clearInterval(tokenRefreshIntervalRef.current);
 
       const response = await apiClient.deleteProfile(email);
 
@@ -530,21 +578,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(null);
         refreshingRef.current = false;
 
-        localStorage.setItem('auth_logout', Date.now().toString());
-        setTimeout(() => localStorage.removeItem('auth_logout'), 1000);
+        localStorage.setItem("auth_logout", Date.now().toString());
+        setTimeout(() => localStorage.removeItem("auth_logout"), 1000);
 
-        navigate('/');
+        navigate("/");
 
         toast({
-          title: 'Account deleted',
-          description: 'Your account and all data have been permanently deleted.',
+          title: "Account deleted",
+          description:
+            "Your account and all data have been permanently deleted.",
         });
       }
     } catch (error: any) {
       toast({
-        title: 'Deletion failed',
+        title: "Deletion failed",
         description: error.message,
-        variant: 'destructive',
+        variant: "destructive",
       });
       throw error;
     }
@@ -573,7 +622,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within AuthProvider');
+    throw new Error("useAuth must be used within AuthProvider");
   }
   return context;
 };

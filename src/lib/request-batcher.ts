@@ -12,7 +12,7 @@ class RequestBatcher<T> {
 
   constructor(
     private batchFn: (ids: string[]) => Promise<T[]>,
-    options: { batchDelay?: number; maxBatchSize?: number } = {}
+    options: { batchDelay?: number; maxBatchSize?: number } = {},
   ) {
     this.batchDelay = options.batchDelay || 50;
     this.maxBatchSize = options.maxBatchSize || 10;
@@ -40,19 +40,19 @@ class RequestBatcher<T> {
     if (batch.length === 0) return;
 
     try {
-      const ids = batch.map(req => req.id);
+      const ids = batch.map((req) => req.id);
       const results = await this.batchFn(ids);
-      
+
       batch.forEach((req, index) => {
         req.resolve(results[index]);
       });
     } catch (error) {
-      batch.forEach(req => req.reject(error));
+      batch.forEach((req) => req.reject(error));
     }
   }
 }
 
 export const createBatcher = <T>(
   batchFn: (ids: string[]) => Promise<T[]>,
-  options?: { batchDelay?: number; maxBatchSize?: number }
+  options?: { batchDelay?: number; maxBatchSize?: number },
 ) => new RequestBatcher(batchFn, options);

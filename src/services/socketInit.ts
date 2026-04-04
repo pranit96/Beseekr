@@ -1,5 +1,5 @@
 // Initialize socket connection on user interaction
-import { deepAnalyticsSocket } from './deepAnalyticsSocket';
+import { deepAnalyticsSocket } from "./deepAnalyticsSocket";
 
 /**
  * Initialize socket to connect on first user interaction

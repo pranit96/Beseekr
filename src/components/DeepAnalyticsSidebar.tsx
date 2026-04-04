@@ -1,10 +1,17 @@
 // Deep Analytics Sidebar - Session History
-import React from 'react';
-import { Clock, Brain, Plus, Loader2, Trash2, AlertTriangle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { formatDistanceToNow } from 'date-fns';
-import { cn } from '@/lib/utils';
+import React from "react";
+import {
+  Clock,
+  Brain,
+  Plus,
+  Loader2,
+  Trash2,
+  AlertTriangle,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { formatDistanceToNow } from "date-fns";
+import { cn } from "@/lib/utils";
 
 export interface SessionSummary {
   id: string;
@@ -19,37 +26,39 @@ export interface SessionSummary {
 
 // Helper to extract a readable session name from problem text
 const getSessionName = (problem: string | undefined | null): string => {
-  if (!problem || typeof problem !== 'string') return 'Untitled Session';
+  if (!problem || typeof problem !== "string") return "Untitled Session";
 
   const trimmed = problem.trim();
-  if (!trimmed) return 'Untitled Session';
+  if (!trimmed) return "Untitled Session";
 
   // Try to extract first meaningful line (skip flowchart syntax)
-  const lines = trimmed.split('\n').filter(line => {
+  const lines = trimmed.split("\n").filter((line) => {
     const lineTrimmed = line.trim();
-    return lineTrimmed &&
-      !lineTrimmed.startsWith('flowchart') &&
-      !lineTrimmed.startsWith('%%') &&
-      !lineTrimmed.startsWith('subgraph') &&
-      !lineTrimmed.startsWith('classDef') &&
-      !lineTrimmed.startsWith('class ') &&
-      !lineTrimmed.includes('-->') &&
-      !lineTrimmed.includes('==>') &&
+    return (
+      lineTrimmed &&
+      !lineTrimmed.startsWith("flowchart") &&
+      !lineTrimmed.startsWith("%%") &&
+      !lineTrimmed.startsWith("subgraph") &&
+      !lineTrimmed.startsWith("classDef") &&
+      !lineTrimmed.startsWith("class ") &&
+      !lineTrimmed.includes("-->") &&
+      !lineTrimmed.includes("==>") &&
       !lineTrimmed.match(/^\w+\[/) && // Skip node definitions like "A[text]"
-      lineTrimmed.length > 10;
+      lineTrimmed.length > 10
+    );
   });
 
   if (lines.length > 0) {
     const firstLine = lines[0].trim();
     // Remove any remaining markdown or special chars
-    const cleaned = firstLine.replace(/[#*`]/g, '').trim();
+    const cleaned = firstLine.replace(/[#*`]/g, "").trim();
     return cleaned.substring(0, 60);
   }
 
   // Fallback: use first 60 chars, clean up
-  const cleaned = trimmed.replace(/[#*`]/g, '').substring(0, 60).trim();
-  return cleaned || 'Untitled Session';
-}
+  const cleaned = trimmed.replace(/[#*`]/g, "").substring(0, 60).trim();
+  return cleaned || "Untitled Session";
+};
 
 interface DeepAnalyticsSidebarProps {
   sessions: SessionSummary[];
@@ -66,11 +75,17 @@ export const DeepAnalyticsSidebar = ({
   onSelectSession,
   onNewAnalysis,
   onDeleteSession,
-  loading = false
+  loading = false,
 }: DeepAnalyticsSidebarProps) => {
-  const [showDeleteMenu, setShowDeleteMenu] = React.useState<string | null>(null);
+  const [showDeleteMenu, setShowDeleteMenu] = React.useState<string | null>(
+    null,
+  );
 
-  const handleDelete = (sessionId: string, erase: boolean, e: React.MouseEvent) => {
+  const handleDelete = (
+    sessionId: string,
+    erase: boolean,
+    e: React.MouseEvent,
+  ) => {
     e.stopPropagation();
     if (onDeleteSession) {
       onDeleteSession(sessionId, erase);
@@ -82,11 +97,7 @@ export const DeepAnalyticsSidebar = ({
     <div className="h-full flex flex-col bg-muted/30">
       {/* Header */}
       <div className="p-4 border-b border-border">
-        <Button
-          onClick={onNewAnalysis}
-          className="w-full gap-2"
-          size="sm"
-        >
+        <Button onClick={onNewAnalysis} className="w-full gap-2" size="sm">
           <Plus className="w-4 h-4" />
           New Analysis
         </Button>
@@ -115,32 +126,32 @@ export const DeepAnalyticsSidebar = ({
                 <button
                   onClick={() => onSelectSession(session)}
                   className={cn(
-                    'w-full text-left p-2.5 rounded-lg border transition-all block',
+                    "w-full text-left p-2.5 rounded-lg border transition-all block",
                     currentSessionId === session.id
-                      ? 'border-primary bg-primary/10 shadow-sm'
-                      : 'border-border hover:bg-muted/50 hover:border-border/80'
+                      ? "border-primary bg-primary/10 shadow-sm"
+                      : "border-border hover:bg-muted/50 hover:border-border/80",
                   )}
                 >
                   <div className="flex items-start gap-2.5 w-full">
                     <div className="mt-0.5 flex-shrink-0">
                       <div
                         className={cn(
-                          'w-7 h-7 rounded-lg flex items-center justify-center',
-                          session.status === 'completed'
-                            ? 'bg-success/10'
-                            : session.status === 'failed'
-                              ? 'bg-destructive/10'
-                              : 'bg-muted'
+                          "w-7 h-7 rounded-lg flex items-center justify-center",
+                          session.status === "completed"
+                            ? "bg-success/10"
+                            : session.status === "failed"
+                              ? "bg-destructive/10"
+                              : "bg-muted",
                         )}
                       >
                         <Brain
                           className={cn(
-                            'w-3.5 h-3.5',
-                            session.status === 'completed'
-                              ? 'text-success'
-                              : session.status === 'failed'
-                                ? 'text-destructive'
-                                : 'text-muted-foreground'
+                            "w-3.5 h-3.5",
+                            session.status === "completed"
+                              ? "text-success"
+                              : session.status === "failed"
+                                ? "text-destructive"
+                                : "text-muted-foreground",
                           )}
                         />
                       </div>
@@ -163,7 +174,12 @@ export const DeepAnalyticsSidebar = ({
                         </span>
                         {session.execution_metrics && (
                           <span className="flex items-center gap-1 flex-shrink-0 whitespace-nowrap">
-                            • {Math.round(session.execution_metrics.execution_time_ms / 60000)}m
+                            •{" "}
+                            {Math.round(
+                              session.execution_metrics.execution_time_ms /
+                                60000,
+                            )}
+                            m
                           </span>
                         )}
                       </div>

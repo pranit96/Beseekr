@@ -1,4 +1,4 @@
-import { SpeedInsights } from '@vercel/speed-insights/react';
+import { SpeedInsights } from "@vercel/speed-insights/react";
 
 /**
  * SpeedInsightsTracker component

@@ -1,22 +1,34 @@
 // src/components/AutonomousWorkflowInterface.tsx
 // Futuristic orbital workflow UI — single Phase state, proper cancel support
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef } from "react";
 import {
-  X, Sparkles, Loader2, CheckCircle2, AlertCircle,
-  ArrowRight, Copy, Check, Zap, Brain, Search, FileText, Code2, Database,
+  X,
+  Sparkles,
+  Loader2,
+  CheckCircle2,
+  AlertCircle,
+  ArrowRight,
+  Copy,
+  Check,
+  Zap,
+  Brain,
+  Search,
+  FileText,
+  Code2,
+  Database,
   Square,
-} from 'lucide-react';
-import { motion, AnimatePresence, useAnimationFrame } from 'framer-motion';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { cn } from '@/lib/utils';
-import { ChatFileUpload } from '@/components/ChatFileUpload';
-import useAutonomousWorkflow from '@/hooks/use-autonomous-workflow';
-import { useToast } from '@/hooks/use-toast';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import rehypeRaw from 'rehype-raw';
+} from "lucide-react";
+import { motion, AnimatePresence, useAnimationFrame } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
+import { ChatFileUpload } from "@/components/ChatFileUpload";
+import useAutonomousWorkflow from "@/hooks/use-autonomous-workflow";
+import { useToast } from "@/hooks/use-toast";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import rehypeRaw from "rehype-raw";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -26,7 +38,7 @@ interface Agent {
   role: string;
   domain: string;
   tools: string[];
-  status: 'pending' | 'running' | 'done' | 'error';
+  status: "pending" | "running" | "done" | "error";
   output: string;
   reasoning?: string;
 }
@@ -36,7 +48,7 @@ interface Agent {
  * One enum = AnimatePresence always has exactly one keyed child.
  * No intermediate frame where two conditions are simultaneously true.
  */
-type Phase = 'prompt' | 'executing' | 'cancelling' | 'complete' | 'error';
+type Phase = "prompt" | "executing" | "cancelling" | "complete" | "error";
 
 interface AutonomousWorkflowInterfaceProps {
   onClose?: () => void;
@@ -47,12 +59,12 @@ interface AutonomousWorkflowInterfaceProps {
 const AGENT_ICONS = [Brain, Search, Code2, Database, FileText, Zap];
 
 const AGENT_PALETTES = [
-  { from: '#6366f1', to: '#8b5cf6', glow: 'rgba(99,102,241,0.6)' },
-  { from: '#06b6d4', to: '#0ea5e9', glow: 'rgba(6,182,212,0.6)' },
-  { from: '#f59e0b', to: '#ef4444', glow: 'rgba(245,158,11,0.6)' },
-  { from: '#10b981', to: '#059669', glow: 'rgba(16,185,129,0.6)' },
-  { from: '#ec4899', to: '#f43f5e', glow: 'rgba(236,72,153,0.6)' },
-  { from: '#8b5cf6', to: '#6366f1', glow: 'rgba(139,92,246,0.6)' },
+  { from: "#6366f1", to: "#8b5cf6", glow: "rgba(99,102,241,0.6)" },
+  { from: "#06b6d4", to: "#0ea5e9", glow: "rgba(6,182,212,0.6)" },
+  { from: "#f59e0b", to: "#ef4444", glow: "rgba(245,158,11,0.6)" },
+  { from: "#10b981", to: "#059669", glow: "rgba(16,185,129,0.6)" },
+  { from: "#ec4899", to: "#f43f5e", glow: "rgba(236,72,153,0.6)" },
+  { from: "#8b5cf6", to: "#6366f1", glow: "rgba(139,92,246,0.6)" },
 ];
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -73,9 +85,23 @@ const ParticleField: React.FC = () => {
         <motion.div
           key={p.id}
           className="absolute rounded-full bg-primary/20"
-          style={{ left: `${p.x}%`, top: `${p.y}%`, width: p.size, height: p.size }}
-          animate={{ opacity: [0, 0.6, 0], scale: [0.5, 1, 0.5], y: [0, -30, 0] }}
-          transition={{ duration: p.dur, repeat: Infinity, delay: p.delay, ease: 'easeInOut' }}
+          style={{
+            left: `${p.x}%`,
+            top: `${p.y}%`,
+            width: p.size,
+            height: p.size,
+          }}
+          animate={{
+            opacity: [0, 0.6, 0],
+            scale: [0.5, 1, 0.5],
+            y: [0, -30, 0],
+          }}
+          transition={{
+            duration: p.dur,
+            repeat: Infinity,
+            delay: p.delay,
+            ease: "easeInOut",
+          }}
         />
       ))}
     </div>
@@ -92,7 +118,12 @@ interface AgentNodeProps {
 }
 
 const AgentNode: React.FC<AgentNodeProps> = ({
-  agent, index, total, orbitRadius, orbitAngleOffset, dimmed = false,
+  agent,
+  index,
+  total,
+  orbitRadius,
+  orbitAngleOffset,
+  dimmed = false,
 }) => {
   const baseAngle = (index / total) * 2 * Math.PI - Math.PI / 2;
   const angle = baseAngle + orbitAngleOffset;
@@ -100,19 +131,19 @@ const AgentNode: React.FC<AgentNodeProps> = ({
   const y = Math.sin(angle) * orbitRadius;
   const palette = AGENT_PALETTES[index % AGENT_PALETTES.length];
   const Icon = AGENT_ICONS[index % AGENT_ICONS.length];
-  const isRunning = agent.status === 'running';
-  const isDone = agent.status === 'done';
-  const isError = agent.status === 'error';
+  const isRunning = agent.status === "running";
+  const isDone = agent.status === "done";
+  const isError = agent.status === "error";
 
   return (
     <motion.div
       initial={{ scale: 0, opacity: 0 }}
       animate={{ scale: 1, opacity: dimmed ? 0.35 : 1 }}
-      transition={{ delay: index * 0.08, type: 'spring', stiffness: 200 }}
+      transition={{ delay: index * 0.08, type: "spring", stiffness: 200 }}
       className="absolute"
       style={{
-        left: '50%',
-        top: '50%',
+        left: "50%",
+        top: "50%",
         transform: `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`,
         zIndex: isRunning ? 10 : 5,
       }}
@@ -121,7 +152,7 @@ const AgentNode: React.FC<AgentNodeProps> = ({
       {isRunning && !dimmed && (
         <motion.div
           className="absolute inset-0 rounded-full"
-          style={{ background: palette.glow, filter: 'blur(12px)', zIndex: -1 }}
+          style={{ background: palette.glow, filter: "blur(12px)", zIndex: -1 }}
           animate={{ scale: [1, 1.8, 1], opacity: [0.5, 0.9, 0.5] }}
           transition={{ duration: 1.4, repeat: Infinity }}
         />
@@ -131,14 +162,24 @@ const AgentNode: React.FC<AgentNodeProps> = ({
       <svg
         className="absolute pointer-events-none"
         style={{
-          left: '50%', top: '50%',
-          width: orbitRadius, height: 2,
+          left: "50%",
+          top: "50%",
+          width: orbitRadius,
+          height: 2,
           transform: `rotate(${angle * (180 / Math.PI)}deg)`,
-          transformOrigin: '0 50%',
+          transformOrigin: "0 50%",
           opacity: isRunning && !dimmed ? 0.5 : 0.1,
         }}
       >
-        <line x1="0" y1="1" x2={orbitRadius} y2="1" stroke={palette.from} strokeWidth="1" strokeDasharray="4 6" />
+        <line
+          x1="0"
+          y1="1"
+          x2={orbitRadius}
+          y2="1"
+          stroke={palette.from}
+          strokeWidth="1"
+          strokeDasharray="4 6"
+        />
       </svg>
 
       {/* Node circle */}
@@ -147,28 +188,49 @@ const AgentNode: React.FC<AgentNodeProps> = ({
         transition={{ duration: 1, repeat: Infinity }}
         className="relative flex items-center justify-center rounded-full text-white shadow-xl"
         style={{
-          width: 56, height: 56,
+          width: 56,
+          height: 56,
           background: `linear-gradient(135deg, ${palette.from}, ${palette.to})`,
-          boxShadow: isRunning && !dimmed ? `0 0 24px ${palette.glow}` : `0 4px 16px ${palette.glow}40`,
+          boxShadow:
+            isRunning && !dimmed
+              ? `0 0 24px ${palette.glow}`
+              : `0 4px 16px ${palette.glow}40`,
         }}
       >
-        {isDone    && <CheckCircle2 className="w-6 h-6" />}
-        {isError   && <AlertCircle  className="w-6 h-6" />}
+        {isDone && <CheckCircle2 className="w-6 h-6" />}
+        {isError && <AlertCircle className="w-6 h-6" />}
         {isRunning && <Loader2 className="w-6 h-6 animate-spin" />}
-        {agent.status === 'pending' && <Icon className="w-5 h-5 opacity-80" />}
+        {agent.status === "pending" && <Icon className="w-5 h-5 opacity-80" />}
       </motion.div>
 
       {/* Label — hidden to keep UI clean */}
       {false && (
-      <div className="mt-2 text-center" style={{ width: 80, marginLeft: -12 }}>
-        <p className="text-[10px] font-semibold leading-tight text-foreground/80 truncate">{agent.name}</p>
-        <p
-          className="text-[9px] leading-tight mt-0.5 font-medium"
-          style={{ color: isRunning ? palette.from : isDone ? '#10b981' : 'var(--muted-foreground)' }}
+        <div
+          className="mt-2 text-center"
+          style={{ width: 80, marginLeft: -12 }}
         >
-          {isRunning ? 'Running' : isDone ? 'Done' : isError ? 'Error' : 'Waiting'}
-        </p>
-      </div>
+          <p className="text-[10px] font-semibold leading-tight text-foreground/80 truncate">
+            {agent.name}
+          </p>
+          <p
+            className="text-[9px] leading-tight mt-0.5 font-medium"
+            style={{
+              color: isRunning
+                ? palette.from
+                : isDone
+                  ? "#10b981"
+                  : "var(--muted-foreground)",
+            }}
+          >
+            {isRunning
+              ? "Running"
+              : isDone
+                ? "Done"
+                : isError
+                  ? "Error"
+                  : "Waiting"}
+          </p>
+        </div>
       )}
     </motion.div>
   );
@@ -176,15 +238,28 @@ const AgentNode: React.FC<AgentNodeProps> = ({
 
 // ─── Main Component ────────────────────────────────────────────────────────────
 
-export const AutonomousWorkflowInterface: React.FC<AutonomousWorkflowInterfaceProps> = ({ onClose }) => {
-  const [phase, setPhase] = useState<Phase>('prompt');
-  const [prompt, setPrompt] = useState('');
-  const [status, setStatus] = useState<string>('Initializing…');
-  const [executionPlan, setExecutionPlan] = useState<string>('');
+export const AutonomousWorkflowInterface: React.FC<
+  AutonomousWorkflowInterfaceProps
+> = ({ onClose }) => {
+  const [phase, setPhase] = useState<Phase>("prompt");
+  const [prompt, setPrompt] = useState("");
+  const [status, setStatus] = useState<string>("Initializing…");
+  const [executionPlan, setExecutionPlan] = useState<string>("");
   const [agents, setAgents] = useState<Agent[]>([]);
-  const [finalAnswer, setFinalAnswer] = useState<string>('');
+  const [finalAnswer, setFinalAnswer] = useState<string>("");
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
-  const [attachedFiles, setAttachedFiles] = useState<Array<{ id: string; name: string; type: string; size: number; size_readable: string; storage_path: string; url: string | null; extracted_content?: string | null }>>([]);
+  const [attachedFiles, setAttachedFiles] = useState<
+    Array<{
+      id: string;
+      name: string;
+      type: string;
+      size: number;
+      size_readable: string;
+      storage_path: string;
+      url: string | null;
+      extracted_content?: string | null;
+    }>
+  >([]);
 
   /**
    * cancelRef holds the cancel fn provided by the workflow hook via onCancelReady.
@@ -195,7 +270,7 @@ export const AutonomousWorkflowInterface: React.FC<AutonomousWorkflowInterfacePr
   // Slow orbit rotation, only ticks during executing phase
   const [orbitAngle, setOrbitAngle] = useState(0);
   useAnimationFrame((_, delta) => {
-    if (phase === 'executing') setOrbitAngle((a) => a + (delta / 1000) * 0.08);
+    if (phase === "executing") setOrbitAngle((a) => a + (delta / 1000) * 0.08);
   });
 
   const { toast } = useToast();
@@ -204,10 +279,10 @@ export const AutonomousWorkflowInterface: React.FC<AutonomousWorkflowInterfacePr
   // ── Helpers ──────────────────────────────────────────────────────────────
 
   const resetState = () => {
-    setStatus('Initializing…');
-    setExecutionPlan('');
+    setStatus("Initializing…");
+    setExecutionPlan("");
     setAgents([]);
-    setFinalAnswer('');
+    setFinalAnswer("");
     setOrbitAngle(0);
     setAttachedFiles([]);
     cancelRef.current = null;
@@ -227,14 +302,18 @@ export const AutonomousWorkflowInterface: React.FC<AutonomousWorkflowInterfacePr
    * then back to 'prompt' once server ACKs or after a safety timeout.
    */
   const handleCancel = () => {
-    setPhase('cancelling');
+    setPhase("cancelling");
     if (cancelRef.current) {
-      try { cancelRef.current(); } catch (_) { /* socket may already be closed */ }
+      try {
+        cancelRef.current();
+      } catch (_) {
+        /* socket may already be closed */
+      }
     }
     // Safety fallback: reset after 1.5 s even without a server ACK
     setTimeout(() => {
       resetState();
-      setPhase('prompt');
+      setPhase("prompt");
     }, 1500);
   };
 
@@ -244,13 +323,17 @@ export const AutonomousWorkflowInterface: React.FC<AutonomousWorkflowInterfacePr
    * All other phases: closes immediately.
    */
   const handleDismiss = () => {
-    if (phase === 'executing' || phase === 'cancelling') {
+    if (phase === "executing" || phase === "cancelling") {
       if (cancelRef.current) {
-        try { cancelRef.current(); } catch (_) { /* ignore */ }
+        try {
+          cancelRef.current();
+        } catch (_) {
+          /* ignore */
+        }
       }
     }
     resetState();
-    setPhase('prompt');
+    setPhase("prompt");
     onClose?.();
   };
 
@@ -258,96 +341,138 @@ export const AutonomousWorkflowInterface: React.FC<AutonomousWorkflowInterfacePr
 
   const handleStartWorkflow = () => {
     if (!prompt.trim()) {
-      toast({ title: 'Prompt required', description: 'Please enter a prompt to start the workflow', variant: 'destructive' });
+      toast({
+        title: "Prompt required",
+        description: "Please enter a prompt to start the workflow",
+        variant: "destructive",
+      });
       return;
     }
 
     const currentPrompt = prompt; // capture before resetState clears nothing (prompt kept)
     resetState();
-    setPhase('executing');
+    setPhase("executing");
 
     const requestId = `wf_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
 
-    const filesPayload = attachedFiles.length > 0
-      ? attachedFiles.map(f => ({ name: f.name, type: f.type, size: f.size, storage_path: f.storage_path, url: f.url, extracted_content: f.extracted_content || null }))
-      : undefined;
+    const filesPayload =
+      attachedFiles.length > 0
+        ? attachedFiles.map((f) => ({
+            name: f.name,
+            type: f.type,
+            size: f.size,
+            storage_path: f.storage_path,
+            url: f.url,
+            extracted_content: f.extracted_content || null,
+          }))
+        : undefined;
 
     execute(
-      { prompt: currentPrompt, requestId, save_to_history: false, attached_files: filesPayload },
+      {
+        prompt: currentPrompt,
+        requestId,
+        save_to_history: false,
+        attached_files: filesPayload,
+      },
       {
         // The hook calls this once the socket is wired up and cancellation is possible
-        onCancelReady: (fn) => { cancelRef.current = fn; },
+        onCancelReady: (fn) => {
+          cancelRef.current = fn;
+        },
 
-        onAck: () => setStatus('Acknowledged — planning your workflow…'),
+        onAck: () => setStatus("Acknowledged — planning your workflow…"),
         onStatus: (data) => setStatus(data.message || data.status),
 
         onPlan: (data) => {
           setExecutionPlan(data.plan);
-          setAgents(data.agents.map((a: any) => ({
-            id: '',
-            name: a.name,
-            role: a.role,
-            domain: a.domain,
-            tools: a.tools || [],
-            status: 'pending',
-            output: '',
-            reasoning: a.reasoning,
-          })));
+          setAgents(
+            data.agents.map((a: any) => ({
+              id: "",
+              name: a.name,
+              role: a.role,
+              domain: a.domain,
+              tools: a.tools || [],
+              status: "pending",
+              output: "",
+              reasoning: a.reasoning,
+            })),
+          );
         },
 
         onAgentCreated: (data) =>
-          setAgents((prev) => prev.map((a) => a.name === data.agent.name ? { ...a, id: data.agent.id } : a)),
+          setAgents((prev) =>
+            prev.map((a) =>
+              a.name === data.agent.name ? { ...a, id: data.agent.id } : a,
+            ),
+          ),
 
         onAgentStart: (data) => {
-          setAgents((prev) => prev.map((a) => a.id === data.agent_id ? { ...a, status: 'running' } : a));
+          setAgents((prev) =>
+            prev.map((a) =>
+              a.id === data.agent_id ? { ...a, status: "running" } : a,
+            ),
+          );
           setStatus(`Running agent: ${data.agent_name}`);
         },
 
         onAgentToken: (data) =>
-          setAgents((prev) => prev.map((a) => a.id === data.agent_id ? { ...a, output: a.output + data.token } : a)),
+          setAgents((prev) =>
+            prev.map((a) =>
+              a.id === data.agent_id
+                ? { ...a, output: a.output + data.token }
+                : a,
+            ),
+          ),
 
         onAgentDone: (data) =>
-          setAgents((prev) => prev.map((a) => a.id === data.agent_id ? { ...a, status: 'done' } : a)),
+          setAgents((prev) =>
+            prev.map((a) =>
+              a.id === data.agent_id ? { ...a, status: "done" } : a,
+            ),
+          ),
 
-        onSynthesisToken: () => setStatus('Synthesizing final answer…'),
+        onSynthesisToken: () => setStatus("Synthesizing final answer…"),
 
         // Server confirmed cancellation — go straight to prompt without waiting for timeout
         onCancelled: () => {
           resetState();
-          setPhase('prompt');
+          setPhase("prompt");
         },
 
         onDone: (data) => {
           setFinalAnswer(data.final_answer);
           cancelRef.current = null;
-          setPhase('complete'); // single atomic phase change — no overlap possible
+          setPhase("complete"); // single atomic phase change — no overlap possible
         },
 
         onError: (data) => {
           // Suppress errors that are just a side-effect of an intentional cancel
-          if (phase === 'cancelling') return;
-          toast({ title: 'Workflow failed', description: data.error, variant: 'destructive' });
+          if (phase === "cancelling") return;
+          toast({
+            title: "Workflow failed",
+            description: data.error,
+            variant: "destructive",
+          });
           cancelRef.current = null;
-          setPhase('error');
+          setPhase("error");
         },
-      }
+      },
     );
   };
 
   // ── Derived ──────────────────────────────────────────────────────────────
 
-  const ORBIT_RADIUS  = agents.length > 4 ? 200 : 170;
-  const runningAgent  = agents.find((a) => a.status === 'running');
-  const isCancelling  = phase === 'cancelling';
+  const ORBIT_RADIUS = agents.length > 4 ? 200 : 170;
+  const runningAgent = agents.find((a) => a.status === "running");
+  const isCancelling = phase === "cancelling";
 
   // ── Render ───────────────────────────────────────────────────────────────
 
   return (
     <div className="flex flex-col h-screen bg-background overflow-hidden">
       <AnimatePresence mode="wait">
-
         {/* ════════════════════════ PHASE: prompt ════════════════════════ */}
-        {phase === 'prompt' && (
+        {phase === "prompt" && (
           <motion.div
             key="prompt"
             initial={{ opacity: 0 }}
@@ -361,12 +486,15 @@ export const AutonomousWorkflowInterface: React.FC<AutonomousWorkflowInterfacePr
             <motion.div
               initial={{ scale: 0.92, y: 24 }}
               animate={{ scale: 1, y: 0 }}
-              transition={{ type: 'spring', stiffness: 220, damping: 22 }}
+              transition={{ type: "spring", stiffness: 220, damping: 22 }}
               className="w-full max-w-xl relative z-10"
             >
               <div
                 className="absolute -inset-8 rounded-3xl pointer-events-none"
-                style={{ background: 'radial-gradient(ellipse at 50% 60%, hsl(var(--primary)/0.12), transparent 70%)' }}
+                style={{
+                  background:
+                    "radial-gradient(ellipse at 50% 60%, hsl(var(--primary)/0.12), transparent 70%)",
+                }}
               />
 
               <div className="relative bg-background border border-border/60 rounded-2xl shadow-2xl p-7 sm:p-9">
@@ -382,15 +510,24 @@ export const AutonomousWorkflowInterface: React.FC<AutonomousWorkflowInterfacePr
                 <div className="flex justify-center mb-6">
                   <motion.div
                     animate={{ rotate: [0, 8, -8, 0], scale: [1, 1.06, 1] }}
-                    transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+                    transition={{
+                      duration: 4,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                    }}
                     className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg"
-                    style={{ background: 'linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)))' }}
+                    style={{
+                      background:
+                        "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)))",
+                    }}
                   >
                     <Sparkles className="w-8 h-8 text-white" />
                   </motion.div>
                 </div>
 
-                <h2 className="text-2xl sm:text-3xl font-bold text-center mb-1 tracking-tight">Autonomous Workflow</h2>
+                <h2 className="text-2xl sm:text-3xl font-bold text-center mb-1 tracking-tight">
+                  Autonomous Workflow
+                </h2>
                 <p className="text-sm text-muted-foreground text-center mb-6">
                   Describe your task — AI spawns specialized agents to solve it
                 </p>
@@ -398,7 +535,10 @@ export const AutonomousWorkflowInterface: React.FC<AutonomousWorkflowInterfacePr
                 <Textarea
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleStartWorkflow(); }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && (e.metaKey || e.ctrlKey))
+                      handleStartWorkflow();
+                  }}
                   placeholder="E.g., Research the latest AI trends, analyze them, and write a comprehensive report…"
                   className="min-h-[110px] resize-none text-sm mb-4"
                   autoFocus
@@ -406,9 +546,15 @@ export const AutonomousWorkflowInterface: React.FC<AutonomousWorkflowInterfacePr
 
                 <div className="mb-4">
                   <ChatFileUpload
-                    onFilesUploaded={(files) => setAttachedFiles(prev => [...prev, ...files])}
+                    onFilesUploaded={(files) =>
+                      setAttachedFiles((prev) => [...prev, ...files])
+                    }
                     attachedFiles={attachedFiles}
-                    onRemoveFile={(id) => setAttachedFiles(prev => prev.filter(f => f.id !== id))}
+                    onRemoveFile={(id) =>
+                      setAttachedFiles((prev) =>
+                        prev.filter((f) => f.id !== id),
+                      )
+                    }
                     disabled={false}
                   />
                 </div>
@@ -418,7 +564,10 @@ export const AutonomousWorkflowInterface: React.FC<AutonomousWorkflowInterfacePr
                   disabled={!prompt.trim()}
                   size="lg"
                   className="w-full gap-2 font-semibold"
-                  style={{ background: 'linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)))' }}
+                  style={{
+                    background:
+                      "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)))",
+                  }}
                 >
                   <Sparkles className="w-4 h-4" /> Start Workflow
                 </Button>
@@ -428,7 +577,7 @@ export const AutonomousWorkflowInterface: React.FC<AutonomousWorkflowInterfacePr
         )}
 
         {/* ════════════════ PHASE: executing / cancelling ════════════════ */}
-        {(phase === 'executing' || phase === 'cancelling') && (
+        {(phase === "executing" || phase === "cancelling") && (
           <motion.div
             key="executing"
             initial={{ opacity: 0 }}
@@ -449,7 +598,14 @@ export const AutonomousWorkflowInterface: React.FC<AutonomousWorkflowInterfacePr
             <div className="w-full max-w-2xl relative flex flex-col items-center mt-12">
               {/* ── Sleek Central Hub ── */}
               <div className="flex flex-col items-center justify-center w-full mx-auto mb-16 relative z-10 px-4 mt-8">
-               <div className="relative flex items-center justify-center" style={{ width: agents.length > 0 ? ORBIT_RADIUS * 2 + 80 : 96, height: agents.length > 0 ? ORBIT_RADIUS * 2 + 80 : 96, minHeight: 96 }}>
+                <div
+                  className="relative flex items-center justify-center"
+                  style={{
+                    width: agents.length > 0 ? ORBIT_RADIUS * 2 + 80 : 96,
+                    height: agents.length > 0 ? ORBIT_RADIUS * 2 + 80 : 96,
+                    minHeight: 96,
+                  }}
+                >
                   {/* Orbital Nodes */}
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
                     <AnimatePresence>
@@ -469,53 +625,77 @@ export const AutonomousWorkflowInterface: React.FC<AutonomousWorkflowInterfacePr
 
                   {/* Central Orb */}
                   <motion.div
-                    animate={isCancelling ? { rotate: 0, scale: 0.95 } : { rotate: 360, scale: [1, 1.05, 1] }}
-                    transition={isCancelling ? {} : { duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+                    animate={
+                      isCancelling
+                        ? { rotate: 0, scale: 0.95 }
+                        : { rotate: 360, scale: [1, 1.05, 1] }
+                    }
+                    transition={
+                      isCancelling
+                        ? {}
+                        : { duration: 4, repeat: Infinity, ease: "easeInOut" }
+                    }
                     className="w-full h-full rounded-full flex items-center justify-center relative z-20"
                     style={{
                       background: isCancelling
-                        ? 'conic-gradient(from 0deg, hsl(var(--muted-foreground)/0.3), hsl(var(--muted-foreground)/0.3))'
-                        : 'conic-gradient(from 0deg, hsl(var(--primary)/0.8), hsl(var(--accent)/0.8), hsl(var(--primary)/0.8))',
+                        ? "conic-gradient(from 0deg, hsl(var(--muted-foreground)/0.3), hsl(var(--muted-foreground)/0.3))"
+                        : "conic-gradient(from 0deg, hsl(var(--primary)/0.8), hsl(var(--accent)/0.8), hsl(var(--primary)/0.8))",
                       padding: 3,
-                      boxShadow: isCancelling ? 'none' : '0 0 40px rgba(var(--primary-glow), 0.3)',
+                      boxShadow: isCancelling
+                        ? "none"
+                        : "0 0 40px rgba(var(--primary-glow), 0.3)",
                     }}
                   >
                     <div className="w-full h-full rounded-full bg-background flex items-center justify-center relative z-10">
-                      {isCancelling
-                        ? <Loader2 className="w-10 h-10 animate-spin text-muted-foreground" />
-                        : <Sparkles className="w-10 h-10" style={{ color: 'hsl(var(--primary))' }} />
-                      }
+                      {isCancelling ? (
+                        <Loader2 className="w-10 h-10 animate-spin text-muted-foreground" />
+                      ) : (
+                        <Sparkles
+                          className="w-10 h-10"
+                          style={{ color: "hsl(var(--primary))" }}
+                        />
+                      )}
                     </div>
                     {/* Glowing ring effect */}
                     {!isCancelling && (
                       <motion.div
                         className="absolute -inset-4 rounded-full border border-primary/20 pointer-events-none"
                         animate={{ scale: [1, 1.3, 1], opacity: [0.3, 0, 0.3] }}
-                        transition={{ duration: 2.5, repeat: Infinity, ease: 'easeOut' }}
+                        transition={{
+                          duration: 2.5,
+                          repeat: Infinity,
+                          ease: "easeOut",
+                        }}
                       />
                     )}
                   </motion.div>
                 </div>
 
                 <div className="mt-6">
-                <p
-                  className={cn(
-                    'text-lg font-semibold text-center mb-2 transition-colors duration-300',
-                    isCancelling ? 'text-muted-foreground' : 'text-foreground'
-                  )}
-                >
-                  {isCancelling ? 'Stopping workflow…' : status}
-                </p>
+                  <p
+                    className={cn(
+                      "text-lg font-semibold text-center mb-2 transition-colors duration-300",
+                      isCancelling
+                        ? "text-muted-foreground"
+                        : "text-foreground",
+                    )}
+                  >
+                    {isCancelling ? "Stopping workflow…" : status}
+                  </p>
 
-                {executionPlan && !isCancelling && (
-                  <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-xs text-muted-foreground text-center max-w-[400px]">
-                    {executionPlan.length > 100 ? executionPlan.slice(0, 100) + '…' : executionPlan}
-                  </motion.p>
-                )}
+                  {executionPlan && !isCancelling && (
+                    <motion.p
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="text-xs text-muted-foreground text-center max-w-[400px]"
+                    >
+                      {executionPlan.length > 100
+                        ? executionPlan.slice(0, 100) + "…"
+                        : executionPlan}
+                    </motion.p>
+                  )}
                 </div>
               </div>
-
-
 
               {/* Live output preview */}
               {!isCancelling && runningAgent?.output && (
@@ -524,8 +704,12 @@ export const AutonomousWorkflowInterface: React.FC<AutonomousWorkflowInterfacePr
                   animate={{ opacity: 1 }}
                   className="mt-4 w-full max-w-lg mx-auto rounded-xl border border-border/40 bg-muted/40 backdrop-blur px-4 py-3"
                 >
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1.5 font-semibold">Live output</p>
-                  <p className="text-xs text-foreground/70 font-mono leading-relaxed line-clamp-3">{runningAgent.output}</p>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1.5 font-semibold">
+                    Live output
+                  </p>
+                  <p className="text-xs text-foreground/70 font-mono leading-relaxed line-clamp-3">
+                    {runningAgent.output}
+                  </p>
                 </motion.div>
               )}
 
@@ -540,17 +724,23 @@ export const AutonomousWorkflowInterface: React.FC<AutonomousWorkflowInterfacePr
                   onClick={handleCancel}
                   disabled={isCancelling}
                   className={cn(
-                    'flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold border transition-all select-none',
+                    "flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold border transition-all select-none",
                     isCancelling
-                      ? 'border-border/30 text-muted-foreground bg-muted/20 cursor-not-allowed'
-                      : 'border-destructive/40 text-destructive bg-destructive/5 hover:bg-destructive/12 hover:border-destructive/70 active:scale-95'
+                      ? "border-border/30 text-muted-foreground bg-muted/20 cursor-not-allowed"
+                      : "border-destructive/40 text-destructive bg-destructive/5 hover:bg-destructive/12 hover:border-destructive/70 active:scale-95",
                   )}
                   aria-label="Stop workflow"
                 >
-                  {isCancelling
-                    ? <><Loader2 className="w-4 h-4 animate-spin" /> Stopping…</>
-                    : <><Square  className="w-3.5 h-3.5 fill-current" /> Stop Workflow</>
-                  }
+                  {isCancelling ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" /> Stopping…
+                    </>
+                  ) : (
+                    <>
+                      <Square className="w-3.5 h-3.5 fill-current" /> Stop
+                      Workflow
+                    </>
+                  )}
                 </button>
               </motion.div>
             </div>
@@ -558,7 +748,7 @@ export const AutonomousWorkflowInterface: React.FC<AutonomousWorkflowInterfacePr
         )}
 
         {/* ════════════════════════ PHASE: complete ════════════════════════ */}
-        {phase === 'complete' && finalAnswer && (
+        {phase === "complete" && finalAnswer && (
           <motion.div
             key="complete"
             initial={{ opacity: 0 }}
@@ -579,21 +769,26 @@ export const AutonomousWorkflowInterface: React.FC<AutonomousWorkflowInterfacePr
               <motion.div
                 initial={{ scale: 0.95, y: 20 }}
                 animate={{ scale: 1, y: 0 }}
-                transition={{ type: 'spring', stiffness: 200 }}
+                transition={{ type: "spring", stiffness: 200 }}
                 className="bg-background border border-emerald-500/25 rounded-2xl shadow-2xl p-6 sm:p-8"
               >
                 {/* Header */}
                 <div className="flex items-center gap-4 mb-6 pb-5 border-b border-border/30">
                   <div
                     className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg shrink-0"
-                    style={{ background: 'linear-gradient(135deg, #10b981, #059669)' }}
+                    style={{
+                      background: "linear-gradient(135deg, #10b981, #059669)",
+                    }}
                   >
                     <CheckCircle2 className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-emerald-500">Workflow Complete</h3>
+                    <h3 className="text-xl font-bold text-emerald-500">
+                      Workflow Complete
+                    </h3>
                     <p className="text-sm text-muted-foreground">
-                      {agents.length} agent{agents.length !== 1 ? 's' : ''} collaborated · All tasks finished
+                      {agents.length} agent{agents.length !== 1 ? "s" : ""}{" "}
+                      collaborated · All tasks finished
                     </p>
                   </div>
 
@@ -616,7 +811,8 @@ export const AutonomousWorkflowInterface: React.FC<AutonomousWorkflowInterfacePr
                 </div>
 
                 {/* Markdown result */}
-                <div className="prose prose-sm sm:prose-base max-w-none dark:prose-invert mb-6
+                <div
+                  className="prose prose-sm sm:prose-base max-w-none dark:prose-invert mb-6
                   prose-headings:font-bold prose-headings:text-foreground
                   prose-h1:text-2xl prose-h1:mb-4 prose-h1:mt-6
                   prose-h2:text-xl prose-h2:mb-3 prose-h2:mt-5
@@ -636,7 +832,8 @@ export const AutonomousWorkflowInterface: React.FC<AutonomousWorkflowInterfacePr
                   prose-td:px-4 prose-td:py-2 prose-td:border-t prose-td:border-border/50 prose-td:text-foreground/90
                   prose-img:rounded-lg prose-img:shadow-md prose-img:my-4 prose-img:mx-auto prose-img:max-w-full
                   prose-hr:border-border/50 prose-hr:my-6
-                ">
+                "
+                >
                   <ReactMarkdown
                     remarkPlugins={[remarkGfm]}
                     rehypePlugins={[rehypeRaw]}
@@ -646,43 +843,72 @@ export const AutonomousWorkflowInterface: React.FC<AutonomousWorkflowInterfacePr
                           {...props}
                           className="rounded-lg shadow-md my-4 mx-auto max-w-full"
                           loading="lazy"
-                          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).style.display =
+                              "none";
+                          }}
                         />
                       ),
                       code: ({ node, className, children, ...props }: any) => {
-                        const match = /language-(\w+)/.exec(className || '');
-                        const codeString = String(children).replace(/\n$/, '');
+                        const match = /language-(\w+)/.exec(className || "");
+                        const codeString = String(children).replace(/\n$/, "");
                         return match ? (
                           <div className="relative my-4">
                             <div className="flex items-center justify-between bg-muted/50 border-b border-border/50 px-4 py-2 rounded-t-lg">
-                              <span className="text-xs font-medium text-muted-foreground">{match[1]}</span>
+                              <span className="text-xs font-medium text-muted-foreground">
+                                {match[1]}
+                              </span>
                               <button
                                 onClick={() => handleCopyCode(codeString)}
                                 className="text-xs flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
                               >
-                                {copiedCode === codeString
-                                  ? <><Check className="w-3 h-3" /> Copied</>
-                                  : <><Copy  className="w-3 h-3" /> Copy</>}
+                                {copiedCode === codeString ? (
+                                  <>
+                                    <Check className="w-3 h-3" /> Copied
+                                  </>
+                                ) : (
+                                  <>
+                                    <Copy className="w-3 h-3" /> Copy
+                                  </>
+                                )}
                               </button>
                             </div>
                             <pre className="bg-muted border border-border/50 rounded-b-lg p-4 overflow-x-auto">
-                              <code className={className} {...props}>{children}</code>
+                              <code className={className} {...props}>
+                                {children}
+                              </code>
                             </pre>
                           </div>
                         ) : (
-                          <code className="text-primary bg-muted px-1.5 py-0.5 rounded text-sm" {...props}>{children}</code>
+                          <code
+                            className="text-primary bg-muted px-1.5 py-0.5 rounded text-sm"
+                            {...props}
+                          >
+                            {children}
+                          </code>
                         );
                       },
                       table: ({ node, ...props }) => (
                         <div className="overflow-x-auto my-4 border border-border/50 rounded-lg">
-                          <table className="w-full border-collapse" {...props} />
+                          <table
+                            className="w-full border-collapse"
+                            {...props}
+                          />
                         </div>
                       ),
                       a: ({ node, ...props }) => (
-                        <a {...props} className="text-primary hover:underline" target="_blank" rel="noopener noreferrer" />
+                        <a
+                          {...props}
+                          className="text-primary hover:underline"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        />
                       ),
                       blockquote: ({ node, ...props }) => (
-                        <blockquote className="border-l-4 border-primary/30 pl-4 py-2 my-4 italic text-foreground/80 bg-muted/30 rounded-r-lg" {...props} />
+                        <blockquote
+                          className="border-l-4 border-primary/30 pl-4 py-2 my-4 italic text-foreground/80 bg-muted/30 rounded-r-lg"
+                          {...props}
+                        />
                       ),
                     }}
                   >
@@ -692,10 +918,15 @@ export const AutonomousWorkflowInterface: React.FC<AutonomousWorkflowInterfacePr
 
                 <div className="pt-5 border-t border-border/30">
                   <Button
-                    onClick={() => { resetState(); setPhase('prompt'); }}
+                    onClick={() => {
+                      resetState();
+                      setPhase("prompt");
+                    }}
                     size="lg"
                     className="w-full font-semibold gap-2"
-                    style={{ background: 'linear-gradient(135deg, #10b981, #059669)' }}
+                    style={{
+                      background: "linear-gradient(135deg, #10b981, #059669)",
+                    }}
                   >
                     <Sparkles className="w-4 h-4" /> Start New Workflow
                   </Button>
@@ -706,7 +937,7 @@ export const AutonomousWorkflowInterface: React.FC<AutonomousWorkflowInterfacePr
         )}
 
         {/* ════════════════════════ PHASE: error ════════════════════════ */}
-        {phase === 'error' && (
+        {phase === "error" && (
           <motion.div
             key="error"
             initial={{ opacity: 0 }}
@@ -719,17 +950,27 @@ export const AutonomousWorkflowInterface: React.FC<AutonomousWorkflowInterfacePr
                 <AlertCircle className="w-8 h-8 text-destructive" />
               </div>
               <h3 className="text-xl font-bold mb-2">Workflow Failed</h3>
-              <p className="text-sm text-muted-foreground mb-6">Something went wrong during execution.</p>
+              <p className="text-sm text-muted-foreground mb-6">
+                Something went wrong during execution.
+              </p>
               <div className="flex gap-3 justify-center">
-                <Button onClick={() => { resetState(); setPhase('prompt'); }} variant="outline" className="gap-2">
+                <Button
+                  onClick={() => {
+                    resetState();
+                    setPhase("prompt");
+                  }}
+                  variant="outline"
+                  className="gap-2"
+                >
                   <ArrowRight className="w-4 h-4" /> Try Again
                 </Button>
-                <Button onClick={handleDismiss} variant="ghost">Close</Button>
+                <Button onClick={handleDismiss} variant="ghost">
+                  Close
+                </Button>
               </div>
             </div>
           </motion.div>
         )}
-
       </AnimatePresence>
     </div>
   );

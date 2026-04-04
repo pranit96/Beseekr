@@ -1,27 +1,41 @@
-import { useQuery, useMutation, useQueryClient, useInfiniteQuery, keepPreviousData } from '@tanstack/react-query';
-import { apiClient } from '@/lib/api';
-import { getBlogs, getBlog, getTopics } from '@/api/blogs';
-import { useToast } from '@/hooks/use-toast';
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  useInfiniteQuery,
+  keepPreviousData,
+} from "@tanstack/react-query";
+import { apiClient } from "@/lib/api";
+import { getBlogs, getBlog, getTopics } from "@/api/blogs";
+import { useToast } from "@/hooks/use-toast";
 
 // Query Keys
 export const queryKeys = {
-  agents: ['agents'] as const,
-  myAgents: ['agents', 'my'] as const,
-  conversations: (status?: 'active' | 'archived') => ['conversations', status] as const,
-  messages: (conversationId: string, page?: number) => ['messages', conversationId, page] as const,
-  usageStats: (startDate?: string, endDate?: string) => ['usage', 'stats', startDate, endDate] as const,
-  usageLogs: (params?: any) => ['usage', 'logs', params] as const,
-  sessionDetails: (sessionId: string) => ['thinkers', 'sessions', sessionId] as const,
-  sessions: (params?: any) => ['thinkers', 'sessions', params] as const,
-  currentUser: ['auth', 'me'] as const,
-  blogs: (topic?: string, search?: string) => ['blogs', topic, search] as const,
-  blog: (slug: string) => ['blog', slug] as const,
-  blogTopics: ['blogTopics'] as const,
+  agents: ["agents"] as const,
+  myAgents: ["agents", "my"] as const,
+  conversations: (status?: "active" | "archived") =>
+    ["conversations", status] as const,
+  messages: (conversationId: string, page?: number) =>
+    ["messages", conversationId, page] as const,
+  usageStats: (startDate?: string, endDate?: string) =>
+    ["usage", "stats", startDate, endDate] as const,
+  usageLogs: (params?: any) => ["usage", "logs", params] as const,
+  sessionDetails: (sessionId: string) =>
+    ["thinkers", "sessions", sessionId] as const,
+  sessions: (params?: any) => ["thinkers", "sessions", params] as const,
+  currentUser: ["auth", "me"] as const,
+  blogs: (topic?: string, search?: string) => ["blogs", topic, search] as const,
+  blog: (slug: string) => ["blog", slug] as const,
+  blogTopics: ["blogTopics"] as const,
 };
 
 // ============= AGENTS =============
 
-export function useAgents(params?: { domain?: string; page?: number; limit?: number }) {
+export function useAgents(params?: {
+  domain?: string;
+  page?: number;
+  limit?: number;
+}) {
   return useQuery({
     queryKey: [...queryKeys.agents, params],
     queryFn: () => apiClient.getAgents(params),
@@ -50,16 +64,16 @@ export function useCreateAgent() {
       queryClient.invalidateQueries({ queryKey: queryKeys.agents });
       if (response.data) {
         toast({
-          title: 'Agent created',
+          title: "Agent created",
           description: `${response.data.name} has been created successfully.`,
         });
       }
     },
     onError: (error: any) => {
       toast({
-        title: 'Failed to create agent',
+        title: "Failed to create agent",
         description: error.message,
-        variant: 'destructive',
+        variant: "destructive",
       });
     },
   });
@@ -70,23 +84,23 @@ export function useUpdateAgent() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: ({ id, agent }: { id: string; agent: any }) => 
+    mutationFn: ({ id, agent }: { id: string; agent: any }) =>
       apiClient.updateAgent(id, agent),
     onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.myAgents });
       queryClient.invalidateQueries({ queryKey: queryKeys.agents });
       if (response.data) {
         toast({
-          title: 'Agent updated',
+          title: "Agent updated",
           description: `${response.data.name} has been updated successfully.`,
         });
       }
     },
     onError: (error: any) => {
       toast({
-        title: 'Failed to update agent',
+        title: "Failed to update agent",
         description: error.message,
-        variant: 'destructive',
+        variant: "destructive",
       });
     },
   });
@@ -102,15 +116,15 @@ export function useDeleteAgent() {
       queryClient.invalidateQueries({ queryKey: queryKeys.myAgents });
       queryClient.invalidateQueries({ queryKey: queryKeys.agents });
       toast({
-        title: 'Agent deleted',
-        description: 'The agent has been permanently deleted.',
+        title: "Agent deleted",
+        description: "The agent has been permanently deleted.",
       });
     },
     onError: (error: any) => {
       toast({
-        title: 'Failed to delete agent',
+        title: "Failed to delete agent",
         description: error.message,
-        variant: 'destructive',
+        variant: "destructive",
       });
     },
   });
@@ -118,7 +132,10 @@ export function useDeleteAgent() {
 
 // ============= CONVERSATIONS =============
 
-export function useConversations(params?: { status?: 'active' | 'archived'; page?: number; limit?: number }, enabled: boolean = true) {
+export function useConversations(
+  params?: { status?: "active" | "archived"; page?: number; limit?: number },
+  enabled: boolean = true,
+) {
   return useQuery({
     queryKey: queryKeys.conversations(params?.status),
     queryFn: () => apiClient.getConversations(params),
@@ -132,10 +149,10 @@ export function useCreateConversation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (conversation: { agent_id?: string | null; title?: string }) => 
+    mutationFn: (conversation: { agent_id?: string | null; title?: string }) =>
       apiClient.createConversation(conversation),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+      queryClient.invalidateQueries({ queryKey: ["conversations"] });
     },
   });
 }
@@ -145,19 +162,20 @@ export function useDeleteConversation() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: (conversationId: string) => apiClient.deleteConversation(conversationId),
+    mutationFn: (conversationId: string) =>
+      apiClient.deleteConversation(conversationId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+      queryClient.invalidateQueries({ queryKey: ["conversations"] });
       toast({
-        title: 'Conversation deleted',
-        description: 'The conversation has been permanently deleted.',
+        title: "Conversation deleted",
+        description: "The conversation has been permanently deleted.",
       });
     },
     onError: (error: any) => {
       toast({
-        title: 'Failed to delete conversation',
+        title: "Failed to delete conversation",
         description: error.message,
-        variant: 'destructive',
+        variant: "destructive",
       });
     },
   });
@@ -168,22 +186,31 @@ export function useUpdateConversationStatus() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: ({ conversationId, status }: { conversationId: string; status: 'active' | 'archived' }) => 
-      apiClient.updateConversationStatus(conversationId, status),
+    mutationFn: ({
+      conversationId,
+      status,
+    }: {
+      conversationId: string;
+      status: "active" | "archived";
+    }) => apiClient.updateConversationStatus(conversationId, status),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+      queryClient.invalidateQueries({ queryKey: ["conversations"] });
       toast({
-        title: variables.status === 'archived' ? 'Conversation archived' : 'Conversation restored',
-        description: variables.status === 'archived' 
-          ? 'The conversation has been archived.' 
-          : 'The conversation has been restored to active list.',
+        title:
+          variables.status === "archived"
+            ? "Conversation archived"
+            : "Conversation restored",
+        description:
+          variables.status === "archived"
+            ? "The conversation has been archived."
+            : "The conversation has been restored to active list.",
       });
     },
     onError: (error: any) => {
       toast({
-        title: 'Failed to update conversation',
+        title: "Failed to update conversation",
         description: error.message,
-        variant: 'destructive',
+        variant: "destructive",
       });
     },
   });
@@ -191,7 +218,11 @@ export function useUpdateConversationStatus() {
 
 // ============= MESSAGES =============
 
-export function useMessages(conversationId: string, page?: number, limit?: number) {
+export function useMessages(
+  conversationId: string,
+  page?: number,
+  limit?: number,
+) {
   return useQuery({
     queryKey: queryKeys.messages(conversationId, page),
     queryFn: () => apiClient.getMessages(conversationId, page, limit),
@@ -203,7 +234,10 @@ export function useMessages(conversationId: string, page?: number, limit?: numbe
 
 // ============= USAGE & ANALYTICS =============
 
-export function useUsageStats(params?: { start_date?: string; end_date?: string }) {
+export function useUsageStats(params?: {
+  start_date?: string;
+  end_date?: string;
+}) {
   return useQuery({
     queryKey: queryKeys.usageStats(params?.start_date, params?.end_date),
     queryFn: () => apiClient.getUsageStats(params),
@@ -212,7 +246,11 @@ export function useUsageStats(params?: { start_date?: string; end_date?: string 
   });
 }
 
-export function useUsageLogs(params?: { start_date?: string; end_date?: string; page?: number }) {
+export function useUsageLogs(params?: {
+  start_date?: string;
+  end_date?: string;
+  page?: number;
+}) {
   return useQuery({
     queryKey: queryKeys.usageLogs(params),
     queryFn: () => apiClient.getUsageLogs(params),
@@ -232,7 +270,10 @@ export function useSessionDetails(sessionId: string) {
     gcTime: 30 * 60 * 1000, // 30 minutes
     retry: (failureCount, error: any) => {
       // Don't retry on backend database errors (500 with "coerce" message)
-      if (error?.message?.includes('coerce') || error?.message?.includes('Cannot coerce')) {
+      if (
+        error?.message?.includes("coerce") ||
+        error?.message?.includes("Cannot coerce")
+      ) {
         return false;
       }
       // Retry other errors up to 2 times
@@ -278,7 +319,11 @@ export function useBlogTopics() {
   });
 }
 
-export function useInfiniteBlogs(topic?: string, search?: string, limit: number = 12) {
+export function useInfiniteBlogs(
+  topic?: string,
+  search?: string,
+  limit: number = 12,
+) {
   return useInfiniteQuery({
     queryKey: queryKeys.blogs(topic, search),
     queryFn: async ({ pageParam = 1 }) => {
@@ -290,7 +335,10 @@ export function useInfiniteBlogs(topic?: string, search?: string, limit: number 
       });
       return {
         data: res.data || [],
-        nextPage: res.meta && res.meta.page < res.meta.totalPages ? pageParam + 1 : undefined
+        nextPage:
+          res.meta && res.meta.page < res.meta.totalPages
+            ? pageParam + 1
+            : undefined,
       };
     },
     initialPageParam: 1,
@@ -315,4 +363,3 @@ export function useBlog(slug?: string) {
     placeholderData: keepPreviousData,
   });
 }
-

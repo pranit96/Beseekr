@@ -1,6 +1,6 @@
 // src/pages/AutonomousWorkflow.tsx
-import { GlobalHeader } from '@/components/GlobalHeader';
-import { AutonomousWorkflowInterface } from '@/components/AutonomousWorkflowInterface';
+import { GlobalHeader } from "@/components/GlobalHeader";
+import { AutonomousWorkflowInterface } from "@/components/AutonomousWorkflowInterface";
 
 export default function AutonomousWorkflow() {
   return (

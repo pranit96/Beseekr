@@ -44,7 +44,7 @@ export interface AgentResponse {
   agentName: string;
   content: string;
   timestamp: string | Date;
-  status: 'pending' | 'success' | 'error';
+  status: "pending" | "success" | "error";
   metadata?: {
     usage?: {
       prompt_tokens: number;
@@ -55,11 +55,11 @@ export interface AgentResponse {
   };
 }
 
-export type ExecutionMode = 'sequential' | 'parallel';
+export type ExecutionMode = "sequential" | "parallel";
 
 export interface ChatMessage {
   id: string;
-  type: 'user' | 'agent';
+  type: "user" | "agent";
   content: string;
   timestamp: Date;
   agentResponses?: AgentResponse[];

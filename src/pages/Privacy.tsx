@@ -1,8 +1,17 @@
 // src/pages/Privacy.tsx
-import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Sparkles, Shield, Eye, Lock, Server, Users, CreditCard } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Link, useNavigate } from "react-router-dom";
+import {
+  ArrowLeft,
+  Sparkles,
+  Shield,
+  Eye,
+  Lock,
+  Server,
+  Users,
+  CreditCard,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 
 const Privacy = () => {
   const navigate = useNavigate();
@@ -45,7 +54,8 @@ const Privacy = () => {
             Privacy Policy
           </h1>
           <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto">
-            Your privacy is important to us. Learn how we collect, use, and protect your data on beseekr.
+            Your privacy is important to us. Learn how we collect, use, and
+            protect your data on beseekr.
           </p>
           <p className="text-sm text-muted-foreground mt-4">
             Last updated: December 8, 2024
@@ -87,7 +97,12 @@ const Privacy = () => {
             </h2>
             <Card className="p-6 glass">
               <p className="text-muted-foreground">
-                beseekr is a SaaS platform that helps entrepreneurs and product builders discover real-world problems worth solving. Our platform aggregates and analyzes discussions from various online communities to identify business opportunities, pain points, and unmet needs. Users can browse problems, validate their ideas, and track opportunities using our research tools.
+                beseekr is a SaaS platform that helps entrepreneurs and product
+                builders discover real-world problems worth solving. Our
+                platform aggregates and analyzes discussions from various online
+                communities to identify business opportunities, pain points, and
+                unmet needs. Users can browse problems, validate their ideas,
+                and track opportunities using our research tools.
               </p>
             </Card>
           </section>
@@ -98,7 +113,9 @@ const Privacy = () => {
               Information We Collect
             </h2>
             <Card className="p-6 glass mb-6">
-              <h3 className="text-lg font-semibold mb-3">Account Information</h3>
+              <h3 className="text-lg font-semibold mb-3">
+                Account Information
+              </h3>
               <p className="text-muted-foreground mb-4">
                 When you create an account, we collect:
               </p>
@@ -123,7 +140,9 @@ const Privacy = () => {
             </Card>
 
             <Card className="p-6 glass">
-              <h3 className="text-lg font-semibold mb-3">Research & Validation Data</h3>
+              <h3 className="text-lg font-semibold mb-3">
+                Research & Validation Data
+              </h3>
               <p className="text-muted-foreground mb-4">
                 When you use our research features:
               </p>
@@ -143,16 +162,25 @@ const Privacy = () => {
             <Card className="p-6 glass">
               <div className="space-y-4 text-muted-foreground">
                 <p>
-                  <strong className="text-foreground">Provide Services:</strong> We use your information to deliver problem discovery, idea validation, and research features.
+                  <strong className="text-foreground">Provide Services:</strong>{" "}
+                  We use your information to deliver problem discovery, idea
+                  validation, and research features.
                 </p>
                 <p>
-                  <strong className="text-foreground">Personalization:</strong> We personalize your experience by remembering your preferences, watchlist, and research history.
+                  <strong className="text-foreground">Personalization:</strong>{" "}
+                  We personalize your experience by remembering your
+                  preferences, watchlist, and research history.
                 </p>
                 <p>
-                  <strong className="text-foreground">Communication:</strong> We may send you service updates, new problem alerts (if opted in), and account-related notifications.
+                  <strong className="text-foreground">Communication:</strong> We
+                  may send you service updates, new problem alerts (if opted
+                  in), and account-related notifications.
                 </p>
                 <p>
-                  <strong className="text-foreground">Analytics:</strong> We analyze usage patterns to improve features, fix bugs, and optimize performance. All analytics data is aggregated and anonymized.
+                  <strong className="text-foreground">Analytics:</strong> We
+                  analyze usage patterns to improve features, fix bugs, and
+                  optimize performance. All analytics data is aggregated and
+                  anonymized.
                 </p>
               </div>
             </Card>
@@ -166,13 +194,32 @@ const Privacy = () => {
             <Card className="p-6 glass">
               <div className="space-y-4 text-muted-foreground">
                 <p>
-                  <strong className="text-foreground">Payment Processing:</strong> We use Razorpay to process payments. We do not store your full credit card details on our servers.
+                  <strong className="text-foreground">
+                    Payment Processing:
+                  </strong>{" "}
+                  We use Razorpay to process payments. We do not store your full
+                  credit card details on our servers.
                 </p>
                 <p>
-                  <strong className="text-foreground">Subscription Data:</strong> We store your subscription status, plan type, and billing history for account management purposes.
+                  <strong className="text-foreground">
+                    Subscription Data:
+                  </strong>{" "}
+                  We store your subscription status, plan type, and billing
+                  history for account management purposes.
                 </p>
                 <p>
-                  <strong className="text-foreground">Razorpay:</strong> Razorpay handles all payment data in accordance with PCI DSS compliance standards. Please review <a href="https://razorpay.com/privacy/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Razorpay's Privacy Policy</a> for details.
+                  <strong className="text-foreground">Razorpay:</strong>{" "}
+                  Razorpay handles all payment data in accordance with PCI DSS
+                  compliance standards. Please review{" "}
+                  <a
+                    href="https://razorpay.com/privacy/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline"
+                  >
+                    Razorpay's Privacy Policy
+                  </a>{" "}
+                  for details.
                 </p>
               </div>
             </Card>
@@ -186,13 +233,34 @@ const Privacy = () => {
             <Card className="p-6 glass">
               <div className="space-y-4 text-muted-foreground">
                 <p>
-                  We implement industry-standard security measures to protect your data:
+                  We implement industry-standard security measures to protect
+                  your data:
                 </p>
                 <ul className="space-y-2">
-                  <li>• <strong className="text-foreground">Encryption:</strong> All data is encrypted using AES-256 at rest and TLS 1.3 in transit</li>
-                  <li>• <strong className="text-foreground">Access Controls:</strong> Strict access controls limit who can view your data</li>
-                  <li>• <strong className="text-foreground">Secure Infrastructure:</strong> Our systems are hosted on secure, certified cloud platforms</li>
-                  <li>• <strong className="text-foreground">Regular Audits:</strong> We conduct regular security assessments</li>
+                  <li>
+                    • <strong className="text-foreground">Encryption:</strong>{" "}
+                    All data is encrypted using AES-256 at rest and TLS 1.3 in
+                    transit
+                  </li>
+                  <li>
+                    •{" "}
+                    <strong className="text-foreground">
+                      Access Controls:
+                    </strong>{" "}
+                    Strict access controls limit who can view your data
+                  </li>
+                  <li>
+                    •{" "}
+                    <strong className="text-foreground">
+                      Secure Infrastructure:
+                    </strong>{" "}
+                    Our systems are hosted on secure, certified cloud platforms
+                  </li>
+                  <li>
+                    •{" "}
+                    <strong className="text-foreground">Regular Audits:</strong>{" "}
+                    We conduct regular security assessments
+                  </li>
                 </ul>
               </div>
             </Card>
@@ -208,24 +276,33 @@ const Privacy = () => {
                 <p>You have the following rights regarding your data:</p>
                 <ul className="space-y-3">
                   <li>
-                    <strong className="text-foreground">Access:</strong> Request a copy of all your data at any time
+                    <strong className="text-foreground">Access:</strong> Request
+                    a copy of all your data at any time
                   </li>
                   <li>
-                    <strong className="text-foreground">Correction:</strong> Update or correct your personal information
+                    <strong className="text-foreground">Correction:</strong>{" "}
+                    Update or correct your personal information
                   </li>
                   <li>
-                    <strong className="text-foreground">Deletion:</strong> Delete your account and all associated data permanently
+                    <strong className="text-foreground">Deletion:</strong>{" "}
+                    Delete your account and all associated data permanently
                   </li>
                   <li>
-                    <strong className="text-foreground">Export:</strong> Download your data in a portable format
+                    <strong className="text-foreground">Export:</strong>{" "}
+                    Download your data in a portable format
                   </li>
                   <li>
-                    <strong className="text-foreground">Opt-Out:</strong> Unsubscribe from marketing communications
+                    <strong className="text-foreground">Opt-Out:</strong>{" "}
+                    Unsubscribe from marketing communications
                   </li>
                 </ul>
                 <p className="mt-4">
-                  To exercise any of these rights, visit your Profile Settings or contact us at{' '}
-                  <a href="mailto:hello@support.beseekr.com" className="text-primary hover:underline">
+                  To exercise any of these rights, visit your Profile Settings
+                  or contact us at{" "}
+                  <a
+                    href="mailto:hello@support.beseekr.com"
+                    className="text-primary hover:underline"
+                  >
                     hello@support.beseekr.com
                   </a>
                 </p>
@@ -237,11 +314,17 @@ const Privacy = () => {
             <h2 className="text-2xl font-bold mb-4">Data Retention</h2>
             <Card className="p-6 glass">
               <p className="text-muted-foreground mb-4">
-                We retain your data for as long as your account is active. When you delete your account:
+                We retain your data for as long as your account is active. When
+                you delete your account:
               </p>
               <ul className="space-y-2 text-muted-foreground">
-                <li>• Your personal data is permanently deleted within 30 days</li>
-                <li>• Anonymized analytics data may be retained for service improvement</li>
+                <li>
+                  • Your personal data is permanently deleted within 30 days
+                </li>
+                <li>
+                  • Anonymized analytics data may be retained for service
+                  improvement
+                </li>
                 <li>• Backup copies are purged within 90 days</li>
               </ul>
             </Card>
@@ -255,16 +338,20 @@ const Privacy = () => {
               </p>
               <ul className="space-y-3 text-muted-foreground">
                 <li>
-                  <strong className="text-foreground">AI Providers:</strong> For idea validation and analysis features
+                  <strong className="text-foreground">AI Providers:</strong> For
+                  idea validation and analysis features
                 </li>
                 <li>
-                  <strong className="text-foreground">Razorpay:</strong> For secure payment processing
+                  <strong className="text-foreground">Razorpay:</strong> For
+                  secure payment processing
                 </li>
                 <li>
-                  <strong className="text-foreground">Cloud Hosting:</strong> Secure cloud infrastructure providers
+                  <strong className="text-foreground">Cloud Hosting:</strong>{" "}
+                  Secure cloud infrastructure providers
                 </li>
                 <li>
-                  <strong className="text-foreground">Analytics:</strong> Privacy-focused analytics (Vercel Analytics)
+                  <strong className="text-foreground">Analytics:</strong>{" "}
+                  Privacy-focused analytics (Vercel Analytics)
                 </li>
               </ul>
             </Card>
@@ -274,7 +361,10 @@ const Privacy = () => {
             <h2 className="text-2xl font-bold mb-4">Changes to This Policy</h2>
             <Card className="p-6 glass">
               <p className="text-muted-foreground">
-                We may update this Privacy Policy periodically. When we make significant changes, we'll notify you via email or through the platform. Continued use of beseekr after changes indicates your acceptance of the updated policy.
+                We may update this Privacy Policy periodically. When we make
+                significant changes, we'll notify you via email or through the
+                platform. Continued use of beseekr after changes indicates your
+                acceptance of the updated policy.
               </p>
             </Card>
           </section>
@@ -283,12 +373,16 @@ const Privacy = () => {
             <h2 className="text-2xl font-bold mb-4">Contact Us</h2>
             <Card className="p-6 glass">
               <p className="text-muted-foreground mb-4">
-                If you have questions or concerns about this Privacy Policy, please contact us:
+                If you have questions or concerns about this Privacy Policy,
+                please contact us:
               </p>
               <div className="space-y-2 text-muted-foreground">
                 <p>
-                  <strong className="text-foreground">Email:</strong>{' '}
-                  <a href="mailto:hello@support.beseekr.com" className="text-primary hover:underline">
+                  <strong className="text-foreground">Email:</strong>{" "}
+                  <a
+                    href="mailto:hello@support.beseekr.com"
+                    className="text-primary hover:underline"
+                  >
                     hello@support.beseekr.com
                   </a>
                 </p>
@@ -313,7 +407,9 @@ const Privacy = () => {
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Sparkles className="h-4 w-4 text-primary" />
-              <span>© {new Date().getFullYear()} beseekr. All rights reserved.</span>
+              <span>
+                © {new Date().getFullYear()} beseekr. All rights reserved.
+              </span>
             </div>
             <div className="flex items-center gap-4 sm:gap-6 text-sm">
               <Link

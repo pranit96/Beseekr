@@ -4,25 +4,27 @@ import { createLogger } from "@/services/logging";
 import { Button } from "@/components/ui/button";
 import { Home, ArrowLeft } from "lucide-react";
 
-const logger = createLogger('NotFound');
+const logger = createLogger("NotFound");
 
 const NotFound = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
   useEffect(() => {
-    logger.error("User attempted to access non-existent route", { pathname: location.pathname });
+    logger.error("User attempted to access non-existent route", {
+      pathname: location.pathname,
+    });
   }, [location.pathname]);
 
   const handleGoHome = () => {
-    navigate('/');
+    navigate("/");
   };
 
   const handleGoBack = () => {
     if (window.history.length > 1) {
       navigate(-1);
     } else {
-      navigate('/dashboard/problems');
+      navigate("/dashboard/problems");
     }
   };
 
@@ -63,7 +65,8 @@ const NotFound = () => {
             Oops! Page not found
           </h2>
           <p className="text-sm sm:text-base text-muted-foreground max-w-xs mx-auto leading-relaxed">
-            Looks like this page went on a walk and got lost. Don't worry, our pup is on the case!
+            Looks like this page went on a walk and got lost. Don't worry, our
+            pup is on the case!
           </p>
         </div>
 
@@ -91,7 +94,10 @@ const NotFound = () => {
         {/* Attempted Path (for debugging context) */}
         <div className="pt-4 sm:pt-6">
           <p className="text-xs text-muted-foreground/60">
-            Attempted path: <code className="px-2 py-1 bg-muted/50 rounded text-xs font-mono">{location.pathname}</code>
+            Attempted path:{" "}
+            <code className="px-2 py-1 bg-muted/50 rounded text-xs font-mono">
+              {location.pathname}
+            </code>
           </p>
         </div>
       </div>

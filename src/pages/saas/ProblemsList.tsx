@@ -1,1600 +1,1831 @@
-import { useState, useMemo, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useAuth } from '@/contexts/AuthContext';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Input } from '@/components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useState, useMemo, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
-    TrendingUp,
-    ThumbsUp,
-    ThumbsDown,
-    FileText,
-    Bookmark,
-    BookmarkCheck,
-    AlertCircle,
-    ChevronLeft,
-    ChevronRight,
-    Flame,
-    Search,
-    Sparkles,
-    ArrowUpRight,
-    Lock,
-    Crown,
-    Zap,
-    Check,
-    Loader2,
-    Shield,
-    CheckCircle2,
-} from 'lucide-react';
-import { problemsApi } from '@/api/problems';
-import { paymentsApi, type Plan } from '@/api/payments';
-import type { SortOption, ProblemListItem } from '@/types/problems';
-import { cn } from '@/lib/utils';
-import { motion, AnimatePresence } from 'framer-motion';
+  TrendingUp,
+  ThumbsUp,
+  ThumbsDown,
+  FileText,
+  Bookmark,
+  BookmarkCheck,
+  AlertCircle,
+  ChevronLeft,
+  ChevronRight,
+  Flame,
+  Search,
+  Sparkles,
+  ArrowUpRight,
+  Lock,
+  Crown,
+  Zap,
+  Check,
+  Loader2,
+  Shield,
+  CheckCircle2,
+} from "lucide-react";
+import { problemsApi } from "@/api/problems";
+import { paymentsApi, type Plan } from "@/api/payments";
+import type { SortOption, ProblemListItem } from "@/types/problems";
+import { cn } from "@/lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
 
 const ITEMS_PER_PAGE = 12;
 
 // Skeleton loading - fixed height to prevent layout shift
 function ProblemSkeleton() {
-    return (
-        <div className="group relative p-4 sm:p-6 rounded-2xl bg-gradient-to-br from-muted/50 to-muted/30 border border-border/50 min-h-[180px] sm:min-h-[200px]">
-            <div className="space-y-3 sm:space-y-4">
-                <div className="flex gap-2">
-                    <Skeleton className="h-5 w-14 sm:w-16 rounded-full" />
-                    <Skeleton className="h-5 w-16 sm:w-20 rounded-full" />
-                </div>
-                <Skeleton className="h-5 sm:h-6 w-3/4" />
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-2/3" />
-                <div className="flex gap-3 sm:gap-4 pt-2">
-                    <Skeleton className="h-5 w-12 sm:w-16" />
-                    <Skeleton className="h-5 w-12 sm:w-16" />
-                    <Skeleton className="h-5 w-12 sm:w-16" />
-                </div>
-            </div>
+  return (
+    <div className="group relative p-4 sm:p-6 rounded-2xl bg-gradient-to-br from-muted/50 to-muted/30 border border-border/50 min-h-[180px] sm:min-h-[200px]">
+      <div className="space-y-3 sm:space-y-4">
+        <div className="flex gap-2">
+          <Skeleton className="h-5 w-14 sm:w-16 rounded-full" />
+          <Skeleton className="h-5 w-16 sm:w-20 rounded-full" />
         </div>
-    );
+        <Skeleton className="h-5 sm:h-6 w-3/4" />
+        <Skeleton className="h-4 w-full" />
+        <Skeleton className="h-4 w-2/3" />
+        <div className="flex gap-3 sm:gap-4 pt-2">
+          <Skeleton className="h-5 w-12 sm:w-16" />
+          <Skeleton className="h-5 w-12 sm:w-16" />
+          <Skeleton className="h-5 w-12 sm:w-16" />
+        </div>
+      </div>
+    </div>
+  );
 }
 
 // Problem card with organic design
 function ProblemCard({
-    problem,
-    isWatching,
-    onWatchlistToggle,
-    onRateToggle,
-    index,
+  problem,
+  isWatching,
+  onWatchlistToggle,
+  onRateToggle,
+  index,
 }: {
-    problem: ProblemListItem;
-    isWatching: boolean;
-    onWatchlistToggle: (id: string, add: boolean) => void;
-    onRateToggle: (id: string, rating: 'upvote' | 'downvote') => void;
-    index: number;
+  problem: ProblemListItem;
+  isWatching: boolean;
+  onWatchlistToggle: (id: string, add: boolean) => void;
+  onRateToggle: (id: string, rating: "upvote" | "downvote") => void;
+  index: number;
 }) {
-    const navigate = useNavigate();
+  const navigate = useNavigate();
 
-    const handleClick = () => navigate(`/dashboard/problems/${problem.id}`);
+  const handleClick = () => navigate(`/dashboard/problems/${problem.id}`);
 
-    const handleWatchlistClick = (e: React.MouseEvent) => {
-        e.stopPropagation();
-        onWatchlistToggle(problem.id, !isWatching);
-    };
+  const handleWatchlistClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onWatchlistToggle(problem.id, !isWatching);
+  };
 
-    const getScoreGradient = (score: number) => {
-        if (score >= 70) return 'from-emerald-500/20 to-cyan-500/10';
-        if (score >= 50) return 'from-amber-500/20 to-orange-500/10';
-        return 'from-rose-500/20 to-pink-500/10';
-    };
+  const getScoreGradient = (score: number) => {
+    if (score >= 70) return "from-emerald-500/20 to-cyan-500/10";
+    if (score >= 50) return "from-amber-500/20 to-orange-500/10";
+    return "from-rose-500/20 to-pink-500/10";
+  };
 
-    const getScoreColor = (score: number) => {
-        if (score >= 70) return 'text-emerald-500';
-        if (score >= 50) return 'text-amber-500';
-        return 'text-rose-500';
-    };
+  const getScoreColor = (score: number) => {
+    if (score >= 70) return "text-emerald-500";
+    if (score >= 50) return "text-amber-500";
+    return "text-rose-500";
+  };
 
-    return (
-        <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: index * 0.05, ease: 'easeOut' }}
-            whileHover={{ y: -4, transition: { duration: 0.2 } }}
-            onClick={handleClick}
-            className={cn(
-                "group relative cursor-pointer rounded-xl sm:rounded-2xl p-4 sm:p-6 transition-all duration-300",
-                "bg-gradient-to-br from-background to-muted/30",
-                "border border-border/50 hover:border-primary/30",
-                "hover:shadow-xl hover:shadow-primary/5 active:scale-[0.98]",
-                "min-h-[180px] sm:min-h-[200px]",
-                problem.has_brief && problem.brief_approved && "ring-2 ring-primary/20"
-            )}
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, delay: index * 0.05, ease: "easeOut" }}
+      whileHover={{ y: -4, transition: { duration: 0.2 } }}
+      onClick={handleClick}
+      className={cn(
+        "group relative cursor-pointer rounded-xl sm:rounded-2xl p-4 sm:p-6 transition-all duration-300",
+        "bg-gradient-to-br from-background to-muted/30",
+        "border border-border/50 hover:border-primary/30",
+        "hover:shadow-xl hover:shadow-primary/5 active:scale-[0.98]",
+        "min-h-[180px] sm:min-h-[200px]",
+        problem.has_brief && problem.brief_approved && "ring-2 ring-primary/20",
+      )}
+    >
+      {/* Opportunity score badge - floating */}
+      {problem.opportunity_score && (
+        <div
+          className={cn(
+            "absolute -top-2 -right-2 sm:-top-3 sm:-right-3 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs sm:text-sm font-bold shadow-lg",
+            "bg-gradient-to-r",
+            getScoreGradient(problem.opportunity_score),
+            "border border-border/50 backdrop-blur-sm",
+            getScoreColor(problem.opportunity_score),
+          )}
         >
-            {/* Opportunity score badge - floating */}
-            {problem.opportunity_score && (
-                <div className={cn(
-                    "absolute -top-2 -right-2 sm:-top-3 sm:-right-3 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-xs sm:text-sm font-bold shadow-lg",
-                    "bg-gradient-to-r", getScoreGradient(problem.opportunity_score),
-                    "border border-border/50 backdrop-blur-sm",
-                    getScoreColor(problem.opportunity_score)
-                )}>
-                    {problem.opportunity_score}
-                </div>
-            )}
+          {problem.opportunity_score}
+        </div>
+      )}
 
-            {/* Tags */}
-            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-3 sm:mb-4">
-                {problem.tags?.slice(0, 2).map((tag) => (
-                    <span
-                        key={tag}
-                        className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium bg-muted/80 text-muted-foreground"
-                    >
-                        {tag}
-                    </span>
-                ))}
-                {problem.has_brief && problem.brief_approved && (
-                    <span className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium bg-primary/10 text-primary flex items-center gap-1">
-                        <Sparkles className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
-                        Brief Ready
-                    </span>
+      {/* Tags */}
+      <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-3 sm:mb-4">
+        {problem.tags?.slice(0, 2).map((tag) => (
+          <span
+            key={tag}
+            className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium bg-muted/80 text-muted-foreground"
+          >
+            {tag}
+          </span>
+        ))}
+        {problem.has_brief && problem.brief_approved && (
+          <span className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium bg-primary/10 text-primary flex items-center gap-1">
+            <Sparkles className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+            Brief Ready
+          </span>
+        )}
+      </div>
+
+      {/* Title */}
+      <h3 className="text-base sm:text-lg font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-2 mb-2 sm:mb-3 leading-snug">
+        {problem.title}
+      </h3>
+
+      {/* Summary */}
+      <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2 mb-4 sm:mb-6 leading-relaxed">
+        {problem.summary ||
+          "Discover validated pain points and market opportunities."}
+      </p>
+
+      {/* Stats row */}
+      <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm">
+        {/* Rating buttons - read from either flat fields or nested feedback */}
+        {(() => {
+          const upvotes = problem.upvotes ?? problem.feedback?.upvotes ?? 0;
+          const downvotes =
+            problem.downvotes ?? problem.feedback?.downvotes ?? 0;
+          const userVote =
+            problem.user_vote ?? problem.feedback?.user_vote ?? null;
+
+          return (
+            <>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onRateToggle(problem.id, "upvote");
+                }}
+                className={cn(
+                  "flex items-center gap-1 sm:gap-1.5 px-2 py-1 rounded-lg transition-colors min-h-[32px]",
+                  userVote === "upvote"
+                    ? "bg-emerald-500/10 text-emerald-600"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
                 )}
-            </div>
+              >
+                <ThumbsUp
+                  className={cn(
+                    "h-3.5 w-3.5 sm:h-4 sm:w-4",
+                    userVote === "upvote" && "fill-current",
+                  )}
+                />
+                <span className="font-medium">{upvotes}</span>
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onRateToggle(problem.id, "downvote");
+                }}
+                className={cn(
+                  "flex items-center gap-1 sm:gap-1.5 px-2 py-1 rounded-lg transition-colors min-h-[32px]",
+                  userVote === "downvote"
+                    ? "bg-rose-500/10 text-rose-600"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                )}
+              >
+                <ThumbsDown
+                  className={cn(
+                    "h-3.5 w-3.5 sm:h-4 sm:w-4",
+                    userVote === "downvote" && "fill-current",
+                  )}
+                />
+                <span className="font-medium">{downvotes}</span>
+              </motion.button>
+            </>
+          );
+        })()}
+        <div className="flex items-center gap-1 sm:gap-1.5 text-muted-foreground">
+          <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+          <span className="font-medium">
+            {problem.metrics?.source_count || 0}
+          </span>
+        </div>
 
-            {/* Title */}
-            <h3 className="text-base sm:text-lg font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-2 mb-2 sm:mb-3 leading-snug">
-                {problem.title}
-            </h3>
+        {/* Spacer */}
+        <div className="flex-1" />
 
-            {/* Summary */}
-            <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2 mb-4 sm:mb-6 leading-relaxed">
-                {problem.summary || 'Discover validated pain points and market opportunities.'}
-            </p>
+        {/* Watchlist button - styled like vote buttons */}
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={handleWatchlistClick}
+          className={cn(
+            "flex items-center gap-1 sm:gap-1.5 px-2 py-1 rounded-lg transition-colors min-h-[32px]",
+            isWatching
+              ? "bg-amber-500/10 text-amber-600"
+              : "text-muted-foreground hover:bg-muted hover:text-foreground",
+          )}
+        >
+          {isWatching ? (
+            <BookmarkCheck className="h-3.5 w-3.5 sm:h-4 sm:w-4 fill-current" />
+          ) : (
+            <Bookmark className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+          )}
+          <span className="font-medium text-xs sm:text-sm hidden xs:inline">
+            {isWatching ? "Saved" : "Save"}
+          </span>
+        </motion.button>
 
-            {/* Stats row */}
-            <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm">
-                {/* Rating buttons - read from either flat fields or nested feedback */}
-                {(() => {
-                    const upvotes = problem.upvotes ?? problem.feedback?.upvotes ?? 0;
-                    const downvotes = problem.downvotes ?? problem.feedback?.downvotes ?? 0;
-                    const userVote = problem.user_vote ?? problem.feedback?.user_vote ?? null;
-
-                    return (
-                        <>
-                            <motion.button
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    onRateToggle(problem.id, 'upvote');
-                                }}
-                                className={cn(
-                                    "flex items-center gap-1 sm:gap-1.5 px-2 py-1 rounded-lg transition-colors min-h-[32px]",
-                                    userVote === 'upvote'
-                                        ? "bg-emerald-500/10 text-emerald-600"
-                                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                                )}
-                            >
-                                <ThumbsUp className={cn(
-                                    "h-3.5 w-3.5 sm:h-4 sm:w-4",
-                                    userVote === 'upvote' && "fill-current"
-                                )} />
-                                <span className="font-medium">{upvotes}</span>
-                            </motion.button>
-                            <motion.button
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    onRateToggle(problem.id, 'downvote');
-                                }}
-                                className={cn(
-                                    "flex items-center gap-1 sm:gap-1.5 px-2 py-1 rounded-lg transition-colors min-h-[32px]",
-                                    userVote === 'downvote'
-                                        ? "bg-rose-500/10 text-rose-600"
-                                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                                )}
-                            >
-                                <ThumbsDown className={cn(
-                                    "h-3.5 w-3.5 sm:h-4 sm:w-4",
-                                    userVote === 'downvote' && "fill-current"
-                                )} />
-                                <span className="font-medium">{downvotes}</span>
-                            </motion.button>
-                        </>
-                    );
-                })()}
-                <div className="flex items-center gap-1 sm:gap-1.5 text-muted-foreground">
-                    <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                    <span className="font-medium">{problem.metrics?.source_count || 0}</span>
-                </div>
-
-                {/* Spacer */}
-                <div className="flex-1" />
-
-                {/* Watchlist button - styled like vote buttons */}
-                <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={handleWatchlistClick}
-                    className={cn(
-                        "flex items-center gap-1 sm:gap-1.5 px-2 py-1 rounded-lg transition-colors min-h-[32px]",
-                        isWatching
-                            ? "bg-amber-500/10 text-amber-600"
-                            : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                    )}
-                >
-                    {isWatching ? (
-                        <BookmarkCheck className="h-3.5 w-3.5 sm:h-4 sm:w-4 fill-current" />
-                    ) : (
-                        <Bookmark className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                    )}
-                    <span className="font-medium text-xs sm:text-sm hidden xs:inline">
-                        {isWatching ? 'Saved' : 'Save'}
-                    </span>
-                </motion.button>
-
-                {/* Arrow indicator - hidden on mobile */}
-                <ArrowUpRight className="h-5 w-5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity hidden sm:block" />
-            </div>
-        </motion.div>
-    );
+        {/* Arrow indicator - hidden on mobile */}
+        <ArrowUpRight className="h-5 w-5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity hidden sm:block" />
+      </div>
+    </motion.div>
+  );
 }
 
 export function ProblemsList() {
-    const navigate = useNavigate();
-    const [searchParams, setSearchParams] = useSearchParams();
-    const queryClient = useQueryClient();
-    const { user } = useAuth();
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
 
-    // Initialize tab from URL query param
-    const tabFromUrl = searchParams.get('tab');
-    const [activeTab, setActiveTab] = useState<'free' | 'premium'>(
-        tabFromUrl === 'premium' ? 'premium' : 'free'
-    );
-    const [page, setPage] = useState(1);
-    const [premiumPage, setPremiumPage] = useState(1);
-    const [sortBy, setSortBy] = useState<SortOption>('hot');
-    const [searchQuery, setSearchQuery] = useState('');
-    const [showPayment, setShowPayment] = useState(false);
-    const [selectedTier, setSelectedTier] = useState<'standard' | 'pro'>('standard');
-    const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
-    const [isCreatingLink, setIsCreatingLink] = useState(false);
-    const [showLoginModal, setShowLoginModal] = useState(false);
+  // Initialize tab from URL query param
+  const tabFromUrl = searchParams.get("tab");
+  const [activeTab, setActiveTab] = useState<"free" | "premium">(
+    tabFromUrl === "premium" ? "premium" : "free",
+  );
+  const [page, setPage] = useState(1);
+  const [premiumPage, setPremiumPage] = useState(1);
+  const [sortBy, setSortBy] = useState<SortOption>("hot");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showPayment, setShowPayment] = useState(false);
+  const [selectedTier, setSelectedTier] = useState<"standard" | "pro">(
+    "standard",
+  );
+  const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">(
+    "monthly",
+  );
+  const [isCreatingLink, setIsCreatingLink] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
 
-    // Sync activeTab with URL when it changes
-    useEffect(() => {
-        const urlTab = searchParams.get('tab');
-        if (urlTab === 'premium' && activeTab !== 'premium') {
-            setActiveTab('premium');
-        } else if (urlTab !== 'premium' && activeTab !== 'free') {
-            setActiveTab('free');
-        }
-    }, [searchParams]);
+  // Sync activeTab with URL when it changes
+  useEffect(() => {
+    const urlTab = searchParams.get("tab");
+    if (urlTab === "premium" && activeTab !== "premium") {
+      setActiveTab("premium");
+    } else if (urlTab !== "premium" && activeTab !== "free") {
+      setActiveTab("free");
+    }
+  }, [searchParams]);
 
-    // Helper to prompt login instead of direct redirect
-    const promptLogin = () => {
-        console.log('promptLogin called - setting showLoginModal to true');
-        console.log('Current showLoginModal state:', showLoginModal);
-        setShowLoginModal(true);
-        // Force a small delay to ensure state updates
-        setTimeout(() => {
-            console.log('After timeout - showLoginModal should be true:', showLoginModal);
-        }, 100);
-    };
+  // Helper to prompt login instead of direct redirect
+  const promptLogin = () => {
+    console.log("promptLogin called - setting showLoginModal to true");
+    console.log("Current showLoginModal state:", showLoginModal);
+    setShowLoginModal(true);
+    // Force a small delay to ensure state updates
+    setTimeout(() => {
+      console.log(
+        "After timeout - showLoginModal should be true:",
+        showLoginModal,
+      );
+    }, 100);
+  };
 
-    // Lock body scroll when dialog opens (mobile Safari fix)
-    useEffect(() => {
-        if (showLoginModal) {
-            // Lock body scroll on mobile to prevent background scrolling
-            const scrollY = window.scrollY;
-            document.body.style.overflow = 'hidden';
-            document.body.style.position = 'fixed';
-            document.body.style.width = '100%';
-            document.body.style.top = `-${scrollY}px`;
-        } else {
-            // Restore scroll position
-            const scrollY = document.body.style.top;
-            document.body.style.overflow = '';
-            document.body.style.position = '';
-            document.body.style.width = '';
-            document.body.style.top = '';
-            if (scrollY) {
-                window.scrollTo(0, parseInt(scrollY || '0') * -1);
-            }
-        }
-
-        return () => {
-            // Cleanup on unmount
-            document.body.style.overflow = '';
-            document.body.style.position = '';
-            document.body.style.width = '';
-            document.body.style.top = '';
-        };
-    }, [showLoginModal]);
-
-    // SEO - Update page meta tags (search-query focused)
-    useEffect(() => {
-        document.title = 'Startup Ideas: Find Validated Business Problems | beseekr';
-        const metaDesc = document.querySelector('meta[name="description"]');
-        if (metaDesc) {
-            metaDesc.setAttribute('content', 'Find startup ideas that actually work. Discover validated SaaS ideas, B2B problems, and business opportunities from real market research. Free to browse.');
-        }
-        // Add keywords meta
-        let metaKeywords = document.querySelector('meta[name="keywords"]');
-        if (!metaKeywords) {
-            metaKeywords = document.createElement('meta');
-            metaKeywords.setAttribute('name', 'keywords');
-            document.head.appendChild(metaKeywords);
-        }
-        metaKeywords.setAttribute('content', 'startup ideas 2024, SaaS ideas, business ideas, validated problems, B2B startup ideas, indie hacker ideas, micro SaaS ideas');
-        return () => {
-            document.title = 'beseekr - Discover Validated Startup Problems';
-        };
-    }, []);
-
-    // Helper to get cached data from localStorage for instant display
-    const getCachedProblems = (key: string) => {
-        try {
-            const cached = localStorage.getItem(`beseekr_cache_${key}`);
-            if (cached) {
-                const entry = JSON.parse(cached);
-                if (Date.now() - entry.timestamp < 60 * 60 * 1000) { // 1 hour
-                    return entry.data;
-                }
-            }
-        } catch { }
-        return undefined;
-    };
-
-    // Fetch free problems - AGGRESSIVE CACHING
-    // Show cached data instantly (placeholderData), while fetching fresh in background
-    const { data, isLoading, error, isFetching } = useQuery({
-        queryKey: ['problems', page, sortBy],
-        queryFn: () => problemsApi.getProblems(sortBy, page, ITEMS_PER_PAGE),
-        staleTime: 0, // Always refetch in background
-        gcTime: 24 * 60 * 60 * 1000, // Keep in memory for 24 hours
-        refetchOnMount: true,
-        refetchOnWindowFocus: false,
-        placeholderData: getCachedProblems(`problems_${sortBy}_${page}_${ITEMS_PER_PAGE}`),
-    });
-
-    // Fetch premium problems - AGGRESSIVE CACHING
-    const { data: premiumData, isLoading: isLoadingPremium, isFetching: isFetchingPremium } = useQuery({
-        queryKey: ['premium-problems', premiumPage],
-        queryFn: () => problemsApi.getPremiumProblems(premiumPage, ITEMS_PER_PAGE),
-        enabled: activeTab === 'premium',
-        staleTime: 0, // Always refetch in background
-        gcTime: 24 * 60 * 60 * 1000,
-        refetchOnMount: true,
-        refetchOnWindowFocus: false,
-    });
-
-    // Fetch subscription plans - always for logged-in users (to check premium status)
-    const { data: plansData, isLoading: isLoadingPlans } = useQuery({
-        queryKey: ['subscription-plans'],
-        queryFn: () => paymentsApi.getPlans(),
-        enabled: !!user, // Always fetch for logged-in users
-        staleTime: 5 * 60 * 1000, // Cache for 5 minutes
-    });
-
-    // Check if user is premium (from plans API) - must be defined before premiumPreviewData query
-    const isPremiumUser = plansData?.user?.is_premium === true;
-
-    // Fetch premium preview for teaser on free tab (only for non-premium users)
-    const { data: premiumPreviewData } = useQuery({
-        queryKey: ['premium-preview'],
-        queryFn: () => problemsApi.getPremiumProblems(1, 1),
-        enabled: activeTab === 'free' && !isPremiumUser,
-        staleTime: 10 * 60 * 1000, // Cache for 10 minutes
-        gcTime: 30 * 60 * 1000,
-    });
-
-    // Extract plans from response
-    const plans = plansData?.plans;
-
-    // Fetch watchlist (only for authenticated users)
-    const { data: watchlist } = useQuery({
-        queryKey: ['watchlist'],
-        queryFn: () => problemsApi.getWatchlist(),
-        enabled: !!user,
-    });
-
-    // Mutations with optimistic updates
-    const addToWatchlistMutation = useMutation({
-        mutationFn: problemsApi.addToWatchlist,
-        onMutate: async (problemId: string) => {
-            // Cancel outgoing refetches
-            await queryClient.cancelQueries({ queryKey: ['watchlist'] });
-
-            // Snapshot previous value
-            const previousWatchlist = queryClient.getQueryData(['watchlist']);
-
-            // Optimistically update watchlist
-            queryClient.setQueryData(['watchlist'], (old: any) => {
-                if (!old) return [{ problem_id: problemId, problem: { id: problemId } }];
-                return [...old, { problem_id: problemId, problem: { id: problemId } }];
-            });
-
-            return { previousWatchlist };
-        },
-        onError: (_err, _problemId, context) => {
-            // Rollback on error
-            if (context?.previousWatchlist) {
-                queryClient.setQueryData(['watchlist'], context.previousWatchlist);
-            }
-        },
-        onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: ['watchlist'] });
-        },
-    });
-
-    const removeFromWatchlistMutation = useMutation({
-        mutationFn: problemsApi.removeFromWatchlist,
-        onMutate: async (problemId: string) => {
-            await queryClient.cancelQueries({ queryKey: ['watchlist'] });
-
-            const previousWatchlist = queryClient.getQueryData(['watchlist']);
-
-            // Optimistically remove from watchlist
-            queryClient.setQueryData(['watchlist'], (old: any) => {
-                if (!old) return [];
-                return old.filter((item: any) =>
-                    (item.problem?.id || item.problem_id) !== problemId
-                );
-            });
-
-            return { previousWatchlist };
-        },
-        onError: (_err, _problemId, context) => {
-            if (context?.previousWatchlist) {
-                queryClient.setQueryData(['watchlist'], context.previousWatchlist);
-            }
-        },
-        onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: ['watchlist'] });
-        },
-    });
-
-    const watchlistIds = useMemo(() => {
-        if (!watchlist || !Array.isArray(watchlist)) return new Set<string>();
-        return new Set(watchlist.map((item: { problem?: { id: string }; problem_id?: string }) =>
-            item.problem?.id || item.problem_id
-        ));
-    }, [watchlist]);
-
-    const handleWatchlistToggle = (problemId: string, add: boolean) => {
-        if (!user) {
-            promptLogin();
-            return;
-        }
-        if (add) {
-            addToWatchlistMutation.mutate(problemId);
-        } else {
-            removeFromWatchlistMutation.mutate(problemId);
-        }
-    };
-
-    // Helper to optimistically update problems in cache
-    const updateProblemInCache = (
-        problemId: string,
-        updater: (problem: any) => any
-    ) => {
-        // Update free problems cache
-        queryClient.setQueryData(['problems', page, sortBy], (old: any) => {
-            if (!old?.items) return old;
-            return {
-                ...old,
-                items: old.items.map((p: any) =>
-                    p.id === problemId ? updater(p) : p
-                ),
-            };
-        });
-
-        // Update premium problems cache
-        queryClient.setQueryData(['premium-problems', premiumPage], (old: any) => {
-            if (!old?.problems) return old;
-            return {
-                ...old,
-                problems: old.problems.map((item: any) => {
-                    if (item.id === problemId) return updater(item);
-                    if (item.problem?.id === problemId) {
-                        return { ...item, problem: updater(item.problem) };
-                    }
-                    return item;
-                }),
-            };
-        });
-    };
-
-    // Rating mutations with optimistic updates
-    const rateProblemMutation = useMutation({
-        mutationFn: ({ problemId, rating }: { problemId: string; rating: 'upvote' | 'downvote' }) =>
-            problemsApi.rateProblem(problemId, rating),
-        onMutate: async ({ problemId, rating }) => {
-            await queryClient.cancelQueries({ queryKey: ['problems'] });
-            await queryClient.cancelQueries({ queryKey: ['premium-problems'] });
-
-            // Snapshot previous state
-            const previousProblems = queryClient.getQueryData(['problems', page, sortBy]);
-            const previousPremium = queryClient.getQueryData(['premium-problems', premiumPage]);
-
-            // Optimistically update - handle both flat fields and nested feedback
-            updateProblemInCache(problemId, (problem) => {
-                const prevVote = problem.user_vote ?? problem.feedback?.user_vote;
-                const currUpvotes = problem.upvotes ?? problem.feedback?.upvotes ?? 0;
-                const currDownvotes = problem.downvotes ?? problem.feedback?.downvotes ?? 0;
-
-                const newUpvotes = rating === 'upvote'
-                    ? currUpvotes + 1
-                    : (prevVote === 'upvote' ? currUpvotes - 1 : currUpvotes);
-                const newDownvotes = rating === 'downvote'
-                    ? currDownvotes + 1
-                    : (prevVote === 'downvote' ? currDownvotes - 1 : currDownvotes);
-
-                // Update both flat fields and nested feedback for compatibility
-                return {
-                    ...problem,
-                    user_vote: rating,
-                    upvotes: newUpvotes,
-                    downvotes: newDownvotes,
-                    feedback: {
-                        ...problem.feedback,
-                        upvotes: newUpvotes,
-                        downvotes: newDownvotes,
-                        user_vote: rating,
-                    },
-                };
-            });
-
-            return { previousProblems, previousPremium };
-        },
-        onError: (_err, _vars, context) => {
-            // Rollback on error
-            if (context?.previousProblems) {
-                queryClient.setQueryData(['problems', page, sortBy], context.previousProblems);
-            }
-            if (context?.previousPremium) {
-                queryClient.setQueryData(['premium-problems', premiumPage], context.previousPremium);
-            }
-        },
-        // Don't invalidate queries - the GET endpoint doesn't return user_vote
-        // so refetching would overwrite our optimistic update. Only rollback on error.
-    });
-
-    const removeRatingMutation = useMutation({
-        mutationFn: problemsApi.removeRating,
-        onMutate: async (problemId: string) => {
-            await queryClient.cancelQueries({ queryKey: ['problems'] });
-            await queryClient.cancelQueries({ queryKey: ['premium-problems'] });
-
-            const previousProblems = queryClient.getQueryData(['problems', page, sortBy]);
-            const previousPremium = queryClient.getQueryData(['premium-problems', premiumPage]);
-
-            // Optimistically remove vote - handle both flat fields and nested feedback
-            updateProblemInCache(problemId, (problem) => {
-                const prevVote = problem.user_vote ?? problem.feedback?.user_vote;
-                const currUpvotes = problem.upvotes ?? problem.feedback?.upvotes ?? 0;
-                const currDownvotes = problem.downvotes ?? problem.feedback?.downvotes ?? 0;
-
-                const newUpvotes = prevVote === 'upvote' ? Math.max(0, currUpvotes - 1) : currUpvotes;
-                const newDownvotes = prevVote === 'downvote' ? Math.max(0, currDownvotes - 1) : currDownvotes;
-
-                return {
-                    ...problem,
-                    user_vote: null,
-                    upvotes: newUpvotes,
-                    downvotes: newDownvotes,
-                    feedback: {
-                        ...problem.feedback,
-                        upvotes: newUpvotes,
-                        downvotes: newDownvotes,
-                        user_vote: null,
-                    },
-                };
-            });
-
-            return { previousProblems, previousPremium };
-        },
-        onError: (_err, _vars, context) => {
-            if (context?.previousProblems) {
-                queryClient.setQueryData(['problems', page, sortBy], context.previousProblems);
-            }
-            if (context?.previousPremium) {
-                queryClient.setQueryData(['premium-problems', premiumPage], context.previousPremium);
-            }
-        },
-        // Don't invalidate queries - the GET endpoint doesn't return user_vote
-        // so refetching would overwrite our optimistic update. Only rollback on error.
-    });
-
-    const handleRateToggle = (problemId: string, rating: 'upvote' | 'downvote') => {
-        if (!user) {
-            promptLogin();
-            return;
-        }
-
-        // Read directly from cache to get the latest optimistic state
-        const cachedProblems = queryClient.getQueryData<any>(['problems', page, sortBy]);
-        const cachedPremium = queryClient.getQueryData<any>(['premium-problems', premiumPage]);
-
-        // Find current problem from cache
-        const currentProblem = cachedProblems?.items?.find((p: any) => p.id === problemId);
-        const premiumItem = cachedPremium?.problems?.find((item: any) =>
-            item.problem?.id === problemId || item.id === problemId
-        );
-
-        // Check vote from multiple possible locations (including nested feedback)
-        const currentVote = currentProblem?.user_vote
-            ?? currentProblem?.feedback?.user_vote
-            ?? premiumItem?.problem?.user_vote
-            ?? premiumItem?.problem?.feedback?.user_vote
-            ?? null;
-
-        // If clicking the same vote, remove it (toggle off)
-        if (currentVote === rating) {
-            removeRatingMutation.mutate(problemId);
-        } else {
-            // Otherwise, set/change the vote
-            rateProblemMutation.mutate({ problemId, rating });
-        }
-    };
-
-    // Handle plan selection and payment
-    const handlePlanSelect = async () => {
-        if (!user) {
-            promptLogin();
-            return;
-        }
-
-        setIsCreatingLink(true);
-        try {
-            const planKey = `${selectedTier}_${billingCycle}` as string;
-            const paymentLink = await paymentsApi.createPaymentLink(planKey);
-
-            // Redirect to Razorpay payment page
-            if (paymentLink.short_url) {
-                window.location.href = paymentLink.short_url;
-            }
-        } catch (error) {
-            console.error('Failed to create payment link:', error);
-            // Could add toast notification here
-        } finally {
-            setIsCreatingLink(false);
-        }
-    };
-
-    // Get selected plan details
-    const getSelectedPlan = (): Plan | undefined => {
-        if (!plans) return undefined;
-        return plans.find(p => p.tier === selectedTier && p.plan_type === billingCycle);
-    };
-
-    // Filter problems by search
-    const problems = useMemo(() => {
-        const items = data?.items || [];
-        if (!searchQuery.trim()) return items;
-        const query = searchQuery.toLowerCase();
-        return items.filter((p: ProblemListItem) =>
-            p.title.toLowerCase().includes(query) ||
-            p.summary?.toLowerCase().includes(query) ||
-            p.tags?.some(tag => tag.toLowerCase().includes(query))
-        );
-    }, [data?.items, searchQuery]);
-
-    const totalPages = data?.total_pages || 1;
-
-    if (error) {
-        return (
-            <div className="flex flex-col items-center justify-center py-20">
-                <AlertCircle className="h-12 w-12 text-destructive mb-4" />
-                <h3 className="text-xl font-semibold mb-2">Something went wrong</h3>
-                <p className="text-muted-foreground mb-6">We could not load the problems. Try again later.</p>
-                <Button onClick={() => window.location.reload()}>Retry</Button>
-            </div>
-        );
+  // Lock body scroll when dialog opens (mobile Safari fix)
+  useEffect(() => {
+    if (showLoginModal) {
+      // Lock body scroll on mobile to prevent background scrolling
+      const scrollY = window.scrollY;
+      document.body.style.overflow = "hidden";
+      document.body.style.position = "fixed";
+      document.body.style.width = "100%";
+      document.body.style.top = `-${scrollY}px`;
+    } else {
+      // Restore scroll position
+      const scrollY = document.body.style.top;
+      document.body.style.overflow = "";
+      document.body.style.position = "";
+      document.body.style.width = "";
+      document.body.style.top = "";
+      if (scrollY) {
+        window.scrollTo(0, parseInt(scrollY || "0") * -1);
+      }
     }
 
+    return () => {
+      // Cleanup on unmount
+      document.body.style.overflow = "";
+      document.body.style.position = "";
+      document.body.style.width = "";
+      document.body.style.top = "";
+    };
+  }, [showLoginModal]);
+
+  // SEO - Update page meta tags (search-query focused)
+  useEffect(() => {
+    document.title =
+      "Startup Ideas: Find Validated Business Problems | beseekr";
+    const metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc) {
+      metaDesc.setAttribute(
+        "content",
+        "Find startup ideas that actually work. Discover validated SaaS ideas, B2B problems, and business opportunities from real market research. Free to browse.",
+      );
+    }
+    // Add keywords meta
+    let metaKeywords = document.querySelector('meta[name="keywords"]');
+    if (!metaKeywords) {
+      metaKeywords = document.createElement("meta");
+      metaKeywords.setAttribute("name", "keywords");
+      document.head.appendChild(metaKeywords);
+    }
+    metaKeywords.setAttribute(
+      "content",
+      "startup ideas 2024, SaaS ideas, business ideas, validated problems, B2B startup ideas, indie hacker ideas, micro SaaS ideas",
+    );
+    return () => {
+      document.title = "beseekr - Discover Validated Startup Problems";
+    };
+  }, []);
+
+  // Helper to get cached data from localStorage for instant display
+  const getCachedProblems = (key: string) => {
+    try {
+      const cached = localStorage.getItem(`beseekr_cache_${key}`);
+      if (cached) {
+        const entry = JSON.parse(cached);
+        if (Date.now() - entry.timestamp < 60 * 60 * 1000) {
+          // 1 hour
+          return entry.data;
+        }
+      }
+    } catch {}
+    return undefined;
+  };
+
+  // Fetch free problems - AGGRESSIVE CACHING
+  // Show cached data instantly (placeholderData), while fetching fresh in background
+  const { data, isLoading, error, isFetching } = useQuery({
+    queryKey: ["problems", page, sortBy],
+    queryFn: () => problemsApi.getProblems(sortBy, page, ITEMS_PER_PAGE),
+    staleTime: 0, // Always refetch in background
+    gcTime: 24 * 60 * 60 * 1000, // Keep in memory for 24 hours
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
+    placeholderData: getCachedProblems(
+      `problems_${sortBy}_${page}_${ITEMS_PER_PAGE}`,
+    ),
+  });
+
+  // Fetch premium problems - AGGRESSIVE CACHING
+  const {
+    data: premiumData,
+    isLoading: isLoadingPremium,
+    isFetching: isFetchingPremium,
+  } = useQuery({
+    queryKey: ["premium-problems", premiumPage],
+    queryFn: () => problemsApi.getPremiumProblems(premiumPage, ITEMS_PER_PAGE),
+    enabled: activeTab === "premium",
+    staleTime: 0, // Always refetch in background
+    gcTime: 24 * 60 * 60 * 1000,
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
+  });
+
+  // Fetch subscription plans - always for logged-in users (to check premium status)
+  const { data: plansData, isLoading: isLoadingPlans } = useQuery({
+    queryKey: ["subscription-plans"],
+    queryFn: () => paymentsApi.getPlans(),
+    enabled: !!user, // Always fetch for logged-in users
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+  });
+
+  // Check if user is premium (from plans API) - must be defined before premiumPreviewData query
+  const isPremiumUser = plansData?.user?.is_premium === true;
+
+  // Fetch premium preview for teaser on free tab (only for non-premium users)
+  const { data: premiumPreviewData } = useQuery({
+    queryKey: ["premium-preview"],
+    queryFn: () => problemsApi.getPremiumProblems(1, 1),
+    enabled: activeTab === "free" && !isPremiumUser,
+    staleTime: 10 * 60 * 1000, // Cache for 10 minutes
+    gcTime: 30 * 60 * 1000,
+  });
+
+  // Extract plans from response
+  const plans = plansData?.plans;
+
+  // Fetch watchlist (only for authenticated users)
+  const { data: watchlist } = useQuery({
+    queryKey: ["watchlist"],
+    queryFn: () => problemsApi.getWatchlist(),
+    enabled: !!user,
+  });
+
+  // Mutations with optimistic updates
+  const addToWatchlistMutation = useMutation({
+    mutationFn: problemsApi.addToWatchlist,
+    onMutate: async (problemId: string) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ["watchlist"] });
+
+      // Snapshot previous value
+      const previousWatchlist = queryClient.getQueryData(["watchlist"]);
+
+      // Optimistically update watchlist
+      queryClient.setQueryData(["watchlist"], (old: any) => {
+        if (!old)
+          return [{ problem_id: problemId, problem: { id: problemId } }];
+        return [...old, { problem_id: problemId, problem: { id: problemId } }];
+      });
+
+      return { previousWatchlist };
+    },
+    onError: (_err, _problemId, context) => {
+      // Rollback on error
+      if (context?.previousWatchlist) {
+        queryClient.setQueryData(["watchlist"], context.previousWatchlist);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["watchlist"] });
+    },
+  });
+
+  const removeFromWatchlistMutation = useMutation({
+    mutationFn: problemsApi.removeFromWatchlist,
+    onMutate: async (problemId: string) => {
+      await queryClient.cancelQueries({ queryKey: ["watchlist"] });
+
+      const previousWatchlist = queryClient.getQueryData(["watchlist"]);
+
+      // Optimistically remove from watchlist
+      queryClient.setQueryData(["watchlist"], (old: any) => {
+        if (!old) return [];
+        return old.filter(
+          (item: any) => (item.problem?.id || item.problem_id) !== problemId,
+        );
+      });
+
+      return { previousWatchlist };
+    },
+    onError: (_err, _problemId, context) => {
+      if (context?.previousWatchlist) {
+        queryClient.setQueryData(["watchlist"], context.previousWatchlist);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["watchlist"] });
+    },
+  });
+
+  const watchlistIds = useMemo(() => {
+    if (!watchlist || !Array.isArray(watchlist)) return new Set<string>();
+    return new Set(
+      watchlist.map(
+        (item: { problem?: { id: string }; problem_id?: string }) =>
+          item.problem?.id || item.problem_id,
+      ),
+    );
+  }, [watchlist]);
+
+  const handleWatchlistToggle = (problemId: string, add: boolean) => {
+    if (!user) {
+      promptLogin();
+      return;
+    }
+    if (add) {
+      addToWatchlistMutation.mutate(problemId);
+    } else {
+      removeFromWatchlistMutation.mutate(problemId);
+    }
+  };
+
+  // Helper to optimistically update problems in cache
+  const updateProblemInCache = (
+    problemId: string,
+    updater: (problem: any) => any,
+  ) => {
+    // Update free problems cache
+    queryClient.setQueryData(["problems", page, sortBy], (old: any) => {
+      if (!old?.items) return old;
+      return {
+        ...old,
+        items: old.items.map((p: any) => (p.id === problemId ? updater(p) : p)),
+      };
+    });
+
+    // Update premium problems cache
+    queryClient.setQueryData(["premium-problems", premiumPage], (old: any) => {
+      if (!old?.problems) return old;
+      return {
+        ...old,
+        problems: old.problems.map((item: any) => {
+          if (item.id === problemId) return updater(item);
+          if (item.problem?.id === problemId) {
+            return { ...item, problem: updater(item.problem) };
+          }
+          return item;
+        }),
+      };
+    });
+  };
+
+  // Rating mutations with optimistic updates
+  const rateProblemMutation = useMutation({
+    mutationFn: ({
+      problemId,
+      rating,
+    }: {
+      problemId: string;
+      rating: "upvote" | "downvote";
+    }) => problemsApi.rateProblem(problemId, rating),
+    onMutate: async ({ problemId, rating }) => {
+      await queryClient.cancelQueries({ queryKey: ["problems"] });
+      await queryClient.cancelQueries({ queryKey: ["premium-problems"] });
+
+      // Snapshot previous state
+      const previousProblems = queryClient.getQueryData([
+        "problems",
+        page,
+        sortBy,
+      ]);
+      const previousPremium = queryClient.getQueryData([
+        "premium-problems",
+        premiumPage,
+      ]);
+
+      // Optimistically update - handle both flat fields and nested feedback
+      updateProblemInCache(problemId, (problem) => {
+        const prevVote = problem.user_vote ?? problem.feedback?.user_vote;
+        const currUpvotes = problem.upvotes ?? problem.feedback?.upvotes ?? 0;
+        const currDownvotes =
+          problem.downvotes ?? problem.feedback?.downvotes ?? 0;
+
+        const newUpvotes =
+          rating === "upvote"
+            ? currUpvotes + 1
+            : prevVote === "upvote"
+              ? currUpvotes - 1
+              : currUpvotes;
+        const newDownvotes =
+          rating === "downvote"
+            ? currDownvotes + 1
+            : prevVote === "downvote"
+              ? currDownvotes - 1
+              : currDownvotes;
+
+        // Update both flat fields and nested feedback for compatibility
+        return {
+          ...problem,
+          user_vote: rating,
+          upvotes: newUpvotes,
+          downvotes: newDownvotes,
+          feedback: {
+            ...problem.feedback,
+            upvotes: newUpvotes,
+            downvotes: newDownvotes,
+            user_vote: rating,
+          },
+        };
+      });
+
+      return { previousProblems, previousPremium };
+    },
+    onError: (_err, _vars, context) => {
+      // Rollback on error
+      if (context?.previousProblems) {
+        queryClient.setQueryData(
+          ["problems", page, sortBy],
+          context.previousProblems,
+        );
+      }
+      if (context?.previousPremium) {
+        queryClient.setQueryData(
+          ["premium-problems", premiumPage],
+          context.previousPremium,
+        );
+      }
+    },
+    // Don't invalidate queries - the GET endpoint doesn't return user_vote
+    // so refetching would overwrite our optimistic update. Only rollback on error.
+  });
+
+  const removeRatingMutation = useMutation({
+    mutationFn: problemsApi.removeRating,
+    onMutate: async (problemId: string) => {
+      await queryClient.cancelQueries({ queryKey: ["problems"] });
+      await queryClient.cancelQueries({ queryKey: ["premium-problems"] });
+
+      const previousProblems = queryClient.getQueryData([
+        "problems",
+        page,
+        sortBy,
+      ]);
+      const previousPremium = queryClient.getQueryData([
+        "premium-problems",
+        premiumPage,
+      ]);
+
+      // Optimistically remove vote - handle both flat fields and nested feedback
+      updateProblemInCache(problemId, (problem) => {
+        const prevVote = problem.user_vote ?? problem.feedback?.user_vote;
+        const currUpvotes = problem.upvotes ?? problem.feedback?.upvotes ?? 0;
+        const currDownvotes =
+          problem.downvotes ?? problem.feedback?.downvotes ?? 0;
+
+        const newUpvotes =
+          prevVote === "upvote" ? Math.max(0, currUpvotes - 1) : currUpvotes;
+        const newDownvotes =
+          prevVote === "downvote"
+            ? Math.max(0, currDownvotes - 1)
+            : currDownvotes;
+
+        return {
+          ...problem,
+          user_vote: null,
+          upvotes: newUpvotes,
+          downvotes: newDownvotes,
+          feedback: {
+            ...problem.feedback,
+            upvotes: newUpvotes,
+            downvotes: newDownvotes,
+            user_vote: null,
+          },
+        };
+      });
+
+      return { previousProblems, previousPremium };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previousProblems) {
+        queryClient.setQueryData(
+          ["problems", page, sortBy],
+          context.previousProblems,
+        );
+      }
+      if (context?.previousPremium) {
+        queryClient.setQueryData(
+          ["premium-problems", premiumPage],
+          context.previousPremium,
+        );
+      }
+    },
+    // Don't invalidate queries - the GET endpoint doesn't return user_vote
+    // so refetching would overwrite our optimistic update. Only rollback on error.
+  });
+
+  const handleRateToggle = (
+    problemId: string,
+    rating: "upvote" | "downvote",
+  ) => {
+    if (!user) {
+      promptLogin();
+      return;
+    }
+
+    // Read directly from cache to get the latest optimistic state
+    const cachedProblems = queryClient.getQueryData<any>([
+      "problems",
+      page,
+      sortBy,
+    ]);
+    const cachedPremium = queryClient.getQueryData<any>([
+      "premium-problems",
+      premiumPage,
+    ]);
+
+    // Find current problem from cache
+    const currentProblem = cachedProblems?.items?.find(
+      (p: any) => p.id === problemId,
+    );
+    const premiumItem = cachedPremium?.problems?.find(
+      (item: any) => item.problem?.id === problemId || item.id === problemId,
+    );
+
+    // Check vote from multiple possible locations (including nested feedback)
+    const currentVote =
+      currentProblem?.user_vote ??
+      currentProblem?.feedback?.user_vote ??
+      premiumItem?.problem?.user_vote ??
+      premiumItem?.problem?.feedback?.user_vote ??
+      null;
+
+    // If clicking the same vote, remove it (toggle off)
+    if (currentVote === rating) {
+      removeRatingMutation.mutate(problemId);
+    } else {
+      // Otherwise, set/change the vote
+      rateProblemMutation.mutate({ problemId, rating });
+    }
+  };
+
+  // Handle plan selection and payment
+  const handlePlanSelect = async () => {
+    if (!user) {
+      promptLogin();
+      return;
+    }
+
+    setIsCreatingLink(true);
+    try {
+      const planKey = `${selectedTier}_${billingCycle}` as string;
+      const paymentLink = await paymentsApi.createPaymentLink(planKey);
+
+      // Redirect to Razorpay payment page
+      if (paymentLink.short_url) {
+        window.location.href = paymentLink.short_url;
+      }
+    } catch (error) {
+      console.error("Failed to create payment link:", error);
+      // Could add toast notification here
+    } finally {
+      setIsCreatingLink(false);
+    }
+  };
+
+  // Get selected plan details
+  const getSelectedPlan = (): Plan | undefined => {
+    if (!plans) return undefined;
+    return plans.find(
+      (p) => p.tier === selectedTier && p.plan_type === billingCycle,
+    );
+  };
+
+  // Filter problems by search
+  const problems = useMemo(() => {
+    const items = data?.items || [];
+    if (!searchQuery.trim()) return items;
+    const query = searchQuery.toLowerCase();
+    return items.filter(
+      (p: ProblemListItem) =>
+        p.title.toLowerCase().includes(query) ||
+        p.summary?.toLowerCase().includes(query) ||
+        p.tags?.some((tag) => tag.toLowerCase().includes(query)),
+    );
+  }, [data?.items, searchQuery]);
+
+  const totalPages = data?.total_pages || 1;
+
+  if (error) {
     return (
-        <div className="space-y-8">
-            {/* Hero Header */}
-            <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                className="text-center max-w-2xl mx-auto px-2"
-            >
-                <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4">
-                    Find{' '}
-                    <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient">
-                        Unmet Needs
-                    </span>
-                </h1>
-                <p className="text-sm sm:text-lg text-muted-foreground">
-                    Real pain points extracted from Reddit, Hacker News & online communities. Scored by opportunity potential.
+      <div className="flex flex-col items-center justify-center py-20">
+        <AlertCircle className="h-12 w-12 text-destructive mb-4" />
+        <h3 className="text-xl font-semibold mb-2">Something went wrong</h3>
+        <p className="text-muted-foreground mb-6">
+          We could not load the problems. Try again later.
+        </p>
+        <Button onClick={() => window.location.reload()}>Retry</Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-8">
+      {/* Hero Header */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="text-center max-w-2xl mx-auto px-2"
+      >
+        <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4">
+          Find{" "}
+          <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient">
+            Unmet Needs
+          </span>
+        </h1>
+        <p className="text-sm sm:text-lg text-muted-foreground">
+          Real pain points extracted from Reddit, Hacker News & online
+          communities. Scored by opportunity potential.
+        </p>
+
+        {/* Trust Badge */}
+        <div className="flex items-center justify-center gap-1.5 text-xs sm:text-sm text-muted-foreground mt-4 sm:mt-6">
+          <Sparkles className="h-4 w-4 text-purple-500" />
+          <span>AI-curated & updated weekly</span>
+        </div>
+
+        {/* Social Proof */}
+        <div className="flex items-center justify-center gap-2 mt-3 sm:mt-4 text-xs sm:text-sm text-muted-foreground">
+          <div className="flex -space-x-2">
+            {[...Array(4)].map((_, i) => (
+              <div
+                key={i}
+                className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-gradient-to-br from-primary/60 to-accent/60 border-2 border-background"
+              />
+            ))}
+          </div>
+          <span>Explore problems. Run deep research. Build what matters.</span>
+        </div>
+      </motion.div>
+
+      {/* Gated Content Banner - Show for anonymous users */}
+      {data?.gated && !user && activeTab === "free" && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.15 }}
+          className="mx-auto max-w-2xl"
+        >
+          <div className="relative p-4 sm:p-6 rounded-2xl bg-gradient-to-r from-primary/10 via-accent/10 to-primary/10 border border-primary/20 backdrop-blur-sm">
+            <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
+              <div className="shrink-0 w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center">
+                <Lock className="h-6 w-6 text-primary" />
+              </div>
+              <div className="flex-1 text-center sm:text-left">
+                <p className="font-semibold text-foreground">
+                  Showing {data.showing} of {data.total_available} problems
                 </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Sign up to unlock all problems +{" "}
+                  <span className="font-medium text-primary">
+                    7 days of Pro access free
+                  </span>
+                </p>
+              </div>
+              <Button
+                onClick={promptLogin}
+                className="shrink-0 rounded-xl bg-primary hover:bg-primary/90 transition-opacity touch-manipulation active:scale-95"
+              >
+                Start Free Trial
+              </Button>
+            </div>
+          </div>
+        </motion.div>
+      )}
 
-                {/* Trust Badge */}
-                <div className="flex items-center justify-center gap-1.5 text-xs sm:text-sm text-muted-foreground mt-4 sm:mt-6">
-                    <Sparkles className="h-4 w-4 text-purple-500" />
-                    <span>AI-curated & updated weekly</span>
-                </div>
-
-                {/* Social Proof */}
-                <div className="flex items-center justify-center gap-2 mt-3 sm:mt-4 text-xs sm:text-sm text-muted-foreground">
-                    <div className="flex -space-x-2">
-                        {[...Array(4)].map((_, i) => (
-                            <div key={i} className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-gradient-to-br from-primary/60 to-accent/60 border-2 border-background" />
-                        ))}
-                    </div>
-                    <span>Explore problems. Run deep research. Build what matters.</span>
-                </div>
-            </motion.div>
-
-            {/* Gated Content Banner - Show for anonymous users */}
-            {data?.gated && !user && activeTab === 'free' && (
-                <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, delay: 0.15 }}
-                    className="mx-auto max-w-2xl"
-                >
-                    <div className="relative p-4 sm:p-6 rounded-2xl bg-gradient-to-r from-primary/10 via-accent/10 to-primary/10 border border-primary/20 backdrop-blur-sm">
-                        <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
-                            <div className="shrink-0 w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center">
-                                <Lock className="h-6 w-6 text-primary" />
-                            </div>
-                            <div className="flex-1 text-center sm:text-left">
-                                <p className="font-semibold text-foreground">
-                                    Showing {data.showing} of {data.total_available} problems
-                                </p>
-                                <p className="text-sm text-muted-foreground mt-1">
-                                    Sign up to unlock all problems + <span className="font-medium text-primary">7 days of Pro access free</span>
-                                </p>
-                            </div>
-                            <Button
-                                onClick={promptLogin}
-                                className="shrink-0 rounded-xl bg-primary hover:bg-primary/90 transition-opacity touch-manipulation active:scale-95"
-                            >
-                                Start Free Trial
-                            </Button>
-                        </div>
-                    </div>
-                </motion.div>
-            )}
-
-            {/* Tab Toggle - Free vs Premium */}
-            <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.12 }}
-                className="flex justify-center px-2"
+      {/* Tab Toggle - Free vs Premium */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.12 }}
+        className="flex justify-center px-2"
+      >
+        <Tabs
+          value={activeTab}
+          onValueChange={(v) => setActiveTab(v as "free" | "premium")}
+          className="w-full max-w-md"
+        >
+          <TabsList className="grid w-full grid-cols-2 h-11 sm:h-12 rounded-xl bg-muted/50 p-1">
+            <TabsTrigger
+              value="free"
+              className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm flex items-center gap-1.5 sm:gap-2 text-sm"
             >
-                <Tabs
-                    value={activeTab}
-                    onValueChange={(v) => setActiveTab(v as 'free' | 'premium')}
-                    className="w-full max-w-md"
-                >
-                    <TabsList className="grid w-full grid-cols-2 h-11 sm:h-12 rounded-xl bg-muted/50 p-1">
-                        <TabsTrigger
-                            value="free"
-                            className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm flex items-center gap-1.5 sm:gap-2 text-sm"
-                        >
-                            <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                            <span className="hidden xs:inline">Free </span>Problems
-                        </TabsTrigger>
-                        <TabsTrigger
-                            value="premium"
-                            className="rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500/10 data-[state=active]:to-orange-500/10 data-[state=active]:text-amber-600 flex items-center gap-1.5 sm:gap-2 text-sm"
-                        >
-                            <Crown className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                            Premium
-                            {!user && <Lock className="h-3 w-3 ml-0.5 sm:ml-1" />}
-                        </TabsTrigger>
-                    </TabsList>
-                </Tabs>
+              <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              <span className="hidden xs:inline">Free </span>Problems
+            </TabsTrigger>
+            <TabsTrigger
+              value="premium"
+              className="rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500/10 data-[state=active]:to-orange-500/10 data-[state=active]:text-amber-600 flex items-center gap-1.5 sm:gap-2 text-sm"
+            >
+              <Crown className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              Premium
+              {!user && <Lock className="h-3 w-3 ml-0.5 sm:ml-1" />}
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </motion.div>
+
+      {/* Free Problems Tab Content */}
+      {activeTab === "free" && (
+        <>
+          {/* Search and Filter Bar */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.1 }}
+            className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-stretch sm:items-center justify-between"
+          >
+            {/* Search */}
+            <div className="relative w-full sm:w-80">
+              <Search className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
+              <Input
+                placeholder="Search problems..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 sm:pl-12 h-11 sm:h-12 rounded-xl border-border/50 bg-muted/30 focus:bg-background transition-colors text-sm sm:text-base"
+              />
+            </div>
+
+            {/* Sort */}
+            <div className="flex items-center gap-2 sm:gap-3">
+              <span className="text-xs sm:text-sm text-muted-foreground">
+                Sort by
+              </span>
+              <Select
+                value={sortBy}
+                onValueChange={(v) => setSortBy(v as SortOption)}
+              >
+                <SelectTrigger className="w-32 sm:w-40 h-11 sm:h-12 rounded-xl border-border/50 bg-muted/30 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl">
+                  <SelectItem value="hot" className="rounded-lg">
+                    <span className="flex items-center gap-2">
+                      <Flame className="h-4 w-4" /> Hot
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="trending" className="rounded-lg">
+                    <span className="flex items-center gap-2">
+                      <TrendingUp className="h-4 w-4" /> Trending
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="newest" className="rounded-lg">
+                    <span className="flex items-center gap-2">
+                      <ThumbsUp className="h-4 w-4" /> Newest
+                    </span>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </motion.div>
+
+          {/* Problems Grid */}
+          {isLoading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 min-h-[600px] sm:min-h-[650px]">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <ProblemSkeleton key={i} />
+              ))}
+            </div>
+          ) : problems.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 min-h-[600px] sm:min-h-[650px]">
+              <AnimatePresence mode="wait">
+                {problems.map((problem: ProblemListItem, index: number) => (
+                  <ProblemCard
+                    key={problem.id}
+                    problem={problem}
+                    isWatching={watchlistIds.has(problem.id)}
+                    onWatchlistToggle={handleWatchlistToggle}
+                    onRateToggle={handleRateToggle}
+                    index={index}
+                  />
+                ))}
+              </AnimatePresence>
+            </div>
+          ) : (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-center py-20"
+            >
+              <div className="w-20 h-20 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-6">
+                <Search className="h-10 w-10 text-muted-foreground" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">No problems found</h3>
+              <p className="text-muted-foreground">
+                {searchQuery
+                  ? "Try adjusting your search terms."
+                  : "Check back soon for new opportunities."}
+              </p>
             </motion.div>
+          )}
 
-            {/* Free Problems Tab Content */}
-            {activeTab === 'free' && (
-                <>
-                    {/* Search and Filter Bar */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.4, delay: 0.1 }}
-                        className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-stretch sm:items-center justify-between"
-                    >
-                        {/* Search */}
-                        <div className="relative w-full sm:w-80">
-                            <Search className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
-                            <Input
-                                placeholder="Search problems..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="pl-10 sm:pl-12 h-11 sm:h-12 rounded-xl border-border/50 bg-muted/30 focus:bg-background transition-colors text-sm sm:text-base"
-                            />
-                        </div>
+          {/* Premium Teaser on Free Tab - hidden for premium users */}
+          {!isLoading && problems.length > 0 && !isPremiumUser && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="mt-8 p-6 rounded-2xl bg-gradient-to-r from-primary/5 via-accent/5 to-primary/5 border border-primary/20"
+            >
+              <div className="flex flex-col lg:flex-row gap-6 items-center">
+                {/* Premium Problem Preview */}
+                <div className="flex-1 w-full">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Crown className="h-5 w-5 text-primary" />
+                    <span className="text-sm font-medium text-primary">
+                      Featured Premium Problem
+                    </span>
+                  </div>
+                  {(() => {
+                    // Get the first premium problem from preview data
+                    // Handle both: previews array with nested problem OR problems array
+                    const firstItem =
+                      premiumPreviewData?.previews?.[0] ||
+                      premiumPreviewData?.problems?.[0];
 
-                        {/* Sort */}
-                        <div className="flex items-center gap-2 sm:gap-3">
-                            <span className="text-xs sm:text-sm text-muted-foreground">Sort by</span>
-                            <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)}>
-                                <SelectTrigger className="w-32 sm:w-40 h-11 sm:h-12 rounded-xl border-border/50 bg-muted/30 text-sm">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent className="rounded-xl">
-                                    <SelectItem value="hot" className="rounded-lg">
-                                        <span className="flex items-center gap-2">
-                                            <Flame className="h-4 w-4" /> Hot
-                                        </span>
-                                    </SelectItem>
-                                    <SelectItem value="trending" className="rounded-lg">
-                                        <span className="flex items-center gap-2">
-                                            <TrendingUp className="h-4 w-4" /> Trending
-                                        </span>
-                                    </SelectItem>
-                                    <SelectItem value="newest" className="rounded-lg">
-                                        <span className="flex items-center gap-2">
-                                            <ThumbsUp className="h-4 w-4" /> Newest
-                                        </span>
-                                    </SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </motion.div>
+                    if (firstItem) {
+                      const previewProblem = firstItem.problem || firstItem;
+                      const score =
+                        firstItem.opportunity_score ||
+                        firstItem.score ||
+                        previewProblem?.opportunity_score ||
+                        "85+";
 
-                    {/* Problems Grid */}
-                    {isLoading ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 min-h-[600px] sm:min-h-[650px]">
-                            {Array.from({ length: 6 }).map((_, i) => (
-                                <ProblemSkeleton key={i} />
-                            ))}
-                        </div>
-                    ) : problems.length > 0 ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 min-h-[600px] sm:min-h-[650px]">
-                            <AnimatePresence mode="wait">
-                                {problems.map((problem: ProblemListItem, index: number) => (
-                                    <ProblemCard
-                                        key={problem.id}
-                                        problem={problem}
-                                        isWatching={watchlistIds.has(problem.id)}
-                                        onWatchlistToggle={handleWatchlistToggle}
-                                        onRateToggle={handleRateToggle}
-                                        index={index}
-                                    />
-                                ))}
-                            </AnimatePresence>
-                        </div>
-                    ) : (
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            className="text-center py-20"
+                      return (
+                        <div
+                          className="p-4 rounded-xl bg-background/50 border border-primary/10 cursor-pointer hover:border-primary/30 transition-all"
+                          onClick={() =>
+                            user ? setActiveTab("premium") : promptLogin()
+                          }
                         >
-                            <div className="w-20 h-20 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-6">
-                                <Search className="h-10 w-10 text-muted-foreground" />
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex-1">
+                              <h4 className="font-semibold line-clamp-1">
+                                {previewProblem?.title || "Premium Problem"}
+                              </h4>
+                              <p className="text-sm text-muted-foreground line-clamp-1 mt-1">
+                                {previewProblem?.description ||
+                                  previewProblem?.summary ||
+                                  ""}
+                              </p>
                             </div>
-                            <h3 className="text-xl font-semibold mb-2">No problems found</h3>
-                            <p className="text-muted-foreground">
-                                {searchQuery ? 'Try adjusting your search terms.' : 'Check back soon for new opportunities.'}
+                            <div className="shrink-0 px-3 py-1 rounded-full bg-primary text-primary-foreground text-sm font-bold">
+                              {score}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    // Fallback placeholder if no premium data yet
+                    return (
+                      <div
+                        className="p-4 rounded-xl bg-background/50 border border-primary/10 cursor-pointer hover:border-primary/30 transition-all"
+                        onClick={() =>
+                          user ? setActiveTab("premium") : promptLogin()
+                        }
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1">
+                            <h4 className="font-semibold line-clamp-1">
+                              High-Opportunity Business Problem
+                            </h4>
+                            <p className="text-sm text-muted-foreground line-clamp-1 mt-1">
+                              Discover validated problems with 85+ opportunity
+                              scores
                             </p>
-                        </motion.div>
-                    )}
+                          </div>
+                          <div className="shrink-0 px-3 py-1 rounded-full bg-primary text-primary-foreground text-sm font-bold">
+                            85+
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
 
-                    {/* Premium Teaser on Free Tab - hidden for premium users */}
-                    {!isLoading && problems.length > 0 && !isPremiumUser && (
+                {/* CTA */}
+                <div className="text-center lg:text-right shrink-0">
+                  <p className="text-sm text-muted-foreground mb-3">
+                    <span className="text-foreground font-semibold">
+                      {premiumPreviewData?.available_count ||
+                        premiumPreviewData?.total ||
+                        "20"}
+                      +
+                    </span>{" "}
+                    high-opportunity problems
+                  </p>
+                  <Button
+                    onClick={() =>
+                      user ? setActiveTab("premium") : promptLogin()
+                    }
+                    className="rounded-xl bg-primary hover:bg-primary/90"
+                  >
+                    {user ? "View Premium" : "Get Premium Access"}
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Pagination */}
+          {!isLoading && problems.length > 0 && totalPages > 1 && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3 }}
+              className="flex items-center justify-center gap-2 sm:gap-4 pt-6 sm:pt-8"
+            >
+              <Button
+                variant="outline"
+                size="default"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="rounded-xl gap-1 sm:gap-2 h-10 sm:h-11 px-3 sm:px-4"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                <span className="hidden sm:inline">Previous</span>
+              </Button>
+
+              <div className="flex items-center gap-1 sm:gap-2">
+                {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
+                  const pageNum = i + 1;
+                  return (
+                    <Button
+                      key={pageNum}
+                      variant={page === pageNum ? "default" : "ghost"}
+                      size="icon"
+                      onClick={() => setPage(pageNum)}
+                      className="rounded-lg sm:rounded-xl w-9 h-9 sm:w-10 sm:h-10 text-sm"
+                    >
+                      {pageNum}
+                    </Button>
+                  );
+                })}
+                {totalPages > 3 && (
+                  <>
+                    <span className="text-muted-foreground text-sm">...</span>
+                    <Button
+                      variant={page === totalPages ? "default" : "ghost"}
+                      size="icon"
+                      onClick={() => setPage(totalPages)}
+                      className="rounded-lg sm:rounded-xl w-9 h-9 sm:w-10 sm:h-10 text-sm"
+                    >
+                      {totalPages}
+                    </Button>
+                  </>
+                )}
+              </div>
+
+              <Button
+                variant="outline"
+                size="default"
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                className="rounded-xl gap-1 sm:gap-2 h-10 sm:h-11 px-3 sm:px-4"
+              >
+                <span className="hidden sm:inline">Next</span>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </motion.div>
+          )}
+        </>
+      )}
+
+      {/* Premium Problems Tab Content */}
+      {activeTab === "premium" && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+        >
+          {/* Guest user - show premium problems with unlock status */}
+          {!user ? (
+            <div className="space-y-6">
+              <div className="text-center">
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary mb-4">
+                  <Crown className="h-4 w-4" />
+                  <span className="text-sm font-medium">Premium Preview</span>
+                </div>
+                <h3 className="text-xl font-bold mb-2">
+                  High-Opportunity Problems
+                </h3>
+                <p className="text-muted-foreground">
+                  {premiumData?.upgrade_message ||
+                    `Sign up to unlock ${premiumData?.unlocked_count || 1} premium problem for free`}
+                </p>
+              </div>
+
+              {/* Loading state */}
+              {isLoadingPremium ? (
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <ProblemSkeleton key={i} />
+                  ))}
+                </div>
+              ) : premiumData?.previews?.length > 0 ||
+                premiumData?.problems?.length > 0 ? (
+                // Show premium problems with unlocked/locked status
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                  {(premiumData.previews || premiumData.problems).map(
+                    (item: any, index: number) => {
+                      // Handle both structures: direct properties or nested problem object
+                      const problemData = item.problem || item;
+                      const problemId = problemData.id || item.problem_id;
+                      const title = problemData.title || item.title;
+                      const description =
+                        problemData.description || item.description;
+                      const score =
+                        item.opportunity_score ||
+                        item.score ||
+                        problemData.opportunity_score ||
+                        "85+";
+                      const isUnlocked = item.unlocked === true;
+
+                      return (
                         <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.4 }}
-                            className="mt-8 p-6 rounded-2xl bg-gradient-to-r from-primary/5 via-accent/5 to-primary/5 border border-primary/20"
+                          key={item.id || problemData.id || index}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.3, delay: index * 0.05 }}
+                          onClick={() => {
+                            if (isUnlocked && problemId) {
+                              // Unlocked problem - navigate to details
+                              navigate(`/dashboard/problems/${problemId}`);
+                            } else {
+                              // Locked - prompt login
+                              promptLogin();
+                            }
+                          }}
+                          className={cn(
+                            "group relative cursor-pointer p-5 sm:p-6 rounded-2xl border transition-all",
+                            isUnlocked
+                              ? "bg-gradient-to-br from-primary/5 to-accent/5 border-primary/20 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/10"
+                              : "bg-muted/30 border-border/50 hover:border-border",
+                          )}
                         >
-                            <div className="flex flex-col lg:flex-row gap-6 items-center">
-                                {/* Premium Problem Preview */}
-                                <div className="flex-1 w-full">
-                                    <div className="flex items-center gap-2 mb-3">
-                                        <Crown className="h-5 w-5 text-primary" />
-                                        <span className="text-sm font-medium text-primary">Featured Premium Problem</span>
-                                    </div>
-                                    {(() => {
-                                        // Get the first premium problem from preview data
-                                        // Handle both: previews array with nested problem OR problems array
-                                        const firstItem = premiumPreviewData?.previews?.[0] || premiumPreviewData?.problems?.[0];
+                          {/* Score badge */}
+                          <div
+                            className={cn(
+                              "absolute -top-2 -right-2 px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1",
+                              isUnlocked
+                                ? "bg-primary text-primary-foreground"
+                                : "bg-muted text-muted-foreground",
+                            )}
+                          >
+                            <Crown className="h-3 w-3" />
+                            {score}
+                          </div>
 
-                                        if (firstItem) {
-                                            const previewProblem = firstItem.problem || firstItem;
-                                            const score = firstItem.opportunity_score || firstItem.score || previewProblem?.opportunity_score || '85+';
+                          <h4
+                            className={cn(
+                              "font-semibold text-base sm:text-lg mb-2 line-clamp-2 transition-colors",
+                              isUnlocked
+                                ? "group-hover:text-primary"
+                                : "text-muted-foreground",
+                            )}
+                          >
+                            {title}
+                          </h4>
 
-                                            return (
-                                                <div
-                                                    className="p-4 rounded-xl bg-background/50 border border-primary/10 cursor-pointer hover:border-primary/30 transition-all"
-                                                    onClick={() => user ? setActiveTab('premium') : promptLogin()}
-                                                >
-                                                    <div className="flex items-start justify-between gap-4">
-                                                        <div className="flex-1">
-                                                            <h4 className="font-semibold line-clamp-1">{previewProblem?.title || 'Premium Problem'}</h4>
-                                                            <p className="text-sm text-muted-foreground line-clamp-1 mt-1">
-                                                                {previewProblem?.description || previewProblem?.summary || ''}
-                                                            </p>
-                                                        </div>
-                                                        <div className="shrink-0 px-3 py-1 rounded-full bg-primary text-primary-foreground text-sm font-bold">
-                                                            {score}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            );
-                                        }
+                          {description && (
+                            <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+                              {description}
+                            </p>
+                          )}
 
-                                        // Fallback placeholder if no premium data yet
-                                        return (
-                                            <div
-                                                className="p-4 rounded-xl bg-background/50 border border-primary/10 cursor-pointer hover:border-primary/30 transition-all"
-                                                onClick={() => user ? setActiveTab('premium') : promptLogin()}
-                                            >
-                                                <div className="flex items-start justify-between gap-4">
-                                                    <div className="flex-1">
-                                                        <h4 className="font-semibold line-clamp-1">High-Opportunity Business Problem</h4>
-                                                        <p className="text-sm text-muted-foreground line-clamp-1 mt-1">
-                                                            Discover validated problems with 85+ opportunity scores
-                                                        </p>
-                                                    </div>
-                                                    <div className="shrink-0 px-3 py-1 rounded-full bg-primary text-primary-foreground text-sm font-bold">
-                                                        85+
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        );
-                                    })()}
-                                </div>
-
-                                {/* CTA */}
-                                <div className="text-center lg:text-right shrink-0">
-                                    <p className="text-sm text-muted-foreground mb-3">
-                                        <span className="text-foreground font-semibold">{premiumPreviewData?.available_count || premiumPreviewData?.total || '20'}+</span> high-opportunity problems
-                                    </p>
-                                    <Button
-                                        onClick={() => user ? setActiveTab('premium') : promptLogin()}
-                                        className="rounded-xl bg-primary hover:bg-primary/90"
-                                    >
-                                        {user ? 'View Premium' : 'Get Premium Access'}
-                                    </Button>
-                                </div>
-                            </div>
-                        </motion.div>
-                    )}
-
-                    {/* Pagination */}
-                    {!isLoading && problems.length > 0 && totalPages > 1 && (
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ delay: 0.3 }}
-                            className="flex items-center justify-center gap-2 sm:gap-4 pt-6 sm:pt-8"
-                        >
-                            <Button
-                                variant="outline"
-                                size="default"
-                                onClick={() => setPage(p => Math.max(1, p - 1))}
-                                disabled={page === 1}
-                                className="rounded-xl gap-1 sm:gap-2 h-10 sm:h-11 px-3 sm:px-4"
+                          <div className="flex items-center justify-between mt-auto pt-2">
+                            {isUnlocked ? (
+                              <span className="flex items-center gap-1 text-primary text-sm font-medium">
+                                <CheckCircle2 className="h-4 w-4" />
+                                Free to view
+                              </span>
+                            ) : (
+                              <span className="flex items-center gap-1 text-muted-foreground text-sm">
+                                <Lock className="h-4 w-4" />
+                                Locked
+                              </span>
+                            )}
+                            <span
+                              className={cn(
+                                "text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity",
+                                isUnlocked
+                                  ? "text-primary"
+                                  : "text-muted-foreground",
+                              )}
                             >
-                                <ChevronLeft className="h-4 w-4" />
-                                <span className="hidden sm:inline">Previous</span>
-                            </Button>
+                              {isUnlocked
+                                ? "View details →"
+                                : "Sign up to unlock"}
+                            </span>
+                          </div>
+                        </motion.div>
+                      );
+                    },
+                  )}
+                </div>
+              ) : null}
 
-                            <div className="flex items-center gap-1 sm:gap-2">
-                                {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
-                                    const pageNum = i + 1;
-                                    return (
-                                        <Button
-                                            key={pageNum}
-                                            variant={page === pageNum ? 'default' : 'ghost'}
-                                            size="icon"
-                                            onClick={() => setPage(pageNum)}
-                                            className="rounded-lg sm:rounded-xl w-9 h-9 sm:w-10 sm:h-10 text-sm"
-                                        >
-                                            {pageNum}
-                                        </Button>
-                                    );
-                                })}
-                                {totalPages > 3 && (
-                                    <>
-                                        <span className="text-muted-foreground text-sm">...</span>
-                                        <Button
-                                            variant={page === totalPages ? 'default' : 'ghost'}
-                                            size="icon"
-                                            onClick={() => setPage(totalPages)}
-                                            className="rounded-lg sm:rounded-xl w-9 h-9 sm:w-10 sm:h-10 text-sm"
-                                        >
-                                            {totalPages}
-                                        </Button>
-                                    </>
+              {/* Signup banner */}
+              <div className="text-center p-6 rounded-2xl bg-gradient-to-r from-primary/5 via-accent/5 to-primary/5 border border-primary/20">
+                <p className="text-muted-foreground mb-2">
+                  <span className="text-foreground font-semibold">
+                    {premiumData?.available_count || "20+"} premium problems
+                  </span>{" "}
+                  with high opportunity scores
+                </p>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Sign up now and get{" "}
+                  <span className="text-primary font-medium">
+                    7 days of Pro access free
+                  </span>
+                </p>
+                <Button
+                  onClick={promptLogin}
+                  className="rounded-xl bg-primary hover:bg-primary/90 touch-manipulation active:scale-95"
+                >
+                  Start Free Trial
+                </Button>
+              </div>
+            </div>
+          ) : isLoadingPremium ? (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <ProblemSkeleton key={i} />
+              ))}
+            </div>
+          ) : premiumData?.is_premium === false ||
+            premiumData?.user_type === "free" ? (
+            // Free tier - show problems list with unlocked/locked status + upgrade
+            <div className="space-y-6 sm:space-y-8">
+              {/* Header with count */}
+              <div className="p-4 sm:p-6 rounded-2xl bg-gradient-to-r from-primary/5 via-accent/5 to-primary/5 border border-primary/20 text-center">
+                <Crown className="h-10 w-10 sm:h-12 sm:w-12 text-primary mx-auto mb-3 sm:mb-4" />
+                <h3 className="text-lg sm:text-xl font-bold mb-2">
+                  Premium Problems
+                </h3>
+                <p className="text-sm sm:text-base text-muted-foreground mb-4">
+                  {premiumData?.upgrade_message ||
+                    `Access ${premiumData?.available_count || 0} high-opportunity problems`}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  <span className="text-primary font-medium">
+                    {premiumData?.unlocked_count || 0} problems
+                  </span>{" "}
+                  unlocked for free users
+                </p>
+              </div>
+
+              {/* Problems List */}
+              {(premiumData?.previews?.length > 0 ||
+                premiumData?.problems?.length > 0) && (
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                  {(premiumData.previews || premiumData.problems).map(
+                    (item: any, index: number) => {
+                      // Handle both structures: direct properties or nested problem object
+                      const problemData = item.problem || item;
+                      const problemId = problemData.id || item.problem_id;
+                      const title = problemData.title || item.title;
+                      const description =
+                        problemData.description || item.description;
+                      const score =
+                        item.opportunity_score ||
+                        item.score ||
+                        problemData.opportunity_score ||
+                        "85+";
+                      const isUnlocked = item.unlocked === true;
+
+                      return (
+                        <motion.div
+                          key={item.id || problemData.id || index}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.3, delay: index * 0.05 }}
+                          onClick={() => {
+                            if (isUnlocked && problemId) {
+                              navigate(`/dashboard/problems/${problemId}`);
+                            } else {
+                              setShowPayment(true);
+                            }
+                          }}
+                          className={cn(
+                            "group relative cursor-pointer p-5 sm:p-6 rounded-2xl border transition-all",
+                            isUnlocked
+                              ? "bg-gradient-to-br from-primary/5 to-accent/5 border-primary/20 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/10"
+                              : "bg-muted/30 border-border/50 hover:border-border",
+                          )}
+                        >
+                          {/* Score badge */}
+                          <div
+                            className={cn(
+                              "absolute -top-2 -right-2 px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1",
+                              isUnlocked
+                                ? "bg-primary text-primary-foreground"
+                                : "bg-muted text-muted-foreground",
+                            )}
+                          >
+                            <Crown className="h-3 w-3" />
+                            {score}
+                          </div>
+
+                          <h4
+                            className={cn(
+                              "font-semibold text-base sm:text-lg mb-2 line-clamp-2 transition-colors",
+                              isUnlocked
+                                ? "group-hover:text-primary"
+                                : "text-muted-foreground",
+                            )}
+                          >
+                            {title}
+                          </h4>
+
+                          {description && (
+                            <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+                              {description}
+                            </p>
+                          )}
+
+                          <div className="flex items-center justify-between mt-auto pt-2">
+                            {isUnlocked ? (
+                              <span className="flex items-center gap-1 text-primary text-sm font-medium">
+                                <CheckCircle2 className="h-4 w-4" />
+                                Unlocked
+                              </span>
+                            ) : (
+                              <span className="flex items-center gap-1 text-muted-foreground text-sm">
+                                <Lock className="h-4 w-4" />
+                                Locked
+                              </span>
+                            )}
+                            <span
+                              className={cn(
+                                "text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity",
+                                isUnlocked
+                                  ? "text-primary"
+                                  : "text-muted-foreground",
+                              )}
+                            >
+                              {isUnlocked
+                                ? "View details →"
+                                : "Upgrade to unlock"}
+                            </span>
+                          </div>
+                        </motion.div>
+                      );
+                    },
+                  )}
+                </div>
+              )}
+
+              {/* Upgrade CTA */}
+              {!showPayment && (
+                <div className="text-center">
+                  <Button
+                    onClick={() => setShowPayment(true)}
+                    className="rounded-xl bg-primary hover:bg-primary/90 gap-2"
+                  >
+                    <Zap className="h-4 w-4" />
+                    Upgrade to Unlock All
+                  </Button>
+                </div>
+              )}
+
+              {/* Plan Selection - Only shown after clicking CTA */}
+              {showPayment && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="space-y-6"
+                >
+                  {/* Billing Cycle Toggle */}
+                  <div className="flex justify-center">
+                    <div className="inline-flex items-center gap-2 p-1 rounded-xl bg-muted/50 border border-border/50">
+                      <button
+                        onClick={() => setBillingCycle("monthly")}
+                        className={cn(
+                          "px-4 py-2 rounded-lg text-sm font-medium transition-all",
+                          billingCycle === "monthly"
+                            ? "bg-background shadow-sm text-foreground"
+                            : "text-muted-foreground hover:text-foreground",
+                        )}
+                      >
+                        Monthly
+                      </button>
+                      <button
+                        onClick={() => setBillingCycle("yearly")}
+                        className={cn(
+                          "px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2",
+                          billingCycle === "yearly"
+                            ? "bg-background shadow-sm text-foreground"
+                            : "text-muted-foreground hover:text-foreground",
+                        )}
+                      >
+                        Yearly
+                        <span className="text-[10px] sm:text-xs px-1.5 py-0.5 rounded-full bg-green-500/10 text-green-600 font-semibold">
+                          Save 17%
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Plan Cards */}
+                  {isLoadingPlans ? (
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <Skeleton className="h-64 rounded-2xl" />
+                      <Skeleton className="h-64 rounded-2xl" />
+                    </div>
+                  ) : (
+                    <div className="grid sm:grid-cols-2 gap-4 max-w-2xl mx-auto">
+                      {/* Standard Plan */}
+                      {(() => {
+                        const standardPlan = plans?.find(
+                          (p) =>
+                            p.tier === "standard" &&
+                            p.plan_type === billingCycle,
+                        );
+                        return (
+                          <div
+                            onClick={() => setSelectedTier("standard")}
+                            className={cn(
+                              "relative p-5 sm:p-6 rounded-2xl border-2 cursor-pointer transition-all",
+                              selectedTier === "standard"
+                                ? "border-amber-500 bg-amber-500/5"
+                                : "border-border/50 hover:border-amber-500/50",
+                            )}
+                          >
+                            {selectedTier === "standard" && (
+                              <div className="absolute top-3 right-3 w-5 h-5 rounded-full bg-amber-500 flex items-center justify-center">
+                                <Check className="h-3 w-3 text-white" />
+                              </div>
+                            )}
+                            <h4 className="text-lg font-bold mb-2">Standard</h4>
+                            <div className="mb-4">
+                              <span className="text-3xl font-bold">
+                                {standardPlan?.amount_inr_display ||
+                                  (billingCycle === "yearly"
+                                    ? "₹2,499"
+                                    : "₹299")}
+                              </span>
+                              <span className="text-muted-foreground text-sm">
+                                /{billingCycle === "yearly" ? "year" : "month"}
+                              </span>
+                              {billingCycle === "yearly" &&
+                                standardPlan?.per_month_inr && (
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    {standardPlan.per_month_inr}/month
+                                  </p>
                                 )}
                             </div>
+                            <ul className="space-y-2 text-sm text-muted-foreground">
+                              {standardPlan?.features?.length ? (
+                                standardPlan.features.map((feature, idx) => (
+                                  <li
+                                    key={idx}
+                                    className="flex items-center gap-2"
+                                  >
+                                    <Check className="h-4 w-4 text-green-500 shrink-0" />
+                                    {feature}
+                                  </li>
+                                ))
+                              ) : (
+                                <>
+                                  <li className="flex items-center gap-2">
+                                    <Check className="h-4 w-4 text-green-500" />
+                                    All premium problems access
+                                  </li>
+                                  <li className="flex items-center gap-2">
+                                    <Check className="h-4 w-4 text-green-500" />
+                                    10 validations/month
+                                  </li>
+                                </>
+                              )}
+                            </ul>
+                          </div>
+                        );
+                      })()}
 
-                            <Button
-                                variant="outline"
-                                size="default"
-                                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                                disabled={page === totalPages}
-                                className="rounded-xl gap-1 sm:gap-2 h-10 sm:h-11 px-3 sm:px-4"
-                            >
-                                <span className="hidden sm:inline">Next</span>
-                                <ChevronRight className="h-4 w-4" />
-                            </Button>
-                        </motion.div>
-                    )}
-                </>
-            )}
-
-            {/* Premium Problems Tab Content */}
-            {activeTab === 'premium' && (
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4 }}
-                >
-                    {/* Guest user - show premium problems with unlock status */}
-                    {!user ? (
-                        <div className="space-y-6">
-                            <div className="text-center">
-                                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary mb-4">
-                                    <Crown className="h-4 w-4" />
-                                    <span className="text-sm font-medium">Premium Preview</span>
-                                </div>
-                                <h3 className="text-xl font-bold mb-2">High-Opportunity Problems</h3>
-                                <p className="text-muted-foreground">
-                                    {premiumData?.upgrade_message || `Sign up to unlock ${premiumData?.unlocked_count || 1} premium problem for free`}
-                                </p>
-                            </div>
-
-                            {/* Loading state */}
-                            {isLoadingPremium ? (
-                                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                    {Array.from({ length: 3 }).map((_, i) => (
-                                        <ProblemSkeleton key={i} />
-                                    ))}
-                                </div>
-                            ) : (premiumData?.previews?.length > 0 || premiumData?.problems?.length > 0) ? (
-                                // Show premium problems with unlocked/locked status
-                                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                                    {(premiumData.previews || premiumData.problems).map((item: any, index: number) => {
-                                        // Handle both structures: direct properties or nested problem object
-                                        const problemData = item.problem || item;
-                                        const problemId = problemData.id || item.problem_id;
-                                        const title = problemData.title || item.title;
-                                        const description = problemData.description || item.description;
-                                        const score = item.opportunity_score || item.score || problemData.opportunity_score || '85+';
-                                        const isUnlocked = item.unlocked === true;
-
-                                        return (
-                                            <motion.div
-                                                key={item.id || problemData.id || index}
-                                                initial={{ opacity: 0, y: 20 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                transition={{ duration: 0.3, delay: index * 0.05 }}
-                                                onClick={() => {
-                                                    if (isUnlocked && problemId) {
-                                                        // Unlocked problem - navigate to details
-                                                        navigate(`/dashboard/problems/${problemId}`);
-                                                    } else {
-                                                        // Locked - prompt login
-                                                        promptLogin();
-                                                    }
-                                                }}
-                                                className={cn(
-                                                    "group relative cursor-pointer p-5 sm:p-6 rounded-2xl border transition-all",
-                                                    isUnlocked
-                                                        ? "bg-gradient-to-br from-primary/5 to-accent/5 border-primary/20 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/10"
-                                                        : "bg-muted/30 border-border/50 hover:border-border"
-                                                )}
-                                            >
-                                                {/* Score badge */}
-                                                <div className={cn(
-                                                    "absolute -top-2 -right-2 px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1",
-                                                    isUnlocked
-                                                        ? "bg-primary text-primary-foreground"
-                                                        : "bg-muted text-muted-foreground"
-                                                )}>
-                                                    <Crown className="h-3 w-3" />
-                                                    {score}
-                                                </div>
-
-                                                <h4 className={cn(
-                                                    "font-semibold text-base sm:text-lg mb-2 line-clamp-2 transition-colors",
-                                                    isUnlocked ? "group-hover:text-primary" : "text-muted-foreground"
-                                                )}>
-                                                    {title}
-                                                </h4>
-
-                                                {description && (
-                                                    <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
-                                                        {description}
-                                                    </p>
-                                                )}
-
-                                                <div className="flex items-center justify-between mt-auto pt-2">
-                                                    {isUnlocked ? (
-                                                        <span className="flex items-center gap-1 text-primary text-sm font-medium">
-                                                            <CheckCircle2 className="h-4 w-4" />
-                                                            Free to view
-                                                        </span>
-                                                    ) : (
-                                                        <span className="flex items-center gap-1 text-muted-foreground text-sm">
-                                                            <Lock className="h-4 w-4" />
-                                                            Locked
-                                                        </span>
-                                                    )}
-                                                    <span className={cn(
-                                                        "text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity",
-                                                        isUnlocked ? "text-primary" : "text-muted-foreground"
-                                                    )}>
-                                                        {isUnlocked ? 'View details →' : 'Sign up to unlock'}
-                                                    </span>
-                                                </div>
-                                            </motion.div>
-                                        );
-                                    })}
-                                </div>
-                            ) : null}
-
-                            {/* Signup banner */}
-                            <div className="text-center p-6 rounded-2xl bg-gradient-to-r from-primary/5 via-accent/5 to-primary/5 border border-primary/20">
-                                <p className="text-muted-foreground mb-2">
-                                    <span className="text-foreground font-semibold">{premiumData?.available_count || '20+'}  premium problems</span> with high opportunity scores
-                                </p>
-                                <p className="text-sm text-muted-foreground mb-4">
-                                    Sign up now and get <span className="text-primary font-medium">7 days of Pro access free</span>
-                                </p>
-                                <Button
-                                    onClick={promptLogin}
-                                    className="rounded-xl bg-primary hover:bg-primary/90 touch-manipulation active:scale-95"
-                                >
-                                    Start Free Trial
-                                </Button>
-                            </div>
-                        </div>
-                    ) : isLoadingPremium ? (
-                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {Array.from({ length: 6 }).map((_, i) => (
-                                <ProblemSkeleton key={i} />
-                            ))}
-                        </div>
-                    ) : premiumData?.is_premium === false || premiumData?.user_type === 'free' ? (
-                        // Free tier - show problems list with unlocked/locked status + upgrade
-                        <div className="space-y-6 sm:space-y-8">
-                            {/* Header with count */}
-                            <div className="p-4 sm:p-6 rounded-2xl bg-gradient-to-r from-primary/5 via-accent/5 to-primary/5 border border-primary/20 text-center">
-                                <Crown className="h-10 w-10 sm:h-12 sm:w-12 text-primary mx-auto mb-3 sm:mb-4" />
-                                <h3 className="text-lg sm:text-xl font-bold mb-2">Premium Problems</h3>
-                                <p className="text-sm sm:text-base text-muted-foreground mb-4">
-                                    {premiumData?.upgrade_message || `Access ${premiumData?.available_count || 0} high-opportunity problems`}
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                    <span className="text-primary font-medium">{premiumData?.unlocked_count || 0} problems</span> unlocked for free users
-                                </p>
-                            </div>
-
-                            {/* Problems List */}
-                            {(premiumData?.previews?.length > 0 || premiumData?.problems?.length > 0) && (
-                                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                                    {(premiumData.previews || premiumData.problems).map((item: any, index: number) => {
-                                        // Handle both structures: direct properties or nested problem object
-                                        const problemData = item.problem || item;
-                                        const problemId = problemData.id || item.problem_id;
-                                        const title = problemData.title || item.title;
-                                        const description = problemData.description || item.description;
-                                        const score = item.opportunity_score || item.score || problemData.opportunity_score || '85+';
-                                        const isUnlocked = item.unlocked === true;
-
-                                        return (
-                                            <motion.div
-                                                key={item.id || problemData.id || index}
-                                                initial={{ opacity: 0, y: 20 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                transition={{ duration: 0.3, delay: index * 0.05 }}
-                                                onClick={() => {
-                                                    if (isUnlocked && problemId) {
-                                                        navigate(`/dashboard/problems/${problemId}`);
-                                                    } else {
-                                                        setShowPayment(true);
-                                                    }
-                                                }}
-                                                className={cn(
-                                                    "group relative cursor-pointer p-5 sm:p-6 rounded-2xl border transition-all",
-                                                    isUnlocked
-                                                        ? "bg-gradient-to-br from-primary/5 to-accent/5 border-primary/20 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/10"
-                                                        : "bg-muted/30 border-border/50 hover:border-border"
-                                                )}
-                                            >
-                                                {/* Score badge */}
-                                                <div className={cn(
-                                                    "absolute -top-2 -right-2 px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1",
-                                                    isUnlocked
-                                                        ? "bg-primary text-primary-foreground"
-                                                        : "bg-muted text-muted-foreground"
-                                                )}>
-                                                    <Crown className="h-3 w-3" />
-                                                    {score}
-                                                </div>
-
-                                                <h4 className={cn(
-                                                    "font-semibold text-base sm:text-lg mb-2 line-clamp-2 transition-colors",
-                                                    isUnlocked ? "group-hover:text-primary" : "text-muted-foreground"
-                                                )}>
-                                                    {title}
-                                                </h4>
-
-                                                {description && (
-                                                    <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
-                                                        {description}
-                                                    </p>
-                                                )}
-
-                                                <div className="flex items-center justify-between mt-auto pt-2">
-                                                    {isUnlocked ? (
-                                                        <span className="flex items-center gap-1 text-primary text-sm font-medium">
-                                                            <CheckCircle2 className="h-4 w-4" />
-                                                            Unlocked
-                                                        </span>
-                                                    ) : (
-                                                        <span className="flex items-center gap-1 text-muted-foreground text-sm">
-                                                            <Lock className="h-4 w-4" />
-                                                            Locked
-                                                        </span>
-                                                    )}
-                                                    <span className={cn(
-                                                        "text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity",
-                                                        isUnlocked ? "text-primary" : "text-muted-foreground"
-                                                    )}>
-                                                        {isUnlocked ? 'View details →' : 'Upgrade to unlock'}
-                                                    </span>
-                                                </div>
-                                            </motion.div>
-                                        );
-                                    })}
-                                </div>
+                      {/* Pro Plan */}
+                      {(() => {
+                        const proPlan = plans?.find(
+                          (p) =>
+                            p.tier === "pro" && p.plan_type === billingCycle,
+                        );
+                        return (
+                          <div
+                            onClick={() => setSelectedTier("pro")}
+                            className={cn(
+                              "relative p-5 sm:p-6 rounded-2xl border-2 cursor-pointer transition-all",
+                              selectedTier === "pro"
+                                ? "border-amber-500 bg-amber-500/5"
+                                : "border-border/50 hover:border-amber-500/50",
                             )}
-
-                            {/* Upgrade CTA */}
-                            {!showPayment && (
-                                <div className="text-center">
-                                    <Button
-                                        onClick={() => setShowPayment(true)}
-                                        className="rounded-xl bg-primary hover:bg-primary/90 gap-2"
-                                    >
-                                        <Zap className="h-4 w-4" />
-                                        Upgrade to Unlock All
-                                    </Button>
-                                </div>
-                            )}
-
-                            {/* Plan Selection - Only shown after clicking CTA */}
-                            {showPayment && (
-                                <motion.div
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ duration: 0.3 }}
-                                    className="space-y-6"
-                                >
-                                    {/* Billing Cycle Toggle */}
-                                    <div className="flex justify-center">
-                                        <div className="inline-flex items-center gap-2 p-1 rounded-xl bg-muted/50 border border-border/50">
-                                            <button
-                                                onClick={() => setBillingCycle('monthly')}
-                                                className={cn(
-                                                    "px-4 py-2 rounded-lg text-sm font-medium transition-all",
-                                                    billingCycle === 'monthly'
-                                                        ? "bg-background shadow-sm text-foreground"
-                                                        : "text-muted-foreground hover:text-foreground"
-                                                )}
-                                            >
-                                                Monthly
-                                            </button>
-                                            <button
-                                                onClick={() => setBillingCycle('yearly')}
-                                                className={cn(
-                                                    "px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2",
-                                                    billingCycle === 'yearly'
-                                                        ? "bg-background shadow-sm text-foreground"
-                                                        : "text-muted-foreground hover:text-foreground"
-                                                )}
-                                            >
-                                                Yearly
-                                                <span className="text-[10px] sm:text-xs px-1.5 py-0.5 rounded-full bg-green-500/10 text-green-600 font-semibold">
-                                                    Save 17%
-                                                </span>
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    {/* Plan Cards */}
-                                    {isLoadingPlans ? (
-                                        <div className="grid sm:grid-cols-2 gap-4">
-                                            <Skeleton className="h-64 rounded-2xl" />
-                                            <Skeleton className="h-64 rounded-2xl" />
-                                        </div>
-                                    ) : (
-                                        <div className="grid sm:grid-cols-2 gap-4 max-w-2xl mx-auto">
-                                            {/* Standard Plan */}
-                                            {(() => {
-                                                const standardPlan = plans?.find(p => p.tier === 'standard' && p.plan_type === billingCycle);
-                                                return (
-                                                    <div
-                                                        onClick={() => setSelectedTier('standard')}
-                                                        className={cn(
-                                                            "relative p-5 sm:p-6 rounded-2xl border-2 cursor-pointer transition-all",
-                                                            selectedTier === 'standard'
-                                                                ? "border-amber-500 bg-amber-500/5"
-                                                                : "border-border/50 hover:border-amber-500/50"
-                                                        )}
-                                                    >
-                                                        {selectedTier === 'standard' && (
-                                                            <div className="absolute top-3 right-3 w-5 h-5 rounded-full bg-amber-500 flex items-center justify-center">
-                                                                <Check className="h-3 w-3 text-white" />
-                                                            </div>
-                                                        )}
-                                                        <h4 className="text-lg font-bold mb-2">Standard</h4>
-                                                        <div className="mb-4">
-                                                            <span className="text-3xl font-bold">
-                                                                {standardPlan?.amount_inr_display || (billingCycle === 'yearly' ? '₹2,499' : '₹299')}
-                                                            </span>
-                                                            <span className="text-muted-foreground text-sm">
-                                                                /{billingCycle === 'yearly' ? 'year' : 'month'}
-                                                            </span>
-                                                            {billingCycle === 'yearly' && standardPlan?.per_month_inr && (
-                                                                <p className="text-xs text-muted-foreground mt-1">
-                                                                    {standardPlan.per_month_inr}/month
-                                                                </p>
-                                                            )}
-                                                        </div>
-                                                        <ul className="space-y-2 text-sm text-muted-foreground">
-                                                            {standardPlan?.features?.length ? (
-                                                                standardPlan.features.map((feature, idx) => (
-                                                                    <li key={idx} className="flex items-center gap-2">
-                                                                        <Check className="h-4 w-4 text-green-500 shrink-0" />
-                                                                        {feature}
-                                                                    </li>
-                                                                ))
-                                                            ) : (
-                                                                <>
-                                                                    <li className="flex items-center gap-2">
-                                                                        <Check className="h-4 w-4 text-green-500" />
-                                                                        All premium problems access
-                                                                    </li>
-                                                                    <li className="flex items-center gap-2">
-                                                                        <Check className="h-4 w-4 text-green-500" />
-                                                                        10 validations/month
-                                                                    </li>
-                                                                </>
-                                                            )}
-                                                        </ul>
-                                                    </div>
-                                                );
-                                            })()}
-
-                                            {/* Pro Plan */}
-                                            {(() => {
-                                                const proPlan = plans?.find(p => p.tier === 'pro' && p.plan_type === billingCycle);
-                                                return (
-                                                    <div
-                                                        onClick={() => setSelectedTier('pro')}
-                                                        className={cn(
-                                                            "relative p-5 sm:p-6 rounded-2xl border-2 cursor-pointer transition-all",
-                                                            selectedTier === 'pro'
-                                                                ? "border-amber-500 bg-amber-500/5"
-                                                                : "border-border/50 hover:border-amber-500/50"
-                                                        )}
-                                                    >
-                                                        <Badge className="absolute top-3 right-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[10px]">
-                                                            Popular
-                                                        </Badge>
-                                                        <h4 className="text-lg font-bold mb-2">Pro</h4>
-                                                        <div className="mb-4">
-                                                            <span className="text-3xl font-bold">
-                                                                {proPlan?.amount_inr_display || (billingCycle === 'yearly' ? '₹6,999' : '₹799')}
-                                                            </span>
-                                                            <span className="text-muted-foreground text-sm">
-                                                                /{billingCycle === 'yearly' ? 'year' : 'month'}
-                                                            </span>
-                                                            {billingCycle === 'yearly' && proPlan?.per_month_inr && (
-                                                                <p className="text-xs text-muted-foreground mt-1">
-                                                                    {proPlan.per_month_inr}/month
-                                                                </p>
-                                                            )}
-                                                        </div>
-                                                        <ul className="space-y-2 text-sm text-muted-foreground">
-                                                            {proPlan?.features?.length ? (
-                                                                proPlan.features.map((feature, idx) => (
-                                                                    <li key={idx} className="flex items-center gap-2">
-                                                                        <Check className="h-4 w-4 text-green-500 shrink-0" />
-                                                                        {feature}
-                                                                    </li>
-                                                                ))
-                                                            ) : (
-                                                                <>
-                                                                    <li className="flex items-center gap-2">
-                                                                        <Check className="h-4 w-4 text-green-500" />
-                                                                        Everything in Standard
-                                                                    </li>
-                                                                    <li className="flex items-center gap-2">
-                                                                        <Check className="h-4 w-4 text-green-500" />
-                                                                        Unlimited validations
-                                                                    </li>
-                                                                    <li className="flex items-center gap-2">
-                                                                        <Check className="h-4 w-4 text-green-500" />
-                                                                        Priority support
-                                                                    </li>
-                                                                </>
-                                                            )}
-                                                        </ul>
-                                                    </div>
-                                                );
-                                            })()}
-                                        </div>
-                                    )}
-
-                                    {/* Continue Button */}
-                                    <div className="flex justify-center">
-                                        <Button
-                                            onClick={handlePlanSelect}
-                                            disabled={isCreatingLink || isLoadingPlans}
-                                            size="lg"
-                                            className="rounded-xl bg-primary hover:bg-primary/90 gap-2 min-w-[200px]"
-                                        >
-                                            {isCreatingLink ? (
-                                                <>
-                                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                                    Creating Payment...
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <Zap className="h-4 w-4" />
-                                                    Continue with {selectedTier === 'pro' ? 'Pro' : 'Standard'}
-                                                </>
-                                            )}
-                                        </Button>
-                                    </div>
-                                </motion.div>
-                            )}
-
-                        </div>
-                    ) : (
-                        // Premium tier - show all problems
-                        <div className="space-y-6">
-                            {premiumData?.subscription && (
-                                <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20">
-                                    <div className="flex items-center gap-3">
-                                        <Crown className="h-5 w-5 text-primary" />
-                                        <span className="font-medium capitalize">{premiumData.subscription.tier} Plan</span>
-                                    </div>
-                                    {premiumData.subscription.days_remaining && (
-                                        <span className="text-sm text-muted-foreground">
-                                            {premiumData.subscription.days_remaining} days remaining
-                                        </span>
-                                    )}
-                                </div>
-                            )}
-
-                            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {premiumData?.problems?.map((item: any, index: number) => (
-                                    <ProblemCard
-                                        key={item.id}
-                                        problem={item.problem}
-                                        isWatching={watchlistIds.has(item.problem?.id)}
-                                        onWatchlistToggle={handleWatchlistToggle}
-                                        onRateToggle={handleRateToggle}
-                                        index={index}
-                                    />
-                                ))}
+                          >
+                            <Badge className="absolute top-3 right-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[10px]">
+                              Popular
+                            </Badge>
+                            <h4 className="text-lg font-bold mb-2">Pro</h4>
+                            <div className="mb-4">
+                              <span className="text-3xl font-bold">
+                                {proPlan?.amount_inr_display ||
+                                  (billingCycle === "yearly"
+                                    ? "₹6,999"
+                                    : "₹799")}
+                              </span>
+                              <span className="text-muted-foreground text-sm">
+                                /{billingCycle === "yearly" ? "year" : "month"}
+                              </span>
+                              {billingCycle === "yearly" &&
+                                proPlan?.per_month_inr && (
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    {proPlan.per_month_inr}/month
+                                  </p>
+                                )}
                             </div>
-                        </div>
-                    )
-                    }
-                </motion.div >
-            )}
-
-            {/* Login Modal - Mobile Safari Optimized */}
-            <Dialog open={showLoginModal} onOpenChange={(open) => {
-                console.log('Dialog onOpenChange called:', open);
-                setShowLoginModal(open);
-            }} modal={true}>
-                <DialogContent
-                    className="!fixed !top-[50vh] !left-[50vw] !-translate-x-1/2 !-translate-y-1/2 !z-[9999] sm:max-w-md max-w-[90vw] rounded-2xl p-6 gap-6 !m-0 !max-h-[90vh] !overflow-y-auto"
-                    onPointerDownOutside={(e) => {
-                        console.log('Pointer down outside dialog');
-                        e.preventDefault();
-                    }}
-                    onInteractOutside={(e) => {
-                        console.log('Interact outside dialog - closing');
-                    }}
-                >
-                    <DialogHeader className="space-y-3">
-                        <div className="mx-auto w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center shadow-lg">
-                            <Sparkles className="w-8 h-8 text-white" />
-                        </div>
-                        <DialogTitle className="text-center text-2xl font-bold">Start Your Free Trial</DialogTitle>
-                        <DialogDescription className="text-center text-base">
-                            Get full access to validated startup problems and insights
-                        </DialogDescription>
-                    </DialogHeader>
-
-                    {/* Trial Highlight */}
-                    <div className="p-4 rounded-xl bg-primary/5 border border-primary/20">
-                        <div className="flex items-center gap-3">
-                            <div className="shrink-0 w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                                <span className="text-xl">🎉</span>
-                            </div>
-                            <div>
-                                <p className="font-semibold text-foreground">7 Days of Pro Access</p>
-                                <p className="text-sm text-muted-foreground">Full premium features, no credit card required</p>
-                            </div>
-                        </div>
+                            <ul className="space-y-2 text-sm text-muted-foreground">
+                              {proPlan?.features?.length ? (
+                                proPlan.features.map((feature, idx) => (
+                                  <li
+                                    key={idx}
+                                    className="flex items-center gap-2"
+                                  >
+                                    <Check className="h-4 w-4 text-green-500 shrink-0" />
+                                    {feature}
+                                  </li>
+                                ))
+                              ) : (
+                                <>
+                                  <li className="flex items-center gap-2">
+                                    <Check className="h-4 w-4 text-green-500" />
+                                    Everything in Standard
+                                  </li>
+                                  <li className="flex items-center gap-2">
+                                    <Check className="h-4 w-4 text-green-500" />
+                                    Unlimited validations
+                                  </li>
+                                  <li className="flex items-center gap-2">
+                                    <Check className="h-4 w-4 text-green-500" />
+                                    Priority support
+                                  </li>
+                                </>
+                              )}
+                            </ul>
+                          </div>
+                        );
+                      })()}
                     </div>
+                  )}
 
-                    <div className="space-y-3">
-                        <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/50">
-                            <div className="shrink-0 w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
-                                <Crown className="h-4 w-4 text-primary" />
-                            </div>
-                            <span className="text-sm leading-tight">Access all premium problems and deep research</span>
-                        </div>
-                        <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/50">
-                            <div className="shrink-0 w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
-                                <TrendingUp className="h-4 w-4 text-primary" />
-                            </div>
-                            <span className="text-sm leading-tight">Unlimited problem validations and insights</span>
-                        </div>
-                        <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/50">
-                            <div className="shrink-0 w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
-                                <Bookmark className="h-4 w-4 text-primary" />
-                            </div>
-                            <span className="text-sm leading-tight">Save and track problems in your watchlist</span>
-                        </div>
-                    </div>
-                    <div className="flex flex-col gap-3 pt-2">
-                        <Button
-                            onClick={() => {
-                                console.log('Start Free Trial button clicked in modal');
-                                setShowLoginModal(false);
-                                navigate('/auth');
-                            }}
-                            className="w-full h-12 bg-primary hover:bg-primary/90 text-base font-semibold touch-manipulation active:scale-95"
-                        >
-                            Start Free Trial
-                        </Button>
-                        <p className="text-center text-xs text-muted-foreground">
-                            No credit card required • Cancel anytime
-                        </p>
-                        <Button
-                            variant="ghost"
-                            onClick={() => {
-                                console.log('Maybe Later clicked');
-                                setShowLoginModal(false);
-                            }}
-                            className="text-muted-foreground h-11 touch-manipulation active:scale-95"
-                        >
-                            Maybe Later
-                        </Button>
-                    </div>
-                </DialogContent>
-            </Dialog>
-        </div >
-    );
+                  {/* Continue Button */}
+                  <div className="flex justify-center">
+                    <Button
+                      onClick={handlePlanSelect}
+                      disabled={isCreatingLink || isLoadingPlans}
+                      size="lg"
+                      className="rounded-xl bg-primary hover:bg-primary/90 gap-2 min-w-[200px]"
+                    >
+                      {isCreatingLink ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Creating Payment...
+                        </>
+                      ) : (
+                        <>
+                          <Zap className="h-4 w-4" />
+                          Continue with{" "}
+                          {selectedTier === "pro" ? "Pro" : "Standard"}
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </motion.div>
+              )}
+            </div>
+          ) : (
+            // Premium tier - show all problems
+            <div className="space-y-6">
+              {premiumData?.subscription && (
+                <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20">
+                  <div className="flex items-center gap-3">
+                    <Crown className="h-5 w-5 text-primary" />
+                    <span className="font-medium capitalize">
+                      {premiumData.subscription.tier} Plan
+                    </span>
+                  </div>
+                  {premiumData.subscription.days_remaining && (
+                    <span className="text-sm text-muted-foreground">
+                      {premiumData.subscription.days_remaining} days remaining
+                    </span>
+                  )}
+                </div>
+              )}
+
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {premiumData?.problems?.map((item: any, index: number) => (
+                  <ProblemCard
+                    key={item.id}
+                    problem={item.problem}
+                    isWatching={watchlistIds.has(item.problem?.id)}
+                    onWatchlistToggle={handleWatchlistToggle}
+                    onRateToggle={handleRateToggle}
+                    index={index}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+        </motion.div>
+      )}
+
+      {/* Login Modal - Mobile Safari Optimized */}
+      <Dialog
+        open={showLoginModal}
+        onOpenChange={(open) => {
+          console.log("Dialog onOpenChange called:", open);
+          setShowLoginModal(open);
+        }}
+        modal={true}
+      >
+        <DialogContent
+          className="!fixed !top-[50vh] !left-[50vw] !-translate-x-1/2 !-translate-y-1/2 !z-[9999] sm:max-w-md max-w-[90vw] rounded-2xl p-6 gap-6 !m-0 !max-h-[90vh] !overflow-y-auto"
+          onPointerDownOutside={(e) => {
+            console.log("Pointer down outside dialog");
+            e.preventDefault();
+          }}
+          onInteractOutside={(e) => {
+            console.log("Interact outside dialog - closing");
+          }}
+        >
+          <DialogHeader className="space-y-3">
+            <div className="mx-auto w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center shadow-lg">
+              <Sparkles className="w-8 h-8 text-white" />
+            </div>
+            <DialogTitle className="text-center text-2xl font-bold">
+              Start Your Free Trial
+            </DialogTitle>
+            <DialogDescription className="text-center text-base">
+              Get full access to validated startup problems and insights
+            </DialogDescription>
+          </DialogHeader>
+
+          {/* Trial Highlight */}
+          <div className="p-4 rounded-xl bg-primary/5 border border-primary/20">
+            <div className="flex items-center gap-3">
+              <div className="shrink-0 w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <span className="text-xl">🎉</span>
+              </div>
+              <div>
+                <p className="font-semibold text-foreground">
+                  7 Days of Pro Access
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Full premium features, no credit card required
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/50">
+              <div className="shrink-0 w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
+                <Crown className="h-4 w-4 text-primary" />
+              </div>
+              <span className="text-sm leading-tight">
+                Access all premium problems and deep research
+              </span>
+            </div>
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/50">
+              <div className="shrink-0 w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
+                <TrendingUp className="h-4 w-4 text-primary" />
+              </div>
+              <span className="text-sm leading-tight">
+                Unlimited problem validations and insights
+              </span>
+            </div>
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/50">
+              <div className="shrink-0 w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
+                <Bookmark className="h-4 w-4 text-primary" />
+              </div>
+              <span className="text-sm leading-tight">
+                Save and track problems in your watchlist
+              </span>
+            </div>
+          </div>
+          <div className="flex flex-col gap-3 pt-2">
+            <Button
+              onClick={() => {
+                console.log("Start Free Trial button clicked in modal");
+                setShowLoginModal(false);
+                navigate("/auth");
+              }}
+              className="w-full h-12 bg-primary hover:bg-primary/90 text-base font-semibold touch-manipulation active:scale-95"
+            >
+              Start Free Trial
+            </Button>
+            <p className="text-center text-xs text-muted-foreground">
+              No credit card required • Cancel anytime
+            </p>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                console.log("Maybe Later clicked");
+                setShowLoginModal(false);
+              }}
+              className="text-muted-foreground h-11 touch-manipulation active:scale-95"
+            >
+              Maybe Later
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
 }
 
 export default ProblemsList;

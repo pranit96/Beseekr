@@ -5,12 +5,25 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
-import { Sparkles, ArrowLeft, CheckCircle2, AlertCircle, Eye, EyeOff, Loader2, Zap } from "lucide-react";
+import {
+  Sparkles,
+  ArrowLeft,
+  CheckCircle2,
+  AlertCircle,
+  Eye,
+  EyeOff,
+  Loader2,
+  Zap,
+} from "lucide-react";
 import { apiClient } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
-import { supabase, isSupabaseConfigured, isSafariBrowser } from "@/lib/supabase";
+import {
+  supabase,
+  isSupabaseConfigured,
+  isSafariBrowser,
+} from "@/lib/supabase";
 import { analytics } from "@/lib/analytics";
-import { Logo } from '@/components/Logo'
+import { Logo } from "@/components/Logo";
 
 const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -37,16 +50,17 @@ const Auth = () => {
   // Google OAuth handler
   const handleGoogleSignIn = async () => {
     // Track Google OAuth initiation
-    analytics.track('google_oauth_initiated', { source: 'auth_page' });
+    analytics.track("google_oauth_initiated", { source: "auth_page" });
 
     if (!isSupabaseConfigured()) {
-      analytics.track('google_oauth_error', { error: 'not_configured' });
+      analytics.track("google_oauth_error", { error: "not_configured" });
       toast({
         title: "Configuration Error",
-        description: "Google sign-in is not available. Please contact support or try email/password signup.",
+        description:
+          "Google sign-in is not available. Please contact support or try email/password signup.",
         variant: "destructive",
       });
-      console.error('Supabase not configured - missing environment variables');
+      console.error("Supabase not configured - missing environment variables");
       return;
     }
 
@@ -55,7 +69,7 @@ const Auth = () => {
     // Detect Safari for conditional handling
     const isSafari = isSafariBrowser();
 
-    console.log('Initiating Google OAuth', {
+    console.log("Initiating Google OAuth", {
       isSafari,
       isMobile: /iPhone|iPad|iPod|Android/i.test(navigator.userAgent),
       redirectUrl: `${window.location.origin}/auth/callback`,
@@ -63,13 +77,13 @@ const Auth = () => {
 
     try {
       const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
+        provider: "google",
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
           skipBrowserRedirect: false, // Explicitly use redirect flow (not popup)
           queryParams: {
-            access_type: 'offline', // Request refresh token
-            prompt: 'consent', // Force consent screen to ensure we get refresh token
+            access_type: "offline", // Request refresh token
+            prompt: "consent", // Force consent screen to ensure we get refresh token
           },
         },
       });
@@ -79,16 +93,18 @@ const Auth = () => {
       }
       // If no error, browser will redirect to Google
       // On Safari mobile, this may take a moment
-      console.log('Redirecting to Google OAuth...');
+      console.log("Redirecting to Google OAuth...");
     } catch (error: any) {
-      analytics.track('google_oauth_error', { error: error.message });
-      console.error('Google sign-in error:', error);
+      analytics.track("google_oauth_error", { error: error.message });
+      console.error("Google sign-in error:", error);
 
       // Provide more helpful error message for Safari users
-      let errorMessage = error.message || "Could not connect to Google. Please try again.";
+      let errorMessage =
+        error.message || "Could not connect to Google. Please try again.";
 
-      if (isSafari && error.message?.includes('popup')) {
-        errorMessage = "Safari blocked the sign-in popup. Please allow popups and try again, or use email/password signup.";
+      if (isSafari && error.message?.includes("popup")) {
+        errorMessage =
+          "Safari blocked the sign-in popup. Please allow popups and try again, or use email/password signup.";
       } else if (isSafari) {
         errorMessage = `${errorMessage} If this persists on Safari, try using email/password signup instead.`;
       }
@@ -126,7 +142,9 @@ const Auth = () => {
     return Object.values(validation).every(Boolean);
   };
 
-  const [bubbles, setBubbles] = useState<{ id: number; x: number; y: number; size: number }[]>([]);
+  const [bubbles, setBubbles] = useState<
+    { id: number; x: number; y: number; size: number }[]
+  >([]);
   const [messages] = useState([
     "Find Real Problems.",
     "Build What Matters.",
@@ -161,8 +179,14 @@ const Auth = () => {
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       const { innerWidth, innerHeight } = window;
-      document.documentElement.style.setProperty("--mouse-x", `${(e.clientX / innerWidth - 0.5) * 12}px`);
-      document.documentElement.style.setProperty("--mouse-y", `${(e.clientY / innerHeight - 0.5) * 12}px`);
+      document.documentElement.style.setProperty(
+        "--mouse-x",
+        `${(e.clientX / innerWidth - 0.5) * 12}px`,
+      );
+      document.documentElement.style.setProperty(
+        "--mouse-y",
+        `${(e.clientY / innerHeight - 0.5) * 12}px`,
+      );
     };
     window.addEventListener("mousemove", handleMouseMove);
     return () => window.removeEventListener("mousemove", handleMouseMove);
@@ -196,11 +220,13 @@ const Auth = () => {
     const cleanupOAuthState = () => {
       try {
         // Check if we just came from a failed OAuth attempt
-        const oauthRefreshAttempted = sessionStorage.getItem('oauth-refresh-attempted');
+        const oauthRefreshAttempted = sessionStorage.getItem(
+          "oauth-refresh-attempted",
+        );
 
         if (oauthRefreshAttempted) {
-          console.log('Cleaning up OAuth state from previous attempt');
-          sessionStorage.removeItem('oauth-refresh-attempted');
+          console.log("Cleaning up OAuth state from previous attempt");
+          sessionStorage.removeItem("oauth-refresh-attempted");
 
           // Don't remove beseekr-auth-token here as it might be a valid session
           // Only remove if it's clearly corrupted (Supabase returns error)
@@ -208,11 +234,15 @@ const Auth = () => {
             try {
               const { data, error } = await supabase.auth.getSession();
               if (error || !data.session) {
-                console.log('No valid Supabase session found, cleaning up storage');
-                localStorage.removeItem('beseekr-auth-token');
+                console.log(
+                  "No valid Supabase session found, cleaning up storage",
+                );
+                localStorage.removeItem("beseekr-auth-token");
               }
             } catch (e) {
-              console.log('Supabase session check failed, storage might be corrupted');
+              console.log(
+                "Supabase session check failed, storage might be corrupted",
+              );
               // Don't remove - let user try OAuth again
             }
           };
@@ -220,7 +250,7 @@ const Auth = () => {
           checkSupabaseState();
         }
       } catch (e) {
-        console.error('OAuth state cleanup error:', e);
+        console.error("OAuth state cleanup error:", e);
       }
     };
 
@@ -234,14 +264,14 @@ const Auth = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    analytics.track('login_initiated', { method: 'email' });
+    analytics.track("login_initiated", { method: "email" });
     setIsLoading(true);
     setLoginError("");
     try {
       await login(loginEmail, loginPassword);
-      analytics.track('login_success', { method: 'email' });
+      analytics.track("login_success", { method: "email" });
     } catch (error: any) {
-      analytics.track('login_error', { method: 'email', error: error.message });
+      analytics.track("login_error", { method: "email", error: error.message });
       const errorMsg = error.message || "Invalid email or password";
       setLoginError(errorMsg);
       setLoginPassword("");
@@ -252,14 +282,16 @@ const Auth = () => {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    analytics.track('signup_initiated', { method: 'email' });
+    analytics.track("signup_initiated", { method: "email" });
     setIsLoading(true);
     setSignupError("");
 
     // Validate password format before submitting
     const validation = validatePassword(signupPassword);
     if (!isPasswordValid(validation)) {
-      analytics.track('signup_validation_error', { error: 'password_requirements' });
+      analytics.track("signup_validation_error", {
+        error: "password_requirements",
+      });
       setSignupError("Please ensure your password meets all requirements");
       setIsLoading(false);
       return;
@@ -267,15 +299,17 @@ const Auth = () => {
 
     try {
       await signup(signupEmail, signupPassword, signupName);
-      analytics.track('signup_success', { method: 'email' });
+      analytics.track("signup_success", { method: "email" });
       // If we get here, signup was successful and user is logged in
     } catch (error: any) {
       // Check if this is email verification required (not an actual error)
-      if (error.isEmailVerificationRequired ||
+      if (
+        error.isEmailVerificationRequired ||
         error.message?.includes("verify your email") ||
-        error.message?.includes("email confirmation")) {
+        error.message?.includes("email confirmation")
+      ) {
         // Show verification pending screen silently (no error message)
-        analytics.track('verification_email_shown', { email: signupEmail });
+        analytics.track("verification_email_shown", { email: signupEmail });
         setVerificationEmail(signupEmail);
         setVerificationPending(true);
         // Clear form
@@ -284,7 +318,10 @@ const Auth = () => {
         setSignupPassword("");
       } else {
         // This is an actual error - show it
-        analytics.track('signup_error', { method: 'email', error: error.message });
+        analytics.track("signup_error", {
+          method: "email",
+          error: error.message,
+        });
         const errorMsg = error.message || "Failed to create account";
         setSignupError(errorMsg);
         setSignupPassword("");
@@ -302,7 +339,9 @@ const Auth = () => {
       if (response.success) {
         toast({
           title: "Email sent",
-          description: response.message || "If an account exists with this email, a password reset link has been sent.",
+          description:
+            response.message ||
+            "If an account exists with this email, a password reset link has been sent.",
         });
         setShowForgotPassword(false);
         setForgotPasswordEmail("");
@@ -321,22 +360,30 @@ const Auth = () => {
   const handleResendVerification = async () => {
     if (!canResend || isResending) return;
 
-    analytics.track('verification_email_resend_initiated', { email: verificationEmail });
+    analytics.track("verification_email_resend_initiated", {
+      email: verificationEmail,
+    });
     setIsResending(true);
     try {
-      const response = await apiClient.resendVerificationEmail(verificationEmail);
+      const response =
+        await apiClient.resendVerificationEmail(verificationEmail);
       if (response.success) {
-        analytics.track('verification_email_resent', { email: verificationEmail });
+        analytics.track("verification_email_resent", {
+          email: verificationEmail,
+        });
         toast({
           title: "Email sent!",
-          description: "If an account exists with this email and is not yet verified, you will receive a verification link.",
+          description:
+            "If an account exists with this email and is not yet verified, you will receive a verification link.",
         });
         // Reset countdown (reduced from 60s to 30s for better UX)
         setResendCountdown(30);
         setCanResend(false);
       }
     } catch (error: any) {
-      analytics.track('verification_email_resend_error', { error: error.message });
+      analytics.track("verification_email_resend_error", {
+        error: error.message,
+      });
       toast({
         title: "Failed to resend",
         description: error.message || "Please try again later.",
@@ -358,9 +405,11 @@ const Auth = () => {
         />
 
         {/* Overlay */}
-        <div className="absolute inset-0 mix-blend-multiply pointer-events-none
+        <div
+          className="absolute inset-0 mix-blend-multiply pointer-events-none
                         bg-gradient-to-br from-primary/30 via-white/60 to-white/90
-                        dark:from-primary/50 dark:via-background/70 dark:to-background/90" />
+                        dark:from-primary/50 dark:via-background/70 dark:to-background/90"
+        />
 
         {/* Bubbles */}
         {bubbles.map((b) => (
@@ -387,7 +436,8 @@ const Auth = () => {
             {messages[currentMsg]}
           </h1>
           <p className="text-base md:text-lg text-slate-700 dark:text-white/80 max-w-2xl mx-auto">
-            Discover validated startup problems from real conversations. Turn market insights into your next big idea.
+            Discover validated startup problems from real conversations. Turn
+            market insights into your next big idea.
           </p>
         </div>
 
@@ -397,27 +447,29 @@ const Auth = () => {
 
       {/* RIGHT SIDE - Auth Form */}
       <div className="flex-1 lg:w-[40%] flex items-center justify-center p-4 sm:p-8 relative">
-        <Card className="w-full max-w-md p-6 sm:p-8 glass shadow-strong border border-primary/20 transition-all
-                          bg-white/95 text-slate-900 dark:bg-card/90 dark:text-foreground">
-    <div className="text-center px-6 py-12">
-      
-      {/* Logo */}
-      <div className="mb-6 flex justify-center">
-        <div className="w-28 sm:w-32 opacity-90">
-          <Logo />
-        </div>
-      </div>
+        <Card
+          className="w-full max-w-md p-6 sm:p-8 glass shadow-strong border border-primary/20 transition-all
+                          bg-white/95 text-slate-900 dark:bg-card/90 dark:text-foreground"
+        >
+          <div className="text-center px-6 py-12">
+            {/* Logo */}
+            <div className="mb-6 flex justify-center">
+              <div className="w-28 sm:w-32 opacity-90">
+                <Logo />
+              </div>
+            </div>
 
-      {/* Headline */}
-      <h1 className="text-2xl sm:text-4xl font-semibold tracking-tight text-slate-900 dark:text-foreground">
-        Discover opportunities that already work.
-      </h1>
+            {/* Headline */}
+            <h1 className="text-2xl sm:text-4xl font-semibold tracking-tight text-slate-900 dark:text-foreground">
+              Discover opportunities that already work.
+            </h1>
 
-      {/* Subheading */}
-      <p className="mt-3 text-sm sm:text-base text-slate-500 dark:text-slate-400 max-w-md mx-auto">
-        Skip the guesswork. Explore ideas backed by real validation, traction, and demand.
-      </p>
-    </div>
+            {/* Subheading */}
+            <p className="mt-3 text-sm sm:text-base text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+              Skip the guesswork. Explore ideas backed by real validation,
+              traction, and demand.
+            </p>
+          </div>
           {verificationPending ? (
             <div className="space-y-6 text-center">
               <div className="mx-auto w-16 h-16 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center animate-bounce-slow">
@@ -454,13 +506,11 @@ const Auth = () => {
                   className="w-full h-11 shadow-medium hover:shadow-glow"
                   variant={canResend ? "default" : "secondary"}
                 >
-                  {isResending ? (
-                    "Sending..."
-                  ) : canResend ? (
-                    "Resend Verification Email"
-                  ) : (
-                    `Resend available in ${resendCountdown}s`
-                  )}
+                  {isResending
+                    ? "Sending..."
+                    : canResend
+                      ? "Resend Verification Email"
+                      : `Resend available in ${resendCountdown}s`}
                 </Button>
 
                 <Button
@@ -490,7 +540,9 @@ const Auth = () => {
                 Back to Login
               </Button>
               <div className="text-center mb-4">
-                <h3 className="text-lg font-semibold text-slate-700 dark:text-foreground">Reset Password</h3>
+                <h3 className="text-lg font-semibold text-slate-700 dark:text-foreground">
+                  Reset Password
+                </h3>
                 <p className="text-sm text-slate-600 dark:text-muted-foreground mt-1">
                   Enter your email and we'll send you a reset link
                 </p>
@@ -508,7 +560,11 @@ const Auth = () => {
                     onChange={(e) => setForgotPasswordEmail(e.target.value)}
                   />
                 </div>
-                <Button type="submit" className="w-full h-11 shadow-medium hover:shadow-glow" disabled={isLoading}>
+                <Button
+                  type="submit"
+                  className="w-full h-11 shadow-medium hover:shadow-glow"
+                  disabled={isLoading}
+                >
                   {isLoading ? "Sending..." : "Send Reset Link"}
                 </Button>
               </form>
@@ -553,7 +609,9 @@ const Auth = () => {
                           />
                         </svg>
                       )}
-                      {isGoogleLoading ? "Connecting..." : "Continue with Google"}
+                      {isGoogleLoading
+                        ? "Connecting..."
+                        : "Continue with Google"}
                     </Button>
                     <span className="absolute -top-2 left-4 px-2 py-0.5 text-[10px] font-semibold bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-full flex items-center gap-1">
                       <Zap className="w-3 h-3" />
@@ -567,7 +625,9 @@ const Auth = () => {
                       <span className="w-full border-t border-gray-300 dark:border-gray-600" />
                     </div>
                     <div className="relative flex justify-center text-xs uppercase">
-                      <span className="bg-white dark:bg-card px-2 text-gray-500 dark:text-gray-400">Or use email</span>
+                      <span className="bg-white dark:bg-card px-2 text-gray-500 dark:text-gray-400">
+                        Or use email
+                      </span>
                     </div>
                   </div>
 
@@ -583,7 +643,9 @@ const Auth = () => {
                           required
                           className="h-11"
                           value={loginEmail}
-                          onChange={(e) => handleEmailInput(e.target.value, "login")}
+                          onChange={(e) =>
+                            handleEmailInput(e.target.value, "login")
+                          }
                         />
                       </div>
                     </div>
@@ -604,7 +666,9 @@ const Auth = () => {
                         />
                         <button
                           type="button"
-                          onClick={() => setShowLoginPassword(!showLoginPassword)}
+                          onClick={() =>
+                            setShowLoginPassword(!showLoginPassword)
+                          }
                           className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
                         >
                           {showLoginPassword ? (
@@ -632,7 +696,11 @@ const Auth = () => {
                         Forgot password?
                       </Button>
                     </div>
-                    <Button type="submit" className="w-full h-11 shadow-medium hover:shadow-glow" disabled={isLoading}>
+                    <Button
+                      type="submit"
+                      className="w-full h-11 shadow-medium hover:shadow-glow"
+                      disabled={isLoading}
+                    >
                       {isLoading ? "Logging in..." : "Login with Email"}
                     </Button>
                   </form>
@@ -672,7 +740,9 @@ const Auth = () => {
                           />
                         </svg>
                       )}
-                      {isGoogleLoading ? "Connecting..." : "Continue with Google"}
+                      {isGoogleLoading
+                        ? "Connecting..."
+                        : "Continue with Google"}
                     </Button>
                     <span className="absolute -top-2 left-4 px-2 py-0.5 text-[10px] font-semibold bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-full flex items-center gap-1">
                       <Zap className="w-3 h-3" />
@@ -684,7 +754,9 @@ const Auth = () => {
                   <div className="p-3 rounded-xl bg-primary/5 border border-primary/20">
                     <div className="flex items-center gap-2 text-center justify-center">
                       <span className="text-lg">🎉</span>
-                      <span className="text-sm font-medium text-foreground">7 Days of Pro Access Free!</span>
+                      <span className="text-sm font-medium text-foreground">
+                        7 Days of Pro Access Free!
+                      </span>
                     </div>
                     <p className="text-xs text-muted-foreground text-center mt-1">
                       No credit card required
@@ -697,7 +769,9 @@ const Auth = () => {
                       <span className="w-full border-t border-gray-300 dark:border-gray-600" />
                     </div>
                     <div className="relative flex justify-center text-xs uppercase">
-                      <span className="bg-white dark:bg-card px-2 text-gray-500 dark:text-gray-400">Or use email</span>
+                      <span className="bg-white dark:bg-card px-2 text-gray-500 dark:text-gray-400">
+                        Or use email
+                      </span>
                     </div>
                   </div>
 
@@ -725,7 +799,9 @@ const Auth = () => {
                           required
                           className="h-11"
                           value={signupEmail}
-                          onChange={(e) => handleEmailInput(e.target.value, "signup")}
+                          onChange={(e) =>
+                            handleEmailInput(e.target.value, "signup")
+                          }
                         />
                       </div>
                     </div>
@@ -737,23 +813,29 @@ const Auth = () => {
                           type={showSignupPassword ? "text" : "password"}
                           placeholder="••••••••"
                           required
-                          className={`h-11 pr-10 ${signupPassword && isPasswordValid(passwordValidation)
-                            ? "border-green-500 dark:border-green-500"
-                            : signupPassword
-                              ? "border-yellow-500 dark:border-yellow-500"
-                              : ""
-                            }`}
+                          className={`h-11 pr-10 ${
+                            signupPassword &&
+                            isPasswordValid(passwordValidation)
+                              ? "border-green-500 dark:border-green-500"
+                              : signupPassword
+                                ? "border-yellow-500 dark:border-yellow-500"
+                                : ""
+                          }`}
                           value={signupPassword}
                           onChange={(e) => {
                             const newPassword = e.target.value;
                             setSignupPassword(newPassword);
-                            setPasswordValidation(validatePassword(newPassword));
+                            setPasswordValidation(
+                              validatePassword(newPassword),
+                            );
                             setSignupError("");
                           }}
                         />
                         <button
                           type="button"
-                          onClick={() => setShowSignupPassword(!showSignupPassword)}
+                          onClick={() =>
+                            setShowSignupPassword(!showSignupPassword)
+                          }
                           className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
                         >
                           {showSignupPassword ? (
@@ -773,7 +855,13 @@ const Auth = () => {
                             ) : (
                               <AlertCircle className="w-4 h-4 text-gray-400" />
                             )}
-                            <span className={passwordValidation.minLength ? "text-green-600 dark:text-green-400" : "text-gray-600 dark:text-gray-400"}>
+                            <span
+                              className={
+                                passwordValidation.minLength
+                                  ? "text-green-600 dark:text-green-400"
+                                  : "text-gray-600 dark:text-gray-400"
+                              }
+                            >
                               At least 8 characters
                             </span>
                           </div>
@@ -783,7 +871,13 @@ const Auth = () => {
                             ) : (
                               <AlertCircle className="w-4 h-4 text-gray-400" />
                             )}
-                            <span className={passwordValidation.hasUpperCase ? "text-green-600 dark:text-green-400" : "text-gray-600 dark:text-gray-400"}>
+                            <span
+                              className={
+                                passwordValidation.hasUpperCase
+                                  ? "text-green-600 dark:text-green-400"
+                                  : "text-gray-600 dark:text-gray-400"
+                              }
+                            >
                               One uppercase letter
                             </span>
                           </div>
@@ -793,7 +887,13 @@ const Auth = () => {
                             ) : (
                               <AlertCircle className="w-4 h-4 text-gray-400" />
                             )}
-                            <span className={passwordValidation.hasLowerCase ? "text-green-600 dark:text-green-400" : "text-gray-600 dark:text-gray-400"}>
+                            <span
+                              className={
+                                passwordValidation.hasLowerCase
+                                  ? "text-green-600 dark:text-green-400"
+                                  : "text-gray-600 dark:text-gray-400"
+                              }
+                            >
                               One lowercase letter
                             </span>
                           </div>
@@ -803,7 +903,13 @@ const Auth = () => {
                             ) : (
                               <AlertCircle className="w-4 h-4 text-gray-400" />
                             )}
-                            <span className={passwordValidation.hasNumber ? "text-green-600 dark:text-green-400" : "text-gray-600 dark:text-gray-400"}>
+                            <span
+                              className={
+                                passwordValidation.hasNumber
+                                  ? "text-green-600 dark:text-green-400"
+                                  : "text-gray-600 dark:text-gray-400"
+                              }
+                            >
                               One number
                             </span>
                           </div>
@@ -813,7 +919,13 @@ const Auth = () => {
                             ) : (
                               <AlertCircle className="w-4 h-4 text-gray-400" />
                             )}
-                            <span className={passwordValidation.hasSpecialChar ? "text-green-600 dark:text-green-400" : "text-gray-600 dark:text-gray-400"}>
+                            <span
+                              className={
+                                passwordValidation.hasSpecialChar
+                                  ? "text-green-600 dark:text-green-400"
+                                  : "text-gray-600 dark:text-gray-400"
+                              }
+                            >
                               One special character (!@#$%^&amp;*...)
                             </span>
                           </div>
@@ -827,7 +939,11 @@ const Auth = () => {
                         </div>
                       )}
                     </div>
-                    <Button type="submit" className="w-full h-11 shadow-medium hover:shadow-glow" disabled={isLoading}>
+                    <Button
+                      type="submit"
+                      className="w-full h-11 shadow-medium hover:shadow-glow"
+                      disabled={isLoading}
+                    >
                       {isLoading ? "Creating account..." : "Sign Up with Email"}
                     </Button>
                   </form>

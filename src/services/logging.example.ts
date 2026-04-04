@@ -1,27 +1,30 @@
 // Example usage of the logging service
 // DO NOT import this file - it's just for reference
 
-import { createLogger } from './logging';
+import { createLogger } from "./logging";
 
 // Create a logger for your component/module
-const logger = createLogger('MyComponent');
+const logger = createLogger("MyComponent");
 
 // Usage examples:
 
 // Debug level (only in development)
-logger.debug('Component mounted', { props: { id: 123 } });
+logger.debug("Component mounted", { props: { id: 123 } });
 
 // Info level
-logger.info('User action completed', { action: 'submit', userId: 'abc123' });
+logger.info("User action completed", { action: "submit", userId: "abc123" });
 
 // Warning level
-logger.warn('Deprecated API used', { api: 'oldMethod', replacement: 'newMethod' });
+logger.warn("Deprecated API used", {
+  api: "oldMethod",
+  replacement: "newMethod",
+});
 
 // Error level
-logger.error('Failed to fetch data', { 
-  error: 'Network timeout', 
-  endpoint: '/api/data',
-  retryCount: 3 
+logger.error("Failed to fetch data", {
+  error: "Network timeout",
+  endpoint: "/api/data",
+  retryCount: 3,
 });
 
 // In React components:

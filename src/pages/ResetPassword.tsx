@@ -22,7 +22,7 @@ const ResetPassword = () => {
     const hashParams = new URLSearchParams(location.hash.substring(1));
     const accessToken = hashParams.get("access_token");
     const type = hashParams.get("type");
-    
+
     // Check if this is a recovery/reset password link
     if (accessToken && type === "recovery") {
       setHasValidToken(true);
@@ -65,14 +65,17 @@ const ResetPassword = () => {
       if (response.success) {
         toast({
           title: "Password reset successful",
-          description: "Your password has been updated. You can now log in with your new password.",
+          description:
+            "Your password has been updated. You can now log in with your new password.",
         });
         navigate("/auth");
       }
     } catch (error: any) {
       toast({
         title: "Reset failed",
-        description: error.message || "Failed to reset password. The link may have expired.",
+        description:
+          error.message ||
+          "Failed to reset password. The link may have expired.",
         variant: "destructive",
       });
     } finally {
@@ -85,7 +88,9 @@ const ResetPassword = () => {
       <div className="min-h-screen flex items-center justify-center p-4 bg-white dark:bg-background">
         <Card className="w-full max-w-md p-6 sm:p-8 glass shadow-strong border border-primary/20 bg-white/95 dark:bg-card/90">
           <div className="text-center">
-            <div className="animate-pulse text-muted-foreground">Validating reset link...</div>
+            <div className="animate-pulse text-muted-foreground">
+              Validating reset link...
+            </div>
           </div>
         </Card>
       </div>

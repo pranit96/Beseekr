@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink } from "react-router-dom";
 import {
   LayoutDashboard,
   TrendingUp,
@@ -13,25 +13,25 @@ import {
   Eye,
   PlayCircle,
   Shield,
-  Target
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
+  Target,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const navItems = [
-  { to: '/trading/picks', icon: Target, label: 'Daily Picks' },
-  { to: '/trading/overview', icon: LayoutDashboard, label: 'Overview' },
-  { to: '/trading/live', icon: TrendingUp, label: 'Live Trading' },
-  { to: '/trading/positions', icon: Briefcase, label: 'Positions' },
-  { to: '/trading/history', icon: History, label: 'Trade History' },
-  { to: '/trading/signals', icon: Signal, label: 'Signals' },
-  { to: '/trading/watchlist', icon: Eye, label: 'Watchlist' },
-  { to: '/trading/paper-trading', icon: PlayCircle, label: 'Paper Trading' },
-  { to: '/trading/analytics', icon: BarChart3, label: 'Analytics' },
-  { to: '/trading/market', icon: Globe, label: 'Market' },
-  { to: '/trading/data-validation', icon: Shield, label: 'Data Quality' },
-  { to: '/trading/system', icon: Activity, label: 'System' },
-  { to: '/trading/alerts', icon: Bell, label: 'Alerts' },
-  { to: '/trading/settings', icon: Settings, label: 'Settings' },
+  { to: "/trading/picks", icon: Target, label: "Daily Picks" },
+  { to: "/trading/overview", icon: LayoutDashboard, label: "Overview" },
+  { to: "/trading/live", icon: TrendingUp, label: "Live Trading" },
+  { to: "/trading/positions", icon: Briefcase, label: "Positions" },
+  { to: "/trading/history", icon: History, label: "Trade History" },
+  { to: "/trading/signals", icon: Signal, label: "Signals" },
+  { to: "/trading/watchlist", icon: Eye, label: "Watchlist" },
+  { to: "/trading/paper-trading", icon: PlayCircle, label: "Paper Trading" },
+  { to: "/trading/analytics", icon: BarChart3, label: "Analytics" },
+  { to: "/trading/market", icon: Globe, label: "Market" },
+  { to: "/trading/data-validation", icon: Shield, label: "Data Quality" },
+  { to: "/trading/system", icon: Activity, label: "System" },
+  { to: "/trading/alerts", icon: Bell, label: "Alerts" },
+  { to: "/trading/settings", icon: Settings, label: "Settings" },
 ];
 
 export function Sidebar() {
@@ -49,10 +49,10 @@ export function Sidebar() {
             to={item.to}
             className={({ isActive }) =>
               cn(
-                'flex items-center gap-3 px-4 py-3 rounded-lg transition-colors',
+                "flex items-center gap-3 px-4 py-3 rounded-lg transition-colors",
                 isActive
-                  ? 'bg-blue-600 text-white'
-                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                  ? "bg-blue-600 text-white"
+                  : "text-slate-300 hover:bg-slate-800 hover:text-white",
               )
             }
           >

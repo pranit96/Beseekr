@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { apiClient } from '@/lib/api';
-import { TrendingUp, CheckCircle2, XCircle, Clock } from 'lucide-react';
+import { useEffect, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { apiClient } from "@/lib/api";
+import { TrendingUp, CheckCircle2, XCircle, Clock } from "lucide-react";
 
 interface Metrics {
   totalOrders: number;
@@ -52,9 +52,10 @@ export function DeckMetricsCard() {
     return null;
   }
 
-  const successRate = metrics.totalOrders > 0
-    ? Math.round((metrics.completedOrders / metrics.totalOrders) * 100)
-    : 0;
+  const successRate =
+    metrics.totalOrders > 0
+      ? Math.round((metrics.completedOrders / metrics.totalOrders) * 100)
+      : 0;
 
   const formatTime = (seconds: number): string => {
     if (seconds < 60) return `${Math.round(seconds)}s`;
@@ -106,7 +107,9 @@ export function DeckMetricsCard() {
                 <Clock className="h-4 w-4 text-blue-500" />
                 <span className="text-muted-foreground">Avg. Time</span>
               </div>
-              <span className="font-medium">{formatTime(metrics.averageProcessingTime)}</span>
+              <span className="font-medium">
+                {formatTime(metrics.averageProcessingTime)}
+              </span>
             </div>
           )}
         </div>

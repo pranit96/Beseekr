@@ -15,12 +15,15 @@ import { initSocketOnUserInteraction } from "./services/socketInit";
 
 // Clean up any existing service workers on startup
 async function cleanupServiceWorkers() {
-  if ('serviceWorker' in navigator) {
+  if ("serviceWorker" in navigator) {
     try {
       const registrations = await navigator.serviceWorker.getRegistrations();
       for (const registration of registrations) {
         await registration.unregister();
-        console.log('[Cleanup] Unregistered service worker:', registration.scope);
+        console.log(
+          "[Cleanup] Unregistered service worker:",
+          registration.scope,
+        );
       }
     } catch (e) {
       // Ignore errors
@@ -28,12 +31,12 @@ async function cleanupServiceWorkers() {
   }
 
   // Clear all caches
-  if ('caches' in window) {
+  if ("caches" in window) {
     try {
       const names = await caches.keys();
       for (const name of names) {
         await caches.delete(name);
-        console.log('[Cleanup] Deleted cache:', name);
+        console.log("[Cleanup] Deleted cache:", name);
       }
     } catch (e) {
       // Ignore errors

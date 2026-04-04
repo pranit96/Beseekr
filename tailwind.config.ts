@@ -20,7 +20,7 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['Manrope', 'ui-sans-serif', 'system-ui'],
+        sans: ["Manrope", "ui-sans-serif", "system-ui"],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -107,11 +107,11 @@ export default {
           "0%": { transform: "translateY(20px)", opacity: "0" },
           "100%": { transform: "translateY(0)", opacity: "1" },
         },
-        "shimmer": {
+        shimmer: {
           "0%": { backgroundPosition: "-1000px 0" },
           "100%": { backgroundPosition: "1000px 0" },
         },
-        "float": {
+        float: {
           "0%, 100%": { transform: "translateY(0)" },
           "50%": { transform: "translateY(-15px)" },
         },
@@ -119,7 +119,7 @@ export default {
           "0%": { transform: "rotate(0deg)" },
           "100%": { transform: "rotate(360deg)" },
         },
-        "bubble": {
+        bubble: {
           "0%": { transform: "translateY(0) scale(1)", opacity: "0.8" },
           "50%": { transform: "translateY(-20px) scale(1.1)", opacity: "1" },
           "100%": { transform: "translateY(0) scale(1)", opacity: "0.8" },
@@ -148,26 +148,24 @@ export default {
         "fade-out": "fade-out 0.4s ease-out",
         "scale-in": "scale-in 0.3s ease-out",
         "slide-up": "slide-up 0.5s ease-out",
-        "shimmer": "shimmer 2s linear infinite",
+        shimmer: "shimmer 2s linear infinite",
         "float-slow": "float 6s ease-in-out infinite",
         "rotate-slow": "rotate-slow 12s linear infinite",
-        "bubble": "bubble 4s ease-in-out infinite",
+        bubble: "bubble 4s ease-in-out infinite",
         "fade-rotate": "fade-rotate 1.2s ease-out",
         "pulse-glow": "pulse-glow 2s ease-in-out infinite",
         "fade-in-up": "fade-in-up 0.6s ease-out",
         "slide-in-right": "slide-in-right 0.5s ease-out",
       },
       backdropBlur: {
-        xs: '2px',
+        xs: "2px",
       },
       backgroundImage: {
-        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-        'gradient-conic': 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
-      }
+        "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
+        "gradient-conic":
+          "conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))",
+      },
     },
   },
-  plugins: [
-    require("tailwindcss-animate"),
-    require("@tailwindcss/typography"),
-  ],
+  plugins: [require("tailwindcss-animate"), require("@tailwindcss/typography")],
 } satisfies Config;

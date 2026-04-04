@@ -12,9 +12,9 @@ class Analytics {
   private timer: NodeJS.Timeout | null = null;
 
   constructor() {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       this.startAutoFlush();
-      window.addEventListener('beforeunload', () => this.flush());
+      window.addEventListener("beforeunload", () => this.flush());
     }
   }
 
@@ -37,11 +37,11 @@ class Analytics {
   }
 
   page(path: string, properties?: Record<string, any>) {
-    this.track('page_view', { path, ...properties });
+    this.track("page_view", { path, ...properties });
   }
 
   identify(userId: string, traits?: Record<string, any>) {
-    this.track('identify', { userId, ...traits });
+    this.track("identify", { userId, ...traits });
   }
 
   private startAutoFlush() {
@@ -56,12 +56,12 @@ class Analytics {
 
     try {
       await fetch(this.endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ events: eventsToSend }),
       });
     } catch (error) {
-      console.error('Analytics flush failed:', error);
+      console.error("Analytics flush failed:", error);
       // Re-add events on failure
       this.events.unshift(...eventsToSend);
     }

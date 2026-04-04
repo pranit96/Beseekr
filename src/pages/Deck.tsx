@@ -1,29 +1,61 @@
-import { useState } from 'react';
-import { GlobalHeader } from '@/components/GlobalHeader';
-import { DeckUploadZone } from '@/components/DeckUploadZone';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { apiClient } from '@/lib/api';
-import { toast } from 'sonner';
-import { CheckCircle2, Clock, FileSpreadsheet, Info, Upload as UploadIcon } from 'lucide-react';
-import { IndustryType, StageType } from '@/types/deck-to-model';
-import { DeckOrdersSidebar } from '@/components/DeckOrdersSidebar';
+import { useState } from "react";
+import { GlobalHeader } from "@/components/GlobalHeader";
+import { DeckUploadZone } from "@/components/DeckUploadZone";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { apiClient } from "@/lib/api";
+import { toast } from "sonner";
+import {
+  CheckCircle2,
+  Clock,
+  FileSpreadsheet,
+  Info,
+  Upload as UploadIcon,
+} from "lucide-react";
+import { IndustryType, StageType } from "@/types/deck-to-model";
+import { DeckOrdersSidebar } from "@/components/DeckOrdersSidebar";
 
-const INDUSTRIES: IndustryType[] = ['SaaS', 'FinTech', 'E-commerce', 'Healthcare', 'Other'];
-const STAGES: StageType[] = ['Pre-seed', 'Seed', 'Series A', 'Series B', 'Series C', 'Growth', 'Other'];
+const INDUSTRIES: IndustryType[] = [
+  "SaaS",
+  "FinTech",
+  "E-commerce",
+  "Healthcare",
+  "Other",
+];
+const STAGES: StageType[] = [
+  "Pre-seed",
+  "Seed",
+  "Series A",
+  "Series B",
+  "Series C",
+  "Growth",
+  "Other",
+];
 
 export default function Deck() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [companyName, setCompanyName] = useState('');
-  const [industry, setIndustry] = useState('');
-  const [stage, setStage] = useState('');
-  const [notes, setNotes] = useState('');
+  const [companyName, setCompanyName] = useState("");
+  const [industry, setIndustry] = useState("");
+  const [stage, setStage] = useState("");
+  const [notes, setNotes] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
@@ -38,7 +70,7 @@ export default function Deck() {
 
   const handleUpload = async () => {
     if (!selectedFile) {
-      toast.error('Please select a file to upload');
+      toast.error("Please select a file to upload");
       return;
     }
 
@@ -46,19 +78,19 @@ export default function Deck() {
 
     try {
       const formData = new FormData();
-      formData.append('pdf', selectedFile);
+      formData.append("pdf", selectedFile);
 
       if (companyName.trim()) {
-        formData.append('company_name', companyName.trim());
+        formData.append("company_name", companyName.trim());
       }
       if (industry) {
-        formData.append('industry', industry);
+        formData.append("industry", industry);
       }
       if (stage) {
-        formData.append('stage', stage);
+        formData.append("stage", stage);
       }
       if (notes.trim()) {
-        formData.append('additional_notes', notes.trim());
+        formData.append("additional_notes", notes.trim());
       }
 
       const response = await apiClient.uploadDeck(formData);
@@ -66,13 +98,13 @@ export default function Deck() {
       if (response.success) {
         setUploadSuccess(true);
         setOrderId(response.data.orderId);
-        toast.success('Deck uploaded successfully!', {
-          description: 'Your financial model is being generated'
+        toast.success("Deck uploaded successfully!", {
+          description: "Your financial model is being generated",
         });
       }
     } catch (error: any) {
-      toast.error('Upload failed', {
-        description: error.message || 'Please try again'
+      toast.error("Upload failed", {
+        description: error.message || "Please try again",
       });
     } finally {
       setIsUploading(false);
@@ -81,10 +113,10 @@ export default function Deck() {
 
   const handleUploadAnother = () => {
     setSelectedFile(null);
-    setCompanyName('');
-    setIndustry('');
-    setStage('');
-    setNotes('');
+    setCompanyName("");
+    setIndustry("");
+    setStage("");
+    setNotes("");
     setUploadSuccess(false);
     setOrderId(null);
   };
@@ -103,7 +135,9 @@ export default function Deck() {
                 <CardHeader>
                   <div className="flex items-center gap-3 mb-2">
                     <CheckCircle2 className="h-8 w-8 text-green-500" />
-                    <CardTitle className="text-2xl">Upload Successful!</CardTitle>
+                    <CardTitle className="text-2xl">
+                      Upload Successful!
+                    </CardTitle>
                   </div>
                   <CardDescription>
                     Your pitch deck has been uploaded and is being processed
@@ -116,7 +150,9 @@ export default function Deck() {
                       <span className="font-mono">{orderId}</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Estimated Time:</span>
+                      <span className="text-muted-foreground">
+                        Estimated Time:
+                      </span>
                       <span className="font-medium">3-5 minutes</span>
                     </div>
                     <div className="flex justify-between text-sm">
@@ -131,7 +167,8 @@ export default function Deck() {
                   <Alert>
                     <Info className="h-4 w-4" />
                     <AlertDescription>
-                      Check the sidebar to track your order progress. You'll be able to download the Excel file when it's ready.
+                      Check the sidebar to track your order progress. You'll be
+                      able to download the Excel file when it's ready.
                     </AlertDescription>
                   </Alert>
 
@@ -146,9 +183,12 @@ export default function Deck() {
               <>
                 {/* Header */}
                 <div>
-                  <h1 className="text-3xl font-bold mb-2">Deck to Financial Model</h1>
+                  <h1 className="text-3xl font-bold mb-2">
+                    Deck to Financial Model
+                  </h1>
                   <p className="text-muted-foreground">
-                    Transform your pitch deck into a professional 3-statement financial model
+                    Transform your pitch deck into a professional 3-statement
+                    financial model
                   </p>
                 </div>
 
@@ -188,7 +228,8 @@ export default function Deck() {
                   <CardHeader>
                     <CardTitle>Upload Your Deck</CardTitle>
                     <CardDescription>
-                      Upload your pitch deck and provide optional details to enhance the model
+                      Upload your pitch deck and provide optional details to
+                      enhance the model
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6">
@@ -203,7 +244,9 @@ export default function Deck() {
                     {/* Optional Fields */}
                     <div className="space-y-4">
                       <div className="space-y-2">
-                        <Label htmlFor="company-name">Company Name (Optional)</Label>
+                        <Label htmlFor="company-name">
+                          Company Name (Optional)
+                        </Label>
                         <Input
                           id="company-name"
                           placeholder="e.g., Acme Inc"
@@ -216,7 +259,11 @@ export default function Deck() {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="industry">Industry (Optional)</Label>
-                          <Select value={industry} onValueChange={setIndustry} disabled={isUploading}>
+                          <Select
+                            value={industry}
+                            onValueChange={setIndustry}
+                            disabled={isUploading}
+                          >
                             <SelectTrigger id="industry">
                               <SelectValue placeholder="Select industry" />
                             </SelectTrigger>
@@ -232,7 +279,11 @@ export default function Deck() {
 
                         <div className="space-y-2">
                           <Label htmlFor="stage">Stage (Optional)</Label>
-                          <Select value={stage} onValueChange={setStage} disabled={isUploading}>
+                          <Select
+                            value={stage}
+                            onValueChange={setStage}
+                            disabled={isUploading}
+                          >
                             <SelectTrigger id="stage">
                               <SelectValue placeholder="Select stage" />
                             </SelectTrigger>
@@ -248,7 +299,9 @@ export default function Deck() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="notes">Additional Notes (Optional)</Label>
+                        <Label htmlFor="notes">
+                          Additional Notes (Optional)
+                        </Label>
                         <Textarea
                           id="notes"
                           placeholder="Any specific requirements or context for the model..."
@@ -295,23 +348,38 @@ export default function Deck() {
                     <ul className="space-y-2 text-sm text-muted-foreground">
                       <li className="flex items-start gap-2">
                         <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                        <span><strong>Summary Sheet:</strong> Key metrics and financial overview</span>
+                        <span>
+                          <strong>Summary Sheet:</strong> Key metrics and
+                          financial overview
+                        </span>
                       </li>
                       <li className="flex items-start gap-2">
                         <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                        <span><strong>Income Statement:</strong> 5-year P&L projections</span>
+                        <span>
+                          <strong>Income Statement:</strong> 5-year P&L
+                          projections
+                        </span>
                       </li>
                       <li className="flex items-start gap-2">
                         <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                        <span><strong>Balance Sheet:</strong> Assets, liabilities, and equity</span>
+                        <span>
+                          <strong>Balance Sheet:</strong> Assets, liabilities,
+                          and equity
+                        </span>
                       </li>
                       <li className="flex items-start gap-2">
                         <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                        <span><strong>Cash Flow:</strong> Operating, investing, and financing activities</span>
+                        <span>
+                          <strong>Cash Flow:</strong> Operating, investing, and
+                          financing activities
+                        </span>
                       </li>
                       <li className="flex items-start gap-2">
                         <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                        <span><strong>Assumptions:</strong> Model assumptions with 3 scenarios</span>
+                        <span>
+                          <strong>Assumptions:</strong> Model assumptions with 3
+                          scenarios
+                        </span>
                       </li>
                     </ul>
                   </CardContent>

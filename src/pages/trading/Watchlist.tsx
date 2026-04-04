@@ -1,9 +1,16 @@
-import { useEffect, useState } from 'react';
-import { tradingApi } from '@/api/trading';
-import { Plus, Trash2, Bell, TrendingUp, TrendingDown, AlertCircle } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { DataQualityBadge } from '@/components/trading/DataQualityBadge';
-import type { WatchlistItem } from '@/types/trading';
+import { useEffect, useState } from "react";
+import { tradingApi } from "@/api/trading";
+import {
+  Plus,
+  Trash2,
+  Bell,
+  TrendingUp,
+  TrendingDown,
+  AlertCircle,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { DataQualityBadge } from "@/components/trading/DataQualityBadge";
+import type { WatchlistItem } from "@/types/trading";
 
 export default function Watchlist() {
   const [watchlist, setWatchlist] = useState<WatchlistItem[]>([]);
@@ -26,20 +33,20 @@ export default function Watchlist() {
       const data = await tradingApi.getWatchlist();
       setWatchlist(data);
     } catch (err: any) {
-      setError(err.message || 'Failed to load watchlist');
+      setError(err.message || "Failed to load watchlist");
     } finally {
       setLoading(false);
     }
   };
 
   const handleRemove = async (id: string) => {
-    if (!confirm('Remove this stock from watchlist?')) return;
-    
+    if (!confirm("Remove this stock from watchlist?")) return;
+
     try {
       await tradingApi.removeFromWatchlist(id);
-      setWatchlist(watchlist.filter(item => item.id !== id));
+      setWatchlist(watchlist.filter((item) => item.id !== id));
     } catch (err: any) {
-      alert(err.message || 'Failed to remove from watchlist');
+      alert(err.message || "Failed to remove from watchlist");
     }
   };
 
@@ -76,7 +83,9 @@ export default function Watchlist() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Watchlist</h1>
-          <p className="text-gray-600 mt-1">Track your favorite stocks with price alerts</p>
+          <p className="text-gray-600 mt-1">
+            Track your favorite stocks with price alerts
+          </p>
         </div>
         <button
           onClick={() => setShowAddModal(true)}
@@ -94,9 +103,12 @@ export default function Watchlist() {
             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <TrendingUp className="w-8 h-8 text-gray-400" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Your watchlist is empty</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Your watchlist is empty
+            </h3>
             <p className="text-gray-600 mb-6">
-              Add stocks to track their prices and set alerts for important price movements.
+              Add stocks to track their prices and set alerts for important
+              price movements.
             </p>
             <button
               onClick={() => setShowAddModal(true)}
@@ -150,12 +162,12 @@ export default function Watchlist() {
   );
 }
 
-function WatchlistCard({ 
-  item, 
-  onRemove, 
-  onSetAlert 
-}: { 
-  item: WatchlistItem; 
+function WatchlistCard({
+  item,
+  onRemove,
+  onSetAlert,
+}: {
+  item: WatchlistItem;
   onRemove: (id: string) => void;
   onSetAlert: (item: WatchlistItem) => void;
 }) {
@@ -196,23 +208,28 @@ function WatchlistCard({
               ₹{item.current_price.toFixed(2)}
             </div>
             {item.data_quality_score !== undefined && (
-              <DataQualityBadge 
-                score={item.data_quality_score} 
+              <DataQualityBadge
+                score={item.data_quality_score}
                 warnings={item.validation_warnings}
                 size="sm"
               />
             )}
           </div>
-          <div className={cn(
-            "flex items-center gap-1 text-sm font-medium",
-            isPositive ? "text-green-600" : "text-red-600"
-          )}>
+          <div
+            className={cn(
+              "flex items-center gap-1 text-sm font-medium",
+              isPositive ? "text-green-600" : "text-red-600",
+            )}
+          >
             {isPositive ? (
               <TrendingUp className="w-4 h-4" />
             ) : (
               <TrendingDown className="w-4 h-4" />
             )}
-            <span>{isPositive ? '+' : ''}{changePercent.toFixed(2)}%</span>
+            <span>
+              {isPositive ? "+" : ""}
+              {changePercent.toFixed(2)}%
+            </span>
           </div>
         </div>
       )}
@@ -245,18 +262,24 @@ function WatchlistCard({
   );
 }
 
-function AddStockModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
-  const [symbol, setSymbol] = useState('');
-  const [alertAbove, setAlertAbove] = useState('');
-  const [alertBelow, setAlertBelow] = useState('');
-  const [notes, setNotes] = useState('');
+function AddStockModal({
+  onClose,
+  onSuccess,
+}: {
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const [symbol, setSymbol] = useState("");
+  const [alertAbove, setAlertAbove] = useState("");
+  const [alertBelow, setAlertBelow] = useState("");
+  const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
+    setError("");
 
     try {
       await tradingApi.addToWatchlist({
@@ -267,7 +290,7 @@ function AddStockModal({ onClose, onSuccess }: { onClose: () => void; onSuccess:
       });
       onSuccess();
     } catch (err: any) {
-      setError(err.message || 'Failed to add stock');
+      setError(err.message || "Failed to add stock");
     } finally {
       setLoading(false);
     }
@@ -276,8 +299,10 @@ function AddStockModal({ onClose, onSuccess }: { onClose: () => void; onSuccess:
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg max-w-md w-full p-6">
-        <h2 className="text-xl font-bold text-gray-900 mb-4">Add Stock to Watchlist</h2>
-        
+        <h2 className="text-xl font-bold text-gray-900 mb-4">
+          Add Stock to Watchlist
+        </h2>
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -355,7 +380,7 @@ function AddStockModal({ onClose, onSuccess }: { onClose: () => void; onSuccess:
               disabled={loading}
               className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
             >
-              {loading ? 'Adding...' : 'Add Stock'}
+              {loading ? "Adding..." : "Add Stock"}
             </button>
           </div>
         </form>
@@ -364,24 +389,28 @@ function AddStockModal({ onClose, onSuccess }: { onClose: () => void; onSuccess:
   );
 }
 
-function SetAlertModal({ 
-  item, 
-  onClose, 
-  onSuccess 
-}: { 
-  item: WatchlistItem; 
-  onClose: () => void; 
+function SetAlertModal({
+  item,
+  onClose,
+  onSuccess,
+}: {
+  item: WatchlistItem;
+  onClose: () => void;
   onSuccess: () => void;
 }) {
-  const [alertAbove, setAlertAbove] = useState(item.alert_price_above?.toString() || '');
-  const [alertBelow, setAlertBelow] = useState(item.alert_price_below?.toString() || '');
+  const [alertAbove, setAlertAbove] = useState(
+    item.alert_price_above?.toString() || "",
+  );
+  const [alertBelow, setAlertBelow] = useState(
+    item.alert_price_below?.toString() || "",
+  );
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
+    setError("");
 
     try {
       await tradingApi.updateWatchlistAlerts(item.id, {
@@ -390,7 +419,7 @@ function SetAlertModal({
       });
       onSuccess();
     } catch (err: any) {
-      setError(err.message || 'Failed to update alerts');
+      setError(err.message || "Failed to update alerts");
     } finally {
       setLoading(false);
     }
@@ -399,14 +428,20 @@ function SetAlertModal({
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg max-w-md w-full p-6">
-        <h2 className="text-xl font-bold text-gray-900 mb-2">Set Price Alerts</h2>
-        <p className="text-gray-600 mb-4">{item.stocks.name} ({item.stocks.symbol})</p>
-        
+        <h2 className="text-xl font-bold text-gray-900 mb-2">
+          Set Price Alerts
+        </h2>
+        <p className="text-gray-600 mb-4">
+          {item.stocks.name} ({item.stocks.symbol})
+        </p>
+
         <form onSubmit={handleSubmit} className="space-y-4">
           {item.current_price && (
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
               <div className="text-sm text-blue-800">Current Price</div>
-              <div className="text-2xl font-bold text-blue-900">₹{item.current_price.toFixed(2)}</div>
+              <div className="text-2xl font-bold text-blue-900">
+                ₹{item.current_price.toFixed(2)}
+              </div>
             </div>
           )}
 
@@ -457,7 +492,7 @@ function SetAlertModal({
               disabled={loading}
               className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
             >
-              {loading ? 'Saving...' : 'Save Alerts'}
+              {loading ? "Saving..." : "Save Alerts"}
             </button>
           </div>
         </form>

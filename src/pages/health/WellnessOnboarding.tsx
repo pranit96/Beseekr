@@ -9,8 +9,11 @@ export default function WellnessOnboarding() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { data: profile, isLoading: profileLoading, saveProfile } =
-    useHealthProfile();
+  const {
+    data: profile,
+    isLoading: profileLoading,
+    saveProfile,
+  } = useHealthProfile();
   const plan = useHealthPlan();
 
   const [step, setStep] = useState(1);
@@ -227,9 +230,7 @@ export default function WellnessOnboarding() {
                 <select
                   className="w-full rounded-lg border border-border bg-background px-2 py-1.5"
                   value={form.primaryGoal}
-                  onChange={(e) =>
-                    updateField("primaryGoal", e.target.value)
-                  }
+                  onChange={(e) => updateField("primaryGoal", e.target.value)}
                 >
                   <option value="">Select</option>
                   <option value="fat_loss">Fat loss</option>
@@ -246,9 +247,7 @@ export default function WellnessOnboarding() {
                 <select
                   className="w-full rounded-lg border border-border bg-background px-2 py-1.5"
                   value={form.activityLevel}
-                  onChange={(e) =>
-                    updateField("activityLevel", e.target.value)
-                  }
+                  onChange={(e) => updateField("activityLevel", e.target.value)}
                 >
                   <option value="">Select</option>
                   <option value="sedentary">Mostly sitting</option>
@@ -385,4 +384,3 @@ export default function WellnessOnboarding() {
     </div>
   );
 }
-

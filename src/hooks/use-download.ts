@@ -1,12 +1,12 @@
-import { useState } from 'react';
-import { toast } from '@/hooks/use-toast';
-import { createLogger } from '@/services/logging';
+import { useState } from "react";
+import { toast } from "@/hooks/use-toast";
+import { createLogger } from "@/services/logging";
 
-const logger = createLogger('useDownload');
+const logger = createLogger("useDownload");
 
 interface DownloadOptions {
   filename?: string;
-  format?: 'markdown' | 'pdf' | 'html' | 'json' | 'text';
+  format?: "markdown" | "pdf" | "html" | "json" | "text";
 }
 
 export const useDownload = () => {
@@ -15,17 +15,20 @@ export const useDownload = () => {
   const downloadFile = async (
     content: string,
     originalFormat: string,
-    options: DownloadOptions = {}
+    options: DownloadOptions = {},
   ) => {
-    const { filename = `analysis-${Date.now()}`, format = originalFormat as any } = options;
-    
+    const {
+      filename = `analysis-${Date.now()}`,
+      format = originalFormat as any,
+    } = options;
+
     try {
       setIsConverting(true);
-      
+
       // If same format, download directly
       if (format === originalFormat) {
-        const blob = new Blob([content], { 
-          type: getMimeType(originalFormat) 
+        const blob = new Blob([content], {
+          type: getMimeType(originalFormat),
         });
         downloadBlob(blob, `${filename}.${getFileExtension(originalFormat)}`);
         return;
@@ -34,30 +37,34 @@ export const useDownload = () => {
       // Convert to requested format
       let convertedContent = content;
       let finalFormat = format;
-      
+
       // Handle JSON conversion
-      if (format === 'json') {
+      if (format === "json") {
         try {
           // If content is already JSON, parse and re-stringify
-          if (originalFormat === 'json') {
+          if (originalFormat === "json") {
             convertedContent = JSON.stringify(JSON.parse(content), null, 2);
           } else {
             // Wrap markdown/text in JSON structure
-            convertedContent = JSON.stringify({
-              content,
-              originalFormat,
-              convertedAt: new Date().toISOString()
-            }, null, 2);
+            convertedContent = JSON.stringify(
+              {
+                content,
+                originalFormat,
+                convertedAt: new Date().toISOString(),
+              },
+              null,
+              2,
+            );
           }
         } catch (e) {
           // If parsing fails, wrap as string
           convertedContent = JSON.stringify({ content }, null, 2);
         }
       }
-      
+
       // Handle HTML conversion
-      if (format === 'html') {
-        if (originalFormat === 'markdown') {
+      if (format === "html") {
+        if (originalFormat === "markdown") {
           // Simple markdown to HTML (you can enhance this with a proper library)
           convertedContent = `
             <!DOCTYPE html>
@@ -96,34 +103,35 @@ export const useDownload = () => {
             </html>
           `;
         }
-        finalFormat = 'html';
+        finalFormat = "html";
       }
-      
+
       // Handle plain text conversion
-      if (format === 'text') {
-        if (originalFormat === 'json') {
+      if (format === "text") {
+        if (originalFormat === "json") {
           try {
             const parsed = JSON.parse(content);
             // Extract main content if it exists
-            convertedContent = parsed.content || JSON.stringify(parsed, null, 2);
+            convertedContent =
+              parsed.content || JSON.stringify(parsed, null, 2);
           } catch {
             convertedContent = content;
           }
         }
         // For markdown, we could strip markdown syntax but keeping as-is for simplicity
-        finalFormat = 'text';
+        finalFormat = "text";
       }
-      
+
       // Handle PDF conversion (client-side using browser print)
-      if (format === 'pdf') {
+      if (format === "pdf") {
         // Create a hidden iframe for PDF generation
-        const iframe = document.createElement('iframe');
-        iframe.style.display = 'none';
+        const iframe = document.createElement("iframe");
+        iframe.style.display = "none";
         document.body.appendChild(iframe);
-        
+
         const doc = iframe.contentDocument || iframe.contentWindow?.document;
-        if (!doc) throw new Error('Could not create PDF document');
-        
+        if (!doc) throw new Error("Could not create PDF document");
+
         doc.open();
         doc.write(`
           <!DOCTYPE html>
@@ -144,12 +152,12 @@ export const useDownload = () => {
             </style>
           </head>
           <body>
-            ${originalFormat === 'markdown' ? markdownToHtml(content) : `<pre>${content}</pre>`}
+            ${originalFormat === "markdown" ? markdownToHtml(content) : `<pre>${content}</pre>`}
           </body>
           </html>
         `);
         doc.close();
-        
+
         // Trigger print to PDF
         setTimeout(() => {
           iframe.contentWindow?.focus();
@@ -159,20 +167,22 @@ export const useDownload = () => {
         }, 500);
         return;
       }
-      
+
       // Download converted content
-      const blob = new Blob([convertedContent], { 
-        type: getMimeType(finalFormat) 
+      const blob = new Blob([convertedContent], {
+        type: getMimeType(finalFormat),
       });
       downloadBlob(blob, `${filename}.${getFileExtension(finalFormat)}`);
-      logger.info('File downloaded successfully', { filename, format: finalFormat });
-      
+      logger.info("File downloaded successfully", {
+        filename,
+        format: finalFormat,
+      });
     } catch (error) {
-      logger.error('Download failed', { error, filename, format });
+      logger.error("Download failed", { error, filename, format });
       toast({
-        title: 'Download failed',
-        description: 'Could not convert/download the file. Please try again.',
-        variant: 'destructive'
+        title: "Download failed",
+        description: "Could not convert/download the file. Please try again.",
+        variant: "destructive",
       });
     } finally {
       setIsConverting(false);
@@ -185,62 +195,62 @@ export const useDownload = () => {
 // Helper functions
 const getMimeType = (format: string): string => {
   const mimeTypes: Record<string, string> = {
-    markdown: 'text/markdown',
-    md: 'text/markdown',
-    pdf: 'application/pdf',
-    html: 'text/html',
-    json: 'application/json',
-    text: 'text/plain',
-    txt: 'text/plain'
+    markdown: "text/markdown",
+    md: "text/markdown",
+    pdf: "application/pdf",
+    html: "text/html",
+    json: "application/json",
+    text: "text/plain",
+    txt: "text/plain",
   };
-  return mimeTypes[format] || 'text/plain';
+  return mimeTypes[format] || "text/plain";
 };
 
 const getFileExtension = (format: string): string => {
   const extensions: Record<string, string> = {
-    markdown: 'md',
-    html: 'html',
-    json: 'json',
-    text: 'txt',
-    pdf: 'pdf'
+    markdown: "md",
+    html: "html",
+    json: "json",
+    text: "txt",
+    pdf: "pdf",
   };
   return extensions[format] || format;
 };
 
 const downloadBlob = (blob: Blob, filename: string) => {
   const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
+  const a = document.createElement("a");
   a.href = url;
   a.download = filename;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
-  
+
   toast({
-    title: 'Downloaded',
-    description: `${filename} has been downloaded`
+    title: "Downloaded",
+    description: `${filename} has been downloaded`,
   });
 };
 
 // Simple markdown to HTML converter (basic implementation)
 const markdownToHtml = (markdown: string): string => {
   let html = markdown
-    .replace(/^### (.*$)/gm, '<h3>$1</h3>')
-    .replace(/^## (.*$)/gm, '<h2>$1</h2>')
-    .replace(/^# (.*$)/gm, '<h1>$1</h1>')
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*(.*?)\*/g, '<em>$1</em>')
-    .replace(/^- (.*$)/gm, '<li>$1</li>')
-    .replace(/<\/li>\s*<li>/g, '</li><li>')
-    .replace(/^-/g, '<ul>')
-    .replace(/<\/li>/g, '</li></ul>')
+    .replace(/^### (.*$)/gm, "<h3>$1</h3>")
+    .replace(/^## (.*$)/gm, "<h2>$1</h2>")
+    .replace(/^# (.*$)/gm, "<h1>$1</h1>")
+    .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+    .replace(/\*(.*?)\*/g, "<em>$1</em>")
+    .replace(/^- (.*$)/gm, "<li>$1</li>")
+    .replace(/<\/li>\s*<li>/g, "</li><li>")
+    .replace(/^-/g, "<ul>")
+    .replace(/<\/li>/g, "</li></ul>")
     .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank">$1</a>')
-    .replace(/`([^`]+)`/g, '<code>$1</code>')
-    .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
-  
+    .replace(/`([^`]+)`/g, "<code>$1</code>")
+    .replace(/```([\s\S]*?)```/g, "<pre><code>$1</code></pre>");
+
   // Fix multiple <ul> tags
-  html = html.replace(/<\/ul>\s*<ul>/g, '');
-  
+  html = html.replace(/<\/ul>\s*<ul>/g, "");
+
   return html;
 };

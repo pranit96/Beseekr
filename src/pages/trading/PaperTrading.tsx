@@ -1,8 +1,16 @@
-import { useEffect, useState } from 'react';
-import { tradingApi } from '@/api/trading';
-import { Play, X, TrendingUp, TrendingDown, BarChart3, Target, AlertCircle } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import type { PaperTrade, PaperTradingStats } from '@/types/trading';
+import { useEffect, useState } from "react";
+import { tradingApi } from "@/api/trading";
+import {
+  Play,
+  X,
+  TrendingUp,
+  TrendingDown,
+  BarChart3,
+  Target,
+  AlertCircle,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import type { PaperTrade, PaperTradingStats } from "@/types/trading";
 
 export default function PaperTrading() {
   const [openTrades, setOpenTrades] = useState<PaperTrade[]>([]);
@@ -11,7 +19,9 @@ export default function PaperTrading() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showStartModal, setShowStartModal] = useState(false);
-  const [activeTab, setActiveTab] = useState<'open' | 'closed' | 'stats'>('open');
+  const [activeTab, setActiveTab] = useState<"open" | "closed" | "stats">(
+    "open",
+  );
 
   useEffect(() => {
     loadData();
@@ -24,28 +34,28 @@ export default function PaperTrading() {
       setLoading(true);
       setError(null);
       const [open, closed, statistics] = await Promise.all([
-        tradingApi.getPaperTrades('OPEN'),
-        tradingApi.getPaperTrades('CLOSED'),
+        tradingApi.getPaperTrades("OPEN"),
+        tradingApi.getPaperTrades("CLOSED"),
         tradingApi.getPaperTradingStats(),
       ]);
       setOpenTrades(open);
       setClosedTrades(closed.slice(0, 10)); // Last 10 closed trades
       setStats(statistics);
     } catch (err: any) {
-      setError(err.message || 'Failed to load paper trading data');
+      setError(err.message || "Failed to load paper trading data");
     } finally {
       setLoading(false);
     }
   };
 
   const handleCloseTrade = async (tradeId: string) => {
-    if (!confirm('Close this paper trade?')) return;
-    
+    if (!confirm("Close this paper trade?")) return;
+
     try {
       await tradingApi.closePaperTrade(tradeId);
       await loadData();
     } catch (err: any) {
-      alert(err.message || 'Failed to close trade');
+      alert(err.message || "Failed to close trade");
     }
   };
 
@@ -77,7 +87,9 @@ export default function PaperTrading() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Paper Trading</h1>
-          <p className="text-gray-600 mt-1">Practice trading without risking real money</p>
+          <p className="text-gray-600 mt-1">
+            Practice trading without risking real money
+          </p>
         </div>
         <button
           onClick={() => setShowStartModal(true)}
@@ -94,7 +106,7 @@ export default function PaperTrading() {
           <StatCard
             label="Total P&L"
             value={`₹${stats.total_pnl.toFixed(2)}`}
-            trend={stats.total_pnl >= 0 ? 'up' : 'down'}
+            trend={stats.total_pnl >= 0 ? "up" : "down"}
             icon={<BarChart3 className="w-5 h-5" />}
           />
           <StatCard
@@ -112,7 +124,7 @@ export default function PaperTrading() {
           <StatCard
             label="Avg P&L"
             value={`₹${stats.avg_pnl.toFixed(2)}`}
-            trend={stats.avg_pnl >= 0 ? 'up' : 'down'}
+            trend={stats.avg_pnl >= 0 ? "up" : "down"}
             icon={<BarChart3 className="w-5 h-5" />}
           />
         </div>
@@ -122,34 +134,34 @@ export default function PaperTrading() {
       <div className="border-b border-gray-200">
         <div className="flex gap-6">
           <button
-            onClick={() => setActiveTab('open')}
+            onClick={() => setActiveTab("open")}
             className={cn(
               "pb-3 px-1 border-b-2 font-medium transition-colors",
-              activeTab === 'open'
+              activeTab === "open"
                 ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-600 hover:text-gray-900"
+                : "border-transparent text-gray-600 hover:text-gray-900",
             )}
           >
             Open Trades ({openTrades.length})
           </button>
           <button
-            onClick={() => setActiveTab('closed')}
+            onClick={() => setActiveTab("closed")}
             className={cn(
               "pb-3 px-1 border-b-2 font-medium transition-colors",
-              activeTab === 'closed'
+              activeTab === "closed"
                 ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-600 hover:text-gray-900"
+                : "border-transparent text-gray-600 hover:text-gray-900",
             )}
           >
             Closed Trades
           </button>
           <button
-            onClick={() => setActiveTab('stats')}
+            onClick={() => setActiveTab("stats")}
             className={cn(
               "pb-3 px-1 border-b-2 font-medium transition-colors",
-              activeTab === 'stats'
+              activeTab === "stats"
                 ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-600 hover:text-gray-900"
+                : "border-transparent text-gray-600 hover:text-gray-900",
             )}
           >
             Statistics
@@ -158,15 +170,11 @@ export default function PaperTrading() {
       </div>
 
       {/* Content */}
-      {activeTab === 'open' && (
+      {activeTab === "open" && (
         <OpenTradesTab trades={openTrades} onClose={handleCloseTrade} />
       )}
-      {activeTab === 'closed' && (
-        <ClosedTradesTab trades={closedTrades} />
-      )}
-      {activeTab === 'stats' && stats && (
-        <StatsTab stats={stats} />
-      )}
+      {activeTab === "closed" && <ClosedTradesTab trades={closedTrades} />}
+      {activeTab === "stats" && stats && <StatsTab stats={stats} />}
 
       {/* Start Trade Modal */}
       {showStartModal && (
@@ -182,29 +190,33 @@ export default function PaperTrading() {
   );
 }
 
-function StatCard({ 
-  label, 
-  value, 
-  subtitle, 
-  trend, 
-  icon 
-}: { 
-  label: string; 
-  value: string; 
-  subtitle?: string; 
-  trend?: 'up' | 'down';
+function StatCard({
+  label,
+  value,
+  subtitle,
+  trend,
+  icon,
+}: {
+  label: string;
+  value: string;
+  subtitle?: string;
+  trend?: "up" | "down";
   icon: React.ReactNode;
 }) {
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-4">
       <div className="flex items-center justify-between mb-2">
         <span className="text-sm text-gray-600">{label}</span>
-        <div className={cn(
-          "p-2 rounded-lg",
-          trend === 'up' ? "bg-green-50 text-green-600" :
-          trend === 'down' ? "bg-red-50 text-red-600" :
-          "bg-gray-50 text-gray-600"
-        )}>
+        <div
+          className={cn(
+            "p-2 rounded-lg",
+            trend === "up"
+              ? "bg-green-50 text-green-600"
+              : trend === "down"
+                ? "bg-red-50 text-red-600"
+                : "bg-gray-50 text-gray-600",
+          )}
+        >
           {icon}
         </div>
       </div>
@@ -214,11 +226,11 @@ function StatCard({
   );
 }
 
-function OpenTradesTab({ 
-  trades, 
-  onClose 
-}: { 
-  trades: PaperTrade[]; 
+function OpenTradesTab({
+  trades,
+  onClose,
+}: {
+  trades: PaperTrade[];
   onClose: (id: string) => void;
 }) {
   if (trades.length === 0) {
@@ -228,7 +240,9 @@ function OpenTradesTab({
           <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <Play className="w-8 h-8 text-gray-400" />
           </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">No open paper trades</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            No open paper trades
+          </h3>
           <p className="text-gray-600">
             Start a paper trade to practice trading without risking real money.
           </p>
@@ -260,12 +274,24 @@ function ClosedTradesTab({ trades }: { trades: PaperTrade[] }) {
       <table className="w-full">
         <thead className="bg-gray-50 border-b border-gray-200">
           <tr>
-            <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Stock</th>
-            <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">Entry</th>
-            <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">Exit</th>
-            <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">Qty</th>
-            <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">P&L</th>
-            <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">%</th>
+            <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
+              Stock
+            </th>
+            <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">
+              Entry
+            </th>
+            <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">
+              Exit
+            </th>
+            <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">
+              Qty
+            </th>
+            <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">
+              P&L
+            </th>
+            <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">
+              %
+            </th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-200">
@@ -274,8 +300,12 @@ function ClosedTradesTab({ trades }: { trades: PaperTrade[] }) {
             return (
               <tr key={trade.id} className="hover:bg-gray-50">
                 <td className="px-4 py-3">
-                  <div className="font-medium text-gray-900">{trade.stocks.symbol}</div>
-                  <div className="text-sm text-gray-600">{trade.stocks.name}</div>
+                  <div className="font-medium text-gray-900">
+                    {trade.stocks.symbol}
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    {trade.stocks.name}
+                  </div>
                 </td>
                 <td className="px-4 py-3 text-right text-sm text-gray-900">
                   ₹{trade.entry_price.toFixed(2)}
@@ -286,17 +316,22 @@ function ClosedTradesTab({ trades }: { trades: PaperTrade[] }) {
                 <td className="px-4 py-3 text-right text-sm text-gray-900">
                   {trade.quantity}
                 </td>
-                <td className={cn(
-                  "px-4 py-3 text-right text-sm font-medium",
-                  isProfit ? "text-green-600" : "text-red-600"
-                )}>
-                  {isProfit ? '+' : ''}₹{trade.pnl?.toFixed(2)}
+                <td
+                  className={cn(
+                    "px-4 py-3 text-right text-sm font-medium",
+                    isProfit ? "text-green-600" : "text-red-600",
+                  )}
+                >
+                  {isProfit ? "+" : ""}₹{trade.pnl?.toFixed(2)}
                 </td>
-                <td className={cn(
-                  "px-4 py-3 text-right text-sm font-medium",
-                  isProfit ? "text-green-600" : "text-red-600"
-                )}>
-                  {isProfit ? '+' : ''}{trade.pnl_percent?.toFixed(2)}%
+                <td
+                  className={cn(
+                    "px-4 py-3 text-right text-sm font-medium",
+                    isProfit ? "text-green-600" : "text-red-600",
+                  )}
+                >
+                  {isProfit ? "+" : ""}
+                  {trade.pnl_percent?.toFixed(2)}%
                 </td>
               </tr>
             );
@@ -312,33 +347,47 @@ function StatsTab({ stats }: { stats: PaperTradingStats }) {
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       {/* Performance Summary */}
       <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Performance Summary</h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">
+          Performance Summary
+        </h3>
         <div className="space-y-3">
           <StatRow label="Total Trades" value={stats.total_trades.toString()} />
-          <StatRow label="Winning Trades" value={stats.winning_trades.toString()} />
-          <StatRow label="Losing Trades" value={stats.losing_trades.toString()} />
-          <StatRow label="Win Rate" value={`${stats.win_rate.toFixed(1)}%`} />
-          <StatRow 
-            label="Total P&L" 
-            value={`₹${stats.total_pnl.toFixed(2)}`}
-            valueColor={stats.total_pnl >= 0 ? 'text-green-600' : 'text-red-600'}
+          <StatRow
+            label="Winning Trades"
+            value={stats.winning_trades.toString()}
           />
-          <StatRow 
-            label="Average P&L" 
+          <StatRow
+            label="Losing Trades"
+            value={stats.losing_trades.toString()}
+          />
+          <StatRow label="Win Rate" value={`${stats.win_rate.toFixed(1)}%`} />
+          <StatRow
+            label="Total P&L"
+            value={`₹${stats.total_pnl.toFixed(2)}`}
+            valueColor={
+              stats.total_pnl >= 0 ? "text-green-600" : "text-red-600"
+            }
+          />
+          <StatRow
+            label="Average P&L"
             value={`₹${stats.avg_pnl.toFixed(2)}`}
-            valueColor={stats.avg_pnl >= 0 ? 'text-green-600' : 'text-red-600'}
+            valueColor={stats.avg_pnl >= 0 ? "text-green-600" : "text-red-600"}
           />
         </div>
       </div>
 
       {/* Best & Worst Trades */}
       <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Best & Worst Trades</h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">
+          Best & Worst Trades
+        </h3>
         <div className="space-y-4">
           <div>
             <div className="text-sm text-gray-600 mb-2">Best Trade</div>
             <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-              <div className="font-medium text-green-900">{stats.best_trade.symbol}</div>
+              <div className="font-medium text-green-900">
+                {stats.best_trade.symbol}
+              </div>
               <div className="text-2xl font-bold text-green-600">
                 +₹{stats.best_trade.pnl.toFixed(2)}
               </div>
@@ -351,7 +400,9 @@ function StatsTab({ stats }: { stats: PaperTradingStats }) {
           <div>
             <div className="text-sm text-gray-600 mb-2">Worst Trade</div>
             <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-              <div className="font-medium text-red-900">{stats.worst_trade.symbol}</div>
+              <div className="font-medium text-red-900">
+                {stats.worst_trade.symbol}
+              </div>
               <div className="text-2xl font-bold text-red-600">
                 ₹{stats.worst_trade.pnl.toFixed(2)}
               </div>
@@ -366,13 +417,13 @@ function StatsTab({ stats }: { stats: PaperTradingStats }) {
   );
 }
 
-function StatRow({ 
-  label, 
-  value, 
-  valueColor = 'text-gray-900' 
-}: { 
-  label: string; 
-  value: string; 
+function StatRow({
+  label,
+  value,
+  valueColor = "text-gray-900",
+}: {
+  label: string;
+  value: string;
   valueColor?: string;
 }) {
   return (
@@ -383,11 +434,11 @@ function StatRow({
   );
 }
 
-function PaperTradeCard({ 
-  trade, 
-  onClose 
-}: { 
-  trade: PaperTrade; 
+function PaperTradeCard({
+  trade,
+  onClose,
+}: {
+  trade: PaperTrade;
   onClose: (id: string) => void;
 }) {
   const currentPnL = trade.current_pnl || 0;
@@ -413,11 +464,15 @@ function PaperTradeCard({
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
         <div>
           <div className="text-sm text-gray-600">Entry Price</div>
-          <div className="font-medium text-gray-900">₹{trade.entry_price.toFixed(2)}</div>
+          <div className="font-medium text-gray-900">
+            ₹{trade.entry_price.toFixed(2)}
+          </div>
         </div>
         <div>
           <div className="text-sm text-gray-600">Current Price</div>
-          <div className="font-medium text-gray-900">₹{trade.current_price?.toFixed(2)}</div>
+          <div className="font-medium text-gray-900">
+            ₹{trade.current_price?.toFixed(2)}
+          </div>
         </div>
         <div>
           <div className="text-sm text-gray-600">Quantity</div>
@@ -431,29 +486,39 @@ function PaperTradeCard({
         </div>
       </div>
 
-      <div className={cn(
-        "rounded-lg p-3",
-        isProfit ? "bg-green-50 border border-green-200" : "bg-red-50 border border-red-200"
-      )}>
+      <div
+        className={cn(
+          "rounded-lg p-3",
+          isProfit
+            ? "bg-green-50 border border-green-200"
+            : "bg-red-50 border border-red-200",
+        )}
+      >
         <div className="flex items-center justify-between">
           <div>
-            <div className={cn(
-              "text-sm font-medium",
-              isProfit ? "text-green-700" : "text-red-700"
-            )}>
+            <div
+              className={cn(
+                "text-sm font-medium",
+                isProfit ? "text-green-700" : "text-red-700",
+              )}
+            >
               Current P&L
             </div>
-            <div className={cn(
-              "text-2xl font-bold",
-              isProfit ? "text-green-600" : "text-red-600"
-            )}>
-              {isProfit ? '+' : ''}₹{currentPnL.toFixed(2)}
+            <div
+              className={cn(
+                "text-2xl font-bold",
+                isProfit ? "text-green-600" : "text-red-600",
+              )}
+            >
+              {isProfit ? "+" : ""}₹{currentPnL.toFixed(2)}
             </div>
           </div>
-          <div className={cn(
-            "text-right",
-            isProfit ? "text-green-600" : "text-red-600"
-          )}>
+          <div
+            className={cn(
+              "text-right",
+              isProfit ? "text-green-600" : "text-red-600",
+            )}
+          >
             <div className="flex items-center gap-1">
               {isProfit ? (
                 <TrendingUp className="w-5 h-5" />
@@ -461,7 +526,8 @@ function PaperTradeCard({
                 <TrendingDown className="w-5 h-5" />
               )}
               <span className="text-xl font-bold">
-                {isProfit ? '+' : ''}{currentPnLPercent.toFixed(2)}%
+                {isProfit ? "+" : ""}
+                {currentPnLPercent.toFixed(2)}%
               </span>
             </div>
           </div>
@@ -473,13 +539,17 @@ function PaperTradeCard({
           {trade.target_price && (
             <div>
               <span className="text-gray-600">Target: </span>
-              <span className="font-medium text-gray-900">₹{trade.target_price.toFixed(2)}</span>
+              <span className="font-medium text-gray-900">
+                ₹{trade.target_price.toFixed(2)}
+              </span>
             </div>
           )}
           {trade.stop_loss && (
             <div>
               <span className="text-gray-600">Stop Loss: </span>
-              <span className="font-medium text-gray-900">₹{trade.stop_loss.toFixed(2)}</span>
+              <span className="font-medium text-gray-900">
+                ₹{trade.stop_loss.toFixed(2)}
+              </span>
             </div>
           )}
         </div>
@@ -488,19 +558,25 @@ function PaperTradeCard({
   );
 }
 
-function StartTradeModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
-  const [symbol, setSymbol] = useState('');
-  const [quantity, setQuantity] = useState('');
-  const [targetPrice, setTargetPrice] = useState('');
-  const [stopLoss, setStopLoss] = useState('');
-  const [notes, setNotes] = useState('');
+function StartTradeModal({
+  onClose,
+  onSuccess,
+}: {
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const [symbol, setSymbol] = useState("");
+  const [quantity, setQuantity] = useState("");
+  const [targetPrice, setTargetPrice] = useState("");
+  const [stopLoss, setStopLoss] = useState("");
+  const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
+    setError("");
 
     try {
       await tradingApi.startPaperTrade({
@@ -512,7 +588,7 @@ function StartTradeModal({ onClose, onSuccess }: { onClose: () => void; onSucces
       });
       onSuccess();
     } catch (err: any) {
-      setError(err.message || 'Failed to start paper trade');
+      setError(err.message || "Failed to start paper trade");
     } finally {
       setLoading(false);
     }
@@ -521,8 +597,10 @@ function StartTradeModal({ onClose, onSuccess }: { onClose: () => void; onSucces
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg max-w-md w-full p-6">
-        <h2 className="text-xl font-bold text-gray-900 mb-4">Start Paper Trade</h2>
-        
+        <h2 className="text-xl font-bold text-gray-900 mb-4">
+          Start Paper Trade
+        </h2>
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -615,7 +693,7 @@ function StartTradeModal({ onClose, onSuccess }: { onClose: () => void; onSucces
               disabled={loading}
               className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
             >
-              {loading ? 'Starting...' : 'Start Trade'}
+              {loading ? "Starting..." : "Start Trade"}
             </button>
           </div>
         </form>

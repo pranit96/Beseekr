@@ -1,7 +1,7 @@
 // API Client Configuration with Enhanced Error Handling
-import { createLogger } from '@/services/logging';
+import { createLogger } from "@/services/logging";
 
-const logger = createLogger('APIClient');
+const logger = createLogger("APIClient");
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 interface ApiResponse<T> {
@@ -27,7 +27,8 @@ interface PendingRequest {
 class ApiClient {
   private baseUrl: string;
   private onUnauthorized?: () => void;
-  private requestCache: Map<string, { data: any; timestamp: number }> = new Map();
+  private requestCache: Map<string, { data: any; timestamp: number }> =
+    new Map();
   private pendingRequests: Map<string, Promise<any>> = new Map();
   private readonly CACHE_TTL = 30000; // 30 seconds cache
   private isRefreshingSession = false;
@@ -40,7 +41,7 @@ class ApiClient {
   // NEW: Attempt to refresh session before calling unauthorized handler
   private async handleSessionExpired(): Promise<boolean> {
     if (this.isRefreshingSession && this.refreshPromise) {
-      logger.info('Session refresh already in progress, waiting...');
+      logger.info("Session refresh already in progress, waiting...");
       try {
         await this.refreshPromise;
         return true;
@@ -52,22 +53,22 @@ class ApiClient {
     this.isRefreshingSession = true;
     this.refreshPromise = (async () => {
       try {
-        logger.info('Attempting to refresh expired session');
+        logger.info("Attempting to refresh expired session");
         const response = await fetch(`${this.baseUrl}/api/auth/me`, {
-          method: 'GET',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
+          method: "GET",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
         });
 
         if (response.ok) {
-          logger.info('Session refresh successful');
+          logger.info("Session refresh successful");
           this.clearCache(); // Clear cache after refresh
           return;
         }
 
-        throw new Error('Session refresh failed');
+        throw new Error("Session refresh failed");
       } catch (error) {
-        logger.error('Session refresh failed', { error });
+        logger.error("Session refresh failed", { error });
         throw error;
       } finally {
         this.isRefreshingSession = false;
@@ -84,7 +85,7 @@ class ApiClient {
   }
 
   private getCacheKey(endpoint: string, options: RequestInit): string {
-    return `${options.method || 'GET'}-${endpoint}-${JSON.stringify(options.body || '')}`;
+    return `${options.method || "GET"}-${endpoint}-${JSON.stringify(options.body || "")}`;
   }
 
   private isCacheValid(timestamp: number): boolean {
@@ -94,27 +95,27 @@ class ApiClient {
   private async request<T>(
     endpoint: string,
     options: RequestInit = {},
-    retryCount: number = 0
+    retryCount: number = 0,
   ): Promise<ApiResponse<T>> {
     const cacheKey = this.getCacheKey(endpoint, options);
 
     // Check if there's a pending request for the same endpoint (only for first attempt)
     if (retryCount === 0 && this.pendingRequests.has(cacheKey)) {
-      logger.debug('Reusing pending request', { endpoint });
+      logger.debug("Reusing pending request", { endpoint });
       return this.pendingRequests.get(cacheKey)!;
     }
 
     // Check cache for GET requests (only for first attempt)
-    if (retryCount === 0 && (options.method === 'GET' || !options.method)) {
+    if (retryCount === 0 && (options.method === "GET" || !options.method)) {
       const cached = this.requestCache.get(cacheKey);
       if (cached && this.isCacheValid(cached.timestamp)) {
-        logger.debug('Returning cached response', { endpoint });
+        logger.debug("Returning cached response", { endpoint });
         return cached.data;
       }
     }
 
     const headers: HeadersInit = {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
       ...options.headers,
     };
 
@@ -127,16 +128,16 @@ class ApiClient {
         const response = await fetch(`${this.baseUrl}${endpoint}`, {
           ...options,
           headers,
-          credentials: 'include', // CRITICAL: Send cookies with every request
+          credentials: "include", // CRITICAL: Send cookies with every request
           signal: controller.signal,
         });
 
         clearTimeout(timeoutId);
 
         // Check if response is JSON
-        const contentType = response.headers.get('content-type');
-        if (!contentType || !contentType.includes('application/json')) {
-          throw new Error('Server returned non-JSON response');
+        const contentType = response.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+          throw new Error("Server returned non-JSON response");
         }
 
         const data = await response.json();
@@ -144,15 +145,23 @@ class ApiClient {
         if (!response.ok) {
           // Handle 401 Unauthorized with automatic retry
           if (response.status === 401) {
-            logger.warn('Unauthorized response', { endpoint, status: response.status, retryCount });
+            logger.warn("Unauthorized response", {
+              endpoint,
+              status: response.status,
+              retryCount,
+            });
 
             // Try to refresh session and retry once
             if (retryCount === 0) {
-              logger.info('Attempting session refresh before retry', { endpoint });
+              logger.info("Attempting session refresh before retry", {
+                endpoint,
+              });
               const refreshed = await this.handleSessionExpired();
 
               if (refreshed) {
-                logger.info('Session refreshed, retrying request', { endpoint });
+                logger.info("Session refreshed, retrying request", {
+                  endpoint,
+                });
                 // Remove from pending requests before retry
                 this.pendingRequests.delete(cacheKey);
                 // Retry the request
@@ -164,16 +173,24 @@ class ApiClient {
             if (this.onUnauthorized) {
               this.onUnauthorized();
             }
-            throw new Error('Session expired. Please log in again.');
+            throw new Error("Session expired. Please log in again.");
           }
 
           // Handle other errors
-          logger.error('Request failed', { endpoint, status: response.status, error: data.error || data.message });
-          throw new Error(data.error || data.message || `Request failed with status ${response.status}`);
+          logger.error("Request failed", {
+            endpoint,
+            status: response.status,
+            error: data.error || data.message,
+          });
+          throw new Error(
+            data.error ||
+              data.message ||
+              `Request failed with status ${response.status}`,
+          );
         }
 
         // Cache successful GET responses
-        if ((options.method === 'GET' || !options.method) && data.success) {
+        if ((options.method === "GET" || !options.method) && data.success) {
           this.requestCache.set(cacheKey, {
             data,
             timestamp: Date.now(),
@@ -181,22 +198,34 @@ class ApiClient {
         }
 
         // Clear cache for mutation requests
-        if (options.method && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(options.method)) {
+        if (
+          options.method &&
+          ["POST", "PUT", "PATCH", "DELETE"].includes(options.method)
+        ) {
           this.clearCache();
         }
 
-        logger.info('Request successful', { endpoint, status: response.status, retryCount });
+        logger.info("Request successful", {
+          endpoint,
+          status: response.status,
+          retryCount,
+        });
         return data;
       } catch (error: any) {
-        logger.error('Request failed', { endpoint, error: error.message, errorName: error.name, retryCount });
+        logger.error("Request failed", {
+          endpoint,
+          error: error.message,
+          errorName: error.name,
+          retryCount,
+        });
 
         // Handle network errors
-        if (error.name === 'AbortError') {
-          throw new Error('Request timeout. Please try again.');
+        if (error.name === "AbortError") {
+          throw new Error("Request timeout. Please try again.");
         }
 
-        if (error.message === 'Failed to fetch') {
-          throw new Error('Network error. Please check your connection.');
+        if (error.message === "Failed to fetch") {
+          throw new Error("Network error. Please check your connection.");
         }
 
         throw error;
@@ -219,7 +248,7 @@ class ApiClient {
   }
 
   public clearAllState() {
-    logger.info('Clearing all API client state');
+    logger.info("Clearing all API client state");
     this.clearCache();
     this.pendingRequests.clear();
     this.isRefreshingSession = false;
@@ -240,7 +269,7 @@ class ApiClient {
       }
     });
 
-    keysToDelete.forEach(key => {
+    keysToDelete.forEach((key) => {
       this.requestCache.delete(key);
     });
   }
@@ -252,65 +281,65 @@ class ApiClient {
   // Auth endpoints
   async signup(email: string, password: string, full_name: string) {
     this.clearCache();
-    return this.request<any>('/api/auth/signup', {
-      method: 'POST',
+    return this.request<any>("/api/auth/signup", {
+      method: "POST",
       body: JSON.stringify({ email, password, full_name }),
     });
   }
 
   async login(email: string, password: string) {
     this.clearCache();
-    return this.request<any>('/api/auth/login', {
-      method: 'POST',
+    return this.request<any>("/api/auth/login", {
+      method: "POST",
       body: JSON.stringify({ email, password }),
     });
   }
 
   async logout() {
     this.clearCache();
-    return this.request<any>('/api/auth/logout', {
-      method: 'POST',
+    return this.request<any>("/api/auth/logout", {
+      method: "POST",
     });
   }
 
   async getCurrentUser() {
     // Don't cache this - always fetch fresh
-    const cacheKey = this.getCacheKey('/api/auth/me', { method: 'GET' });
+    const cacheKey = this.getCacheKey("/api/auth/me", { method: "GET" });
     this.requestCache.delete(cacheKey);
 
-    return this.request<any>('/api/auth/me');
+    return this.request<any>("/api/auth/me");
   }
 
   async exportData() {
-    return this.request<any>('/api/auth/export');
+    return this.request<any>("/api/auth/export");
   }
 
   async deleteProfile(confirm_email: string) {
     this.clearCache();
-    return this.request<any>('/api/auth/profile', {
-      method: 'DELETE',
+    return this.request<any>("/api/auth/profile", {
+      method: "DELETE",
       body: JSON.stringify({ confirm_email }),
     });
   }
 
   async forgotPassword(email: string) {
-    return this.request<any>('/api/auth/forgot-password', {
-      method: 'POST',
+    return this.request<any>("/api/auth/forgot-password", {
+      method: "POST",
       body: JSON.stringify({ email }),
     });
   }
 
   async resetPassword(password: string) {
     this.clearCache();
-    return this.request<any>('/api/auth/reset-password', {
-      method: 'POST',
+    return this.request<any>("/api/auth/reset-password", {
+      method: "POST",
       body: JSON.stringify({ password }),
     });
   }
 
   async resendVerificationEmail(email: string) {
-    return this.request<any>('/api/auth/resend-verification', {
-      method: 'POST',
+    return this.request<any>("/api/auth/resend-verification", {
+      method: "POST",
       body: JSON.stringify({ email }),
     });
   }
@@ -318,8 +347,8 @@ class ApiClient {
   // Google OAuth - exchange Supabase token for backend session
   async googleCallback(accessToken: string, refreshToken?: string) {
     this.clearCache();
-    return this.request<any>('/api/auth/google-callback', {
-      method: 'POST',
+    return this.request<any>("/api/auth/google-callback", {
+      method: "POST",
       body: JSON.stringify({
         access_token: accessToken,
         refresh_token: refreshToken,
@@ -334,89 +363,98 @@ class ApiClient {
   }
 
   async getMyAgents() {
-    return this.request<any>('/api/agents/my');
+    return this.request<any>("/api/agents/my");
   }
 
   async createAgent(agent: any) {
-    this.invalidateCache('/api/agents');
-    return this.request<any>('/api/agents', {
-      method: 'POST',
+    this.invalidateCache("/api/agents");
+    return this.request<any>("/api/agents", {
+      method: "POST",
       body: JSON.stringify(agent),
     });
   }
 
   async generateAgent(description: string) {
-    return this.request<any>('/api/agents/generate', {
-      method: 'POST',
+    return this.request<any>("/api/agents/generate", {
+      method: "POST",
       body: JSON.stringify({ description }),
     });
   }
 
   async updateAgent(id: string, agent: any) {
-    this.invalidateCache('/api/agents');
+    this.invalidateCache("/api/agents");
     return this.request<any>(`/api/agents/${id}`, {
-      method: 'PATCH',
+      method: "PATCH",
       body: JSON.stringify(agent),
     });
   }
 
   async deleteAgent(id: string) {
-    this.invalidateCache('/api/agents');
+    this.invalidateCache("/api/agents");
     return this.request<any>(`/api/agents/${id}`, {
-      method: 'DELETE',
+      method: "DELETE",
     });
   }
 
   async duplicateAgent(id: string) {
-    this.invalidateCache('/api/agents');
+    this.invalidateCache("/api/agents");
     return this.request<any>(`/api/agents/${id}/duplicate`, {
-      method: 'POST',
+      method: "POST",
     });
   }
 
-  async bulkAgentAction(payload: { action: 'activate' | 'deactivate' | 'delete'; agent_ids: string[] }) {
-    this.invalidateCache('/api/agents');
-    return this.request<any>('/api/agents/bulk', {
-      method: 'POST',
+  async bulkAgentAction(payload: {
+    action: "activate" | "deactivate" | "delete";
+    agent_ids: string[];
+  }) {
+    this.invalidateCache("/api/agents");
+    return this.request<any>("/api/agents/bulk", {
+      method: "POST",
       body: JSON.stringify(payload),
     });
   }
 
-  async testAgent(id: string, payload: { message: string; system_prompt_override?: string }) {
+  async testAgent(
+    id: string,
+    payload: { message: string; system_prompt_override?: string },
+  ) {
     return this.request<any>(`/api/agents/${id}/test`, {
-      method: 'POST',
+      method: "POST",
       body: JSON.stringify(payload),
     });
   }
 
   async getAgentTemplates() {
-    return this.request<any>('/api/agents/templates');
+    return this.request<any>("/api/agents/templates");
   }
 
   async getAgentStats(id: string) {
     return this.request<any>(`/api/agents/${id}/stats`);
   }
 
-  async enhanceAgentPrompt(id: string, payload: { current_prompt: string; description?: string }) {
+  async enhanceAgentPrompt(
+    id: string,
+    payload: { current_prompt: string; description?: string },
+  ) {
     return this.request<any>(`/api/agents/${id}/enhance-prompt`, {
-      method: 'POST',
+      method: "POST",
       body: JSON.stringify(payload),
     });
   }
 
   // Tools endpoints
   async getTools() {
-    return this.request<any>('/api/tools');
+    return this.request<any>("/api/tools");
   }
 
   // Chat file upload
   async uploadChatFiles(files: File[]) {
     const formData = new FormData();
-    files.forEach((file) => formData.append('files', file));
+    files.forEach((file) => formData.append("files", file));
 
     const response = await fetch(`${this.baseUrl}/api/chat/upload`, {
-      method: 'POST',
-      credentials: 'include',
+      method: "POST",
+      credentials: "include",
       body: formData,
     });
 
@@ -432,7 +470,7 @@ class ApiClient {
   async executeOrchestration(payload: {
     agent_ids: string[];
     message: string;
-    mode: 'sequential' | 'parallel';
+    mode: "sequential" | "parallel";
     conversation_id: string;
     save_to_conversation?: boolean;
   }) {
@@ -442,29 +480,33 @@ class ApiClient {
       final_output?: string;
       aggregated_output?: string;
       total_usage: { total_tokens: number };
-    }>('/api/orchestration/execute', {
-      method: 'POST',
+    }>("/api/orchestration/execute", {
+      method: "POST",
       body: JSON.stringify(payload),
     });
   }
 
   async getModels() {
-    return this.request<any>('/api/orchestration/models');
+    return this.request<any>("/api/orchestration/models");
   }
 
   async createOrchestrationSession(payload: {
     agent_ids: string[];
-    mode: 'sequential' | 'parallel';
+    mode: "sequential" | "parallel";
     title?: string;
   }) {
-    return this.request<any>('/api/orchestration/session', {
-      method: 'POST',
+    return this.request<any>("/api/orchestration/session", {
+      method: "POST",
       body: JSON.stringify(payload),
     });
   }
 
   // Usage endpoints
-  async getUsageLogs(params?: { start_date?: string; end_date?: string; page?: number }) {
+  async getUsageLogs(params?: {
+    start_date?: string;
+    end_date?: string;
+    page?: number;
+  }) {
     const query = new URLSearchParams(params as any).toString();
     return this.request<any>(`/api/usage?${query}`);
   }
@@ -486,35 +528,45 @@ class ApiClient {
   }
 
   // Conversation endpoints
-  async getConversations(params?: { status?: 'active' | 'archived'; page?: number; limit?: number }) {
+  async getConversations(params?: {
+    status?: "active" | "archived";
+    page?: number;
+    limit?: number;
+  }) {
     const queryParams = new URLSearchParams();
-    if (params?.status) queryParams.append('status', params.status);
-    if (params?.page) queryParams.append('page', params.page.toString());
-    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    if (params?.status) queryParams.append("status", params.status);
+    if (params?.page) queryParams.append("page", params.page.toString());
+    if (params?.limit) queryParams.append("limit", params.limit.toString());
 
     const query = queryParams.toString();
-    return this.request<any>(`/api/conversations${query ? `?${query}` : ''}`);
+    return this.request<any>(`/api/conversations${query ? `?${query}` : ""}`);
   }
 
-  async createConversation(conversation: { agent_id?: string | null; title?: string }) {
-    this.invalidateCache('/api/conversations');
-    return this.request<any>('/api/conversations', {
-      method: 'POST',
+  async createConversation(conversation: {
+    agent_id?: string | null;
+    title?: string;
+  }) {
+    this.invalidateCache("/api/conversations");
+    return this.request<any>("/api/conversations", {
+      method: "POST",
       body: JSON.stringify(conversation),
     });
   }
 
   async deleteConversation(conversationId: string) {
-    this.invalidateCache('/api/conversations');
+    this.invalidateCache("/api/conversations");
     return this.request<any>(`/api/conversations/${conversationId}`, {
-      method: 'DELETE',
+      method: "DELETE",
     });
   }
 
-  async updateConversationStatus(conversationId: string, status: 'active' | 'archived') {
-    this.invalidateCache('/api/conversations');
+  async updateConversationStatus(
+    conversationId: string,
+    status: "active" | "archived",
+  ) {
+    this.invalidateCache("/api/conversations");
     return this.request<any>(`/api/conversations/${conversationId}`, {
-      method: 'PUT',
+      method: "PUT",
       body: JSON.stringify({ status }),
     });
   }
@@ -522,14 +574,14 @@ class ApiClient {
   // Message endpoints
   async getMessages(conversation_id: string, page?: number, limit?: number) {
     const queryParams = new URLSearchParams();
-    queryParams.append('page', (page || 1).toString());
-    queryParams.append('limit', (limit || 50).toString());
+    queryParams.append("page", (page || 1).toString());
+    queryParams.append("limit", (limit || 50).toString());
 
     // Always invalidate messages cache to ensure fresh data when switching conversations
     this.invalidateCache(`/api/messages/conversation/${conversation_id}`);
 
     return this.request<any>(
-      `/api/messages/conversation/${conversation_id}?${queryParams.toString()}`
+      `/api/messages/conversation/${conversation_id}?${queryParams.toString()}`,
     );
   }
 
@@ -541,9 +593,9 @@ class ApiClient {
       conversation_id: string | null;
       problem: string;
       context: string | null;
-      status: 'completed' | 'failed' | 'in_progress';
-      tier: 'free' | 'standard' | 'pro';
-      output_format: 'markdown' | 'json';
+      status: "completed" | "failed" | "in_progress";
+      tier: "free" | "standard" | "pro";
+      output_format: "markdown" | "json";
       final_solution: string;
       files?: Array<{
         id: string;
@@ -566,7 +618,9 @@ class ApiClient {
 
   async getSessions(params?: { limit?: number; page?: number }) {
     const query = new URLSearchParams(params as any).toString();
-    const response: any = await this.request<any>(`/api/thinkers/sessions${query ? `?${query}` : ''}`);
+    const response: any = await this.request<any>(
+      `/api/thinkers/sessions${query ? `?${query}` : ""}`,
+    );
 
     // Backend returns sessions at root level, not nested in data
     // Transform to match expected structure
@@ -575,8 +629,8 @@ class ApiClient {
         success: response.success,
         data: {
           sessions: response.sessions,
-          pagination: response.pagination
-        }
+          pagination: response.pagination,
+        },
       };
     }
 
@@ -587,15 +641,15 @@ class ApiClient {
     problem: string;
     context?: string;
     files?: string[];
-    output_format: 'markdown' | 'json';
+    output_format: "markdown" | "json";
   }) {
     return this.request<{
       jobId: string;
       sessionId: string;
       tier: string;
-      status: 'queued';
-    }>('/api/thinkers/queue', {
-      method: 'POST',
+      status: "queued";
+    }>("/api/thinkers/queue", {
+      method: "POST",
       body: JSON.stringify(payload),
     });
   }
@@ -603,7 +657,7 @@ class ApiClient {
   async getJobStatus(jobId: string) {
     return this.request<{
       id: string;
-      state: 'queued' | 'active' | 'completed' | 'failed' | 'cancelled';
+      state: "queued" | "active" | "completed" | "failed" | "cancelled";
       progress: number;
       sessionId: string;
       tier: string;
@@ -615,23 +669,23 @@ class ApiClient {
       success: boolean;
       message: string;
     }>(`/api/thinkers/cancel/${jobId}`, {
-      method: 'POST',
+      method: "POST",
     });
   }
 
   async deleteFile(fileId: string) {
-    this.invalidateCache('/api/thinkers/files');
+    this.invalidateCache("/api/thinkers/files");
     return this.request<{
       success: boolean;
       message: string;
     }>(`/api/thinkers/files/${fileId}`, {
-      method: 'DELETE',
+      method: "DELETE",
     });
   }
 
   async deleteSession(sessionId: string, erase: boolean = false) {
-    this.invalidateCache('/api/thinkers/sessions');
-    const query = erase ? '?erase=true' : '';
+    this.invalidateCache("/api/thinkers/sessions");
+    const query = erase ? "?erase=true" : "";
     return this.request<{
       success: boolean;
       message: string;
@@ -644,12 +698,12 @@ class ApiClient {
         pii_logs: number;
       };
     }>(`/api/thinkers/sessions/${sessionId}${query}`, {
-      method: 'DELETE',
+      method: "DELETE",
     });
   }
 
   async submitSupplementalInputs(sessionId: string, data: Record<string, any>) {
-    this.invalidateCache('/api/thinkers/sessions');
+    this.invalidateCache("/api/thinkers/sessions");
     return this.request<{
       success: boolean;
       message: string;
@@ -657,25 +711,25 @@ class ApiClient {
       jobId: string;
       reprocessing: boolean;
     }>(`/api/thinkers/sessions/${sessionId}/inputs`, {
-      method: 'POST',
+      method: "POST",
       body: JSON.stringify(data),
     });
   }
 
   // Deck-to-Model endpoints
   async uploadDeck(formData: FormData) {
-    this.invalidateCache('/api/deck-to-model');
+    this.invalidateCache("/api/deck-to-model");
 
     // Don't set Content-Type for FormData - browser will set it with boundary
     const response = await fetch(`${this.baseUrl}/api/deck-to-model/upload`, {
-      method: 'POST',
+      method: "POST",
       body: formData,
-      credentials: 'include',
+      credentials: "include",
     });
 
-    const contentType = response.headers.get('content-type');
-    if (!contentType || !contentType.includes('application/json')) {
-      throw new Error('Server returned non-JSON response');
+    const contentType = response.headers.get("content-type");
+    if (!contentType || !contentType.includes("application/json")) {
+      throw new Error("Server returned non-JSON response");
     }
 
     const data = await response.json();
@@ -685,17 +739,23 @@ class ApiClient {
         if (this.onUnauthorized) {
           this.onUnauthorized();
         }
-        throw new Error('Session expired. Please log in again.');
+        throw new Error("Session expired. Please log in again.");
       }
-      throw new Error(data.error || data.message || 'Upload failed');
+      throw new Error(data.error || data.message || "Upload failed");
     }
 
     return data;
   }
 
-  async getDeckOrders(params?: { limit?: number; offset?: number; status?: string }) {
+  async getDeckOrders(params?: {
+    limit?: number;
+    offset?: number;
+    status?: string;
+  }) {
     const query = new URLSearchParams(params as any).toString();
-    return this.request<any>(`/api/deck-to-model/orders${query ? `?${query}` : ''}`);
+    return this.request<any>(
+      `/api/deck-to-model/orders${query ? `?${query}` : ""}`,
+    );
   }
 
   async getDeckOrder(orderId: string) {
@@ -703,16 +763,19 @@ class ApiClient {
   }
 
   async downloadDeckModel(orderId: string): Promise<Blob> {
-    const response = await fetch(`${this.baseUrl}/api/deck-to-model/orders/${orderId}/download`, {
-      method: 'GET',
-      credentials: 'include',
-    });
+    const response = await fetch(
+      `${this.baseUrl}/api/deck-to-model/orders/${orderId}/download`,
+      {
+        method: "GET",
+        credentials: "include",
+      },
+    );
 
     if (!response.ok) {
-      const contentType = response.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
         const data = await response.json();
-        throw new Error(data.error || data.message || 'Download failed');
+        throw new Error(data.error || data.message || "Download failed");
       }
       throw new Error(`Download failed with status ${response.status}`);
     }
@@ -721,23 +784,27 @@ class ApiClient {
   }
 
   async deleteDeckOrder(orderId: string) {
-    this.invalidateCache('/api/deck-to-model');
+    this.invalidateCache("/api/deck-to-model");
     return this.request<any>(`/api/deck-to-model/orders/${orderId}`, {
-      method: 'DELETE',
+      method: "DELETE",
     });
   }
 
   async getDeckMetrics() {
-    return this.request<any>('/api/deck-to-model/metrics');
+    return this.request<any>("/api/deck-to-model/metrics");
   }
 
   // ========== STOCK STRATEGY ENDPOINTS ==========
 
   // Signals
-  async getStockSignals(filters?: { strategy?: string; min_confidence?: number }) {
+  async getStockSignals(filters?: {
+    strategy?: string;
+    min_confidence?: number;
+  }) {
     const params = new URLSearchParams();
-    if (filters?.strategy) params.append('strategy', filters.strategy);
-    if (filters?.min_confidence) params.append('min_confidence', filters.min_confidence.toString());
+    if (filters?.strategy) params.append("strategy", filters.strategy);
+    if (filters?.min_confidence)
+      params.append("min_confidence", filters.min_confidence.toString());
 
     return this.request<any>(`/api/stock-strategy/signals?${params}`);
   }
@@ -746,43 +813,55 @@ class ApiClient {
     return this.request<any>(`/api/stock-strategy/signals/${signalId}`);
   }
 
-  async getStockSignalsWithEvents(filters?: { has_event?: boolean; days?: number }) {
+  async getStockSignalsWithEvents(filters?: {
+    has_event?: boolean;
+    days?: number;
+  }) {
     const params = new URLSearchParams();
-    if (filters?.has_event !== undefined) params.append('has_event', filters.has_event.toString());
-    if (filters?.days) params.append('days', filters.days.toString());
+    if (filters?.has_event !== undefined)
+      params.append("has_event", filters.has_event.toString());
+    if (filters?.days) params.append("days", filters.days.toString());
 
-    return this.request<any>(`/api/stock-strategy/signals/with-events?${params}`);
+    return this.request<any>(
+      `/api/stock-strategy/signals/with-events?${params}`,
+    );
   }
 
   async triggerStockScan() {
-    this.invalidateCache('/api/stock-strategy/signals');
-    return this.request<any>('/api/stock-strategy/signals/scan', {
-      method: 'POST',
+    this.invalidateCache("/api/stock-strategy/signals");
+    return this.request<any>("/api/stock-strategy/signals/scan", {
+      method: "POST",
     });
   }
 
   // Analysis
   async analyzeStock(symbol: string) {
     return this.request<any>(`/api/stock-strategy/analysis/stock/${symbol}`, {
-      method: 'POST',
+      method: "POST",
     });
   }
 
   async getAdvancedTechnicalAnalysis(symbol: string) {
-    return this.request<any>(`/api/stock-strategy/analysis/technical/${symbol}`);
+    return this.request<any>(
+      `/api/stock-strategy/analysis/technical/${symbol}`,
+    );
   }
 
   async getAdvancedFundamentalAnalysis(symbol: string) {
-    return this.request<any>(`/api/stock-strategy/analysis/fundamental/${symbol}`);
+    return this.request<any>(
+      `/api/stock-strategy/analysis/fundamental/${symbol}`,
+    );
   }
 
   async getComprehensiveAnalysis(symbol: string) {
-    return this.request<any>(`/api/stock-strategy/analysis/comprehensive/${symbol}`);
+    return this.request<any>(
+      `/api/stock-strategy/analysis/comprehensive/${symbol}`,
+    );
   }
 
   // Strategies
   async getStockStrategies() {
-    return this.request<any>('/api/stock-strategy/strategies');
+    return this.request<any>("/api/stock-strategy/strategies");
   }
 
   // Trades
@@ -792,37 +871,44 @@ class ApiClient {
     shares: number;
     notes?: string;
   }) {
-    this.invalidateCache('/api/stock-strategy/trades');
-    return this.request<any>('/api/stock-strategy/trades', {
-      method: 'POST',
+    this.invalidateCache("/api/stock-strategy/trades");
+    return this.request<any>("/api/stock-strategy/trades", {
+      method: "POST",
       body: JSON.stringify(data),
     });
   }
 
-  async closeStockTrade(tradeId: string, data: { exit_price: number; notes?: string }) {
-    this.invalidateCache('/api/stock-strategy/trades');
+  async closeStockTrade(
+    tradeId: string,
+    data: { exit_price: number; notes?: string },
+  ) {
+    this.invalidateCache("/api/stock-strategy/trades");
     return this.request<any>(`/api/stock-strategy/trades/${tradeId}/close`, {
-      method: 'POST',
+      method: "POST",
       body: JSON.stringify(data),
     });
   }
 
-  async getStockTrades(filters?: { status?: string; page?: number; limit?: number }) {
+  async getStockTrades(filters?: {
+    status?: string;
+    page?: number;
+    limit?: number;
+  }) {
     const params = new URLSearchParams();
-    if (filters?.status) params.append('status', filters.status);
-    if (filters?.page) params.append('page', filters.page.toString());
-    if (filters?.limit) params.append('limit', filters.limit.toString());
+    if (filters?.status) params.append("status", filters.status);
+    if (filters?.page) params.append("page", filters.page.toString());
+    if (filters?.limit) params.append("limit", filters.limit.toString());
 
     return this.request<any>(`/api/stock-strategy/trades?${params}`);
   }
 
   // Portfolio
   async getStockPerformanceStats() {
-    return this.request<any>('/api/stock-strategy/portfolio/performance');
+    return this.request<any>("/api/stock-strategy/portfolio/performance");
   }
 
   async getPortfolioCorrelation() {
-    return this.request<any>('/api/stock-strategy/portfolio/correlation');
+    return this.request<any>("/api/stock-strategy/portfolio/correlation");
   }
 
   async calculatePositionSize(data: {
@@ -831,61 +917,67 @@ class ApiClient {
     entry_price: number;
     stop_loss: number;
   }) {
-    return this.request<any>('/api/stock-strategy/portfolio/position', {
-      method: 'POST',
+    return this.request<any>("/api/stock-strategy/portfolio/position", {
+      method: "POST",
       body: JSON.stringify(data),
     });
   }
 
   // Market
   async getMarketRegime() {
-    return this.request<any>('/api/stock-strategy/market/regime');
+    return this.request<any>("/api/stock-strategy/market/regime");
   }
 
   async getUpcomingEvents(filters?: { days?: number; type?: string }) {
     const params = new URLSearchParams();
-    if (filters?.days) params.append('days', filters.days.toString());
-    if (filters?.type) params.append('type', filters.type);
+    if (filters?.days) params.append("days", filters.days.toString());
+    if (filters?.type) params.append("type", filters.type);
 
     return this.request<any>(`/api/stock-strategy/market/events?${params}`);
   }
 
   async getDrawdownStatus() {
-    return this.request<any>('/api/stock-strategy/market/drawdown');
+    return this.request<any>("/api/stock-strategy/market/drawdown");
   }
 
   // Budget Portfolio
   async generateBudgetPortfolio(data: {
     budget: number;
-    risk_profile: 'conservative' | 'moderate' | 'aggressive';
-    timeframe: 'day' | 'week' | 'month' | 'year';
+    risk_profile: "conservative" | "moderate" | "aggressive";
+    timeframe: "day" | "week" | "month" | "year";
   }) {
-    return this.request<any>('/api/stock-strategy/budget-portfolio/generate', {
-      method: 'POST',
+    return this.request<any>("/api/stock-strategy/budget-portfolio/generate", {
+      method: "POST",
       body: JSON.stringify(data),
     });
   }
 
   // Validation
   async validateSignalWithClaude(signalId: string) {
-    return this.request<any>('/api/stock-strategy/validate/claude', {
-      method: 'POST',
+    return this.request<any>("/api/stock-strategy/validate/claude", {
+      method: "POST",
       body: JSON.stringify({ signalId }),
     });
   }
 
   // Config
   async getStockLLMConfig() {
-    return this.request<any>('/api/stock-strategy/llm/config');
+    return this.request<any>("/api/stock-strategy/llm/config");
   }
 
   // ========== END STOCK STRATEGY ENDPOINTS ==========
 
   // ========== AUTONOMOUS WORKFLOW ENDPOINTS ==========
 
-  async getWorkflowHistory(params?: { page?: number; limit?: number; status?: string }) {
+  async getWorkflowHistory(params?: {
+    page?: number;
+    limit?: number;
+    status?: string;
+  }) {
     const query = new URLSearchParams(params as any).toString();
-    return this.request<any>(`/api/autonomous-workflow/history${query ? `?${query}` : ''}`);
+    return this.request<any>(
+      `/api/autonomous-workflow/history${query ? `?${query}` : ""}`,
+    );
   }
 
   async getWorkflowExecution(id: string) {
@@ -893,9 +985,9 @@ class ApiClient {
   }
 
   async deleteWorkflowExecution(id: string) {
-    this.invalidateCache('/api/autonomous-workflow');
+    this.invalidateCache("/api/autonomous-workflow");
     return this.request<any>(`/api/autonomous-workflow/executions/${id}`, {
-      method: 'DELETE',
+      method: "DELETE",
     });
   }
 
@@ -908,7 +1000,7 @@ class ApiClient {
       email_problem_alerts: boolean;
       email_product_updates: boolean;
       email_marketing: boolean;
-    }>('/api/user/notifications');
+    }>("/api/user/notifications");
   }
 
   async updateNotificationPreferences(preferences: {
@@ -923,50 +1015,75 @@ class ApiClient {
       email_problem_alerts: boolean;
       email_product_updates: boolean;
       email_marketing: boolean;
-    }>('/api/user/notifications', {
-      method: 'PUT',
+    }>("/api/user/notifications", {
+      method: "PUT",
       body: JSON.stringify(preferences),
     });
   }
 
   // Generic HTTP methods to support modular API files
-  public async get<T = any>(endpoint: string, options?: { params?: Record<string, any>; headers?: HeadersInit }) {
+  public async get<T = any>(
+    endpoint: string,
+    options?: { params?: Record<string, any>; headers?: HeadersInit },
+  ) {
     let url = endpoint;
     if (options?.params) {
       const cleanParams = Object.fromEntries(
-        Object.entries(options.params).filter(([_, v]) => v !== undefined && v !== null)
+        Object.entries(options.params).filter(
+          ([_, v]) => v !== undefined && v !== null,
+        ),
       );
-      const query = new URLSearchParams(cleanParams as Record<string, string>).toString();
+      const query = new URLSearchParams(
+        cleanParams as Record<string, string>,
+      ).toString();
       if (query) {
-        url += `${url.includes('?') ? '&' : '?'}${query}`;
+        url += `${url.includes("?") ? "&" : "?"}${query}`;
       }
     }
-    return this.request<T>(url, { method: 'GET', headers: options?.headers });
+    return this.request<T>(url, { method: "GET", headers: options?.headers });
   }
 
-  public async post<T = any>(endpoint: string, body?: any, options?: { headers?: HeadersInit }) {
+  public async post<T = any>(
+    endpoint: string,
+    body?: any,
+    options?: { headers?: HeadersInit },
+  ) {
     return this.request<T>(endpoint, {
-      method: 'POST',
+      method: "POST",
       headers: options?.headers,
       body: body ? JSON.stringify(body) : undefined,
     });
   }
 
-  public async put<T = any>(endpoint: string, body?: any, options?: { headers?: HeadersInit }) {
+  public async put<T = any>(
+    endpoint: string,
+    body?: any,
+    options?: { headers?: HeadersInit },
+  ) {
     return this.request<T>(endpoint, {
-      method: 'PUT',
+      method: "PUT",
       headers: options?.headers,
       body: body ? JSON.stringify(body) : undefined,
     });
   }
 
-  public async delete<T = any>(endpoint: string, options?: { headers?: HeadersInit }) {
-    return this.request<T>(endpoint, { method: 'DELETE', headers: options?.headers });
+  public async delete<T = any>(
+    endpoint: string,
+    options?: { headers?: HeadersInit },
+  ) {
+    return this.request<T>(endpoint, {
+      method: "DELETE",
+      headers: options?.headers,
+    });
   }
 
-  public async patch<T = any>(endpoint: string, body?: any, options?: { headers?: HeadersInit }) {
+  public async patch<T = any>(
+    endpoint: string,
+    body?: any,
+    options?: { headers?: HeadersInit },
+  ) {
     return this.request<T>(endpoint, {
-      method: 'PATCH',
+      method: "PATCH",
       headers: options?.headers,
       body: body ? JSON.stringify(body) : undefined,
     });

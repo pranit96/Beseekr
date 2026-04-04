@@ -1,11 +1,11 @@
-import { useState } from 'react';
-import { Bell, CheckCircle, AlertCircle, Info, TrendingUp } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { useState } from "react";
+import { Bell, CheckCircle, AlertCircle, Info, TrendingUp } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface Alert {
   id: string;
-  type: 'signal' | 'exit' | 'system' | 'info';
-  severity: 'info' | 'warning' | 'error' | 'success';
+  type: "signal" | "exit" | "system" | "info";
+  severity: "info" | "warning" | "error" | "success";
   title: string;
   message: string;
   timestamp: string;
@@ -16,29 +16,29 @@ export default function Alerts() {
   // Mock alerts - in production, these would come from WebSocket or API
   const [alerts] = useState<Alert[]>([
     {
-      id: '1',
-      type: 'signal',
-      severity: 'success',
-      title: 'New Signal Generated',
-      message: 'RELIANCE - BUY signal with 85% confidence',
+      id: "1",
+      type: "signal",
+      severity: "success",
+      title: "New Signal Generated",
+      message: "RELIANCE - BUY signal with 85% confidence",
       timestamp: new Date().toISOString(),
       read: false,
     },
     {
-      id: '2',
-      type: 'exit',
-      severity: 'warning',
-      title: 'Stop Loss Hit',
-      message: 'TCS position closed at stop loss',
+      id: "2",
+      type: "exit",
+      severity: "warning",
+      title: "Stop Loss Hit",
+      message: "TCS position closed at stop loss",
       timestamp: new Date(Date.now() - 3600000).toISOString(),
       read: false,
     },
     {
-      id: '3',
-      type: 'system',
-      severity: 'info',
-      title: 'System Health Check',
-      message: 'All systems operational',
+      id: "3",
+      type: "system",
+      severity: "info",
+      title: "System Health Check",
+      message: "All systems operational",
       timestamp: new Date(Date.now() - 7200000).toISOString(),
       read: true,
     },
@@ -46,30 +46,42 @@ export default function Alerts() {
 
   const getIcon = (type: string) => {
     switch (type) {
-      case 'signal': return TrendingUp;
-      case 'exit': return AlertCircle;
-      case 'system': return CheckCircle;
-      default: return Info;
+      case "signal":
+        return TrendingUp;
+      case "exit":
+        return AlertCircle;
+      case "system":
+        return CheckCircle;
+      default:
+        return Info;
     }
   };
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
-      case 'success': return 'text-green-500 bg-green-500/20 border-green-500/30';
-      case 'warning': return 'text-yellow-500 bg-yellow-500/20 border-yellow-500/30';
-      case 'error': return 'text-red-500 bg-red-500/20 border-red-500/30';
-      default: return 'text-blue-500 bg-blue-500/20 border-blue-500/30';
+      case "success":
+        return "text-green-500 bg-green-500/20 border-green-500/30";
+      case "warning":
+        return "text-yellow-500 bg-yellow-500/20 border-yellow-500/30";
+      case "error":
+        return "text-red-500 bg-red-500/20 border-red-500/30";
+      default:
+        return "text-blue-500 bg-blue-500/20 border-blue-500/30";
     }
   };
 
-  const unreadCount = alerts.filter(a => !a.read).length;
+  const unreadCount = alerts.filter((a) => !a.read).length;
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-white">Alerts & Notifications</h1>
-          <p className="text-slate-400 mt-1">Stay updated with trading events</p>
+          <h1 className="text-3xl font-bold text-white">
+            Alerts & Notifications
+          </h1>
+          <p className="text-slate-400 mt-1">
+            Stay updated with trading events
+          </p>
         </div>
         {unreadCount > 0 && (
           <div className="flex items-center gap-2 px-4 py-2 bg-blue-500/20 text-blue-400 rounded-lg">
@@ -87,7 +99,7 @@ export default function Alerts() {
             <div className="text-sm text-slate-400">Signals</div>
           </div>
           <div className="text-2xl font-bold text-white">
-            {alerts.filter(a => a.type === 'signal').length}
+            {alerts.filter((a) => a.type === "signal").length}
           </div>
         </div>
 
@@ -97,7 +109,7 @@ export default function Alerts() {
             <div className="text-sm text-slate-400">Exits</div>
           </div>
           <div className="text-2xl font-bold text-white">
-            {alerts.filter(a => a.type === 'exit').length}
+            {alerts.filter((a) => a.type === "exit").length}
           </div>
         </div>
 
@@ -107,7 +119,7 @@ export default function Alerts() {
             <div className="text-sm text-slate-400">System</div>
           </div>
           <div className="text-2xl font-bold text-white">
-            {alerts.filter(a => a.type === 'system').length}
+            {alerts.filter((a) => a.type === "system").length}
           </div>
         </div>
 
@@ -135,9 +147,9 @@ export default function Alerts() {
               <div
                 key={alert.id}
                 className={cn(
-                  'bg-slate-900 rounded-lg border p-4 transition-opacity',
+                  "bg-slate-900 rounded-lg border p-4 transition-opacity",
                   getSeverityColor(alert.severity),
-                  alert.read && 'opacity-60'
+                  alert.read && "opacity-60",
                 )}
               >
                 <div className="flex items-start gap-4">
@@ -145,8 +157,12 @@ export default function Alerts() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-4 mb-2">
                       <div>
-                        <div className="font-bold text-white mb-1">{alert.title}</div>
-                        <div className="text-sm text-slate-300">{alert.message}</div>
+                        <div className="font-bold text-white mb-1">
+                          {alert.title}
+                        </div>
+                        <div className="text-sm text-slate-300">
+                          {alert.message}
+                        </div>
                       </div>
                       {!alert.read && (
                         <div className="h-2 w-2 rounded-full bg-blue-500 flex-shrink-0 mt-2" />
@@ -168,11 +184,14 @@ export default function Alerts() {
         <div className="flex items-start gap-3">
           <Info className="h-5 w-5 text-blue-400 flex-shrink-0 mt-0.5" />
           <div className="text-sm text-slate-300">
-            <div className="font-medium text-blue-400 mb-1">Real-time Alerts</div>
+            <div className="font-medium text-blue-400 mb-1">
+              Real-time Alerts
+            </div>
             <div>
-              Alerts are delivered in real-time via WebSocket. You'll be notified instantly when:
-              new signals are generated, positions hit stop loss or target, system health changes,
-              or important market events occur.
+              Alerts are delivered in real-time via WebSocket. You'll be
+              notified instantly when: new signals are generated, positions hit
+              stop loss or target, system health changes, or important market
+              events occur.
             </div>
           </div>
         </div>

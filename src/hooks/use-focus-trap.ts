@@ -1,5 +1,5 @@
 // src/hooks/use-focus-trap.ts - FOCUS MANAGEMENT FOR ACCESSIBILITY
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef } from "react";
 
 /**
  * Hook to trap focus within a container (useful for modals, dialogs)
@@ -12,7 +12,7 @@ export function useFocusTrap(active: boolean = true) {
 
     const container = containerRef.current;
     const focusableElements = container.querySelectorAll<HTMLElement>(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
     );
 
     const firstElement = focusableElements[0];
@@ -22,7 +22,7 @@ export function useFocusTrap(active: boolean = true) {
     firstElement?.focus();
 
     const handleTabKey = (e: KeyboardEvent) => {
-      if (e.key !== 'Tab') return;
+      if (e.key !== "Tab") return;
 
       if (e.shiftKey) {
         // Shift + Tab
@@ -39,10 +39,10 @@ export function useFocusTrap(active: boolean = true) {
       }
     };
 
-    container.addEventListener('keydown', handleTabKey);
+    container.addEventListener("keydown", handleTabKey);
 
     return () => {
-      container.removeEventListener('keydown', handleTabKey);
+      container.removeEventListener("keydown", handleTabKey);
     };
   }, [active]);
 
@@ -71,10 +71,10 @@ export function useRovingTabIndex(items: HTMLElement[], activeIndex: number) {
   useEffect(() => {
     items.forEach((item, index) => {
       if (index === activeIndex) {
-        item.setAttribute('tabindex', '0');
+        item.setAttribute("tabindex", "0");
         item.focus();
       } else {
-        item.setAttribute('tabindex', '-1');
+        item.setAttribute("tabindex", "-1");
       }
     });
   }, [items, activeIndex]);
@@ -89,11 +89,11 @@ export function useAriaLive() {
   useEffect(() => {
     // Create live region if it doesn't exist
     if (!liveRegionRef.current) {
-      const liveRegion = document.createElement('div');
-      liveRegion.setAttribute('role', 'status');
-      liveRegion.setAttribute('aria-live', 'polite');
-      liveRegion.setAttribute('aria-atomic', 'true');
-      liveRegion.className = 'sr-only';
+      const liveRegion = document.createElement("div");
+      liveRegion.setAttribute("role", "status");
+      liveRegion.setAttribute("aria-live", "polite");
+      liveRegion.setAttribute("aria-atomic", "true");
+      liveRegion.className = "sr-only";
       document.body.appendChild(liveRegion);
       liveRegionRef.current = liveRegion;
     }
@@ -106,9 +106,12 @@ export function useAriaLive() {
     };
   }, []);
 
-  const announce = (message: string, priority: 'polite' | 'assertive' = 'polite') => {
+  const announce = (
+    message: string,
+    priority: "polite" | "assertive" = "polite",
+  ) => {
     if (liveRegionRef.current) {
-      liveRegionRef.current.setAttribute('aria-live', priority);
+      liveRegionRef.current.setAttribute("aria-live", priority);
       liveRegionRef.current.textContent = message;
     }
   };

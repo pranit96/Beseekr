@@ -18,14 +18,14 @@ export interface Signal {
     name: string;
     description?: string;
   };
-  signal_type: 'BUY' | 'SELL';
+  signal_type: "BUY" | "SELL";
   entry_price: number;
   target_price: number;
   stop_loss: number;
   risk_reward: number;
   confidence_score: number;
   criteria_met: string[];
-  status: 'ACTIVE' | 'EXPIRED' | 'EXECUTED';
+  status: "ACTIVE" | "EXPIRED" | "EXECUTED";
   created_at: string;
   expires_at: string;
 }
@@ -43,12 +43,12 @@ export interface Position {
   current_price?: number;
   current_pnl?: number;
   current_pnl_percent?: number;
-  status: 'OPEN' | 'CLOSED';
+  status: "OPEN" | "CLOSED";
   exit_date?: string;
   exit_price?: number;
   pnl?: number;
   pnl_percent?: number;
-  outcome?: 'WIN' | 'LOSS' | 'BREAKEVEN';
+  outcome?: "WIN" | "LOSS" | "BREAKEVEN";
   exit_type?: string;
   exit_reason?: string;
   notes?: string;
@@ -56,12 +56,12 @@ export interface Position {
 
 export interface Trade extends Position {
   // Trade is same as Position but always CLOSED
-  status: 'CLOSED';
+  status: "CLOSED";
   exit_date: string;
   exit_price: number;
   pnl: number;
   pnl_percent: number;
-  outcome: 'WIN' | 'LOSS' | 'BREAKEVEN';
+  outcome: "WIN" | "LOSS" | "BREAKEVEN";
 }
 
 export interface PriceUpdate {
@@ -130,7 +130,7 @@ export interface RiskAttribution {
     current_pnl: number;
     current_pnl_percent: number;
     distance_to_stop_percent: number;
-    risk_level: 'Critical' | 'High' | 'Normal';
+    risk_level: "Critical" | "High" | "Normal";
     risk_percent_of_portfolio: number;
     value_percent_of_portfolio: number;
   }[];
@@ -173,10 +173,10 @@ export interface PortfolioMetrics {
 }
 
 export interface SystemHealth {
-  overall_status: 'healthy' | 'degraded' | 'critical';
+  overall_status: "healthy" | "degraded" | "critical";
   services: {
     zerodha: {
-      status: 'healthy' | 'degraded' | 'error';
+      status: "healthy" | "degraded" | "error";
       circuit_breaker?: {
         state: string;
         failures: number;
@@ -185,7 +185,7 @@ export interface SystemHealth {
       message: string;
     };
     claude: {
-      status: 'healthy' | 'degraded' | 'error';
+      status: "healthy" | "degraded" | "error";
       circuit_breaker?: {
         state: string;
         failures: number;
@@ -197,12 +197,12 @@ export interface SystemHealth {
       message: string;
     };
     database: {
-      status: 'healthy' | 'error';
+      status: "healthy" | "error";
       response_time_ms?: number;
       message: string;
     };
     memory: {
-      status: 'healthy' | 'warning' | 'critical';
+      status: "healthy" | "warning" | "critical";
       heap_used_mb: string;
       heap_total_mb: string;
       heap_percent: string;
@@ -249,10 +249,10 @@ export interface TradingContextType {
   prices: Map<string, PriceUpdate>;
   realtimePnL: RealtimePnL | null;
   systemHealth: SystemHealth | null;
-  
+
   // WebSocket status
   wsStatus: WebSocketStatus;
-  
+
   // Actions
   subscribeToPrices: (symbols: string[]) => void;
   subscribeToPnL: () => void;
@@ -289,7 +289,7 @@ export interface PaperTrade {
   quantity: number;
   target_price?: number;
   stop_loss?: number;
-  status: 'OPEN' | 'CLOSED' | 'STOPPED';
+  status: "OPEN" | "CLOSED" | "STOPPED";
   pnl?: number;
   pnl_percent?: number;
   notes?: string;

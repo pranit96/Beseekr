@@ -1,34 +1,62 @@
-import { Badge } from '@/components/ui/badge';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { CheckCircle2, AlertTriangle, XCircle } from 'lucide-react';
+import { Badge } from "@/components/ui/badge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { CheckCircle2, AlertTriangle, XCircle } from "lucide-react";
 
 interface DataQualityBadgeProps {
   score: number;
   warnings?: string[];
   showIcon?: boolean;
-  size?: 'sm' | 'md' | 'lg';
+  size?: "sm" | "md" | "lg";
 }
 
-export function DataQualityBadge({ 
-  score, 
-  warnings = [], 
+export function DataQualityBadge({
+  score,
+  warnings = [],
   showIcon = true,
-  size = 'md' 
+  size = "md",
 }: DataQualityBadgeProps) {
   const getQualityLevel = (score: number) => {
-    if (score >= 90) return { label: 'Excellent', variant: 'default' as const, color: 'text-green-500', icon: CheckCircle2 };
-    if (score >= 70) return { label: 'Good', variant: 'secondary' as const, color: 'text-green-500', icon: CheckCircle2 };
-    if (score >= 50) return { label: 'Fair', variant: 'secondary' as const, color: 'text-yellow-500', icon: AlertTriangle };
-    return { label: 'Poor', variant: 'destructive' as const, color: 'text-red-500', icon: XCircle };
+    if (score >= 90)
+      return {
+        label: "Excellent",
+        variant: "default" as const,
+        color: "text-green-500",
+        icon: CheckCircle2,
+      };
+    if (score >= 70)
+      return {
+        label: "Good",
+        variant: "secondary" as const,
+        color: "text-green-500",
+        icon: CheckCircle2,
+      };
+    if (score >= 50)
+      return {
+        label: "Fair",
+        variant: "secondary" as const,
+        color: "text-yellow-500",
+        icon: AlertTriangle,
+      };
+    return {
+      label: "Poor",
+      variant: "destructive" as const,
+      color: "text-red-500",
+      icon: XCircle,
+    };
   };
 
   const quality = getQualityLevel(score);
   const Icon = quality.icon;
 
   const sizeClasses = {
-    sm: 'text-xs',
-    md: 'text-sm',
-    lg: 'text-base'
+    sm: "text-xs",
+    md: "text-sm",
+    lg: "text-base",
   };
 
   const content = (
@@ -42,9 +70,7 @@ export function DataQualityBadge({
     return (
       <TooltipProvider>
         <Tooltip>
-          <TooltipTrigger asChild>
-            {content}
-          </TooltipTrigger>
+          <TooltipTrigger asChild>{content}</TooltipTrigger>
           <TooltipContent>
             <div className="space-y-1">
               <p className="font-semibold">Data Quality: {score}/100</p>
@@ -75,17 +101,28 @@ interface MarketStatusIndicatorProps {
   warning?: string;
 }
 
-export function MarketStatusIndicator({ 
-  isOpen, 
-  canTrade, 
+export function MarketStatusIndicator({
+  isOpen,
+  canTrade,
   reason,
-  warning 
+  warning,
 }: MarketStatusIndicatorProps) {
   const getStatus = () => {
-    if (!isOpen) return { label: 'CLOSED', variant: 'secondary' as const, icon: XCircle };
-    if (!canTrade) return { label: 'BLOCKED', variant: 'destructive' as const, icon: XCircle };
-    if (warning) return { label: 'CAUTION', variant: 'secondary' as const, icon: AlertTriangle };
-    return { label: 'OPEN', variant: 'default' as const, icon: CheckCircle2 };
+    if (!isOpen)
+      return { label: "CLOSED", variant: "secondary" as const, icon: XCircle };
+    if (!canTrade)
+      return {
+        label: "BLOCKED",
+        variant: "destructive" as const,
+        icon: XCircle,
+      };
+    if (warning)
+      return {
+        label: "CAUTION",
+        variant: "secondary" as const,
+        icon: AlertTriangle,
+      };
+    return { label: "OPEN", variant: "default" as const, icon: CheckCircle2 };
   };
 
   const status = getStatus();
@@ -102,9 +139,7 @@ export function MarketStatusIndicator({
     return (
       <TooltipProvider>
         <Tooltip>
-          <TooltipTrigger asChild>
-            {content}
-          </TooltipTrigger>
+          <TooltipTrigger asChild>{content}</TooltipTrigger>
           <TooltipContent>
             <div className="space-y-1">
               <p className="font-semibold">Market Status</p>

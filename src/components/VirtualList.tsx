@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback } from "react";
 
 interface VirtualListProps<T> {
   items: T[];
@@ -21,7 +21,10 @@ export function VirtualList<T>({
   const totalHeight = items.length * itemHeight;
   const visibleCount = Math.ceil(containerHeight / itemHeight);
   const startIndex = Math.max(0, Math.floor(scrollTop / itemHeight) - overscan);
-  const endIndex = Math.min(items.length, startIndex + visibleCount + overscan * 2);
+  const endIndex = Math.min(
+    items.length,
+    startIndex + visibleCount + overscan * 2,
+  );
   const visibleItems = items.slice(startIndex, endIndex);
   const offsetY = startIndex * itemHeight;
 
@@ -33,10 +36,10 @@ export function VirtualList<T>({
     <div
       ref={containerRef}
       onScroll={handleScroll}
-      style={{ height: containerHeight, overflow: 'auto' }}
+      style={{ height: containerHeight, overflow: "auto" }}
       className="relative"
     >
-      <div style={{ height: totalHeight, position: 'relative' }}>
+      <div style={{ height: totalHeight, position: "relative" }}>
         <div style={{ transform: `translateY(${offsetY}px)` }}>
           {visibleItems.map((item, index) => (
             <div key={startIndex + index} style={{ height: itemHeight }}>

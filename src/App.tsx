@@ -2,7 +2,13 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+} from "react-router-dom";
 import { ThemeProvider } from "./hooks/use-theme";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { KeyboardShortcutsDialog } from "./components/KeyboardShortcutsDialog";
@@ -29,7 +35,7 @@ import Home from "./pages/Home";
  */
 const lazyRetry = <T extends React.ComponentType<any>>(
   importFn: () => Promise<{ default: T }>,
-  chunkName: string
+  chunkName: string,
 ): React.LazyExoticComponent<T> => {
   return lazy(async () => {
     const sessionKey = `chunk-retry-${chunkName}`;
@@ -43,14 +49,16 @@ const lazyRetry = <T extends React.ComponentType<any>>(
     } catch (error: any) {
       // Check if this is a chunk loading error (likely due to deployment)
       const isChunkError =
-        error?.message?.includes('Failed to fetch dynamically imported module') ||
-        error?.message?.includes('Loading chunk') ||
-        error?.message?.includes('Loading CSS chunk') ||
-        error?.name === 'ChunkLoadError';
+        error?.message?.includes(
+          "Failed to fetch dynamically imported module",
+        ) ||
+        error?.message?.includes("Loading chunk") ||
+        error?.message?.includes("Loading CSS chunk") ||
+        error?.name === "ChunkLoadError";
 
       if (isChunkError && !hasRefreshed) {
         // Mark that we're retrying, then refresh
-        sessionStorage.setItem(sessionKey, 'true');
+        sessionStorage.setItem(sessionKey, "true");
         console.log(`Chunk load failed for ${chunkName}, refreshing page...`);
         window.location.reload();
         // Return a placeholder while reloading
@@ -68,12 +76,24 @@ const Chat = lazyRetry(() => import("./pages/Chat"), "Chat");
 const Agents = lazyRetry(() => import("./pages/Agents"), "Agents");
 const Analytics = lazyRetry(() => import("./pages/Analytics"), "Analytics");
 const Profile = lazyRetry(() => import("./pages/Profile"), "Profile");
-const ResetPassword = lazyRetry(() => import("./pages/ResetPassword"), "ResetPassword");
+const ResetPassword = lazyRetry(
+  () => import("./pages/ResetPassword"),
+  "ResetPassword",
+);
 const Landing = lazyRetry(() => import("./pages/Landing"), "Landing");
-const DeepAnalytics = lazyRetry(() => import("./pages/DeepAnalytics"), "DeepAnalytics");
-const AutonomousWorkflow = lazyRetry(() => import("./pages/AutonomousWorkflow"), "AutonomousWorkflow");
+const DeepAnalytics = lazyRetry(
+  () => import("./pages/DeepAnalytics"),
+  "DeepAnalytics",
+);
+const AutonomousWorkflow = lazyRetry(
+  () => import("./pages/AutonomousWorkflow"),
+  "AutonomousWorkflow",
+);
 // const Deck = lazyRetry(() => import("./pages/Deck"), "Deck");
-const AuthCallback = lazyRetry(() => import("./pages/AuthCallback"), "AuthCallback");
+const AuthCallback = lazyRetry(
+  () => import("./pages/AuthCallback"),
+  "AuthCallback",
+);
 // const WellnessDashboard = lazyRetry(() => import("./pages/health/WellnessDashboard"), "WellnessDashboard");
 // const WellnessOnboarding = lazyRetry(() => import("./pages/health/WellnessOnboarding"), "WellnessOnboarding");
 // const WellnessPlan = lazyRetry(() => import("./pages/health/WellnessPlan"), "WellnessPlan");
@@ -95,10 +115,19 @@ import { SaasDashboardLayout } from "./layouts/SaasDashboardLayout";
 // import { TradingLayout } from "./layouts/TradingLayout";
 
 // Dashboard pages with retry logic
-const ProblemsList = lazyRetry(() => import("./pages/saas/ProblemsList"), "ProblemsList");
-const ProblemDetails = lazyRetry(() => import("./pages/saas/ProblemDetails"), "ProblemDetails");
+const ProblemsList = lazyRetry(
+  () => import("./pages/saas/ProblemsList"),
+  "ProblemsList",
+);
+const ProblemDetails = lazyRetry(
+  () => import("./pages/saas/ProblemDetails"),
+  "ProblemDetails",
+);
 const Validate = lazyRetry(() => import("./pages/saas/Validate"), "Validate");
-const SaasWatchlist = lazyRetry(() => import("./pages/saas/Watchlist"), "Watchlist");
+const SaasWatchlist = lazyRetry(
+  () => import("./pages/saas/Watchlist"),
+  "Watchlist",
+);
 const Pricing = lazyRetry(() => import("./pages/saas/Pricing"), "Pricing");
 
 // Trading System pages with retry logic
@@ -177,7 +206,10 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
   if (!user) {
     // Save the intended destination so we can redirect back after login
-    sessionStorage.setItem('auth-redirect', location.pathname + location.search);
+    sessionStorage.setItem(
+      "auth-redirect",
+      location.pathname + location.search,
+    );
     return <Navigate to="/auth" replace />;
   }
 
@@ -187,15 +219,18 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 const App = () => {
   useEffect(() => {
     // Performance monitoring
-    import('./lib/performance').then(({ perf }) => {
-      perf.reportWebVitals();
-    }).catch(() => { });
+    import("./lib/performance")
+      .then(({ perf }) => {
+        perf.reportWebVitals();
+      })
+      .catch(() => {});
 
-    import('./lib/performance-budget').then(({ performanceBudget }) => {
-      setTimeout(() => performanceBudget.check(), 3000);
-    }).catch(() => { });
+    import("./lib/performance-budget")
+      .then(({ performanceBudget }) => {
+        setTimeout(() => performanceBudget.check(), 3000);
+      })
+      .catch(() => {});
   }, []);
-
 
   return (
     <ErrorBoundary>
@@ -214,14 +249,25 @@ const App = () => {
                   {/* =============================================
                       BLOG - Fully public, no auth required
                       ============================================= */}
-                  <Route path="/blog" element={<Navigate to="/blogs" replace />} />
+                  <Route
+                    path="/blog"
+                    element={<Navigate to="/blogs" replace />}
+                  />
                   <Route
                     path="/blogs"
-                    element={<Suspense fallback={<PageLoader />}><BlogList /></Suspense>}
+                    element={
+                      <Suspense fallback={<PageLoader />}>
+                        <BlogList />
+                      </Suspense>
+                    }
                   />
                   <Route
                     path="/blogs/:slug"
-                    element={<Suspense fallback={<PageLoader />}><BlogPost /></Suspense>}
+                    element={
+                      <Suspense fallback={<PageLoader />}>
+                        <BlogPost />
+                      </Suspense>
+                    }
                   />
 
                   {/* =============================================
@@ -231,12 +277,25 @@ const App = () => {
                   {/* Auth page - anyone can access */}
                   <Route path="/auth" element={<Auth />} />
 
-
                   {/* OAuth callback - handles Google redirect */}
-                  <Route path="/auth/callback" element={<Suspense fallback={<PageLoader />}><AuthCallback /></Suspense>} />
+                  <Route
+                    path="/auth/callback"
+                    element={
+                      <Suspense fallback={<PageLoader />}>
+                        <AuthCallback />
+                      </Suspense>
+                    }
+                  />
 
                   {/* Password reset */}
-                  <Route path="/reset-password" element={<Suspense fallback={<PageLoader />}><ResetPassword /></Suspense>} />
+                  <Route
+                    path="/reset-password"
+                    element={
+                      <Suspense fallback={<PageLoader />}>
+                        <ResetPassword />
+                      </Suspense>
+                    }
+                  />
 
                   {/* Privacy policy */}
                   <Route path="/privacy" element={<Privacy />} />
@@ -307,17 +366,72 @@ const App = () => {
                       ============================================= */}
                   <Route path="/dashboard" element={<SaasDashboardLayout />}>
                     <Route index element={<Navigate to="problems" replace />} />
-                    <Route path="problems" element={<Suspense fallback={<PageLoader />}><ProblemsList /></Suspense>} />
-                    <Route path="problems/:id" element={<Suspense fallback={<PageLoader />}><ProblemDetails /></Suspense>} />
-                    <Route path="validate" element={<Suspense fallback={<PageLoader />}><Validate /></Suspense>} />
-                    <Route path="validate/:id" element={<Suspense fallback={<PageLoader />}><Validate /></Suspense>} />
-                    <Route path="watchlist" element={<Suspense fallback={<PageLoader />}><SaasWatchlist /></Suspense>} />
-                    <Route path="pricing" element={<Suspense fallback={<PageLoader />}><Pricing /></Suspense>} />
-                    <Route path="profile" element={<Suspense fallback={<PageLoader />}><Profile /></Suspense>} />
+                    <Route
+                      path="problems"
+                      element={
+                        <Suspense fallback={<PageLoader />}>
+                          <ProblemsList />
+                        </Suspense>
+                      }
+                    />
+                    <Route
+                      path="problems/:id"
+                      element={
+                        <Suspense fallback={<PageLoader />}>
+                          <ProblemDetails />
+                        </Suspense>
+                      }
+                    />
+                    <Route
+                      path="validate"
+                      element={
+                        <Suspense fallback={<PageLoader />}>
+                          <Validate />
+                        </Suspense>
+                      }
+                    />
+                    <Route
+                      path="validate/:id"
+                      element={
+                        <Suspense fallback={<PageLoader />}>
+                          <Validate />
+                        </Suspense>
+                      }
+                    />
+                    <Route
+                      path="watchlist"
+                      element={
+                        <Suspense fallback={<PageLoader />}>
+                          <SaasWatchlist />
+                        </Suspense>
+                      }
+                    />
+                    <Route
+                      path="pricing"
+                      element={
+                        <Suspense fallback={<PageLoader />}>
+                          <Pricing />
+                        </Suspense>
+                      }
+                    />
+                    <Route
+                      path="profile"
+                      element={
+                        <Suspense fallback={<PageLoader />}>
+                          <Profile />
+                        </Suspense>
+                      }
+                    />
 
                     {/* OLD STOCK ROUTES - Redirect to new trading system */}
-                    <Route path="stocks" element={<Navigate to="/trading/overview" replace />} />
-                    <Route path="stocks/*" element={<Navigate to="/trading/overview" replace />} />
+                    <Route
+                      path="stocks"
+                      element={<Navigate to="/trading/overview" replace />}
+                    />
+                    <Route
+                      path="stocks/*"
+                      element={<Navigate to="/trading/overview" replace />}
+                    />
                   </Route>
 
                   {/* =============================================
@@ -346,26 +460,53 @@ const App = () => {
                       CAT PREP DASHBOARD - HIDDEN (module disabled)
                       Redirect any /cat/* URLs to main dashboard
                       ============================================= */}
-                  <Route path="/cat/*" element={<Navigate to="/dashboard/problems" replace />} />
+                  <Route
+                    path="/cat/*"
+                    element={<Navigate to="/dashboard/problems" replace />}
+                  />
 
                   {/* =============================================
                       PROTECTED ROUTES - Legacy routes requiring auth
                       ============================================= */}
                   <Route
                     path="/chat"
-                    element={<ProtectedRoute><Suspense fallback={<PageLoader />}><Chat /></Suspense></ProtectedRoute>}
+                    element={
+                      <ProtectedRoute>
+                        <Suspense fallback={<PageLoader />}>
+                          <Chat />
+                        </Suspense>
+                      </ProtectedRoute>
+                    }
                   />
                   <Route
                     path="/agents"
-                    element={<ProtectedRoute><Suspense fallback={<PageLoader />}><Agents /></Suspense></ProtectedRoute>}
+                    element={
+                      <ProtectedRoute>
+                        <Suspense fallback={<PageLoader />}>
+                          <Agents />
+                        </Suspense>
+                      </ProtectedRoute>
+                    }
                   />
                   <Route
                     path="/workflow"
-                    element={<ProtectedRoute><Suspense fallback={<PageLoader />}><AutonomousWorkflow /></Suspense></ProtectedRoute>}
+                    element={
+                      <ProtectedRoute>
+                        <Suspense fallback={<PageLoader />}>
+                          <AutonomousWorkflow />
+                        </Suspense>
+                      </ProtectedRoute>
+                    }
                   />
                   <Route
                     path="/analytics"
-                    element={<ProtectedRoute><Suspense fallback={<PageLoader />}><Analytics /></Suspense></ProtectedRoute>}
+                    element={
+                      <ProtectedRoute>
+                        <Suspense fallback={<PageLoader />}>
+                          <Analytics />
+                        </Suspense>
+                      </ProtectedRoute>
+                    }
                   />
                   {/* <Route
                     path="/metaLayer"

@@ -1,7 +1,7 @@
 // Logging Service - Centralized logging for the application
 // No direct console usage - all logs go through this service
 
-export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+export type LogLevel = "debug" | "info" | "warn" | "error";
 
 export interface LogEntry {
   timestamp: string;
@@ -20,7 +20,7 @@ export interface Logger {
 
 class LoggingService {
   private isDevelopment = import.meta.env.DEV;
-  private minLogLevel: LogLevel = this.isDevelopment ? 'debug' : 'info';
+  private minLogLevel: LogLevel = this.isDevelopment ? "debug" : "info";
   private logQueue: LogEntry[] = [];
   private flushInterval: number | null = null;
   private readonly FLUSH_INTERVAL_MS = 5000;
@@ -39,14 +39,19 @@ class LoggingService {
     }, this.FLUSH_INTERVAL_MS);
   }
 
-  private formatMessage(component: string, level: LogLevel, message: string, data?: any): string {
+  private formatMessage(
+    component: string,
+    level: LogLevel,
+    message: string,
+    data?: any,
+  ): string {
     const timestamp = new Date().toISOString();
-    const dataStr = data ? ` | ${JSON.stringify(data)}` : '';
+    const dataStr = data ? ` | ${JSON.stringify(data)}` : "";
     return `[${timestamp}] [${level.toUpperCase()}] [${component}] ${message}${dataStr}`;
   }
 
   private shouldLog(level: LogLevel): boolean {
-    const levels: LogLevel[] = ['debug', 'info', 'warn', 'error'];
+    const levels: LogLevel[] = ["debug", "info", "warn", "error"];
     const currentLevelIndex = levels.indexOf(this.minLogLevel);
     const requestedLevelIndex = levels.indexOf(level);
     return requestedLevelIndex >= currentLevelIndex;
@@ -54,7 +59,7 @@ class LoggingService {
 
   private logToConsole(level: LogLevel, message: string, data?: any): void {
     // Log to console in both development AND production for full visibility
-    const consoleMethod = level === 'debug' ? 'log' : level;
+    const consoleMethod = level === "debug" ? "log" : level;
     if (data !== undefined) {
       console[consoleMethod](message, data);
     } else {
@@ -84,7 +89,7 @@ class LoggingService {
       // Silently fail - don't log errors about logging
       // In development, we can still see console output
       if (this.isDevelopment) {
-        console.error('[LoggingService] Failed to send logs:', error);
+        console.error("[LoggingService] Failed to send logs:", error);
       }
     }
   }
@@ -92,7 +97,7 @@ class LoggingService {
   private async sendToLogEndpoint(logs: LogEntry[]): Promise<void> {
     try {
       // Transform logs to match API expectation
-      const transformedLogs = logs.map(log => ({
+      const transformedLogs = logs.map((log) => ({
         timestamp: log.timestamp,
         level: log.level,
         source: log.component,
@@ -102,29 +107,41 @@ class LoggingService {
         userAgent: navigator.userAgent,
       }));
 
-      await fetch('/api/log', {
-        method: 'POST',
+      await fetch("/api/log", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
           // Add API key if configured
-          ...(import.meta.env.VITE_LOG_API_KEY ? {
-            'Authorization': `Bearer ${import.meta.env.VITE_LOG_API_KEY}`
-          } : {})
+          ...(import.meta.env.VITE_LOG_API_KEY
+            ? {
+                Authorization: `Bearer ${import.meta.env.VITE_LOG_API_KEY}`,
+              }
+            : {}),
         },
         body: JSON.stringify(transformedLogs),
       });
     } catch (error) {
       // Silently fail
       if (this.isDevelopment) {
-        console.error('[LoggingService] Failed to send to /api/log:', error);
+        console.error("[LoggingService] Failed to send to /api/log:", error);
       }
     }
   }
 
-  private log(component: string, level: LogLevel, message: string, data?: any): void {
+  private log(
+    component: string,
+    level: LogLevel,
+    message: string,
+    data?: any,
+  ): void {
     if (!this.shouldLog(level)) return;
 
-    const formattedMessage = this.formatMessage(component, level, message, data);
+    const formattedMessage = this.formatMessage(
+      component,
+      level,
+      message,
+      data,
+    );
 
     // ALWAYS log to console for visibility (both dev and production)
     this.logToConsole(level, formattedMessage, data);
@@ -144,10 +161,14 @@ class LoggingService {
 
   createLogger(component: string): Logger {
     return {
-      debug: (message: string, data?: any) => this.log(component, 'debug', message, data),
-      info: (message: string, data?: any) => this.log(component, 'info', message, data),
-      warn: (message: string, data?: any) => this.log(component, 'warn', message, data),
-      error: (message: string, data?: any) => this.log(component, 'error', message, data),
+      debug: (message: string, data?: any) =>
+        this.log(component, "debug", message, data),
+      info: (message: string, data?: any) =>
+        this.log(component, "info", message, data),
+      warn: (message: string, data?: any) =>
+        this.log(component, "warn", message, data),
+      error: (message: string, data?: any) =>
+        this.log(component, "error", message, data),
     };
   }
 

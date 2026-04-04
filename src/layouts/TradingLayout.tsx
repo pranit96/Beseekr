@@ -1,9 +1,9 @@
-import { Outlet } from 'react-router-dom';
-import { Sidebar } from '@/components/trading/Sidebar';
-import { TopBar } from '@/components/trading/TopBar';
-import { useTradingWebSocket } from '@/hooks/useTradingWebSocket';
-import { useEffect } from 'react';
-import { GlobalHeader } from '@/components/GlobalHeader';
+import { Outlet } from "react-router-dom";
+import { Sidebar } from "@/components/trading/Sidebar";
+import { TopBar } from "@/components/trading/TopBar";
+import { useTradingWebSocket } from "@/hooks/useTradingWebSocket";
+import { useEffect } from "react";
+import { GlobalHeader } from "@/components/GlobalHeader";
 
 export function TradingLayout() {
   const { subscribeToHealth, subscribeToPnL } = useTradingWebSocket();

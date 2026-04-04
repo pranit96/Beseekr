@@ -263,7 +263,12 @@ export const useMood = () => {
     },
   });
 
-  return { history: history.data ?? [], isLoading: history.isLoading, logMood, deleteMood };
+  return {
+    history: history.data ?? [],
+    isLoading: history.isLoading,
+    logMood,
+    deleteMood,
+  };
 };
 
 // ─── Sleep ───────────────────────────────────────────────────────────────────
@@ -298,7 +303,12 @@ export const useSleep = () => {
     },
   });
 
-  return { history: history.data ?? [], isLoading: history.isLoading, logSleep, deleteSleep };
+  return {
+    history: history.data ?? [],
+    isLoading: history.isLoading,
+    logSleep,
+    deleteSleep,
+  };
 };
 
 // ─── Weight ──────────────────────────────────────────────────────────────────
@@ -333,7 +343,12 @@ export const useWeight = () => {
     },
   });
 
-  return { history: history.data ?? [], isLoading: history.isLoading, logWeight, deleteWeight };
+  return {
+    history: history.data ?? [],
+    isLoading: history.isLoading,
+    logWeight,
+    deleteWeight,
+  };
 };
 
 // ─── Journal ─────────────────────────────────────────────────────────────────
@@ -355,18 +370,27 @@ export const useJournal = () => {
       return res.data as JournalEntry;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["health", "mind", "journal"] });
+      queryClient.invalidateQueries({
+        queryKey: ["health", "mind", "journal"],
+      });
     },
   });
 
   const deleteJournal = useMutation({
     mutationFn: async (id: string) => healthApi.deleteJournal(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["health", "mind", "journal"] });
+      queryClient.invalidateQueries({
+        queryKey: ["health", "mind", "journal"],
+      });
     },
   });
 
-  return { entries: entries.data ?? [], isLoading: entries.isLoading, createJournal, deleteJournal };
+  return {
+    entries: entries.data ?? [],
+    isLoading: entries.isLoading,
+    createJournal,
+    deleteJournal,
+  };
 };
 
 // ─── Weekly Review ───────────────────────────────────────────────────────────
@@ -388,7 +412,9 @@ export const useWeeklyReview = () => {
       return res;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["health", "mind", "weekly-review"] });
+      queryClient.invalidateQueries({
+        queryKey: ["health", "mind", "weekly-review"],
+      });
       queryClient.invalidateQueries({ queryKey: ["health", "dashboard"] });
     },
   });

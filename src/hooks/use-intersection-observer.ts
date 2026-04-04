@@ -1,20 +1,23 @@
 // src/hooks/use-intersection-observer.ts - LAZY LOADING & VISIBILITY DETECTION
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from "react";
 
 interface UseIntersectionObserverOptions extends IntersectionObserverInit {
   freezeOnceVisible?: boolean;
-  onChange?: (isIntersecting: boolean, entry: IntersectionObserverEntry) => void;
+  onChange?: (
+    isIntersecting: boolean,
+    entry: IntersectionObserverEntry,
+  ) => void;
 }
 
 export function useIntersectionObserver(
-  options: UseIntersectionObserverOptions = {}
+  options: UseIntersectionObserverOptions = {},
 ): [React.RefObject<HTMLElement>, boolean] {
   const {
     threshold = 0,
     root = null,
-    rootMargin = '0px',
+    rootMargin = "0px",
     freezeOnceVisible = false,
-    onChange
+    onChange,
   } = options;
 
   const elementRef = useRef<HTMLElement>(null);
@@ -44,7 +47,7 @@ export function useIntersectionObserver(
           observer.disconnect();
         }
       },
-      { threshold, root, rootMargin }
+      { threshold, root, rootMargin },
     );
 
     observer.observe(element);
@@ -61,11 +64,11 @@ export function useIntersectionObserver(
  * Hook for lazy loading images
  */
 export function useLazyImage(src: string, placeholder?: string) {
-  const [imageSrc, setImageSrc] = useState(placeholder || '');
+  const [imageSrc, setImageSrc] = useState(placeholder || "");
   const [isLoaded, setIsLoaded] = useState(false);
   const [ref, isVisible] = useIntersectionObserver({
     threshold: 0.1,
-    freezeOnceVisible: true
+    freezeOnceVisible: true,
   });
 
   useEffect(() => {
@@ -87,10 +90,10 @@ export function useLazyImage(src: string, placeholder?: string) {
  */
 export function useInfiniteScroll(
   callback: () => void,
-  options: { threshold?: number; rootMargin?: string } = {}
+  options: { threshold?: number; rootMargin?: string } = {},
 ) {
-  const { threshold = 0.1, rootMargin = '100px' } = options;
-  
+  const { threshold = 0.1, rootMargin = "100px" } = options;
+
   const [ref, isVisible] = useIntersectionObserver({
     threshold,
     rootMargin,
@@ -98,7 +101,7 @@ export function useInfiniteScroll(
       if (isIntersecting) {
         callback();
       }
-    }
+    },
   });
 
   return ref;

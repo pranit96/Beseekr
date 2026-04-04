@@ -1,6 +1,6 @@
-import { useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
-import { analytics } from '@/lib/analytics';
+import { useEffect } from "react";
+import { useLocation } from "react-router-dom";
+import { analytics } from "@/lib/analytics";
 
 export function useAnalytics() {
   const location = useLocation();

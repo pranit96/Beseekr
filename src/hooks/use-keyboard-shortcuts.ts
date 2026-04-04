@@ -1,5 +1,5 @@
 // src/hooks/use-keyboard-shortcuts.ts - KEYBOARD NAVIGATION & SHORTCUTS
-import { useEffect, useCallback, useRef } from 'react';
+import { useEffect, useCallback, useRef } from "react";
 
 interface KeyboardShortcut {
   key: string;
@@ -27,7 +27,7 @@ export function useKeyboardShortcut(shortcut: KeyboardShortcut) {
         shift = false,
         alt = false,
         meta = false,
-        preventDefault = true
+        preventDefault = true,
       } = shortcut;
 
       const isMatch =
@@ -45,8 +45,8 @@ export function useKeyboardShortcut(shortcut: KeyboardShortcut) {
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [shortcut]);
 }
 
@@ -67,7 +67,7 @@ export function useKeyboardShortcuts(shortcuts: KeyboardShortcut[]) {
           alt = false,
           meta = false,
           callback,
-          preventDefault = true
+          preventDefault = true,
         } = shortcut;
 
         const isMatch =
@@ -87,8 +87,8 @@ export function useKeyboardShortcuts(shortcuts: KeyboardShortcut[]) {
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 }
 
@@ -97,9 +97,9 @@ export function useKeyboardShortcuts(shortcuts: KeyboardShortcut[]) {
  */
 export function useEscapeKey(callback: () => void, enabled = true) {
   useKeyboardShortcut({
-    key: 'Escape',
+    key: "Escape",
     callback,
-    preventDefault: true
+    preventDefault: true,
   });
 }
 
@@ -120,27 +120,27 @@ export function useArrowNavigation(options: {
 
     const handleKeyDown = (event: KeyboardEvent) => {
       switch (event.key) {
-        case 'ArrowUp':
+        case "ArrowUp":
           event.preventDefault();
           onUp?.();
           break;
-        case 'ArrowDown':
+        case "ArrowDown":
           event.preventDefault();
           onDown?.();
           break;
-        case 'ArrowLeft':
+        case "ArrowLeft":
           event.preventDefault();
           onLeft?.();
           break;
-        case 'ArrowRight':
+        case "ArrowRight":
           event.preventDefault();
           onRight?.();
           break;
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [onUp, onDown, onLeft, onRight, enabled]);
 }
 

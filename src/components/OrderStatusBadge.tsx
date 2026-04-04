@@ -1,6 +1,6 @@
-import { Badge } from '@/components/ui/badge';
-import { Clock, Loader2, CheckCircle2, XCircle, Archive } from 'lucide-react';
-import { OrderStatus } from '@/types/deck-to-model';
+import { Badge } from "@/components/ui/badge";
+import { Clock, Loader2, CheckCircle2, XCircle, Archive } from "lucide-react";
+import { OrderStatus } from "@/types/deck-to-model";
 
 interface OrderStatusBadgeProps {
   status: OrderStatus;
@@ -8,51 +8,55 @@ interface OrderStatusBadgeProps {
   className?: string;
 }
 
-export function OrderStatusBadge({ status, processingStage, className }: OrderStatusBadgeProps) {
+export function OrderStatusBadge({
+  status,
+  processingStage,
+  className,
+}: OrderStatusBadgeProps) {
   const getStatusConfig = () => {
     switch (status) {
-      case 'pending':
+      case "pending":
         return {
-          label: 'Pending',
+          label: "Pending",
           icon: Clock,
-          variant: 'secondary' as const,
-          className: 'bg-gray-500/10 text-gray-500 border-gray-500/20'
+          variant: "secondary" as const,
+          className: "bg-gray-500/10 text-gray-500 border-gray-500/20",
         };
-      case 'processing':
+      case "processing":
         return {
-          label: processingStage || 'Processing',
+          label: processingStage || "Processing",
           icon: Loader2,
-          variant: 'default' as const,
-          className: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
-          animate: true
+          variant: "default" as const,
+          className: "bg-blue-500/10 text-blue-500 border-blue-500/20",
+          animate: true,
         };
-      case 'delivered':
+      case "delivered":
         return {
-          label: 'Ready',
+          label: "Ready",
           icon: CheckCircle2,
-          variant: 'default' as const,
-          className: 'bg-green-500/10 text-green-500 border-green-500/20'
+          variant: "default" as const,
+          className: "bg-green-500/10 text-green-500 border-green-500/20",
         };
-      case 'failed':
+      case "failed":
         return {
-          label: 'Failed',
+          label: "Failed",
           icon: XCircle,
-          variant: 'destructive' as const,
-          className: 'bg-red-500/10 text-red-500 border-red-500/20'
+          variant: "destructive" as const,
+          className: "bg-red-500/10 text-red-500 border-red-500/20",
         };
-      case 'expired':
+      case "expired":
         return {
-          label: 'Expired',
+          label: "Expired",
           icon: Archive,
-          variant: 'secondary' as const,
-          className: 'bg-gray-500/10 text-gray-500 border-gray-500/20'
+          variant: "secondary" as const,
+          className: "bg-gray-500/10 text-gray-500 border-gray-500/20",
         };
       default:
         return {
           label: status,
           icon: Clock,
-          variant: 'secondary' as const,
-          className: ''
+          variant: "secondary" as const,
+          className: "",
         };
     }
   };
@@ -61,8 +65,13 @@ export function OrderStatusBadge({ status, processingStage, className }: OrderSt
   const Icon = config.icon;
 
   return (
-    <Badge variant={config.variant} className={`${config.className} ${className}`}>
-      <Icon className={`h-3 w-3 mr-1 ${config.animate ? 'animate-spin' : ''}`} />
+    <Badge
+      variant={config.variant}
+      className={`${config.className} ${className}`}
+    >
+      <Icon
+        className={`h-3 w-3 mr-1 ${config.animate ? "animate-spin" : ""}`}
+      />
       {config.label}
     </Badge>
   );

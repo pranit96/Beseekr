@@ -1,14 +1,14 @@
-import { useState, useEffect } from 'react';
-import { GripVertical, X } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { GripVertical, X } from "lucide-react";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Agent } from '@/types/agent';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Agent } from "@/types/agent";
 
 interface AgentWorkflowDialogProps {
   open: boolean;
@@ -35,12 +35,12 @@ export const AgentWorkflowDialog = ({
 
   const handleDragStart = (e: React.DragEvent, index: number) => {
     setDraggedIndex(index);
-    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.effectAllowed = "move";
   };
 
   const handleDragOver = (e: React.DragEvent, index: number) => {
     e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
+    e.dataTransfer.dropEffect = "move";
     if (draggedIndex !== null && draggedIndex !== index) {
       setDragOverIndex(index);
     }
@@ -77,12 +77,15 @@ export const AgentWorkflowDialog = ({
     setDragOverIndex(null);
   };
 
-  const moveAgent = (index: number, direction: 'up' | 'down') => {
+  const moveAgent = (index: number, direction: "up" | "down") => {
     const newOrder = [...orderedAgents];
-    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    const targetIndex = direction === "up" ? index - 1 : index + 1;
 
     if (targetIndex >= 0 && targetIndex < newOrder.length) {
-      [newOrder[index], newOrder[targetIndex]] = [newOrder[targetIndex], newOrder[index]];
+      [newOrder[index], newOrder[targetIndex]] = [
+        newOrder[targetIndex],
+        newOrder[index],
+      ];
       setOrderedAgents(newOrder);
     }
   };
@@ -122,8 +125,8 @@ export const AgentWorkflowDialog = ({
                 onDrop={(e) => handleDrop(e, index)}
                 onDragEnd={handleDragEnd}
                 className={`flex items-center gap-3 p-4 rounded-lg border bg-card transition-all cursor-move
-                  ${draggedIndex === index ? 'opacity-50 border-primary' : 'border-border'}
-                  ${dragOverIndex === index ? 'ring-2 ring-primary/30 scale-[1.01]' : ''}
+                  ${draggedIndex === index ? "opacity-50 border-primary" : "border-border"}
+                  ${dragOverIndex === index ? "ring-2 ring-primary/30 scale-[1.01]" : ""}
                   hover:border-primary/50 hover:shadow-sm`}
               >
                 <div className="flex items-center gap-2">
@@ -138,7 +141,7 @@ export const AgentWorkflowDialog = ({
                     {agent.name}
                   </p>
                   <p className="text-xs text-muted-foreground line-clamp-2">
-                    {agent.description || 'No description available'}
+                    {agent.description || "No description available"}
                   </p>
                 </div>
 
@@ -146,7 +149,7 @@ export const AgentWorkflowDialog = ({
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => moveAgent(index, 'up')}
+                    onClick={() => moveAgent(index, "up")}
                     disabled={index === 0}
                     className="h-8 w-8 p-0"
                     title="Move up"
@@ -156,7 +159,7 @@ export const AgentWorkflowDialog = ({
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => moveAgent(index, 'down')}
+                    onClick={() => moveAgent(index, "down")}
                     disabled={index === orderedAgents.length - 1}
                     className="h-8 w-8 p-0"
                     title="Move down"
@@ -180,13 +183,17 @@ export const AgentWorkflowDialog = ({
 
         <div className="flex justify-between items-center pt-4 border-t">
           <p className="text-sm text-muted-foreground">
-            {orderedAgents.length} {orderedAgents.length === 1 ? 'agent' : 'agents'} in workflow
+            {orderedAgents.length}{" "}
+            {orderedAgents.length === 1 ? "agent" : "agents"} in workflow
           </p>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button onClick={handleConfirm} disabled={orderedAgents.length === 0}>
+            <Button
+              onClick={handleConfirm}
+              disabled={orderedAgents.length === 0}
+            >
               Confirm Workflow
             </Button>
           </div>

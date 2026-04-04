@@ -1,5 +1,5 @@
 // src/components/MessageList.tsx
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   Copy,
   RotateCw,
@@ -8,11 +8,11 @@ import {
   Bot,
   Loader2,
   Sparkles,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { ChatMessage } from '@/types/agent';
-import { useToast } from '@/hooks/use-toast';
-import AgentResponseCard from './messages/AgentResponseCard';
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ChatMessage } from "@/types/agent";
+import { useToast } from "@/hooks/use-toast";
+import AgentResponseCard from "./messages/AgentResponseCard";
 
 interface MessageListProps {
   messages: ChatMessage[];
@@ -33,15 +33,15 @@ const MessageList: React.FC<MessageListProps> = ({
       await navigator.clipboard.writeText(content);
       setCopiedId(messageId);
       toast({
-        title: 'Copied to clipboard',
-        description: 'Message content copied successfully',
+        title: "Copied to clipboard",
+        description: "Message content copied successfully",
       });
       setTimeout(() => setCopiedId(null), 2000);
     } catch (err) {
       toast({
-        title: 'Failed to copy',
-        description: 'Could not copy to clipboard',
-        variant: 'destructive',
+        title: "Failed to copy",
+        description: "Could not copy to clipboard",
+        variant: "destructive",
       });
     }
   };
@@ -50,16 +50,16 @@ const MessageList: React.FC<MessageListProps> = ({
     if (onRetryMessage) {
       onRetryMessage(messageId);
       toast({
-        title: 'Retrying message',
-        description: 'Resending your request to the agents',
+        title: "Retrying message",
+        description: "Resending your request to the agents",
       });
     }
   };
 
   const formatTimestamp = (date: Date | string) =>
-    new Intl.DateTimeFormat('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
+    new Intl.DateTimeFormat("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
       hour12: true,
     }).format(new Date(date));
 
@@ -68,7 +68,7 @@ const MessageList: React.FC<MessageListProps> = ({
       {messages.map((message) => (
         <div key={message.id}>
           {/* ─── User Message ─── */}
-          {message.type === 'user' && (
+          {message.type === "user" && (
             <div className="flex justify-end mb-5 px-2 animate-fade-in">
               <div className="flex flex-col items-end gap-1.5 max-w-[80%] sm:max-w-[70%] md:max-w-[65%]">
                 <div className="rounded-2xl rounded-br-lg px-5 py-3.5 bg-primary text-primary-foreground shadow-sm">
@@ -98,12 +98,12 @@ const MessageList: React.FC<MessageListProps> = ({
           )}
 
           {/* ─── Agent Responses ─── */}
-          {message.type === 'agent' &&
+          {message.type === "agent" &&
             message.agentResponses &&
             message.agentResponses.length > 0 && (
               <div className="mb-6 px-2 animate-fade-in">
                 {/* Parallel mode: side-by-side grid */}
-                {message.executionMode === 'parallel' ? (
+                {message.executionMode === "parallel" ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {message.agentResponses.map((response, idx) => (
                       <AgentResponseCard
@@ -127,43 +127,50 @@ const MessageList: React.FC<MessageListProps> = ({
                 )}
 
                 {/* Per-agent execution summary */}
-                {message.perAgentSummary && message.perAgentSummary.length > 0 && (
-                  <div className="mt-3 ml-0 flex flex-wrap gap-2">
-                    {message.perAgentSummary.map((summary) => (
-                      <div
-                        key={summary.agent_id}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-muted/60 border border-border/40 text-[11px] text-muted-foreground"
-                      >
-                        <span className="font-medium text-foreground/80">{summary.agent_name}</span>
-                        <span>·</span>
-                        <span>{summary.tokens_used} tokens</span>
-                        <span>·</span>
-                        <span>{(summary.execution_time_ms / 1000).toFixed(1)}s</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                {message.perAgentSummary &&
+                  message.perAgentSummary.length > 0 && (
+                    <div className="mt-3 ml-0 flex flex-wrap gap-2">
+                      {message.perAgentSummary.map((summary) => (
+                        <div
+                          key={summary.agent_id}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-muted/60 border border-border/40 text-[11px] text-muted-foreground"
+                        >
+                          <span className="font-medium text-foreground/80">
+                            {summary.agent_name}
+                          </span>
+                          <span>·</span>
+                          <span>{summary.tokens_used} tokens</span>
+                          <span>·</span>
+                          <span>
+                            {(summary.execution_time_ms / 1000).toFixed(1)}s
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
 
                 {/* Retry button for last message */}
-                {onRetryMessage && message.agentResponses.every(r => r.status !== 'pending') && (
-                  <div className="mt-2 ml-0">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 text-xs text-muted-foreground hover:text-foreground gap-1.5"
-                      onClick={() => handleRetry(message.id)}
-                      disabled={isLoading}
-                    >
-                      <RotateCw className="w-3 h-3" />
-                      Retry
-                    </Button>
-                  </div>
-                )}
+                {onRetryMessage &&
+                  message.agentResponses.every(
+                    (r) => r.status !== "pending",
+                  ) && (
+                    <div className="mt-2 ml-0">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 text-xs text-muted-foreground hover:text-foreground gap-1.5"
+                        onClick={() => handleRetry(message.id)}
+                        disabled={isLoading}
+                      >
+                        <RotateCw className="w-3 h-3" />
+                        Retry
+                      </Button>
+                    </div>
+                  )}
               </div>
             )}
         </div>
       ))}
-
     </div>
   );
 };

@@ -13,7 +13,7 @@ class ABTesting {
   private assignments = new Map<string, string>();
 
   constructor() {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       this.loadAssignments();
     }
   }
@@ -21,14 +21,14 @@ class ABTesting {
   defineExperiment(id: string, variants: Variant[]) {
     const totalWeight = variants.reduce((sum, v) => sum + v.weight, 0);
     if (Math.abs(totalWeight - 1) > 0.001) {
-      throw new Error('Variant weights must sum to 1');
+      throw new Error("Variant weights must sum to 1");
     }
     this.experiments.set(id, { id, variants });
   }
 
   getVariant(experimentId: string, userId?: string): string {
-    const key = `${experimentId}:${userId || 'anonymous'}`;
-    
+    const key = `${experimentId}:${userId || "anonymous"}`;
+
     if (this.assignments.has(key)) {
       return this.assignments.get(key)!;
     }
@@ -61,22 +61,22 @@ class ABTesting {
 
   private loadAssignments() {
     try {
-      const stored = localStorage.getItem('ab_assignments');
+      const stored = localStorage.getItem("ab_assignments");
       if (stored) {
         const data = JSON.parse(stored);
         this.assignments = new Map(Object.entries(data));
       }
     } catch (error) {
-      console.error('Failed to load AB test assignments:', error);
+      console.error("Failed to load AB test assignments:", error);
     }
   }
 
   private saveAssignments() {
     try {
       const data = Object.fromEntries(this.assignments);
-      localStorage.setItem('ab_assignments', JSON.stringify(data));
+      localStorage.setItem("ab_assignments", JSON.stringify(data));
     } catch (error) {
-      console.error('Failed to save AB test assignments:', error);
+      console.error("Failed to save AB test assignments:", error);
     }
   }
 }

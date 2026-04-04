@@ -1,8 +1,8 @@
 // frontend src/services/socketService.ts
-import { io, Socket } from 'socket.io-client';
-import { createLogger } from '@/services/logging';
+import { io, Socket } from "socket.io-client";
+import { createLogger } from "@/services/logging";
 
-const logger = createLogger('SocketService');
+const logger = createLogger("SocketService");
 
 interface ConnectionStatusData {
   connected: boolean;
@@ -19,16 +19,31 @@ interface OrchestrationCallbacks {
   onError?: (data: any) => void;
   onWarning?: (data: any) => void;
   onRateLimit?: (data: any) => void;
-  onProgress?: (data: { step: number; total: number; agent_id?: string; agent_name?: string }) => void;
+  onProgress?: (data: {
+    step: number;
+    total: number;
+    agent_id?: string;
+    agent_name?: string;
+  }) => void;
   onCancelled?: (data: any) => void;
-  onToolStart?: (data: { call_id: string; tool_name: string; agent_id: string }) => void;
-  onToolResult?: (data: { call_id: string; tool_name: string; agent_id: string; success: boolean; execution_time_ms?: number }) => void;
+  onToolStart?: (data: {
+    call_id: string;
+    tool_name: string;
+    agent_id: string;
+  }) => void;
+  onToolResult?: (data: {
+    call_id: string;
+    tool_name: string;
+    agent_id: string;
+    success: boolean;
+    execution_time_ms?: number;
+  }) => void;
 }
 
 interface OrchestrationPayload {
   agent_ids?: string[];
   message?: string;
-  mode?: 'sequential' | 'parallel';
+  mode?: "sequential" | "parallel";
   conversation_id?: string | null;
   save_to_conversation?: boolean;
   requestId?: string;
@@ -55,12 +70,16 @@ class SocketService {
   private connectionTimeout: number | null = null;
   private autoConnect: false;
   withCredentials: true;
-  private onTokensRefreshed: ((tokens: { access_token: string; refresh_token: string }) => void) | null = null;
+  private onTokensRefreshed:
+    | ((tokens: { access_token: string; refresh_token: string }) => void)
+    | null = null;
 
   /**
    * Set callback for when tokens are refreshed
    */
-  setTokenRefreshCallback(callback: (tokens: { access_token: string; refresh_token: string }) => void): void {
+  setTokenRefreshCallback(
+    callback: (tokens: { access_token: string; refresh_token: string }) => void,
+  ): void {
     this.onTokensRefreshed = callback;
   }
 
@@ -73,12 +92,12 @@ class SocketService {
     const SOCKET_URL = import.meta.env.VITE_API_BASE_URL;
 
     if (!SOCKET_URL || !this.isValidUrl(SOCKET_URL)) {
-      throw new Error('Invalid socket URL configuration');
+      throw new Error("Invalid socket URL configuration");
     }
 
     const opts: any = {
       withCredentials: true, // ✅ this sends HttpOnly cookies automatically
-      transports: ['websocket', 'polling'],
+      transports: ["websocket", "polling"],
       reconnection: true,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
@@ -86,7 +105,7 @@ class SocketService {
       timeout: 10000,
       upgrade: true,
       rememberUpgrade: true,
-      secure: SOCKET_URL.startsWith('https'),
+      secure: SOCKET_URL.startsWith("https"),
       rejectUnauthorized: true,
     };
 
@@ -97,56 +116,58 @@ class SocketService {
     return this.socket;
   }
 
-
   /**
    * Setup all socket event handlers
    */
   private setupEventHandlers(): void {
     if (!this.socket) return;
 
-    this.socket.on('connect', () => {
+    this.socket.on("connect", () => {
       this.connected = true;
       this.reconnectAttempts = 0;
       this.clearConnectionTimeout();
 
-      this._emitLocal('connection_status', {
+      this._emitLocal("connection_status", {
         connected: true,
-        socketId: this.socket?.id
+        socketId: this.socket?.id,
       });
     });
 
     // Handle token refresh from server
-    this.socket.on('auth:tokens_refreshed', (data: { access_token: string; refresh_token: string }) => {
-      logger.info('Received refreshed tokens from server');
+    this.socket.on(
+      "auth:tokens_refreshed",
+      (data: { access_token: string; refresh_token: string }) => {
+        logger.info("Received refreshed tokens from server");
 
-      // Update cookies via callback (e.g., auth context)
-      if (this.onTokensRefreshed) {
-        this.onTokensRefreshed(data);
-      }
+        // Update cookies via callback (e.g., auth context)
+        if (this.onTokensRefreshed) {
+          this.onTokensRefreshed(data);
+        }
 
-      // Emit event for other listeners
-      this._emitLocal('tokens_refreshed', data);
-    });
+        // Emit event for other listeners
+        this._emitLocal("tokens_refreshed", data);
+      },
+    );
 
-    this.socket.on('disconnect', (reason: string) => {
+    this.socket.on("disconnect", (reason: string) => {
       this.connected = false;
       this.stopHeartbeat();
 
-      this._emitLocal('connection_status', { connected: false, reason });
+      this._emitLocal("connection_status", { connected: false, reason });
 
       // Handle abnormal disconnects
-      if (reason === 'io server disconnect') {
+      if (reason === "io server disconnect") {
         this.handleForcedDisconnect();
       }
     });
 
-    this.socket.on('connect_error', (error: Error) => {
+    this.socket.on("connect_error", (error: Error) => {
       this.reconnectAttempts++;
 
       // Check if it's an auth error
-      if (error.message === 'Unauthorized' || error.message.includes('token')) {
-        logger.error('Authentication error', { error: error.message });
-        this._emitLocal('auth_error', { error: error.message });
+      if (error.message === "Unauthorized" || error.message.includes("token")) {
+        logger.error("Authentication error", { error: error.message });
+        this._emitLocal("auth_error", { error: error.message });
 
         // Stop reconnecting on auth errors
         this.disconnect();
@@ -157,23 +178,23 @@ class SocketService {
         this.handleMaxReconnectAttempts();
       }
 
-      this._emitLocal('connection_error', {
+      this._emitLocal("connection_error", {
         error: error?.message || error,
-        attempts: this.reconnectAttempts
+        attempts: this.reconnectAttempts,
       });
     });
 
-    this.socket.on('error', (error: any) => {
-      logger.error('Socket error', { error });
-      this._emitLocal('socket_error', { error });
+    this.socket.on("error", (error: any) => {
+      logger.error("Socket error", { error });
+      this._emitLocal("socket_error", { error });
     });
 
-    this.socket.on('rate_limit_exceeded', (data: any) => {
-      this._emitLocal('rate_limit_exceeded', data);
+    this.socket.on("rate_limit_exceeded", (data: any) => {
+      this._emitLocal("rate_limit_exceeded", data);
     });
 
     // Heartbeat response — backend emits 'orchestration:heartbeat'
-    this.socket.on('orchestration:heartbeat', () => {
+    this.socket.on("orchestration:heartbeat", () => {
       this.resetConnectionTimeout();
     });
   }
@@ -184,7 +205,7 @@ class SocketService {
   private isValidUrl(url: string): boolean {
     try {
       const parsed = new URL(url);
-      return ['http:', 'https:', 'ws:', 'wss:'].includes(parsed.protocol);
+      return ["http:", "https:", "ws:", "wss:"].includes(parsed.protocol);
     } catch {
       return false;
     }
@@ -207,7 +228,7 @@ class SocketService {
 
     this.heartbeatInterval = window.setInterval(() => {
       if (this.socket?.connected) {
-        this.socket.emit('orchestration:ping');
+        this.socket.emit("orchestration:ping");
         this.setConnectionTimeout();
       }
     }, 30000);
@@ -231,7 +252,7 @@ class SocketService {
     this.clearConnectionTimeout();
     this.connectionTimeout = window.setTimeout(() => {
       if (this.socket?.connected) {
-        logger.warn('Heartbeat timeout - reconnecting');
+        logger.warn("Heartbeat timeout - reconnecting");
         this.socket.disconnect();
         this.socket.connect();
       }
@@ -260,8 +281,9 @@ class SocketService {
    */
   private handleForcedDisconnect(): void {
     this.cancelAllRequests();
-    this._emitLocal('forced_disconnect', {
-      message: 'Server disconnected the connection. Please refresh and login again.'
+    this._emitLocal("forced_disconnect", {
+      message:
+        "Server disconnected the connection. Please refresh and login again.",
     });
   }
 
@@ -270,8 +292,9 @@ class SocketService {
    */
   private handleMaxReconnectAttempts(): void {
     this.disconnect();
-    this._emitLocal('max_reconnect_attempts', {
-      message: 'Failed to connect after multiple attempts. Please check your connection.'
+    this._emitLocal("max_reconnect_attempts", {
+      message:
+        "Failed to connect after multiple attempts. Please check your connection.",
     });
   }
 
@@ -287,7 +310,7 @@ class SocketService {
         this.socket.removeAllListeners();
         this.socket.disconnect();
       } catch (e) {
-        logger.error('Error during disconnect', { error: e });
+        logger.error("Error during disconnect", { error: e });
       }
       this.socket = null;
       this.connected = false;
@@ -299,11 +322,14 @@ class SocketService {
    * Cancel all active requests
    */
   private cancelAllRequests(): void {
-    this.activeRequests.forEach(control => {
+    this.activeRequests.forEach((control) => {
       try {
         control.cancel();
       } catch (e) {
-        logger.error('Error cancelling request', { error: e, requestId: control.requestId });
+        logger.error("Error cancelling request", {
+          error: e,
+          requestId: control.requestId,
+        });
       }
     });
     this.activeRequests.clear();
@@ -321,20 +347,18 @@ class SocketService {
         continue;
       }
 
-      if (typeof value === 'string') {
-        sanitized[key] = value.replace(/<script[^>]*>.*?<\/script>/gi, '')
-          .replace(/javascript:/gi, '')
-          .replace(/on\w+\s*=/gi, '');
-      }
-      else if (Array.isArray(value)) {
-        sanitized[key] = value.map(item =>
-          typeof item === 'string' ? this.sanitizePayload({ item }).item : item
+      if (typeof value === "string") {
+        sanitized[key] = value
+          .replace(/<script[^>]*>.*?<\/script>/gi, "")
+          .replace(/javascript:/gi, "")
+          .replace(/on\w+\s*=/gi, "");
+      } else if (Array.isArray(value)) {
+        sanitized[key] = value.map((item) =>
+          typeof item === "string" ? this.sanitizePayload({ item }).item : item,
         );
-      }
-      else if (typeof value === 'number' || typeof value === 'boolean') {
+      } else if (typeof value === "number" || typeof value === "boolean") {
         sanitized[key] = value;
-      }
-      else if (typeof value === 'object') {
+      } else if (typeof value === "object") {
         sanitized[key] = this.sanitizePayload(value);
       }
     }
@@ -347,27 +371,31 @@ class SocketService {
    */
   executeOrchestration(
     payload: OrchestrationPayload,
-    callbacks: OrchestrationCallbacks = {}
+    callbacks: OrchestrationCallbacks = {},
   ): OrchestrationControl {
     if (!this.socket) {
-      throw new Error('Socket not connected. Call connect() first.');
+      throw new Error("Socket not connected. Call connect() first.");
     }
 
     if (!this.socket.connected) {
-      throw new Error('Socket is not in connected state. Please wait for connection.');
+      throw new Error(
+        "Socket is not in connected state. Please wait for connection.",
+      );
     }
 
     const sanitizedPayload = this.sanitizePayload(payload);
 
-    const requestId = sanitizedPayload.requestId || `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const requestId =
+      sanitizedPayload.requestId ||
+      `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const fullPayload = { ...sanitizedPayload, requestId };
 
     if (!fullPayload.agent_ids || fullPayload.agent_ids.length === 0) {
-      throw new Error('At least one agent_id is required');
+      throw new Error("At least one agent_id is required");
     }
 
-    if (!fullPayload.message || fullPayload.message.trim() === '') {
-      throw new Error('Message cannot be empty');
+    if (!fullPayload.message || fullPayload.message.trim() === "") {
+      throw new Error("Message cannot be empty");
     }
 
     // Setup per-request listeners
@@ -379,7 +407,7 @@ class SocketService {
 
     const onToken = (data: any) => {
       if (data.requestId === requestId) {
-        if (data.agent_id && typeof data.token === 'string') {
+        if (data.agent_id && typeof data.token === "string") {
           callbacks.onToken?.(data.agent_id, data.token, data);
         }
       }
@@ -421,7 +449,8 @@ class SocketService {
       // Only trigger when server explicitly says you're blocked
       if (
         (!data.requestId || data.requestId === requestId) &&
-        (data.reason === 'rate_limit_exceeded' || data.reason === 'temporarily_blocked')
+        (data.reason === "rate_limit_exceeded" ||
+          data.reason === "temporarily_blocked")
       ) {
         callbacks.onRateLimit?.(data);
       }
@@ -440,18 +469,18 @@ class SocketService {
     };
 
     const cleanup = () => {
-      this.socket?.off('orchestration:ack', onAck);
-      this.socket?.off('orchestration:token', onToken);
-      this.socket?.off('orchestration:agent_done', onAgentDone);
-      this.socket?.off('orchestration:agent_error', onAgentError);
-      this.socket?.off('orchestration:done', onDone);
-      this.socket?.off('orchestration:error', onError);
-      this.socket?.off('orchestration:warning', onWarning);
-      this.socket?.off('orchestration:rate_limit', onRateLimit);
-      this.socket?.off('orchestration:progress', onProgress);
-      this.socket?.off('orchestration:cancelled', onCancelled);
-      this.socket?.off('orchestration:tool_start', onToolStart);
-      this.socket?.off('orchestration:tool_result', onToolResult);
+      this.socket?.off("orchestration:ack", onAck);
+      this.socket?.off("orchestration:token", onToken);
+      this.socket?.off("orchestration:agent_done", onAgentDone);
+      this.socket?.off("orchestration:agent_error", onAgentError);
+      this.socket?.off("orchestration:done", onDone);
+      this.socket?.off("orchestration:error", onError);
+      this.socket?.off("orchestration:warning", onWarning);
+      this.socket?.off("orchestration:rate_limit", onRateLimit);
+      this.socket?.off("orchestration:progress", onProgress);
+      this.socket?.off("orchestration:cancelled", onCancelled);
+      this.socket?.off("orchestration:tool_start", onToolStart);
+      this.socket?.off("orchestration:tool_result", onToolResult);
       this.activeRequests.delete(requestId);
     };
 
@@ -469,29 +498,29 @@ class SocketService {
     };
 
     // Attach listeners
-    this.socket.on('orchestration:ack', onAck);
-    this.socket.on('orchestration:token', onToken);
-    this.socket.on('orchestration:agent_done', onAgentDone);
-    this.socket.on('orchestration:agent_error', onAgentError);
-    this.socket.on('orchestration:done', onDone);
-    this.socket.on('orchestration:error', onError);
-    this.socket.on('orchestration:warning', onWarning);
-    this.socket.on('orchestration:rate_limit', onRateLimit);
-    this.socket.on('orchestration:progress', onProgress);
-    this.socket.on('orchestration:cancelled', onCancelled);
-    this.socket.on('orchestration:tool_start', onToolStart);
-    this.socket.on('orchestration:tool_result', onToolResult);
+    this.socket.on("orchestration:ack", onAck);
+    this.socket.on("orchestration:token", onToken);
+    this.socket.on("orchestration:agent_done", onAgentDone);
+    this.socket.on("orchestration:agent_error", onAgentError);
+    this.socket.on("orchestration:done", onDone);
+    this.socket.on("orchestration:error", onError);
+    this.socket.on("orchestration:warning", onWarning);
+    this.socket.on("orchestration:rate_limit", onRateLimit);
+    this.socket.on("orchestration:progress", onProgress);
+    this.socket.on("orchestration:cancelled", onCancelled);
+    this.socket.on("orchestration:tool_start", onToolStart);
+    this.socket.on("orchestration:tool_result", onToolResult);
 
     // Emit request with timeout
     const emitTimeout = setTimeout(() => {
       callbacks.onError?.({
-        error: 'Request timeout - no response from server',
-        requestId
+        error: "Request timeout - no response from server",
+        requestId,
       });
       cleanup();
     }, 120000); // 2 minute timeout
 
-    this.socket.emit('orchestration:execute', fullPayload, (ack: any) => {
+    this.socket.emit("orchestration:execute", fullPayload, (ack: any) => {
       clearTimeout(emitTimeout);
       if (ack?.error) {
         callbacks.onError?.(ack);
@@ -503,12 +532,15 @@ class SocketService {
       requestId,
       cancel: () => {
         try {
-          this.socket?.emit('orchestration:cancel', { requestId });
+          this.socket?.emit("orchestration:cancel", { requestId });
           cleanup();
         } catch (e) {
-          logger.error('Error cancelling orchestration', { error: e, requestId });
+          logger.error("Error cancelling orchestration", {
+            error: e,
+            requestId,
+          });
         }
-      }
+      },
     };
 
     this.activeRequests.set(requestId, control);
@@ -547,11 +579,11 @@ class SocketService {
    */
   emit(event: string, data?: any): void {
     if (!this.socket) {
-      throw new Error('Socket not connected. Call connect() first.');
+      throw new Error("Socket not connected. Call connect() first.");
     }
 
     if (!this.socket.connected) {
-      throw new Error('Socket is not in connected state.');
+      throw new Error("Socket is not in connected state.");
     }
 
     this.socket.emit(event, data);
@@ -562,11 +594,11 @@ class SocketService {
    */
   private _emitLocal(event: string, data: any): void {
     const arr = this.listeners.get(event) || [];
-    arr.forEach(cb => {
+    arr.forEach((cb) => {
       try {
         cb(data);
       } catch (e) {
-        logger.error('Error in event listener', { event, error: e });
+        logger.error("Error in event listener", { event, error: e });
       }
     });
   }
@@ -605,10 +637,10 @@ class SocketService {
       onToken?: (token: string) => void;
       onDone?: (data: any) => void;
       onError?: (error: any) => void;
-    } = {}
+    } = {},
   ): { cancel: () => void } {
     if (!this.socket || !this.socket.connected) {
-      throw new Error('Socket not connected.');
+      throw new Error("Socket not connected.");
     }
 
     const requestId = `test_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -634,16 +666,16 @@ class SocketService {
     };
 
     const cleanupTest = () => {
-      this.socket?.off('agent:test_token', onTestToken);
-      this.socket?.off('agent:test_done', onTestDone);
-      this.socket?.off('orchestration:error', onTestError);
+      this.socket?.off("agent:test_token", onTestToken);
+      this.socket?.off("agent:test_done", onTestDone);
+      this.socket?.off("orchestration:error", onTestError);
     };
 
-    this.socket.on('agent:test_token', onTestToken);
-    this.socket.on('agent:test_done', onTestDone);
-    this.socket.on('orchestration:error', onTestError);
+    this.socket.on("agent:test_token", onTestToken);
+    this.socket.on("agent:test_done", onTestDone);
+    this.socket.on("orchestration:error", onTestError);
 
-    this.socket.emit('agent:test', {
+    this.socket.emit("agent:test", {
       agent_id: agentId,
       message,
       requestId,
@@ -651,7 +683,7 @@ class SocketService {
 
     return {
       cancel: () => {
-        this.socket?.emit('orchestration:cancel', { requestId });
+        this.socket?.emit("orchestration:cancel", { requestId });
         cleanupTest();
       },
     };

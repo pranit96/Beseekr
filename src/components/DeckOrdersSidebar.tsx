@@ -1,14 +1,14 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,13 +18,21 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { OrderStatusBadge } from '@/components/OrderStatusBadge';
-import { apiClient } from '@/lib/api';
-import { DeckOrder } from '@/types/deck-to-model';
-import { Download, Eye, FileText, TrendingUp, Clock, MoreVertical, Trash2 } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
-import { toast } from 'sonner';
+} from "@/components/ui/alert-dialog";
+import { OrderStatusBadge } from "@/components/OrderStatusBadge";
+import { apiClient } from "@/lib/api";
+import { DeckOrder } from "@/types/deck-to-model";
+import {
+  Download,
+  Eye,
+  FileText,
+  TrendingUp,
+  Clock,
+  MoreVertical,
+  Trash2,
+} from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
+import { toast } from "sonner";
 
 interface DeckOrdersSidebarProps {
   currentOrderId?: string;
@@ -43,7 +51,9 @@ export function DeckOrdersSidebar({ currentOrderId }: DeckOrdersSidebarProps) {
 
     // Auto-refresh if any order is processing
     const interval = setInterval(() => {
-      const hasProcessing = orders.some(o => o.status === 'processing' || o.status === 'pending');
+      const hasProcessing = orders.some(
+        (o) => o.status === "processing" || o.status === "pending",
+      );
       if (hasProcessing) {
         fetchOrders();
       }
@@ -67,33 +77,35 @@ export function DeckOrdersSidebar({ currentOrderId }: DeckOrdersSidebarProps) {
 
   const handleDownload = async (order: DeckOrder, e: React.MouseEvent) => {
     e.stopPropagation();
-    
-    if (order.status !== 'delivered') {
-      toast.error('Model not ready yet');
+
+    if (order.status !== "delivered") {
+      toast.error("Model not ready yet");
       return;
     }
 
-    setDownloadingIds(prev => new Set(prev).add(order.id));
+    setDownloadingIds((prev) => new Set(prev).add(order.id));
 
     try {
       const blob = await apiClient.downloadDeckModel(order.id);
-      
+
       const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
-      a.download = order.excel_filename || `Financial_Model_${order.company_name || 'Untitled'}.xlsx`;
+      a.download =
+        order.excel_filename ||
+        `Financial_Model_${order.company_name || "Untitled"}.xlsx`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
 
-      toast.success('Download started');
+      toast.success("Download started");
     } catch (error: any) {
-      toast.error('Download failed', {
-        description: error.message
+      toast.error("Download failed", {
+        description: error.message,
       });
     } finally {
-      setDownloadingIds(prev => {
+      setDownloadingIds((prev) => {
         const next = new Set(prev);
         next.delete(order.id);
         return next;
@@ -103,13 +115,13 @@ export function DeckOrdersSidebar({ currentOrderId }: DeckOrdersSidebarProps) {
 
   const handleDeleteClick = (order: DeckOrder, e: React.MouseEvent) => {
     e.stopPropagation();
-    
+
     // Only allow deletion of completed, failed, or expired orders
-    if (order.status === 'processing' || order.status === 'pending') {
-      toast.error('Cannot delete orders that are currently processing');
+    if (order.status === "processing" || order.status === "pending") {
+      toast.error("Cannot delete orders that are currently processing");
       return;
     }
-    
+
     setOrderToDelete(order);
   };
 
@@ -120,21 +132,21 @@ export function DeckOrdersSidebar({ currentOrderId }: DeckOrdersSidebarProps) {
 
     try {
       const response = await apiClient.deleteDeckOrder(orderToDelete.id);
-      
+
       if (response.success) {
-        toast.success('Order deleted successfully');
-        
+        toast.success("Order deleted successfully");
+
         // Remove from local state
-        setOrders(prev => prev.filter(o => o.id !== orderToDelete.id));
-        
+        setOrders((prev) => prev.filter((o) => o.id !== orderToDelete.id));
+
         // If we're on the detail page of the deleted order, navigate away
         if (currentOrderId === orderToDelete.id) {
-          navigate('/deck-to-model/orders');
+          navigate("/deck-to-model/orders");
         }
       }
     } catch (error: any) {
-      toast.error('Failed to delete order', {
-        description: error.message
+      toast.error("Failed to delete order", {
+        description: error.message,
       });
     } finally {
       setDeletingId(null);
@@ -143,7 +155,11 @@ export function DeckOrdersSidebar({ currentOrderId }: DeckOrdersSidebarProps) {
   };
 
   const canDelete = (order: DeckOrder): boolean => {
-    return order.status === 'delivered' || order.status === 'failed' || order.status === 'expired';
+    return (
+      order.status === "delivered" ||
+      order.status === "failed" ||
+      order.status === "expired"
+    );
   };
 
   if (loading) {
@@ -154,7 +170,9 @@ export function DeckOrdersSidebar({ currentOrderId }: DeckOrdersSidebarProps) {
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center py-8">
-            <div className="animate-pulse text-sm text-muted-foreground">Loading...</div>
+            <div className="animate-pulse text-sm text-muted-foreground">
+              Loading...
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -187,15 +205,17 @@ export function DeckOrdersSidebar({ currentOrderId }: DeckOrdersSidebarProps) {
                     key={order.id}
                     className={`p-3 rounded-lg border cursor-pointer transition-colors ${
                       isActive
-                        ? 'border-primary bg-primary/5'
-                        : 'border-border hover:border-primary/50 hover:bg-accent/50'
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:border-primary/50 hover:bg-accent/50"
                     }`}
-                    onClick={() => navigate(`/deck-to-model/orders/${order.id}`)}
+                    onClick={() =>
+                      navigate(`/deck-to-model/orders/${order.id}`)
+                    }
                   >
                     <div className="space-y-2">
                       <div className="flex items-start justify-between gap-2">
                         <h4 className="font-medium text-sm truncate flex-1">
-                          {order.company_name || 'Untitled'}
+                          {order.company_name || "Untitled"}
                         </h4>
                         <OrderStatusBadge
                           status={order.status}
@@ -213,12 +233,16 @@ export function DeckOrdersSidebar({ currentOrderId }: DeckOrdersSidebarProps) {
                         )}
                         <div className="flex items-center gap-1">
                           <Clock className="h-3 w-3" />
-                          <span>{formatDistanceToNow(new Date(order.created_at), { addSuffix: true })}</span>
+                          <span>
+                            {formatDistanceToNow(new Date(order.created_at), {
+                              addSuffix: true,
+                            })}
+                          </span>
                         </div>
                       </div>
 
                       <div className="flex gap-1 pt-1">
-                        {order.status === 'delivered' && (
+                        {order.status === "delivered" && (
                           <Button
                             size="sm"
                             variant="outline"
@@ -227,10 +251,10 @@ export function DeckOrdersSidebar({ currentOrderId }: DeckOrdersSidebarProps) {
                             disabled={isDownloading}
                           >
                             <Download className="h-3 w-3 mr-1" />
-                            {isDownloading ? 'Downloading...' : 'Download'}
+                            {isDownloading ? "Downloading..." : "Download"}
                           </Button>
                         )}
-                        
+
                         <Button
                           size="sm"
                           variant="ghost"
@@ -257,11 +281,15 @@ export function DeckOrdersSidebar({ currentOrderId }: DeckOrdersSidebarProps) {
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem
                               onClick={(e) => handleDeleteClick(order, e)}
-                              disabled={!canDelete(order) || deletingId === order.id}
+                              disabled={
+                                !canDelete(order) || deletingId === order.id
+                              }
                               className="text-destructive focus:text-destructive"
                             >
                               <Trash2 className="h-4 w-4 mr-2" />
-                              {deletingId === order.id ? 'Deleting...' : 'Delete Order'}
+                              {deletingId === order.id
+                                ? "Deleting..."
+                                : "Delete Order"}
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -276,31 +304,35 @@ export function DeckOrdersSidebar({ currentOrderId }: DeckOrdersSidebarProps) {
       </CardContent>
 
       {/* Delete Confirmation Dialog */}
-      <AlertDialog open={!!orderToDelete} onOpenChange={(open) => !open && setOrderToDelete(null)}>
+      <AlertDialog
+        open={!!orderToDelete}
+        onOpenChange={(open) => !open && setOrderToDelete(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Order?</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete the order for{' '}
-              <strong>{orderToDelete?.company_name || 'Untitled'}</strong>?
-              {orderToDelete?.status === 'delivered' && (
+              Are you sure you want to delete the order for{" "}
+              <strong>{orderToDelete?.company_name || "Untitled"}</strong>?
+              {orderToDelete?.status === "delivered" && (
                 <span className="block mt-2 text-yellow-600">
-                  Warning: The Excel file will no longer be available for download.
+                  Warning: The Excel file will no longer be available for
+                  download.
                 </span>
               )}
-              <span className="block mt-2">
-                This action cannot be undone.
-              </span>
+              <span className="block mt-2">This action cannot be undone.</span>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={!!deletingId}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={!!deletingId}>
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteConfirm}
               disabled={!!deletingId}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {deletingId ? 'Deleting...' : 'Delete'}
+              {deletingId ? "Deleting..." : "Delete"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

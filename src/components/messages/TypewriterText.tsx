@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from "react";
 
 interface TypewriterTextProps {
   text: string;
@@ -13,7 +13,7 @@ export const TypewriterText = ({
   onComplete,
   children,
 }: TypewriterTextProps) => {
-  const [displayedText, setDisplayedText] = useState('');
+  const [displayedText, setDisplayedText] = useState("");
   const [isComplete, setIsComplete] = useState(false);
   const indexRef = useRef(0);
   const rafRef = useRef<number>();
@@ -21,14 +21,14 @@ export const TypewriterText = ({
 
   useEffect(() => {
     if (!text) {
-      setDisplayedText('');
+      setDisplayedText("");
       setIsComplete(true);
       onComplete?.();
       return;
     }
 
     // Reset state when text changes
-    setDisplayedText('');
+    setDisplayedText("");
     setIsComplete(false);
     indexRef.current = 0;
     lastTimestampRef.current = 0;

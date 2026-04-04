@@ -1,15 +1,15 @@
 // src/components/messages/MarkdownRenderer.tsx
-import React, { useState, useRef, useEffect } from 'react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import remarkBreaks from 'remark-breaks';
-import rehypeRaw from 'rehype-raw';
-import { createLogger } from '@/services/logging';
+import React, { useState, useRef, useEffect } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import remarkBreaks from "remark-breaks";
+import rehypeRaw from "rehype-raw";
+import { createLogger } from "@/services/logging";
 
 // Import remark-toc ONLY if you plan to use TOC
-import remarkToc from 'remark-toc';
+import remarkToc from "remark-toc";
 
-const logger = createLogger('MarkdownRenderer'); 
+const logger = createLogger("MarkdownRenderer");
 // NOTE: remark-toc is ONLY used when showToc=true
 
 interface TocItem {
@@ -29,10 +29,10 @@ interface MarkdownRendererProps {
 
 export default function MarkdownRenderer({
   content,
-  className = '',
+  className = "",
   showToc = false,
   enableCopy = true,
-  maxHeight = 'none'
+  maxHeight = "none",
 }: MarkdownRendererProps) {
   const [toc, setToc] = useState<TocItem[]>([]);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
@@ -40,52 +40,54 @@ export default function MarkdownRenderer({
 
   // Preprocess: strip code fences, fix tables, and convert plain text headings into markdown headings
   const normalizeContent = (text: string) => {
-    if (!text) return '';
-    
+    if (!text) return "";
+
     // Strip markdown code fences if present (```markdown ... ``` or ```...```)
     let cleaned = text.trim();
-    if (cleaned.startsWith('```')) {
+    if (cleaned.startsWith("```")) {
       // Remove opening fence (```markdown or ```md or just ```)
-      cleaned = cleaned.replace(/^```(?:markdown|md)?\n?/, '');
+      cleaned = cleaned.replace(/^```(?:markdown|md)?\n?/, "");
       // Remove closing fence
-      cleaned = cleaned.replace(/\n?```\s*$/, '');
+      cleaned = cleaned.replace(/\n?```\s*$/, "");
     }
-    
-    const lines = cleaned.replace(/\r/g, '').split('\n');
+
+    const lines = cleaned.replace(/\r/g, "").split("\n");
     const out: string[] = [];
 
     for (let i = 0; i < lines.length; i++) {
       let line = lines[i];
       const trimmedLine = line.trim();
-      const nextLine = (lines[i + 1] || '').trim();
+      const nextLine = (lines[i + 1] || "").trim();
 
       if (!trimmedLine) {
-        out.push('');
+        out.push("");
         continue;
       }
 
       // Fix table rows: ensure proper spacing around pipes
-      if (trimmedLine.includes('|')) {
+      if (trimmedLine.includes("|")) {
         // Check if this looks like a table row
         const pipeCount = (trimmedLine.match(/\|/g) || []).length;
         if (pipeCount >= 2) {
           // This is likely a table row - ensure it starts and ends with |
           let fixedLine = trimmedLine;
-          if (!fixedLine.startsWith('|')) fixedLine = '| ' + fixedLine;
-          if (!fixedLine.endsWith('|')) fixedLine = fixedLine + ' |';
-          
+          if (!fixedLine.startsWith("|")) fixedLine = "| " + fixedLine;
+          if (!fixedLine.endsWith("|")) fixedLine = fixedLine + " |";
+
           // Check if next line is a separator line (contains dashes)
-          const isHeaderRow = nextLine.includes('---') || nextLine.includes('|-');
-          
+          const isHeaderRow =
+            nextLine.includes("---") || nextLine.includes("|-");
+
           out.push(fixedLine);
-          
+
           // If this is a header row and next line isn't a proper separator, add one
           if (isHeaderRow && i + 1 < lines.length) {
             const separatorLine = lines[i + 1].trim();
             if (!separatorLine.match(/^\|?[\s\-:|]+\|?$/)) {
               // Generate separator based on column count
               const colCount = (fixedLine.match(/\|/g) || []).length - 1;
-              const separator = '| ' + Array(colCount).fill('---').join(' | ') + ' |';
+              const separator =
+                "| " + Array(colCount).fill("---").join(" | ") + " |";
               out.push(separator);
             }
           }
@@ -94,8 +96,8 @@ export default function MarkdownRenderer({
       }
 
       if (/:$/.test(trimmedLine)) {
-        out.push(`### ${trimmedLine.replace(/:$/, '')}`);
-        out.push('');
+        out.push(`### ${trimmedLine.replace(/:$/, "")}`);
+        out.push("");
         continue;
       }
 
@@ -110,26 +112,30 @@ export default function MarkdownRenderer({
 
       if (looksLikeTitle) {
         out.push(`### ${trimmedLine}`);
-        out.push('');
+        out.push("");
         continue;
       }
 
       out.push(line);
     }
 
-    return out.join('\n').replace(/\n{3,}/g, '\n\n');
+    return out.join("\n").replace(/\n{3,}/g, "\n\n");
   };
 
   // Generate Table of Contents from headings after render (only if showToc=true)
   useEffect(() => {
     if (showToc && contentRef.current) {
-      const headings = contentRef.current.querySelectorAll('h1, h2, h3, h4, h5, h6');
-      const tocItems: TocItem[] = Array.from(headings).map((heading, index) => ({
-        id: `heading-${index}`,
-        text: heading.textContent || '',
-        level: parseInt(heading.tagName.charAt(1)),
-        element: heading as HTMLElement
-      }));
+      const headings = contentRef.current.querySelectorAll(
+        "h1, h2, h3, h4, h5, h6",
+      );
+      const tocItems: TocItem[] = Array.from(headings).map(
+        (heading, index) => ({
+          id: `heading-${index}`,
+          text: heading.textContent || "",
+          level: parseInt(heading.tagName.charAt(1)),
+          element: heading as HTMLElement,
+        }),
+      );
 
       tocItems.forEach((item, i) => {
         if (item.element && !item.element.id) {
@@ -147,54 +153,78 @@ export default function MarkdownRenderer({
       setCopiedCode(id);
       setTimeout(() => setCopiedCode(null), 2000);
     } catch (err) {
-      logger.error('Failed to copy text', { error: err });
+      logger.error("Failed to copy text", { error: err });
     }
   };
 
   const scrollToHeading = (element: HTMLElement) => {
-    element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    element.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   // ReactMarkdown component overrides
   const components = {
     p: ({ children, ...props }: any) => (
-      <p className="mb-4 text-foreground/90 leading-relaxed text-[15px]" {...props}>
+      <p
+        className="mb-4 text-foreground/90 leading-relaxed text-[15px]"
+        {...props}
+      >
         {children}
       </p>
     ),
     h1: ({ children, ...props }: any) => (
-      <h1 className="text-2xl font-bold mt-8 mb-4 text-foreground border-b pb-2" {...props}>
+      <h1
+        className="text-2xl font-bold mt-8 mb-4 text-foreground border-b pb-2"
+        {...props}
+      >
         {children}
       </h1>
     ),
     h2: ({ children, ...props }: any) => (
-      <h2 className="text-xl font-semibold mt-8 mb-3 text-foreground" {...props}>
+      <h2
+        className="text-xl font-semibold mt-8 mb-3 text-foreground"
+        {...props}
+      >
         {children}
       </h2>
     ),
     h3: ({ children, ...props }: any) => (
-      <h3 className="text-lg font-semibold mt-6 mb-2 text-foreground/90" {...props}>
+      <h3
+        className="text-lg font-semibold mt-6 mb-2 text-foreground/90"
+        {...props}
+      >
         {children}
       </h3>
     ),
     ul: ({ children, ...props }: any) => (
-      <ul className="list-disc pl-6 space-y-1.5 mb-4 text-foreground/90" {...props}>
+      <ul
+        className="list-disc pl-6 space-y-1.5 mb-4 text-foreground/90"
+        {...props}
+      >
         {children}
       </ul>
     ),
     ol: ({ children, ...props }: any) => (
-      <ol className="list-decimal pl-6 space-y-1.5 mb-4 text-foreground/90" {...props}>
+      <ol
+        className="list-decimal pl-6 space-y-1.5 mb-4 text-foreground/90"
+        {...props}
+      >
         {children}
       </ol>
     ),
     li: ({ children, ...props }: any) => (
-      <li className="leading-relaxed text-[15px]" {...props}>{children}</li>
+      <li className="leading-relaxed text-[15px]" {...props}>
+        {children}
+      </li>
     ),
     strong: ({ children, ...props }: any) => (
-      <strong className="font-semibold text-foreground" {...props}>{children}</strong>
+      <strong className="font-semibold text-foreground" {...props}>
+        {children}
+      </strong>
     ),
     em: ({ children, ...props }: any) => (
-      <em className="italic text-foreground/90" {...props}>{children}</em>
+      <em className="italic text-foreground/90" {...props}>
+        {children}
+      </em>
     ),
     a: ({ children, href, ...props }: any) => (
       <a
@@ -215,7 +245,7 @@ export default function MarkdownRenderer({
         {children}
       </blockquote>
     ),
-    
+
     table: ({ children, ...props }: any) => (
       <div className="my-6 overflow-x-auto rounded-lg border border-border/40 shadow-sm">
         <table className="min-w-full border-collapse" {...props}>
@@ -239,7 +269,10 @@ export default function MarkdownRenderer({
       </tr>
     ),
     th: ({ children, ...props }: any) => (
-      <th className="px-4 py-3 text-left text-xs font-semibold text-foreground uppercase tracking-wider" {...props}>
+      <th
+        className="px-4 py-3 text-left text-xs font-semibold text-foreground uppercase tracking-wider"
+        {...props}
+      >
         {children}
       </th>
     ),
@@ -251,38 +284,40 @@ export default function MarkdownRenderer({
 
     // Code renderer
     code: ({ children, className, inline, ...props }: any) => {
-      const match = /language-(\w+)/.exec(className || '');
-      const language = match ? match[1] : '';
-      const code = String(children).replace(/\n$/, '');
+      const match = /language-(\w+)/.exec(className || "");
+      const language = match ? match[1] : "";
+      const code = String(children).replace(/\n$/, "");
       const codeId = Math.random().toString(36).substring(7);
 
       if (!inline && language) {
         return (
           <div className="relative my-4 rounded-lg overflow-hidden border border-border/40">
             <div className="flex justify-between items-center px-3 py-2 bg-muted/40 border-b border-border/30">
-              <span className="text-xs font-mono text-foreground/70 uppercase">{language}</span>
+              <span className="text-xs font-mono text-foreground/70 uppercase">
+                {language}
+              </span>
               {enableCopy && (
                 <button
                   onClick={() => copyToClipboard(code, codeId)}
                   className="text-xs text-foreground/60 hover:text-foreground/80"
                   aria-label={`Copy ${language} code`}
                 >
-                  {copiedCode === codeId ? '✓ Copied' : 'Copy'}
+                  {copiedCode === codeId ? "✓ Copied" : "Copy"}
                 </button>
               )}
             </div>
-            <div style={{ maxHeight: '60vh', overflow: 'auto' }}>
+            <div style={{ maxHeight: "60vh", overflow: "auto" }}>
               <pre
                 style={{
-                  padding: '1rem',
-                  fontSize: '0.9rem',
-                  whiteSpace: 'pre',
-                  backgroundColor: '#000000',
+                  padding: "1rem",
+                  fontSize: "0.9rem",
+                  whiteSpace: "pre",
+                  backgroundColor: "#000000",
                   fontFamily:
                     'ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Segoe UI Mono", "Courier New", monospace',
                   lineHeight: 1.6,
-                  WebkitFontSmoothing: 'antialiased',
-                  MozOsxFontSmoothing: 'grayscale',
+                  WebkitFontSmoothing: "antialiased",
+                  MozOsxFontSmoothing: "grayscale",
                   margin: 0,
                 }}
               >
@@ -297,7 +332,10 @@ export default function MarkdownRenderer({
       return (
         <code
           className="font-mono bg-muted/60 rounded px-1.5 py-0.5 text-sm text-foreground/90 border border-border/30"
-          style={{ WebkitFontSmoothing: 'antialiased', MozOsxFontSmoothing: 'grayscale' }}
+          style={{
+            WebkitFontSmoothing: "antialiased",
+            MozOsxFontSmoothing: "grayscale",
+          }}
           {...props}
         >
           {children}
@@ -318,10 +356,14 @@ export default function MarkdownRenderer({
     ),
   };
 
-  const processed = normalizeContent(content || '');
+  const processed = normalizeContent(content || "");
 
-  const outerStyle = maxHeight && maxHeight !== 'none' ? { maxHeight } as React.CSSProperties : undefined;
-  const outerOverflowClass = maxHeight && maxHeight !== 'none' ? 'overflow-y-auto' : '';
+  const outerStyle =
+    maxHeight && maxHeight !== "none"
+      ? ({ maxHeight } as React.CSSProperties)
+      : undefined;
+  const outerOverflowClass =
+    maxHeight && maxHeight !== "none" ? "overflow-y-auto" : "";
 
   // 🟢 When TOC is OFF: render content directly (no flex, no sidebar)
   if (!showToc) {
@@ -348,7 +390,9 @@ export default function MarkdownRenderer({
       {toc.length > 0 && (
         <div className="hidden lg:block flex-shrink-0 w-56">
           <div className="sticky top-6">
-            <h3 className="text-sm font-semibold text-foreground/80 mb-3 uppercase">Contents</h3>
+            <h3 className="text-sm font-semibold text-foreground/80 mb-3 uppercase">
+              Contents
+            </h3>
             <nav className="space-y-2">
               {toc.map((item, i) => (
                 <button
@@ -371,7 +415,11 @@ export default function MarkdownRenderer({
         style={outerStyle}
       >
         <ReactMarkdown
-          remarkPlugins={[remarkGfm, remarkBreaks, [() => remarkToc({ tight: true })]]}
+          remarkPlugins={[
+            remarkGfm,
+            remarkBreaks,
+            [() => remarkToc({ tight: true })],
+          ]}
           rehypePlugins={[rehypeRaw]}
           components={components}
         >

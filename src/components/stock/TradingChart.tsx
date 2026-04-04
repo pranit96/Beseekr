@@ -1,7 +1,12 @@
 // Trading Chart Component with Lightweight Charts
-import { useEffect, useRef } from 'react';
-import { createChart, IChartApi, ISeriesApi, CandlestickData } from 'lightweight-charts';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useEffect, useRef } from "react";
+import {
+  createChart,
+  IChartApi,
+  ISeriesApi,
+  CandlestickData,
+} from "lightweight-charts";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface TradingChartProps {
   symbol: string;
@@ -9,10 +14,14 @@ interface TradingChartProps {
   height?: number;
 }
 
-export function TradingChart({ symbol, data, height = 400 }: TradingChartProps) {
+export function TradingChart({
+  symbol,
+  data,
+  height = 400,
+}: TradingChartProps) {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
-  const seriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
+  const seriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
 
   useEffect(() => {
     if (!chartContainerRef.current) return;
@@ -22,21 +31,21 @@ export function TradingChart({ symbol, data, height = 400 }: TradingChartProps) 
       width: chartContainerRef.current.clientWidth,
       height,
       layout: {
-        background: { color: 'transparent' },
-        textColor: '#9CA3AF',
+        background: { color: "transparent" },
+        textColor: "#9CA3AF",
       },
       grid: {
-        vertLines: { color: '#1F2937' },
-        horzLines: { color: '#1F2937' },
+        vertLines: { color: "#1F2937" },
+        horzLines: { color: "#1F2937" },
       },
       crosshair: {
         mode: 1,
       },
       rightPriceScale: {
-        borderColor: '#374151',
+        borderColor: "#374151",
       },
       timeScale: {
-        borderColor: '#374151',
+        borderColor: "#374151",
         timeVisible: true,
       },
     });
@@ -45,12 +54,12 @@ export function TradingChart({ symbol, data, height = 400 }: TradingChartProps) 
 
     // Add candlestick series
     const candlestickSeries = chart.addCandlestickSeries({
-      upColor: '#10B981',
-      downColor: '#EF4444',
-      borderUpColor: '#10B981',
-      borderDownColor: '#EF4444',
-      wickUpColor: '#10B981',
-      wickDownColor: '#EF4444',
+      upColor: "#10B981",
+      downColor: "#EF4444",
+      borderUpColor: "#10B981",
+      borderDownColor: "#EF4444",
+      wickUpColor: "#10B981",
+      wickDownColor: "#EF4444",
     });
 
     seriesRef.current = candlestickSeries;
@@ -65,10 +74,10 @@ export function TradingChart({ symbol, data, height = 400 }: TradingChartProps) 
       }
     };
 
-    window.addEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
 
     return () => {
-      window.removeEventListener('resize', handleResize);
+      window.removeEventListener("resize", handleResize);
       if (chartRef.current) {
         chartRef.current.remove();
       }
