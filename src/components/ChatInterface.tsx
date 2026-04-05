@@ -152,6 +152,8 @@ export const ChatInterface: React.FC<{
   const retryMessageRef = useRef<string>("");
   const isCreatingConversationRef = useRef(false);
   const rateLimitTimerRef = useRef<number | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatScrollRef = useRef<HTMLDivElement>(null);
 
   const { toast } = useToast();
   const { socketConnected } = useAuth();
@@ -194,6 +196,18 @@ export const ChatInterface: React.FC<{
     if (!isExecuting && !preparingMessage && textareaRef.current)
       textareaRef.current.focus();
   }, [isExecuting, hasStarted, preparingMessage]);
+
+  // Auto-scroll to bottom whenever messages change or execution state changes
+  useEffect(() => {
+    const el = chatScrollRef.current;
+    if (!el) return;
+    const isNearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 200;
+    if (isNearBottom || isExecuting || preparingMessage) {
+      requestAnimationFrame(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+      });
+    }
+  }, [messages, isExecuting, preparingMessage]);
 
   useEffect(
     () => () => {
@@ -479,11 +493,15 @@ export const ChatInterface: React.FC<{
                 agentTraces: m.agentTraces?.map(at => at.status === "pending" || at.status === "running" ? { ...at, status: "success" } : at),
                 markdownOutput: doneData.final_markdown || m.markdownOutput,
                 finalOutput: doneData.final_markdown || m.finalOutput,
-                content: doneData.final_markdown || m.content,
+                content: doneData.final_markdown || m.content || "Response completed.",
                 perAgentSummary: doneData.per_agent_summary || undefined,
               } as ChatMessage;
             }),
           );
+          // Force scroll to reveal content after completion
+          setTimeout(() => {
+            messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+          }, 100);
         },
         onError: (err) => {
           errorHandled = true;
@@ -838,7 +856,7 @@ export const ChatInterface: React.FC<{
         </div>
       ) : (
         /* ── Active chat ─────────────────────────────────────────────────────── */
-        <div className="flex-1 overflow-y-auto px-2 md:px-6 py-4">
+        <div ref={chatScrollRef} className="flex-1 overflow-y-auto px-2 md:px-6 py-4">
           <div className="max-w-5xl 2xl:max-w-6xl mx-auto w-full">
             <div className="flex items-center justify-end mb-3">
               <Button
@@ -859,6 +877,8 @@ export const ChatInterface: React.FC<{
               isLoading={isLoadingLocal || isExecuting}
               onRetryMessage={handleRetryMessage}
             />
+            {/* Scroll anchor — always kept at bottom to enable auto-scroll */}
+            <div ref={messagesEndRef} className="h-2" />
           </div>
         </div>
       )}

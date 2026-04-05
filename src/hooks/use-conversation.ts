@@ -31,6 +31,9 @@ export function useConversation(
   );
   const activeConvIdRef = useRef<string | null>(initialConversationId || null);
   const [hasStarted, setHasStarted] = useState(false);
+  // Fallback local messages when no conversationId is available yet
+  const [localMessages, setLocalMessages] = useState<ChatMessage[]>([]);
+  const localMessagesRef = useRef<ChatMessage[]>([]);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -158,21 +161,34 @@ export function useConversation(
     },
   });
 
-  // Provide a setter that mutates the React Query cache so streaming agents can append logic
+  // Provide a setter that mutates the React Query cache so streaming agents can append logic.
+  // Falls back to local state when no conversationId exists yet (e.g. during conversation creation).
   const setMessages = useCallback(
     (updater: ChatMessage[] | ((prev: ChatMessage[]) => ChatMessage[])) => {
       const targetId = activeConvIdRef.current;
-      if (!targetId) return;
 
-      queryClient.setQueryData(
-        ["messages", targetId],
-        (old: ChatMessage[] = []) => {
+      if (targetId) {
+        // Normal path — update React Query cache
+        queryClient.setQueryData(
+          ["messages", targetId],
+          (old: ChatMessage[] = []) => {
+            const newMessages =
+              typeof updater === "function" ? updater(old) : updater;
+            if (newMessages.length > 0) setHasStarted(true);
+            localMessagesRef.current = newMessages;
+            return newMessages;
+          },
+        );
+      } else {
+        // Fallback path — no conversationId yet, keep in local state
+        setLocalMessages((prev) => {
           const newMessages =
-            typeof updater === "function" ? updater(old) : updater;
+            typeof updater === "function" ? updater(prev) : updater;
           if (newMessages.length > 0) setHasStarted(true);
+          localMessagesRef.current = newMessages;
           return newMessages;
-        },
-      );
+        });
+      }
     },
     [queryClient],
   );
@@ -192,12 +208,33 @@ export function useConversation(
     [conversationId, refetch],
   );
 
+  // When a conversationId first becomes available, migrate any locally-buffered
+  // messages into the React Query cache so the chat doesn't go blank.
+  const prevConvIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    const prevId = prevConvIdRef.current;
+    prevConvIdRef.current = conversationId;
+    if (conversationId && !prevId && localMessagesRef.current.length > 0) {
+      queryClient.setQueryData(
+        ["messages", conversationId],
+        (old: ChatMessage[] = []) =>
+          old.length > 0 ? old : localMessagesRef.current,
+      );
+      setLocalMessages([]);
+      localMessagesRef.current = [];
+    }
+  }, [conversationId, queryClient]);
+
+  // Effective messages: prefer React Query cache, fall back to localMessages
+  const effectiveMessages = conversationId ? messages : localMessages;
+
   // Backward compatibility mock for messageCache
   const messageCache = new Map<string, ChatMessage[]>();
   if (conversationId) messageCache.set(conversationId, messages);
+  else if (localMessages.length > 0) messageCache.set("local", localMessages);
 
   return {
-    messages,
+    messages: effectiveMessages,
     setMessages,
     conversationId,
     setConversationId,

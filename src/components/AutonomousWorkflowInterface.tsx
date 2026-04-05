@@ -261,9 +261,13 @@ export const AutonomousWorkflowInterface: React.FC<
     }>
   >([]);
 
+  // ── Extended Workflow State ──
+  const [workflowPhase, setWorkflowPhase] = useState<string>("queued");
+  const [isSynthesizing, setIsSynthesizing] = useState(false);
+  const [synthesisOutput, setSynthesisOutput] = useState("");
+
   /**
    * cancelRef holds the cancel fn provided by the workflow hook via onCancelReady.
-   * A ref — not state — so assigning it never triggers a re-render.
    */
   const cancelRef = useRef<(() => void) | null>(null);
 
@@ -285,6 +289,9 @@ export const AutonomousWorkflowInterface: React.FC<
     setFinalAnswer("");
     setOrbitAngle(0);
     setAttachedFiles([]);
+    setWorkflowPhase("queued");
+    setIsSynthesizing(false);
+    setSynthesisOutput("");
     cancelRef.current = null;
   };
 
@@ -380,8 +387,14 @@ export const AutonomousWorkflowInterface: React.FC<
           cancelRef.current = fn;
         },
 
-        onAck: () => setStatus("Acknowledged — planning your workflow…"),
-        onStatus: (data) => setStatus(data.message || data.status),
+        onAck: () => {
+          setStatus("Acknowledged — planning your workflow…");
+          setWorkflowPhase("planning");
+        },
+        onStatus: (data) => {
+          setStatus(data.message || data.status);
+          if (data.status) setWorkflowPhase(data.status);
+        },
 
         onPlan: (data) => {
           setExecutionPlan(data.plan);
@@ -397,14 +410,17 @@ export const AutonomousWorkflowInterface: React.FC<
               reasoning: a.reasoning,
             })),
           );
+          setWorkflowPhase("agents_planned");
         },
 
-        onAgentCreated: (data) =>
+        onAgentCreated: (data) => {
           setAgents((prev) =>
             prev.map((a) =>
               a.name === data.agent.name ? { ...a, id: data.agent.id } : a,
             ),
-          ),
+          );
+          setWorkflowPhase("agents_created");
+        },
 
         onAgentStart: (data) => {
           setAgents((prev) =>
@@ -413,6 +429,7 @@ export const AutonomousWorkflowInterface: React.FC<
             ),
           );
           setStatus(`Running agent: ${data.agent_name}`);
+          setWorkflowPhase("running");
         },
 
         onAgentToken: (data) =>
@@ -431,7 +448,12 @@ export const AutonomousWorkflowInterface: React.FC<
             ),
           ),
 
-        onSynthesisToken: () => setStatus("Synthesizing final answer…"),
+        onSynthesisToken: (data) => {
+          setStatus("Synthesizing final answer…");
+          setWorkflowPhase("synthesizing");
+          setIsSynthesizing(true);
+          setSynthesisOutput((prev) => prev + (data.token || ""));
+        },
 
         // Server confirmed cancellation — go straight to prompt without waiting for timeout
         onCancelled: () => {
@@ -597,79 +619,133 @@ export const AutonomousWorkflowInterface: React.FC<
 
             <div className="w-full max-w-2xl relative flex flex-col items-center mt-12">
               {/* ── Sleek Central Hub ── */}
-              <div className="flex flex-col items-center justify-center w-full mx-auto mb-16 relative z-10 px-4 mt-8">
-                <div
-                  className="relative flex items-center justify-center"
-                  style={{
-                    width: agents.length > 0 ? ORBIT_RADIUS * 2 + 80 : 96,
-                    height: agents.length > 0 ? ORBIT_RADIUS * 2 + 80 : 96,
-                    minHeight: 96,
-                  }}
-                >
-                  {/* Orbital Nodes */}
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
-                    <AnimatePresence>
-                      {agents.map((agent, i) => (
-                        <AgentNode
-                          key={agent.id || i}
-                          agent={agent}
-                          index={i}
-                          total={agents.length}
-                          orbitRadius={ORBIT_RADIUS}
-                          orbitAngleOffset={orbitAngle}
-                          dimmed={isCancelling}
-                        />
-                      ))}
-                    </AnimatePresence>
-                  </div>
-
-                  {/* Central Orb */}
-                  <motion.div
-                    animate={
-                      isCancelling
-                        ? { rotate: 0, scale: 0.95 }
-                        : { rotate: 360, scale: [1, 1.05, 1] }
-                    }
-                    transition={
-                      isCancelling
-                        ? {}
-                        : { duration: 4, repeat: Infinity, ease: "easeInOut" }
-                    }
-                    className="w-full h-full rounded-full flex items-center justify-center relative z-20"
+              <div className="flex flex-col items-center justify-center w-full mx-auto mb-8 relative z-10 px-4 mt-8">
+                {/* ── Before Plan Arrives (Queue/Planning) ────────────── */}
+                {agents.length === 0 && !isCancelling ? (
+                  <motion.div 
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="flex flex-col items-center justify-center pt-8 pb-12 w-full max-w-sm"
+                  >
+                    <div className="relative mb-8 w-24 h-24 flex items-center justify-center">
+                       {/* Spinner rings */}
+                       <motion.div animate={{ rotate: 360 }} transition={{ duration: 3, repeat: Infinity, ease: "linear" }} className="absolute inset-0 rounded-full border-t-2 border-primary border-opacity-30" />
+                       <motion.div animate={{ rotate: -360 }} transition={{ duration: 2, repeat: Infinity, ease: "linear" }} className="absolute inset-2 rounded-full border-t-2 border-accent border-opacity-60" />
+                       <div className="relative z-10 w-14 h-14 rounded-full bg-background border border-border flex items-center justify-center shadow-[0_0_20px_rgba(var(--primary-glow),0.2)]">
+                         <Brain className="w-6 h-6 text-primary animate-pulse" />
+                       </div>
+                    </div>
+                    
+                    {/* Animated Step Tracker */}
+                    <div className="w-full space-y-4">
+                      <div className="flex items-center gap-3">
+                        <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                        <span className="text-sm font-medium text-foreground">Request queued</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        {workflowPhase === "planning" || workflowPhase === "creating_agents" ? (
+                          <Loader2 className="w-5 h-5 text-primary animate-spin" />
+                        ) : workflowPhase === "queued" ? (
+                          <div className="w-5 h-5 rounded-full border-2 border-border" />
+                        ) : (
+                          <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                        )}
+                        <span className={cn("text-sm font-medium", ["planning", "creating_agents"].includes(workflowPhase) ? "text-foreground" : "text-muted-foreground")}>
+                          Architecting multi-agent workflow
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        {workflowPhase === "creating_agents" ? (
+                          <Loader2 className="w-5 h-5 text-primary animate-spin" />
+                        ) : (
+                          <div className="w-5 h-5 rounded-full border-2 border-border" />
+                        )}
+                        <span className={cn("text-sm font-medium", workflowPhase === "creating_agents" ? "text-foreground" : "text-muted-foreground")}>
+                          Spawning specialized agents
+                        </span>
+                      </div>
+                    </div>
+                  </motion.div>
+                ) : (
+                  /* ── After Plan Arrives (Orbital System) ────────────── */
+                  <div
+                    className="relative flex items-center justify-center"
                     style={{
-                      background: isCancelling
-                        ? "conic-gradient(from 0deg, hsl(var(--muted-foreground)/0.3), hsl(var(--muted-foreground)/0.3))"
-                        : "conic-gradient(from 0deg, hsl(var(--primary)/0.8), hsl(var(--accent)/0.8), hsl(var(--primary)/0.8))",
-                      padding: 3,
-                      boxShadow: isCancelling
-                        ? "none"
-                        : "0 0 40px rgba(var(--primary-glow), 0.3)",
+                      width: agents.length > 0 ? ORBIT_RADIUS * 2 + 80 : 96,
+                      height: agents.length > 0 ? ORBIT_RADIUS * 2 + 80 : 96,
+                      minHeight: 96,
                     }}
                   >
-                    <div className="w-full h-full rounded-full bg-background flex items-center justify-center relative z-10">
-                      {isCancelling ? (
-                        <Loader2 className="w-10 h-10 animate-spin text-muted-foreground" />
-                      ) : (
-                        <Sparkles
-                          className="w-10 h-10"
-                          style={{ color: "hsl(var(--primary))" }}
+                    {/* Orbital Nodes */}
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
+                      <AnimatePresence>
+                        {agents.map((agent, i) => (
+                          <AgentNode
+                            key={agent.id || i}
+                            agent={agent}
+                            index={i}
+                            total={agents.length}
+                            orbitRadius={ORBIT_RADIUS}
+                            orbitAngleOffset={orbitAngle}
+                            dimmed={isCancelling || isSynthesizing}
+                          />
+                        ))}
+                      </AnimatePresence>
+                    </div>
+
+                    {/* Central Orb */}
+                    <motion.div
+                      animate={
+                        isCancelling
+                          ? { rotate: 0, scale: 0.95 }
+                          : { rotate: 360, scale: [1, 1.05, 1] }
+                      }
+                      transition={
+                        isCancelling
+                          ? {}
+                          : { duration: 4, repeat: Infinity, ease: "easeInOut" }
+                      }
+                      className="w-full h-full rounded-full flex items-center justify-center relative z-20"
+                      style={{
+                        background: isCancelling
+                          ? "conic-gradient(from 0deg, hsl(var(--muted-foreground)/0.3), hsl(var(--muted-foreground)/0.3))"
+                          : isSynthesizing 
+                            ? "conic-gradient(from 0deg, hsl(var(--chart-4)/0.8), hsl(var(--chart-5)/0.8), hsl(var(--chart-4)/0.8))"
+                            : "conic-gradient(from 0deg, hsl(var(--primary)/0.8), hsl(var(--accent)/0.8), hsl(var(--primary)/0.8))",
+                        padding: 3,
+                        boxShadow: isCancelling
+                          ? "none"
+                          : "0 0 40px rgba(var(--primary-glow), 0.3)",
+                      }}
+                    >
+                      <div className="w-full h-full rounded-full bg-background flex items-center justify-center relative z-10">
+                        {isCancelling ? (
+                          <Loader2 className="w-10 h-10 animate-spin text-muted-foreground" />
+                        ) : isSynthesizing ? (
+                          <Zap className="w-10 h-10 text-amber-500 animate-pulse" />
+                        ) : (
+                          <Sparkles
+                            className="w-10 h-10"
+                            style={{ color: "hsl(var(--primary))" }}
+                          />
+                        )}
+                      </div>
+                      {/* Glowing ring effect */}
+                      {!isCancelling && (
+                        <motion.div
+                          className="absolute -inset-4 rounded-full border pointer-events-none"
+                          style={{ borderColor: isSynthesizing ? "hsl(var(--chart-4)/0.4)" : "hsl(var(--primary)/0.2)" }}
+                          animate={{ scale: [1, 1.3, 1], opacity: [0.3, 0, 0.3] }}
+                          transition={{
+                            duration: 2.5,
+                            repeat: Infinity,
+                            ease: "easeOut",
+                          }}
                         />
                       )}
-                    </div>
-                    {/* Glowing ring effect */}
-                    {!isCancelling && (
-                      <motion.div
-                        className="absolute -inset-4 rounded-full border border-primary/20 pointer-events-none"
-                        animate={{ scale: [1, 1.3, 1], opacity: [0.3, 0, 0.3] }}
-                        transition={{
-                          duration: 2.5,
-                          repeat: Infinity,
-                          ease: "easeOut",
-                        }}
-                      />
-                    )}
-                  </motion.div>
-                </div>
+                    </motion.div>
+                  </div>
+                )}
 
                 <div className="mt-6">
                   <p
@@ -697,18 +773,25 @@ export const AutonomousWorkflowInterface: React.FC<
                 </div>
               </div>
 
-              {/* Live output preview */}
-              {!isCancelling && runningAgent?.output && (
+              {/* Live output preview (Agent OR Synthesizer) */}
+              {!isCancelling && (runningAgent?.output || isSynthesizing) && (
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   className="mt-4 w-full max-w-lg mx-auto rounded-xl border border-border/40 bg-muted/40 backdrop-blur px-4 py-3"
                 >
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1.5 font-semibold">
-                    Live output
-                  </p>
-                  <p className="text-xs text-foreground/70 font-mono leading-relaxed line-clamp-3">
-                    {runningAgent.output}
+                  <div className="flex items-center gap-2 mb-1.5">
+                    {isSynthesizing ? (
+                      <Zap className="w-3.5 h-3.5 fill-amber-500 text-amber-500 animate-pulse" />
+                    ) : (
+                      <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                    )}
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">
+                      {isSynthesizing ? "Synthesizing Final Output" : "Live Agent Output"}
+                    </p>
+                  </div>
+                  <p className="text-xs text-foreground/70 font-mono leading-relaxed line-clamp-4">
+                    {isSynthesizing ? synthesisOutput : runningAgent?.output}
                   </p>
                 </motion.div>
               )}

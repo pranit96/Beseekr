@@ -1109,4 +1109,250 @@
       transform: translateY(0) scale(1);
     }
   }
+
+  /* ── Yin-Yang Loading Screen keyframes ───────── */
+  @keyframes yy-spin-cw {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+  }
+  @keyframes yy-spin-ccw {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(-360deg); }
+  }
+  @keyframes yy-core-spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+  }
+  @keyframes yy-orbit {
+    from { transform: rotate(var(--orbit-angle)) translateX(110px) rotate(calc(-1 * var(--orbit-angle))); }
+    to   { transform: rotate(calc(var(--orbit-angle) + 360deg)) translateX(110px) rotate(calc(-1 * (var(--orbit-angle) + 360deg))); }
+  }
+  @keyframes blob-pop {
+    0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.18; }
+    50%       { transform: scale(1.18) rotate(8deg); opacity: 0.28; }
+  }
+  @keyframes badge-pulse {
+    0%, 100% { opacity: 0.85; transform: scale(1); }
+    50%       { opacity: 1; transform: scale(1.04); }
+  }
+  @keyframes dots-fade {
+    0%, 100% { opacity: 0.3; transform: scaleY(0.6); }
+    50%       { opacity: 1;   transform: scaleY(1); }
+  }
 }
+
+/* ══════════════════════════════════════════════════
+   Chat Loading — Full Screen Yin-Yang Orbital System
+   ══════════════════════════════════════════════════ */
+@layer components {
+  .loading-fullscreen {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: hsl(var(--background));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  /* Ambient blobs */
+  .loading-blob {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(90px);
+    pointer-events: none;
+    animation: blob-pop 8s ease-in-out infinite;
+  }
+  .loading-blob-1 {
+    width: 560px; height: 560px;
+    background: hsl(250 84% 54% / 0.22);
+    top: -10%; left: -8%;
+    animation-duration: 9s;
+  }
+  .loading-blob-2 {
+    width: 420px; height: 420px;
+    background: hsl(200 90% 58% / 0.18);
+    bottom: -8%; right: -6%;
+    animation-duration: 11s;
+    animation-delay: -4s;
+  }
+  .loading-blob-3 {
+    width: 300px; height: 300px;
+    background: hsl(280 84% 60% / 0.14);
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    animation-duration: 7s;
+    animation-delay: -2s;
+  }
+
+  /* Center stack */
+  .loading-center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 40px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ── Yin-Yang orbital system ── */
+  .yy-system {
+    position: relative;
+    width: 240px;
+    height: 240px;
+  }
+
+  /* Rings */
+  .yy-ring {
+    position: absolute;
+    top: 50%; left: 50%;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    will-change: transform;
+  }
+  .yy-ring-outer {
+    width: 240px; height: 240px;
+    border-color: hsl(var(--primary) / 0.25) hsl(var(--accent) / 0.6) hsl(var(--primary) / 0.15) transparent;
+    animation: yy-spin-cw 3.6s linear infinite;
+    box-shadow: 0 0 24px hsl(var(--primary) / 0.15);
+  }
+  .yy-ring-middle {
+    width: 180px; height: 180px;
+    border-color: transparent hsl(var(--accent) / 0.5) transparent hsl(var(--primary) / 0.4);
+    animation: yy-spin-ccw 2.4s linear infinite;
+    box-shadow: 0 0 16px hsl(var(--accent) / 0.12);
+  }
+
+  /* Yin-Yang core */
+  .yy-core {
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 90px; height: 90px;
+    border-radius: 50%;
+    overflow: hidden;
+    animation: yy-core-spin 6s linear infinite;
+    box-shadow:
+      0 0 0 2px hsl(var(--border) / 0.5),
+      0 0 30px hsl(var(--primary) / 0.3),
+      0 0 60px hsl(var(--primary) / 0.12);
+    will-change: transform;
+    transform: translate(-50%, -50%);
+  }
+  .yy-yin {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 50%;
+    background: hsl(var(--foreground));
+    border-radius: 45px 45px 0 0;
+  }
+  .yy-yang {
+    position: absolute;
+    bottom: 0; left: 0;
+    width: 100%; height: 50%;
+    background: hsl(var(--background));
+    border: 1px solid hsl(var(--border) / 0.4);
+    border-radius: 0 0 45px 45px;
+  }
+  .yy-dot {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 22px; height: 22px;
+    border-radius: 50%;
+  }
+  .yy-dot-top {
+    top: 11px;
+    background: hsl(var(--background));
+    box-shadow: inset 0 0 0 3px hsl(var(--foreground) / 0.15);
+  }
+  .yy-dot-bot {
+    bottom: 11px;
+    background: hsl(var(--foreground));
+    box-shadow: inset 0 0 0 3px hsl(var(--background) / 0.35);
+  }
+
+  /* Orbiting agent nodes */
+  .yy-orbit-node {
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 0; height: 0;
+    transform: rotate(var(--orbit-angle)) translateX(110px) rotate(calc(-1 * var(--orbit-angle)));
+    animation: yy-orbit 6s linear infinite;
+    will-change: transform;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .yy-node-dot {
+    display: block;
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--node-color, hsl(var(--primary)));
+    box-shadow: 0 0 10px var(--node-color, hsl(var(--primary))),
+                0 0 24px var(--node-color, hsl(var(--primary)));
+    transition: transform 0.3s, box-shadow 0.3s;
+    flex-shrink: 0;
+  }
+  .yy-node-label {
+    position: absolute;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 10px;
+    font-weight: 600;
+    white-space: nowrap;
+    color: hsl(var(--muted-foreground) / 0.55);
+    letter-spacing: 0.03em;
+    pointer-events: none;
+    transition: color 0.3s, opacity 0.3s;
+    opacity: 0;
+  }
+  .yy-orbit-node-active .yy-node-dot {
+    width: 14px; height: 14px;
+    box-shadow: 0 0 18px var(--node-color, hsl(var(--primary))),
+                0 0 40px var(--node-color, hsl(var(--primary)));
+  }
+  .yy-orbit-node-active .yy-node-label {
+    color: var(--node-color, hsl(var(--primary)));
+    opacity: 1;
+  }
+
+  /* Status / Badge area */
+  .loading-status {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+  .loading-agent-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 18px;
+    border-radius: 999px;
+    border: 1px solid var(--badge-color, hsl(var(--primary)));
+    background: color-mix(in srgb, var(--badge-color, hsl(var(--primary))) 10%, transparent);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--badge-color, hsl(var(--primary)));
+    animation: badge-pulse 1.4s ease-in-out infinite;
+    transition: border-color 0.5s, color 0.5s, background 0.5s;
+  }
+  .loading-badge-dot {
+    display: block;
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--badge-color, hsl(var(--primary)));
+    box-shadow: 0 0 8px var(--badge-color, hsl(var(--primary)));
+    animation: dots-fade 1s ease-in-out infinite;
+  }
+  .loading-tagline {
+    font-size: 13px;
+    color: hsl(var(--muted-foreground) / 0.5);
+    letter-spacing: 0.02em;
+    font-weight: 500;
+    margin: 0;
+  }
+}
+
