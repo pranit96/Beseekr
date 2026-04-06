@@ -121,3 +121,30 @@ export async function getTopics(): Promise<Topic[]> {
 
 export const blogsApi = { getBlogs, getBlog, getTopics };
 export default blogsApi;
+
+// ─── Newsletter ────────────────────────────────────────────────────────────────
+
+export interface NewsletterResponse {
+  success: boolean;
+  message: string;
+}
+
+export async function subscribeNewsletter(
+  email: string,
+): Promise<NewsletterResponse> {
+  const url = `${API_BASE}/api/newsletter/subscribe`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+  });
+  const json = await res.json();
+  if (!res.ok) {
+    throw new ApiError(
+      json.error || `Request failed: ${res.status}`,
+      json,
+      res.status,
+    );
+  }
+  return json as NewsletterResponse;
+}

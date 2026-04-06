@@ -6,7 +6,7 @@ import {
   keepPreviousData,
 } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api";
-import { getBlogs, getBlog, getTopics } from "@/api/blogs";
+import { getBlogs, getBlog, getTopics, subscribeNewsletter } from "@/api/blogs";
 import { useToast } from "@/hooks/use-toast";
 
 // Query Keys
@@ -361,5 +361,13 @@ export function useBlog(slug?: string) {
     staleTime: 5 * 60 * 1000, // 5 min
     gcTime: 10 * 60 * 1000,
     placeholderData: keepPreviousData,
+  });
+}
+
+// ============= NEWSLETTER =============
+
+export function useSubscribeNewsletter() {
+  return useMutation({
+    mutationFn: (email: string) => subscribeNewsletter(email),
   });
 }

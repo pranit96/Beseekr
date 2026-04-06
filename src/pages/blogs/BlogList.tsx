@@ -1,13 +1,17 @@
 import React, { useEffect, useState, useMemo, useRef } from "react";
-import { useBlogTopics, useInfiniteBlogs } from "@/hooks/use-api-queries";
-import { Link } from "react-router-dom";
+import {
+  useBlogTopics,
+  useInfiniteBlogs,
+  useSubscribeNewsletter,
+} from "@/hooks/use-api-queries";
+import { Link, useSearchParams } from "react-router-dom";
 import {
   motion,
   AnimatePresence,
   useScroll,
   useTransform,
 } from "framer-motion";
-import { Clock, ArrowRight, Tag, Bookmark, Search, X } from "lucide-react";
+import { Clock, ArrowRight, Tag, Bookmark, Search, X, Mail, CheckCircle, Loader2 } from "lucide-react";
 import { type Blog, type Topic } from "@/api/blogs";
 import { Logo } from "@/components/Logo";
 
@@ -234,12 +238,180 @@ function BlogCard({ blog, index = 0 }: { blog: Blog; index?: number }) {
   );
 }
 
+/* ─── newsletter widget ──────────────────────────────────── */
+function NewsletterSection() {
+  const [email, setEmail] = useState("");
+  const [done, setDone] = useState<string | null>(null);
+
+  const subscribe = useSubscribeNewsletter();
+  const isPending = subscribe.isPending;
+  const errorMsg =
+    subscribe.error instanceof Error ? subscribe.error.message : null;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim()) return;
+    try {
+      const res = await subscribe.mutateAsync(email.trim());
+      setDone(res.message);
+      setEmail("");
+    } catch {
+      // shown inline via subscribe.error
+    }
+  };
+
+  return (
+    <div
+      className="relative overflow-hidden"
+      style={{
+        background: "linear-gradient(135deg, #0d0d1a 0%, #111127 60%, #0d0d1a 100%)",
+        borderTop: "1px solid rgba(255,255,255,0.06)",
+      }}
+    >
+      {/* Ambient glow */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background:
+            "radial-gradient(ellipse 70% 60% at 50% 100%, rgba(99,102,241,0.12) 0%, transparent 70%)",
+        }}
+      />
+
+      <div className="relative max-w-2xl mx-auto px-4 sm:px-8 py-20 text-center">
+        {/* Icon */}
+        <motion.div
+          initial={{ scale: 0.8, opacity: 0 }}
+          whileInView={{ scale: 1, opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+          className="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-8"
+          style={{
+            background: "linear-gradient(135deg, rgba(99,102,241,0.2), rgba(139,92,246,0.2))",
+            border: "1px solid rgba(139,92,246,0.3)",
+          }}
+        >
+          <Mail className="w-6 h-6" style={{ color: "#a78bfa" }} />
+        </motion.div>
+
+        {/* Heading */}
+        <motion.h2
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.1 }}
+          className="text-3xl sm:text-4xl font-bold text-white mb-3"
+          style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
+        >
+          Stay in the loop
+        </motion.h2>
+
+        <motion.p
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.18 }}
+          className="text-white/45 text-base mb-10 leading-relaxed"
+          style={{ fontFamily: "'Source Serif 4', Georgia, serif" }}
+        >
+          Get the latest articles, insights, and updates delivered straight to
+          your inbox. No spam — unsubscribe anytime via the link in any email.
+        </motion.p>
+
+        <AnimatePresence mode="wait">
+          {done ? (
+            <motion.div
+              key="done"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex flex-col items-center gap-3"
+            >
+              <div
+                className="inline-flex items-center justify-center w-12 h-12 rounded-full"
+                style={{
+                  background: "rgba(99,102,241,0.15)",
+                  border: "1px solid rgba(99,102,241,0.4)",
+                }}
+              >
+                <CheckCircle className="w-6 h-6" style={{ color: "#818cf8" }} />
+              </div>
+              <p className="text-white/80 text-sm font-medium max-w-sm">{done}</p>
+              <button
+                onClick={() => { setDone(null); subscribe.reset(); }}
+                className="mt-1 text-xs text-white/30 hover:text-white/60 transition-colors underline underline-offset-2"
+              >
+                Subscribe another email
+              </button>
+            </motion.div>
+          ) : (
+            <motion.form
+              key="form"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              onSubmit={handleSubmit}
+              className="w-full"
+            >
+              <div className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
+                <input
+                  id="newsletter-email"
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="your@email.com"
+                  className="flex-1 bg-white/5 border border-white/10 text-white text-sm px-4 py-3 rounded-full placeholder:text-white/25 outline-none focus:border-indigo-500/60 transition-all duration-200"
+                  style={{ backdropFilter: "blur(12px)" }}
+                />
+                <button
+                  type="submit"
+                  disabled={isPending || !email.trim()}
+                  className="flex items-center justify-center gap-2 px-6 py-3 rounded-full font-semibold text-sm text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{
+                    background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                    boxShadow: "0 4px 20px rgba(99,102,241,0.35)",
+                  }}
+                >
+                  {isPending ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    "Subscribe"
+                  )}
+                </button>
+              </div>
+
+              {/* Inline error */}
+              <AnimatePresence>
+                {errorMsg && (
+                  <motion.p
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    className="mt-3 text-red-400/80 text-sm"
+                  >
+                    {errorMsg}
+                  </motion.p>
+                )}
+              </AnimatePresence>
+
+              <p className="mt-5 text-xs text-white/25">
+                To unsubscribe, click the link in any email we send you.
+              </p>
+            </motion.form>
+          )}
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+}
+
 /* ─── main page ───────────────────────────────────────────── */
 export default function BlogList() {
   const [selectedTopic, setSelectedTopic] = useState("All");
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [searchParams] = useSearchParams();
   const LIMIT = 12;
 
   // Debounce search
@@ -500,6 +672,36 @@ export default function BlogList() {
           </>
         )}
       </main>
+
+      {/* ── NEWSLETTER ─────────────────────────────────── */}
+      <NewsletterSection />
+
+      {/* Unsubscribed banner (redirected from token link) */}
+      <AnimatePresence>
+        {(searchParams.get("unsub") === "success" ||
+          searchParams.get("unsub") === "already") && (
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 40 }}
+            className="fixed bottom-6 inset-x-0 flex justify-center z-50 px-4"
+          >
+            <div
+              className="flex items-center gap-3 px-5 py-3.5 rounded-2xl text-sm font-medium text-white shadow-2xl"
+              style={{
+                background: "rgba(20,20,30,0.95)",
+                border: "1px solid rgba(255,255,255,0.1)",
+                backdropFilter: "blur(20px)",
+              }}
+            >
+              <CheckCircle className="w-4 h-4 shrink-0" style={{ color: "#818cf8" }} />
+              {searchParams.get("unsub") === "already"
+                ? "You were already unsubscribed."
+                : "You've been successfully unsubscribed."}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
