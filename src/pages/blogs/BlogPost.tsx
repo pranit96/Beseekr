@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { useBlog } from "@/hooks/use-api-queries";
+import { useBlog, useSubscribeNewsletter } from "@/hooks/use-api-queries";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -13,6 +13,8 @@ import {
   ChevronDown,
   Mail,
   User,
+  CheckCircle,
+  Loader2,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -230,13 +232,21 @@ function AuthorBio({
 /* ─── Newsletter CTA ──────────────────────────────────────── */
 function NewsletterCTA() {
   const [email, setEmail] = useState("");
-  const [submitted, setSubmitted] = useState(false);
+  const [done, setDone] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const subscribe = useSubscribeNewsletter();
+  const isPending = subscribe.isPending;
+  const errorMsg = subscribe.error instanceof Error ? subscribe.error.message : null;
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email.trim()) {
-      setSubmitted(true);
+    if (!email.trim()) return;
+    try {
+      const res = await subscribe.mutateAsync(email.trim());
+      setDone(res.message);
       setEmail("");
+    } catch {
+      // shown inline
     }
   };
 
@@ -263,37 +273,76 @@ function NewsletterCTA() {
         </h3>
         <p className="text-white/40 text-sm mb-6 max-w-md mx-auto">
           Get the latest articles, insights, and updates delivered straight to
-          your inbox. No spam, unsubscribe anytime.
+          your inbox. No spam — unsubscribe anytime via the link in any email.
         </p>
-        {submitted ? (
-          <motion.p
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-primary font-semibold text-sm"
-          >
-            ✓ Thanks! You're on the list.
-          </motion.p>
-        ) : (
-          <form
-            onSubmit={handleSubmit}
-            className="flex flex-col sm:flex-row items-center gap-3 max-w-md mx-auto"
-          >
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="your@email.com"
-              required
-              className="flex-1 w-full bg-white/5 border border-white/15 rounded-full px-5 py-3 text-sm text-white placeholder:text-white/30 outline-none focus:border-primary/50 transition-colors"
-            />
-            <button
-              type="submit"
-              className="w-full sm:w-auto bg-primary text-black font-bold px-7 py-3 rounded-full hover:bg-primary/90 transition-colors text-sm flex-shrink-0"
+
+        <AnimatePresence mode="wait">
+          {done ? (
+            <motion.div
+              key="done"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex flex-col items-center gap-2"
             >
-              Subscribe
-            </button>
-          </form>
-        )}
+              <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-primary/20 mb-2">
+                <CheckCircle className="w-5 h-5 text-primary" />
+              </div>
+              <p className="text-white/90 text-sm font-semibold">{done}</p>
+              <button
+                onClick={() => {
+                  setDone(null);
+                  subscribe.reset();
+                }}
+                className="mt-2 text-xs text-white/40 hover:text-white/70 underline underline-offset-2 transition-colors"
+              >
+                Subscribe another email
+              </button>
+            </motion.div>
+          ) : (
+            <motion.form
+              key="form"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              onSubmit={handleSubmit}
+              className="flex flex-col items-center max-w-md mx-auto w-full"
+            >
+              <div className="flex flex-col sm:flex-row items-center gap-3 w-full">
+                <input
+                  id="newsletter-email-post"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="your@email.com"
+                  required
+                  className="flex-1 w-full bg-white/5 border border-white/15 rounded-full px-5 py-3 text-sm text-white placeholder:text-white/30 outline-none focus:border-primary/50 transition-colors"
+                />
+                <button
+                  type="submit"
+                  disabled={isPending || !email.trim()}
+                  className="w-full sm:w-auto bg-primary text-black font-bold px-7 py-3 rounded-full hover:bg-primary/90 transition-colors text-sm flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Subscribe"}
+                </button>
+              </div>
+
+              {/* Inline Error */}
+              <AnimatePresence>
+                {errorMsg && (
+                  <motion.p
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    className="mt-3 text-red-400 text-sm"
+                  >
+                    {errorMsg}
+                  </motion.p>
+                )}
+              </AnimatePresence>
+            </motion.form>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );
