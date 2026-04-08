@@ -4,6 +4,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
 import rehypeRaw from "rehype-raw";
+import rehypeSanitize from "rehype-sanitize";
 import { createLogger } from "@/services/logging";
 
 // Import remark-toc ONLY if you plan to use TOC
@@ -375,7 +376,7 @@ export default function MarkdownRenderer({
       >
         <ReactMarkdown
           remarkPlugins={[remarkGfm, remarkBreaks]}
-          rehypePlugins={[rehypeRaw]}
+          rehypePlugins={[rehypeRaw, rehypeSanitize]}
           components={components}
         >
           {processed}
@@ -420,7 +421,7 @@ export default function MarkdownRenderer({
             remarkBreaks,
             [() => remarkToc({ tight: true })],
           ]}
-          rehypePlugins={[rehypeRaw]}
+          rehypePlugins={[rehypeRaw, rehypeSanitize]}
           components={components}
         >
           {processed}
