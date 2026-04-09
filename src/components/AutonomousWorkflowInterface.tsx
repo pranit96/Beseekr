@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { ChatFileUpload } from "@/components/ChatFileUpload";
+import { LiveGraphVisualizer, GraphAgent } from "./LiveGraphVisualizer";
 import useAutonomousWorkflow from "@/hooks/use-autonomous-workflow";
 import { useToast } from "@/hooks/use-toast";
 import ReactMarkdown from "react-markdown";
@@ -32,14 +33,7 @@ import rehypeRaw from "rehype-raw";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-interface Agent {
-  id: string;
-  name: string;
-  role: string;
-  domain: string;
-  tools: string[];
-  status: "pending" | "running" | "done" | "error";
-  output: string;
+interface Agent extends GraphAgent {
   reasoning?: string;
 }
 
@@ -404,7 +398,7 @@ export const AutonomousWorkflowInterface: React.FC<
               name: a.name,
               role: a.role,
               domain: a.domain,
-              tools: a.tools || [],
+              tools: [], // We start empty, we'll populate it via ToolStart/Result events
               status: "pending",
               output: "",
               reasoning: a.reasoning,
@@ -447,6 +441,30 @@ export const AutonomousWorkflowInterface: React.FC<
               a.id === data.agent_id ? { ...a, status: "done" } : a,
             ),
           ),
+
+        onToolStart: (data) => {
+          setAgents((prev) =>
+            prev.map((a) => {
+              if (a.id !== data.agent_id) return a;
+              const newTools = [...a.tools, { call_id: data.call_id, name: data.tool_name, status: "running" as const }];
+              return { ...a, tools: newTools };
+            })
+          );
+        },
+
+        onToolResult: (data) => {
+          setAgents((prev) =>
+            prev.map((a) => {
+              if (a.id !== data.agent_id) return a;
+              const newTools = a.tools.map(t => 
+                t.call_id === data.call_id 
+                  ? { ...t, status: (data.success ? "success" : "error") as const, time_ms: data.execution_time_ms }
+                  : t
+              );
+              return { ...a, tools: newTools };
+            })
+          );
+        },
 
         onSynthesisToken: (data) => {
           setStatus("Synthesizing final answer…");
@@ -668,82 +686,12 @@ export const AutonomousWorkflowInterface: React.FC<
                   </motion.div>
                 ) : (
                   /* ── After Plan Arrives (Orbital System) ────────────── */
-                  <div
-                    className="relative flex items-center justify-center"
-                    style={{
-                      width: agents.length > 0 ? ORBIT_RADIUS * 2 + 80 : 96,
-                      height: agents.length > 0 ? ORBIT_RADIUS * 2 + 80 : 96,
-                      minHeight: 96,
-                    }}
-                  >
-                    {/* Orbital Nodes */}
-                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
-                      <AnimatePresence>
-                        {agents.map((agent, i) => (
-                          <AgentNode
-                            key={agent.id || i}
-                            agent={agent}
-                            index={i}
-                            total={agents.length}
-                            orbitRadius={ORBIT_RADIUS}
-                            orbitAngleOffset={orbitAngle}
-                            dimmed={isCancelling || isSynthesizing}
-                          />
-                        ))}
-                      </AnimatePresence>
-                    </div>
-
-                    {/* Central Orb */}
-                    <motion.div
-                      animate={
-                        isCancelling
-                          ? { rotate: 0, scale: 0.95 }
-                          : { rotate: 360, scale: [1, 1.05, 1] }
-                      }
-                      transition={
-                        isCancelling
-                          ? {}
-                          : { duration: 4, repeat: Infinity, ease: "easeInOut" }
-                      }
-                      className="w-full h-full rounded-full flex items-center justify-center relative z-20"
-                      style={{
-                        background: isCancelling
-                          ? "conic-gradient(from 0deg, hsl(var(--muted-foreground)/0.3), hsl(var(--muted-foreground)/0.3))"
-                          : isSynthesizing 
-                            ? "conic-gradient(from 0deg, hsl(var(--chart-4)/0.8), hsl(var(--chart-5)/0.8), hsl(var(--chart-4)/0.8))"
-                            : "conic-gradient(from 0deg, hsl(var(--primary)/0.8), hsl(var(--accent)/0.8), hsl(var(--primary)/0.8))",
-                        padding: 3,
-                        boxShadow: isCancelling
-                          ? "none"
-                          : "0 0 40px rgba(var(--primary-glow), 0.3)",
-                      }}
-                    >
-                      <div className="w-full h-full rounded-full bg-background flex items-center justify-center relative z-10">
-                        {isCancelling ? (
-                          <Loader2 className="w-10 h-10 animate-spin text-muted-foreground" />
-                        ) : isSynthesizing ? (
-                          <Zap className="w-10 h-10 text-amber-500 animate-pulse" />
-                        ) : (
-                          <Sparkles
-                            className="w-10 h-10"
-                            style={{ color: "hsl(var(--primary))" }}
-                          />
-                        )}
-                      </div>
-                      {/* Glowing ring effect */}
-                      {!isCancelling && (
-                        <motion.div
-                          className="absolute -inset-4 rounded-full border pointer-events-none"
-                          style={{ borderColor: isSynthesizing ? "hsl(var(--chart-4)/0.4)" : "hsl(var(--primary)/0.2)" }}
-                          animate={{ scale: [1, 1.3, 1], opacity: [0.3, 0, 0.3] }}
-                          transition={{
-                            duration: 2.5,
-                            repeat: Infinity,
-                            ease: "easeOut",
-                          }}
-                        />
-                      )}
-                    </motion.div>
+                  <div className="w-full flex justify-center w-[600px] mt-4 mb-4">
+                    <LiveGraphVisualizer 
+                      workflowPhase={workflowPhase} 
+                      agents={agents} 
+                      isSynthesizing={isSynthesizing} 
+                    />
                   </div>
                 )}
 
@@ -773,28 +721,7 @@ export const AutonomousWorkflowInterface: React.FC<
                 </div>
               </div>
 
-              {/* Live output preview (Agent OR Synthesizer) */}
-              {!isCancelling && (runningAgent?.output || isSynthesizing) && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="mt-4 w-full max-w-lg mx-auto rounded-xl border border-border/40 bg-muted/40 backdrop-blur px-4 py-3"
-                >
-                  <div className="flex items-center gap-2 mb-1.5">
-                    {isSynthesizing ? (
-                      <Zap className="w-3.5 h-3.5 fill-amber-500 text-amber-500 animate-pulse" />
-                    ) : (
-                      <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-                    )}
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">
-                      {isSynthesizing ? "Synthesizing Final Output" : "Live Agent Output"}
-                    </p>
-                  </div>
-                  <p className="text-xs text-foreground/70 font-mono leading-relaxed line-clamp-4">
-                    {isSynthesizing ? synthesisOutput : runningAgent?.output}
-                  </p>
-                </motion.div>
-              )}
+              {/* Live output preview removed because it is now natively rendered inside each block of the LiveGraphVisualizer. */}
 
               {/* Stop Workflow Button */}
               <motion.div
