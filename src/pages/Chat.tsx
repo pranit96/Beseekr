@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChatInterface } from "@/components/ChatInterface";
 import { ConversationHistory } from "@/components/ConversationHistory";
+import { WorkflowHistoryViewer } from "@/components/WorkflowHistoryViewer";
 import { GlobalHeader } from "@/components/GlobalHeader";
 import { apiClient } from "@/lib/api";
 import { useAgents } from "@/hooks/use-agents";
@@ -411,6 +412,7 @@ const Chat = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [key, setKey] = useState(0);
   const [retrying, setRetrying] = useState(false);
+  const [viewingWorkflowId, setViewingWorkflowId] = useState<string | null>(null);
 
   const { agents, loading: loadingAgents, reload } = useAgents();
   const { user, refreshAuth } = useAuth();
@@ -563,6 +565,11 @@ const Chat = () => {
   const handleSelectConversation = useCallback((conversationId: string) => {
     setCurrentConversationId(conversationId);
     sessionStorage.setItem("lastActiveConversation", conversationId);
+  }, []);
+
+  const handleSelectWorkflow = useCallback((id: string) => {
+    setViewingWorkflowId(id);
+    setSidebarOpen(false); // close sidebar so the overlay has full focus
   }, []);
 
   const handleNewSession = useCallback(async () => {
@@ -845,6 +852,7 @@ const Chat = () => {
             onConversationDeleted={handleConversationDeleted}
             onConversationArchived={handleConversationArchived}
             currentConversationId={currentConversationId}
+            onSelectWorkflow={handleSelectWorkflow}
           />
         </aside>
 
@@ -905,6 +913,20 @@ const Chat = () => {
           </div>
         </main>
       </div>
+
+      {/* ── Workflow History Viewer Overlay ── */}
+      {viewingWorkflowId && (
+        <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm overflow-hidden">
+          <WorkflowHistoryViewer
+            executionId={viewingWorkflowId}
+            onBack={() => setViewingWorkflowId(null)}
+            onNewWorkflow={() => {
+              setViewingWorkflowId(null);
+              // The Workflow button in ChatInterface handles opening the modal
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 };

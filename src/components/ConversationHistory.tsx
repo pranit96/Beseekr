@@ -1,6 +1,7 @@
 // src/components/ConversationHistory.tsx
 import { useState, useEffect, useRef, useMemo, useCallback, memo } from "react";
-import { Plus, MoreHorizontal, Archive, Trash2, Search } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Plus, MoreHorizontal, Archive, Trash2, Search, Sparkles, ChevronDown, ChevronRight, Cpu, Clock, Trash } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   DropdownMenu,
@@ -21,6 +22,7 @@ import {
 import { apiClient } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 
 interface Conversation {
   id: string;
@@ -30,6 +32,17 @@ interface Conversation {
   last_message?: string;
 }
 
+interface WorkflowExecution {
+  id: string;
+  prompt: string;
+  status: "running" | "completed" | "failed";
+  agent_results?: any[];
+  planned_agents?: any[];
+  total_tokens?: number;
+  execution_time_ms?: number;
+  created_at: string;
+}
+
 interface ConversationHistoryProps {
   conversations: Conversation[];
   onSelectConversation: (conversationId: string) => void;
@@ -37,6 +50,8 @@ interface ConversationHistoryProps {
   onConversationDeleted: (conversationId?: string) => void;
   onConversationArchived: () => void;
   currentConversationId?: string;
+  /** Called when a past workflow run is selected — Chat.tsx shows the viewer overlay */
+  onSelectWorkflow?: (id: string) => void;
 }
 
 function relativeTime(dateStr: string): string {
@@ -156,6 +171,7 @@ export const ConversationHistory = memo(
     onConversationDeleted,
     onConversationArchived,
     currentConversationId,
+    onSelectWorkflow,
   }: ConversationHistoryProps) => {
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
@@ -286,6 +302,42 @@ export const ConversationHistory = memo(
       }
     };
 
+    // ── Workflow history mini-section ──────────────────────────────────────
+    const [workflowsExpanded, setWorkflowsExpanded] = useState(true);
+    const queryClient = useQueryClient();
+
+    const { data: wfData, isLoading: wfLoading } = useQuery({
+      queryKey: ["workflow-history", 1],
+      queryFn: async () => {
+        const res = await apiClient.getWorkflowHistory({ page: 1, limit: 8 });
+        return res;
+      },
+      staleTime: 60_000,
+      gcTime: 5 * 60_000,
+      refetchOnWindowFocus: false,
+    });
+
+    const workflows: WorkflowExecution[] = wfData?.data ?? [];
+
+    const handleDeleteWorkflow = useCallback(
+      async (e: React.MouseEvent, id: string) => {
+        e.stopPropagation();
+        // Optimistic removal
+        queryClient.setQueryData(["workflow-history", 1], (old: any) => {
+          if (!old?.data) return old;
+          return { ...old, data: old.data.filter((w: WorkflowExecution) => w.id !== id) };
+        });
+        try {
+          await apiClient.deleteWorkflowExecution(id);
+          queryClient.invalidateQueries({ queryKey: ["workflow-history"] });
+        } catch {
+          queryClient.invalidateQueries({ queryKey: ["workflow-history"] });
+          toast({ title: "Failed to delete workflow", variant: "destructive" });
+        }
+      },
+      [queryClient, toast],
+    );
+
     return (
       <div className="flex flex-col h-full bg-background/60 backdrop-blur-sm">
         {/* Header */}
@@ -354,6 +406,110 @@ export const ConversationHistory = memo(
             )}
           </div>
         </ScrollArea>
+
+        {/* ── Workflow History Section ── */}
+        <div className="border-t border-border/20">
+          <button
+            onClick={() => setWorkflowsExpanded((v) => !v)}
+            className="w-full flex items-center justify-between px-4 py-2.5 text-left hover:bg-muted/30 transition-colors"
+            aria-expanded={workflowsExpanded}
+          >
+            <div className="flex items-center gap-1.5">
+              <Sparkles className="w-3 h-3 text-primary/70" />
+              <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50 select-none">
+                Workflows
+              </span>
+            </div>
+            {workflowsExpanded ? (
+              <ChevronDown className="w-3 h-3 text-muted-foreground/30" />
+            ) : (
+              <ChevronRight className="w-3 h-3 text-muted-foreground/30" />
+            )}
+          </button>
+
+          {workflowsExpanded && (
+            <div className="px-2 pb-2 space-y-0.5 max-h-52 overflow-y-auto">
+              {wfLoading ? (
+                <>
+                  <Skeleton className="h-10 w-full rounded-lg mb-1" />
+                  <Skeleton className="h-10 w-full rounded-lg" />
+                </>
+              ) : workflows.length === 0 ? (
+                <p className="px-3 py-3 text-[11px] text-muted-foreground/35 text-center">
+                  No workflows yet
+                </p>
+              ) : (
+                workflows.map((wf) => {
+                  const agentCount =
+                    wf.agent_results?.length ?? wf.planned_agents?.length ?? 0;
+
+                  // relative time helper
+                  const diff = Date.now() - new Date(wf.created_at).getTime();
+                  const mins = Math.floor(diff / 60000);
+                  const relTime =
+                    mins < 1
+                      ? "just now"
+                      : mins < 60
+                        ? `${mins}m ago`
+                        : `${Math.floor(mins / 60)}h ago`;
+
+                  return (
+                    <div
+                      key={wf.id}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => onSelectWorkflow?.(wf.id)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          onSelectWorkflow?.(wf.id);
+                        }
+                      }}
+                      className="group relative flex flex-col gap-0.5 px-3 py-2 rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
+                    >
+                      <p className="text-[11.5px] font-medium text-foreground/75 truncate leading-snug pr-5">
+                        {wf.prompt}
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={cn(
+                            "text-[9px] font-semibold px-1.5 py-0.5 rounded-md",
+                            wf.status === "completed"
+                              ? "text-emerald-500 bg-emerald-500/10"
+                              : wf.status === "failed"
+                                ? "text-destructive bg-destructive/10"
+                                : "text-primary bg-primary/10",
+                          )}
+                        >
+                          {wf.status}
+                        </span>
+                        {agentCount > 0 && (
+                          <span className="flex items-center gap-0.5 text-[9px] text-muted-foreground/45">
+                            <Cpu className="w-2 h-2" />
+                            {agentCount}
+                          </span>
+                        )}
+                        <span className="ml-auto text-[9px] text-muted-foreground/35">
+                          {relTime}
+                        </span>
+                      </div>
+
+                      {/* Delete button */}
+                      <button
+                        onClick={(e) => handleDeleteWorkflow(e, wf.id)}
+                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-destructive/10 hover:text-destructive text-muted-foreground/40"
+                        aria-label="Delete workflow"
+                        title="Delete"
+                      >
+                        <Trash className="w-2.5 h-2.5" />
+                      </button>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          )}
+        </div>
 
         <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
           <AlertDialogContent>

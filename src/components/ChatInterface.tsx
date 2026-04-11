@@ -925,6 +925,10 @@ export const ChatInterface: React.FC<{
       {workflowDialogOpen && (
         <AutonomousWorkflowInterface
           onClose={() => setWorkflowDialogOpen(false)}
+          onWorkflowComplete={() => {
+            // Refresh the sidebar's Workflows section automatically
+            queryClient.invalidateQueries({ queryKey: ["workflow-history"] });
+          }}
         />
       )}
     </div>
