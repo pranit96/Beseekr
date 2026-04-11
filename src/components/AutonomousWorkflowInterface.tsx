@@ -670,7 +670,7 @@ export const AutonomousWorkflowInterface: React.FC<
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background/95 backdrop-blur-sm overflow-hidden p-4"
+            className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background/95 backdrop-blur-sm overflow-y-auto overflow-x-hidden p-4"
           >
             <button
               onClick={handleDismiss}
@@ -848,14 +848,6 @@ export const AutonomousWorkflowInterface: React.FC<
             transition={{ duration: 0.3 }}
             className="fixed inset-0 z-50 overflow-y-auto bg-background/98 backdrop-blur-2xl p-4"
           >
-            <button
-              onClick={handleDismiss}
-              className="fixed top-4 right-4 p-2 rounded-xl bg-background/60 hover:bg-background/90 border border-border/40 transition-colors z-20"
-              aria-label="Close"
-            >
-              <X className="w-4 h-4" />
-            </button>
-
             <div className="max-w-5xl w-full mx-auto py-8 lg:py-12 px-4">
               <motion.div
                 initial={{ scale: 0.95, y: 20 }}
@@ -886,21 +878,33 @@ export const AutonomousWorkflowInterface: React.FC<
                     </p>
                   </div>
 
-                  {/* Agent chips */}
-                  <div className="ml-auto hidden sm:flex flex-wrap gap-1.5 justify-end max-w-xs">
-                    {agents.map((a, i) => (
-                      <span
-                        key={a.id || i}
-                        className="text-[9px] px-2 py-0.5 rounded-full font-medium"
-                        style={{
-                          background: `${AGENT_PALETTES[i % AGENT_PALETTES.length].glow}22`,
-                          color: AGENT_PALETTES[i % AGENT_PALETTES.length].from,
-                          border: `1px solid ${AGENT_PALETTES[i % AGENT_PALETTES.length].from}44`,
-                        }}
-                      >
-                        {a.name}
-                      </span>
-                    ))}
+                  <div className="flex items-center ml-auto gap-4">
+                    {/* Agent chips */}
+                    <div className="hidden sm:flex flex-wrap gap-1.5 justify-end max-w-xs">
+                      {agents.map((a, i) => (
+                        <span
+                          key={a.id || i}
+                          className="text-[9px] px-2 py-0.5 rounded-full font-medium"
+                          style={{
+                            background: `${AGENT_PALETTES[i % AGENT_PALETTES.length].glow}22`,
+                            color: AGENT_PALETTES[i % AGENT_PALETTES.length].from,
+                            border: `1px solid ${AGENT_PALETTES[i % AGENT_PALETTES.length].from}44`,
+                          }}
+                        >
+                          {a.name}
+                        </span>
+                      ))}
+                    </div>
+
+                    {/* Close Button */}
+                    <button
+                      onClick={handleDismiss}
+                      className="p-2 rounded-xl bg-muted/60 hover:bg-destructive/15 text-muted-foreground hover:text-destructive border border-transparent hover:border-destructive/30 transition-all shrink-0 cursor-pointer"
+                      title="Close Workflow Results"
+                      aria-label="Close"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
                   </div>
                 </div>
 

@@ -13,6 +13,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import socketService from "@/services/socketService";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 /**
  * Advanced DAG visualization for Agent thought processes.
@@ -125,7 +127,7 @@ export const LiveGraphVisualizer: React.FC<LiveGraphVisualizerProps> = ({
   return (
     <div
       ref={containerRef}
-      className="relative w-full h-[380px] sm:h-[450px] overflow-x-auto overflow-y-auto bg-background/50 rounded-2xl border border-border/50 p-6 smooth-scroll"
+      className="relative w-full min-h-[500px] overflow-x-auto bg-background/50 rounded-2xl border border-border/50 p-6 smooth-scroll"
       style={{
         background:
           "radial-gradient(ellipse at 50% -20%, hsl(var(--primary)/0.03), transparent 70%)",
@@ -272,7 +274,7 @@ export const LiveGraphVisualizer: React.FC<LiveGraphVisualizerProps> = ({
 
                   {/* Agent Output Terminal */}
                   {agent.output && (
-                    <motion.div className="mt-6 p-3 rounded-lg bg-black/80 border border-white/10 w-full max-w-[260px] text-white/80 overflow-hidden relative shadow-inner">
+                    <motion.div className="mt-6 p-3 rounded-lg bg-black/80 border border-white/10 w-full max-w-[280px] text-white/80 overflow-hidden relative shadow-inner">
                       <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
                       <div className="flex items-center gap-1.5 mb-2">
                         <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
@@ -280,9 +282,11 @@ export const LiveGraphVisualizer: React.FC<LiveGraphVisualizerProps> = ({
                           stdout
                         </span>
                       </div>
-                      <p className="text-[11px] font-mono leading-relaxed line-clamp-3">
-                        {agent.output}
-                      </p>
+                      <div className="text-[11px] leading-relaxed max-h-[140px] overflow-y-auto custom-scrollbar pr-2 prose prose-invert prose-p:my-1 prose-headings:my-2 prose-headings:text-white prose-strong:text-white prose-ul:my-1 prose-ul:pl-4 prose-li:my-0">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                          {agent.output}
+                        </ReactMarkdown>
+                      </div>
                     </motion.div>
                   )}
                 </motion.div>
