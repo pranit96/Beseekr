@@ -58,7 +58,10 @@ const useAutonomousWorkflow = () => {
         socketService.off("autonomous_workflow:agent_done", onAgentDone);
         socketService.off("autonomous_workflow:tool_start", onToolStart);
         socketService.off("autonomous_workflow:tool_result", onToolResult);
-        socketService.off("autonomous_workflow:synthesis_token", onSynthesisToken);
+        socketService.off(
+          "autonomous_workflow:synthesis_token",
+          onSynthesisToken,
+        );
         socketService.off("autonomous_workflow:done", onDone);
         socketService.off("autonomous_workflow:error", onError);
         socketService.off("autonomous_workflow:cancelled", onCancelled);
@@ -67,7 +70,9 @@ const useAutonomousWorkflow = () => {
       const cancel = () => {
         try {
           // @ts-ignore - accessing private socket property
-          socketService.socket?.emit("autonomous_workflow:cancel", { requestId });
+          socketService.socket?.emit("autonomous_workflow:cancel", {
+            requestId,
+          });
         } catch (e) {
           logger.error("Cancel emit failed", { error: e });
         }

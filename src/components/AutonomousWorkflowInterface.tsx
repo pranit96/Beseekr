@@ -61,6 +61,8 @@ const AGENT_PALETTES = [
   { from: "#8b5cf6", to: "#6366f1", glow: "rgba(139,92,246,0.6)" },
 ];
 
+type ToolStatus = "success" | "error";
+
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 const ParticleField: React.FC = () => {
@@ -446,9 +448,16 @@ export const AutonomousWorkflowInterface: React.FC<
           setAgents((prev) =>
             prev.map((a) => {
               if (a.id !== data.agent_id) return a;
-              const newTools = [...a.tools, { call_id: data.call_id, name: data.tool_name, status: "running" as const }];
+              const newTools = [
+                ...a.tools,
+                {
+                  call_id: data.call_id,
+                  name: data.tool_name,
+                  status: "running" as const,
+                },
+              ];
               return { ...a, tools: newTools };
-            })
+            }),
           );
         },
 
@@ -456,13 +465,21 @@ export const AutonomousWorkflowInterface: React.FC<
           setAgents((prev) =>
             prev.map((a) => {
               if (a.id !== data.agent_id) return a;
-              const newTools = a.tools.map(t => 
-                t.call_id === data.call_id 
-                  ? { ...t, status: (data.success ? "success" : "error") as const, time_ms: data.execution_time_ms }
-                  : t
+
+              const newTools = a.tools.map((t) =>
+                t.call_id === data.call_id
+                  ? {
+                      ...t,
+                      status: (data.success
+                        ? "success"
+                        : "error") as ToolStatus,
+                      time_ms: data.execution_time_ms,
+                    }
+                  : t,
               );
+
               return { ...a, tools: newTools };
-            })
+            }),
           );
         },
 
@@ -640,35 +657,63 @@ export const AutonomousWorkflowInterface: React.FC<
               <div className="flex flex-col items-center justify-center w-full mx-auto mb-8 relative z-10 px-4 mt-8">
                 {/* ── Before Plan Arrives (Queue/Planning) ────────────── */}
                 {agents.length === 0 && !isCancelling ? (
-                  <motion.div 
+                  <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     className="flex flex-col items-center justify-center pt-8 pb-12 w-full max-w-sm"
                   >
                     <div className="relative mb-8 w-24 h-24 flex items-center justify-center">
-                       {/* Spinner rings */}
-                       <motion.div animate={{ rotate: 360 }} transition={{ duration: 3, repeat: Infinity, ease: "linear" }} className="absolute inset-0 rounded-full border-t-2 border-primary border-opacity-30" />
-                       <motion.div animate={{ rotate: -360 }} transition={{ duration: 2, repeat: Infinity, ease: "linear" }} className="absolute inset-2 rounded-full border-t-2 border-accent border-opacity-60" />
-                       <div className="relative z-10 w-14 h-14 rounded-full bg-background border border-border flex items-center justify-center shadow-[0_0_20px_rgba(var(--primary-glow),0.2)]">
-                         <Brain className="w-6 h-6 text-primary animate-pulse" />
-                       </div>
+                      {/* Spinner rings */}
+                      <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{
+                          duration: 3,
+                          repeat: Infinity,
+                          ease: "linear",
+                        }}
+                        className="absolute inset-0 rounded-full border-t-2 border-primary border-opacity-30"
+                      />
+                      <motion.div
+                        animate={{ rotate: -360 }}
+                        transition={{
+                          duration: 2,
+                          repeat: Infinity,
+                          ease: "linear",
+                        }}
+                        className="absolute inset-2 rounded-full border-t-2 border-accent border-opacity-60"
+                      />
+                      <div className="relative z-10 w-14 h-14 rounded-full bg-background border border-border flex items-center justify-center shadow-[0_0_20px_rgba(var(--primary-glow),0.2)]">
+                        <Brain className="w-6 h-6 text-primary animate-pulse" />
+                      </div>
                     </div>
-                    
+
                     {/* Animated Step Tracker */}
                     <div className="w-full space-y-4">
                       <div className="flex items-center gap-3">
                         <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-                        <span className="text-sm font-medium text-foreground">Request queued</span>
+                        <span className="text-sm font-medium text-foreground">
+                          Request queued
+                        </span>
                       </div>
                       <div className="flex items-center gap-3">
-                        {workflowPhase === "planning" || workflowPhase === "creating_agents" ? (
+                        {workflowPhase === "planning" ||
+                        workflowPhase === "creating_agents" ? (
                           <Loader2 className="w-5 h-5 text-primary animate-spin" />
                         ) : workflowPhase === "queued" ? (
                           <div className="w-5 h-5 rounded-full border-2 border-border" />
                         ) : (
                           <CheckCircle2 className="w-5 h-5 text-emerald-500" />
                         )}
-                        <span className={cn("text-sm font-medium", ["planning", "creating_agents"].includes(workflowPhase) ? "text-foreground" : "text-muted-foreground")}>
+                        <span
+                          className={cn(
+                            "text-sm font-medium",
+                            ["planning", "creating_agents"].includes(
+                              workflowPhase,
+                            )
+                              ? "text-foreground"
+                              : "text-muted-foreground",
+                          )}
+                        >
                           Architecting multi-agent workflow
                         </span>
                       </div>
@@ -678,7 +723,14 @@ export const AutonomousWorkflowInterface: React.FC<
                         ) : (
                           <div className="w-5 h-5 rounded-full border-2 border-border" />
                         )}
-                        <span className={cn("text-sm font-medium", workflowPhase === "creating_agents" ? "text-foreground" : "text-muted-foreground")}>
+                        <span
+                          className={cn(
+                            "text-sm font-medium",
+                            workflowPhase === "creating_agents"
+                              ? "text-foreground"
+                              : "text-muted-foreground",
+                          )}
+                        >
                           Spawning specialized agents
                         </span>
                       </div>
@@ -687,10 +739,10 @@ export const AutonomousWorkflowInterface: React.FC<
                 ) : (
                   /* ── After Plan Arrives (Orbital System) ────────────── */
                   <div className="w-full flex justify-center w-[600px] mt-4 mb-4">
-                    <LiveGraphVisualizer 
-                      workflowPhase={workflowPhase} 
-                      agents={agents} 
-                      isSynthesizing={isSynthesizing} 
+                    <LiveGraphVisualizer
+                      workflowPhase={workflowPhase}
+                      agents={agents}
+                      isSynthesizing={isSynthesizing}
                     />
                   </div>
                 )}
@@ -775,13 +827,16 @@ export const AutonomousWorkflowInterface: React.FC<
               <X className="w-4 h-4" />
             </button>
 
-            <div className="max-w-4xl mx-auto py-8">
+            <div className="max-w-5xl w-full mx-auto py-8 lg:py-12 px-4">
               <motion.div
                 initial={{ scale: 0.95, y: 20 }}
                 animate={{ scale: 1, y: 0 }}
                 transition={{ type: "spring", stiffness: 200 }}
-                className="bg-background border border-emerald-500/25 rounded-2xl shadow-2xl p-6 sm:p-8"
+                className="relative bg-background/80 backdrop-blur-3xl border border-primary/20 rounded-3xl shadow-[0_0_80px_rgba(var(--primary-glow,0,0,0),0.1)] p-8 sm:p-12 overflow-hidden"
               >
+                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[120px] pointer-events-none -translate-y-1/2 translate-x-1/3" />
+                <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-accent/10 rounded-full blur-[100px] pointer-events-none translate-y-1/3 -translate-x-1/3" />
+
                 {/* Header */}
                 <div className="flex items-center gap-4 mb-6 pb-5 border-b border-border/30">
                   <div
@@ -822,26 +877,26 @@ export const AutonomousWorkflowInterface: React.FC<
 
                 {/* Markdown result */}
                 <div
-                  className="prose prose-sm sm:prose-base max-w-none dark:prose-invert mb-6
-                  prose-headings:font-bold prose-headings:text-foreground
-                  prose-h1:text-2xl prose-h1:mb-4 prose-h1:mt-6
-                  prose-h2:text-xl prose-h2:mb-3 prose-h2:mt-5
-                  prose-h3:text-lg prose-h3:mb-2 prose-h3:mt-4
-                  prose-p:text-foreground/90 prose-p:leading-relaxed prose-p:mb-4
-                  prose-a:text-primary prose-a:no-underline hover:prose-a:underline
-                  prose-strong:text-foreground prose-strong:font-semibold
-                  prose-code:text-primary prose-code:bg-muted prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:before:content-none prose-code:after:content-none
-                  prose-pre:bg-muted prose-pre:border prose-pre:border-border/50 prose-pre:rounded-lg prose-pre:p-4 prose-pre:overflow-x-auto
-                  prose-blockquote:border-l-4 prose-blockquote:border-primary/30 prose-blockquote:pl-4 prose-blockquote:italic prose-blockquote:text-foreground/80
-                  prose-ul:list-disc prose-ul:pl-6 prose-ul:mb-4
-                  prose-ol:list-decimal prose-ol:pl-6 prose-ol:mb-4
-                  prose-li:mb-1 prose-li:text-foreground/90
-                  prose-table:w-full prose-table:border-collapse prose-table:my-4
-                  prose-thead:border-b-2 prose-thead:border-border
-                  prose-th:px-4 prose-th:py-2 prose-th:text-left prose-th:font-semibold
-                  prose-td:px-4 prose-td:py-2 prose-td:border-t prose-td:border-border/50 prose-td:text-foreground/90
-                  prose-img:rounded-lg prose-img:shadow-md prose-img:my-4 prose-img:mx-auto prose-img:max-w-full
-                  prose-hr:border-border/50 prose-hr:my-6
+                  className="relative z-10 prose prose-sm sm:prose-base lg:prose-lg max-w-none dark:prose-invert mb-10
+                  prose-headings:font-bold prose-headings:tracking-tight
+                  prose-h1:text-4xl prose-h1:mb-6 prose-h1:mt-8 prose-h1:bg-clip-text prose-h1:text-transparent prose-h1:bg-gradient-to-r prose-h1:from-primary prose-h1:to-accent
+                  prose-h2:text-2xl prose-h2:mb-4 prose-h2:mt-10 prose-h2:text-foreground prose-h2:border-b-2 prose-h2:border-border/50 prose-h2:pb-2
+                  prose-h3:text-lg prose-h3:mb-3 prose-h3:mt-8 prose-h3:text-primary prose-h3:uppercase prose-h3:tracking-widest
+                  prose-p:text-foreground/80 prose-p:leading-7 prose-p:mb-5
+                  prose-a:text-accent prose-a:font-medium prose-a:no-underline prose-a:border-b-2 prose-a:border-accent/30 hover:prose-a:border-accent transition-all
+                  prose-strong:text-foreground prose-strong:font-bold
+                  prose-code:text-accent prose-code:bg-accent/10 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:font-mono prose-code:text-[0.9em] prose-code:before:content-none prose-code:after:content-none
+                  prose-pre:bg-[#0d1117] prose-pre:border prose-pre:border-border/40 prose-pre:rounded-xl prose-pre:p-5 prose-pre:overflow-x-auto prose-pre:shadow-2xl
+                  prose-blockquote:border-l-4 prose-blockquote:border-primary prose-blockquote:bg-gradient-to-r prose-blockquote:from-primary/10 prose-blockquote:to-transparent prose-blockquote:rounded-r-2xl prose-blockquote:py-5 prose-blockquote:px-6 prose-blockquote:italic prose-blockquote:text-xl prose-blockquote:leading-relaxed prose-blockquote:font-medium prose-blockquote:my-8 prose-blockquote:shadow-inner
+                  prose-ul:list-disc prose-ul:pl-6 prose-ul:mb-6 prose-ul:space-y-2
+                  prose-ol:list-decimal prose-ol:pl-6 prose-ol:mb-6 prose-ol:space-y-2
+                  prose-li:text-foreground/80 prose-li:marker:text-primary/70
+                  prose-table:w-full prose-table:border-collapse prose-table:my-8 prose-table:rounded-xl prose-table:overflow-hidden prose-table:shadow-[0_0_30px_rgba(var(--primary-glow,0,0,0),0.05)] prose-table:border prose-table:border-primary/20
+                  prose-thead:bg-primary/5 prose-thead:border-b-2 prose-thead:border-primary/20
+                  prose-th:px-5 prose-th:py-4 prose-th:text-left prose-th:font-bold prose-th:text-foreground prose-th:uppercase prose-th:tracking-wider prose-th:text-xs
+                  prose-td:px-5 prose-td:py-4 prose-td:border-b prose-td:border-border/40 prose-td:text-foreground/80 prose-td:align-top
+                  prose-img:rounded-2xl prose-img:shadow-[0_0_40px_rgba(var(--primary-glow,0,0,0),0.15)] prose-img:border prose-img:border-primary/10 prose-img:my-8 prose-img:mx-auto prose-img:max-w-full
+                  prose-hr:border-none prose-hr:h-px prose-hr:bg-gradient-to-r prose-hr:from-transparent prose-hr:via-primary/50 prose-hr:to-transparent prose-hr:my-10
                 "
                 >
                   <ReactMarkdown

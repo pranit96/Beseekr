@@ -15,10 +15,30 @@ const logger = createLogger("Chat");
 
 // ─── Epic Loading Screen ─────────────────────────────────────────────────────
 const FALLBACK_STEPS = [
-  { label: "Research Analyst",  subtitle: "Scouring knowledge bases",    color: "#7c3aed", glow: "rgba(124,58,237,0.5)" },
-  { label: "Creative Catalyst", subtitle: "Igniting creative pathways",   color: "#0ea5e9", glow: "rgba(14,165,233,0.5)" },
-  { label: "Logic Verifier",    subtitle: "Validating reasoning chains",  color: "#10b981", glow: "rgba(16,185,129,0.5)" },
-  { label: "Synthesizer",       subtitle: "Weaving final insights",        color: "#f59e0b", glow: "rgba(245,158,11,0.5)" },
+  {
+    label: "Research Analyst",
+    subtitle: "Scouring knowledge bases",
+    color: "#7c3aed",
+    glow: "rgba(124,58,237,0.5)",
+  },
+  {
+    label: "Creative Catalyst",
+    subtitle: "Igniting creative pathways",
+    color: "#0ea5e9",
+    glow: "rgba(14,165,233,0.5)",
+  },
+  {
+    label: "Logic Verifier",
+    subtitle: "Validating reasoning chains",
+    color: "#10b981",
+    glow: "rgba(16,185,129,0.5)",
+  },
+  {
+    label: "Synthesizer",
+    subtitle: "Weaving final insights",
+    color: "#f59e0b",
+    glow: "rgba(245,158,11,0.5)",
+  },
 ];
 
 const STEP_COLORS = [
@@ -30,17 +50,21 @@ const STEP_COLORS = [
   { color: "#6366f1", glow: "rgba(99,102,241,0.5)" },
 ];
 
-interface LoadingAgent { name: string; domain?: string; }
+interface LoadingAgent {
+  name: string;
+  domain?: string;
+}
 
 const ChatLoadingScreen = ({ agents = [] }: { agents?: LoadingAgent[] }) => {
   // Build steps from real agents when available, else use fallback
-  const AGENT_STEPS = agents.length > 0
-    ? agents.map((a, i) => ({
-        label: a.name,
-        subtitle: a.domain ? `${a.domain} specialist` : "AI specialist",
-        ...STEP_COLORS[i % STEP_COLORS.length],
-      }))
-    : FALLBACK_STEPS;
+  const AGENT_STEPS =
+    agents.length > 0
+      ? agents.map((a, i) => ({
+          label: a.name,
+          subtitle: a.domain ? `${a.domain} specialist` : "AI specialist",
+          ...STEP_COLORS[i % STEP_COLORS.length],
+        }))
+      : FALLBACK_STEPS;
   const [step, setStep] = useState(0);
   const [fadingOut, setFadingOut] = useState(false);
 
@@ -48,7 +72,7 @@ const ChatLoadingScreen = ({ agents = [] }: { agents?: LoadingAgent[] }) => {
     const tick = () => {
       setFadingOut(true);
       setTimeout(() => {
-        setStep(prev => (prev + 1) % AGENT_STEPS.length);
+        setStep((prev) => (prev + 1) % AGENT_STEPS.length);
         setFadingOut(false);
       }, 350);
     };
@@ -79,8 +103,9 @@ const ChatLoadingScreen = ({ agents = [] }: { agents?: LoadingAgent[] }) => {
       <div className="loading-blob loading-blob-3" />
 
       {/* ── Orbital system container ── */}
-      <div style={{ position: "relative", width: 280, height: 280, flexShrink: 0 }}>
-
+      <div
+        style={{ position: "relative", width: 280, height: 280, flexShrink: 0 }}
+      >
         {/* Outermost halo ring */}
         <div
           style={{
@@ -158,8 +183,10 @@ const ChatLoadingScreen = ({ agents = [] }: { agents?: LoadingAgent[] }) => {
           <div
             style={{
               position: "absolute",
-              top: 0, left: 0,
-              width: "100%", height: "50%",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "50%",
               background: "hsl(var(--foreground))",
               borderRadius: "50px 50px 0 0",
             }}
@@ -168,8 +195,10 @@ const ChatLoadingScreen = ({ agents = [] }: { agents?: LoadingAgent[] }) => {
           <div
             style={{
               position: "absolute",
-              bottom: 0, left: 0,
-              width: "100%", height: "50%",
+              bottom: 0,
+              left: 0,
+              width: "100%",
+              height: "50%",
               background: "hsl(var(--background))",
               border: "1px solid hsl(var(--border)/0.4)",
               borderRadius: "0 0 50px 50px",
@@ -181,7 +210,8 @@ const ChatLoadingScreen = ({ agents = [] }: { agents?: LoadingAgent[] }) => {
               position: "absolute",
               top: "50%",
               left: "50%",
-              width: 24, height: 24,
+              width: 24,
+              height: 24,
               marginLeft: -12,
               marginTop: -24,
               borderRadius: "50%",
@@ -196,7 +226,8 @@ const ChatLoadingScreen = ({ agents = [] }: { agents?: LoadingAgent[] }) => {
               position: "absolute",
               top: "50%",
               left: "50%",
-              width: 24, height: 24,
+              width: 24,
+              height: 24,
               marginLeft: -12,
               marginTop: 0,
               borderRadius: "50%",
@@ -214,17 +245,19 @@ const ChatLoadingScreen = ({ agents = [] }: { agents?: LoadingAgent[] }) => {
           return (
             <div
               key={agent.label}
-              style={{
-                position: "absolute",
-                top: "50%",
-                left: "50%",
-                width: 0,
-                height: 0,
-                transform: `rotate(${angle}deg) translateX(118px) rotate(-${angle}deg)`,
-                animation: `yy-orbit 6s linear infinite`,
-                animationDelay: `${(i / AGENT_STEPS.length) * -6}s`,
-                willChange: "transform",
-              } as React.CSSProperties}
+              style={
+                {
+                  position: "absolute",
+                  top: "50%",
+                  left: "50%",
+                  width: 0,
+                  height: 0,
+                  transform: `rotate(${angle}deg) translateX(118px) rotate(-${angle}deg)`,
+                  animation: `yy-orbit 6s linear infinite`,
+                  animationDelay: `${(i / AGENT_STEPS.length) * -6}s`,
+                  willChange: "transform",
+                } as React.CSSProperties
+              }
             >
               <div
                 style={{
@@ -254,7 +287,9 @@ const ChatLoadingScreen = ({ agents = [] }: { agents?: LoadingAgent[] }) => {
                     fontSize: 10,
                     fontWeight: 600,
                     whiteSpace: "nowrap",
-                    color: isActive ? agent.color : "hsl(var(--muted-foreground)/0.45)",
+                    color: isActive
+                      ? agent.color
+                      : "hsl(var(--muted-foreground)/0.45)",
                     letterSpacing: "0.04em",
                     opacity: isActive ? 1 : 0,
                     transform: isActive ? "translateY(0)" : "translateY(-4px)",
@@ -280,7 +315,8 @@ const ChatLoadingScreen = ({ agents = [] }: { agents?: LoadingAgent[] }) => {
               width: i === step ? 24 : 7,
               height: 7,
               borderRadius: 999,
-              background: i === step ? current.color : "hsl(var(--muted-foreground)/0.2)",
+              background:
+                i === step ? current.color : "hsl(var(--muted-foreground)/0.2)",
               boxShadow: i === step ? `0 0 10px ${current.glow}` : "none",
               transition: "all 0.45s cubic-bezier(0.34, 1.56, 0.64, 1)",
             }}
@@ -316,12 +352,14 @@ const ChatLoadingScreen = ({ agents = [] }: { agents?: LoadingAgent[] }) => {
             letterSpacing: "-0.01em",
             boxShadow: `0 0 20px ${current.glow}`,
             animation: "badge-pulse 1.6s ease-in-out infinite",
-            transition: "border-color 0.4s, color 0.4s, background 0.4s, box-shadow 0.4s",
+            transition:
+              "border-color 0.4s, color 0.4s, background 0.4s, box-shadow 0.4s",
           }}
         >
           <span
             style={{
-              width: 8, height: 8,
+              width: 8,
+              height: 8,
               borderRadius: "50%",
               background: current.color,
               boxShadow: `0 0 10px ${current.glow}`,

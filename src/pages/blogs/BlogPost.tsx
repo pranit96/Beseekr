@@ -236,7 +236,8 @@ function NewsletterCTA() {
 
   const subscribe = useSubscribeNewsletter();
   const isPending = subscribe.isPending;
-  const errorMsg = subscribe.error instanceof Error ? subscribe.error.message : null;
+  const errorMsg =
+    subscribe.error instanceof Error ? subscribe.error.message : null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -323,7 +324,11 @@ function NewsletterCTA() {
                   disabled={isPending || !email.trim()}
                   className="w-full sm:w-auto bg-primary text-black font-bold px-7 py-3 rounded-full hover:bg-primary/90 transition-colors text-sm flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Subscribe"}
+                  {isPending ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    "Subscribe"
+                  )}
                 </button>
               </div>
 

@@ -80,9 +80,16 @@ export interface ChatMessage {
   finalOutput?: string;
   isFromCache?: boolean;
   perAgentSummary?: PerAgentSummary[];
-  
+
   // New unified orchestration fields
-  workflowStatus?: "planning" | "creating_agents" | "executing" | "synthesizing" | "completed" | "error" | "cancelled";
+  workflowStatus?:
+    | "planning"
+    | "creating_agents"
+    | "executing"
+    | "synthesizing"
+    | "completed"
+    | "error"
+    | "cancelled";
   workflowMessage?: string;
   agentTraces?: AgentTrace[];
   synthesisOutput?: string;

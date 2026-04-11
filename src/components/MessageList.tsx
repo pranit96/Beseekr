@@ -100,85 +100,92 @@ const MessageList: React.FC<MessageListProps> = ({
           )}
 
           {/* ─── Unified Agent Trace & Synthesis (New Architecture) ─── */}
-          {message.type === "agent" && message.agentTraces && message.agentTraces.length > 0 && (
-            <div className="mb-6 px-2 animate-fade-in flex flex-col gap-3 max-w-[90%] sm:max-w-[85%] md:max-w-[80%]">
-              {/* Agent Progress Trace */}
-              <div className="flex flex-col gap-2 p-3 rounded-lg border border-border/40 bg-muted/30">
-                <div className="flex items-center gap-1.5 font-medium text-[13px] text-foreground/80 mb-1">
-                  <Sparkles className="w-3.5 h-3.5 text-primary" />
-                  Agent Workflow
-                </div>
-                
-                {message.agentTraces.map((trace, idx) => (
-                  <div key={idx} className="flex items-center gap-2 text-xs">
-                    {trace.status === "pending" ? (
-                      <div className="w-1.5 h-1.5 ml-1 rounded-full bg-muted-foreground/30" />
-                    ) : trace.status === "running" ? (
-                      <Loader2 className="w-3 h-3 animate-spin text-primary ml-0.5" />
-                    ) : trace.status === "success" ? (
-                      <Check className="w-3.5 h-3.5 text-emerald-500" />
-                    ) : (
-                      <X className="w-3.5 h-3.5 text-destructive" />
-                    )}
-                    <span
-                      className={
-                        trace.status === "running" || trace.status === "success"
-                          ? "text-foreground font-medium"
-                          : trace.status === "error"
-                            ? "text-destructive"
-                            : "text-muted-foreground"
-                      }
-                    >
-                      {trace.agentName}
-                    </span>
-                    <span className="text-muted-foreground/70">
-                      {trace.status === "running"
-                        ? "is processing..."
-                        : trace.status === "success"
-                          ? `completed (${trace.tokens || 0} tokens)`
-                          : trace.error
-                            ? `failed: ${trace.error}`
-                            : "waiting..."}
-                    </span>
+          {message.type === "agent" &&
+            message.agentTraces &&
+            message.agentTraces.length > 0 && (
+              <div className="mb-6 px-2 animate-fade-in flex flex-col gap-3 max-w-[90%] sm:max-w-[85%] md:max-w-[80%]">
+                {/* Agent Progress Trace */}
+                <div className="flex flex-col gap-2 p-3 rounded-lg border border-border/40 bg-muted/30">
+                  <div className="flex items-center gap-1.5 font-medium text-[13px] text-foreground/80 mb-1">
+                    <Sparkles className="w-3.5 h-3.5 text-primary" />
+                    Agent Workflow
                   </div>
-                ))}
-                
-                {/* Synthesizer Indicator */}
-                {message.workflowStatus === "synthesizing" && (
-                  <div className="flex items-center gap-2 text-xs mt-1 pt-2 border-t border-border/40">
-                    <Loader2 className="w-3 h-3 animate-spin text-primary ml-0.5" />
-                    <span className="text-foreground font-medium">Synthesizing final response...</span>
-                  </div>
-                )}
-              </div>
 
-              {/* Synthesized Output */}
-              {(message.content || message.workflowStatus === "completed") && (
-                <div className="rounded-xl border border-border/50 bg-background shadow-sm p-4 text-sm mt-2">
-                  <MarkdownRenderer
-                    content={message.content || ""}
-                    className="leading-relaxed"
-                  />
-                  
-                  {/* Retry button for last message */}
-                  {onRetryMessage && message.workflowStatus === "completed" && (
-                    <div className="mt-4 pt-3 border-t border-border/40 flex justify-end">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 text-xs text-muted-foreground hover:text-foreground gap-1.5"
-                        onClick={() => handleRetry(message.id)}
-                        disabled={isLoading}
+                  {message.agentTraces.map((trace, idx) => (
+                    <div key={idx} className="flex items-center gap-2 text-xs">
+                      {trace.status === "pending" ? (
+                        <div className="w-1.5 h-1.5 ml-1 rounded-full bg-muted-foreground/30" />
+                      ) : trace.status === "running" ? (
+                        <Loader2 className="w-3 h-3 animate-spin text-primary ml-0.5" />
+                      ) : trace.status === "success" ? (
+                        <Check className="w-3.5 h-3.5 text-emerald-500" />
+                      ) : (
+                        <X className="w-3.5 h-3.5 text-destructive" />
+                      )}
+                      <span
+                        className={
+                          trace.status === "running" ||
+                          trace.status === "success"
+                            ? "text-foreground font-medium"
+                            : trace.status === "error"
+                              ? "text-destructive"
+                              : "text-muted-foreground"
+                        }
                       >
-                        <RotateCw className="w-3 h-3" />
-                        Retry
-                      </Button>
+                        {trace.agentName}
+                      </span>
+                      <span className="text-muted-foreground/70">
+                        {trace.status === "running"
+                          ? "is processing..."
+                          : trace.status === "success"
+                            ? `completed (${trace.tokens || 0} tokens)`
+                            : trace.error
+                              ? `failed: ${trace.error}`
+                              : "waiting..."}
+                      </span>
+                    </div>
+                  ))}
+
+                  {/* Synthesizer Indicator */}
+                  {message.workflowStatus === "synthesizing" && (
+                    <div className="flex items-center gap-2 text-xs mt-1 pt-2 border-t border-border/40">
+                      <Loader2 className="w-3 h-3 animate-spin text-primary ml-0.5" />
+                      <span className="text-foreground font-medium">
+                        Synthesizing final response...
+                      </span>
                     </div>
                   )}
                 </div>
-              )}
-            </div>
-          )}
+
+                {/* Synthesized Output */}
+                {(message.content ||
+                  message.workflowStatus === "completed") && (
+                  <div className="rounded-xl border border-border/50 bg-background shadow-sm p-4 text-sm mt-2">
+                    <MarkdownRenderer
+                      content={message.content || ""}
+                      className="leading-relaxed"
+                    />
+
+                    {/* Retry button for last message */}
+                    {onRetryMessage &&
+                      message.workflowStatus === "completed" && (
+                        <div className="mt-4 pt-3 border-t border-border/40 flex justify-end">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 text-xs text-muted-foreground hover:text-foreground gap-1.5"
+                            onClick={() => handleRetry(message.id)}
+                            disabled={isLoading}
+                          >
+                            <RotateCw className="w-3 h-3" />
+                            Retry
+                          </Button>
+                        </div>
+                      )}
+                  </div>
+                )}
+              </div>
+            )}
 
           {/* ─── Legacy Agent Responses ─── */}
           {message.type === "agent" &&

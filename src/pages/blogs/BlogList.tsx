@@ -11,7 +11,17 @@ import {
   useScroll,
   useTransform,
 } from "framer-motion";
-import { Clock, ArrowRight, Tag, Bookmark, Search, X, Mail, CheckCircle, Loader2 } from "lucide-react";
+import {
+  Clock,
+  ArrowRight,
+  Tag,
+  Bookmark,
+  Search,
+  X,
+  Mail,
+  CheckCircle,
+  Loader2,
+} from "lucide-react";
 import { type Blog, type Topic } from "@/api/blogs";
 import { Logo } from "@/components/Logo";
 
@@ -264,7 +274,8 @@ function NewsletterSection() {
     <div
       className="relative overflow-hidden"
       style={{
-        background: "linear-gradient(135deg, #0d0d1a 0%, #111127 60%, #0d0d1a 100%)",
+        background:
+          "linear-gradient(135deg, #0d0d1a 0%, #111127 60%, #0d0d1a 100%)",
         borderTop: "1px solid rgba(255,255,255,0.06)",
       }}
     >
@@ -286,7 +297,8 @@ function NewsletterSection() {
           transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
           className="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-8"
           style={{
-            background: "linear-gradient(135deg, rgba(99,102,241,0.2), rgba(139,92,246,0.2))",
+            background:
+              "linear-gradient(135deg, rgba(99,102,241,0.2), rgba(139,92,246,0.2))",
             border: "1px solid rgba(139,92,246,0.3)",
           }}
         >
@@ -335,9 +347,14 @@ function NewsletterSection() {
               >
                 <CheckCircle className="w-6 h-6" style={{ color: "#818cf8" }} />
               </div>
-              <p className="text-white/80 text-sm font-medium max-w-sm">{done}</p>
+              <p className="text-white/80 text-sm font-medium max-w-sm">
+                {done}
+              </p>
               <button
-                onClick={() => { setDone(null); subscribe.reset(); }}
+                onClick={() => {
+                  setDone(null);
+                  subscribe.reset();
+                }}
                 className="mt-1 text-xs text-white/30 hover:text-white/60 transition-colors underline underline-offset-2"
               >
                 Subscribe another email
@@ -694,7 +711,10 @@ export default function BlogList() {
                 backdropFilter: "blur(20px)",
               }}
             >
-              <CheckCircle className="w-4 h-4 shrink-0" style={{ color: "#818cf8" }} />
+              <CheckCircle
+                className="w-4 h-4 shrink-0"
+                style={{ color: "#818cf8" }}
+              />
               {searchParams.get("unsub") === "already"
                 ? "You were already unsubscribed."
                 : "You've been successfully unsubscribed."}
