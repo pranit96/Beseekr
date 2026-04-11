@@ -18,6 +18,7 @@ import {
   Code2,
   Database,
   Square,
+  TrendingUp,
 } from "lucide-react";
 import { motion, AnimatePresence, useAnimationFrame } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -61,6 +62,12 @@ const AGENT_PALETTES = [
   { from: "#10b981", to: "#059669", glow: "rgba(16,185,129,0.6)" },
   { from: "#ec4899", to: "#f43f5e", glow: "rgba(236,72,153,0.6)" },
   { from: "#8b5cf6", to: "#6366f1", glow: "rgba(139,92,246,0.6)" },
+];
+
+const TRENDING_TOPICS = [
+  "Research the latest AI trends and write a comprehensive report",
+  "Analyze competitor pricing strategies in the SaaS market",
+  "Draft a comprehensive 7-day marketing campaign for a new product"
 ];
 
 type ToolStatus = "success" | "error";
@@ -604,6 +611,24 @@ export const AutonomousWorkflowInterface: React.FC<
                   className="min-h-[110px] resize-none text-sm mb-4"
                   autoFocus
                 />
+
+                <div className="mb-4">
+                  <div className="flex items-center gap-1.5 mb-2 text-muted-foreground/80">
+                    <TrendingUp className="w-3.5 h-3.5" />
+                    <span className="text-[11px] font-semibold uppercase tracking-wider">Trending Topics</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {TRENDING_TOPICS.map((topic, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setPrompt(topic)}
+                        className="text-[11.5px] px-2.5 py-1.5 rounded-lg border border-border/50 bg-muted/40 hover:bg-muted/80 hover:border-border text-foreground/75 hover:text-foreground transition-all text-left"
+                      >
+                        {topic}
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
                 <div className="mb-4">
                   <ChatFileUpload
