@@ -46,6 +46,8 @@ type Phase = "prompt" | "executing" | "cancelling" | "complete" | "error";
 
 interface AutonomousWorkflowInterfaceProps {
   onClose?: () => void;
+  /** Called after a workflow completes and is saved — use to refresh history cache */
+  onWorkflowComplete?: () => void;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -236,7 +238,7 @@ const AgentNode: React.FC<AgentNodeProps> = ({
 
 export const AutonomousWorkflowInterface: React.FC<
   AutonomousWorkflowInterfaceProps
-> = ({ onClose }) => {
+> = ({ onClose, onWorkflowComplete }) => {
   const [phase, setPhase] = useState<Phase>("prompt");
   const [prompt, setPrompt] = useState("");
   const [status, setStatus] = useState<string>("Initializing…");
@@ -374,7 +376,7 @@ export const AutonomousWorkflowInterface: React.FC<
       {
         prompt: currentPrompt,
         requestId,
-        save_to_history: false,
+        save_to_history: true,
         attached_files: filesPayload,
       },
       {
@@ -500,6 +502,8 @@ export const AutonomousWorkflowInterface: React.FC<
           setFinalAnswer(data.final_answer);
           cancelRef.current = null;
           setPhase("complete"); // single atomic phase change — no overlap possible
+          // Notify parent to refresh history sidebar
+          onWorkflowComplete?.();
         },
 
         onError: (data) => {
