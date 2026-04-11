@@ -681,7 +681,7 @@ export const AutonomousWorkflowInterface: React.FC<
               <X className="w-4 h-4" />
             </button>
 
-            <div className="w-full max-w-2xl relative flex flex-col items-center mt-12">
+            <div className="w-full max-w-[1400px] mx-auto px-4 relative flex flex-col items-center mt-12">
               {/* ── Sleek Central Hub ── */}
               <div className="flex flex-col items-center justify-center w-full mx-auto mb-8 relative z-10 px-4 mt-8">
                 {/* ── Before Plan Arrives (Queue/Planning) ────────────── */}
@@ -767,7 +767,7 @@ export const AutonomousWorkflowInterface: React.FC<
                   </motion.div>
                 ) : (
                   /* ── After Plan Arrives (Orbital System) ────────────── */
-                  <div className="w-full flex justify-center w-[600px] mt-4 mb-4">
+                  <div className="w-full max-w-5xl flex justify-center mt-4 mb-4">
                     <LiveGraphVisualizer
                       workflowPhase={workflowPhase}
                       agents={agents}
