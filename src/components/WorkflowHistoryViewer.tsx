@@ -154,10 +154,11 @@ export function WorkflowHistoryViewer({
             id="workflow-history-new-btn"
             onClick={onNewWorkflow}
             size="sm"
-            className="gap-2"
+            className="gap-2 text-white shadow-lg hover:opacity-90 transition-opacity"
             style={{
               background:
-                "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)))",
+                "linear-gradient(135deg, #10b981, #06b6d4)",
+              boxShadow: "0 0 16px rgba(16,185,129,0.35)",
             }}
           >
             <Sparkles className="w-3.5 h-3.5" />
@@ -357,10 +358,11 @@ export function WorkflowHistoryViewer({
         <div className="mt-6 flex justify-center">
           <Button
             onClick={onNewWorkflow}
-            className="gap-2 font-semibold"
+            className="gap-2 font-semibold text-white shadow-xl hover:opacity-90 transition-opacity"
             style={{
               background:
-                "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)))",
+                "linear-gradient(135deg, #10b981, #06b6d4)",
+              boxShadow: "0 0 24px rgba(16,185,129,0.4)",
             }}
           >
             <Sparkles className="w-4 h-4" />
