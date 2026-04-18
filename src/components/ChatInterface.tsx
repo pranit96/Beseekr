@@ -391,11 +391,27 @@ export const ChatInterface: React.FC<{
 
       await execute(payload, {
         onAck: () => {},
+        onAgentToken: (agentId, token) => {
+          if (finalAgents.length === 1) {
+            setMessages((prev) =>
+              prev.map((m) => {
+                if (m.id !== agentMessageId) return m;
+                return {
+                  ...m,
+                  content: (m.content || "") + token,
+                  workflowStatus: "executing",
+                } as ChatMessage;
+              }),
+            );
+          }
+        },
         onToken: (agentId, token) => {
           if (agentId === "synthesis") {
             setMessages((prev) =>
               prev.map((m) => {
                 if (m.id !== agentMessageId) return m;
+                // Ignore the huge synthesis token for single agents, since we streamed it via onAgentToken
+                if (finalAgents.length === 1) return m;
                 return {
                   ...m,
                   content: (m.content || "") + token,
@@ -720,8 +736,8 @@ export const ChatInterface: React.FC<{
   const inputAreaNode = (
     <div className="input-area-root">
       {/* Agent selector & toolbar row */}
-      <div className="input-toolbar">
-        <div className="flex-1 min-w-0 flex items-center gap-2">
+      <div className="input-toolbar flex-wrap md:flex-nowrap">
+        <div className="flex-1 min-w-0 flex items-center gap-2 overflow-x-auto custom-scrollbar pb-1 md:pb-0">
           <AgentSelector
             agents={agents}
             selectedAgents={selectedAgents}
@@ -730,7 +746,7 @@ export const ChatInterface: React.FC<{
         </div>
         <div className="flex items-center gap-1.5 flex-shrink-0">
           {/* Execution Mode Toggle */}
-          <div className="flex bg-muted/50 p-0.5 rounded-lg border border-border/50 hidden sm:flex">
+          <div className="flex bg-muted/50 p-0.5 rounded-lg border border-border/50">
             <button
               onClick={() => setExecutionMode("sequential")}
               className={`flex px-2.5 py-1 text-[11px] font-semibold rounded-md transition-all ${
