@@ -40,6 +40,7 @@ interface LiveGraphVisualizerProps {
   workflowPhase: string;
   agents: GraphAgent[];
   isSynthesizing: boolean;
+  redTeamCritique?: string;
 }
 
 const AGENT_ICONS: Record<string, React.ElementType> = {
@@ -53,6 +54,7 @@ export const LiveGraphVisualizer: React.FC<LiveGraphVisualizerProps> = ({
   workflowPhase,
   agents,
   isSynthesizing,
+  redTeamCritique,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [orchestratorAgents, setOrchestratorAgents] = useState<GraphAgent[]>(
@@ -294,6 +296,35 @@ export const LiveGraphVisualizer: React.FC<LiveGraphVisualizerProps> = ({
             })}
           </AnimatePresence>
         </div>
+
+        {/* Red Team Node */}
+        {allAgents.length > 0 &&
+          (redTeamCritique || workflowPhase === "red_team") && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex flex-col items-center mt-12 w-full max-w-lg"
+            >
+              <div className="h-12 w-px bg-gradient-to-b from-border to-rose-500/50" />
+              <div className="p-4 bg-background/80 backdrop-blur-sm border border-rose-500/30 rounded-xl shadow-[0_0_30px_rgba(243,63,94,0.05)] w-full text-center flex flex-col items-center overflow-hidden">
+                <div className="flex items-center gap-2 mb-3 text-rose-500">
+                  {workflowPhase === "red_team" ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <CheckCircle2 className="w-5 h-5" />
+                  )}
+                  <span className="text-sm font-bold tracking-wider uppercase">
+                    Adversarial Red-Team
+                  </span>
+                </div>
+                <div className="text-left w-full text-[11px] leading-relaxed max-h-[140px] overflow-y-auto custom-scrollbar pr-2 prose prose-invert prose-p:my-1 text-muted-foreground">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {redTeamCritique || "Initializing critique engine..."}
+                  </ReactMarkdown>
+                </div>
+              </div>
+            </motion.div>
+          )}
 
         {/* Synthesizing Node at Bottom */}
         {allAgents.length > 0 && isSynthesizing && (

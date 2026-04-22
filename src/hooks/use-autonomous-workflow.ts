@@ -7,14 +7,19 @@ const logger = createLogger("useAutonomousWorkflow");
 
 interface WorkflowCallbacks {
   onAck?: (data: any) => void;
+  onPhase?: (data: any) => void;
   onStatus?: (data: any) => void;
   onPlan?: (data: any) => void;
   onAgentCreated?: (data: any) => void;
   onAgentStart?: (data: any) => void;
   onAgentToken?: (data: any) => void;
+  onAgentProgress?: (data: any) => void;
   onAgentDone?: (data: any) => void;
   onToolStart?: (data: any) => void;
   onToolResult?: (data: any) => void;
+  onAdversarialStart?: (data: any) => void;
+  onAdversarialToken?: (data: any) => void;
+  onAdversarialDone?: (data: any) => void;
   onSynthesisToken?: (data: any) => void;
   onDone?: (data: any) => void;
   onError?: (data: any) => void;
@@ -33,6 +38,7 @@ interface WorkflowPayload {
     storage_path: string;
     url: string | null;
   }>;
+  continue_from?: string;
 }
 
 const useAutonomousWorkflow = () => {
@@ -50,14 +56,31 @@ const useAutonomousWorkflow = () => {
         if (cleanupCalled) return;
         cleanupCalled = true;
         socketService.off("autonomous_workflow:ack", onAck);
+        socketService.off("autonomous_workflow:phase", onPhase);
         socketService.off("autonomous_workflow:status", onStatus);
         socketService.off("autonomous_workflow:plan", onPlan);
         socketService.off("autonomous_workflow:agent_created", onAgentCreated);
         socketService.off("autonomous_workflow:agent_start", onAgentStart);
         socketService.off("autonomous_workflow:agent_token", onAgentToken);
+        socketService.off(
+          "autonomous_workflow:agent_progress",
+          onAgentProgress,
+        );
         socketService.off("autonomous_workflow:agent_done", onAgentDone);
         socketService.off("autonomous_workflow:tool_start", onToolStart);
         socketService.off("autonomous_workflow:tool_result", onToolResult);
+        socketService.off(
+          "autonomous_workflow:adversarial_start",
+          onAdversarialStart,
+        );
+        socketService.off(
+          "autonomous_workflow:adversarial_token",
+          onAdversarialToken,
+        );
+        socketService.off(
+          "autonomous_workflow:adversarial_done",
+          onAdversarialDone,
+        );
         socketService.off(
           "autonomous_workflow:synthesis_token",
           onSynthesisToken,
@@ -82,6 +105,9 @@ const useAutonomousWorkflow = () => {
       const onAck = (data: any) => {
         if (data.requestId === requestId) callbacks.onAck?.(data);
       };
+      const onPhase = (data: any) => {
+        if (data.requestId === requestId) callbacks.onPhase?.(data);
+      };
       const onStatus = (data: any) => {
         if (data.requestId === requestId) callbacks.onStatus?.(data);
       };
@@ -97,6 +123,9 @@ const useAutonomousWorkflow = () => {
       const onAgentToken = (data: any) => {
         if (data.requestId === requestId) callbacks.onAgentToken?.(data);
       };
+      const onAgentProgress = (data: any) => {
+        if (data.requestId === requestId) callbacks.onAgentProgress?.(data);
+      };
       const onAgentDone = (data: any) => {
         if (data.requestId === requestId) callbacks.onAgentDone?.(data);
       };
@@ -105,6 +134,15 @@ const useAutonomousWorkflow = () => {
       };
       const onToolResult = (data: any) => {
         if (data.requestId === requestId) callbacks.onToolResult?.(data);
+      };
+      const onAdversarialStart = (data: any) => {
+        if (data.requestId === requestId) callbacks.onAdversarialStart?.(data);
+      };
+      const onAdversarialToken = (data: any) => {
+        if (data.requestId === requestId) callbacks.onAdversarialToken?.(data);
+      };
+      const onAdversarialDone = (data: any) => {
+        if (data.requestId === requestId) callbacks.onAdversarialDone?.(data);
       };
       const onSynthesisToken = (data: any) => {
         if (data.requestId === requestId) callbacks.onSynthesisToken?.(data);
@@ -131,14 +169,28 @@ const useAutonomousWorkflow = () => {
 
       // Register all listeners first
       socketService.on("autonomous_workflow:ack", onAck);
+      socketService.on("autonomous_workflow:phase", onPhase);
       socketService.on("autonomous_workflow:status", onStatus);
       socketService.on("autonomous_workflow:plan", onPlan);
       socketService.on("autonomous_workflow:agent_created", onAgentCreated);
       socketService.on("autonomous_workflow:agent_start", onAgentStart);
       socketService.on("autonomous_workflow:agent_token", onAgentToken);
+      socketService.on("autonomous_workflow:agent_progress", onAgentProgress);
       socketService.on("autonomous_workflow:agent_done", onAgentDone);
       socketService.on("autonomous_workflow:tool_start", onToolStart);
       socketService.on("autonomous_workflow:tool_result", onToolResult);
+      socketService.on(
+        "autonomous_workflow:adversarial_start",
+        onAdversarialStart,
+      );
+      socketService.on(
+        "autonomous_workflow:adversarial_token",
+        onAdversarialToken,
+      );
+      socketService.on(
+        "autonomous_workflow:adversarial_done",
+        onAdversarialDone,
+      );
       socketService.on("autonomous_workflow:synthesis_token", onSynthesisToken);
       socketService.on("autonomous_workflow:done", onDone);
       socketService.on("autonomous_workflow:error", onError);

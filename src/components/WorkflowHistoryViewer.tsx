@@ -121,7 +121,7 @@ export function WorkflowHistoryViewer({
   const agents =
     data.agent_results && data.agent_results.length > 0
       ? data.agent_results
-      : data.planned_agents ?? [];
+      : (data.planned_agents ?? []);
 
   const isCompleted = data.status === "completed";
   const statusColor = isCompleted ? "#10b981" : "#ef4444";
@@ -156,8 +156,7 @@ export function WorkflowHistoryViewer({
             size="sm"
             className="gap-2 text-white shadow-lg hover:opacity-90 transition-opacity"
             style={{
-              background:
-                "linear-gradient(135deg, #10b981, #06b6d4)",
+              background: "linear-gradient(135deg, #10b981, #06b6d4)",
               boxShadow: "0 0 16px rgba(16,185,129,0.35)",
             }}
           >
@@ -176,7 +175,9 @@ export function WorkflowHistoryViewer({
           <div className="relative z-10 flex items-start gap-4 mb-6 pb-5 border-b border-border/30">
             <div
               className="w-11 h-11 rounded-xl flex items-center justify-center shadow-lg shrink-0"
-              style={{ background: `linear-gradient(135deg, ${statusColor}, ${statusColor}cc)` }}
+              style={{
+                background: `linear-gradient(135deg, ${statusColor}, ${statusColor}cc)`,
+              }}
             >
               {isCompleted ? (
                 <CheckCircle2 className="w-5 h-5 text-white" />
@@ -360,8 +361,7 @@ export function WorkflowHistoryViewer({
             onClick={onNewWorkflow}
             className="gap-2 font-semibold text-white shadow-xl hover:opacity-90 transition-opacity"
             style={{
-              background:
-                "linear-gradient(135deg, #10b981, #06b6d4)",
+              background: "linear-gradient(135deg, #10b981, #06b6d4)",
               boxShadow: "0 0 24px rgba(16,185,129,0.4)",
             }}
           >

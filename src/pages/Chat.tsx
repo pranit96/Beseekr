@@ -412,7 +412,9 @@ const Chat = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [key, setKey] = useState(0);
   const [retrying, setRetrying] = useState(false);
-  const [viewingWorkflowId, setViewingWorkflowId] = useState<string | null>(null);
+  const [viewingWorkflowId, setViewingWorkflowId] = useState<string | null>(
+    null,
+  );
 
   const { agents, loading: loadingAgents, reload } = useAgents();
   const { user, refreshAuth } = useAuth();

@@ -1,7 +1,19 @@
 // src/components/ConversationHistory.tsx
 import { useState, useEffect, useRef, useMemo, useCallback, memo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, MoreHorizontal, Archive, Trash2, Search, Sparkles, ChevronDown, ChevronRight, Cpu, Clock, Trash } from "lucide-react";
+import {
+  Plus,
+  MoreHorizontal,
+  Archive,
+  Trash2,
+  Search,
+  Sparkles,
+  ChevronDown,
+  ChevronRight,
+  Cpu,
+  Clock,
+  Trash,
+} from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   DropdownMenu,
@@ -325,7 +337,10 @@ export const ConversationHistory = memo(
         // Optimistic removal
         queryClient.setQueryData(["workflow-history", 1], (old: any) => {
           if (!old?.data) return old;
-          return { ...old, data: old.data.filter((w: WorkflowExecution) => w.id !== id) };
+          return {
+            ...old,
+            data: old.data.filter((w: WorkflowExecution) => w.id !== id),
+          };
         });
         try {
           await apiClient.deleteWorkflowExecution(id);

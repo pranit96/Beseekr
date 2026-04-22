@@ -67,7 +67,7 @@ const AGENT_PALETTES = [
 const TRENDING_TOPICS = [
   "Research the latest AI trends and write a comprehensive report",
   "Analyze competitor pricing strategies in the SaaS market",
-  "Draft a comprehensive 7-day marketing campaign for a new product"
+  "Draft a comprehensive 7-day marketing campaign for a new product",
 ];
 
 type ToolStatus = "success" | "error";
@@ -270,6 +270,12 @@ export const AutonomousWorkflowInterface: React.FC<
   const [workflowPhase, setWorkflowPhase] = useState<string>("queued");
   const [isSynthesizing, setIsSynthesizing] = useState(false);
   const [synthesisOutput, setSynthesisOutput] = useState("");
+  const [etaSeconds, setEtaSeconds] = useState<number | null>(null);
+  const [redTeamCritique, setRedTeamCritique] = useState("");
+  const [confidenceScore, setConfidenceScore] = useState<number | null>(null);
+  const [confidenceDeductions, setConfidenceDeductions] = useState<string[]>(
+    [],
+  );
 
   /**
    * cancelRef holds the cancel fn provided by the workflow hook via onCancelReady.
@@ -297,6 +303,10 @@ export const AutonomousWorkflowInterface: React.FC<
     setWorkflowPhase("queued");
     setIsSynthesizing(false);
     setSynthesisOutput("");
+    setEtaSeconds(null);
+    setRedTeamCritique("");
+    setConfidenceScore(null);
+    setConfidenceDeductions([]);
     cancelRef.current = null;
   };
 
@@ -392,13 +402,48 @@ export const AutonomousWorkflowInterface: React.FC<
           cancelRef.current = fn;
         },
 
-        onAck: () => {
-          setStatus("Acknowledged — planning your workflow…");
+        onAck: (data) => {
+          if (data.estimated_seconds) {
+            setEtaSeconds(data.estimated_seconds);
+            setStatus(
+              `Acknowledged — planning workflow (~${data.estimated_seconds}s)`,
+            );
+          } else {
+            setStatus("Acknowledged — planning your workflow…");
+          }
           setWorkflowPhase("planning");
         },
+        onPhase: (data) => {
+          if (data.phase) {
+            setWorkflowPhase(data.phase);
+            if (data.phase === "red_team")
+              setStatus("Adversarial Red-Team Critique");
+            else if (data.phase === "synthesis")
+              setStatus("Synthesizing Final Output");
+            else if (data.phase === "verification" || data.phase === "gap_fill")
+              setStatus("Verifying Intent and Filling Gaps");
+          }
+        },
         onStatus: (data) => {
-          setStatus(data.message || data.status);
-          if (data.status) setWorkflowPhase(data.status);
+          // Status updates can be overridden by explicit string messages, but we want phase transitions to stick
+          if (data.message) setStatus(data.message);
+          if (data.status && data.status !== "queued") {
+            // Avoid overriding 'red_team' or 'synthesis' with generic 'running_agents' if we already advanced
+            setWorkflowPhase((prev) => {
+              const priorityPhases = [
+                "red_team",
+                "synthesis",
+                "verification",
+                "gap_fill",
+              ];
+              if (
+                priorityPhases.includes(prev) &&
+                !priorityPhases.includes(data.status)
+              )
+                return prev;
+              return data.status;
+            });
+          }
         },
 
         onPlan: (data) => {
@@ -492,9 +537,15 @@ export const AutonomousWorkflowInterface: React.FC<
           );
         },
 
+        onAdversarialToken: (data) => {
+          setStatus("Adversarial Red-Team Critique...");
+          setWorkflowPhase("red_team");
+          setRedTeamCritique((prev) => prev + (data.token || ""));
+        },
+
         onSynthesisToken: (data) => {
           setStatus("Synthesizing final answer…");
-          setWorkflowPhase("synthesizing");
+          setWorkflowPhase("synthesis");
           setIsSynthesizing(true);
           setSynthesisOutput((prev) => prev + (data.token || ""));
         },
@@ -507,6 +558,10 @@ export const AutonomousWorkflowInterface: React.FC<
 
         onDone: (data) => {
           setFinalAnswer(data.final_answer);
+          if (data.metadata) {
+            setConfidenceScore(data.metadata.confidence_score ?? null);
+            setConfidenceDeductions(data.metadata.confidence_deductions ?? []);
+          }
           cancelRef.current = null;
           setPhase("complete"); // single atomic phase change — no overlap possible
           // Notify parent to refresh history sidebar
@@ -615,7 +670,9 @@ export const AutonomousWorkflowInterface: React.FC<
                 <div className="mb-4">
                   <div className="flex items-center gap-1.5 mb-2 text-muted-foreground/80">
                     <TrendingUp className="w-3.5 h-3.5" />
-                    <span className="text-[11px] font-semibold uppercase tracking-wider">Trending Topics</span>
+                    <span className="text-[11px] font-semibold uppercase tracking-wider">
+                      Trending Topics
+                    </span>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {TRENDING_TOPICS.map((topic, i) => (
@@ -772,6 +829,7 @@ export const AutonomousWorkflowInterface: React.FC<
                       workflowPhase={workflowPhase}
                       agents={agents}
                       isSynthesizing={isSynthesizing}
+                      redTeamCritique={redTeamCritique}
                     />
                   </div>
                 )}
@@ -879,6 +937,46 @@ export const AutonomousWorkflowInterface: React.FC<
                   </div>
 
                   <div className="flex items-center ml-auto gap-4">
+                    {/* Confidence Score */}
+                    {confidenceScore !== null && (
+                      <div
+                        className="flex flex-col items-end justify-center mr-4 pr-4 border-r border-border/40 cursor-help"
+                        title={
+                          confidenceDeductions.length > 0
+                            ? "Potential Issues:\n" +
+                              confidenceDeductions
+                                .map((d) => "• " + d)
+                                .join("\n")
+                            : "High Trust: No major issues detected during generation."
+                        }
+                      >
+                        <span
+                          className={cn(
+                            "text-[9px] font-bold uppercase tracking-widest mb-0.5",
+                            confidenceScore >= 80
+                              ? "text-emerald-500"
+                              : confidenceScore >= 50
+                                ? "text-amber-500"
+                                : "text-rose-500",
+                          )}
+                        >
+                          Confidence
+                        </span>
+                        <span
+                          className={cn(
+                            "text-xl font-black leading-none",
+                            confidenceScore >= 80
+                              ? "text-emerald-400"
+                              : confidenceScore >= 50
+                                ? "text-amber-400"
+                                : "text-rose-400",
+                          )}
+                        >
+                          {confidenceScore}%
+                        </span>
+                      </div>
+                    )}
+
                     {/* Agent chips */}
                     <div className="hidden sm:flex flex-wrap gap-1.5 justify-end max-w-xs">
                       {agents.map((a, i) => (
@@ -887,7 +985,8 @@ export const AutonomousWorkflowInterface: React.FC<
                           className="text-[9px] px-2 py-0.5 rounded-full font-medium"
                           style={{
                             background: `${AGENT_PALETTES[i % AGENT_PALETTES.length].glow}22`,
-                            color: AGENT_PALETTES[i % AGENT_PALETTES.length].from,
+                            color:
+                              AGENT_PALETTES[i % AGENT_PALETTES.length].from,
                             border: `1px solid ${AGENT_PALETTES[i % AGENT_PALETTES.length].from}44`,
                           }}
                         >

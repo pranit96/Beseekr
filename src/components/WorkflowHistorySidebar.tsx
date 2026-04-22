@@ -212,10 +212,10 @@ export function WorkflowHistorySidebar({
       });
       return res;
     },
-    staleTime: 60_000,        // 60 s — sidebar doesn't need to be real-time
-    gcTime: 5 * 60_000,      // 5 min garbage collection
+    staleTime: 60_000, // 60 s — sidebar doesn't need to be real-time
+    gcTime: 5 * 60_000, // 5 min garbage collection
     refetchOnWindowFocus: false,
-    placeholderData: (prev) => prev,  // keep old data while next page loads
+    placeholderData: (prev) => prev, // keep old data while next page loads
   });
 
   const allItems: WorkflowExecution[] = data?.data ?? [];
@@ -225,9 +225,7 @@ export function WorkflowHistorySidebar({
   const filtered = useMemo(() => {
     if (!query.trim()) return allItems;
     const q = query.trim().toLowerCase();
-    return allItems.filter((item) =>
-      item.prompt.toLowerCase().includes(q),
-    );
+    return allItems.filter((item) => item.prompt.toLowerCase().includes(q));
   }, [allItems, query]);
 
   // ── Delete mutation ────────────────────────────────────────────────────────
