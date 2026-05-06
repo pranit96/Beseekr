@@ -214,14 +214,31 @@ export function useConversation(
   useEffect(() => {
     const prevId = prevConvIdRef.current;
     prevConvIdRef.current = conversationId;
-    if (conversationId && !prevId && localMessagesRef.current.length > 0) {
-      queryClient.setQueryData(
-        ["messages", conversationId],
-        (old: ChatMessage[] = []) =>
-          old.length > 0 ? old : localMessagesRef.current,
-      );
-      setLocalMessages([]);
-      localMessagesRef.current = [];
+
+    // Migrate buffered messages when switching from null OR a temp-* ID to a real ID.
+    // This prevents a blank flash when the real conversation ID is assigned after creation.
+    const prevWasEmpty = !prevId || prevId.startsWith("temp-");
+    const nowIsReal = conversationId && !conversationId.startsWith("temp-");
+
+    if (prevWasEmpty && nowIsReal) {
+      // Pull messages buffered under the temp key (if any) from the cache
+      const tempCached: ChatMessage[] = prevId?.startsWith("temp-")
+        ? queryClient.getQueryData<ChatMessage[]>(["messages", prevId]) ?? []
+        : [];
+      const buffered = tempCached.length > 0 ? tempCached : localMessagesRef.current;
+
+      if (buffered.length > 0) {
+        queryClient.setQueryData(
+          ["messages", conversationId],
+          (old: ChatMessage[] = []) => (old.length > 0 ? old : buffered),
+        );
+        // Clean up temp cache key
+        if (prevId?.startsWith("temp-")) {
+          queryClient.removeQueries({ queryKey: ["messages", prevId] });
+        }
+        setLocalMessages([]);
+        localMessagesRef.current = [];
+      }
     }
   }, [conversationId, queryClient]);
 

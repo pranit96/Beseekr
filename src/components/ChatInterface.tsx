@@ -96,6 +96,91 @@ const TopBar = ({ active }: { active: boolean }) => (
   />
 );
 
+// ──────────────────────────────── Agent Loading Card (in-chat) ───────────────
+const AgentLoadingCard = ({
+  step,
+  total,
+  agentName,
+  agentNames,
+}: {
+  step?: number;
+  total?: number;
+  agentName?: string;
+  agentNames: string[];
+}) => (
+  <div className="mb-6 px-2 animate-fade-in flex flex-col gap-3 max-w-[90%] sm:max-w-[85%] md:max-w-[80%]">
+    <div className="flex flex-col gap-3 p-4 rounded-xl border border-primary/20 bg-gradient-to-br from-primary/5 via-background to-accent/5 shadow-sm">
+      {/* Header row */}
+      <div className="flex items-center gap-2">
+        <div className="relative flex-shrink-0">
+          <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center">
+            <svg className="w-4 h-4 text-primary animate-spin" style={{ animationDuration: '1.2s' }} viewBox="0 0 24 24" fill="none">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+            </svg>
+          </div>
+        </div>
+        <div className="flex flex-col min-w-0">
+          {step && total ? (
+            <>
+              <span className="text-[13px] font-semibold text-foreground leading-tight">
+                Step {step} of {total}
+              </span>
+              {agentName && (
+                <span className="text-[12px] text-primary font-medium mt-0.5 truncate">
+                  {agentName}
+                </span>
+              )}
+            </>
+          ) : (
+            <span className="text-[13px] font-semibold text-foreground">
+              Running agents…
+            </span>
+          )}
+        </div>
+        {step && total && (
+          <div className="ml-auto flex-shrink-0">
+            <span className="text-[11px] font-mono text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-full">
+              {step}/{total}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Progress bar */}
+      {step && total && (
+        <div className="w-full h-1 bg-muted/50 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-gradient-to-r from-primary to-accent rounded-full transition-all duration-700 ease-out"
+            style={{ width: `${Math.round((step / total) * 100)}%` }}
+          />
+        </div>
+      )}
+
+      {/* Agent pills */}
+      {agentNames.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mt-0.5">
+          {agentNames.map((name) => (
+            <span
+              key={name}
+              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium border transition-all duration-300 ${
+                name === agentName
+                  ? "bg-primary/15 border-primary/40 text-primary"
+                  : "bg-muted/40 border-border/40 text-muted-foreground"
+              }`}
+            >
+              {name === agentName && (
+                <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse flex-shrink-0" />
+              )}
+              {name}
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  </div>
+);
+
 export const ChatInterface: React.FC<{
   agents: Agent[];
   activeConversationId?: string;
@@ -713,21 +798,12 @@ export const ChatInterface: React.FC<{
     statusLineNode = (
       <div className="status-line">
         <TypingDots />
-        {orchestrationProgress ? (
-          <span>
-            Step {orchestrationProgress.step}/{orchestrationProgress.total}
-            {orchestrationProgress.agent_name
-              ? ` · ${orchestrationProgress.agent_name}`
-              : ""}
+        <span>
+          Running{" "}
+          <span className="text-foreground/70">
+            {selectedAgents.map((a) => a.name).join(", ")}
           </span>
-        ) : (
-          <span>
-            Running{" "}
-            <span className="text-foreground/70">
-              {selectedAgents.map((a) => a.name).join(", ")}
-            </span>
-          </span>
-        )}
+        </span>
       </div>
     );
   }
@@ -876,7 +952,7 @@ export const ChatInterface: React.FC<{
       {/* Top loader bar */}
       <TopBar active={isActive} />
 
-      {messages.length === 0 && !isExecuting && !preparingMessage ? (
+      {messages.length === 0 && !isExecuting && !preparingMessage && !hasStarted ? (
         /* ── Welcome state ───────────────────────────────────────────────────── */
         <div className="flex-1 flex flex-col items-center justify-center overflow-y-auto">
           <WelcomeScreen
@@ -915,6 +991,15 @@ export const ChatInterface: React.FC<{
               isLoading={isLoadingLocal || isExecuting}
               onRetryMessage={handleRetryMessage}
             />
+            {/* In-chat agent loading card — shown while executing */}
+            {isExecuting && (
+              <AgentLoadingCard
+                step={orchestrationProgress?.step}
+                total={orchestrationProgress?.total}
+                agentName={orchestrationProgress?.agent_name}
+                agentNames={selectedAgents.map((a) => a.name)}
+              />
+            )}
             {/* Scroll anchor — always kept at bottom to enable auto-scroll */}
             <div ref={messagesEndRef} className="h-2" />
           </div>
@@ -922,7 +1007,7 @@ export const ChatInterface: React.FC<{
       )}
 
       {/* Bottom input area — always rendered */}
-      <div className="flex-shrink-0 border-t border-border/30 bg-background/80 backdrop-blur-md">
+      <div className="flex-shrink-0 border-t border-border/30 bg-background/80 backdrop-blur-md pb-4">
         <div
           className={`max-w-${messages.length === 0 ? "2xl" : "5xl"} 2xl:max-w-${messages.length === 0 ? "3xl" : "6xl"} mx-auto w-full`}
         >
