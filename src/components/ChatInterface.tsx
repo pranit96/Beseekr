@@ -377,9 +377,10 @@ export const ChatInterface: React.FC<{
       if (isTempConversation && convId) {
         const realId = sessionStorage.getItem(`conv_mapping_${convId}`);
         if (realId) {
+          const tempKey = convId; // capture before overwrite
           convId = realId;
           setConversationId(realId);
-          sessionStorage.removeItem(`conv_mapping_${convId}`);
+          sessionStorage.removeItem(`conv_mapping_${tempKey}`); // remove the temp key, not the real one
           setTimeout(() => {
             onConversationChange?.(realId);
             onConversationCreated?.(realId);
@@ -952,7 +953,7 @@ export const ChatInterface: React.FC<{
       {/* Top loader bar */}
       <TopBar active={isActive} />
 
-      {messages.length === 0 && !isExecuting && !preparingMessage && !hasStarted ? (
+      {messages.length === 0 && !isExecuting && !preparingMessage && !hasStarted && !convLoading ? (
         /* ── Welcome state ───────────────────────────────────────────────────── */
         <div className="flex-1 flex flex-col items-center justify-center overflow-y-auto">
           <WelcomeScreen

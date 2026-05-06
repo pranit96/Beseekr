@@ -156,7 +156,12 @@ export function useConversation(
         return { ...base, type: "user" } as ChatMessage;
       });
 
-      setHasStarted(apiMessages.length > 0);
+      // Only ever set hasStarted → true from the queryFn.
+      // Never set it to false here — the user may be actively streaming a response
+      // while this query fires for a brand-new conversation (which returns [] from
+      // the API). Setting false would overwrite the true set in handleSubmit and
+      // collapse the UI back to the welcome screen once isExecuting clears.
+      if (apiMessages.length > 0) setHasStarted(true);
       return apiMessages;
     },
   });
@@ -207,6 +212,17 @@ export function useConversation(
     },
     [conversationId, refetch],
   );
+
+  // Reset hasStarted when the user switches to a DIFFERENT conversation.
+  // Guard: skip during active orchestration so we don't reset the flag mid-stream.
+  // This ensures the welcome screen and loading state behave correctly when the
+  // sidebar is used to open a different conversation.
+  useEffect(() => {
+    if (!isActiveOrchestrationRef.current) {
+      setHasStarted(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [conversationId]);
 
   // When a conversationId first becomes available, migrate any locally-buffered
   // messages into the React Query cache so the chat doesn't go blank.
