@@ -831,7 +831,9 @@
   .conv-row {
     position: relative;
     display: flex;
-    align-items: flex-start;
+    align-items: center;        /* center-align so the ⋯ button is vertically centered */
+    min-width: 0;               /* allow flex children to shrink below their content size */
+    overflow: hidden;           /* clip long titles — prevents actions from being pushed off-screen */
     padding: 8px 8px 8px 0;
     border-radius: 8px;
     cursor: pointer;

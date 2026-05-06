@@ -3,7 +3,6 @@ import { useState, useEffect, useRef, useMemo, useCallback, memo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Plus,
-  MoreHorizontal,
   Archive,
   Trash2,
   Search,
@@ -15,12 +14,6 @@ import {
   Trash,
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -95,9 +88,9 @@ const ConversationRow = memo(
     isActive: boolean;
     onClick: () => void;
     onArchive: () => void;
-    onDelete: () => void;
-    onMouseEnter: () => void;
-  }) => (
+      onDelete: () => void;
+      onMouseEnter: () => void;
+    }) => (
     <div
       role="button"
       tabIndex={0}
@@ -117,6 +110,7 @@ const ConversationRow = memo(
         className={`conv-accent-bar ${isActive ? "opacity-100" : "opacity-0 group-hover:opacity-40"}`}
       />
 
+      {/* Text — flex-1 + min-w-0 ensures truncation even with a long title */}
       <div className="flex-1 min-w-0 pl-3">
         <p className="text-[13px] font-medium text-foreground/85 truncate leading-snug group-hover:text-foreground transition-colors">
           {conversation.title || "Untitled"}
@@ -131,39 +125,25 @@ const ConversationRow = memo(
         </p>
       </div>
 
-      {/* Actions — appear on hover */}
-      <div className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 pr-1">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              className="p-1.5 rounded-md hover:bg-muted/60 transition-colors"
-              onClick={(e) => e.stopPropagation()}
-              aria-label="Conversation options"
-            >
-              <MoreHorizontal className="w-3.5 h-3.5 text-muted-foreground/60" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-36">
-            <DropdownMenuItem
-              onClick={(e) => {
-                e.stopPropagation();
-                onArchive();
-              }}
-              className="gap-2 text-xs"
-            >
-              <Archive className="w-3.5 h-3.5" /> Archive
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete();
-              }}
-              className="gap-2 text-xs text-destructive focus:text-destructive"
-            >
-              <Trash2 className="w-3.5 h-3.5" /> Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+      {/* Actions — flex-shrink-0 guarantees they are NEVER pushed off-screen.
+          Shown on hover via opacity transition. */}
+      <div className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 flex items-center gap-0.5 pr-1.5">
+        <button
+          onClick={(e) => { e.stopPropagation(); onArchive(); }}
+          className="p-1.5 rounded-md hover:bg-muted/60 transition-colors"
+          aria-label="Archive conversation"
+          title="Archive"
+        >
+          <Archive className="w-3 h-3 text-muted-foreground/50" />
+        </button>
+        <button
+          onClick={(e) => { e.stopPropagation(); onDelete(); }}
+          className="p-1.5 rounded-md hover:bg-destructive/10 transition-colors group/del"
+          aria-label="Delete conversation"
+          title="Delete"
+        >
+          <Trash2 className="w-3 h-3 text-muted-foreground/50 group-hover/del:text-destructive transition-colors" />
+        </button>
       </div>
     </div>
   ),
