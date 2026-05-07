@@ -618,6 +618,15 @@ const Chat = () => {
         const realId = response.data.id;
         sessionStorage.setItem(`conv_mapping_${tempId}`, realId);
 
+        // Pre-seed the messages cache for the real ID before updating
+        // currentConversationId. The prop change triggers ChatInterface's
+        // useEffect → loadConversationMessages → React Query fetch.
+        // Without cached data the query fires immediately and may return []
+        // (messages not yet saved), overwriting any in-progress stream.
+        if (!queryClient.getQueryData(["messages", realId])) {
+          queryClient.setQueryData(["messages", realId], []);
+        }
+
         queryClient.setQueryData(
           ["conversations", user?.id],
           (prev: Conversation[] = []) =>
@@ -654,6 +663,13 @@ const Chat = () => {
 
   const handleConversationCreated = useCallback(
     async (conversationId: string) => {
+      // Pre-seed messages cache before updating currentConversationId so the
+      // prop change doesn't trigger an immediate empty API fetch that wipes
+      // any messages already in the cache from the current streaming session.
+      if (!queryClient.getQueryData(["messages", conversationId])) {
+        queryClient.setQueryData(["messages", conversationId], []);
+      }
+
       queryClient.setQueryData(
         ["conversations", user?.id],
         (prev: Conversation[] = []) => {

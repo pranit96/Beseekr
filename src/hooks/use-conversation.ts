@@ -59,8 +59,23 @@ export function useConversation(
     queryKey: ["messages", conversationId],
     enabled: !!conversationId && !conversationId.startsWith("temp-"),
     staleTime: 1000 * 60 * 10, // Cache for 10 minutes
+    gcTime: 1000 * 60 * 30, // Keep in memory for 30 minutes
+    refetchOnWindowFocus: false, // Never wipe streamed messages when tab regains focus
+    refetchOnMount: false, // Only fetch when there is no cached data
     queryFn: async () => {
       if (!conversationId) return [];
+
+      // Guard: if orchestration is active, the cache already has the correct
+      // in-progress streaming messages. Returning them here prevents the
+      // API response (which only knows about messages saved so far) from
+      // overwriting live streamed content.
+      if (isActiveOrchestrationRef.current) {
+        const current = queryClient.getQueryData<ChatMessage[]>([
+          "messages",
+          conversationId,
+        ]);
+        if (current && current.length > 0) return current;
+      }
 
       logger.info("Loading messages for conversation via React Query", {
         conversationId,
@@ -217,8 +232,10 @@ export function useConversation(
   // Guards:
   //   1. Skip during active orchestration so we don't reset the flag mid-stream.
   //   2. Skip if the cache already holds messages for this conversation ID —
-  //      this prevents a stale effect from blanking the screen after a fast
-  //      response where the conversation ID updates while messages are already live.
+  //      prevents the welcome screen flashing after a fast response.
+  //   3. Skip when isLoading is true — the query is fetching messages for a real
+  //      conversation; convLoading already hides the welcome screen during this
+  //      window, and hasStarted will be set true by the queryFn once data arrives.
   useEffect(() => {
     if (isActiveOrchestrationRef.current) return;
     const cached = queryClient.getQueryData<ChatMessage[]>([
@@ -226,9 +243,12 @@ export function useConversation(
       conversationId,
     ]);
     if (cached && cached.length > 0) return;
+    // Only reset if we're NOT actively loading data for this conversation.
+    // isLoading is true when the query has no cached data and is fetching.
+    if (isLoading) return;
     setHasStarted(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [conversationId]);
+  }, [conversationId, isLoading]);
 
   // When a conversationId first becomes available, migrate any locally-buffered
   // messages into the React Query cache so the chat doesn't go blank.

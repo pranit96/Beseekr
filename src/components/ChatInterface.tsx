@@ -395,6 +395,11 @@ export const ChatInterface: React.FC<{
         if (realId) {
           const tempKey = convId; // capture before overwrite
           convId = realId;
+          // Pre-seed cache before activating the query key, same reason as the
+          // new-conversation path: prevents an immediate empty API fetch.
+          if (!queryClient.getQueryData(["messages", convId])) {
+            queryClient.setQueryData(["messages", convId], []);
+          }
           setConversationId(realId);
           sessionStorage.removeItem(`conv_mapping_${tempKey}`); // remove the temp key, not the real one
           setTimeout(() => {
@@ -467,6 +472,10 @@ export const ChatInterface: React.FC<{
         isFromCache: false,
       };
 
+      // Ensure hasStarted is true before injecting messages into the cache.
+      // This closes the window between setConversationId and setMessages where
+      // a stale effect could reset hasStarted to false and blank the screen.
+      setHasStarted(true);
       setMessages((prev) => [...prev, userMessage, agentMessage]);
       setPreparingMessage(false);
       setIsExecuting(true);
