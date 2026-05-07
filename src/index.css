@@ -831,9 +831,10 @@
   .conv-row {
     position: relative;
     display: flex;
-    align-items: center; /* center-align so the ⋯ button is vertically centered */
+    align-items: center;
     min-width: 0; /* allow flex children to shrink below their content size */
-    overflow: hidden; /* clip long titles — prevents actions from being pushed off-screen */
+    /* NO overflow:hidden here — that was clipping the ⋯ action button.
+       Truncation is handled by overflow-hidden on the inner text div. */
     padding: 8px 8px 8px 0;
     border-radius: 8px;
     cursor: pointer;
