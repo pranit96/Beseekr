@@ -10,7 +10,6 @@ import {
   Loader2,
   Download,
 } from "lucide-react";
-import { ToolExecutionIndicator } from "@/components/ToolExecutionIndicator";
 import { ChatFileUpload } from "@/components/ChatFileUpload";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -79,15 +78,6 @@ function generateConversationTitle(message: string, agents: Agent[]): string {
   );
 }
 
-// ──────────────────────────────── Typing Dots ────────────────────────────────
-const TypingDots = () => (
-  <div className="typing-dots" aria-label="Processing…">
-    <span />
-    <span />
-    <span />
-  </div>
-);
-
 // ──────────────────────────────── Top Loading Bar ─────────────────────────────
 const TopBar = ({ active }: { active: boolean }) => (
   <div
@@ -96,7 +86,7 @@ const TopBar = ({ active }: { active: boolean }) => (
   />
 );
 
-// ──────────────────────────────── Agent Loading Card (in-chat) ───────────────
+// ──────────────────────────────── Agent Loading Indicator (in-chat) ─────────
 const AgentLoadingCard = ({
   step,
   total,
@@ -107,95 +97,46 @@ const AgentLoadingCard = ({
   total?: number;
   agentName?: string;
   agentNames: string[];
-}) => (
-  <div className="mb-6 px-2 animate-fade-in flex flex-col gap-3 max-w-[90%] sm:max-w-[85%] md:max-w-[80%]">
-    <div className="flex flex-col gap-3 p-4 rounded-xl border border-primary/20 bg-gradient-to-br from-primary/5 via-background to-accent/5 shadow-sm">
-      {/* Header row */}
-      <div className="flex items-center gap-2">
-        <div className="relative flex-shrink-0">
-          <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center">
-            <svg
-              className="w-4 h-4 text-primary animate-spin"
-              style={{ animationDuration: "1.2s" }}
-              viewBox="0 0 24 24"
-              fill="none"
-            >
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="3"
-              />
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-              />
-            </svg>
-          </div>
-        </div>
-        <div className="flex flex-col min-w-0">
+}) => {
+  const label = agentName || agentNames[0] || "Agent";
+  const pct = step && total ? Math.round((step / total) * 100) : null;
+
+  return (
+    <div className="mb-4 px-2 animate-fade-in">
+      {/* Slim status row */}
+      <div className="flex items-center gap-2.5 py-2">
+        {/* Pulsing dot */}
+        <span className="relative flex-shrink-0 flex h-2 w-2">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-60" />
+          <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
+        </span>
+
+        <span className="text-[12px] text-muted-foreground leading-none">
           {step && total ? (
             <>
-              <span className="text-[13px] font-semibold text-foreground leading-tight">
-                Step {step} of {total}
+              <span className="text-foreground/70 font-medium">{label}</span>
+              <span className="ml-1.5 text-muted-foreground/50">
+                · step {step}/{total}
               </span>
-              {agentName && (
-                <span className="text-[12px] text-primary font-medium mt-0.5 truncate">
-                  {agentName}
-                </span>
-              )}
             </>
           ) : (
-            <span className="text-[13px] font-semibold text-foreground">
-              Running agents…
-            </span>
+            <span className="text-foreground/70 font-medium">{label}</span>
           )}
-        </div>
-        {step && total && (
-          <div className="ml-auto flex-shrink-0">
-            <span className="text-[11px] font-mono text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-full">
-              {step}/{total}
-            </span>
-          </div>
-        )}
+        </span>
       </div>
 
-      {/* Progress bar */}
-      {step && total && (
-        <div className="w-full h-1 bg-muted/50 rounded-full overflow-hidden">
+      {/* Thin progress bar — only when step data is available */}
+      {pct !== null && (
+        <div className="ml-4 h-[2px] w-48 max-w-full bg-border/40 rounded-full overflow-hidden">
           <div
-            className="h-full bg-gradient-to-r from-primary to-accent rounded-full transition-all duration-700 ease-out"
-            style={{ width: `${Math.round((step / total) * 100)}%` }}
+            className="h-full bg-primary/60 rounded-full transition-all duration-500 ease-out"
+            style={{ width: `${pct}%` }}
           />
         </div>
       )}
-
-      {/* Agent pills */}
-      {agentNames.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 mt-0.5">
-          {agentNames.map((name) => (
-            <span
-              key={name}
-              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium border transition-all duration-300 ${
-                name === agentName
-                  ? "bg-primary/15 border-primary/40 text-primary"
-                  : "bg-muted/40 border-border/40 text-muted-foreground"
-              }`}
-            >
-              {name === agentName && (
-                <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse flex-shrink-0" />
-              )}
-              {name}
-            </span>
-          ))}
-        </div>
-      )}
     </div>
-  </div>
-);
+  );
+};
 
 export const ChatInterface: React.FC<{
   agents: Agent[];
@@ -798,7 +739,7 @@ export const ChatInterface: React.FC<{
     !socketConnected;
   const isActive = isExecuting || preparingMessage;
 
-  // ── Inline status line ───────────────────────────────────────────────────────
+  // ── Inline status line — only system-level states, not execution progress ───
   let statusLineNode = null;
   if (connectionStatus === "disconnected") {
     statusLineNode = (
@@ -818,25 +759,6 @@ export const ChatInterface: React.FC<{
       <div className="status-line">
         <Loader2 className="w-3 h-3 animate-spin" />
         <span>Cancelling…</span>
-      </div>
-    );
-  } else if (preparingMessage) {
-    statusLineNode = (
-      <div className="status-line">
-        <Loader2 className="w-3 h-3 animate-spin" />
-        <span>Preparing message…</span>
-      </div>
-    );
-  } else if (isExecuting) {
-    statusLineNode = (
-      <div className="status-line">
-        <TypingDots />
-        <span>
-          Running{" "}
-          <span className="text-foreground/70">
-            {selectedAgents.map((a) => a.name).join(", ")}
-          </span>
-        </span>
       </div>
     );
   }
@@ -998,9 +920,6 @@ export const ChatInterface: React.FC<{
               textareaRef.current?.focus();
             }}
           />
-          {isExecuting && toolExecutions.length > 0 && (
-            <ToolExecutionIndicator executions={toolExecutions} />
-          )}
         </div>
       ) : (
         /* ── Active chat ─────────────────────────────────────────────────────── */
@@ -1020,9 +939,6 @@ export const ChatInterface: React.FC<{
                 <Download className="w-3.5 h-3.5" /> Export
               </Button>
             </div>
-            {isExecuting && toolExecutions.length > 0 && (
-              <ToolExecutionIndicator executions={toolExecutions} />
-            )}
             <MessageList
               messages={messages}
               isLoading={isLoadingLocal || isExecuting}
