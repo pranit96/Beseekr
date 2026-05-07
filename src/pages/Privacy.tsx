@@ -24,7 +24,7 @@ const Privacy = () => {
               <Sparkles className="w-4 h-4 text-primary-foreground" />
             </div>
             <span className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              Prompt Weaver
+              Beseekr
             </span>
           </Link>
           <Link to="/auth">
@@ -84,7 +84,7 @@ const Privacy = () => {
             </h2>
             <div className="text-muted-foreground space-y-4 leading-relaxed">
               <p>
-                When you use Prompt Weaver, we collect essential information to
+                When you use Beseekr, we collect essential information to
                 provide our autonomous multi-agent services. This includes your
                 account information (name, email) and the data you explicitly
                 provide when creating workflows, configuring agents, or chatting
@@ -106,9 +106,9 @@ const Privacy = () => {
             </h2>
             <div className="text-muted-foreground space-y-4 leading-relaxed">
               <p>
-                Your data is strictly used to operate the Prompt Weaver
-                platform. We use your prompts, attached files, and
-                configurations solely as context for the AI agents you invoke.
+                Your data is strictly used to operate the Beseekr platform. We
+                use your prompts, attached files, and configurations solely as
+                context for the AI agents you invoke.
               </p>
               <p>
                 We do <strong>not</strong> use your private workflow data to
@@ -218,7 +218,7 @@ const Privacy = () => {
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Sparkles className="h-4 w-4 text-primary" />
               <span>
-                © {new Date().getFullYear()} Prompt Weaver. All rights reserved.
+                © {new Date().getFullYear()} Beseekr. All rights reserved.
               </span>
             </div>
           </div>
