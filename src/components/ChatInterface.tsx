@@ -114,9 +114,25 @@ const AgentLoadingCard = ({
       <div className="flex items-center gap-2">
         <div className="relative flex-shrink-0">
           <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center">
-            <svg className="w-4 h-4 text-primary animate-spin" style={{ animationDuration: '1.2s' }} viewBox="0 0 24 24" fill="none">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+            <svg
+              className="w-4 h-4 text-primary animate-spin"
+              style={{ animationDuration: "1.2s" }}
+              viewBox="0 0 24 24"
+              fill="none"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="3"
+              />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+              />
             </svg>
           </div>
         </div>
@@ -403,6 +419,11 @@ export const ChatInterface: React.FC<{
           });
           if (res.success && res.data?.id) {
             convId = res.data.id;
+            // Pre-seed the cache with an empty array BEFORE activating the query.
+            // Without this, React Query sees no cached data for the new key and
+            // immediately fires an API fetch that returns [] (messages not saved yet),
+            // overwriting the in-progress streaming messages.
+            queryClient.setQueryData(["messages", convId], []);
             setConversationId(convId);
             setTimeout(() => {
               onConversationChange?.(convId);
@@ -623,6 +644,8 @@ export const ChatInterface: React.FC<{
               block: "end",
             });
           }, 100);
+          // Mark hasStarted so the welcome screen never re-appears after a response
+          setHasStarted(true);
         },
         onError: (err) => {
           errorHandled = true;
@@ -953,7 +976,11 @@ export const ChatInterface: React.FC<{
       {/* Top loader bar */}
       <TopBar active={isActive} />
 
-      {messages.length === 0 && !isExecuting && !preparingMessage && !hasStarted && !convLoading ? (
+      {messages.length === 0 &&
+      !isExecuting &&
+      !preparingMessage &&
+      !hasStarted &&
+      !convLoading ? (
         /* ── Welcome state ───────────────────────────────────────────────────── */
         <div className="flex-1 flex flex-col items-center justify-center overflow-y-auto">
           <WelcomeScreen

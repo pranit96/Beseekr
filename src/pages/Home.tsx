@@ -3,6 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { MessageSquare, TrendingUp, ArrowRight } from "lucide-react";
 import { GlobalHeader } from "@/components/GlobalHeader";
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -88,7 +89,10 @@ export default function Home() {
 
       {/* FOOTER */}
       <footer className="border-t py-6 text-center text-sm text-muted-foreground">
-        © 2026 beseekr
+        © 2026 beseekr |{" "}
+        <Link to="/about" className="hover:text-foreground transition-colors">
+          About
+        </Link>
       </footer>
     </div>
   );

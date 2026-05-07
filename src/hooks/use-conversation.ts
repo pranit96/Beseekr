@@ -214,14 +214,20 @@ export function useConversation(
   );
 
   // Reset hasStarted when the user switches to a DIFFERENT conversation.
-  // Guard: skip during active orchestration so we don't reset the flag mid-stream.
-  // This ensures the welcome screen and loading state behave correctly when the
-  // sidebar is used to open a different conversation.
+  // Guards:
+  //   1. Skip during active orchestration so we don't reset the flag mid-stream.
+  //   2. Skip if the cache already holds messages for this conversation ID —
+  //      this prevents a stale effect from blanking the screen after a fast
+  //      response where the conversation ID updates while messages are already live.
   useEffect(() => {
-    if (!isActiveOrchestrationRef.current) {
-      setHasStarted(false);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (isActiveOrchestrationRef.current) return;
+    const cached = queryClient.getQueryData<ChatMessage[]>([
+      "messages",
+      conversationId,
+    ]);
+    if (cached && cached.length > 0) return;
+    setHasStarted(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conversationId]);
 
   // When a conversationId first becomes available, migrate any locally-buffered
@@ -239,9 +245,10 @@ export function useConversation(
     if (prevWasEmpty && nowIsReal) {
       // Pull messages buffered under the temp key (if any) from the cache
       const tempCached: ChatMessage[] = prevId?.startsWith("temp-")
-        ? queryClient.getQueryData<ChatMessage[]>(["messages", prevId]) ?? []
+        ? (queryClient.getQueryData<ChatMessage[]>(["messages", prevId]) ?? [])
         : [];
-      const buffered = tempCached.length > 0 ? tempCached : localMessagesRef.current;
+      const buffered =
+        tempCached.length > 0 ? tempCached : localMessagesRef.current;
 
       if (buffered.length > 0) {
         queryClient.setQueryData(

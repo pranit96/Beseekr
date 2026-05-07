@@ -88,9 +88,9 @@ const ConversationRow = memo(
     isActive: boolean;
     onClick: () => void;
     onArchive: () => void;
-      onDelete: () => void;
-      onMouseEnter: () => void;
-    }) => (
+    onDelete: () => void;
+    onMouseEnter: () => void;
+  }) => (
     <div
       role="button"
       tabIndex={0}
@@ -110,8 +110,8 @@ const ConversationRow = memo(
         className={`conv-accent-bar ${isActive ? "opacity-100" : "opacity-0 group-hover:opacity-40"}`}
       />
 
-      {/* Text — flex-1 + min-w-0 ensures truncation even with a long title */}
-      <div className="flex-1 min-w-0 pl-3">
+      {/* Text — flex-1 + min-w-0 + overflow-hidden ensures truncation without pushing actions off-screen */}
+      <div className="flex-1 min-w-0 overflow-hidden pl-3">
         <p className="text-[13px] font-medium text-foreground/85 truncate leading-snug group-hover:text-foreground transition-colors">
           {conversation.title || "Untitled"}
         </p>
@@ -126,10 +126,13 @@ const ConversationRow = memo(
       </div>
 
       {/* Actions — flex-shrink-0 guarantees they are NEVER pushed off-screen.
-          Shown on hover via opacity transition. */}
+          Shown on hover via opacity transition. Always rendered outside the text overflow context. */}
       <div className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 flex items-center gap-0.5 pr-1.5">
         <button
-          onClick={(e) => { e.stopPropagation(); onArchive(); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onArchive();
+          }}
           className="p-1.5 rounded-md hover:bg-muted/60 transition-colors"
           aria-label="Archive conversation"
           title="Archive"
@@ -137,7 +140,10 @@ const ConversationRow = memo(
           <Archive className="w-3 h-3 text-muted-foreground/50" />
         </button>
         <button
-          onClick={(e) => { e.stopPropagation(); onDelete(); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete();
+          }}
           className="p-1.5 rounded-md hover:bg-destructive/10 transition-colors group/del"
           aria-label="Delete conversation"
           title="Delete"
