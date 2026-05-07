@@ -88,11 +88,19 @@ export default function Home() {
       </section>
 
       {/* FOOTER */}
-      <footer className="border-t py-6 text-center text-sm text-muted-foreground">
-        © 2026 beseekr |{" "}
-        <Link to="/about" className="hover:text-foreground transition-colors">
-          About
-        </Link>
+      <footer className="border-t py-6 text-center text-sm text-muted-foreground flex items-center justify-center gap-4">
+        <span>© 2026 Prompt Weaver</span>
+        <div className="flex items-center gap-4">
+          <Link to="/about" className="hover:text-foreground transition-colors">
+            About
+          </Link>
+          <Link
+            to="/privacy"
+            className="hover:text-foreground transition-colors"
+          >
+            Privacy Policy
+          </Link>
+        </div>
       </footer>
     </div>
   );

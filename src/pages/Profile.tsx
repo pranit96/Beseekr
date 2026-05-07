@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import {
   Download,
   Trash2,
@@ -530,137 +531,19 @@ const Profile = () => {
             </Card>
           </div>
 
-          <ScrollArea className="h-[600px] rounded-xl border border-border/40 bg-background/40 backdrop-blur-sm">
-            <div className="p-6 sm:p-10 max-w-3xl space-y-10">
-              {/* Header */}
-              <div className="border-b border-border/50 pb-6">
-                <h2 className="text-2xl font-semibold tracking-tight text-foreground">
-                  Privacy Policy
-                </h2>
-                <p className="text-sm text-muted-foreground mt-2">
-                  Last updated: December 13, 2025
-                </p>
-              </div>
-
-              {/* Section 1 */}
-              <section className="space-y-3">
-                <h3 className="text-base font-semibold text-foreground">
-                  1. Information We Collect
-                </h3>
-                <div className="space-y-3 text-sm text-muted-foreground leading-relaxed">
-                  <p>
-                    When you create an account, we collect essential information
-                    required to provide our services, including your name, email
-                    address, and account preferences. Your password is encrypted
-                    and never stored in plain text.
-                  </p>
-                  <p>
-                    To improve your experience, we also collect usage data such
-                    as conversation metadata, feature usage patterns, and
-                    performance logs. The content of your conversations is
-                    encrypted in transit and at rest, used exclusively to
-                    provide our services, and is never shared with third parties
-                    for marketing purposes.
-                  </p>
-                </div>
-              </section>
-
-              {/* Section 2 */}
-              <section className="space-y-3">
-                <h3 className="text-base font-semibold text-foreground">
-                  2. How We Use Your Information
-                </h3>
-                <div className="space-y-3 text-sm text-muted-foreground leading-relaxed">
-                  <p>
-                    We use the information we collect to deliver, maintain, and
-                    improve beseekr's features. This includes monitoring for
-                    suspicious activity to protect your account and analyzing
-                    anonymized usage patterns to enhance our platform.
-                  </p>
-                  <p>
-                    We may communicate with you regarding service updates or
-                    security alerts. Promotional and marketing communications
-                    are strictly opt-in.
-                  </p>
-                </div>
-              </section>
-
-              {/* Section 3 */}
-              <section className="space-y-3">
-                <h3 className="text-base font-semibold text-foreground">
-                  3. Data Security
-                </h3>
-                <div className="space-y-3 text-sm text-muted-foreground leading-relaxed">
-                  <p>
-                    We implement industry-standard security measures to protect
-                    your data. This includes AES-256 encryption at rest and TLS
-                    1.3 in transit. We maintain strict limits on internal data
-                    access and conduct regular security audits and vulnerability
-                    assessments across our certified cloud infrastructure.
-                  </p>
-                </div>
-              </section>
-
-              {/* Section 4 */}
-              <section className="space-y-3">
-                <h3 className="text-base font-semibold text-foreground">
-                  4. Data Retention & Third-Party Services
-                </h3>
-                <div className="space-y-3 text-sm text-muted-foreground leading-relaxed">
-                  <p>
-                    When you delete your account, your personal data is
-                    permanently deleted within 30 days. Backup copies are purged
-                    within 90 days. Anonymized analytics may be retained
-                    indefinitely for service improvements.
-                  </p>
-                  <p>
-                    We partner with select third-party services, including AI
-                    providers (such as OpenAI and Anthropic) under strict data
-                    processing agreements, secure cloud hosting providers, and
-                    privacy-focused analytics tools. No personally identifiable
-                    data is shared with our analytics providers.
-                  </p>
-                </div>
-              </section>
-
-              {/* Section 5 */}
-              <section className="space-y-3">
-                <h3 className="text-base font-semibold text-foreground">
-                  5. Your Rights and Choices
-                </h3>
-                <div className="space-y-3 text-sm text-muted-foreground leading-relaxed">
-                  <p>
-                    You have the right to access, correct, or delete your
-                    personal information at any time. You may also request an
-                    export of your data in a portable format. To exercise these
-                    rights, use the Data & Archive tab in your settings or
-                    contact our support team.
-                  </p>
-                </div>
-              </section>
-
-              {/* Contact */}
-              <section className="space-y-3 pt-6 border-t border-border/50">
-                <h3 className="text-base font-semibold text-foreground">
-                  Contact Us
-                </h3>
-                <div className="text-sm text-muted-foreground leading-relaxed">
-                  <p>
-                    If you have any questions or concerns about this Privacy
-                    Policy, please reach out to us at:
-                  </p>
-                  <p className="mt-2">
-                    <a
-                      href="mailto:hello@support.beseekr.com"
-                      className="text-primary font-medium hover:underline transition-all"
-                    >
-                      hello@support.beseekr.com
-                    </a>
-                  </p>
-                </div>
-              </section>
-            </div>
-          </ScrollArea>
+          <Card className="p-8 glass max-w-2xl text-center mx-auto mt-8">
+            <h2 className="text-xl font-semibold tracking-tight text-foreground mb-3">
+              Full Privacy Policy
+            </h2>
+            <p className="text-sm text-muted-foreground mb-6">
+              To learn more about how we collect, use, and protect your data
+              across the autonomous agent platform, please read our complete
+              Privacy Policy.
+            </p>
+            <Button asChild>
+              <Link to="/privacy">Read Privacy Policy</Link>
+            </Button>
+          </Card>
         </TabsContent>
       </Tabs>
 

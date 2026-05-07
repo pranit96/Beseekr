@@ -97,87 +97,93 @@ const ConversationRow = memo(
     onArchive: () => void;
     onDelete: () => void;
     onMouseEnter: () => void;
-  }) => (
-    <div
-      role="button"
-      tabIndex={0}
-      aria-selected={isActive}
-      onClick={onClick}
-      onMouseEnter={onMouseEnter}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          onClick();
-        }
-      }}
-      className={`conv-row group ${isActive ? "conv-row-active" : ""}`}
-    >
-      {/* Active accent bar */}
-      <span
-        className={`conv-accent-bar ${
-          isActive ? "opacity-100" : "opacity-0 group-hover:opacity-40"
-        }`}
-      />
-
-      {/* Text — flex-1 + min-w-0 + overflow-hidden ensures truncation */}
-      {/* Text — flex-1 + min-w-0 + overflow-hidden ensures truncation */}
-      <div className="flex-1 min-w-0 overflow-hidden pl-3 pr-6">
-        <p className="text-[13px] font-medium text-foreground/85 truncate leading-snug group-hover:text-foreground transition-colors">
-          {conversation.title || "Untitled"}
-        </p>
-        <p className="text-[10px] text-muted-foreground/35 mt-1">
-          {relativeTime(conversation.last_message_at)}
-        </p>
-      </div>
-
-      {/* Actions — 3-dot dropdown menu overlaying the right edge */}
+  }) => {
+    const title = conversation.title || "Untitled";
+    const trimmedTitle = title.length > 40 ? `${title.slice(0, 40)}...` : title;
+    return (
       <div
-        className={`absolute right-2 top-1/2 -translate-y-1/2 transition-opacity duration-200 ${
-          isActive ? "opacity-100" : "opacity-0 group-hover:opacity-100"
-        }`}
-        onClick={(e) => e.stopPropagation()}
+        role="button"
+        tabIndex={0}
+        aria-selected={isActive}
+        onClick={onClick}
+        onMouseEnter={onMouseEnter}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onClick();
+          }
+        }}
+        className={`conv-row group ${isActive ? "conv-row-active" : ""}`}
       >
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              className="p-1 rounded-md hover:bg-background/90 bg-background/60 backdrop-blur-sm transition-colors flex items-center justify-center shadow-sm"
-              aria-label="Conversation options"
-              title="Options"
+        {/* Active accent bar */}
+        <span
+          className={`conv-accent-bar ${
+            isActive ? "opacity-100" : "opacity-0 group-hover:opacity-40"
+          }`}
+        />
+
+        {/* Text — flex-1 + min-w-0 + overflow-hidden ensures truncation */}
+        {/* Text — flex-1 + min-w-0 + overflow-hidden ensures truncation */}
+        {/* Text */}
+        <div className="flex-1 min-w-0 overflow-hidden pl-3 pr-6">
+          <p className="text-[13px] font-medium text-foreground/85 truncate leading-snug group-hover:text-foreground transition-colors">
+            {trimmedTitle}
+          </p>
+
+          <p className="text-[10px] text-muted-foreground/35 mt-1">
+            {relativeTime(conversation.last_message_at)}
+          </p>
+        </div>
+
+        {/* Actions — 3-dot dropdown menu overlaying the right edge */}
+        <div
+          className={`absolute right-2 top-1/2 -translate-y-1/2 transition-opacity duration-200 ${
+            isActive ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+          }`}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                className="p-1 rounded-md hover:bg-background/90 bg-background/60 backdrop-blur-sm transition-colors flex items-center justify-center shadow-sm"
+                aria-label="Conversation options"
+                title="Options"
+              >
+                <MoreHorizontal className="w-4 h-4 text-foreground/70" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              side="bottom"
+              className="w-40 z-[100]"
             >
-              <MoreHorizontal className="w-4 h-4 text-foreground/70" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            align="end"
-            side="bottom"
-            className="w-40 z-[100]"
-          >
-            <DropdownMenuItem
-              onClick={(e) => {
-                e.stopPropagation();
-                onArchive();
-              }}
-              className="gap-2 text-xs cursor-pointer"
-            >
-              <Archive className="w-3.5 h-3.5" />
-              Archive
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete();
-              }}
-              className="gap-2 text-xs cursor-pointer text-destructive focus:text-destructive"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-              Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onArchive();
+                }}
+                className="gap-2 text-xs cursor-pointer"
+              >
+                <Archive className="w-3.5 h-3.5" />
+                Archive
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete();
+                }}
+                className="gap-2 text-xs cursor-pointer text-destructive focus:text-destructive"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
-    </div>
-  ),
+    );
+  },
   (prev, next) =>
     prev.conversation.id === next.conversation.id &&
     prev.isActive === next.isActive &&
