@@ -530,224 +530,135 @@ const Profile = () => {
             </Card>
           </div>
 
-          <ScrollArea className="h-[600px] pr-4">
-            <div className="space-y-6">
-              <Card className="p-6 glass">
-                <h2 className="text-xl font-bold mb-4 flex items-center gap-3">
-                  <Server className="w-5 h-5 text-primary" />
-                  Information We Collect
+          <ScrollArea className="h-[600px] rounded-xl border border-border/40 bg-background/40 backdrop-blur-sm">
+            <div className="p-6 sm:p-10 max-w-3xl space-y-10">
+              {/* Header */}
+              <div className="border-b border-border/50 pb-6">
+                <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+                  Privacy Policy
                 </h2>
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="font-semibold mb-2">Account Information</h3>
-                    <p className="text-sm text-muted-foreground mb-2">
-                      When you create an account, we collect:
-                    </p>
-                    <ul className="text-sm text-muted-foreground space-y-1 ml-4">
-                      <li>• Your name and email address</li>
-                      <li>
-                        • Password (encrypted and never stored in plain text)
-                      </li>
-                      <li>• Account preferences and settings</li>
-                    </ul>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold mb-2">Usage Data</h3>
-                    <p className="text-sm text-muted-foreground mb-2">
-                      To improve our services, we collect:
-                    </p>
-                    <ul className="text-sm text-muted-foreground space-y-1 ml-4">
-                      <li>
-                        • Conversation metadata (timestamps, agent interactions)
-                      </li>
-                      <li>• Feature usage patterns</li>
-                      <li>• Performance and error logs</li>
-                    </ul>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold mb-2">Conversation Content</h3>
-                    <ul className="text-sm text-muted-foreground space-y-1 ml-4">
-                      <li>• Encrypted in transit and at rest</li>
-                      <li>• Used only to provide our services</li>
-                      <li>• Never shared with third parties for marketing</li>
-                    </ul>
-                  </div>
-                </div>
-              </Card>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Last updated: December 13, 2025
+                </p>
+              </div>
 
-              <Card className="p-6 glass">
-                <h2 className="text-xl font-bold mb-4 flex items-center gap-3">
-                  <Lock className="w-5 h-5 text-primary" />
-                  How We Use Your Information
-                </h2>
-                <div className="space-y-3 text-sm text-muted-foreground">
+              {/* Section 1 */}
+              <section className="space-y-3">
+                <h3 className="text-base font-semibold text-foreground">
+                  1. Information We Collect
+                </h3>
+                <div className="space-y-3 text-sm text-muted-foreground leading-relaxed">
                   <p>
-                    <strong className="text-foreground">
-                      Provide Services:
-                    </strong>{" "}
-                    We use your information to deliver and improve beseekr's
-                    features.
+                    When you create an account, we collect essential information
+                    required to provide our services, including your name, email
+                    address, and account preferences. Your password is encrypted
+                    and never stored in plain text.
                   </p>
                   <p>
-                    <strong className="text-foreground">Communication:</strong>{" "}
-                    We may send you service updates and security alerts.
-                    Marketing is opt-in only.
-                  </p>
-                  <p>
-                    <strong className="text-foreground">Security:</strong> We
-                    monitor for suspicious activity to protect your account.
-                  </p>
-                  <p>
-                    <strong className="text-foreground">Analytics:</strong> We
-                    analyze usage patterns to improve features. All data is
-                    anonymized.
+                    To improve your experience, we also collect usage data such
+                    as conversation metadata, feature usage patterns, and
+                    performance logs. The content of your conversations is
+                    encrypted in transit and at rest, used exclusively to
+                    provide our services, and is never shared with third parties
+                    for marketing purposes.
                   </p>
                 </div>
-              </Card>
+              </section>
 
-              <Card className="p-6 glass">
-                <h2 className="text-xl font-bold mb-4 flex items-center gap-3">
-                  <Shield className="w-5 h-5 text-primary" />
-                  Data Security
-                </h2>
-                <div className="space-y-2 text-sm text-muted-foreground">
-                  <p>We implement industry-standard security measures:</p>
-                  <ul className="space-y-1 ml-4">
-                    <li>
-                      • <strong className="text-foreground">Encryption:</strong>{" "}
-                      AES-256 at rest, TLS 1.3 in transit
-                    </li>
-                    <li>
-                      •{" "}
-                      <strong className="text-foreground">
-                        Access Controls:
-                      </strong>{" "}
-                      Strict limits on data access
-                    </li>
-                    <li>
-                      •{" "}
-                      <strong className="text-foreground">
-                        Regular Audits:
-                      </strong>{" "}
-                      Security audits and vulnerability assessments
-                    </li>
-                    <li>
-                      •{" "}
-                      <strong className="text-foreground">
-                        Secure Infrastructure:
-                      </strong>{" "}
-                      Certified cloud platforms
-                    </li>
-                  </ul>
+              {/* Section 2 */}
+              <section className="space-y-3">
+                <h3 className="text-base font-semibold text-foreground">
+                  2. How We Use Your Information
+                </h3>
+                <div className="space-y-3 text-sm text-muted-foreground leading-relaxed">
+                  <p>
+                    We use the information we collect to deliver, maintain, and
+                    improve beseekr's features. This includes monitoring for
+                    suspicious activity to protect your account and analyzing
+                    anonymized usage patterns to enhance our platform.
+                  </p>
+                  <p>
+                    We may communicate with you regarding service updates or
+                    security alerts. Promotional and marketing communications
+                    are strictly opt-in.
+                  </p>
                 </div>
-              </Card>
+              </section>
 
-              <Card className="p-6 glass">
-                <h2 className="text-xl font-bold mb-4 flex items-center gap-3">
-                  <Users className="w-5 h-5 text-primary" />
-                  Your Rights and Choices
-                </h2>
-                <div className="space-y-2 text-sm text-muted-foreground">
-                  <p>You have the following rights regarding your data:</p>
-                  <ul className="space-y-2 ml-4">
-                    <li>
-                      <strong className="text-foreground">Access:</strong>{" "}
-                      Request a copy of all your data
-                    </li>
-                    <li>
-                      <strong className="text-foreground">Correction:</strong>{" "}
-                      Update your personal information
-                    </li>
-                    <li>
-                      <strong className="text-foreground">Deletion:</strong>{" "}
-                      Delete your account and all data permanently
-                    </li>
-                    <li>
-                      <strong className="text-foreground">Export:</strong>{" "}
-                      Download your data in portable format
-                    </li>
-                  </ul>
-                  <p className="mt-3">
-                    To exercise these rights, use the Data & Archive tab or
-                    contact{" "}
+              {/* Section 3 */}
+              <section className="space-y-3">
+                <h3 className="text-base font-semibold text-foreground">
+                  3. Data Security
+                </h3>
+                <div className="space-y-3 text-sm text-muted-foreground leading-relaxed">
+                  <p>
+                    We implement industry-standard security measures to protect
+                    your data. This includes AES-256 encryption at rest and TLS
+                    1.3 in transit. We maintain strict limits on internal data
+                    access and conduct regular security audits and vulnerability
+                    assessments across our certified cloud infrastructure.
+                  </p>
+                </div>
+              </section>
+
+              {/* Section 4 */}
+              <section className="space-y-3">
+                <h3 className="text-base font-semibold text-foreground">
+                  4. Data Retention & Third-Party Services
+                </h3>
+                <div className="space-y-3 text-sm text-muted-foreground leading-relaxed">
+                  <p>
+                    When you delete your account, your personal data is
+                    permanently deleted within 30 days. Backup copies are purged
+                    within 90 days. Anonymized analytics may be retained
+                    indefinitely for service improvements.
+                  </p>
+                  <p>
+                    We partner with select third-party services, including AI
+                    providers (such as OpenAI and Anthropic) under strict data
+                    processing agreements, secure cloud hosting providers, and
+                    privacy-focused analytics tools. No personally identifiable
+                    data is shared with our analytics providers.
+                  </p>
+                </div>
+              </section>
+
+              {/* Section 5 */}
+              <section className="space-y-3">
+                <h3 className="text-base font-semibold text-foreground">
+                  5. Your Rights and Choices
+                </h3>
+                <div className="space-y-3 text-sm text-muted-foreground leading-relaxed">
+                  <p>
+                    You have the right to access, correct, or delete your
+                    personal information at any time. You may also request an
+                    export of your data in a portable format. To exercise these
+                    rights, use the Data & Archive tab in your settings or
+                    contact our support team.
+                  </p>
+                </div>
+              </section>
+
+              {/* Contact */}
+              <section className="space-y-3 pt-6 border-t border-border/50">
+                <h3 className="text-base font-semibold text-foreground">
+                  Contact Us
+                </h3>
+                <div className="text-sm text-muted-foreground leading-relaxed">
+                  <p>
+                    If you have any questions or concerns about this Privacy
+                    Policy, please reach out to us at:
+                  </p>
+                  <p className="mt-2">
                     <a
                       href="mailto:hello@support.beseekr.com"
-                      className="text-primary hover:underline"
+                      className="text-primary font-medium hover:underline transition-all"
                     >
                       hello@support.beseekr.com
                     </a>
                   </p>
                 </div>
-              </Card>
-
-              <Card className="p-6 glass">
-                <h2 className="text-xl font-bold mb-4">Data Retention</h2>
-                <div className="text-sm text-muted-foreground space-y-2">
-                  <p>When you delete your account:</p>
-                  <ul className="space-y-1 ml-4">
-                    <li>
-                      • Personal data is permanently deleted within 30 days
-                    </li>
-                    <li>
-                      • Anonymized analytics may be retained for improvements
-                    </li>
-                    <li>• Backup copies are purged within 90 days</li>
-                  </ul>
-                </div>
-              </Card>
-
-              <Card className="p-6 glass">
-                <h2 className="text-xl font-bold mb-4">Third-Party Services</h2>
-                <div className="text-sm text-muted-foreground space-y-2">
-                  <p>We use select third-party services:</p>
-                  <ul className="space-y-1 ml-4">
-                    <li>
-                      <strong className="text-foreground">AI Providers:</strong>{" "}
-                      OpenAI and Anthropic (data processing agreements in place)
-                    </li>
-                    <li>
-                      <strong className="text-foreground">
-                        Cloud Hosting:
-                      </strong>{" "}
-                      Secure infrastructure providers
-                    </li>
-                    <li>
-                      <strong className="text-foreground">Analytics:</strong>{" "}
-                      Privacy-focused tools (no personal data shared)
-                    </li>
-                  </ul>
-                </div>
-              </Card>
-
-              <Card className="p-6 glass">
-                <h2 className="text-xl font-bold mb-4">Contact Us</h2>
-                <div className="text-sm text-muted-foreground space-y-2">
-                  <p>Questions about this Privacy Policy?</p>
-                  <div className="space-y-1">
-                    <p>
-                      <strong className="text-foreground">Email:</strong>{" "}
-                      <a
-                        href="mailto:hello@support.beseekr.com"
-                        className="text-primary hover:underline"
-                      >
-                        hello@support.beseekr.com
-                      </a>
-                    </p>
-                    <p>
-                      <strong className="text-foreground">Support:</strong>{" "}
-                      <a
-                        href="mailto:support@beseekr.com"
-                        className="text-primary hover:underline"
-                      >
-                        support@beseekr.com
-                      </a>
-                    </p>
-                  </div>
-                  <p className="text-xs mt-4">
-                    Last updated: December 13, 2025
-                  </p>
-                </div>
-              </Card>
+              </section>
             </div>
           </ScrollArea>
         </TabsContent>

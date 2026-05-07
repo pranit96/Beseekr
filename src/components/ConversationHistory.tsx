@@ -10,9 +10,17 @@ import {
   ChevronDown,
   ChevronRight,
   Cpu,
+  MoreHorizontal,
   Trash,
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -112,51 +120,61 @@ const ConversationRow = memo(
       />
 
       {/* Text — flex-1 + min-w-0 + overflow-hidden ensures truncation */}
-      <div className="flex-1 min-w-0 overflow-hidden pl-3">
+      {/* Text — flex-1 + min-w-0 + overflow-hidden ensures truncation */}
+      <div className="flex-1 min-w-0 overflow-hidden pl-3 pr-6">
         <p className="text-[13px] font-medium text-foreground/85 truncate leading-snug group-hover:text-foreground transition-colors">
           {conversation.title || "Untitled"}
         </p>
-        {conversation.last_message && (
-          <p className="text-[11px] text-muted-foreground/50 truncate mt-0.5 leading-snug">
-            {conversation.last_message}
-          </p>
-        )}
         <p className="text-[10px] text-muted-foreground/35 mt-1">
           {relativeTime(conversation.last_message_at)}
         </p>
       </div>
 
-      {/* Actions — Absolutely positioned on the right to overlay text on hover/active.
-          This guarantees they never get pushed out of bounds and match the original clean look. */}
+      {/* Actions — 3-dot dropdown menu overlaying the right edge */}
       <div
-        className={`absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-0.5 p-0.5 rounded-md transition-opacity duration-200 ${
-          isActive
-            ? "opacity-100 bg-background/80 shadow-sm"
-            : "opacity-0 group-hover:opacity-100 bg-background/95 shadow-sm"
+        className={`absolute right-2 top-1/2 -translate-y-1/2 transition-opacity duration-200 ${
+          isActive ? "opacity-100" : "opacity-0 group-hover:opacity-100"
         }`}
+        onClick={(e) => e.stopPropagation()}
       >
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onArchive();
-          }}
-          className="p-1.5 rounded-md hover:bg-muted/80 transition-colors"
-          aria-label="Archive conversation"
-          title="Archive"
-        >
-          <Archive className="w-3.5 h-3.5 text-muted-foreground/70" />
-        </button>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete();
-          }}
-          className="p-1.5 rounded-md hover:bg-destructive/15 transition-colors group/del"
-          aria-label="Delete conversation"
-          title="Delete"
-        >
-          <Trash2 className="w-3.5 h-3.5 text-muted-foreground/70 group-hover/del:text-destructive transition-colors" />
-        </button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              className="p-1 rounded-md hover:bg-background/90 bg-background/60 backdrop-blur-sm transition-colors flex items-center justify-center shadow-sm"
+              aria-label="Conversation options"
+              title="Options"
+            >
+              <MoreHorizontal className="w-4 h-4 text-foreground/70" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align="end"
+            side="bottom"
+            className="w-40 z-[100]"
+          >
+            <DropdownMenuItem
+              onClick={(e) => {
+                e.stopPropagation();
+                onArchive();
+              }}
+              className="gap-2 text-xs cursor-pointer"
+            >
+              <Archive className="w-3.5 h-3.5" />
+              Archive
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
+              className="gap-2 text-xs cursor-pointer text-destructive focus:text-destructive"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   ),
