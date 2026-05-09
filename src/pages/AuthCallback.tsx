@@ -43,11 +43,7 @@ export default function AuthCallback() {
         const isSafari = /^((?!chrome|android).)*safari/i.test(userAgent);
         const isMobile = /iPhone|iPad|iPod|Android/i.test(userAgent);
 
-        console.log("OAuth Callback - Browser Info:", {
-          isSafari,
-          isMobile,
-          userAgent: userAgent.substring(0, 100), // Truncated for brevity
-        });
+        // Browser info logs removed for privacy
 
         // First, check if there are tokens in the URL hash
         const hashParams = new URLSearchParams(
@@ -59,12 +55,7 @@ export default function AuthCallback() {
         const searchParams = new URLSearchParams(window.location.search);
         const hasTokensInSearch = searchParams.has("access_token");
 
-        console.log("OAuth Callback - URL Token Detection:", {
-          hasTokensInUrl,
-          hasTokensInSearch,
-          hashLength: window.location.hash.length,
-          searchLength: window.location.search.length,
-        });
+        // URL Token Detection logs removed for privacy
 
         if (hasTokensInUrl || hasTokensInSearch) {
           // Tokens are in URL - Supabase needs to process them
@@ -90,10 +81,7 @@ export default function AuthCallback() {
 
             // Set up auth state change listener FIRST
             authListener = supabase.auth.onAuthStateChange((event, session) => {
-              console.log("OAuth Callback - Auth State Change:", {
-                event,
-                hasSession: !!session,
-              });
+              console.log(`OAuth Callback - Auth State Change: ${event}`);
 
               if (
                 (event === "SIGNED_IN" ||

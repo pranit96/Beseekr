@@ -75,11 +75,7 @@ const Auth = () => {
     // Detect Safari for conditional handling
     const isSafari = isSafariBrowser();
 
-    console.log("Initiating Google OAuth", {
-      isSafari,
-      isMobile: /iPhone|iPad|iPod|Android/i.test(navigator.userAgent),
-      redirectUrl: `${window.location.origin}/auth/callback`,
-    });
+    // Initiating Google OAuth
 
     try {
       const { error } = await supabase.auth.signInWithOAuth({

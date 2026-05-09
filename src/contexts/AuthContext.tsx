@@ -184,10 +184,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           const response = await apiClient.getCurrentUser();
 
           if (response.success && response.data) {
-            logger.info("getCurrentUser response in refreshAuth:", {
-              mfa_required: (response as any).mfa_required,
-              hasData: !!response.data,
-            });
+            logger.info("Auth refresh successful");
             if ((response as any).mfa_required) {
               logger.warn("MFA required during refresh, redirecting to login");
               handleAuthError();
@@ -198,9 +195,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             setCachedUser(fetchedUser); // SAFARI FIX: Update cache so dashboard sees logged-in state
             lastActivityRef.current = Date.now();
             authErrorShownRef.current = false;
-            logger.info("Auth refresh successful", {
-              userId: fetchedUser.id,
-            });
 
             // Sync language globally
             if (
