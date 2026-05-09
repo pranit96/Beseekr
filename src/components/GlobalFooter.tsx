@@ -16,7 +16,7 @@ export function GlobalFooter() {
 
           {/* Center - Links */}
           <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 text-sm">
-            <Link
+            {/* <Link
               to="/dashboard/problems"
               className="text-muted-foreground hover:text-foreground transition-colors"
             >
@@ -33,7 +33,7 @@ export function GlobalFooter() {
               className="text-muted-foreground hover:text-foreground transition-colors"
             >
               Pricing
-            </Link>
+            </Link> */}
             <Link
               to="/about"
               className="text-muted-foreground hover:text-foreground transition-colors"
