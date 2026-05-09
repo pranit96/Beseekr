@@ -6,17 +6,20 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { apiClient } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
-import { Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Loader2, AlertCircle, CheckCircle2, ArrowLeft } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
 export default function AuthCallback() {
   const navigate = useNavigate();
-  const { refreshAuth } = useAuth();
-  const [status, setStatus] = useState<"loading" | "success" | "error">(
-    "loading",
-  );
+  const { refreshAuth, verifyMFA } = useAuth();
+  const [status, setStatus] = useState<
+    "loading" | "success" | "error" | "mfa"
+  >("loading");
   const [errorMessage, setErrorMessage] = useState("");
+  const [mfaData, setMfaData] = useState<{ factorId: string; userId: string } | null>(null);
+  const [mfaCode, setMfaCode] = useState("");
+  const [isVerifyingMfa, setIsVerifyingMfa] = useState(false);
 
   // Get the intended redirect URL (saved by ProtectedRoute) or fall back to dashboard
   const getRedirectUrl = () => {
@@ -135,6 +138,11 @@ export default function AuthCallback() {
           );
 
           if (response.success) {
+            if ((response as any).mfa_required) {
+              setMfaData(response.data);
+              setStatus("mfa");
+              return;
+            }
             console.log("OAuth Callback - Backend authentication successful");
             // Refresh auth context to update user state across all components
             await refreshAuth(true);
@@ -324,6 +332,70 @@ export default function AuthCallback() {
               </p>
             </div>
           </>
+        )}
+
+        {status === "mfa" && mfaData && (
+          <div className="space-y-6 text-center">
+            <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center animate-pulse">
+              <Loader2 className="h-8 w-8 text-primary" />
+            </div>
+
+            <div className="space-y-2">
+              <h2 className="text-xl font-bold text-slate-800 dark:text-foreground">
+                MFA Required
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                Your Google account is linked, but you have 2FA enabled on your
+                profile. Please enter your 6-digit code.
+              </p>
+            </div>
+
+            <div className="space-y-4 text-left">
+              <div className="space-y-2">
+                <input
+                  type="text"
+                  placeholder="000000"
+                  maxLength={6}
+                  value={mfaCode}
+                  onChange={(e) =>
+                    setMfaCode(e.target.value.replace(/\D/g, ""))
+                  }
+                  className="w-full text-center font-mono text-2xl tracking-[0.5em] h-14 rounded-lg border border-input bg-background px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  autoFocus
+                />
+              </div>
+
+              <div className="space-y-3">
+                <Button
+                  onClick={async () => {
+                    if (mfaCode.length !== 6) return;
+                    setIsVerifyingMfa(true);
+                    try {
+                      await verifyMFA(mfaData.factorId, mfaCode);
+                    } catch (err: any) {
+                      setErrorMessage(err.message || "Invalid code.");
+                      setMfaCode("");
+                    } finally {
+                      setIsVerifyingMfa(false);
+                    }
+                  }}
+                  disabled={mfaCode.length !== 6 || isVerifyingMfa}
+                  className="w-full h-11"
+                >
+                  {isVerifyingMfa ? "Verifying..." : "Verify & Continue"}
+                </Button>
+
+                <Button
+                  onClick={() => navigate("/auth")}
+                  className="w-full h-11"
+                  variant="outline"
+                >
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </div>
         )}
 
         {status === "success" && (

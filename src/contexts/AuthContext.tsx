@@ -36,13 +36,14 @@ interface User {
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, password: string, full_name: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<any>;
+  signup: (email: string, password: string, full_name: string) => Promise<any>;
   logout: () => Promise<void>;
   exportData: () => Promise<any>;
   deleteAccount: (email: string) => Promise<void>;
   socketConnected: boolean;
   refreshAuth: (silent?: boolean) => Promise<void>;
+  verifyMFA: (factorId: string, code: string) => Promise<void>;
   isSessionValid: () => boolean;
 }
 
@@ -474,9 +475,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const response = await apiClient.login(email, password);
       if (response.success && response.data) {
+        if ((response as any).mfa_required) {
+          logger.info("MFA required for login");
+          return response.data; // Return factorId and other data to UI
+        }
+
         const fetchedUser = response.data.user;
         setUser(fetchedUser);
-        setCachedUser(fetchedUser); // Fix: Update local cache immediately
+        setCachedUser(fetchedUser);
         lastActivityRef.current = Date.now();
         authErrorShownRef.current = false;
 
@@ -489,10 +495,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           description: "Successfully logged in.",
         });
 
-        // Redirect to intended page or default to home
         const redirectUrl = sessionStorage.getItem("auth-redirect") || "/";
         sessionStorage.removeItem("auth-redirect");
         navigate(redirectUrl);
+        return response.data;
       }
     } catch (error: any) {
       toast({
@@ -647,6 +653,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         deleteAccount,
         socketConnected,
         refreshAuth,
+        verifyMFA: async (factorId: string, code: string) => {
+          const res = await apiClient.verify2FA(factorId, code);
+          if (res.success) {
+            await refreshAuth(true);
+            const redirectUrl = sessionStorage.getItem("auth-redirect") || "/";
+            sessionStorage.removeItem("auth-redirect");
+            navigate(redirectUrl);
+          } else {
+            throw new Error(res.error || "MFA verification failed");
+          }
+        },
         isSessionValid,
       }}
     >

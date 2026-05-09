@@ -44,8 +44,14 @@ const Auth = () => {
   const [canResend, setCanResend] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-  const { login, signup } = useAuth();
+  const { login, signup, verifyMFA } = useAuth();
   const { toast } = useToast();
+  const [mfaData, setMfaData] = useState<{
+    factorId: string;
+    userId: string;
+  } | null>(null);
+  const [mfaCode, setMfaCode] = useState("");
+  const [isVerifyingMfa, setIsVerifyingMfa] = useState(false);
 
   // Google OAuth handler
   const handleGoogleSignIn = async () => {
@@ -268,8 +274,13 @@ const Auth = () => {
     setIsLoading(true);
     setLoginError("");
     try {
-      await login(loginEmail, loginPassword);
-      analytics.track("login_success", { method: "email" });
+      const res = await login(loginEmail, loginPassword);
+      if (res?.mfa_required) {
+        setMfaData(res);
+        analytics.track("mfa_challenge_shown", { method: "email" });
+      } else {
+        analytics.track("login_success", { method: "email" });
+      }
     } catch (error: any) {
       analytics.track("login_error", { method: "email", error: error.message });
       const errorMsg = error.message || "Invalid email or password";
@@ -526,6 +537,76 @@ const Auth = () => {
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Back to Login
                 </Button>
+              </div>
+            </div>
+          ) : mfaData ? (
+            <div className="space-y-6 text-center">
+              <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center animate-pulse">
+                <Zap className="w-8 h-8 text-primary" />
+              </div>
+
+              <div className="space-y-2">
+                <h3 className="text-xl font-bold text-slate-800 dark:text-foreground">
+                  Two-Factor Authentication
+                </h3>
+                <p className="text-sm text-slate-600 dark:text-muted-foreground">
+                  Enter the 6-digit code from your authenticator app to
+                  continue.
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Input
+                    placeholder="000000"
+                    maxLength={6}
+                    value={mfaCode}
+                    onChange={(e) =>
+                      setMfaCode(e.target.value.replace(/\D/g, ""))
+                    }
+                    className="text-center font-mono text-2xl tracking-[0.5em] h-14"
+                    autoFocus
+                  />
+                </div>
+
+                <div className="space-y-3">
+                  <Button
+                    onClick={async () => {
+                      if (mfaCode.length !== 6) return;
+                      setIsVerifyingMfa(true);
+                      try {
+                        await verifyMFA(mfaData.factorId, mfaCode);
+                        analytics.track("mfa_success", { method: "email" });
+                      } catch (err: any) {
+                        toast({
+                          title: "Verification failed",
+                          description:
+                            err.message || "Invalid code. Please try again.",
+                          variant: "destructive",
+                        });
+                        setMfaCode("");
+                      } finally {
+                        setIsVerifyingMfa(false);
+                      }
+                    }}
+                    disabled={mfaCode.length !== 6 || isVerifyingMfa}
+                    className="w-full h-11 shadow-medium hover:shadow-glow"
+                  >
+                    {isVerifyingMfa ? "Verifying..." : "Verify & Login"}
+                  </Button>
+
+                  <Button
+                    onClick={() => {
+                      setMfaData(null);
+                      setMfaCode("");
+                    }}
+                    className="w-full h-11 shadow-medium hover:shadow-glow"
+                    variant="outline"
+                  >
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Back to Login
+                  </Button>
+                </div>
               </div>
             </div>
           ) : showForgotPassword ? (
