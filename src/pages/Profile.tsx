@@ -74,7 +74,10 @@ interface NotificationPreferences {
 }
 
 export default function Profile() {
-  const [activeTab, setActiveTab] = useState("general");
+  const [activeTab, setActiveTab] = useState(() => {
+    const hash = window.location.hash.replace("#", "");
+    return SIDEBAR_NAV.some((item) => item.id === hash) ? hash : "general";
+  });
 
   // States
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -718,7 +721,10 @@ export default function Profile() {
               return (
                 <button
                   key={item.id}
-                  onClick={() => setActiveTab(item.id)}
+                  onClick={() => {
+                    setActiveTab(item.id);
+                    window.location.hash = item.id;
+                  }}
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
                     isActive
                       ? "bg-primary/10 text-primary"
