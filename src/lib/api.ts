@@ -151,14 +151,17 @@ class ApiClient {
               retryCount,
             });
 
-            const isAuthEndpoint = endpoint.includes('/auth/login') || 
-                                   endpoint.includes('/auth/signup') || 
-                                   endpoint.includes('/auth/reset-password') ||
-                                   endpoint.includes('/auth/forgot-password');
+            const isAuthEndpoint =
+              endpoint.includes("/auth/login") ||
+              endpoint.includes("/auth/signup") ||
+              endpoint.includes("/auth/reset-password") ||
+              endpoint.includes("/auth/forgot-password");
 
             // For auth endpoints, don't attempt refresh or trigger global logout
             if (isAuthEndpoint) {
-              throw new Error(data.error || data.message || "Authentication failed");
+              throw new Error(
+                data.error || data.message || "Authentication failed",
+              );
             }
 
             // Try to refresh session and retry once
@@ -1075,7 +1078,7 @@ class ApiClient {
         created_at: string;
         last_used_at: string;
         user_agent: string | null;
-        ip: string | null;
+        location: string | null;
         is_current: boolean;
       }>
     >("/api/user/sessions");

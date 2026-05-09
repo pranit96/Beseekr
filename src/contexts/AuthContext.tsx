@@ -453,13 +453,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     } catch (error: any) {
       logger.error("Failed to fetch user", { error: error.message });
-      
+
       // CRITICAL: Don't clear user on network errors if we have cached data
       // This prevents redirects to login during temporary network blips or cold starts
-      const isNetworkError = error.message?.includes("Network error") || 
-                            error.message?.includes("Failed to fetch") ||
-                            error.message?.includes("timeout");
-                            
+      const isNetworkError =
+        error.message?.includes("Network error") ||
+        error.message?.includes("Failed to fetch") ||
+        error.message?.includes("timeout");
+
       if (!isNetworkError) {
         setUser(null);
         setCachedUser(null);

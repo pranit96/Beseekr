@@ -21,16 +21,16 @@ function parseUA(ua: string | null) {
         : /safari/i.test(ua)
           ? "Safari"
           : "Browser";
-  const os = /windows/i.test(ua)
-    ? "Windows"
-    : /mac os/i.test(ua)
-      ? "macOS"
-      : /linux/i.test(ua)
-        ? "Linux"
-        : /android/i.test(ua)
-          ? "Android"
-          : /iphone|ipad/i.test(ua)
-            ? "iOS"
+  const os = /iphone|ipad/i.test(ua)
+    ? "iOS"
+    : /android/i.test(ua)
+      ? "Android"
+      : /windows/i.test(ua)
+        ? "Windows"
+        : /mac os|macintosh/i.test(ua)
+          ? "macOS"
+          : /linux/i.test(ua)
+            ? "Linux"
             : "Unknown OS";
   const icon = isTablet ? Tablet : isMobile ? Smartphone : Laptop;
   return { device: os, browser, icon };
@@ -87,9 +87,9 @@ export function SessionsSection() {
                   </Badge>
                 )}
               </div>
-              {session.ip && (
-                <p className="text-xs text-muted-foreground">
-                  IP: {session.ip}
+              {session.location && (
+                <p className="text-xs text-muted-foreground font-medium">
+                  {session.location}
                 </p>
               )}
               <p className="text-xs text-muted-foreground">

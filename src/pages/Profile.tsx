@@ -104,7 +104,6 @@ export default function Profile() {
 
   const { user, loading, exportData, deleteAccount, refreshAuth } = useAuth();
 
-
   useEffect(() => {
     if (user?.timezone) setTimezone(user.timezone);
     if (user?.language) setLanguage(user.language);
