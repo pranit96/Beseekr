@@ -447,13 +447,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           i18n.changeLanguage(fetchedUser.language);
         }
       } else {
+        // Only clear if we explicitly got a failure from the API
         setUser(null);
         setCachedUser(null);
       }
-    } catch (error) {
-      logger.error("Failed to fetch user", { error });
-      setUser(null);
-      setCachedUser(null);
+    } catch (error: any) {
+      logger.error("Failed to fetch user", { error: error.message });
+      
+      // CRITICAL: Don't clear user on network errors if we have cached data
+      // This prevents redirects to login during temporary network blips or cold starts
+      const isNetworkError = error.message?.includes("Network error") || 
+                            error.message?.includes("Failed to fetch") ||
+                            error.message?.includes("timeout");
+                            
+      if (!isNetworkError) {
+        setUser(null);
+        setCachedUser(null);
+      }
     } finally {
       setLoading(false);
     }

@@ -113,7 +113,9 @@ export default function Profile() {
   const { toast } = useToast();
 
   useEffect(() => {
-    if (user?.full_name) setFullName(user.full_name);
+    if (user?.full_name || user?.name) {
+      setFullName(user.full_name || user?.name || "");
+    }
     if ((user as any)?.avatar) setAvatarUrl((user as any).avatar);
   }, [user]);
 
