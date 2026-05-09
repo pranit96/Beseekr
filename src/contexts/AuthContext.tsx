@@ -62,6 +62,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const { i18n } = useTranslation();
 
   const refreshingRef = useRef(false);
+  const refreshPromiseRef = useRef<Promise<any> | null>(null);
   const sessionCheckIntervalRef = useRef<NodeJS.Timeout>();
   const tokenRefreshIntervalRef = useRef<NodeJS.Timeout>();
   const lastActivityRef = useRef<number>(Date.now());
@@ -163,18 +164,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // ENHANCED: Refresh authentication state with retry logic
   const refreshAuth = useCallback(
     async (silent: boolean = false, retries: number = 3) => {
-      if (refreshingRef.current) {
-        logger.debug("Refresh already in progress, skipping");
-        return;
+      if (refreshingRef.current && refreshPromiseRef.current) {
+        logger.debug("Refresh already in progress, waiting for it");
+        return refreshPromiseRef.current;
       }
 
       refreshingRef.current = true;
-
-      try {
-        logger.info("Refreshing authentication state", { silent, retries });
-        const response = await apiClient.getCurrentUser();
+      refreshPromiseRef.current = (async () => {
+        try {
+          logger.info("Refreshing authentication state", { silent, retries });
+          const response = await apiClient.getCurrentUser();
 
         if (response.success && response.data) {
+          logger.info("getCurrentUser response in refreshAuth:", { 
+            mfa_required: (response as any).mfa_required,
+            hasData: !!response.data 
+          });
           if ((response as any).mfa_required) {
             logger.warn("MFA required during refresh, redirecting to login");
             handleAuthError();
@@ -228,9 +233,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         ) {
           handleAuthError();
         }
-      } finally {
-        refreshingRef.current = false;
-      }
+        } finally {
+          refreshingRef.current = false;
+          refreshPromiseRef.current = null;
+        }
+      })();
+
+      return refreshPromiseRef.current;
     },
     [handleAuthError],
   );
@@ -668,6 +677,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         verifyMFA: async (factorId: string, code: string) => {
           const res = await apiClient.verify2FA(factorId, code);
           if (res.success) {
+            // Optimistically update user state if provided
+            if (res.data?.user) {
+              setUser(res.data.user);
+              setCachedUser(res.data.user);
+            }
             await refreshAuth(true);
             const redirectUrl = sessionStorage.getItem("auth-redirect") || "/";
             sessionStorage.removeItem("auth-redirect");
