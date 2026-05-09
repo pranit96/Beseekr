@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { Logo } from "@/components/Logo";
 import {
   Sparkles,
   Send,
@@ -152,12 +153,7 @@ export function Contact() {
             <span className="hidden sm:inline">Back</span>
           </Link>
           <Link to="/dashboard/problems" className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-              <Sparkles className="w-4 h-4 text-white" />
-            </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              beseekr
-            </span>
+            <Logo className="text-xl sm:text-2xl" linkClassName="shrink-0" />
           </Link>
           <div className="w-20" /> {/* Spacer */}
         </div>
