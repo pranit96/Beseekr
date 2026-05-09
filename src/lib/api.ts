@@ -1021,6 +1021,18 @@ class ApiClient {
     });
   }
 
+  async updateProfile(profile: { full_name?: string }) {
+    this.clearCache();
+    return this.request<{
+      id: string;
+      email: string;
+      full_name: string;
+    }>("/api/user/profile", {
+      method: "PUT",
+      body: JSON.stringify(profile),
+    });
+  }
+
   // Generic HTTP methods to support modular API files
   public async get<T = any>(
     endpoint: string,

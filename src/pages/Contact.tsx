@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { GlobalHeader } from "@/components/GlobalHeader";
+import { GlobalFooter } from "@/components/GlobalFooter";
 import {
   Send,
   Loader2,
@@ -275,20 +276,7 @@ export function Contact() {
       </main>
 
       {/* FOOTER */}
-      <footer className="border-t py-6 text-center text-sm text-muted-foreground flex items-center justify-center gap-4 relative z-10 bg-background/80 backdrop-blur-md">
-        <span>© {new Date().getFullYear()} Beseekr</span>
-        <div className="flex items-center gap-4">
-          <Link to="/about" className="hover:text-foreground transition-colors">
-            About
-          </Link>
-          <Link
-            to="/privacy"
-            className="hover:text-foreground transition-colors"
-          >
-            Privacy Policy
-          </Link>
-        </div>
-      </footer>
+      <GlobalFooter />
     </div>
   );
 }

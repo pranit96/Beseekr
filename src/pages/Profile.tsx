@@ -67,8 +67,16 @@ const Profile = () => {
   const [savingNotification, setSavingNotification] = useState<string | null>(
     null,
   );
+  const [fullName, setFullName] = useState("");
+  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
 
-  const { user, exportData, deleteAccount } = useAuth();
+  const { user, exportData, deleteAccount, refreshAuth } = useAuth();
+
+  useEffect(() => {
+    if (user?.full_name) {
+      setFullName(user.full_name);
+    }
+  }, [user]);
   const { toast } = useToast();
 
   // React Query hooks
@@ -114,6 +122,28 @@ const Profile = () => {
       });
     }
   }, [error, toast]);
+
+  const handleUpdateProfile = async () => {
+    setIsUpdatingProfile(true);
+    try {
+      const response = await apiClient.updateProfile({ full_name: fullName });
+      if (response.success) {
+        toast({
+          title: "Profile updated",
+          description: "Your profile information has been saved.",
+        });
+        refreshAuth(true); // silent refresh
+      }
+    } catch (err) {
+      toast({
+        title: "Failed to update profile",
+        description: (err as any).message || "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdatingProfile(false);
+    }
+  };
 
   // Handle notification toggle
   const handleNotificationToggle = async (
@@ -247,8 +277,8 @@ const Profile = () => {
   return (
     <div className="space-y-8">
       <div className="mb-6 sm:mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-          Profile Settings
+        <h1 className="text-2xl sm:text-3xl font-semibold text-foreground">
+          Settings
         </h1>
         <p className="text-muted-foreground mt-1 sm:mt-2 text-sm sm:text-base">
           Manage your account, data, and privacy
@@ -264,23 +294,40 @@ const Profile = () => {
         </TabsList>
 
         <TabsContent value="account" className="space-y-6">
-          <Card className="p-6 glass">
-            <h2 className="text-xl font-semibold mb-4">Account Information</h2>
-            <div className="space-y-3">
-              <div>
-                <div className="text-sm text-muted-foreground">Name</div>
-                <div className="font-medium">
-                  {user?.full_name || "Not set"}
+          <Card className="p-6 border shadow-sm">
+            <h2 className="text-xl font-semibold mb-4 text-foreground">Account Profile</h2>
+            <div className="space-y-4 max-w-md">
+              <div className="space-y-2">
+                <Label htmlFor="fullName">Full Name</Label>
+                <div className="flex gap-2">
+                  <Input 
+                    id="fullName"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    placeholder="Your full name"
+                  />
+                  <Button 
+                    onClick={handleUpdateProfile} 
+                    disabled={isUpdatingProfile || fullName === user?.full_name}
+                  >
+                    {isUpdatingProfile ? "Saving..." : "Save"}
+                  </Button>
                 </div>
               </div>
-              <div>
-                <div className="text-sm text-muted-foreground">Email</div>
-                <div className="font-medium">{user?.email}</div>
+              <div className="space-y-2 pt-2">
+                <Label htmlFor="email">Email Address</Label>
+                <Input 
+                  id="email"
+                  value={user?.email || ""}
+                  disabled
+                  className="bg-muted/50"
+                />
+                <p className="text-xs text-muted-foreground">Your email address cannot be changed directly.</p>
               </div>
             </div>
           </Card>
 
-          <Card className="p-6 glass border-destructive/50">
+          <Card className="p-6 border border-destructive/20 shadow-sm">
             <h2 className="text-xl font-semibold mb-4 text-destructive">
               Danger Zone
             </h2>
@@ -306,7 +353,7 @@ const Profile = () => {
         </TabsContent>
 
         <TabsContent value="notifications" className="space-y-6">
-          <Card className="p-6 glass">
+          <Card className="p-6 border shadow-sm">
             <div className="flex items-center gap-3 mb-6">
               <div className="p-2 rounded-lg bg-primary/10">
                 <Bell className="w-5 h-5 text-primary" />
@@ -392,7 +439,7 @@ const Profile = () => {
             )}
           </Card>
 
-          <Card className="p-6 glass border-destructive/30">
+          <Card className="p-6 border border-destructive/20 shadow-sm">
             <h3 className="font-semibold mb-2">Unsubscribe from All</h3>
             <p className="text-sm text-muted-foreground mb-4">
               Turn off all email notifications. You can also use the unsubscribe
@@ -418,7 +465,7 @@ const Profile = () => {
         </TabsContent>
 
         <TabsContent value="data" className="space-y-6">
-          <Card className="p-6 glass">
+          <Card className="p-6 border shadow-sm">
             <h2 className="text-xl font-semibold mb-4">Data Management</h2>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
@@ -441,7 +488,7 @@ const Profile = () => {
             </div>
           </Card>
 
-          <Card className="p-6 glass">
+          <Card className="p-6 border shadow-sm">
             <h2 className="text-xl font-semibold mb-4">
               Archived Conversations
             </h2>
@@ -506,7 +553,7 @@ const Profile = () => {
 
         <TabsContent value="privacy" className="space-y-6">
           <div className="grid md:grid-cols-3 gap-4 mb-6">
-            <Card className="p-4 glass text-center">
+            <Card className="p-4 border shadow-sm text-center">
               <Lock className="w-8 h-8 text-primary mx-auto mb-3" />
               <h3 className="font-semibold text-sm mb-1">
                 End-to-End Encryption
@@ -515,14 +562,14 @@ const Profile = () => {
                 Your conversations are encrypted and secure
               </p>
             </Card>
-            <Card className="p-4 glass text-center">
+            <Card className="p-4 border shadow-sm text-center">
               <Eye className="w-8 h-8 text-accent mx-auto mb-3" />
               <h3 className="font-semibold text-sm mb-1">No Data Selling</h3>
               <p className="text-xs text-muted-foreground">
                 We never sell your personal information
               </p>
             </Card>
-            <Card className="p-4 glass text-center">
+            <Card className="p-4 border shadow-sm text-center">
               <Users className="w-8 h-8 text-primary mx-auto mb-3" />
               <h3 className="font-semibold text-sm mb-1">Your Control</h3>
               <p className="text-xs text-muted-foreground">
@@ -531,7 +578,7 @@ const Profile = () => {
             </Card>
           </div>
 
-          <Card className="p-8 glass max-w-2xl text-center mx-auto mt-8">
+          <Card className="p-8 border shadow-sm max-w-2xl text-center mx-auto mt-8">
             <h2 className="text-xl font-semibold tracking-tight text-foreground mb-3">
               Full Privacy Policy
             </h2>

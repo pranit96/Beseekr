@@ -1,10 +1,10 @@
 import { Outlet, useLocation, Link } from "react-router-dom";
 import { useTheme } from "@/hooks/use-theme";
 import { useAuth } from "@/contexts/AuthContext";
-import { Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 import { TrialWelcomeBanner } from "@/components/TrialWelcomeBanner";
 import { GlobalHeader } from "@/components/GlobalHeader";
+import { GlobalFooter } from "@/components/GlobalFooter";
 
 export function SaasDashboardLayout() {
   const location = useLocation();
@@ -39,61 +39,7 @@ export function SaasDashboardLayout() {
       </main>
 
       {/* Footer */}
-      <footer className="relative z-10 border-t border-border/50 bg-background/80 backdrop-blur-sm mt-auto">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 py-6 sm:py-8">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            {/* Left - Brand & Copyright */}
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Sparkles className="h-4 w-4 text-primary" />
-              <span>
-                © {new Date().getFullYear()} beseekr. All rights reserved.
-              </span>
-            </div>
-
-            {/* Center - Links */}
-            <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 text-sm">
-              <Link
-                to="/dashboard/problems"
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Browse Problems
-              </Link>
-              <Link
-                to="/dashboard/validate"
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Validate Ideas
-              </Link>
-              <Link
-                to="/dashboard/pricing"
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Pricing
-              </Link>
-              <Link
-                to="/about"
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                About
-              </Link>
-              <Link
-                to="/contact"
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Contact
-              </Link>
-              <Link
-                to="/privacy"
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Privacy
-              </Link>
-            </div>
-
-            {/* Right - Social/Extra */}
-          </div>
-        </div>
-      </footer>
+      <GlobalFooter />
     </div>
   );
 }

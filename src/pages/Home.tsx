@@ -4,6 +4,7 @@ import { MessageSquare, TrendingUp, ArrowRight } from "lucide-react";
 import { GlobalHeader } from "@/components/GlobalHeader";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
+import { GlobalFooter } from "@/components/GlobalFooter";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -88,20 +89,7 @@ export default function Home() {
       </section>
 
       {/* FOOTER */}
-      <footer className="border-t py-6 text-center text-sm text-muted-foreground flex items-center justify-center gap-4">
-        <span>© 2026 Beseekr</span>
-        <div className="flex items-center gap-4">
-          <Link to="/about" className="hover:text-foreground transition-colors">
-            About
-          </Link>
-          <Link
-            to="/privacy"
-            className="hover:text-foreground transition-colors"
-          >
-            Privacy Policy
-          </Link>
-        </div>
-      </footer>
+      <GlobalFooter />
     </div>
   );
 }

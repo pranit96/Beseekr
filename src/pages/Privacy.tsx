@@ -1,9 +1,10 @@
 // src/pages/Privacy.tsx
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Sparkles } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { Logo } from "@/components/Logo";
+import { GlobalFooter } from "@/components/GlobalFooter";
 
 const Privacy = () => {
   const navigate = useNavigate();
@@ -178,18 +179,7 @@ const Privacy = () => {
       </div>
 
       {/* Footer */}
-      <footer className="border-t border-border/50 bg-background/50 backdrop-blur-sm mt-auto">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Sparkles className="h-4 w-4 text-primary" />
-              <span>
-                © {new Date().getFullYear()} Beseekr. All rights reserved.
-              </span>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <GlobalFooter />
     </div>
   );
 };
