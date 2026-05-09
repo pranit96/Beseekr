@@ -22,6 +22,7 @@ interface User {
   full_name?: string;
   name?: string; // Google OAuth returns name instead of full_name
   tier?: string;
+  providers?: string[];
   trial?: {
     active: boolean;
     ends_at: string;

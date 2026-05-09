@@ -28,6 +28,8 @@ export const queryKeys = {
   blog: (slug: string) => ["blog", slug] as const,
   blogTopics: ["blogTopics"] as const,
   notificationPreferences: ["notificationPreferences"] as const,
+  authSessions: ["authSessions"] as const,
+  twoFAStatus: ["2fa", "status"] as const,
 };
 
 // ============= AGENTS =============
@@ -382,7 +384,7 @@ export function useNotificationPreferences() {
       const response = await apiClient.getNotificationPreferences();
       return response.data;
     },
-    staleTime: 60 * 60 * 1000, // Cache for 1 hour
+    staleTime: Infinity, // Cache indefinitely until invalidated
     gcTime: 24 * 60 * 60 * 1000, // Keep in garbage collection for 24 hours
   });
 }
@@ -398,7 +400,8 @@ export function useUpdateNotificationPreferences() {
       email_product_updates?: boolean;
       email_marketing?: boolean;
     }) => {
-      const response = await apiClient.updateNotificationPreferences(preferences);
+      const response =
+        await apiClient.updateNotificationPreferences(preferences);
       if (!response.success) {
         throw new Error("Failed to update preferences");
       }
@@ -407,23 +410,33 @@ export function useUpdateNotificationPreferences() {
     // When mutate is called:
     onMutate: async (newPrefs) => {
       // Cancel any outgoing refetches so they don't overwrite our optimistic update
-      await queryClient.cancelQueries({ queryKey: queryKeys.notificationPreferences });
+      await queryClient.cancelQueries({
+        queryKey: queryKeys.notificationPreferences,
+      });
 
       // Snapshot the previous value
-      const previousPrefs = queryClient.getQueryData(queryKeys.notificationPreferences);
+      const previousPrefs = queryClient.getQueryData(
+        queryKeys.notificationPreferences,
+      );
 
       // Optimistically update to the new value
-      queryClient.setQueryData(queryKeys.notificationPreferences, (old: any) => ({
-        ...old,
-        ...newPrefs,
-      }));
+      queryClient.setQueryData(
+        queryKeys.notificationPreferences,
+        (old: any) => ({
+          ...old,
+          ...newPrefs,
+        }),
+      );
 
       // Return a context object with the snapshotted value
       return { previousPrefs };
     },
     // If the mutation fails, use the context returned from onMutate to roll back
     onError: (err, newPrefs, context: any) => {
-      queryClient.setQueryData(queryKeys.notificationPreferences, context.previousPrefs);
+      queryClient.setQueryData(
+        queryKeys.notificationPreferences,
+        context.previousPrefs,
+      );
       toast({
         title: "Failed to update preferences",
         description: err.message || "Please try again.",
@@ -432,12 +445,153 @@ export function useUpdateNotificationPreferences() {
     },
     // Always refetch after error or success:
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.notificationPreferences });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.notificationPreferences,
+      });
     },
     onSuccess: () => {
       toast({
         title: "Preferences updated",
         description: "Your notification settings have been saved.",
+      });
+    },
+  });
+}
+
+// ============= SESSIONS =============
+
+export function useAuthSessions() {
+  return useQuery({
+    queryKey: queryKeys.authSessions,
+    queryFn: async () => {
+      const response = await apiClient.getAuthSessions();
+      return response.data;
+    },
+    staleTime: 60 * 1000, // 1 minute
+    gcTime: 5 * 60 * 1000,
+  });
+}
+
+export function useRevokeSession() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: (sessionId: string) => apiClient.revokeSession(sessionId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.authSessions });
+      toast({
+        title: "Session revoked",
+        description: "The device has been signed out.",
+      });
+    },
+    onError: (err: any) => {
+      toast({
+        title: "Failed to revoke session",
+        description: err.message,
+        variant: "destructive",
+      });
+    },
+  });
+}
+
+// ============= 2FA =============
+
+export function use2FAStatus() {
+  return useQuery({
+    queryKey: queryKeys.twoFAStatus,
+    queryFn: async () => {
+      const response = await apiClient.get2FAStatus();
+      return response.data;
+    },
+    staleTime: Infinity, // Cache indefinitely until invalidated
+    gcTime: 24 * 60 * 60 * 1000, // Keep in garbage collection for 24 hours
+  });
+}
+
+export function useEnroll2FA() {
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: () => apiClient.enroll2FA(),
+    onError: (err: any) => {
+      toast({
+        title: "Failed to start 2FA setup",
+        description: err.message,
+        variant: "destructive",
+      });
+    },
+  });
+}
+
+export function useVerify2FA() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: ({ factor_id, code }: { factor_id: string; code: string }) =>
+      apiClient.verify2FA(factor_id, code),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.twoFAStatus });
+      toast({
+        title: "2FA enabled",
+        description:
+          "Your account is now protected with two-factor authentication.",
+      });
+    },
+    onError: (err: any) => {
+      toast({
+        title: "Invalid code",
+        description: err.message || "Please check the code and try again.",
+        variant: "destructive",
+      });
+    },
+  });
+}
+
+export function useUnenroll2FA() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: () => apiClient.unenroll2FA(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.twoFAStatus });
+      toast({
+        title: "2FA disabled",
+        description: "Two-factor authentication has been removed.",
+      });
+    },
+    onError: (err: any) => {
+      toast({
+        title: "Failed to disable 2FA",
+        description: err.message,
+        variant: "destructive",
+      });
+    },
+  });
+}
+
+// ============= CHANGE PASSWORD =============
+
+export function useChangePassword() {
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: ({
+      current_password,
+      new_password,
+    }: {
+      current_password?: string;
+      new_password: string;
+    }) => apiClient.changePassword(current_password, new_password),
+    onSuccess: () => {
+      toast({
+        title: "Password changed",
+        description: "Your password has been updated successfully.",
+      });
+    },
+    onError: (err: any) => {
+      toast({
+        title: "Failed to change password",
+        description: err.message || "Please try again.",
+        variant: "destructive",
       });
     },
   });

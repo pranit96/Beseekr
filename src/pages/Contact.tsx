@@ -112,7 +112,7 @@ export function Contact() {
         {/* Ambient background effects */}
         <div className="ambient-blob ambient-blob-1" />
         <div className="ambient-blob ambient-blob-2" />
-        
+
         <GlobalHeader />
 
         <div className="flex-1 flex items-center justify-center p-4 relative z-10">

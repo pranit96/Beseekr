@@ -44,14 +44,14 @@ export function ThemeProvider({
   // Listen for system theme changes
   useEffect(() => {
     if (theme !== "system") return;
-    
+
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
     const handleChange = () => {
       const root = window.document.documentElement;
       root.classList.remove("light", "dark");
       root.classList.add(mediaQuery.matches ? "dark" : "light");
     };
-    
+
     mediaQuery.addEventListener("change", handleChange);
     return () => mediaQuery.removeEventListener("change", handleChange);
   }, [theme]);
@@ -69,9 +69,7 @@ export function ThemeProvider({
   };
 
   return (
-    <ThemeContext.Provider value={value}>
-      {children}
-    </ThemeContext.Provider>
+    <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
   );
 }
 

@@ -18,12 +18,13 @@ const en = {
       saveChanges: "Save changes",
       savingChanges: "Saving changes...",
       profileInformation: "Profile Information",
-      manageDetails: "Manage your personal details and how you appear on the platform.",
+      manageDetails:
+        "Manage your personal details and how you appear on the platform.",
       fullName: "Full Name",
       emailAddress: "Email Address",
       uploadPicture: "Upload new picture",
-    }
-  }
+    },
+  },
 };
 
 // Spanish translations
@@ -42,12 +43,13 @@ const es = {
       saveChanges: "Guardar cambios",
       savingChanges: "Guardando cambios...",
       profileInformation: "Información del Perfil",
-      manageDetails: "Administra tus detalles personales y cómo apareces en la plataforma.",
+      manageDetails:
+        "Administra tus detalles personales y cómo apareces en la plataforma.",
       fullName: "Nombre completo",
       emailAddress: "Correo electrónico",
       uploadPicture: "Subir nueva foto",
-    }
-  }
+    },
+  },
 };
 
 // French translations
@@ -66,12 +68,13 @@ const fr = {
       saveChanges: "Enregistrer",
       savingChanges: "Enregistrement...",
       profileInformation: "Informations sur le Profil",
-      manageDetails: "Gérez vos informations personnelles et votre apparence sur la plateforme.",
+      manageDetails:
+        "Gérez vos informations personnelles et votre apparence sur la plateforme.",
       fullName: "Nom complet",
       emailAddress: "Adresse e-mail",
       uploadPicture: "Télécharger une photo",
-    }
-  }
+    },
+  },
 };
 
 i18n
@@ -83,21 +86,21 @@ i18n
     resources: {
       en,
       es,
-      fr
+      fr,
     },
     // If language is not found, fallback to English
     fallbackLng: "en",
-    
+
     // React handles escaping automatically
     interpolation: {
-      escapeValue: false, 
+      escapeValue: false,
     },
-    
+
     // Automatically detect language preferences
     detection: {
-      order: ['localStorage', 'navigator'],
-      caches: ['localStorage']
-    }
+      order: ["localStorage", "navigator"],
+      caches: ["localStorage"],
+    },
   });
 
 export default i18n;

@@ -1021,15 +1021,82 @@ class ApiClient {
     });
   }
 
-  async updateProfile(profile: { full_name?: string }) {
+  async updateProfile(profile: { full_name?: string; avatar_url?: string }) {
     this.clearCache();
     return this.request<{
       id: string;
       email: string;
       full_name: string;
-    }>("/api/user/profile", {
-      method: "PUT",
+      avatar_url?: string;
+    }>("/api/auth/profile", {
+      method: "PATCH",
       body: JSON.stringify(profile),
+    });
+  }
+
+  async changePassword(
+    current_password: string | undefined,
+    new_password: string,
+  ) {
+    this.clearCache();
+    return this.request<{ message: string }>("/api/auth/change-password", {
+      method: "POST",
+      body: JSON.stringify({ current_password, new_password }),
+    });
+  }
+
+  // Sessions
+  async getAuthSessions() {
+    return this.request<
+      Array<{
+        id: string;
+        created_at: string;
+        last_used_at: string;
+        user_agent: string | null;
+        ip: string | null;
+        is_current: boolean;
+      }>
+    >("/api/user/sessions");
+  }
+
+  async revokeSession(sessionId: string) {
+    this.invalidateCache("/api/user/sessions");
+    return this.request<{ message: string }>(
+      `/api/user/sessions/${sessionId}`,
+      {
+        method: "DELETE",
+      },
+    );
+  }
+
+  // 2FA
+  async get2FAStatus() {
+    return this.request<{
+      enabled: boolean;
+      factors: Array<{ id: string; friendly_name: string; created_at: string }>;
+    }>("/api/user/2fa/status");
+  }
+
+  async enroll2FA() {
+    this.invalidateCache("/api/user/2fa");
+    return this.request<{
+      id: string;
+      totp: { qr_code: string; secret: string; uri: string };
+    }>("/api/user/2fa/enroll", { method: "POST" });
+  }
+
+  async verify2FA(factor_id: string, code: string) {
+    this.invalidateCache("/api/user/2fa");
+    return this.request<{ message: string }>("/api/user/2fa/verify", {
+      method: "POST",
+      body: JSON.stringify({ factor_id, code }),
+    });
+  }
+
+  async unenroll2FA() {
+    this.invalidateCache("/api/user/2fa");
+    return this.request<{ message: string }>("/api/user/2fa", {
+      method: "DELETE",
     });
   }
 

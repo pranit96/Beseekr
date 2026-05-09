@@ -21,7 +21,13 @@ import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   AlertDialog,
@@ -46,6 +52,10 @@ import {
 import { useTheme } from "@/hooks/use-theme";
 import { apiClient } from "@/lib/api";
 import { useTranslation } from "react-i18next";
+import { ChangePasswordDialog } from "@/components/profile/ChangePasswordDialog";
+import { TwoFactorSection } from "@/components/profile/TwoFactorSection";
+import { SessionsSection } from "@/components/profile/SessionsSection";
+import { AvatarPicker } from "@/components/profile/AvatarPicker";
 
 const SIDEBAR_NAV = [
   { id: "general", label: "General", icon: User },
@@ -64,20 +74,24 @@ interface NotificationPreferences {
 
 export default function Profile() {
   const [activeTab, setActiveTab] = useState("general");
-  
+
   // States
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [confirmEmail, setConfirmEmail] = useState("");
   const [isExporting, setIsExporting] = useState(false);
-  const [savingNotification, setSavingNotification] = useState<string | null>(null);
+  const [savingNotification, setSavingNotification] = useState<string | null>(
+    null,
+  );
   const [fullName, setFullName] = useState("");
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
+  const [showChangePassword, setShowChangePassword] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   // Real UI features
   const { theme, setTheme } = useTheme();
-  
+
   const { t, i18n } = useTranslation();
-  
+
   const [timezone, setTimezone] = useState(() => {
     try {
       return Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -90,9 +104,8 @@ export default function Profile() {
   const { toast } = useToast();
 
   useEffect(() => {
-    if (user?.full_name) {
-      setFullName(user.full_name);
-    }
+    if (user?.full_name) setFullName(user.full_name);
+    if ((user as any)?.avatar) setAvatarUrl((user as any).avatar);
   }, [user]);
 
   // React Query hooks
@@ -110,10 +123,8 @@ export default function Profile() {
 
   const archivedConversations = archivedResponse?.data || [];
 
-  const {
-    data: notificationPrefsData,
-    isLoading: loadingNotifications,
-  } = useNotificationPreferences();
+  const { data: notificationPrefsData, isLoading: loadingNotifications } =
+    useNotificationPreferences();
 
   const updateNotificationMutation = useUpdateNotificationPreferences();
 
@@ -157,7 +168,9 @@ export default function Profile() {
     }
   };
 
-  const handleNotificationToggle = async (key: keyof NotificationPreferences) => {
+  const handleNotificationToggle = async (
+    key: keyof NotificationPreferences,
+  ) => {
     const newValue = !notificationPrefs[key];
     setSavingNotification(key);
 
@@ -165,7 +178,7 @@ export default function Profile() {
       { [key]: newValue },
       {
         onSettled: () => setSavingNotification(null),
-      }
+      },
     );
   };
 
@@ -229,46 +242,36 @@ export default function Profile() {
         return (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div>
-              <h2 className="text-xl font-medium text-foreground">{t('profile.profileInformation')}</h2>
+              <h2 className="text-xl font-medium text-foreground">
+                {t("profile.profileInformation")}
+              </h2>
               <p className="text-sm text-muted-foreground mt-1">
-                {t('profile.manageDetails')}
+                {t("profile.manageDetails")}
               </p>
             </div>
-            
-            <div className="flex items-center gap-6">
-              <Avatar className="w-24 h-24 border">
-                <AvatarImage src="" />
-                <AvatarFallback className="text-2xl bg-primary/5 text-primary">
-                  {user?.full_name?.charAt(0) || user?.email?.charAt(0) || "U"}
-                </AvatarFallback>
-              </Avatar>
-              <div className="space-y-2">
-                <Button variant="outline" size="sm" className="gap-2">
-                  <Upload className="w-4 h-4" />
-                  {t('profile.uploadPicture')}
-                </Button>
-                <p className="text-xs text-muted-foreground">
-                  At least 256x256px. PNG or JPG.
-                </p>
-              </div>
-            </div>
+
+            <AvatarPicker
+              currentAvatar={avatarUrl}
+              userInitial={user?.full_name?.charAt(0) || user?.email?.charAt(0)}
+              onAvatarChange={(url) => setAvatarUrl(url)}
+            />
 
             <Separator />
 
             <div className="grid gap-6 max-w-xl">
               <div className="space-y-2">
-                <Label htmlFor="fullName">{t('profile.fullName')}</Label>
-                <Input 
+                <Label htmlFor="fullName">{t("profile.fullName")}</Label>
+                <Input
                   id="fullName"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   placeholder="Your full name"
                 />
               </div>
-              
+
               <div className="space-y-2">
-                <Label htmlFor="email">{t('profile.emailAddress')}</Label>
-                <Input 
+                <Label htmlFor="email">{t("profile.emailAddress")}</Label>
+                <Input
                   id="email"
                   value={user?.email || ""}
                   disabled
@@ -281,8 +284,11 @@ export default function Profile() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>{t('profile.language')}</Label>
-                  <Select value={i18n.language} onValueChange={(val) => i18n.changeLanguage(val)}>
+                  <Label>{t("profile.language")}</Label>
+                  <Select
+                    value={i18n.language}
+                    onValueChange={(val) => i18n.changeLanguage(val)}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select Language" />
                     </SelectTrigger>
@@ -300,14 +306,28 @@ export default function Profile() {
                       <SelectValue placeholder="Select Timezone" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="utc">UTC (Coordinated Universal Time)</SelectItem>
-                      <SelectItem value="America/New_York">Eastern Time (US & Canada)</SelectItem>
-                      <SelectItem value="America/Los_Angeles">Pacific Time (US & Canada)</SelectItem>
-                      <SelectItem value="Asia/Kolkata">India Standard Time</SelectItem>
+                      <SelectItem value="utc">
+                        UTC (Coordinated Universal Time)
+                      </SelectItem>
+                      <SelectItem value="America/New_York">
+                        Eastern Time (US & Canada)
+                      </SelectItem>
+                      <SelectItem value="America/Los_Angeles">
+                        Pacific Time (US & Canada)
+                      </SelectItem>
+                      <SelectItem value="Asia/Kolkata">
+                        India Standard Time
+                      </SelectItem>
                       {/* If the user's real timezone isn't one of the above, make sure it's selectable */}
-                      {timezone && !["utc", "America/New_York", "America/Los_Angeles", "Asia/Kolkata"].includes(timezone) && (
-                        <SelectItem value={timezone}>{timezone}</SelectItem>
-                      )}
+                      {timezone &&
+                        ![
+                          "utc",
+                          "America/New_York",
+                          "America/Los_Angeles",
+                          "Asia/Kolkata",
+                        ].includes(timezone) && (
+                          <SelectItem value={timezone}>{timezone}</SelectItem>
+                        )}
                     </SelectContent>
                   </Select>
                 </div>
@@ -315,11 +335,13 @@ export default function Profile() {
             </div>
 
             <div className="flex justify-end pt-4">
-              <Button 
-                onClick={handleUpdateProfile} 
+              <Button
+                onClick={handleUpdateProfile}
                 disabled={isUpdatingProfile || fullName === user?.full_name}
               >
-                {isUpdatingProfile ? t('profile.savingChanges') : t('profile.saveChanges')}
+                {isUpdatingProfile
+                  ? t("profile.savingChanges")
+                  : t("profile.saveChanges")}
               </Button>
             </div>
           </div>
@@ -329,66 +351,48 @@ export default function Profile() {
         return (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div>
-              <h2 className="text-xl font-medium text-foreground">Security Settings</h2>
+              <h2 className="text-xl font-medium text-foreground">
+                Security Settings
+              </h2>
               <p className="text-sm text-muted-foreground mt-1">
-                Manage your password and secure your account.
+                Manage your password, sessions and two-factor authentication.
               </p>
             </div>
 
             <div className="space-y-4">
-              <h3 className="font-medium">Authentication</h3>
+              <h3 className="font-medium">Password</h3>
               <div className="rounded-xl border p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="space-y-1">
-                  <div className="font-medium flex items-center gap-2">
-                    Password <Badge variant="secondary" className="font-normal">Set</Badge>
-                  </div>
-                  <p className="text-sm text-muted-foreground">Last changed 3 months ago</p>
+                  <div className="font-medium">Account Password</div>
+                  <p className="text-sm text-muted-foreground">
+                    Change the password you use to sign in.
+                  </p>
                 </div>
-                <Button variant="outline">Change Password</Button>
-              </div>
-
-              <div className="rounded-xl border p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="space-y-1">
-                  <div className="font-medium flex items-center gap-2">
-                    Two-Factor Authentication <Badge variant="outline" className="font-normal text-amber-600 border-amber-200 bg-amber-50 dark:bg-amber-950 dark:border-amber-900">Off</Badge>
-                  </div>
-                  <p className="text-sm text-muted-foreground">Add an extra layer of security to your account.</p>
-                </div>
-                <Button variant="outline">Enable 2FA</Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowChangePassword(true)}
+                >
+                  Change Password
+                </Button>
               </div>
             </div>
 
             <Separator />
 
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="font-medium">Active Sessions</h3>
-                <Button variant="ghost" size="sm" className="text-muted-foreground">Revoke all</Button>
-              </div>
-              <div className="rounded-xl border divide-y">
-                <div className="p-4 flex items-start gap-4">
-                  <div className="p-2 rounded-full bg-primary/10">
-                    <Laptop className="w-4 h-4 text-primary" />
-                  </div>
-                  <div className="flex-1 space-y-1">
-                    <div className="font-medium flex items-center gap-2">
-                      Mac OS • Safari
-                      <Badge className="font-normal bg-emerald-500 hover:bg-emerald-600">Current session</Badge>
-                    </div>
-                    <p className="text-xs text-muted-foreground">San Francisco, US • IP: 192.168.1.1</p>
-                  </div>
-                </div>
-                <div className="p-4 flex items-start gap-4">
-                  <div className="p-2 rounded-full bg-muted">
-                    <Smartphone className="w-4 h-4 text-muted-foreground" />
-                  </div>
-                  <div className="flex-1 space-y-1">
-                    <div className="font-medium">iOS • Chrome</div>
-                    <p className="text-xs text-muted-foreground">San Francisco, US • Active 2 days ago</p>
-                  </div>
-                  <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10">Revoke</Button>
-                </div>
-              </div>
+              <h3 className="font-medium">Two-Factor Authentication</h3>
+              <TwoFactorSection />
+            </div>
+
+            <Separator />
+
+            <div className="space-y-4">
+              <h3 className="font-medium">Active Sessions</h3>
+              <p className="text-sm text-muted-foreground">
+                Devices currently signed into your account. Revoke any session
+                you don&apos;t recognize.
+              </p>
+              <SessionsSection />
             </div>
           </div>
         );
@@ -397,14 +401,18 @@ export default function Profile() {
         return (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div>
-              <h2 className="text-xl font-medium text-foreground">Email Notifications</h2>
+              <h2 className="text-xl font-medium text-foreground">
+                Email Notifications
+              </h2>
               <p className="text-sm text-muted-foreground mt-1">
                 Choose what emails you'd like to receive from us.
               </p>
             </div>
 
             {loadingNotifications ? (
-              <div className="py-8 text-muted-foreground animate-pulse">Loading preferences...</div>
+              <div className="py-8 text-muted-foreground animate-pulse">
+                Loading preferences...
+              </div>
             ) : (
               <div className="rounded-xl border divide-y">
                 <div className="flex items-center justify-between p-4">
@@ -416,7 +424,9 @@ export default function Profile() {
                   </div>
                   <Switch
                     checked={notificationPrefs.email_weekly_digest}
-                    onCheckedChange={() => handleNotificationToggle("email_weekly_digest")}
+                    onCheckedChange={() =>
+                      handleNotificationToggle("email_weekly_digest")
+                    }
                     disabled={savingNotification === "email_weekly_digest"}
                   />
                 </div>
@@ -430,7 +440,9 @@ export default function Profile() {
                   </div>
                   <Switch
                     checked={notificationPrefs.email_problem_alerts}
-                    onCheckedChange={() => handleNotificationToggle("email_problem_alerts")}
+                    onCheckedChange={() =>
+                      handleNotificationToggle("email_problem_alerts")
+                    }
                     disabled={savingNotification === "email_problem_alerts"}
                   />
                 </div>
@@ -444,7 +456,9 @@ export default function Profile() {
                   </div>
                   <Switch
                     checked={notificationPrefs.email_product_updates}
-                    onCheckedChange={() => handleNotificationToggle("email_product_updates")}
+                    onCheckedChange={() =>
+                      handleNotificationToggle("email_product_updates")
+                    }
                     disabled={savingNotification === "email_product_updates"}
                   />
                 </div>
@@ -458,7 +472,9 @@ export default function Profile() {
                   </div>
                   <Switch
                     checked={notificationPrefs.email_marketing}
-                    onCheckedChange={() => handleNotificationToggle("email_marketing")}
+                    onCheckedChange={() =>
+                      handleNotificationToggle("email_marketing")
+                    }
                     disabled={savingNotification === "email_marketing"}
                   />
                 </div>
@@ -471,7 +487,9 @@ export default function Profile() {
         return (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div>
-              <h2 className="text-xl font-medium text-foreground">Appearance</h2>
+              <h2 className="text-xl font-medium text-foreground">
+                Appearance
+              </h2>
               <p className="text-sm text-muted-foreground mt-1">
                 Customize how the application looks and feels.
               </p>
@@ -480,7 +498,7 @@ export default function Profile() {
             <div className="space-y-4">
               <h3 className="font-medium">Theme Preferences</h3>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <button 
+                <button
                   onClick={() => setTheme("light")}
                   className={`flex flex-col items-start gap-2 p-4 rounded-xl border-2 transition-all ${theme === "light" ? "border-primary bg-primary/5" : "border-transparent hover:border-border bg-muted/30"}`}
                 >
@@ -492,7 +510,7 @@ export default function Profile() {
                   <span className="font-medium text-sm">Light Mode</span>
                 </button>
 
-                <button 
+                <button
                   onClick={() => setTheme("dark")}
                   className={`flex flex-col items-start gap-2 p-4 rounded-xl border-2 transition-all ${theme === "dark" ? "border-primary bg-primary/5" : "border-transparent hover:border-border bg-muted/30"}`}
                 >
@@ -504,7 +522,7 @@ export default function Profile() {
                   <span className="font-medium text-sm">Dark Mode</span>
                 </button>
 
-                <button 
+                <button
                   onClick={() => setTheme("system")}
                   className={`flex flex-col items-start gap-2 p-4 rounded-xl border-2 transition-all ${theme === "system" ? "border-primary bg-primary/5" : "border-transparent hover:border-border bg-muted/30"}`}
                 >
@@ -524,7 +542,9 @@ export default function Profile() {
         return (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div>
-              <h2 className="text-xl font-medium text-foreground">Data & Privacy</h2>
+              <h2 className="text-xl font-medium text-foreground">
+                Data & Privacy
+              </h2>
               <p className="text-sm text-muted-foreground mt-1">
                 Manage your data footprint and archived information.
               </p>
@@ -535,10 +555,16 @@ export default function Profile() {
               <div className="rounded-xl border p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="space-y-1">
                   <div className="text-sm text-muted-foreground">
-                    Download a copy of your personal data, including all settings and conversations.
+                    Download a copy of your personal data, including all
+                    settings and conversations.
                   </div>
                 </div>
-                <Button onClick={handleExportData} disabled={isExporting} variant="outline" className="gap-2 whitespace-nowrap">
+                <Button
+                  onClick={handleExportData}
+                  disabled={isExporting}
+                  variant="outline"
+                  className="gap-2 whitespace-nowrap"
+                >
                   <Download className="w-4 h-4" />
                   {isExporting ? "Exporting..." : "Request Export"}
                 </Button>
@@ -563,20 +589,42 @@ export default function Profile() {
                   ) : (
                     <div className="divide-y">
                       {archivedConversations.map((conversation: any) => (
-                        <div key={conversation.id} className="p-4 flex items-center justify-between hover:bg-muted/30 transition-colors">
+                        <div
+                          key={conversation.id}
+                          className="p-4 flex items-center justify-between hover:bg-muted/30 transition-colors"
+                        >
                           <div className="flex-1 min-w-0 pr-4">
                             <p className="text-sm font-medium truncate">
                               {conversation.title || "Untitled Conversation"}
                             </p>
                             <p className="text-xs text-muted-foreground mt-1">
-                              Last active: {new Date(conversation.last_message_at).toLocaleDateString()}
+                              Last active:{" "}
+                              {new Date(
+                                conversation.last_message_at,
+                              ).toLocaleDateString()}
                             </p>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Button onClick={() => handleRestoreConversation(conversation.id)} variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary">
+                            <Button
+                              onClick={() =>
+                                handleRestoreConversation(conversation.id)
+                              }
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-muted-foreground hover:text-primary"
+                            >
                               <RotateCcw className="w-4 h-4" />
                             </Button>
-                            <Button onClick={() => handleDeleteArchivedConversation(conversation.id)} variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive">
+                            <Button
+                              onClick={() =>
+                                handleDeleteArchivedConversation(
+                                  conversation.id,
+                                )
+                              }
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                            >
                               <Trash2 className="w-4 h-4" />
                             </Button>
                           </div>
@@ -598,10 +646,15 @@ export default function Profile() {
                     Delete Account
                   </div>
                   <p className="text-sm text-destructive/80">
-                    Permanently delete your account and all associated data. This action is irreversible.
+                    Permanently delete your account and all associated data.
+                    This action is irreversible.
                   </p>
                 </div>
-                <Button onClick={() => setIsDeleteDialogOpen(true)} variant="destructive" className="gap-2 whitespace-nowrap">
+                <Button
+                  onClick={() => setIsDeleteDialogOpen(true)}
+                  variant="destructive"
+                  className="gap-2 whitespace-nowrap"
+                >
                   <AlertTriangle className="w-4 h-4" />
                   Delete Account
                 </Button>
@@ -618,9 +671,11 @@ export default function Profile() {
   return (
     <div className="max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
       <div className="mb-8">
-        <h1 className="text-3xl font-semibold tracking-tight text-foreground">{t('profile.settings')}</h1>
+        <h1 className="text-3xl font-semibold tracking-tight text-foreground">
+          {t("profile.settings")}
+        </h1>
         <p className="text-muted-foreground mt-2">
-          {t('profile.manageAccount')}
+          {t("profile.manageAccount")}
         </p>
       </div>
 
@@ -636,12 +691,14 @@ export default function Profile() {
                   key={item.id}
                   onClick={() => setActiveTab(item.id)}
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
-                    isActive 
-                      ? "bg-primary/10 text-primary" 
+                    isActive
+                      ? "bg-primary/10 text-primary"
                       : "text-muted-foreground hover:bg-muted hover:text-foreground"
                   }`}
                 >
-                  <Icon className={`w-4 h-4 ${isActive ? "text-primary" : "opacity-70"}`} />
+                  <Icon
+                    className={`w-4 h-4 ${isActive ? "text-primary" : "opacity-70"}`}
+                  />
                   {t(`profile.${item.id}`)}
                 </button>
               );
@@ -650,12 +707,13 @@ export default function Profile() {
         </aside>
 
         {/* Main Content Area */}
-        <main className="flex-1 min-w-0">
-          {renderContent()}
-        </main>
+        <main className="flex-1 min-w-0">{renderContent()}</main>
       </div>
 
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+      <AlertDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="text-destructive flex items-center gap-2">
@@ -663,11 +721,14 @@ export default function Profile() {
               Delete Account
             </AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. All your data, settings, and history will be permanently deleted from our servers.
+              This action cannot be undone. All your data, settings, and history
+              will be permanently deleted from our servers.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="py-4 space-y-3">
-            <Label htmlFor="confirm-email">Please type your email to confirm</Label>
+            <Label htmlFor="confirm-email">
+              Please type your email to confirm
+            </Label>
             <Input
               id="confirm-email"
               type="email"
@@ -678,7 +739,9 @@ export default function Profile() {
             />
           </div>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setConfirmEmail("")}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setConfirmEmail("")}>
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteAccount}
               disabled={confirmEmail !== user?.email}
@@ -689,6 +752,11 @@ export default function Profile() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <ChangePasswordDialog
+        open={showChangePassword}
+        onOpenChange={setShowChangePassword}
+      />
     </div>
   );
 }
