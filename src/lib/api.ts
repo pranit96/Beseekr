@@ -317,18 +317,14 @@ class ApiClient {
 
   async getCurrentUser() {
     // Don't cache this - always fetch fresh
-    const cacheKey = this.getCacheKey("/api/auth/me", { method: "GET" });
-    this.requestCache.delete(cacheKey);
-
-    return this.request<any>("/api/auth/me", {
+    // Adding timestamp to bypass deduplication of pending requests
+    return this.request<any>(`/api/auth/me?t=${Date.now()}`, {
       headers: {
         "Cache-Control": "no-cache, no-store, must-revalidate",
         Pragma: "no-cache",
-        Expires: "0",
       },
     });
   }
-
   async exportData() {
     return this.request<any>("/api/auth/export");
   }
