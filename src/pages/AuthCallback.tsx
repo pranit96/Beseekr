@@ -149,7 +149,7 @@ export default function AuthCallback() {
             }
             console.log("OAuth Callback - Backend authentication successful");
             // Refresh auth context to update user state across all components
-            await refreshAuth(true);
+            await refreshAuth(true, 3, true);
             setStatus("success");
 
             // SAFARI FIX: Use hard navigation for Safari to ensure UI state sync
@@ -237,7 +237,7 @@ export default function AuthCallback() {
             }
             console.log("OAuth Callback - Backend authentication successful");
             // Refresh auth context to update user state across all components
-            await refreshAuth(true);
+            await refreshAuth(true, 3, true);
             setStatus("success");
 
             // SAFARI FIX: Use hard navigation for Safari to ensure UI state sync

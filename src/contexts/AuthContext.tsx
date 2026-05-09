@@ -42,7 +42,11 @@ interface AuthContextType {
   exportData: () => Promise<any>;
   deleteAccount: (email: string) => Promise<void>;
   socketConnected: boolean;
-  refreshAuth: (silent?: boolean) => Promise<void>;
+  refreshAuth: (
+    silent?: boolean,
+    retries?: number,
+    force?: boolean,
+  ) => Promise<void>;
   verifyMFA: (factorId: string, code: string) => Promise<void>;
   isSessionValid: () => boolean;
 }
@@ -163,8 +167,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // ENHANCED: Refresh authentication state with retry logic
   const refreshAuth = useCallback(
-    async (silent: boolean = false, retries: number = 3) => {
-      if (refreshingRef.current && refreshPromiseRef.current) {
+    async (
+      silent: boolean = false,
+      retries: number = 3,
+      force: boolean = false,
+    ) => {
+      if (!force && refreshingRef.current && refreshPromiseRef.current) {
         logger.debug("Refresh already in progress, waiting for it");
         return refreshPromiseRef.current;
       }
@@ -685,7 +693,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               setUser(res.data.user);
               setCachedUser(res.data.user);
             }
-            await refreshAuth(true);
+            // Force a refresh to ensure the backend session is fully synced and cookies are processed
+            await refreshAuth(true, 3, true);
+
             const redirectUrl = sessionStorage.getItem("auth-redirect") || "/";
             sessionStorage.removeItem("auth-redirect");
             navigate(redirectUrl);
