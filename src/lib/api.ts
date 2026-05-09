@@ -1020,14 +1020,20 @@ class ApiClient {
       body: JSON.stringify(preferences),
     });
   }
-
-  async updateProfile(profile: { full_name?: string; avatar_url?: string }) {
+  async updateProfile(profile: {
+    full_name?: string;
+    avatar_url?: string;
+    language?: string;
+    timezone?: string;
+  }) {
     this.clearCache();
     return this.request<{
       id: string;
       email: string;
       full_name: string;
       avatar_url?: string;
+      language?: string;
+      timezone?: string;
     }>("/api/auth/profile", {
       method: "PATCH",
       body: JSON.stringify(profile),

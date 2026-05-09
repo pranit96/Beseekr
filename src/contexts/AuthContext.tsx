@@ -13,6 +13,7 @@ import { useToast, toast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import socketService from "@/services/socketService";
 import { createLogger } from "@/services/logging";
+import { useTranslation } from "react-i18next";
 
 const logger = createLogger("AuthContext");
 
@@ -21,6 +22,8 @@ interface User {
   email: string;
   full_name?: string;
   name?: string; // Google OAuth returns name instead of full_name
+  language?: string;
+  timezone?: string;
   tier?: string;
   providers?: string[];
   trial?: {
@@ -54,8 +57,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [socketConnected, setSocketConnected] = useState(false);
-  // toast is imported directly to ensure stable reference
   const navigate = useNavigate();
+  const { i18n } = useTranslation();
 
   const refreshingRef = useRef(false);
   const sessionCheckIntervalRef = useRef<NodeJS.Timeout>();
@@ -171,13 +174,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const response = await apiClient.getCurrentUser();
 
         if (response.success && response.data) {
-          setUser(response.data.user);
-          setCachedUser(response.data.user); // SAFARI FIX: Update cache so dashboard sees logged-in state
+          const fetchedUser = response.data.user;
+          setUser(fetchedUser);
+          setCachedUser(fetchedUser); // SAFARI FIX: Update cache so dashboard sees logged-in state
           lastActivityRef.current = Date.now();
           authErrorShownRef.current = false;
           logger.info("Auth refresh successful", {
-            userId: response.data.user.id,
+            userId: fetchedUser.id,
           });
+
+          // Sync language globally
+          if (fetchedUser.language && fetchedUser.language !== i18n.language) {
+            i18n.changeLanguage(fetchedUser.language);
+          }
 
           if (!silent) {
             toast({
@@ -386,6 +395,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           });
           setUser(cachedUser);
           setLoading(false); // Show content immediately
+
+          if (cachedUser.language && cachedUser.language !== i18n.language) {
+            i18n.changeLanguage(cachedUser.language);
+          }
         }
 
         // Set up API client unauthorized handler
@@ -425,9 +438,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const response = await apiClient.getCurrentUser();
       if (response.success && response.data) {
-        setUser(response.data.user);
-        setCachedUser(response.data.user); // Update cache
+        const fetchedUser = response.data.user;
+        setUser(fetchedUser);
+        setCachedUser(fetchedUser); // Update cache
         lastActivityRef.current = Date.now();
+
+        if (fetchedUser.language && fetchedUser.language !== i18n.language) {
+          i18n.changeLanguage(fetchedUser.language);
+        }
       } else {
         setUser(null);
         setCachedUser(null);
@@ -445,9 +463,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const response = await apiClient.login(email, password);
       if (response.success && response.data) {
-        setUser(response.data.user);
+        const fetchedUser = response.data.user;
+        setUser(fetchedUser);
         lastActivityRef.current = Date.now();
         authErrorShownRef.current = false;
+
+        if (fetchedUser.language && fetchedUser.language !== i18n.language) {
+          i18n.changeLanguage(fetchedUser.language);
+        }
 
         toast({
           title: "Welcome back!",

@@ -101,6 +101,12 @@ export default function Profile() {
   });
 
   const { user, exportData, deleteAccount, refreshAuth } = useAuth();
+
+  useEffect(() => {
+    if (user?.timezone) {
+      setTimezone(user.timezone);
+    }
+  }, [user?.timezone]);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -287,7 +293,18 @@ export default function Profile() {
                   <Label>{t("profile.language")}</Label>
                   <Select
                     value={i18n.language}
-                    onValueChange={(val) => i18n.changeLanguage(val)}
+                    onValueChange={async (val) => {
+                      i18n.changeLanguage(val);
+                      try {
+                        await apiClient.updateProfile({ language: val });
+                        refreshAuth(true); // refresh to update cached user
+                      } catch (err) {
+                        toast({
+                          title: "Failed to save language",
+                          variant: "destructive",
+                        });
+                      }
+                    }}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select Language" />
@@ -301,7 +318,21 @@ export default function Profile() {
                 </div>
                 <div className="space-y-2">
                   <Label>Timezone</Label>
-                  <Select value={timezone} onValueChange={setTimezone}>
+                  <Select
+                    value={timezone}
+                    onValueChange={async (val) => {
+                      setTimezone(val);
+                      try {
+                        await apiClient.updateProfile({ timezone: val });
+                        refreshAuth(true);
+                      } catch (err) {
+                        toast({
+                          title: "Failed to save timezone",
+                          variant: "destructive",
+                        });
+                      }
+                    }}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select Timezone" />
                     </SelectTrigger>
