@@ -8,26 +8,23 @@ import { useAuth } from "@/contexts/AuthContext";
 import { paymentsApi } from "@/api/payments";
 import {
   Compass,
-  Sparkles,
   Moon,
   Sun,
   User,
   LogOut,
   Settings,
-  TrendingUp,
-  CreditCard,
   Clock,
-  Activity,
   MessageSquare,
   BookOpen,
   Home,
   Menu,
   X,
-  Search,
   Bookmark,
   Zap,
-  ChevronDown,
   Bot,
+  CreditCard,
+  TrendingUp,
+  Activity,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -39,58 +36,112 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { motion, AnimatePresence } from "framer-motion";
 
-/* ─── Primary nav items (always visible on desktop) ─── */
-const primaryNavigation = [
-  {
+const NAV_ITEMS = {
+  home: {
     name: "Home",
     href: "/",
     icon: Home,
     color: "from-slate-500 to-zinc-600",
     exact: true,
   },
-  {
-    name: "Discover",
-    href: "/dashboard/problems",
-    icon: Compass,
-    color: "from-violet-500 to-purple-600",
-  },
-  // { name: 'Trading', href: '/trading', icon: TrendingUp, color: 'from-blue-500 to-indigo-500' },
-  // { name: 'Wellness', href: '/wellness', icon: Activity, color: 'from-emerald-500 to-sky-500' },
-  {
+  chat: {
     name: "AI Chat",
     href: "/chat",
     icon: MessageSquare,
     color: "from-violet-500 to-fuchsia-500",
+    exact: false,
   },
-  {
-    name: "Agents",
-    href: "/agents",
-    icon: Bot,
-    color: "from-cyan-500 to-blue-500",
+  discover: {
+    name: "Discover",
+    href: "/dashboard/problems",
+    icon: Compass,
+    color: "from-violet-500 to-purple-600",
+    exact: false,
   },
-  {
+  blog: {
     name: "Blogs",
     href: "/blogs",
     icon: BookOpen,
     color: "from-amber-500 to-orange-500",
+    exact: false,
   },
-];
-
-/* ─── Secondary items shown in "More" dropdown on desktop, always in mobile menu ─── */
-const secondaryNavigation = [
-  { name: "Research", href: "/dashboard/validate", icon: Zap },
-  { name: "Watchlist", href: "/dashboard/watchlist", icon: Bookmark },
-  {
+  agents: {
+    name: "Agents",
+    href: "/agents",
+    icon: Bot,
+    color: "from-cyan-500 to-blue-500",
+    exact: false,
+  },
+  research: {
+    name: "Research",
+    href: "/dashboard/validate",
+    icon: Zap,
+    color: "from-blue-500 to-indigo-500",
+    exact: false,
+  },
+  watchlist: {
+    name: "Watchlist",
+    href: "/dashboard/watchlist",
+    icon: Bookmark,
+    color: "from-emerald-500 to-teal-500",
+    exact: false,
+  },
+  pricing: {
     name: "Pricing",
     href: "/dashboard/pricing",
     icon: CreditCard,
-    premiumHide: true,
+    color: "from-amber-500 to-orange-500",
+    exact: false,
   },
-];
+  trading: {
+    name: "Trading",
+    href: "/trading",
+    icon: TrendingUp,
+    color: "from-blue-500 to-indigo-500",
+    exact: false,
+  },
+  wellness: {
+    name: "Wellness",
+    href: "/wellness",
+    icon: Activity,
+    color: "from-emerald-500 to-sky-500",
+    exact: false,
+  },
+};
 
 function isPathActive(pathname: string, href: string, exact?: boolean) {
   if (exact) return pathname === href;
   return pathname === href || pathname.startsWith(href + "/");
+}
+
+function getNavigationContext(pathname: string, isPremium: boolean) {
+  const isChatContext =
+    pathname.startsWith("/chat") || pathname.startsWith("/agents");
+  const isDiscoverContext =
+    pathname.startsWith("/dashboard") &&
+    !pathname.startsWith("/dashboard/profile");
+
+  if (isChatContext) {
+    return [NAV_ITEMS.home, NAV_ITEMS.chat, NAV_ITEMS.agents];
+  } else if (isDiscoverContext) {
+    const items = [
+      NAV_ITEMS.home,
+      NAV_ITEMS.discover,
+      NAV_ITEMS.research,
+      NAV_ITEMS.watchlist,
+    ];
+    if (!isPremium) items.push(NAV_ITEMS.pricing);
+    return items;
+  }
+
+  return [
+    NAV_ITEMS.home,
+    NAV_ITEMS.chat,
+    NAV_ITEMS.discover,
+    NAV_ITEMS.blog,
+    NAV_ITEMS.trading,
+    NAV_ITEMS.wellness,
+  ];
 }
 
 export function GlobalHeader() {
@@ -115,17 +166,11 @@ export function GlobalHeader() {
     gcTime: 10 * 60 * 1000,
   });
 
-  // Filter secondary nav — hide Pricing for premium users
-  const secondaryItems = useMemo(() => {
+  // Compute contextual navigation items based on current route
+  const currentNavigation = useMemo(() => {
     const isPremium = plansData?.user?.is_premium === true;
-    if (isPremium)
-      return secondaryNavigation.filter((item) => !item.premiumHide);
-    return secondaryNavigation;
-  }, [plansData?.user?.is_premium]);
-
-  const anySecondaryActive = secondaryItems.some((item) =>
-    isPathActive(location.pathname, item.href),
-  );
+    return getNavigationContext(location.pathname, isPremium);
+  }, [location.pathname, plansData?.user?.is_premium]);
 
   return (
     <>
@@ -142,7 +187,7 @@ export function GlobalHeader() {
 
             {/* ── Desktop Nav Pills ── */}
             <nav className="hidden lg:flex items-center gap-0.5 p-1 rounded-xl bg-muted/50">
-              {primaryNavigation.map((item) => {
+              {currentNavigation.map((item) => {
                 const isActive = isPathActive(
                   location.pathname,
                   item.href,
@@ -184,56 +229,11 @@ export function GlobalHeader() {
                   </NavLink>
                 );
               })}
-
-              {/* More dropdown for secondary items */}
-              {secondaryItems.length > 0 && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button
-                      className={cn(
-                        "relative px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-300 flex items-center gap-1 outline-none",
-                        anySecondaryActive
-                          ? "text-foreground bg-background shadow-sm border border-border/50"
-                          : "text-muted-foreground hover:text-foreground",
-                      )}
-                    >
-                      More
-                      <ChevronDown className="h-3 w-3" />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48 rounded-xl">
-                    {secondaryItems.map((item) => {
-                      const isActive = isPathActive(
-                        location.pathname,
-                        item.href,
-                      );
-                      return (
-                        <DropdownMenuItem
-                          key={item.href}
-                          asChild
-                          className="rounded-lg cursor-pointer"
-                        >
-                          <Link
-                            to={item.href}
-                            className={cn(
-                              "flex items-center gap-2 w-full",
-                              isActive && "text-primary font-medium",
-                            )}
-                          >
-                            <item.icon className="h-4 w-4" />
-                            {item.name}
-                          </Link>
-                        </DropdownMenuItem>
-                      );
-                    })}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )}
             </nav>
 
             {/* ── Tablet Nav (icons only, md–lg) ── */}
             <nav className="hidden md:flex lg:hidden items-center gap-0.5 p-0.5 rounded-lg bg-muted/50">
-              {primaryNavigation.map((item) => {
+              {currentNavigation.map((item) => {
                 const isActive = isPathActive(
                   location.pathname,
                   item.href,
@@ -429,8 +429,8 @@ export function GlobalHeader() {
             className="fixed inset-x-0 top-[56px] z-40 md:hidden border-b border-border/50 bg-background/95 backdrop-blur-xl shadow-xl max-h-[calc(100vh-56px)] overflow-y-auto"
           >
             <nav className="px-4 py-3 space-y-1">
-              {/* Primary items */}
-              {primaryNavigation.map((item) => {
+              {/* Contextual navigation items */}
+              {currentNavigation.map((item) => {
                 const isActive = isPathActive(
                   location.pathname,
                   item.href,
@@ -467,30 +467,6 @@ export function GlobalHeader() {
                     {isActive && (
                       <div className="ml-auto h-1.5 w-1.5 rounded-full bg-primary" />
                     )}
-                  </Link>
-                );
-              })}
-
-              {/* Divider */}
-              <div className="border-t border-border/50 my-2" />
-
-              {/* Secondary items */}
-              {secondaryItems.map((item) => {
-                const isActive = isPathActive(location.pathname, item.href);
-                return (
-                  <Link
-                    key={item.href}
-                    to={item.href}
-                    onClick={() => setMobileOpen(false)}
-                    className={cn(
-                      "flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200",
-                      isActive
-                        ? "bg-primary/10 text-primary"
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted",
-                    )}
-                  >
-                    <item.icon className="h-4 w-4" />
-                    {item.name}
                   </Link>
                 );
               })}
