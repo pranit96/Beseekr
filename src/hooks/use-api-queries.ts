@@ -27,6 +27,7 @@ export const queryKeys = {
   blogs: (topic?: string, search?: string) => ["blogs", topic, search] as const,
   blog: (slug: string) => ["blog", slug] as const,
   blogTopics: ["blogTopics"] as const,
+  notificationPreferences: ["notificationPreferences"] as const,
 };
 
 // ============= AGENTS =============
@@ -369,5 +370,75 @@ export function useBlog(slug?: string) {
 export function useSubscribeNewsletter() {
   return useMutation({
     mutationFn: (email: string) => subscribeNewsletter(email),
+  });
+}
+
+// ============= NOTIFICATION PREFERENCES =============
+
+export function useNotificationPreferences() {
+  return useQuery({
+    queryKey: queryKeys.notificationPreferences,
+    queryFn: async () => {
+      const response = await apiClient.getNotificationPreferences();
+      return response.data;
+    },
+    staleTime: 60 * 60 * 1000, // Cache for 1 hour
+    gcTime: 24 * 60 * 60 * 1000, // Keep in garbage collection for 24 hours
+  });
+}
+
+export function useUpdateNotificationPreferences() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (preferences: {
+      email_weekly_digest?: boolean;
+      email_problem_alerts?: boolean;
+      email_product_updates?: boolean;
+      email_marketing?: boolean;
+    }) => {
+      const response = await apiClient.updateNotificationPreferences(preferences);
+      if (!response.success) {
+        throw new Error("Failed to update preferences");
+      }
+      return response.data;
+    },
+    // When mutate is called:
+    onMutate: async (newPrefs) => {
+      // Cancel any outgoing refetches so they don't overwrite our optimistic update
+      await queryClient.cancelQueries({ queryKey: queryKeys.notificationPreferences });
+
+      // Snapshot the previous value
+      const previousPrefs = queryClient.getQueryData(queryKeys.notificationPreferences);
+
+      // Optimistically update to the new value
+      queryClient.setQueryData(queryKeys.notificationPreferences, (old: any) => ({
+        ...old,
+        ...newPrefs,
+      }));
+
+      // Return a context object with the snapshotted value
+      return { previousPrefs };
+    },
+    // If the mutation fails, use the context returned from onMutate to roll back
+    onError: (err, newPrefs, context: any) => {
+      queryClient.setQueryData(queryKeys.notificationPreferences, context.previousPrefs);
+      toast({
+        title: "Failed to update preferences",
+        description: err.message || "Please try again.",
+        variant: "destructive",
+      });
+    },
+    // Always refetch after error or success:
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.notificationPreferences });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Preferences updated",
+        description: "Your notification settings have been saved.",
+      });
+    },
   });
 }

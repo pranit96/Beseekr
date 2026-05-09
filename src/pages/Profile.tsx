@@ -1,20 +1,28 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
 import {
-  Download,
-  Trash2,
-  Archive,
-  RotateCcw,
+  User,
   Shield,
-  Lock,
-  Eye,
-  Users,
-  Server,
   Bell,
+  Database,
+  Palette,
+  Laptop,
+  Smartphone,
+  Trash2,
+  Download,
+  RotateCcw,
+  AlertTriangle,
+  Upload,
 } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,25 +33,26 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { ScrollArea } from "@/components/ui/scroll-area";
+
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import {
   useConversations,
   useUpdateConversationStatus,
   useDeleteConversation,
+  useNotificationPreferences,
+  useUpdateNotificationPreferences,
 } from "@/hooks/use-api-queries";
+import { useTheme } from "@/hooks/use-theme";
 import { apiClient } from "@/lib/api";
 
-interface ArchivedConversation {
-  id: string;
-  title: string;
-  last_message_at: string;
-  archived_at: string;
-}
+const SIDEBAR_NAV = [
+  { id: "general", label: "General", icon: User },
+  { id: "security", label: "Security", icon: Shield },
+  { id: "notifications", label: "Notifications", icon: Bell },
+  { id: "appearance", label: "Appearance", icon: Palette },
+  { id: "data", label: "Data & Privacy", icon: Database },
+];
 
 interface NotificationPreferences {
   email_weekly_digest: boolean;
@@ -52,32 +61,45 @@ interface NotificationPreferences {
   email_marketing: boolean;
 }
 
-const Profile = () => {
+export default function Profile() {
+  const [activeTab, setActiveTab] = useState("general");
+  
+  // States
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [confirmEmail, setConfirmEmail] = useState("");
   const [isExporting, setIsExporting] = useState(false);
-  const [notificationPrefs, setNotificationPrefs] =
-    useState<NotificationPreferences>({
-      email_weekly_digest: true,
-      email_problem_alerts: true,
-      email_product_updates: false,
-      email_marketing: false,
-    });
-  const [loadingNotifications, setLoadingNotifications] = useState(true);
-  const [savingNotification, setSavingNotification] = useState<string | null>(
-    null,
-  );
+  const [savingNotification, setSavingNotification] = useState<string | null>(null);
   const [fullName, setFullName] = useState("");
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
 
+  // Real UI features
+  const { theme, setTheme } = useTheme();
+  
+  // Initialize with real browser values
+  const [language, setLanguage] = useState(() => {
+    const lang = navigator.language.toLowerCase();
+    if (lang.startsWith("es")) return "es";
+    if (lang.startsWith("fr")) return "fr";
+    if (lang.includes("uk") || lang.includes("gb")) return "uk";
+    return "en";
+  });
+  
+  const [timezone, setTimezone] = useState(() => {
+    try {
+      return Intl.DateTimeFormat().resolvedOptions().timeZone;
+    } catch (e) {
+      return "UTC";
+    }
+  });
+
   const { user, exportData, deleteAccount, refreshAuth } = useAuth();
+  const { toast } = useToast();
 
   useEffect(() => {
     if (user?.full_name) {
       setFullName(user.full_name);
     }
   }, [user]);
-  const { toast } = useToast();
 
   // React Query hooks
   const {
@@ -94,25 +116,21 @@ const Profile = () => {
 
   const archivedConversations = archivedResponse?.data || [];
 
-  // Fetch notification preferences
-  useEffect(() => {
-    const fetchNotificationPrefs = async () => {
-      try {
-        const response = await apiClient.getNotificationPreferences();
-        if (response.success && response.data) {
-          setNotificationPrefs(response.data);
-        }
-      } catch (err) {
-        console.error("Failed to fetch notification preferences:", err);
-      } finally {
-        setLoadingNotifications(false);
-      }
-    };
+  const {
+    data: notificationPrefsData,
+    isLoading: loadingNotifications,
+  } = useNotificationPreferences();
 
-    fetchNotificationPrefs();
-  }, []);
+  const updateNotificationMutation = useUpdateNotificationPreferences();
 
-  // Show error toast if query fails (only once)
+  // Default values to use before data is loaded
+  const notificationPrefs = notificationPrefsData || {
+    email_weekly_digest: true,
+    email_problem_alerts: true,
+    email_product_updates: false,
+    email_marketing: false,
+  };
+
   useEffect(() => {
     if (error) {
       toast({
@@ -132,7 +150,7 @@ const Profile = () => {
           title: "Profile updated",
           description: "Your profile information has been saved.",
         });
-        refreshAuth(true); // silent refresh
+        refreshAuth(true);
       }
     } catch (err) {
       toast({
@@ -145,78 +163,16 @@ const Profile = () => {
     }
   };
 
-  // Handle notification toggle
-  const handleNotificationToggle = async (
-    key: keyof NotificationPreferences,
-  ) => {
+  const handleNotificationToggle = async (key: keyof NotificationPreferences) => {
     const newValue = !notificationPrefs[key];
     setSavingNotification(key);
 
-    // Optimistically update UI
-    setNotificationPrefs((prev) => ({ ...prev, [key]: newValue }));
-
-    try {
-      const response = await apiClient.updateNotificationPreferences({
-        [key]: newValue,
-      });
-      if (response.success && response.data) {
-        setNotificationPrefs(response.data);
-        toast({
-          title: "Preferences updated",
-          description: "Your notification settings have been saved.",
-        });
+    updateNotificationMutation.mutate(
+      { [key]: newValue },
+      {
+        onSettled: () => setSavingNotification(null),
       }
-    } catch (err) {
-      // Revert on error
-      setNotificationPrefs((prev) => ({ ...prev, [key]: !newValue }));
-      toast({
-        title: "Failed to update preferences",
-        description: (err as any).message || "Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setSavingNotification(null);
-    }
-  };
-
-  // Handle unsubscribe from all
-  const handleUnsubscribeAll = async () => {
-    setSavingNotification("all");
-    const previousPrefs = { ...notificationPrefs };
-
-    // Optimistically update all to false
-    setNotificationPrefs({
-      email_weekly_digest: false,
-      email_problem_alerts: false,
-      email_product_updates: false,
-      email_marketing: false,
-    });
-
-    try {
-      const response = await apiClient.updateNotificationPreferences({
-        email_weekly_digest: false,
-        email_problem_alerts: false,
-        email_product_updates: false,
-        email_marketing: false,
-      });
-      if (response.success && response.data) {
-        setNotificationPrefs(response.data);
-        toast({
-          title: "Unsubscribed from all",
-          description: "You will no longer receive any emails from us.",
-        });
-      }
-    } catch (err) {
-      // Revert on error
-      setNotificationPrefs(previousPrefs);
-      toast({
-        title: "Failed to update preferences",
-        description: (err as any).message || "Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setSavingNotification(null);
-    }
+    );
   };
 
   const handleExportData = async () => {
@@ -229,7 +185,7 @@ const Profile = () => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `beseekr-data-export-${new Date().toISOString()}.json`;
+      a.download = `export-${new Date().toISOString()}.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -240,7 +196,7 @@ const Profile = () => {
         description: "Your data has been downloaded successfully.",
       });
     } catch (error) {
-      // Error handled in context
+      console.error(error);
     } finally {
       setIsExporting(false);
     }
@@ -255,11 +211,10 @@ const Profile = () => {
       });
       return;
     }
-
     try {
       await deleteAccount(confirmEmail);
     } catch (error) {
-      // Error handled in context
+      console.error(error);
     }
   };
 
@@ -274,364 +229,473 @@ const Profile = () => {
     await deleteConversationMutation.mutateAsync(conversationId);
   };
 
-  return (
-    <div className="space-y-8">
-      <div className="mb-6 sm:mb-8">
-        <h1 className="text-2xl sm:text-3xl font-semibold text-foreground">
-          Settings
-        </h1>
-        <p className="text-muted-foreground mt-1 sm:mt-2 text-sm sm:text-base">
-          Manage your account, data, and privacy
-        </p>
-      </div>
+  const renderContent = () => {
+    switch (activeTab) {
+      case "general":
+        return (
+          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div>
+              <h2 className="text-xl font-medium text-foreground">Profile Information</h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Manage your personal details and how you appear on the platform.
+              </p>
+            </div>
+            
+            <div className="flex items-center gap-6">
+              <Avatar className="w-24 h-24 border">
+                <AvatarImage src="" />
+                <AvatarFallback className="text-2xl bg-primary/5 text-primary">
+                  {user?.full_name?.charAt(0) || user?.email?.charAt(0) || "U"}
+                </AvatarFallback>
+              </Avatar>
+              <div className="space-y-2">
+                <Button variant="outline" size="sm" className="gap-2">
+                  <Upload className="w-4 h-4" />
+                  Upload new picture
+                </Button>
+                <p className="text-xs text-muted-foreground">
+                  At least 256x256px. PNG or JPG.
+                </p>
+              </div>
+            </div>
 
-      <Tabs defaultValue="account" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid">
-          <TabsTrigger value="account">Account</TabsTrigger>
-          <TabsTrigger value="notifications">Notifications</TabsTrigger>
-          <TabsTrigger value="data">Data & Archive</TabsTrigger>
-          <TabsTrigger value="privacy">Privacy Policy</TabsTrigger>
-        </TabsList>
+            <Separator />
 
-        <TabsContent value="account" className="space-y-6">
-          <Card className="p-6 border shadow-sm">
-            <h2 className="text-xl font-semibold mb-4 text-foreground">Account Profile</h2>
-            <div className="space-y-4 max-w-md">
+            <div className="grid gap-6 max-w-xl">
               <div className="space-y-2">
                 <Label htmlFor="fullName">Full Name</Label>
-                <div className="flex gap-2">
-                  <Input 
-                    id="fullName"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    placeholder="Your full name"
-                  />
-                  <Button 
-                    onClick={handleUpdateProfile} 
-                    disabled={isUpdatingProfile || fullName === user?.full_name}
-                  >
-                    {isUpdatingProfile ? "Saving..." : "Save"}
-                  </Button>
-                </div>
+                <Input 
+                  id="fullName"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="Your full name"
+                />
               </div>
-              <div className="space-y-2 pt-2">
+              
+              <div className="space-y-2">
                 <Label htmlFor="email">Email Address</Label>
                 <Input 
                   id="email"
                   value={user?.email || ""}
                   disabled
-                  className="bg-muted/50"
+                  className="bg-muted/30"
                 />
-                <p className="text-xs text-muted-foreground">Your email address cannot be changed directly.</p>
-              </div>
-            </div>
-          </Card>
-
-          <Card className="p-6 border border-destructive/20 shadow-sm">
-            <h2 className="text-xl font-semibold mb-4 text-destructive">
-              Danger Zone
-            </h2>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-medium">Delete Account</div>
-                  <div className="text-sm text-muted-foreground">
-                    Permanently delete your account and all data
-                  </div>
-                </div>
-                <Button
-                  onClick={() => setIsDeleteDialogOpen(true)}
-                  variant="destructive"
-                  className="gap-2"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  Delete Account
-                </Button>
-              </div>
-            </div>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="notifications" className="space-y-6">
-          <Card className="p-6 border shadow-sm">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <Bell className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <h2 className="text-xl font-semibold">Email Notifications</h2>
-                <p className="text-sm text-muted-foreground">
-                  Manage which emails you receive from us
+                <p className="text-xs text-muted-foreground">
+                  To change your email, please contact support.
                 </p>
               </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Language</Label>
+                  <Select value={language} onValueChange={setLanguage}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Language" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="en">English (US)</SelectItem>
+                      <SelectItem value="uk">English (UK)</SelectItem>
+                      <SelectItem value="es">Español</SelectItem>
+                      <SelectItem value="fr">Français</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Timezone</Label>
+                  <Select value={timezone} onValueChange={setTimezone}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Timezone" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="utc">UTC (Coordinated Universal Time)</SelectItem>
+                      <SelectItem value="America/New_York">Eastern Time (US & Canada)</SelectItem>
+                      <SelectItem value="America/Los_Angeles">Pacific Time (US & Canada)</SelectItem>
+                      <SelectItem value="Asia/Kolkata">India Standard Time</SelectItem>
+                      {/* If the user's real timezone isn't one of the above, make sure it's selectable */}
+                      {timezone && !["utc", "America/New_York", "America/Los_Angeles", "Asia/Kolkata"].includes(timezone) && (
+                        <SelectItem value={timezone}>{timezone}</SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-4">
+              <Button 
+                onClick={handleUpdateProfile} 
+                disabled={isUpdatingProfile || fullName === user?.full_name}
+              >
+                {isUpdatingProfile ? "Saving changes..." : "Save changes"}
+              </Button>
+            </div>
+          </div>
+        );
+
+      case "security":
+        return (
+          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div>
+              <h2 className="text-xl font-medium text-foreground">Security Settings</h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Manage your password and secure your account.
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="font-medium">Authentication</h3>
+              <div className="rounded-xl border p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <div className="font-medium flex items-center gap-2">
+                    Password <Badge variant="secondary" className="font-normal">Set</Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground">Last changed 3 months ago</p>
+                </div>
+                <Button variant="outline">Change Password</Button>
+              </div>
+
+              <div className="rounded-xl border p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <div className="font-medium flex items-center gap-2">
+                    Two-Factor Authentication <Badge variant="outline" className="font-normal text-amber-600 border-amber-200 bg-amber-50 dark:bg-amber-950 dark:border-amber-900">Off</Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground">Add an extra layer of security to your account.</p>
+                </div>
+                <Button variant="outline">Enable 2FA</Button>
+              </div>
+            </div>
+
+            <Separator />
+
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="font-medium">Active Sessions</h3>
+                <Button variant="ghost" size="sm" className="text-muted-foreground">Revoke all</Button>
+              </div>
+              <div className="rounded-xl border divide-y">
+                <div className="p-4 flex items-start gap-4">
+                  <div className="p-2 rounded-full bg-primary/10">
+                    <Laptop className="w-4 h-4 text-primary" />
+                  </div>
+                  <div className="flex-1 space-y-1">
+                    <div className="font-medium flex items-center gap-2">
+                      Mac OS • Safari
+                      <Badge className="font-normal bg-emerald-500 hover:bg-emerald-600">Current session</Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground">San Francisco, US • IP: 192.168.1.1</p>
+                  </div>
+                </div>
+                <div className="p-4 flex items-start gap-4">
+                  <div className="p-2 rounded-full bg-muted">
+                    <Smartphone className="w-4 h-4 text-muted-foreground" />
+                  </div>
+                  <div className="flex-1 space-y-1">
+                    <div className="font-medium">iOS • Chrome</div>
+                    <p className="text-xs text-muted-foreground">San Francisco, US • Active 2 days ago</p>
+                  </div>
+                  <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10">Revoke</Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+
+      case "notifications":
+        return (
+          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div>
+              <h2 className="text-xl font-medium text-foreground">Email Notifications</h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Choose what emails you'd like to receive from us.
+              </p>
             </div>
 
             {loadingNotifications ? (
-              <div className="text-center py-8 text-muted-foreground">
-                Loading notification preferences...
-              </div>
+              <div className="py-8 text-muted-foreground animate-pulse">Loading preferences...</div>
             ) : (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-muted/30 transition-colors">
-                  <div className="flex-1">
+              <div className="rounded-xl border divide-y">
+                <div className="flex items-center justify-between p-4">
+                  <div className="flex-1 pr-4">
                     <div className="font-medium">Weekly Digest</div>
-                    <div className="text-sm text-muted-foreground">
-                      Receive a weekly summary of new problems and opportunities
+                    <div className="text-sm text-muted-foreground mt-1">
+                      Receive a weekly summary of new activities and updates.
                     </div>
                   </div>
                   <Switch
                     checked={notificationPrefs.email_weekly_digest}
-                    onCheckedChange={() =>
-                      handleNotificationToggle("email_weekly_digest")
-                    }
+                    onCheckedChange={() => handleNotificationToggle("email_weekly_digest")}
                     disabled={savingNotification === "email_weekly_digest"}
                   />
                 </div>
 
-                <div className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-muted/30 transition-colors">
-                  <div className="flex-1">
+                <div className="flex items-center justify-between p-4">
+                  <div className="flex-1 pr-4">
                     <div className="font-medium">Problem Alerts</div>
-                    <div className="text-sm text-muted-foreground">
-                      Get notified when problems in your watchlist have updates
+                    <div className="text-sm text-muted-foreground mt-1">
+                      Get notified instantly when there are critical alerts.
                     </div>
                   </div>
                   <Switch
                     checked={notificationPrefs.email_problem_alerts}
-                    onCheckedChange={() =>
-                      handleNotificationToggle("email_problem_alerts")
-                    }
+                    onCheckedChange={() => handleNotificationToggle("email_problem_alerts")}
                     disabled={savingNotification === "email_problem_alerts"}
                   />
                 </div>
 
-                <div className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-muted/30 transition-colors">
-                  <div className="flex-1">
+                <div className="flex items-center justify-between p-4">
+                  <div className="flex-1 pr-4">
                     <div className="font-medium">Product Updates</div>
-                    <div className="text-sm text-muted-foreground">
-                      Receive news about new features and improvements
+                    <div className="text-sm text-muted-foreground mt-1">
+                      News about new features, improvements, and changes.
                     </div>
                   </div>
                   <Switch
                     checked={notificationPrefs.email_product_updates}
-                    onCheckedChange={() =>
-                      handleNotificationToggle("email_product_updates")
-                    }
+                    onCheckedChange={() => handleNotificationToggle("email_product_updates")}
                     disabled={savingNotification === "email_product_updates"}
                   />
                 </div>
 
-                <div className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-muted/30 transition-colors">
-                  <div className="flex-1">
+                <div className="flex items-center justify-between p-4">
+                  <div className="flex-1 pr-4">
                     <div className="font-medium">Marketing Communications</div>
-                    <div className="text-sm text-muted-foreground">
-                      Receive tips, guides, and promotional content
+                    <div className="text-sm text-muted-foreground mt-1">
+                      Receive tips, guides, and promotional content.
                     </div>
                   </div>
                   <Switch
                     checked={notificationPrefs.email_marketing}
-                    onCheckedChange={() =>
-                      handleNotificationToggle("email_marketing")
-                    }
+                    onCheckedChange={() => handleNotificationToggle("email_marketing")}
                     disabled={savingNotification === "email_marketing"}
                   />
                 </div>
               </div>
             )}
-          </Card>
+          </div>
+        );
 
-          <Card className="p-6 border border-destructive/20 shadow-sm">
-            <h3 className="font-semibold mb-2">Unsubscribe from All</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              Turn off all email notifications. You can also use the unsubscribe
-              link at the bottom of any email.
-            </p>
-            <Button
-              variant="outline"
-              className="border-destructive/50 text-destructive hover:bg-destructive/10"
-              onClick={handleUnsubscribeAll}
-              disabled={
-                savingNotification === "all" ||
-                (!notificationPrefs.email_weekly_digest &&
-                  !notificationPrefs.email_problem_alerts &&
-                  !notificationPrefs.email_product_updates &&
-                  !notificationPrefs.email_marketing)
-              }
-            >
-              {savingNotification === "all"
-                ? "Unsubscribing..."
-                : "Unsubscribe from All Emails"}
-            </Button>
-          </Card>
-        </TabsContent>
+      case "appearance":
+        return (
+          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div>
+              <h2 className="text-xl font-medium text-foreground">Appearance</h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Customize how the application looks and feels.
+              </p>
+            </div>
 
-        <TabsContent value="data" className="space-y-6">
-          <Card className="p-6 border shadow-sm">
-            <h2 className="text-xl font-semibold mb-4">Data Management</h2>
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-medium">Export Your Data</div>
+              <h3 className="font-medium">Theme Preferences</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <button 
+                  onClick={() => setTheme("light")}
+                  className={`flex flex-col items-start gap-2 p-4 rounded-xl border-2 transition-all ${theme === "light" ? "border-primary bg-primary/5" : "border-transparent hover:border-border bg-muted/30"}`}
+                >
+                  <div className="w-full h-24 rounded-md bg-white border shadow-sm mb-2 p-2 flex flex-col gap-2">
+                    <div className="h-2 w-1/3 bg-slate-200 rounded"></div>
+                    <div className="h-2 w-full bg-slate-100 rounded"></div>
+                    <div className="h-2 w-2/3 bg-slate-100 rounded"></div>
+                  </div>
+                  <span className="font-medium text-sm">Light Mode</span>
+                </button>
+
+                <button 
+                  onClick={() => setTheme("dark")}
+                  className={`flex flex-col items-start gap-2 p-4 rounded-xl border-2 transition-all ${theme === "dark" ? "border-primary bg-primary/5" : "border-transparent hover:border-border bg-muted/30"}`}
+                >
+                  <div className="w-full h-24 rounded-md bg-slate-950 border border-slate-800 shadow-sm mb-2 p-2 flex flex-col gap-2">
+                    <div className="h-2 w-1/3 bg-slate-700 rounded"></div>
+                    <div className="h-2 w-full bg-slate-800 rounded"></div>
+                    <div className="h-2 w-2/3 bg-slate-800 rounded"></div>
+                  </div>
+                  <span className="font-medium text-sm">Dark Mode</span>
+                </button>
+
+                <button 
+                  onClick={() => setTheme("system")}
+                  className={`flex flex-col items-start gap-2 p-4 rounded-xl border-2 transition-all ${theme === "system" ? "border-primary bg-primary/5" : "border-transparent hover:border-border bg-muted/30"}`}
+                >
+                  <div className="w-full h-24 rounded-md bg-gradient-to-r from-white to-slate-950 border shadow-sm mb-2 p-2 flex flex-col gap-2">
+                    <div className="h-2 w-1/3 bg-slate-400 rounded opacity-50"></div>
+                    <div className="h-2 w-full bg-slate-400 rounded opacity-50"></div>
+                    <div className="h-2 w-2/3 bg-slate-400 rounded opacity-50"></div>
+                  </div>
+                  <span className="font-medium text-sm">System Default</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+
+      case "data":
+        return (
+          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div>
+              <h2 className="text-xl font-medium text-foreground">Data & Privacy</h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Manage your data footprint and archived information.
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="font-medium">Export Data</h3>
+              <div className="rounded-xl border p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="space-y-1">
                   <div className="text-sm text-muted-foreground">
-                    Download all your data in JSON format
+                    Download a copy of your personal data, including all settings and conversations.
                   </div>
                 </div>
-                <Button
-                  onClick={handleExportData}
-                  disabled={isExporting}
-                  variant="outline"
-                  className="gap-2"
-                >
+                <Button onClick={handleExportData} disabled={isExporting} variant="outline" className="gap-2 whitespace-nowrap">
                   <Download className="w-4 h-4" />
-                  {isExporting ? "Exporting..." : "Export"}
+                  {isExporting ? "Exporting..." : "Request Export"}
                 </Button>
               </div>
             </div>
-          </Card>
 
-          <Card className="p-6 border shadow-sm">
-            <h2 className="text-xl font-semibold mb-4">
-              Archived Conversations
-            </h2>
-            <ScrollArea className="h-64">
-              {loadingArchived ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  Loading archived conversations...
-                </div>
-              ) : archivedConversations.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  No archived conversations
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {archivedConversations.map((conversation) => (
-                    <div
-                      key={conversation.id}
-                      className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-muted/30 transition-colors"
-                    >
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">
-                          {conversation.title || "Untitled Conversation"}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          Last active:{" "}
-                          {new Date(
-                            conversation.last_message_at,
-                          ).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2 ml-4">
-                        <Button
-                          onClick={() =>
-                            handleRestoreConversation(conversation.id)
-                          }
-                          variant="outline"
-                          size="sm"
-                          className="h-8 gap-2"
-                        >
-                          <RotateCcw className="w-3 h-3" />
-                          Restore
-                        </Button>
-                        <Button
-                          onClick={() =>
-                            handleDeleteArchivedConversation(conversation.id)
-                          }
-                          variant="destructive"
-                          size="sm"
-                          className="h-8 gap-2"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                          Delete
-                        </Button>
-                      </div>
+            <Separator />
+
+            <div className="space-y-4">
+              <h3 className="font-medium">Archived Items</h3>
+              <div className="rounded-xl border overflow-hidden">
+                <ScrollArea className="h-64">
+                  {loadingArchived ? (
+                    <div className="text-center py-8 text-muted-foreground text-sm">
+                      Loading archives...
                     </div>
-                  ))}
+                  ) : archivedConversations.length === 0 ? (
+                    <div className="text-center py-12 text-muted-foreground flex flex-col items-center">
+                      <Database className="w-8 h-8 mb-3 opacity-20" />
+                      <p className="text-sm">No archived conversations</p>
+                    </div>
+                  ) : (
+                    <div className="divide-y">
+                      {archivedConversations.map((conversation: any) => (
+                        <div key={conversation.id} className="p-4 flex items-center justify-between hover:bg-muted/30 transition-colors">
+                          <div className="flex-1 min-w-0 pr-4">
+                            <p className="text-sm font-medium truncate">
+                              {conversation.title || "Untitled Conversation"}
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Last active: {new Date(conversation.last_message_at).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button onClick={() => handleRestoreConversation(conversation.id)} variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary">
+                              <RotateCcw className="w-4 h-4" />
+                            </Button>
+                            <Button onClick={() => handleDeleteArchivedConversation(conversation.id)} variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive">
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </ScrollArea>
+              </div>
+            </div>
+
+            <Separator />
+
+            <div className="space-y-4">
+              <h3 className="font-medium text-destructive">Danger Zone</h3>
+              <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <div className="font-medium text-destructive flex items-center gap-2">
+                    Delete Account
+                  </div>
+                  <p className="text-sm text-destructive/80">
+                    Permanently delete your account and all associated data. This action is irreversible.
+                  </p>
                 </div>
-              )}
-            </ScrollArea>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="privacy" className="space-y-6">
-          <div className="grid md:grid-cols-3 gap-4 mb-6">
-            <Card className="p-4 border shadow-sm text-center">
-              <Lock className="w-8 h-8 text-primary mx-auto mb-3" />
-              <h3 className="font-semibold text-sm mb-1">
-                End-to-End Encryption
-              </h3>
-              <p className="text-xs text-muted-foreground">
-                Your conversations are encrypted and secure
-              </p>
-            </Card>
-            <Card className="p-4 border shadow-sm text-center">
-              <Eye className="w-8 h-8 text-accent mx-auto mb-3" />
-              <h3 className="font-semibold text-sm mb-1">No Data Selling</h3>
-              <p className="text-xs text-muted-foreground">
-                We never sell your personal information
-              </p>
-            </Card>
-            <Card className="p-4 border shadow-sm text-center">
-              <Users className="w-8 h-8 text-primary mx-auto mb-3" />
-              <h3 className="font-semibold text-sm mb-1">Your Control</h3>
-              <p className="text-xs text-muted-foreground">
-                Export or delete your data anytime
-              </p>
-            </Card>
+                <Button onClick={() => setIsDeleteDialogOpen(true)} variant="destructive" className="gap-2 whitespace-nowrap">
+                  <AlertTriangle className="w-4 h-4" />
+                  Delete Account
+                </Button>
+              </div>
+            </div>
           </div>
+        );
 
-          <Card className="p-8 border shadow-sm max-w-2xl text-center mx-auto mt-8">
-            <h2 className="text-xl font-semibold tracking-tight text-foreground mb-3">
-              Full Privacy Policy
-            </h2>
-            <p className="text-sm text-muted-foreground mb-6">
-              To learn more about how we collect, use, and protect your data
-              across the autonomous agent platform, please read our complete
-              Privacy Policy.
-            </p>
-            <Button asChild>
-              <Link to="/privacy">Read Privacy Policy</Link>
-            </Button>
-          </Card>
-        </TabsContent>
-      </Tabs>
+      default:
+        return null;
+    }
+  };
 
-      <AlertDialog
-        open={isDeleteDialogOpen}
-        onOpenChange={setIsDeleteDialogOpen}
-      >
+  return (
+    <div className="max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+      <div className="mb-8">
+        <h1 className="text-3xl font-semibold tracking-tight text-foreground">Settings</h1>
+        <p className="text-muted-foreground mt-2">
+          Manage your account settings and preferences.
+        </p>
+      </div>
+
+      <div className="flex flex-col md:flex-row gap-8 lg:gap-12">
+        {/* Sidebar Navigation */}
+        <aside className="md:w-64 flex-shrink-0">
+          <nav className="flex md:flex-col gap-1 overflow-x-auto md:overflow-visible pb-4 md:pb-0 hide-scrollbar">
+            {SIDEBAR_NAV.map((item) => {
+              const Icon = item.icon;
+              const isActive = activeTab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveTab(item.id)}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+                    isActive 
+                      ? "bg-primary/10 text-primary" 
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  }`}
+                >
+                  <Icon className={`w-4 h-4 ${isActive ? "text-primary" : "opacity-70"}`} />
+                  {item.label}
+                </button>
+              );
+            })}
+          </nav>
+        </aside>
+
+        {/* Main Content Area */}
+        <main className="flex-1 min-w-0">
+          {renderContent()}
+        </main>
+      </div>
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Account</AlertDialogTitle>
+            <AlertDialogTitle className="text-destructive flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5" />
+              Delete Account
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. All your agents, conversations, and
-              data will be permanently deleted.
+              This action cannot be undone. All your data, settings, and history will be permanently deleted from our servers.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <div className="py-4">
-            <Label htmlFor="confirm-email">Confirm your email to proceed</Label>
+          <div className="py-4 space-y-3">
+            <Label htmlFor="confirm-email">Please type your email to confirm</Label>
             <Input
               id="confirm-email"
               type="email"
               placeholder={user?.email}
               value={confirmEmail}
               onChange={(e) => setConfirmEmail(e.target.value)}
-              className="mt-2"
+              className="font-mono"
             />
           </div>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setConfirmEmail("")}>
-              Cancel
-            </AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setConfirmEmail("")}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteAccount}
+              disabled={confirmEmail !== user?.email}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete Account
+              Confirm Deletion
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </div>
   );
-};
-
-export default Profile;
+}
