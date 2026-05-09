@@ -45,6 +45,7 @@ import {
 } from "@/hooks/use-api-queries";
 import { useTheme } from "@/hooks/use-theme";
 import { apiClient } from "@/lib/api";
+import { useTranslation } from "react-i18next";
 
 const SIDEBAR_NAV = [
   { id: "general", label: "General", icon: User },
@@ -75,14 +76,7 @@ export default function Profile() {
   // Real UI features
   const { theme, setTheme } = useTheme();
   
-  // Initialize with real browser values
-  const [language, setLanguage] = useState(() => {
-    const lang = navigator.language.toLowerCase();
-    if (lang.startsWith("es")) return "es";
-    if (lang.startsWith("fr")) return "fr";
-    if (lang.includes("uk") || lang.includes("gb")) return "uk";
-    return "en";
-  });
+  const { t, i18n } = useTranslation();
   
   const [timezone, setTimezone] = useState(() => {
     try {
@@ -235,9 +229,9 @@ export default function Profile() {
         return (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div>
-              <h2 className="text-xl font-medium text-foreground">Profile Information</h2>
+              <h2 className="text-xl font-medium text-foreground">{t('profile.profileInformation')}</h2>
               <p className="text-sm text-muted-foreground mt-1">
-                Manage your personal details and how you appear on the platform.
+                {t('profile.manageDetails')}
               </p>
             </div>
             
@@ -251,7 +245,7 @@ export default function Profile() {
               <div className="space-y-2">
                 <Button variant="outline" size="sm" className="gap-2">
                   <Upload className="w-4 h-4" />
-                  Upload new picture
+                  {t('profile.uploadPicture')}
                 </Button>
                 <p className="text-xs text-muted-foreground">
                   At least 256x256px. PNG or JPG.
@@ -263,7 +257,7 @@ export default function Profile() {
 
             <div className="grid gap-6 max-w-xl">
               <div className="space-y-2">
-                <Label htmlFor="fullName">Full Name</Label>
+                <Label htmlFor="fullName">{t('profile.fullName')}</Label>
                 <Input 
                   id="fullName"
                   value={fullName}
@@ -273,7 +267,7 @@ export default function Profile() {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="email">Email Address</Label>
+                <Label htmlFor="email">{t('profile.emailAddress')}</Label>
                 <Input 
                   id="email"
                   value={user?.email || ""}
@@ -287,14 +281,13 @@ export default function Profile() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Language</Label>
-                  <Select value={language} onValueChange={setLanguage}>
+                  <Label>{t('profile.language')}</Label>
+                  <Select value={i18n.language} onValueChange={(val) => i18n.changeLanguage(val)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select Language" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="en">English (US)</SelectItem>
-                      <SelectItem value="uk">English (UK)</SelectItem>
+                      <SelectItem value="en">English</SelectItem>
                       <SelectItem value="es">Español</SelectItem>
                       <SelectItem value="fr">Français</SelectItem>
                     </SelectContent>
@@ -326,7 +319,7 @@ export default function Profile() {
                 onClick={handleUpdateProfile} 
                 disabled={isUpdatingProfile || fullName === user?.full_name}
               >
-                {isUpdatingProfile ? "Saving changes..." : "Save changes"}
+                {isUpdatingProfile ? t('profile.savingChanges') : t('profile.saveChanges')}
               </Button>
             </div>
           </div>
@@ -625,9 +618,9 @@ export default function Profile() {
   return (
     <div className="max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
       <div className="mb-8">
-        <h1 className="text-3xl font-semibold tracking-tight text-foreground">Settings</h1>
+        <h1 className="text-3xl font-semibold tracking-tight text-foreground">{t('profile.settings')}</h1>
         <p className="text-muted-foreground mt-2">
-          Manage your account settings and preferences.
+          {t('profile.manageAccount')}
         </p>
       </div>
 
@@ -649,7 +642,7 @@ export default function Profile() {
                   }`}
                 >
                   <Icon className={`w-4 h-4 ${isActive ? "text-primary" : "opacity-70"}`} />
-                  {item.label}
+                  {t(`profile.${item.id}`)}
                 </button>
               );
             })}
