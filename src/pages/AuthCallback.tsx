@@ -142,6 +142,7 @@ export default function AuthCallback() {
 
           if (response.success) {
             if ((response as any).mfa_required) {
+              console.log("OAuth Callback - MFA required");
               setMfaData(response.data);
               setStatus("mfa");
               return;
@@ -228,6 +229,12 @@ export default function AuthCallback() {
           );
 
           if (response.success) {
+            if ((response as any).mfa_required) {
+              console.log("OAuth Callback - MFA required (existing session)");
+              setMfaData(response.data);
+              setStatus("mfa");
+              return;
+            }
             console.log("OAuth Callback - Backend authentication successful");
             // Refresh auth context to update user state across all components
             await refreshAuth(true);

@@ -175,6 +175,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const response = await apiClient.getCurrentUser();
 
         if (response.success && response.data) {
+          if ((response as any).mfa_required) {
+            logger.warn("MFA required during refresh, redirecting to login");
+            handleAuthError();
+            return;
+          }
           const fetchedUser = response.data.user;
           setUser(fetchedUser);
           setCachedUser(fetchedUser); // SAFARI FIX: Update cache so dashboard sees logged-in state
@@ -439,6 +444,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const response = await apiClient.getCurrentUser();
       if (response.success && response.data) {
+        if ((response as any).mfa_required) {
+          logger.warn("MFA required during initial fetch");
+          setUser(null);
+          setCachedUser(null);
+          setLoading(false);
+          return;
+        }
         const fetchedUser = response.data.user;
         setUser(fetchedUser);
         setCachedUser(fetchedUser); // Update cache
@@ -477,7 +489,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (response.success && response.data) {
         if ((response as any).mfa_required) {
           logger.info("MFA required for login");
-          return response.data; // Return factorId and other data to UI
+          return { ...response.data, mfa_required: true };
         }
 
         const fetchedUser = response.data.user;
