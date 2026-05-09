@@ -13,6 +13,7 @@ import {
   AlertTriangle,
   Upload,
 } from "lucide-react";
+import { Navigate } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -99,14 +100,19 @@ export default function Profile() {
       return "UTC";
     }
   });
+  const [language, setLanguage] = useState(i18n.language);
 
-  const { user, exportData, deleteAccount, refreshAuth } = useAuth();
+  const { user, loading, exportData, deleteAccount, refreshAuth } = useAuth();
+
+  if (!loading && !user) {
+    return <Navigate to="/auth" replace />;
+  }
 
   useEffect(() => {
-    if (user?.timezone) {
-      setTimezone(user.timezone);
-    }
-  }, [user?.timezone]);
+    if (user?.timezone) setTimezone(user.timezone);
+    if (user?.language) setLanguage(user.language);
+  }, [user?.timezone, user?.language]);
+
   const { toast } = useToast();
 
   useEffect(() => {
@@ -155,8 +161,15 @@ export default function Profile() {
   const handleUpdateProfile = async () => {
     setIsUpdatingProfile(true);
     try {
-      const response = await apiClient.updateProfile({ full_name: fullName });
+      const payload: any = { full_name: fullName };
+      if (timezone !== user?.timezone) payload.timezone = timezone;
+      if (language !== (user?.language || "en")) payload.language = language;
+
+      const response = await apiClient.updateProfile(payload);
       if (response.success) {
+        if (payload.language) {
+          i18n.changeLanguage(payload.language);
+        }
         toast({
           title: "Profile updated",
           description: "Your profile information has been saved.",
@@ -292,19 +305,8 @@ export default function Profile() {
                 <div className="space-y-2">
                   <Label>{t("profile.language")}</Label>
                   <Select
-                    value={i18n.language}
-                    onValueChange={async (val) => {
-                      i18n.changeLanguage(val);
-                      try {
-                        await apiClient.updateProfile({ language: val });
-                        refreshAuth(true); // refresh to update cached user
-                      } catch (err) {
-                        toast({
-                          title: "Failed to save language",
-                          variant: "destructive",
-                        });
-                      }
-                    }}
+                    value={language}
+                    onValueChange={(val) => setLanguage(val)}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select Language" />
@@ -320,18 +322,7 @@ export default function Profile() {
                   <Label>Timezone</Label>
                   <Select
                     value={timezone}
-                    onValueChange={async (val) => {
-                      setTimezone(val);
-                      try {
-                        await apiClient.updateProfile({ timezone: val });
-                        refreshAuth(true);
-                      } catch (err) {
-                        toast({
-                          title: "Failed to save timezone",
-                          variant: "destructive",
-                        });
-                      }
-                    }}
+                    onValueChange={(val) => setTimezone(val)}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select Timezone" />
@@ -368,7 +359,12 @@ export default function Profile() {
             <div className="flex justify-end pt-4">
               <Button
                 onClick={handleUpdateProfile}
-                disabled={isUpdatingProfile || fullName === user?.full_name}
+                disabled={
+                  isUpdatingProfile ||
+                  (fullName === user?.full_name &&
+                    timezone === (user?.timezone || timezone) &&
+                    language === (user?.language || "en"))
+                }
               >
                 {isUpdatingProfile
                   ? t("profile.savingChanges")
@@ -700,8 +696,8 @@ export default function Profile() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-      <div className="mb-8">
+    <div className="max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-4 sm:py-8 h-[calc(100vh-8rem)] flex flex-col">
+      <div className="mb-6 flex-shrink-0">
         <h1 className="text-3xl font-semibold tracking-tight text-foreground">
           {t("profile.settings")}
         </h1>
@@ -710,7 +706,7 @@ export default function Profile() {
         </p>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-8 lg:gap-12">
+      <div className="flex flex-col md:flex-row gap-8 lg:gap-12 flex-1 min-h-0">
         {/* Sidebar Navigation */}
         <aside className="md:w-64 flex-shrink-0">
           <nav className="flex md:flex-col gap-1 overflow-x-auto md:overflow-visible pb-4 md:pb-0 hide-scrollbar">
@@ -730,7 +726,7 @@ export default function Profile() {
                   <Icon
                     className={`w-4 h-4 ${isActive ? "text-primary" : "opacity-70"}`}
                   />
-                  {t(`profile.${item.id}`)}
+                  {t(`profile.${item.id}`, item.label)}
                 </button>
               );
             })}
@@ -738,7 +734,9 @@ export default function Profile() {
         </aside>
 
         {/* Main Content Area */}
-        <main className="flex-1 min-w-0">{renderContent()}</main>
+        <main className="flex-1 min-w-0 overflow-y-auto pr-2 pb-8">
+          {renderContent()}
+        </main>
       </div>
 
       <AlertDialog
