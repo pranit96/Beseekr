@@ -13,11 +13,14 @@ import { Button } from "@/components/ui/button";
 export default function AuthCallback() {
   const navigate = useNavigate();
   const { refreshAuth, verifyMFA } = useAuth();
-  const [status, setStatus] = useState<
-    "loading" | "success" | "error" | "mfa"
-  >("loading");
+  const [status, setStatus] = useState<"loading" | "success" | "error" | "mfa">(
+    "loading",
+  );
   const [errorMessage, setErrorMessage] = useState("");
-  const [mfaData, setMfaData] = useState<{ factorId: string; userId: string } | null>(null);
+  const [mfaData, setMfaData] = useState<{
+    factorId: string;
+    userId: string;
+  } | null>(null);
   const [mfaCode, setMfaCode] = useState("");
   const [isVerifyingMfa, setIsVerifyingMfa] = useState(false);
 
