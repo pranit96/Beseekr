@@ -465,6 +465,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (response.success && response.data) {
         const fetchedUser = response.data.user;
         setUser(fetchedUser);
+        setCachedUser(fetchedUser); // Fix: Update local cache immediately
         lastActivityRef.current = Date.now();
         authErrorShownRef.current = false;
 
