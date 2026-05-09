@@ -93,20 +93,20 @@ const NAV_ITEMS = {
     color: "from-amber-500 to-orange-500",
     exact: false,
   },
-  trading: {
-    name: "Trading",
-    href: "/trading",
-    icon: TrendingUp,
-    color: "from-blue-500 to-indigo-500",
-    exact: false,
-  },
-  wellness: {
-    name: "Wellness",
-    href: "/wellness",
-    icon: Activity,
-    color: "from-emerald-500 to-sky-500",
-    exact: false,
-  },
+  // trading: {
+  //   name: "Trading",
+  //   href: "/trading",
+  //   icon: TrendingUp,
+  //   color: "from-blue-500 to-indigo-500",
+  //   exact: false,
+  // },
+  // wellness: {
+  //   name: "Wellness",
+  //   href: "/wellness",
+  //   icon: Activity,
+  //   color: "from-emerald-500 to-sky-500",
+  //   exact: false,
+  // },
 };
 
 function isPathActive(pathname: string, href: string, exact?: boolean) {
@@ -139,8 +139,8 @@ function getNavigationContext(pathname: string, isPremium: boolean) {
     NAV_ITEMS.chat,
     NAV_ITEMS.discover,
     NAV_ITEMS.blog,
-    NAV_ITEMS.trading,
-    NAV_ITEMS.wellness,
+    // NAV_ITEMS.trading,
+    // NAV_ITEMS.wellness,
   ];
 }
 
