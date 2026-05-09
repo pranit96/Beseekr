@@ -104,9 +104,6 @@ export default function Profile() {
 
   const { user, loading, exportData, deleteAccount, refreshAuth } = useAuth();
 
-  if (!loading && !user) {
-    return <Navigate to="/auth" replace />;
-  }
 
   useEffect(() => {
     if (user?.timezone) setTimezone(user.timezone);
@@ -694,6 +691,10 @@ export default function Profile() {
         return null;
     }
   };
+
+  if (!loading && !user) {
+    return <Navigate to="/auth" replace />;
+  }
 
   return (
     <div className="max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-4 sm:py-8 h-[calc(100vh-8rem)] flex flex-col">
