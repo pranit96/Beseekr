@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,9 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { Logo } from "@/components/Logo";
+import { GlobalHeader } from "@/components/GlobalHeader";
 import {
-  Sparkles,
   Send,
   Loader2,
   Mail,
@@ -31,6 +30,7 @@ interface ContactFormData {
 
 export function Contact() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [formData, setFormData] = useState<ContactFormData>({
@@ -107,81 +107,79 @@ export function Contact() {
 
   if (isSubmitted) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex items-center justify-center p-4">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="max-w-md w-full text-center"
-        >
-          <Card className="p-8 sm:p-12 bg-background/80 backdrop-blur-xl border-border/50">
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ type: "spring", bounce: 0.5, delay: 0.2 }}
-            >
-              <div className="w-20 h-20 mx-auto rounded-full bg-green-500/10 flex items-center justify-center mb-6">
-                <CheckCircle2 className="h-10 w-10 text-green-500" />
-              </div>
-            </motion.div>
-            <h2 className="text-2xl font-bold mb-2">Message Sent!</h2>
-            <p className="text-muted-foreground mb-6">
-              Thank you for reaching out. We'll get back to you within 24-48
-              hours.
-            </p>
-            <Link to="/dashboard/problems">
-              <Button className="rounded-xl">
+      <div className="min-h-screen bg-background text-foreground relative overflow-hidden flex flex-col">
+        {/* Ambient background effects */}
+        <div className="ambient-blob ambient-blob-1" />
+        <div className="ambient-blob ambient-blob-2" />
+        
+        <GlobalHeader />
+
+        <div className="flex-1 flex items-center justify-center p-4 relative z-10">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="max-w-md w-full text-center"
+          >
+            <Card className="p-8 sm:p-12 glass border-border/50">
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: "spring", bounce: 0.5, delay: 0.2 }}
+              >
+                <div className="w-20 h-20 mx-auto rounded-full bg-green-500/10 flex items-center justify-center mb-6">
+                  <CheckCircle2 className="h-10 w-10 text-green-500" />
+                </div>
+              </motion.div>
+              <h2 className="text-2xl font-bold mb-2">Message Sent!</h2>
+              <p className="text-muted-foreground mb-6">
+                Thank you for reaching out. We'll get back to you within 24-48
+                hours.
+              </p>
+              <Button onClick={() => navigate("/")} className="rounded-xl">
                 <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Dashboard
+                Back to Home
               </Button>
-            </Link>
-          </Card>
-        </motion.div>
+            </Card>
+          </motion.div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
-      {/* Header */}
-      <nav className="border-b border-border bg-background/50 backdrop-blur-xl sticky top-0 z-50">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-          <Link
-            to="/dashboard/problems"
-            className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            <span className="hidden sm:inline">Back</span>
-          </Link>
-          <Link to="/dashboard/problems" className="flex items-center gap-3">
-            <Logo className="text-xl sm:text-2xl" linkClassName="shrink-0" />
-          </Link>
-          <div className="w-20" /> {/* Spacer */}
-        </div>
-      </nav>
+    <div className="min-h-screen bg-background text-foreground flex flex-col relative overflow-hidden">
+      {/* Ambient background effects */}
+      <div className="ambient-blob ambient-blob-1" />
+      <div className="ambient-blob ambient-blob-2" />
 
-      {/* Hero */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-primary/10 via-background to-accent/10 border-b border-border">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-12 sm:py-16 text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-6">
-            <MessageSquare className="w-8 h-8 text-primary" />
-          </div>
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-            Contact Us
-          </h1>
-          <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto">
-            Have a question, feedback, or need support? We'd love to hear from
-            you.
-          </p>
-        </div>
-      </div>
+      <GlobalHeader />
 
-      {/* Form Section */}
-      <div className="max-w-2xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
+      <main className="flex-1 max-w-4xl w-full mx-auto px-6 py-12 sm:py-20 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
+          className="text-center mb-12"
         >
-          <Card className="p-6 sm:p-8 bg-background/80 backdrop-blur-xl border-border/50">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 text-primary mb-6 animate-float">
+            <MessageSquare className="w-8 h-8" />
+          </div>
+          <h1 className="text-4xl sm:text-5xl font-semibold tracking-tight mb-4">
+            Let's get in touch.
+          </h1>
+          <p className="text-muted-foreground text-lg max-w-xl mx-auto">
+            Have a question, feedback, or need support? Drop us a line. We're
+            always here to help you execute faster.
+          </p>
+        </motion.div>
+
+        {/* Form Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="max-w-2xl mx-auto"
+        >
+          <Card className="p-6 sm:p-8 glass border-border/50 shadow-soft">
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -192,7 +190,7 @@ export function Contact() {
                     value={formData.name}
                     onChange={handleChange}
                     placeholder="Your name"
-                    className="rounded-xl"
+                    className="rounded-xl bg-background/50"
                     required
                   />
                 </div>
@@ -205,7 +203,7 @@ export function Contact() {
                     value={formData.email}
                     onChange={handleChange}
                     placeholder="your@email.com"
-                    className="rounded-xl"
+                    className="rounded-xl bg-background/50"
                     required
                   />
                 </div>
@@ -219,7 +217,7 @@ export function Contact() {
                   value={formData.subject}
                   onChange={handleChange}
                   placeholder="How can we help?"
-                  className="rounded-xl"
+                  className="rounded-xl bg-background/50"
                 />
               </div>
 
@@ -231,11 +229,11 @@ export function Contact() {
                   value={formData.message}
                   onChange={handleChange}
                   placeholder="Tell us what's on your mind..."
-                  className="rounded-xl min-h-[150px] resize-none"
+                  className="rounded-xl min-h-[150px] resize-none bg-background/50"
                   required
                 />
                 <p
-                  className={`text-xs ${formData.message.length < 10 ? "text-muted-foreground" : "text-green-600"}`}
+                  className={`text-xs ${formData.message.length < 10 ? "text-muted-foreground" : "text-green-500"}`}
                 >
                   {formData.message.length}/10 characters minimum
                 </p>
@@ -244,7 +242,7 @@ export function Contact() {
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full rounded-xl h-12 bg-gradient-to-r from-primary to-accent hover:opacity-90"
+                className="w-full rounded-xl h-12 bg-primary text-primary-foreground hover:opacity-90 hover-scale-sm transition-all"
               >
                 {isSubmitting ? (
                   <>
@@ -266,7 +264,7 @@ export function Contact() {
               </p>
               <a
                 href="mailto:hello@support.beseekr.com"
-                className="inline-flex items-center gap-2 text-primary hover:underline"
+                className="inline-flex items-center gap-2 text-primary hover:underline hover-scale-sm transition-all"
               >
                 <Mail className="h-4 w-4" />
                 hello@support.beseekr.com
@@ -274,33 +272,21 @@ export function Contact() {
             </div>
           </Card>
         </motion.div>
-      </div>
+      </main>
 
-      {/* Footer */}
-      <footer className="border-t border-border/50 bg-background/50 backdrop-blur-sm">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Sparkles className="h-4 w-4 text-primary" />
-              <span>
-                © {new Date().getFullYear()} beseekr. All rights reserved.
-              </span>
-            </div>
-            <div className="flex items-center gap-4 sm:gap-6 text-sm">
-              <Link
-                to="/dashboard/problems"
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Discover Problems
-              </Link>
-              <Link
-                to="/privacy"
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Privacy Policy
-              </Link>
-            </div>
-          </div>
+      {/* FOOTER */}
+      <footer className="border-t py-6 text-center text-sm text-muted-foreground flex items-center justify-center gap-4 relative z-10 bg-background/80 backdrop-blur-md">
+        <span>© {new Date().getFullYear()} Beseekr</span>
+        <div className="flex items-center gap-4">
+          <Link to="/about" className="hover:text-foreground transition-colors">
+            About
+          </Link>
+          <Link
+            to="/privacy"
+            className="hover:text-foreground transition-colors"
+          >
+            Privacy Policy
+          </Link>
         </div>
       </footer>
     </div>
