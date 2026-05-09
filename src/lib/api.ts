@@ -1113,10 +1113,9 @@ class ApiClient {
   async verify2FA(factor_id: string, code: string) {
     this.invalidateCache("/api/user/2fa");
     return this.request<{ user: any }>("/api/user/2fa/verify", {
-        method: "POST",
-        body: JSON.stringify({ factor_id, code }),
-      },
-    );
+      method: "POST",
+      body: JSON.stringify({ factor_id, code }),
+    });
   }
 
   async unenroll2FA() {

@@ -175,64 +175,67 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           logger.info("Refreshing authentication state", { silent, retries });
           const response = await apiClient.getCurrentUser();
 
-        if (response.success && response.data) {
-          logger.info("getCurrentUser response in refreshAuth:", { 
-            mfa_required: (response as any).mfa_required,
-            hasData: !!response.data 
-          });
-          if ((response as any).mfa_required) {
-            logger.warn("MFA required during refresh, redirecting to login");
-            handleAuthError();
-            return;
-          }
-          const fetchedUser = response.data.user;
-          setUser(fetchedUser);
-          setCachedUser(fetchedUser); // SAFARI FIX: Update cache so dashboard sees logged-in state
-          lastActivityRef.current = Date.now();
-          authErrorShownRef.current = false;
-          logger.info("Auth refresh successful", {
-            userId: fetchedUser.id,
-          });
-
-          // Sync language globally
-          if (fetchedUser.language && fetchedUser.language !== i18n.language) {
-            i18n.changeLanguage(fetchedUser.language);
-          }
-
-          if (!silent) {
-            toast({
-              title: "Session refreshed",
-              description: "Your session has been updated.",
-              duration: 2000,
+          if (response.success && response.data) {
+            logger.info("getCurrentUser response in refreshAuth:", {
+              mfa_required: (response as any).mfa_required,
+              hasData: !!response.data,
             });
+            if ((response as any).mfa_required) {
+              logger.warn("MFA required during refresh, redirecting to login");
+              handleAuthError();
+              return;
+            }
+            const fetchedUser = response.data.user;
+            setUser(fetchedUser);
+            setCachedUser(fetchedUser); // SAFARI FIX: Update cache so dashboard sees logged-in state
+            lastActivityRef.current = Date.now();
+            authErrorShownRef.current = false;
+            logger.info("Auth refresh successful", {
+              userId: fetchedUser.id,
+            });
+
+            // Sync language globally
+            if (
+              fetchedUser.language &&
+              fetchedUser.language !== i18n.language
+            ) {
+              i18n.changeLanguage(fetchedUser.language);
+            }
+
+            if (!silent) {
+              toast({
+                title: "Session refreshed",
+                description: "Your session has been updated.",
+                duration: 2000,
+              });
+            }
+          } else {
+            throw new Error("Failed to refresh session");
           }
-        } else {
-          throw new Error("Failed to refresh session");
-        }
-      } catch (error: any) {
-        logger.error("Session refresh failed", {
-          error: error.message,
-          retries,
-        });
+        } catch (error: any) {
+          logger.error("Session refresh failed", {
+            error: error.message,
+            retries,
+          });
 
-        // Retry logic for network errors
-        if (
-          retries > 0 &&
-          !error.message?.includes("401") &&
-          !error.message?.includes("Unauthorized")
-        ) {
-          logger.info("Retrying refresh", { retriesLeft: retries });
-          await new Promise((resolve) => setTimeout(resolve, 2000));
-          refreshingRef.current = false;
-          return refreshAuth(silent, retries - 1);
-        }
+          // Retry logic for network errors
+          if (
+            retries > 0 &&
+            !error.message?.includes("401") &&
+            !error.message?.includes("Unauthorized")
+          ) {
+            logger.info("Retrying refresh", { retriesLeft: retries });
+            await new Promise((resolve) => setTimeout(resolve, 2000));
+            refreshingRef.current = false;
+            return refreshAuth(silent, retries - 1);
+          }
 
-        if (
-          error.message?.includes("401") ||
-          error.message?.includes("Unauthorized")
-        ) {
-          handleAuthError();
-        }
+          if (
+            error.message?.includes("401") ||
+            error.message?.includes("Unauthorized")
+          ) {
+            handleAuthError();
+          }
         } finally {
           refreshingRef.current = false;
           refreshPromiseRef.current = null;
