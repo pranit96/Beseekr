@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { getIsNewMode } from "@/utils/envFlags";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { MessageSquare, TrendingUp, ArrowRight } from "lucide-react";
@@ -11,16 +12,7 @@ export default function Home() {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
 
-  const [isNewMode, setIsNewMode] = useState(false);
-  useEffect(() => {
-    const cookieValue = document.cookie
-      .split("; ")
-      .find((row) => row.startsWith("IsNewChatPage="))
-      ?.split("=")[1];
-    if (cookieValue === "true") {
-      setIsNewMode(true);
-    }
-  }, []);
+  const isNewMode = getIsNewMode();
 
   const go = (route: string) => {
     if (loading) return;

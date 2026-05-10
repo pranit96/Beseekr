@@ -2,6 +2,7 @@
 // Maps all nodes from the validation API response
 
 import React from "react";
+import { getIsNewMode } from "@/utils/envFlags";
 import {
   Card,
   CardContent,
@@ -410,18 +411,9 @@ function ExecutiveVerdictSection({
 }) {
   const style = getRecommendationStyle(data.recommendation);
   const Icon = style.icon;
-  const sourcesAnalyzed = metadata.sources_analyzed || {};
+  const sourcesAnalyzed = (metadata.sources_analyzed || {}) as any;
 
-  const [isNewMode, setIsNewMode] = React.useState(false);
-  React.useEffect(() => {
-    const cookieValue = document.cookie
-      .split("; ")
-      .find((row) => row.startsWith("IsNewChatPage="))
-      ?.split("=")[1];
-    if (cookieValue === "true") {
-      setIsNewMode(true);
-    }
-  }, []);
+  const isNewMode = getIsNewMode();
 
   return (
     <Card
@@ -1345,16 +1337,7 @@ interface ResearchReportProps {
 }
 
 export function ResearchReport({ data }: { data: ValidationReportData }) {
-  const [isNewMode, setIsNewMode] = React.useState(false);
-  React.useEffect(() => {
-    const cookieValue = document.cookie
-      .split("; ")
-      .find((row) => row.startsWith("IsNewChatPage="))
-      ?.split("=")[1];
-    if (cookieValue === "true") {
-      setIsNewMode(true);
-    }
-  }, []);
+  const isNewMode = getIsNewMode();
 
   if (!data || !data.full_report) return null;
   const fullReport = data.full_report;

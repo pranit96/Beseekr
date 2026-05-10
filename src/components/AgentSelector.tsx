@@ -20,6 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { useEffect } from "react";
+import { getIsNewMode } from "@/utils/envFlags";
 
 interface AgentSelectorProps {
   agents: Agent[];
@@ -35,15 +36,7 @@ export const AgentSelector = ({
   compactMode = false,
 }: AgentSelectorProps) => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [isNewUI, setIsNewUI] = useState(false);
-
-  useEffect(() => {
-    const cookieValue = document.cookie
-      .split("; ")
-      .find((row) => row.startsWith("IsNewChatPage="))
-      ?.split("=")[1];
-    setIsNewUI(cookieValue === "true");
-  }, []);
+  const isNewUI = getIsNewMode();
 
   const customAgents = useMemo(
     () => agents.filter((a) => !a.is_default),

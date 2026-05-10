@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { getIsNewMode } from "@/utils/envFlags";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChatInterface } from "@/components/ChatInterface";
 import { ConversationHistory } from "@/components/ConversationHistory";
@@ -159,19 +160,8 @@ const Chat = () => {
   const [viewingWorkflowId, setViewingWorkflowId] = useState<string | null>(
     null,
   );
-  const [isNewMode, setIsNewMode] = useState(false);
+  const isNewMode = getIsNewMode();
   const [isChatActive, setIsChatActive] = useState(false);
-
-  // Cookie check for Experimental New Layout
-  useEffect(() => {
-    const cookieValue = document.cookie
-      .split("; ")
-      .find((row) => row.startsWith("IsNewChatPage="))
-      ?.split("=")[1];
-    if (cookieValue === "true") {
-      setIsNewMode(true);
-    }
-  }, []);
 
   const { agents, loading: loadingAgents, reload } = useAgents();
   const { user, refreshAuth } = useAuth();

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { getIsNewMode } from "@/utils/envFlags";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -2016,16 +2017,7 @@ export function Validate() {
   const [showForm, setShowForm] = useState(false);
   const [upgradeError, setUpgradeError] = useState<UpgradeError | null>(null);
 
-  const [isNewMode, setIsNewMode] = useState(false);
-  useEffect(() => {
-    const cookieValue = document.cookie
-      .split("; ")
-      .find((row) => row.startsWith("IsNewChatPage="))
-      ?.split("=")[1];
-    if (cookieValue === "true") {
-      setIsNewMode(true);
-    }
-  }, []);
+  const isNewMode = getIsNewMode();
 
   // SEO - Update page meta tags (search-query focused)
   useEffect(() => {

@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { getIsNewMode } from "@/utils/envFlags";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -272,16 +273,7 @@ export function ProblemsList() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  const [isNewMode, setIsNewMode] = useState(false);
-  useEffect(() => {
-    const cookieValue = document.cookie
-      .split("; ")
-      .find((row) => row.startsWith("IsNewChatPage="))
-      ?.split("=")[1];
-    if (cookieValue === "true") {
-      setIsNewMode(true);
-    }
-  }, []);
+  const isNewMode = getIsNewMode();
 
   // Initialize tab from URL query param
   const tabFromUrl = searchParams.get("tab");

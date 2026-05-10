@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { getIsNewMode } from "@/utils/envFlags";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -184,15 +185,7 @@ export function Watchlist() {
     removeMutation.mutate(problemId);
   };
 
-  const [isNewMode, setIsNewMode] = useState(false);
-
-  useEffect(() => {
-    const cookieValue = document.cookie
-      .split("; ")
-      .find((row) => row.startsWith("IsNewChatPage="))
-      ?.split("=")[1];
-    setIsNewMode(cookieValue === "true");
-  }, []);
+  const isNewMode = getIsNewMode();
 
   // Auth check - show sign-in prompt for unauthenticated users
   if (!user) {
