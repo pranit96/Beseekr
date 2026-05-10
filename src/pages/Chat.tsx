@@ -11,392 +11,72 @@ import { useToast } from "@/hooks/use-toast";
 import { AlertCircle, RefreshCw, PanelLeftClose } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { createLogger } from "@/services/logging";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const logger = createLogger("Chat");
 
-// ─── Epic Loading Screen ─────────────────────────────────────────────────────
-const FALLBACK_STEPS = [
-  {
-    label: "Research Analyst",
-    subtitle: "Scouring knowledge bases",
-    color: "#7c3aed",
-    glow: "rgba(124,58,237,0.5)",
-  },
-  {
-    label: "Creative Catalyst",
-    subtitle: "Igniting creative pathways",
-    color: "#0ea5e9",
-    glow: "rgba(14,165,233,0.5)",
-  },
-  {
-    label: "Logic Verifier",
-    subtitle: "Validating reasoning chains",
-    color: "#10b981",
-    glow: "rgba(16,185,129,0.5)",
-  },
-  {
-    label: "Synthesizer",
-    subtitle: "Weaving final insights",
-    color: "#f59e0b",
-    glow: "rgba(245,158,11,0.5)",
-  },
-];
-
-const STEP_COLORS = [
-  { color: "#7c3aed", glow: "rgba(124,58,237,0.5)" },
-  { color: "#0ea5e9", glow: "rgba(14,165,233,0.5)" },
-  { color: "#10b981", glow: "rgba(16,185,129,0.5)" },
-  { color: "#f59e0b", glow: "rgba(245,158,11,0.5)" },
-  { color: "#ec4899", glow: "rgba(236,72,153,0.5)" },
-  { color: "#6366f1", glow: "rgba(99,102,241,0.5)" },
-];
-
-interface LoadingAgent {
-  name: string;
-  domain?: string;
-}
-
-const ChatLoadingScreen = ({ agents = [] }: { agents?: LoadingAgent[] }) => {
-  // Build steps from real agents when available, else use fallback
-  const AGENT_STEPS =
-    agents.length > 0
-      ? agents.map((a, i) => ({
-          label: a.name,
-          subtitle: a.domain ? `${a.domain} specialist` : "AI specialist",
-          ...STEP_COLORS[i % STEP_COLORS.length],
-        }))
-      : FALLBACK_STEPS;
-  const [step, setStep] = useState(0);
-  const [fadingOut, setFadingOut] = useState(false);
-
-  useEffect(() => {
-    const tick = () => {
-      setFadingOut(true);
-      setTimeout(() => {
-        setStep((prev) => (prev + 1) % AGENT_STEPS.length);
-        setFadingOut(false);
-      }, 350);
-    };
-    const id = window.setInterval(tick, 1800);
-    return () => clearInterval(id);
-  }, []);
-
-  const current = AGENT_STEPS[step];
-
-  return (
-    <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 9999,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        background: "hsl(var(--background))",
-        overflow: "hidden",
-        gap: "0px",
-      }}
-    >
-      {/* ── Ambient blobs ── */}
-      <div className="loading-blob loading-blob-1" />
-      <div className="loading-blob loading-blob-2" />
-      <div className="loading-blob loading-blob-3" />
-
-      {/* ── Orbital system container ── */}
-      <div
-        style={{ position: "relative", width: 280, height: 280, flexShrink: 0 }}
-      >
-        {/* Outermost halo ring */}
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            borderRadius: "50%",
-            border: "1px solid",
-            borderColor: `color-mix(in srgb, ${current.color} 18%, transparent)`,
-            boxShadow: `0 0 40px 4px ${current.glow}`,
-            animation: "yy-spin-cw 8s linear infinite",
-            transition: "border-color 0.6s ease, box-shadow 0.6s ease",
-          }}
-        />
-
-        {/* Outer spinning ring */}
-        <div
-          style={{
-            position: "absolute",
-            inset: "16px",
-            borderRadius: "50%",
-            border: "2px solid transparent",
-            borderTopColor: current.color,
-            borderRightColor: `color-mix(in srgb, ${current.color} 40%, transparent)`,
-            animation: "yy-spin-cw 3s linear infinite",
-            transition: "border-color 0.5s ease",
-          }}
-        />
-
-        {/* Middle ring spinning opposite */}
-        <div
-          style={{
-            position: "absolute",
-            inset: "40px",
-            borderRadius: "50%",
-            border: "2px solid transparent",
-            borderBottomColor: current.color,
-            borderLeftColor: `color-mix(in srgb, ${current.color} 30%, transparent)`,
-            animation: "yy-spin-ccw 2s linear infinite",
-            transition: "border-color 0.5s ease",
-          }}
-        />
-
-        {/* Inner ring */}
-        <div
-          style={{
-            position: "absolute",
-            inset: "64px",
-            borderRadius: "50%",
-            border: "1.5px solid",
-            borderColor: `color-mix(in srgb, ${current.color} 25%, transparent)`,
-            animation: "yy-spin-cw 5s linear infinite",
-            transition: "border-color 0.5s ease",
-          }}
-        />
-
-        {/* ── Yin-Yang core ── */}
-        <div
-          style={{
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            width: 100,
-            height: 100,
-            marginLeft: -50,
-            marginTop: -50,
-            borderRadius: "50%",
-            overflow: "hidden",
-            animation: "yy-core-spin 4s linear infinite",
-            boxShadow: `0 0 0 2px hsl(var(--border) / 0.6), 0 0 32px ${current.glow}, 0 0 64px color-mix(in srgb, ${current.color} 20%, transparent)`,
-            transition: "box-shadow 0.6s ease",
-            willChange: "transform",
-          }}
-        >
-          {/* Yin (dark) half */}
-          <div
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              width: "100%",
-              height: "50%",
-              background: "hsl(var(--foreground))",
-              borderRadius: "50px 50px 0 0",
-            }}
-          />
-          {/* Yang (light) half */}
-          <div
-            style={{
-              position: "absolute",
-              bottom: 0,
-              left: 0,
-              width: "100%",
-              height: "50%",
-              background: "hsl(var(--background))",
-              border: "1px solid hsl(var(--border)/0.4)",
-              borderRadius: "0 0 50px 50px",
-            }}
-          />
-          {/* Top small dot */}
-          <div
-            style={{
-              position: "absolute",
-              top: "50%",
-              left: "50%",
-              width: 24,
-              height: 24,
-              marginLeft: -12,
-              marginTop: -24,
-              borderRadius: "50%",
-              background: "hsl(var(--background))",
-              boxShadow: `inset 0 0 0 3px hsl(var(--foreground)/0.15), 0 0 8px ${current.glow}`,
-              transition: "box-shadow 0.5s ease",
-            }}
-          />
-          {/* Bottom small dot */}
-          <div
-            style={{
-              position: "absolute",
-              top: "50%",
-              left: "50%",
-              width: 24,
-              height: 24,
-              marginLeft: -12,
-              marginTop: 0,
-              borderRadius: "50%",
-              background: "hsl(var(--foreground))",
-              boxShadow: `inset 0 0 0 3px hsl(var(--background)/0.35), 0 0 8px ${current.glow}`,
-              transition: "box-shadow 0.5s ease",
-            }}
-          />
-        </div>
-
-        {/* ── Orbiting agent dots ── */}
-        {AGENT_STEPS.map((agent, i) => {
-          const isActive = i === step;
-          const angle = (i / AGENT_STEPS.length) * 360;
-          return (
-            <div
-              key={agent.label}
-              style={
-                {
-                  position: "absolute",
-                  top: "50%",
-                  left: "50%",
-                  width: 0,
-                  height: 0,
-                  transform: `rotate(${angle}deg) translateX(118px) rotate(-${angle}deg)`,
-                  animation: `yy-orbit 6s linear infinite`,
-                  animationDelay: `${(i / AGENT_STEPS.length) * -6}s`,
-                  willChange: "transform",
-                } as React.CSSProperties
-              }
-            >
-              <div
-                style={{
-                  position: "absolute",
-                  transform: "translate(-50%, -50%)",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  gap: 6,
-                }}
-              >
-                <div
-                  style={{
-                    width: isActive ? 16 : 10,
-                    height: isActive ? 16 : 10,
-                    borderRadius: "50%",
-                    background: agent.color,
-                    boxShadow: isActive
-                      ? `0 0 20px ${agent.glow}, 0 0 40px ${agent.glow}`
-                      : `0 0 8px color-mix(in srgb, ${agent.color} 50%, transparent)`,
-                    transition: "all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)",
-                    flexShrink: 0,
-                  }}
-                />
-                <span
-                  style={{
-                    fontSize: 10,
-                    fontWeight: 600,
-                    whiteSpace: "nowrap",
-                    color: isActive
-                      ? agent.color
-                      : "hsl(var(--muted-foreground)/0.45)",
-                    letterSpacing: "0.04em",
-                    opacity: isActive ? 1 : 0,
-                    transform: isActive ? "translateY(0)" : "translateY(-4px)",
-                    transition: "all 0.35s ease",
-                    pointerEvents: "none",
-                    textShadow: isActive ? `0 0 12px ${agent.glow}` : "none",
-                  }}
-                >
-                  {agent.label}
-                </span>
-              </div>
-            </div>
-          );
-        })}
+const ChatSkeleton = () => (
+  <div className="h-screen flex flex-col overflow-hidden bg-background">
+    {/* Header skeleton */}
+    <div className="h-14 border-b border-border flex items-center justify-between px-4 flex-shrink-0">
+      <div className="flex items-center gap-4">
+        <Skeleton className="h-8 w-8 rounded-md" />
+        <Skeleton className="h-5 w-32" />
       </div>
-
-      {/* ── Step indicator dots ── */}
-      <div style={{ display: "flex", gap: 8, marginTop: 28 }}>
-        {AGENT_STEPS.map((agent, i) => (
-          <div
-            key={i}
-            style={{
-              width: i === step ? 24 : 7,
-              height: 7,
-              borderRadius: 999,
-              background:
-                i === step ? current.color : "hsl(var(--muted-foreground)/0.2)",
-              boxShadow: i === step ? `0 0 10px ${current.glow}` : "none",
-              transition: "all 0.45s cubic-bezier(0.34, 1.56, 0.64, 1)",
-            }}
-          />
-        ))}
-      </div>
-
-      {/* ── Status badge + tagline ── */}
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: 10,
-          marginTop: 28,
-          opacity: fadingOut ? 0 : 1,
-          transform: fadingOut ? "translateY(6px)" : "translateY(0)",
-          transition: "opacity 0.35s ease, transform 0.35s ease",
-        }}
-      >
-        <div
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 8,
-            padding: "7px 20px",
-            borderRadius: 999,
-            border: `1px solid ${current.color}`,
-            background: `color-mix(in srgb, ${current.color} 12%, transparent)`,
-            color: current.color,
-            fontSize: 13,
-            fontWeight: 700,
-            letterSpacing: "-0.01em",
-            boxShadow: `0 0 20px ${current.glow}`,
-            animation: "badge-pulse 1.6s ease-in-out infinite",
-            transition:
-              "border-color 0.4s, color 0.4s, background 0.4s, box-shadow 0.4s",
-          }}
-        >
-          <span
-            style={{
-              width: 8,
-              height: 8,
-              borderRadius: "50%",
-              background: current.color,
-              boxShadow: `0 0 10px ${current.glow}`,
-              display: "block",
-              animation: "dots-fade 1s ease-in-out infinite",
-              transition: "background 0.4s, box-shadow 0.4s",
-            }}
-          />
-          {current.label}
-        </div>
-        <p
-          style={{
-            fontSize: 12,
-            color: "hsl(var(--muted-foreground)/0.55)",
-            fontWeight: 500,
-            letterSpacing: "0.03em",
-            margin: 0,
-          }}
-        >
-          {current.subtitle}
-        </p>
-        {/* Step counter */}
-        <p
-          style={{
-            fontSize: 11,
-            color: "hsl(var(--muted-foreground)/0.35)",
-            fontWeight: 400,
-            margin: 0,
-          }}
-        >
-          Step {step + 1} of {AGENT_STEPS.length} · Assembling your AI workspace
-        </p>
+      <div className="flex items-center gap-3">
+        <Skeleton className="h-8 w-24 rounded-md hidden md:block" />
+        <Skeleton className="h-8 w-8 rounded-full" />
       </div>
     </div>
-  );
-};
+
+    <div className="flex-1 flex overflow-hidden relative">
+      {/* Sidebar skeleton (visible on desktop) */}
+      <div className="hidden md:flex w-80 border-r border-border bg-muted/10 flex-col p-4 gap-4 flex-shrink-0">
+        <div className="flex justify-between items-center mb-2">
+          <Skeleton className="h-4 w-20" />
+          <Skeleton className="h-7 w-16 rounded-md" />
+        </div>
+        <Skeleton className="h-9 w-full rounded-md" />
+        <div className="space-y-2 mt-4">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="flex flex-col gap-2 p-2">
+              <Skeleton className="h-4 w-3/4" />
+              <Skeleton className="h-2 w-1/4" />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Main content skeleton */}
+      <div className="flex-1 flex flex-col relative bg-background">
+        {/* Messages Area */}
+        <div className="flex-1 flex flex-col items-center justify-center p-6 gap-6">
+          <Skeleton className="h-16 w-16 rounded-full opacity-60" />
+          <div className="flex flex-col items-center gap-2 w-full max-w-md">
+            <Skeleton className="h-6 w-48" />
+            <Skeleton className="h-4 w-64" />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-2xl mt-4">
+            {[...Array(4)].map((_, i) => (
+              <Skeleton key={i} className="h-24 rounded-xl border border-border/50" />
+            ))}
+          </div>
+        </div>
+
+        {/* Input area skeleton */}
+        <div className="border-t border-border/30 p-4 flex justify-center bg-background">
+          <div className="w-full max-w-3xl flex flex-col gap-3">
+            <div className="flex gap-2">
+              <Skeleton className="h-6 w-20 rounded-full" />
+              <Skeleton className="h-6 w-20 rounded-full" />
+            </div>
+            <Skeleton className="h-24 w-full rounded-2xl" />
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+);
 
 interface Conversation {
   id: string;
@@ -802,7 +482,7 @@ const Chat = () => {
   }, [handleNewSession, authError, handleRetryAuth]);
 
   if (isLoading && !authError && conversations.length === 0) {
-    return <ChatLoadingScreen agents={agents} />;
+    return <ChatSkeleton />;
   }
 
   if (authError) {
