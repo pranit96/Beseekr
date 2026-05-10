@@ -9,6 +9,9 @@ import {
   WifiOff,
   Loader2,
   Download,
+  ChevronRight,
+  ChevronLeft,
+  ChevronDown,
 } from "lucide-react";
 import { ChatFileUpload } from "@/components/ChatFileUpload";
 import { Button } from "@/components/ui/button";
@@ -30,6 +33,7 @@ import useOrchestration from "@/hooks/use-orchestration";
 import { useAuth } from "@/contexts/AuthContext";
 import { createLogger } from "@/services/logging";
 import { useQueryClient } from "@tanstack/react-query";
+import { cn } from "@/lib/utils";
 
 const logger = createLogger("ChatInterface");
 
@@ -92,48 +96,93 @@ const AgentLoadingCard = ({
   total,
   agentName,
   agentNames,
+  isCompactMode = false,
 }: {
   step?: number;
   total?: number;
   agentName?: string;
   agentNames: string[];
+  isCompactMode?: boolean;
 }) => {
   const label = agentName || agentNames[0] || "Agent";
   const pct = step && total ? Math.round((step / total) * 100) : null;
 
   return (
-    <div className="mb-4 px-2 animate-fade-in">
-      {/* Slim status row */}
-      <div className="flex items-center gap-2.5 py-2">
-        {/* Pulsing dot */}
-        <span className="relative flex-shrink-0 flex h-2 w-2">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-60" />
-          <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
-        </span>
+    <div className={`mb-6 px-2 animate-in fade-in duration-700 ${isCompactMode ? "flex items-start gap-3" : ""}`}>
+      {isCompactMode && (
+         <div className="w-8 h-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0 text-primary mt-1 shadow-lg shadow-primary/5 animate-pulse">
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+         </div>
+      )}
+      
+      <div
+        className={cn(
+          "relative overflow-hidden transition-all duration-500 ease-in-out",
+          isCompactMode 
+            ? "flex-1 rounded-2xl border border-primary/20 bg-primary/[0.02] backdrop-blur-sm px-5 py-4 shadow-sm"
+            : "w-full rounded-xl border border-border/50 bg-muted/10 p-4"
+        )}
+        style={{
+          animation: "pulse-subtle 3s ease-in-out infinite"
+        }}
+      >
+        <style>{`
+          @keyframes pulse-subtle {
+            0%, 100% { border-color: hsl(var(--primary) / 0.2); opacity: 0.9; }
+            50% { border-color: hsl(var(--primary) / 0.4); opacity: 1; }
+          }
+        `}</style>
 
-        <span className="text-[12px] text-muted-foreground leading-none">
-          {step && total ? (
-            <>
-              <span className="text-foreground/70 font-medium">{label}</span>
-              <span className="ml-1.5 text-muted-foreground/50">
-                · step {step}/{total}
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2.5">
+            {!isCompactMode && (
+               <Loader2 className="w-4 h-4 animate-spin text-primary/70" />
+            )}
+            <div className="flex flex-col">
+              <span className="text-[13px] font-medium text-foreground/90 flex items-center gap-2">
+                {label} is working...
               </span>
-            </>
-          ) : (
-            <span className="text-foreground/70 font-medium">{label}</span>
+              {step && total ? (
+                <span className="text-[11px] text-muted-foreground/60 font-medium">
+                  Phase {step} of {total} completed
+                </span>
+              ) : (
+                 <span className="text-[11px] text-muted-foreground/60 font-medium">
+                  Thinking and synthesizing data...
+                 </span>
+              )}
+            </div>
+          </div>
+          
+          {pct !== null && (
+            <span className="text-[11px] font-black tracking-wider text-primary/80">
+              {pct}%
+            </span>
           )}
-        </span>
-      </div>
+        </div>
 
-      {/* Thin progress bar — only when step data is available */}
-      {pct !== null && (
-        <div className="ml-4 h-[2px] w-48 max-w-full bg-border/40 rounded-full overflow-hidden">
+        {/* High fidelity Progress Track */}
+        <div className="mt-3 w-full h-1 bg-muted/50 rounded-full overflow-hidden relative">
+          <div 
+            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer"
+            style={{ backgroundSize: '200% 100%', animation: 'shimmer-slide 1.5s infinite linear' }}
+          />
           <div
-            className="h-full bg-primary/60 rounded-full transition-all duration-500 ease-out"
-            style={{ width: `${pct}%` }}
+            className="h-full bg-primary transition-all duration-500 ease-out rounded-full shadow-glow"
+            style={{ 
+              width: `${pct !== null ? pct : 30}%`,
+              animation: pct === null ? 'indeterminate-slide 2s infinite ease-in-out' : 'none'
+            }}
           />
         </div>
-      )}
+        <style>{`
+          @keyframes indeterminate-slide {
+            0% { transform: translateX(-100%) scaleX(0.2); }
+            50% { transform: translateX(0%) scaleX(0.5); }
+            100% { transform: translateX(100%) scaleX(0.2); }
+          }
+        `}</style>
+      </div>
     </div>
   );
 };
@@ -144,12 +193,14 @@ export const ChatInterface: React.FC<{
   onConversationChange?: (conversationId: string | null) => void;
   onConversationCreated?: (conversationId: string) => void;
   isCompactMode?: boolean;
+  onChatStartedChange?: (started: boolean) => void;
 }> = ({
   agents,
   activeConversationId,
   onConversationChange,
   onConversationCreated,
   isCompactMode = false,
+  onChatStartedChange,
 }) => {
   const [input, setInput] = useState("");
   const [selectedAgents, setSelectedAgents] = useState<Agent[]>([]);
@@ -158,6 +209,7 @@ export const ChatInterface: React.FC<{
   const [workflowDialogOpen, setWorkflowDialogOpen] = useState(false);
   const [saveToConversation, setSaveToConversation] = useState(true);
   const [isLoadingLocal, setIsLoadingLocal] = useState(false);
+  const [agentsToolbarExpanded, setAgentsToolbarExpanded] = useState(false);
   const [isExecuting, setIsExecuting] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<
@@ -274,6 +326,10 @@ export const ChatInterface: React.FC<{
     if (isActiveOrchestrationRef?.current) return;
     loadConversationMessages(activeConversationId);
   }, [activeConversationId]);
+
+  useEffect(() => {
+    onChatStartedChange?.(hasStarted);
+  }, [hasStarted, onChatStartedChange]);
 
   const startRateLimitCountdown = (seconds: number) => {
     const until = Date.now() + seconds * 1000;
@@ -926,32 +982,24 @@ export const ChatInterface: React.FC<{
 
             <div className="h-4 w-px bg-border/40 mx-0.5 shrink-0" />
 
-            {agents.map((agent) => {
+            {/* 1. Always show Selected Agents first (in selection order) */}
+            {selectedAgents.map((agent) => {
               const selectionIndex = selectedAgents.findIndex(
                 (a) => a.id === agent.id,
               );
-              const isSelected = selectionIndex !== -1;
               return (
                 <button
                   key={agent.id}
                   onClick={() => {
                     setSelectedAgents((prev) =>
-                      isSelected
-                        ? prev.filter((a) => a.id !== agent.id)
-                        : [...prev, agent],
+                      prev.filter((a) => a.id !== agent.id),
                     );
                   }}
-                  className={`flex-shrink-0 flex items-center gap-1.5 px-2 py-1 rounded-full border transition-all text-[11px] font-medium ${
-                    isSelected
-                      ? "bg-primary/10 border-primary/30 text-foreground shadow-sm"
-                      : "bg-transparent border-transparent opacity-60 hover:opacity-100 hover:bg-muted/30 text-muted-foreground"
-                  }`}
+                  className="flex-shrink-0 flex items-center gap-1.5 px-2 py-1 rounded-full border transition-all text-[11px] font-bold bg-primary/10 border-primary/30 text-foreground shadow-sm animate-in fade-in slide-in-from-left-1 duration-300"
                 >
-                  {isSelected && (
-                    <span className="w-3.5 h-3.5 flex items-center justify-center bg-primary text-primary-foreground text-[9px] font-black rounded-full">
-                      {selectionIndex + 1}
-                    </span>
-                  )}
+                  <span className="w-3.5 h-3.5 flex items-center justify-center bg-primary text-primary-foreground text-[9px] font-black rounded-full">
+                    {selectionIndex + 1}
+                  </span>
                   <span
                     className="w-1.5 h-1.5 rounded-full"
                     style={{ backgroundColor: agent.color || "#d1d5db" }}
@@ -960,11 +1008,48 @@ export const ChatInterface: React.FC<{
                 </button>
               );
             })}
+
+            {/* 2. Show others only if toolbar is EXPANDED or none are selected */}
+            {(agentsToolbarExpanded || selectedAgents.length === 0) &&
+              agents
+                .filter((a) => !selectedAgents.some((sa) => sa.id === a.id))
+                .map((agent) => (
+                  <button
+                    key={agent.id}
+                    onClick={() => {
+                      setSelectedAgents((prev) => [...prev, agent]);
+                    }}
+                    className="flex-shrink-0 flex items-center gap-1.5 px-2 py-1 rounded-full border border-transparent bg-transparent opacity-60 hover:opacity-100 hover:bg-muted/30 text-muted-foreground transition-all text-[11px] font-medium animate-in fade-in duration-500"
+                  >
+                    <span
+                      className="w-1.5 h-1.5 rounded-full"
+                      style={{ backgroundColor: agent.color || "#d1d5db" }}
+                    />
+                    {agent.name}
+                  </button>
+                ))}
           </div>
 
           {/* Functional Tooling */}
           <div className="flex items-center gap-3 ml-auto flex-shrink-0">
             <div className="flex items-center gap-2 border-r border-border/40 pr-3 mr-1.5 hidden sm:flex">
+              {/* Dynamic Expand Toggle placed precisely before Seq/Par per user request */}
+              <button
+                onClick={() => setAgentsToolbarExpanded(!agentsToolbarExpanded)}
+                className={`h-6 w-6 flex items-center justify-center rounded border transition-colors ${agentsToolbarExpanded ? "bg-muted text-foreground border-border" : "bg-transparent border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50"}`}
+                title={
+                  agentsToolbarExpanded ? "Collapse quick agents" : "View more agents"
+                }
+              >
+                {agentsToolbarExpanded ? (
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                ) : (
+                  <ChevronRight className="w-3.5 h-3.5" />
+                )}
+              </button>
+
+              <div className="w-px h-4 bg-border/30 mx-0.5" />
+
               {/* Mini Execution Mode Toggle */}
               <div className="flex bg-muted/50 p-0.5 rounded-md border border-border/30">
                 <button
@@ -1083,6 +1168,7 @@ export const ChatInterface: React.FC<{
                 total={orchestrationProgress?.total}
                 agentName={orchestrationProgress?.agent_name}
                 agentNames={selectedAgents.map((a) => a.name)}
+                isCompactMode={isCompactMode}
               />
             )}
             {/* Scroll anchor — always kept at bottom to enable auto-scroll */}
