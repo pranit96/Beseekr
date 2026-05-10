@@ -12,6 +12,7 @@ import {
   ChevronRight,
   ChevronLeft,
   ChevronDown,
+  Plus,
 } from "lucide-react";
 import { ChatFileUpload } from "@/components/ChatFileUpload";
 import { Button } from "@/components/ui/button";
@@ -202,6 +203,7 @@ export const ChatInterface: React.FC<{
   onConversationCreated?: (conversationId: string) => void;
   isCompactMode?: boolean;
   onChatStartedChange?: (started: boolean) => void;
+  onNewSession?: () => void;
 }> = ({
   agents,
   activeConversationId,
@@ -209,6 +211,7 @@ export const ChatInterface: React.FC<{
   onConversationCreated,
   isCompactMode = false,
   onChatStartedChange,
+  onNewSession,
 }) => {
   const [input, setInput] = useState("");
   const [selectedAgents, setSelectedAgents] = useState<Agent[]>([]);
@@ -990,6 +993,17 @@ export const ChatInterface: React.FC<{
         <div className="flex items-center justify-between px-5 py-3 border-b border-border/30 bg-muted/5 shrink-0 relative pr-12">
           {/* Dynamic Real Agents Mapping */}
           <div className="flex items-center gap-2.5 overflow-x-auto hide-scrollbar scroll-smooth flex-1 min-w-0 pr-4">
+            {/* New Chat Action Button - Mirrored from Sidebar */}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 w-7 p-0 rounded-full bg-white/[0.05] border border-white/[0.1] text-foreground hover:bg-white/[0.1] hover:text-primary transition-all shrink-0"
+              aria-label="Start new chat"
+              onClick={onNewSession}
+            >
+              <Plus className="w-3.5 h-3.5" />
+            </Button>
+
             {/* Micro Selector for adding & exploring deeper choice queue */}
             <AgentSelector
               agents={agents}

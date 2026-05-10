@@ -132,7 +132,7 @@ const MessageList: React.FC<MessageListProps> = ({
                         ) : (
                           <>
                             Processing with{" "}
-                            <span className="text-foreground font-bold">
+                            <span className="text-red-500 font-bold">
                               {message.agentTraces?.find(
                                 (t) => t.status === "running",
                               )?.agentName || "Agents"}

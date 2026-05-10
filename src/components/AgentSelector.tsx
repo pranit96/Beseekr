@@ -15,7 +15,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Users, Search, Plus } from "lucide-react";
+import { Users, Search, Plus, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -107,7 +107,7 @@ export const AgentSelector = ({
       className="h-7 w-7 p-0 rounded-full bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 shrink-0"
       aria-label="Select more agents"
     >
-      <Plus className="w-4 h-4" />
+      <Sparkles className="w-4 h-4" />
     </Button>
   ) : (
     <Button

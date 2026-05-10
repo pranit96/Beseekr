@@ -655,6 +655,7 @@ const Chat = () => {
                 key={key}
                 agents={agents}
                 activeConversationId={currentConversationId}
+                onNewSession={handleNewSession}
                 onConversationChange={handleConversationChange}
                 onConversationCreated={handleConversationCreated}
                 isCompactMode={true}
@@ -762,6 +763,7 @@ const Chat = () => {
               key={key}
               agents={agents}
               activeConversationId={currentConversationId}
+              onNewSession={handleNewSession}
               onConversationChange={handleConversationChange}
               onConversationCreated={handleConversationCreated}
             />
