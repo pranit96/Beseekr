@@ -117,74 +117,100 @@ const MessageList: React.FC<MessageListProps> = ({
             message.agentTraces.length > 0 && (
               <div className="mb-6 px-2 animate-fade-in flex flex-col gap-3 max-w-[90%] sm:max-w-[85%] md:max-w-[80%]">
                 {/* Agent Progress Trace */}
-                <div className="flex flex-col gap-3 p-4 rounded-xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-md shadow-xl shadow-black/10 group">
-                  <div className="flex items-center gap-2 font-bold text-[11px] tracking-widest uppercase text-primary/80 pb-2 border-b border-white/[0.03]">
-                    <Sparkles className="w-3 h-3" />
-                    Execution Trace
-                  </div>
-
-                  <div className="flex flex-col gap-2.5 pl-1 mt-1">
-                    {message.agentTraces.map((trace, idx) => (
-                      <div key={idx} className="flex items-center gap-3 text-[13px]">
-                        <div className="relative flex items-center justify-center w-4">
-                          {trace.status === "pending" ? (
-                            <div className="w-2 h-2 rounded-full bg-white/10" />
-                          ) : trace.status === "running" ? (
-                            <div className="relative flex h-3 w-3">
-                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                              <span className="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
-                            </div>
-                          ) : trace.status === "success" ? (
-                            <div className="w-4 h-4 rounded-full bg-emerald-500/20 flex items-center justify-center border border-emerald-500/30">
-                              <Check className="w-2.5 h-2.5 text-emerald-400" />
-                            </div>
-                          ) : (
-                            <div className="w-4 h-4 rounded-full bg-destructive/20 flex items-center justify-center border border-destructive/30">
-                              <X className="w-2.5 h-2.5 text-destructive-foreground" />
-                            </div>
-                          )}
-                          {/* Vertical line connecting traces */}
-                          {idx < message.agentTraces!.length - 1 && (
-                            <div className="absolute top-4 bottom-[-10px] left-1/2 w-px bg-white/[0.04] -translate-x-1/2" />
-                          )}
-                        </div>
-                        <span
-                          className={
-                            trace.status === "running" ||
-                            trace.status === "success"
-                              ? "text-foreground/90 font-semibold"
-                              : trace.status === "error"
-                                ? "text-destructive/80"
-                                : "text-muted-foreground/60"
-                          }
-                        >
-                          {trace.agentName}
-                        </span>
-                        <span className="text-muted-foreground/50 text-xs font-light">
-                          {trace.status === "running"
-                            ? "working..."
-                            : trace.status === "success"
-                              ? `Done (${trace.tokens || 0} t)`
-                              : trace.error
-                                ? "failed"
-                                : "queued"}
-                        </span>
+                {/* Agent Progress Trace - Conditional render based on compactMode */}
+                {isCompactMode ? (
+                  /* Minimal Micro-Trace for New UI */
+                  message.workflowStatus !== "completed" && (
+                    <div className="inline-flex items-center gap-3 py-2 px-4 self-start rounded-full bg-white/[0.02] border border-white/[0.06] backdrop-blur-md shadow-lg">
+                      <div className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
                       </div>
-                    ))}
-                  </div>
-
-                  {/* Synthesizer Indicator */}
-                  {message.workflowStatus === "synthesizing" && (
-                    <div className="flex items-center gap-3 text-[13px] pt-2 mt-1 border-t border-white/[0.03]">
-                      <div className="w-4 flex justify-center">
-                         <Loader2 className="w-3 h-3 animate-spin text-primary" />
-                      </div>
-                      <span className="text-foreground font-semibold animate-pulse">
-                        Synthesizing intelligence...
+                      <span className="text-[11px] font-medium text-muted-foreground flex items-center gap-1.5">
+                        {message.workflowStatus === "synthesizing" ? (
+                          <>Synthesizing intelligence...</>
+                        ) : (
+                          <>
+                            Processing with{" "}
+                            <span className="text-foreground font-bold">
+                              {message.agentTraces?.find((t) => t.status === "running")?.agentName || "Agents"}
+                            </span>
+                          </>
+                        )}
                       </span>
                     </div>
-                  )}
-                </div>
+                  )
+                ) : (
+                  /* Classic Fully Expanded Execution Trace */
+                  <div className="flex flex-col gap-3 p-4 rounded-xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-md shadow-xl shadow-black/10 group">
+                    <div className="flex items-center gap-2 font-bold text-[11px] tracking-widest uppercase text-primary/80 pb-2 border-b border-white/[0.03]">
+                      <Sparkles className="w-3 h-3" />
+                      Execution Trace
+                    </div>
+
+                    <div className="flex flex-col gap-2.5 pl-1 mt-1">
+                      {message.agentTraces.map((trace, idx) => (
+                        <div key={idx} className="flex items-center gap-3 text-[13px]">
+                          <div className="relative flex items-center justify-center w-4">
+                            {trace.status === "pending" ? (
+                              <div className="w-2 h-2 rounded-full bg-white/10" />
+                            ) : trace.status === "running" ? (
+                              <div className="relative flex h-3 w-3">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
+                              </div>
+                            ) : trace.status === "success" ? (
+                              <div className="w-4 h-4 rounded-full bg-emerald-500/20 flex items-center justify-center border border-emerald-500/30">
+                                <Check className="w-2.5 h-2.5 text-emerald-400" />
+                              </div>
+                            ) : (
+                              <div className="w-4 h-4 rounded-full bg-destructive/20 flex items-center justify-center border border-destructive/30">
+                                <X className="w-2.5 h-2.5 text-destructive-foreground" />
+                              </div>
+                            )}
+                            {/* Vertical line connecting traces */}
+                            {idx < message.agentTraces!.length - 1 && (
+                              <div className="absolute top-4 bottom-[-10px] left-1/2 w-px bg-white/[0.04] -translate-x-1/2" />
+                            )}
+                          </div>
+                          <span
+                            className={
+                              trace.status === "running" ||
+                              trace.status === "success"
+                                ? "text-foreground/90 font-semibold"
+                                : trace.status === "error"
+                                  ? "text-destructive/80"
+                                  : "text-muted-foreground/60"
+                            }
+                          >
+                            {trace.agentName}
+                          </span>
+                          <span className="text-muted-foreground/50 text-xs font-light">
+                            {trace.status === "running"
+                              ? "working..."
+                              : trace.status === "success"
+                                ? `Done (${trace.tokens || 0} t)`
+                                : trace.error
+                                  ? "failed"
+                                  : "queued"}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Synthesizer Indicator */}
+                    {message.workflowStatus === "synthesizing" && (
+                      <div className="flex items-center gap-3 text-[13px] pt-2 mt-1 border-t border-white/[0.03]">
+                        <div className="w-4 flex justify-center">
+                          <Loader2 className="w-3 h-3 animate-spin text-primary" />
+                        </div>
+                        <span className="text-foreground font-semibold animate-pulse">
+                          Synthesizing intelligence...
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Synthesized Output */}
                 {(message.content || message.workflowStatus === "completed") &&

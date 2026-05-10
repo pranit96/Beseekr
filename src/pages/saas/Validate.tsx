@@ -886,7 +886,11 @@ function ReportCard({
   return (
     <>
       <Card
-        className="cursor-pointer transition-all hover:shadow-md hover:border-primary/30 group active:scale-[0.99]"
+        className={cn(
+          "cursor-pointer transition-all duration-300 group active:scale-[0.99] rounded-xl sm:rounded-2xl overflow-hidden",
+          "bg-gradient-to-br from-background to-muted/30 hover:border-primary/40 shadow-sm hover:shadow-md hover:-translate-y-0.5",
+          "border border-border/50",
+        )}
         onClick={handleClick}
       >
         <CardContent className="p-3 sm:p-4">
@@ -2012,6 +2016,17 @@ export function Validate() {
   const [showForm, setShowForm] = useState(false);
   const [upgradeError, setUpgradeError] = useState<UpgradeError | null>(null);
 
+  const [isNewMode, setIsNewMode] = useState(false);
+  useEffect(() => {
+    const cookieValue = document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("IsNewChatPage="))
+      ?.split("=")[1];
+    if (cookieValue === "true") {
+      setIsNewMode(true);
+    }
+  }, []);
+
   // SEO - Update page meta tags (search-query focused)
   useEffect(() => {
     document.title =
@@ -2206,24 +2221,47 @@ export function Validate() {
   return (
     <div className="space-y-6 sm:space-y-8">
       {/* Hero Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="text-center max-w-2xl mx-auto px-2"
-      >
-        <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4">
-          Research{" "}
-          <span className="bg-gradient-to-r from-emerald-500 via-cyan-500 to-emerald-500 bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient">
-            Your Ideas
-          </span>
-        </h1>
-        <p className="text-sm sm:text-lg text-muted-foreground">
-          Test your startup ideas with AI-powered market research.{" "}
-          {reports.length > 0 &&
-            `${reports.length} report${reports.length !== 1 ? "s" : ""} analyzed.`}
-        </p>
-      </motion.div>
+      {isNewMode ? (
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="text-left max-w-3xl pt-4 sm:pt-6 pb-2 sm:pb-4"
+        >
+          <div className="flex items-center gap-2 mb-4 sm:mb-5">
+            <span className="text-[10px] sm:text-[11px] font-bold tracking-[0.2em] text-muted-foreground/70 uppercase flex items-center">
+              Validate <span className="mx-2 opacity-60 text-[8px]">•</span> Market Intelligence
+            </span>
+          </div>
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-[1.1] flex flex-col gap-1">
+            <span className="text-foreground">Research ideas.</span>
+            <span className="bg-gradient-to-r from-emerald-400 via-cyan-400 to-emerald-400 bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient">Verify demand.</span>
+          </h1>
+          <p className="text-base sm:text-lg text-muted-foreground/80 mt-5 sm:mt-6 leading-relaxed max-w-2xl font-medium">
+            Harness collective intelligence from across the web to instantly score 
+            startup concepts, competitor gaps, and exact willingness to pay.
+          </p>
+        </motion.div>
+      ) : (
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="text-center max-w-2xl mx-auto px-2"
+        >
+          <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4">
+            Research{" "}
+            <span className="bg-gradient-to-r from-emerald-500 via-cyan-500 to-emerald-500 bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient">
+              Your Ideas
+            </span>
+          </h1>
+          <p className="text-sm sm:text-lg text-muted-foreground">
+            Test your startup ideas with AI-powered market research.{" "}
+            {reports.length > 0 &&
+              `${reports.length} report${reports.length !== 1 ? "s" : ""} analyzed.`}
+          </p>
+        </motion.div>
+      )}
 
       {/* New Validation Button */}
       {!showForm && !createMutation.isPending && (
@@ -2252,9 +2290,14 @@ export function Validate() {
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.3 }}
-            className="max-w-3xl mx-auto"
+            className="max-w-3xl w-full mx-auto"
           >
-            <div className="p-6 rounded-2xl bg-gradient-to-br from-background to-muted/30 border border-border/50">
+            <div className={cn(
+              "p-6 rounded-2xl border transition-all duration-500",
+              isNewMode 
+                ? "bg-white/[0.02] backdrop-blur-xl border-white/[0.08] shadow-2xl shadow-black/20"
+                : "bg-gradient-to-br from-background to-muted/30 border-border/50"
+            )}>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <Textarea
                   placeholder="Describe your startup idea, problem, or concept..."

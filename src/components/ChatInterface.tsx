@@ -218,6 +218,16 @@ export const ChatInterface: React.FC<{
   const [saveToConversation, setSaveToConversation] = useState(true);
   const [isLoadingLocal, setIsLoadingLocal] = useState(false);
   const [agentsToolbarExpanded, setAgentsToolbarExpanded] = useState(false);
+  const [cyclingAgentIndex, setCyclingAgentIndex] = useState(0);
+
+  useEffect(() => {
+    // Rotate recommended agent every 4 seconds when not fully expanded
+    if (agentsToolbarExpanded) return;
+    const cycleTimer = setInterval(() => {
+      setCyclingAgentIndex((prev) => prev + 1);
+    }, 4000);
+    return () => clearInterval(cycleTimer);
+  }, [agentsToolbarExpanded]);
   const [isExecuting, setIsExecuting] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<
@@ -1017,49 +1027,64 @@ export const ChatInterface: React.FC<{
               );
             })}
 
-            {/* 2. Show others ONLY if toolbar is EXPANDED */}
-            {agentsToolbarExpanded &&
-              agents
-                .filter((a) => !selectedAgents.some((sa) => sa.id === a.id))
-                .map((agent) => (
-                  <button
-                    key={agent.id}
-                    onClick={() => {
-                      setSelectedAgents((prev) => [...prev, agent]);
-                    }}
-                    className="flex-shrink-0 flex items-center gap-1.5 px-2 py-1 rounded-full border border-transparent bg-transparent opacity-60 hover:opacity-100 hover:bg-muted/30 text-muted-foreground transition-all text-[11px] font-medium animate-in fade-in duration-500"
-                  >
-                    <span
-                      className="w-1.5 h-1.5 rounded-full"
-                      style={{ backgroundColor: agent.color || "#d1d5db" }}
-                    />
-                    {agent.name}
-                  </button>
-                ))}
+            {/* New Integrated Chevron & Dynamic Expansion Flow */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setAgentsToolbarExpanded(!agentsToolbarExpanded)}
+                className={cn(
+                  "h-6 w-6 flex items-center justify-center rounded-full transition-all duration-300",
+                  "hover:bg-primary/20 border border-border/50 text-muted-foreground hover:text-primary shadow-sm",
+                  agentsToolbarExpanded ? "bg-primary/10 text-primary rotate-180 border-primary/30" : "bg-muted/20 hover:scale-110"
+                )}
+                title={agentsToolbarExpanded ? "Collapse available agents" : "Expand available agents"}
+              >
+                {agentsToolbarExpanded ? <ChevronLeft className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+              </button>
+
+              {/* Conditionally render based on user requirement */}
+              {(() => {
+                const available = agents.filter(
+                  (a) => !selectedAgents.some((sa) => sa.id === a.id)
+                );
+                if (available.length === 0) return null;
+
+                if (agentsToolbarExpanded) {
+                  // Render FULL row if expanded
+                  return (
+                    <div className="flex items-center gap-2 animate-in slide-in-from-left-2 fade-in duration-300">
+                      {available.map((agent) => (
+                        <button
+                          key={agent.id}
+                          onClick={() => setSelectedAgents((prev) => [...prev, agent])}
+                          className="flex-shrink-0 flex items-center gap-1.5 px-2 py-1 rounded-full border border-transparent bg-transparent opacity-60 hover:opacity-100 hover:bg-muted/30 text-muted-foreground transition-all text-[11px] font-medium"
+                        >
+                          <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: agent.color || "#d1d5db" }} />
+                          {agent.name}
+                        </button>
+                      ))}
+                    </div>
+                  );
+                } else {
+                  // COLLAPSED: show EXACTLY ONE dynamic cycling agent
+                  const cyclingAgent = available[cyclingAgentIndex % available.length];
+                  return (
+                    <button
+                      key={`cycle-${cyclingAgent.id}`}
+                      onClick={() => setSelectedAgents((prev) => [...prev, cyclingAgent])}
+                      className="flex-shrink-0 flex items-center gap-1.5 px-2 py-1 rounded-full border border-transparent bg-transparent opacity-50 hover:opacity-100 hover:bg-muted/30 text-muted-foreground transition-all duration-700 text-[11px] font-medium animate-in fade-in zoom-in-95"
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: cyclingAgent.color || "#d1d5db" }} />
+                      {cyclingAgent.name}
+                    </button>
+                  );
+                }
+              })()}
+            </div>
           </div>
 
           {/* Functional Tooling */}
           <div className="flex items-center gap-3 ml-auto flex-shrink-0">
             <div className="flex items-center gap-2 border-r border-border/40 pr-3 mr-1.5 hidden sm:flex">
-              {/* Dynamic Expand Toggle placed precisely before Seq/Par per user request */}
-              <button
-                onClick={() => setAgentsToolbarExpanded(!agentsToolbarExpanded)}
-                className={`h-6 w-6 flex items-center justify-center rounded border transition-colors ${agentsToolbarExpanded ? "bg-muted text-foreground border-border" : "bg-transparent border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50"}`}
-                title={
-                  agentsToolbarExpanded
-                    ? "Collapse quick agents"
-                    : "View more agents"
-                }
-              >
-                {agentsToolbarExpanded ? (
-                  <ChevronLeft className="w-3.5 h-3.5" />
-                ) : (
-                  <ChevronRight className="w-3.5 h-3.5" />
-                )}
-              </button>
-
-              <div className="w-px h-4 bg-border/30 mx-0.5" />
-
               {/* Mini Execution Mode Toggle */}
               <div className="flex bg-muted/50 p-0.5 rounded-md border border-border/30">
                 <button
