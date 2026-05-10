@@ -811,37 +811,21 @@ export function ProblemsList() {
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="text-center max-w-2xl mx-auto px-2"
+        className="text-left max-w-3xl pt-6 pb-2 sm:pb-4"
       >
-        <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4">
-          Find{" "}
-          <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient">
-            Unmet Needs
+        <div className="flex items-center gap-2 mb-4 sm:mb-5">
+          <span className="text-[10px] sm:text-[11px] font-bold tracking-[0.2em] text-muted-foreground/70 uppercase flex items-center">
+            Discover <span className="mx-2 opacity-60 text-[8px]">•</span> The Idea Engine
           </span>
+        </div>
+        <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-[1.1] flex flex-col gap-1">
+          <span className="text-foreground">Real problems.</span>
+          <span className="text-muted-foreground/50">Real user pain.</span>
         </h1>
-        <p className="text-sm sm:text-lg text-muted-foreground">
-          Real pain points extracted from Reddit, Hacker News & online
-          communities. Scored by opportunity potential.
+        <p className="text-base sm:text-lg text-muted-foreground/80 mt-5 sm:mt-6 leading-relaxed max-w-2xl font-medium">
+          Validated startup ideas mined from millions of conversations. Auto-scored for
+          opportunity.
         </p>
-
-        {/* Trust Badge */}
-        <div className="flex items-center justify-center gap-1.5 text-xs sm:text-sm text-muted-foreground mt-4 sm:mt-6">
-          <Sparkles className="h-4 w-4 text-purple-500" />
-          <span>AI-curated & updated weekly</span>
-        </div>
-
-        {/* Social Proof */}
-        <div className="flex items-center justify-center gap-2 mt-3 sm:mt-4 text-xs sm:text-sm text-muted-foreground">
-          <div className="flex -space-x-2">
-            {[...Array(4)].map((_, i) => (
-              <div
-                key={i}
-                className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-gradient-to-br from-primary/60 to-accent/60 border-2 border-background"
-              />
-            ))}
-          </div>
-          <span>Explore problems. Run deep research. Build what matters.</span>
-        </div>
       </motion.div>
 
       {/* Gated Content Banner - Show for anonymous users */}
