@@ -833,7 +833,9 @@ export function ProblemsList() {
           </div>
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-[1.1] flex flex-col gap-1">
             <span className="text-foreground">Real problems.</span>
-            <span className="text-muted-foreground/50">Real user pain.</span>
+            <span className="text-muted-foreground text-red-500">
+              Real user pain.
+            </span>
           </h1>
           <p className="text-base sm:text-lg text-muted-foreground/80 mt-5 sm:mt-6 leading-relaxed max-w-2xl font-medium">
             Validated startup ideas mined from millions of conversations.
