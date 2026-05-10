@@ -1017,8 +1017,8 @@ export const ChatInterface: React.FC<{
               );
             })}
 
-            {/* 2. Show others only if toolbar is EXPANDED or none are selected */}
-            {(agentsToolbarExpanded || selectedAgents.length === 0) &&
+            {/* 2. Show others ONLY if toolbar is EXPANDED */}
+            {agentsToolbarExpanded &&
               agents
                 .filter((a) => !selectedAgents.some((sa) => sa.id === a.id))
                 .map((agent) => (

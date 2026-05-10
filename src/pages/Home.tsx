@@ -123,7 +123,7 @@ export default function Home() {
 
       {/* CENTER CONTENT: SCROLLABLE ONLY IF NECESSARY */}
       <main className="flex-1 overflow-y-auto overflow-x-hidden flex flex-col justify-center min-h-0 custom-scrollbar relative">
-        <div className="max-w-5xl mx-auto w-full px-6 py-12 lg:py-20">
+        <div className="max-w-5xl mx-auto w-full px-6 pt-24 pb-12 md:pt-32 md:pb-16">
           {/* HERO WITH SAME TYPOGRAPHY AS CHAT PAGE */}
           <section className="mb-12 md:mb-16 animate-in fade-in slide-in-from-top-4 duration-500">
             {/* Eyebrow */}

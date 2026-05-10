@@ -22,71 +22,122 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 const logger = createLogger("Chat");
 
-const ChatSkeleton = () => (
-  <div className="h-screen flex flex-col overflow-hidden bg-background">
-    {/* Header skeleton */}
-    <div className="h-14 border-b border-border flex items-center justify-between px-4 flex-shrink-0">
-      <div className="flex items-center gap-4">
-        <Skeleton className="h-8 w-8 rounded-md" />
-        <Skeleton className="h-5 w-32" />
-      </div>
-      <div className="flex items-center gap-3">
-        <Skeleton className="h-8 w-24 rounded-md hidden md:block" />
-        <Skeleton className="h-8 w-8 rounded-full" />
-      </div>
-    </div>
-
-    <div className="flex-1 flex overflow-hidden relative">
-      {/* Sidebar skeleton (visible on desktop) */}
-      <div className="hidden md:flex w-80 border-r border-border bg-muted/10 flex-col p-4 gap-4 flex-shrink-0">
-        <div className="flex justify-between items-center mb-2">
-          <Skeleton className="h-4 w-20" />
-          <Skeleton className="h-7 w-16 rounded-md" />
-        </div>
-        <Skeleton className="h-9 w-full rounded-md" />
-        <div className="space-y-2 mt-4">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className="flex flex-col gap-2 p-2">
-              <Skeleton className="h-4 w-3/4" />
-              <Skeleton className="h-2 w-1/4" />
+const ChatSkeleton = ({ isNewMode = false }: { isNewMode?: boolean }) => {
+  if (isNewMode) {
+    return (
+      <div className="h-screen flex flex-col overflow-hidden bg-[#09090b]">
+        {/* Header mockup skeleton */}
+        <div className="flex-shrink-0 px-4 pt-3 pb-2">
+          <div className="max-w-7xl mx-auto h-14 rounded-2xl border border-white/[0.03] bg-white/[0.02] backdrop-blur-xl flex items-center justify-between px-5 animate-pulse">
+            <div className="flex items-center gap-3">
+              <div className="h-6 w-24 rounded-md bg-white/[0.05]" />
             </div>
-          ))}
+            <div className="hidden md:flex h-8 w-80 rounded-xl bg-white/[0.03]" />
+            <div className="flex gap-2">
+              <div className="h-8 w-8 rounded-full bg-white/[0.05]" />
+            </div>
+          </div>
+        </div>
+
+        {/* Hero & Workspace Skeleton */}
+        <div className="flex-1 flex flex-col max-w-6xl mx-auto w-full px-6 pt-12 md:pt-20 gap-12 animate-pulse">
+          <div className="flex flex-col gap-4 max-w-2xl">
+            <div className="h-3 w-32 rounded bg-primary/20" />
+            <div className="h-12 w-full md:w-3/4 rounded-lg bg-white/[0.05]" />
+            <div className="h-8 w-2/3 rounded-md bg-white/[0.03]" />
+          </div>
+
+          {/* The Central Rounded Framed Container */}
+          <div className="flex-1 min-h-[500px] rounded-3xl border border-white/[0.05] bg-white/[0.01] backdrop-blur-sm p-8 flex flex-col justify-between">
+            <div className="flex flex-col gap-6">
+              <div className="flex gap-3 justify-center md:justify-start flex-wrap">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="h-8 w-24 rounded-full bg-white/[0.03] border border-white/[0.05]" />
+                ))}
+              </div>
+            </div>
+            
+            {/* Bottom input tracker */}
+            <div className="h-32 w-full rounded-2xl bg-white/[0.02] border border-white/[0.05] border-b-0 mt-auto flex flex-col p-4 gap-3">
+              <div className="h-4 w-full rounded-md bg-white/[0.03]" />
+              <div className="h-4 w-3/4 rounded-md bg-white/[0.03]" />
+              <div className="flex justify-between mt-auto">
+                <div className="h-6 w-6 rounded-full bg-white/[0.05]" />
+                <div className="h-8 w-16 rounded-lg bg-primary/20" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-screen flex flex-col overflow-hidden bg-background">
+      {/* Header skeleton */}
+      <div className="h-14 border-b border-border flex items-center justify-between px-4 flex-shrink-0">
+        <div className="flex items-center gap-4">
+          <Skeleton className="h-8 w-8 rounded-md" />
+          <Skeleton className="h-5 w-32" />
+        </div>
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-8 w-24 rounded-md hidden md:block" />
+          <Skeleton className="h-8 w-8 rounded-full" />
         </div>
       </div>
 
-      {/* Main content skeleton */}
-      <div className="flex-1 flex flex-col relative bg-background">
-        {/* Messages Area */}
-        <div className="flex-1 flex flex-col items-center justify-center p-6 gap-6">
-          <Skeleton className="h-16 w-16 rounded-full opacity-60" />
-          <div className="flex flex-col items-center gap-2 w-full max-w-md">
-            <Skeleton className="h-6 w-48" />
-            <Skeleton className="h-4 w-64" />
+      <div className="flex-1 flex overflow-hidden relative">
+        {/* Sidebar skeleton (visible on desktop) */}
+        <div className="hidden md:flex w-80 border-r border-border bg-muted/10 flex-col p-4 gap-4 flex-shrink-0">
+          <div className="flex justify-between items-center mb-2">
+            <Skeleton className="h-4 w-20" />
+            <Skeleton className="h-7 w-16 rounded-md" />
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-2xl mt-4">
-            {[...Array(4)].map((_, i) => (
-              <Skeleton
-                key={i}
-                className="h-24 rounded-xl border border-border/50"
-              />
+          <Skeleton className="h-9 w-full rounded-md" />
+          <div className="space-y-2 mt-4">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="flex flex-col gap-2 p-2">
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-2 w-1/4" />
+              </div>
             ))}
           </div>
         </div>
 
-        {/* Input area skeleton */}
-        <div className="border-t border-border/30 p-4 flex justify-center bg-background">
-          <div className="w-full max-w-3xl flex flex-col gap-3">
-            <div className="flex gap-2">
-              <Skeleton className="h-6 w-20 rounded-full" />
-              <Skeleton className="h-6 w-20 rounded-full" />
+        {/* Main content skeleton */}
+        <div className="flex-1 flex flex-col relative bg-background">
+          {/* Messages Area */}
+          <div className="flex-1 flex flex-col items-center justify-center p-6 gap-6">
+            <Skeleton className="h-16 w-16 rounded-full opacity-60" />
+            <div className="flex flex-col items-center gap-2 w-full max-w-md">
+              <Skeleton className="h-6 w-48" />
+              <Skeleton className="h-4 w-64" />
             </div>
-            <Skeleton className="h-24 w-full rounded-2xl" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-2xl mt-4">
+              {[...Array(4)].map((_, i) => (
+                <Skeleton
+                  key={i}
+                  className="h-24 rounded-xl border border-border/50"
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Input area skeleton */}
+          <div className="border-t border-border/30 p-4 flex justify-center bg-background">
+            <div className="w-full max-w-3xl flex flex-col gap-3">
+              <div className="flex gap-2">
+                <Skeleton className="h-6 w-20 rounded-full" />
+                <Skeleton className="h-6 w-20 rounded-full" />
+              </div>
+              <Skeleton className="h-24 w-full rounded-2xl" />
+            </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 interface Conversation {
   id: string;
@@ -506,7 +557,7 @@ const Chat = () => {
   }, [handleNewSession, authError, handleRetryAuth]);
 
   if (isLoading && !authError && conversations.length === 0) {
-    return <ChatSkeleton />;
+    return <ChatSkeleton isNewMode={isNewMode} />;
   }
 
   if (authError) {
@@ -573,7 +624,7 @@ const Chat = () => {
 
           {/* Main Container Framed Box - Containing the ChatInterface */}
           <div
-            className={`flex-1 flex flex-col transition-all duration-700 ease-in-out ${isChatActive ? "border-0 rounded-none bg-background min-h-screen" : "border border-border/30 rounded-2xl bg-card/5 backdrop-blur-xl shadow-2xl min-h-[500px]"} overflow-hidden relative group`}
+            className={`flex-1 flex flex-col transition-all duration-700 ease-in-out ${isChatActive ? "border-0 rounded-none bg-background h-full" : "border border-border/30 rounded-2xl bg-card/5 backdrop-blur-xl shadow-2xl min-h-[500px]"} overflow-hidden relative group`}
           >
             {/* Inner Box Sidebar Drawer Trigger */}
             <div className="absolute top-3.5 right-4 z-40">

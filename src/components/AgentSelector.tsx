@@ -122,7 +122,7 @@ export const AgentSelector = ({
       </PopoverTrigger>
 
       <PopoverContent
-        className="w-[680px] max-w-[95vw] p-4 glass"
+        className="w-[680px] max-w-[95vw] p-5 bg-[#0d0d10]/95 border-white/[0.06] shadow-2xl shadow-black/40 rounded-2xl backdrop-blur-2xl overflow-y-auto max-h-[80vh] custom-scrollbar"
         align="start"
         role="dialog"
         aria-label="Agent selection dialog"
@@ -175,10 +175,10 @@ export const AgentSelector = ({
                     <button
                       key={agent.id}
                       onClick={() => toggleAgent(agent)}
-                      className={`relative p-3 rounded-lg border transition-all duration-200 flex items-start gap-2 min-h-[80px] w-full hover:scale-[1.02] ${
+                      className={`relative p-3 rounded-xl border transition-all duration-300 flex items-start gap-2.5 min-h-[84px] w-full group/agent hover:-translate-y-0.5 ${
                         isSelected
-                          ? "bg-primary/10 border-primary/30 shadow-sm ring-2 ring-primary/20"
-                          : "hover:bg-muted/40 border-border"
+                          ? "bg-primary/[0.08] border-primary/40 shadow-lg shadow-primary/5"
+                          : "bg-white/[0.01] hover:bg-white/[0.04] border-white/[0.05] hover:border-white/[0.1] hover:shadow-md"
                       }`}
                       aria-label={`${isSelected ? "Deselect" : "Select"} ${agent.name}. ${agent.description}. ${isSelected ? `Position ${selectionOrder} in execution order` : ""}`}
                       aria-pressed={isSelected}
@@ -245,10 +245,10 @@ export const AgentSelector = ({
                     <button
                       key={agent.id}
                       onClick={() => toggleAgent(agent)}
-                      className={`relative p-3 rounded-lg border transition-all duration-200 flex items-start gap-2 min-h-[80px] w-full hover:scale-[1.02] ${
+                      className={`relative p-3 rounded-xl border transition-all duration-300 flex items-start gap-2.5 min-h-[84px] w-full group/agent hover:-translate-y-0.5 ${
                         isSelected
-                          ? "bg-primary/10 border-primary/30 shadow-sm ring-2 ring-primary/20"
-                          : "hover:bg-muted/40 border-border"
+                          ? "bg-primary/[0.08] border-primary/40 shadow-lg shadow-primary/5"
+                          : "bg-white/[0.01] hover:bg-white/[0.04] border-white/[0.05] hover:border-white/[0.1] hover:shadow-md"
                       }`}
                       aria-label={`${isSelected ? "Deselect" : "Select"} ${agent.name}. ${agent.description}. ${isSelected ? `Position ${selectionOrder} in execution order` : ""}`}
                       aria-pressed={isSelected}
