@@ -52,11 +52,14 @@ const ChatSkeleton = ({ isNewMode = false }: { isNewMode?: boolean }) => {
             <div className="flex flex-col gap-6">
               <div className="flex gap-3 justify-center md:justify-start flex-wrap">
                 {[...Array(5)].map((_, i) => (
-                  <div key={i} className="h-8 w-24 rounded-full bg-white/[0.03] border border-white/[0.05]" />
+                  <div
+                    key={i}
+                    className="h-8 w-24 rounded-full bg-white/[0.03] border border-white/[0.05]"
+                  />
                 ))}
               </div>
             </div>
-            
+
             {/* Bottom input tracker */}
             <div className="h-32 w-full rounded-2xl bg-white/[0.02] border border-white/[0.05] border-b-0 mt-auto flex flex-col p-4 gap-3">
               <div className="h-4 w-full rounded-md bg-white/[0.03]" />

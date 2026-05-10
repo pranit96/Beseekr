@@ -133,7 +133,9 @@ const MessageList: React.FC<MessageListProps> = ({
                           <>
                             Processing with{" "}
                             <span className="text-foreground font-bold">
-                              {message.agentTraces?.find((t) => t.status === "running")?.agentName || "Agents"}
+                              {message.agentTraces?.find(
+                                (t) => t.status === "running",
+                              )?.agentName || "Agents"}
                             </span>
                           </>
                         )}
@@ -150,7 +152,10 @@ const MessageList: React.FC<MessageListProps> = ({
 
                     <div className="flex flex-col gap-2.5 pl-1 mt-1">
                       {message.agentTraces.map((trace, idx) => (
-                        <div key={idx} className="flex items-center gap-3 text-[13px]">
+                        <div
+                          key={idx}
+                          className="flex items-center gap-3 text-[13px]"
+                        >
                           <div className="relative flex items-center justify-center w-4">
                             {trace.status === "pending" ? (
                               <div className="w-2 h-2 rounded-full bg-white/10" />

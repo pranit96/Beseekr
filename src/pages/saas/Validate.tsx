@@ -2230,16 +2230,20 @@ export function Validate() {
         >
           <div className="flex items-center gap-2 mb-4 sm:mb-5">
             <span className="text-[10px] sm:text-[11px] font-bold tracking-[0.2em] text-muted-foreground/70 uppercase flex items-center">
-              Validate <span className="mx-2 opacity-60 text-[8px]">•</span> Market Intelligence
+              Validate <span className="mx-2 opacity-60 text-[8px]">•</span>{" "}
+              Market Intelligence
             </span>
           </div>
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-[1.1] flex flex-col gap-1">
             <span className="text-foreground">Research ideas.</span>
-            <span className="bg-gradient-to-r from-emerald-400 via-cyan-400 to-emerald-400 bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient">Verify demand.</span>
+            <span className="bg-gradient-to-r from-emerald-400 via-cyan-400 to-emerald-400 bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient">
+              Verify demand.
+            </span>
           </h1>
           <p className="text-base sm:text-lg text-muted-foreground/80 mt-5 sm:mt-6 leading-relaxed max-w-2xl font-medium">
-            Harness collective intelligence from across the web to instantly score 
-            startup concepts, competitor gaps, and exact willingness to pay.
+            Harness collective intelligence from across the web to instantly
+            score startup concepts, competitor gaps, and exact willingness to
+            pay.
           </p>
         </motion.div>
       ) : (
@@ -2292,12 +2296,14 @@ export function Validate() {
             transition={{ duration: 0.3 }}
             className="max-w-3xl w-full mx-auto"
           >
-            <div className={cn(
-              "p-6 rounded-2xl border transition-all duration-500",
-              isNewMode 
-                ? "bg-white/[0.02] backdrop-blur-xl border-white/[0.08] shadow-2xl shadow-black/20"
-                : "bg-gradient-to-br from-background to-muted/30 border-border/50"
-            )}>
+            <div
+              className={cn(
+                "p-6 rounded-2xl border transition-all duration-500",
+                isNewMode
+                  ? "bg-white/[0.02] backdrop-blur-xl border-white/[0.08] shadow-2xl shadow-black/20"
+                  : "bg-gradient-to-br from-background to-muted/30 border-border/50",
+              )}
+            >
               <form onSubmit={handleSubmit} className="space-y-4">
                 <Textarea
                   placeholder="Describe your startup idea, problem, or concept..."

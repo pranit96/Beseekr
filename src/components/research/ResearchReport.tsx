@@ -424,12 +424,14 @@ function ExecutiveVerdictSection({
   }, []);
 
   return (
-    <Card className={cn(
-      "transition-all duration-500",
-      isNewMode 
-        ? "bg-white/[0.01] backdrop-blur-2xl border-white/[0.08] rounded-2xl shadow-2xl shadow-black/20 ring-1 ring-white/[0.05] ring-offset-0"
-        : cn("border-2", getGradeColor(grade))
-    )}>
+    <Card
+      className={cn(
+        "transition-all duration-500",
+        isNewMode
+          ? "bg-white/[0.01] backdrop-blur-2xl border-white/[0.08] rounded-2xl shadow-2xl shadow-black/20 ring-1 ring-white/[0.05] ring-offset-0"
+          : cn("border-2", getGradeColor(grade)),
+      )}
+    >
       <CardContent className="pt-4 sm:pt-6">
         <div className="flex flex-col lg:flex-row lg:items-start gap-4 sm:gap-6">
           <div className="flex items-center gap-3 sm:gap-4">
@@ -1360,14 +1362,21 @@ export function ResearchReport({ data }: { data: ValidationReportData }) {
   const uniqueVoices = metadata.sources_analyzed?.unique_voices || 0;
 
   return (
-    <div className={cn("space-y-4 sm:space-y-6", isNewMode && "selection:bg-emerald-500/20")}>
+    <div
+      className={cn(
+        "space-y-4 sm:space-y-6",
+        isNewMode && "selection:bg-emerald-500/20",
+      )}
+    >
       {/* Idea Submitted */}
-      <Card className={cn(
-        "transition-all duration-300",
-        isNewMode 
-          ? "bg-white/[0.02] backdrop-blur-md border-white/[0.06] rounded-xl sm:rounded-2xl shadow-xl shadow-black/10" 
-          : "bg-muted/30"
-      )}>
+      <Card
+        className={cn(
+          "transition-all duration-300",
+          isNewMode
+            ? "bg-white/[0.02] backdrop-blur-md border-white/[0.06] rounded-xl sm:rounded-2xl shadow-xl shadow-black/10"
+            : "bg-muted/30",
+        )}
+      >
         <CardContent className="pt-4 sm:pt-6 pb-4 sm:pb-6">
           <p className="text-xs sm:text-sm text-muted-foreground mb-1">
             Idea Validated
@@ -1419,12 +1428,14 @@ export function ResearchReport({ data }: { data: ValidationReportData }) {
       </div>
 
       {/* Report Metadata Footer */}
-      <Card className={cn(
-        "transition-all duration-300",
-        isNewMode 
-          ? "bg-white/[0.02] backdrop-blur-md border-white/[0.06] rounded-xl sm:rounded-2xl" 
-          : "bg-muted/30"
-      )}>
+      <Card
+        className={cn(
+          "transition-all duration-300",
+          isNewMode
+            ? "bg-white/[0.02] backdrop-blur-md border-white/[0.06] rounded-xl sm:rounded-2xl"
+            : "bg-muted/30",
+        )}
+      >
         <CardContent className="pt-4 pb-4">
           <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
             <div className="flex items-center gap-4">
