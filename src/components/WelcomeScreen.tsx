@@ -65,7 +65,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
   }, []);
 
   return (
-    <div className="flex flex-col items-center justify-center w-full px-4 py-8 animate-welcome-in">
+    <div className="flex flex-col items-start w-full max-w-4xl px-6 sm:px-12 py-12 sm:py-20 animate-welcome-in mx-auto">
       {/* Background ambient blobs — GPU-composited, no layout cost */}
       <div
         aria-hidden
@@ -76,23 +76,21 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
       </div>
 
       {/* Eyebrow label */}
-      <div className="mb-6 flex items-center gap-2">
-        <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary/70 animate-pulse-soft" />
-        <span className="text-xs font-medium tracking-widest uppercase text-muted-foreground/60 select-none">
-          Multi-Agent Orchestration
+      <div className="mb-5 flex items-center gap-2">
+        <span className="text-[10px] sm:text-[11px] font-bold tracking-[0.2em] text-muted-foreground/70 uppercase flex items-center select-none">
+          AI Chat <span className="mx-2 opacity-60 text-[8px]">•</span> The Orchestrator
         </span>
       </div>
 
       {/* Headline */}
-      <h1 className="text-[2.15rem] sm:text-[2.6rem] font-semibold tracking-[-0.03em] text-foreground leading-[1.15] text-center mb-3 max-w-xl">
-        What would you like
-        <br />
-        <span className="text-primary/80">to orchestrate?</span>
+      <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-[1.1] flex flex-col gap-1 text-left mb-8">
+        <span className="text-foreground">Think, write, execute.</span>
+        <span className="text-muted-foreground/50">All in one workspace.</span>
       </h1>
 
       {/* Sub-copy */}
-      <p className="text-sm text-muted-foreground/60 text-center mb-10 max-w-sm leading-relaxed">
-        Pick a suggestion or type your own — select agents below to begin.
+      <p className="text-base text-muted-foreground/70 text-left mb-8 max-w-md font-medium">
+        Select agents to get started or try a suggested prompt below.
       </p>
 
       {/* Horizontal scrollable chip strip */}

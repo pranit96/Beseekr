@@ -913,7 +913,7 @@ export const ChatInterface: React.FC<{
       !hasStarted &&
       !convLoading ? (
         /* ── Welcome state ───────────────────────────────────────────────────── */
-        <div className="flex-1 flex flex-col items-center justify-center overflow-y-auto">
+        <div className="flex-1 flex flex-col overflow-y-auto">
           <WelcomeScreen
             onPromptSelect={(prompt) => {
               setInput(prompt);
