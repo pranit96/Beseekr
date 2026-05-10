@@ -79,8 +79,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const updateActivity = () => {
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => {
-        lastActivityRef.current = Date.now();
+        const now = Date.now();
+        lastActivityRef.current = now;
         authErrorShownRef.current = false; // Reset error flag on activity
+        try {
+          localStorage.setItem("auth_activity", now.toString());
+        } catch (e) {}
       }, 500);
     };
 
@@ -261,6 +265,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     // Check for inactivity and refresh if needed
     sessionCheckIntervalRef.current = setInterval(() => {
+      try {
+        const globalActivity = localStorage.getItem("auth_activity");
+        if (globalActivity) {
+          const globalTime = parseInt(globalActivity, 10);
+          if (globalTime > lastActivityRef.current) {
+            lastActivityRef.current = globalTime;
+          }
+        }
+      } catch (e) {}
+
       const inactiveTime = Date.now() - lastActivityRef.current;
 
       if (inactiveTime > ACTIVITY_TIMEOUT) {
