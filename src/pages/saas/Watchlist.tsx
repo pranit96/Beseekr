@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
@@ -39,10 +40,12 @@ function WatchlistCard({
   item,
   onRemove,
   index,
+  isNewMode,
 }: {
   item: WatchlistItem;
   onRemove: (id: string) => void;
   index: number;
+  isNewMode?: boolean;
 }) {
   const navigate = useNavigate();
 
@@ -57,17 +60,22 @@ function WatchlistCard({
 
   return (
     <motion.div
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: 20 }}
-      transition={{ duration: 0.3, delay: index * 0.05, ease: "easeOut" }}
-      whileHover={{ scale: 1.01, transition: { duration: 0.2 } }}
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      transition={{
+        duration: 0.4,
+        delay: index * 0.03,
+        ease: [0.23, 1, 0.32, 1],
+      }}
+      whileHover={{ y: -2, transition: { duration: 0.2 } }}
       onClick={handleClick}
       className={cn(
         "group relative cursor-pointer rounded-xl sm:rounded-2xl p-4 sm:p-6 transition-all duration-300",
-        "bg-gradient-to-br from-background to-muted/30",
-        "border border-border/50 hover:border-amber-500/30",
-        "hover:shadow-xl hover:shadow-amber-500/5 active:scale-[0.98]",
+        isNewMode
+          ? "bg-white/[0.02] hover:bg-white/[0.04] border-white/[0.06] hover:border-amber-500/30 shadow-xl shadow-black/5 hover:shadow-amber-500/[0.03]"
+          : "bg-gradient-to-br from-background to-muted/30 border-border/50 hover:border-amber-500/30 hover:shadow-amber-500/5",
+        "border active:scale-[0.99]",
       )}
     >
       {/* Bookmark indicator */}
@@ -78,37 +86,55 @@ function WatchlistCard({
       <div className="flex items-start gap-3 sm:gap-4">
         <div className="flex-1 min-w-0 ml-3 sm:ml-4">
           {/* Title */}
-          <h3 className="text-base sm:text-lg font-semibold text-foreground group-hover:text-amber-500 transition-colors line-clamp-1 mb-1.5 sm:mb-2">
+          <h3
+            className={cn(
+              "text-base sm:text-lg font-bold transition-colors line-clamp-1 mb-1.5 sm:mb-2",
+              isNewMode
+                ? "text-foreground/90 tracking-tight group-hover:text-amber-400"
+                : "text-foreground group-hover:text-amber-500",
+            )}
+          >
             {problem?.title || "Untitled Problem"}
           </h3>
 
           {/* Summary */}
-          <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2 mb-3 sm:mb-4 leading-relaxed">
+          <p
+            className={cn(
+              "text-xs sm:text-sm line-clamp-2 mb-4 leading-relaxed",
+              isNewMode
+                ? "text-muted-foreground/70 font-medium"
+                : "text-muted-foreground",
+            )}
+          >
             {problem?.summary || "No description available"}
           </p>
 
           {/* Stats */}
-          <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs sm:text-sm">
-            <div className="flex items-center gap-1 sm:gap-1.5 text-muted-foreground">
-              <TrendingUp className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              <span className="font-medium">
-                {problem?.metrics?.frequency || 0}
-              </span>
+          <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs">
+            <div
+              className={cn(
+                "flex items-center gap-1.5 px-2.5 py-1 rounded-full border",
+                isNewMode
+                  ? "bg-amber-500/5 border-amber-500/10 text-amber-400/80 font-bold"
+                  : "text-muted-foreground",
+              )}
+            >
+              <TrendingUp className="h-3.5 w-3.5" />
+              <span>{problem?.metrics?.frequency || 0}</span>
             </div>
-            <div className="flex items-center gap-1 sm:gap-1.5 text-muted-foreground">
-              <ThumbsUp className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              <span className="font-medium">
-                {problem?.metrics?.upvote_score || 0}
-              </span>
+            <div
+              className={cn(
+                "flex items-center gap-1.5 px-2.5 py-1 rounded-full border",
+                isNewMode
+                  ? "bg-white/[0.03] border-white/[0.06] text-muted-foreground/80 font-medium"
+                  : "text-muted-foreground",
+              )}
+            >
+              <ThumbsUp className="h-3.5 w-3.5" />
+              <span>{problem?.metrics?.upvote_score || 0}</span>
             </div>
-            <div className="hidden sm:flex items-center gap-1.5 text-muted-foreground">
-              <FileText className="h-4 w-4" />
-              <span className="font-medium">
-                {problem?.metrics?.source_count || 0}
-              </span>
-            </div>
-            <span className="hidden sm:inline text-muted-foreground/50">•</span>
-            <span className="text-[10px] sm:text-xs text-muted-foreground">
+            <span className="hidden sm:inline text-white/[0.1]">•</span>
+            <span className="text-[10px] sm:text-xs text-muted-foreground/50">
               Saved {new Date(item.added_at).toLocaleDateString()}
             </span>
           </div>
@@ -158,6 +184,16 @@ export function Watchlist() {
     removeMutation.mutate(problemId);
   };
 
+  const [isNewMode, setIsNewMode] = useState(false);
+
+  useEffect(() => {
+    const cookieValue = document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("IsNewChatPage="))
+      ?.split("=")[1];
+    setIsNewMode(cookieValue === "true");
+  }, []);
+
   // Auth check - show sign-in prompt for unauthenticated users
   if (!user) {
     return (
@@ -203,24 +239,50 @@ export function Watchlist() {
   }
 
   return (
-    <div className="space-y-6 sm:space-y-8">
-      {/* Hero Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="text-center max-w-2xl mx-auto px-2"
-      >
-        <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4">
-          Your{" "}
-          <span className="bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient">
-            Watchlist
-          </span>
-        </h1>
-        <p className="text-sm sm:text-lg text-muted-foreground">
-          Problems you're tracking. Build something that solves real pain.
-        </p>
-      </motion.div>
+    <div className={cn("space-y-6 sm:space-y-8", isNewMode && "pb-12")}>
+      {/* Hero Header - Conditional layout */}
+      {isNewMode ? (
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="text-left max-w-3xl pt-4 sm:pt-6 pb-2 sm:pb-4"
+        >
+          <div className="flex items-center gap-2 mb-4 sm:mb-5">
+            <span className="text-[10px] sm:text-[11px] font-bold tracking-[0.2em] text-muted-foreground/70 uppercase flex items-center">
+              Watchlist <span className="mx-2 opacity-60 text-[8px]">•</span>{" "}
+              Your Saved Intelligence
+            </span>
+          </div>
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-[1.1] flex flex-col gap-1">
+            <span className="text-foreground">Curated ideas.</span>
+            <span className="bg-gradient-to-r from-amber-400 via-orange-400 to-amber-400 bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient">
+              Track potential.
+            </span>
+          </h1>
+          <p className="text-base sm:text-lg text-muted-foreground/80 mt-5 sm:mt-6 leading-relaxed max-w-2xl font-medium">
+            Build something that solves real pain. View problems you've curated
+            from across our intelligence feed in one persistent nexus.
+          </p>
+        </motion.div>
+      ) : (
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="text-center max-w-2xl mx-auto px-2"
+        >
+          <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4">
+            Your{" "}
+            <span className="bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient">
+              Watchlist
+            </span>
+          </h1>
+          <p className="text-sm sm:text-lg text-muted-foreground">
+            Problems you're tracking. Build something that solves real pain.
+          </p>
+        </motion.div>
+      )}
 
       {/* Loading State */}
       {isLoading && (
@@ -232,38 +294,74 @@ export function Watchlist() {
       )}
 
       {/* Empty State */}
-      {!isLoading && watchlist.length === 0 && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.4 }}
-          className="text-center py-12 sm:py-20 px-4"
-        >
+      {!isLoading &&
+        watchlist.length === 0 &&
+        (isNewMode ? (
           <motion.div
-            initial={{ y: 10 }}
-            animate={{ y: [10, -10, 10] }}
-            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-            className="w-16 h-16 sm:w-24 sm:h-24 rounded-full bg-gradient-to-br from-amber-500/20 to-orange-500/10 flex items-center justify-center mx-auto mb-5 sm:mb-8 border border-amber-500/20"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="flex flex-col gap-6 p-8 md:p-12 rounded-2xl border border-white/[0.05] bg-gradient-to-br from-white/[0.02] to-transparent backdrop-blur-md shadow-2xl shadow-black/20 mt-8 group overflow-hidden relative"
           >
-            <Bookmark className="h-8 w-8 sm:h-12 sm:w-12 text-amber-500" />
+            {/* Background glow decorative */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 blur-[100px] rounded-full -translate-y-1/2 translate-x-1/3" />
+
+            <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
+              <div className="max-w-xl space-y-4">
+                <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shadow-lg">
+                  <Bookmark className="h-6 w-6 text-amber-500" />
+                </div>
+                <h3 className="text-2xl sm:text-3xl font-bold tracking-tight">
+                  No items in your repository
+                </h3>
+                <p className="text-muted-foreground font-medium leading-relaxed text-base">
+                  Explore validated enterprise problems, monitor trending
+                  consumer frustrations, and archive them here to execute on
+                  when ready.
+                </p>
+              </div>
+              <Button
+                size="lg"
+                onClick={() => navigate("/dashboard/problems")}
+                className="rounded-xl gap-2 bg-white text-black hover:bg-white/90 px-6 h-12 shadow-[0_0_20px_-5px_rgba(255,255,255,0.2)] group-hover:scale-105 transition-all shrink-0"
+              >
+                <Sparkles className="h-5 w-5" />
+                Start Discovering
+              </Button>
+            </div>
           </motion.div>
-          <h3 className="text-xl sm:text-2xl font-semibold mb-2 sm:mb-3">
-            No saved problems yet
-          </h3>
-          <p className="text-sm sm:text-base text-muted-foreground mb-6 sm:mb-8 max-w-md mx-auto">
-            Discover problems worth solving and save them here to track your
-            potential startup ideas.
-          </p>
-          <Button
-            size="default"
-            onClick={() => navigate("/dashboard/problems")}
-            className="rounded-xl gap-2 h-11 sm:h-12 px-5 sm:px-6"
+        ) : (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.4 }}
+            className="text-center py-12 sm:py-20 px-4"
           >
-            <Sparkles className="h-4 w-4 sm:h-5 sm:w-5" />
-            Discover Problems
-          </Button>
-        </motion.div>
-      )}
+            <motion.div
+              initial={{ y: 10 }}
+              animate={{ y: [10, -10, 10] }}
+              transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+              className="w-16 h-16 sm:w-24 sm:h-24 rounded-full bg-gradient-to-br from-amber-500/20 to-orange-500/10 flex items-center justify-center mx-auto mb-5 sm:mb-8 border border-amber-500/20"
+            >
+              <Bookmark className="h-8 w-8 sm:h-12 sm:w-12 text-amber-500" />
+            </motion.div>
+            <h3 className="text-xl sm:text-2xl font-semibold mb-2 sm:mb-3">
+              No saved problems yet
+            </h3>
+            <p className="text-sm sm:text-base text-muted-foreground mb-6 sm:mb-8 max-w-md mx-auto">
+              Discover problems worth solving and save them here to track your
+              potential startup ideas.
+            </p>
+            <Button
+              size="default"
+              onClick={() => navigate("/dashboard/problems")}
+              className="rounded-xl gap-2 h-11 sm:h-12 px-5 sm:px-6"
+            >
+              <Sparkles className="h-4 w-4 sm:h-5 sm:w-5" />
+              Discover Problems
+            </Button>
+          </motion.div>
+        ))}
 
       {/* Watchlist Items */}
       {!isLoading && watchlist.length > 0 && (
@@ -286,6 +384,7 @@ export function Watchlist() {
                 item={item}
                 onRemove={handleRemove}
                 index={index}
+                isNewMode={isNewMode}
               />
             ))}
           </AnimatePresence>

@@ -2268,7 +2268,7 @@ export function Validate() {
       )}
 
       {/* New Validation Button */}
-      {!showForm && !createMutation.isPending && (
+      {!showForm && !createMutation.isPending && reports.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -2421,7 +2421,42 @@ export function Validate() {
         </motion.div>
       ) : (
         !showForm &&
-        !createMutation.isPending && (
+        !createMutation.isPending &&
+        (isNewMode ? (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="flex flex-col gap-6 p-8 md:p-12 rounded-2xl border border-white/[0.05] bg-gradient-to-br from-white/[0.02] to-transparent backdrop-blur-md shadow-2xl shadow-black/20 mt-8 group overflow-hidden relative"
+          >
+            {/* Decor decorative glow for Validate (Emerald) */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 blur-[100px] rounded-full -translate-y-1/2 translate-x-1/3" />
+
+            <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
+              <div className="max-w-xl space-y-4">
+                <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shadow-lg">
+                  <Zap className="h-6 w-6 text-emerald-500" />
+                </div>
+                <h3 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+                  Zero validations run yet
+                </h3>
+                <p className="text-muted-foreground font-medium leading-relaxed text-base">
+                  Input your product, SaaS, or marketplace idea and we'll
+                  aggregate actionable Reddit feedback, pricing tolerance, and
+                  competitor gaps automatically.
+                </p>
+              </div>
+              <Button
+                size="lg"
+                onClick={() => setShowForm(true)}
+                className="rounded-xl gap-2 bg-white text-black hover:bg-white/90 px-6 h-12 shadow-[0_0_20px_-5px_rgba(255,255,255,0.2)] group-hover:scale-105 transition-all shrink-0"
+              >
+                <Zap className="h-5 w-5" />
+                Analyze First Idea
+              </Button>
+            </div>
+          </motion.div>
+        ) : (
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -2451,7 +2486,7 @@ export function Validate() {
               Validate an Idea
             </Button>
           </motion.div>
-        )
+        ))
       )}
 
       {/* Upgrade Required Modal */}

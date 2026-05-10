@@ -138,7 +138,7 @@ export const AgentSelector = ({
     <div className="space-y-5">
       <div
         className={cn(
-          "flex items-center justify-between gap-3 pb-2",
+          "flex items-center justify-between gap-3 pb-2 pr-6 sm:pr-8",
           isNewUI && "border-b border-white/[0.04]",
         )}
       >
