@@ -7,7 +7,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Users, Search } from "lucide-react";
+import { Users, Search, Plus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 
@@ -15,12 +15,14 @@ interface AgentSelectorProps {
   agents: Agent[];
   selectedAgents: Agent[];
   onAgentsChange: (agents: Agent[]) => void;
+  compactMode?: boolean;
 }
 
 export const AgentSelector = ({
   agents,
   selectedAgents,
   onAgentsChange,
+  compactMode = false,
 }: AgentSelectorProps) => {
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -89,23 +91,34 @@ export const AgentSelector = ({
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          className="gap-2 glass border-border/50 hover:border-primary transition-smooth"
-          aria-label={`Select agents. ${selectedCount} agent${selectedCount !== 1 ? "s" : ""} selected`}
-          aria-haspopup="dialog"
-        >
-          <Users className="w-4 h-4" aria-hidden="true" />
-          {selectedCount === 0 ? (
-            <span>Select Agents</span>
-          ) : selectedCount === 1 ? (
-            <span className="truncate max-w-[120px]">
-              {selectedAgents[0].name}
-            </span>
-          ) : (
-            <span>{selectedCount} Agents</span>
-          )}
-        </Button>
+        {compactMode ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 w-7 p-0 rounded-full bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 shrink-0"
+            aria-label="Select more agents"
+          >
+            <Plus className="w-4 h-4" />
+          </Button>
+        ) : (
+          <Button
+            variant="outline"
+            className="gap-2 glass border-border/50 hover:border-primary transition-smooth"
+            aria-label={`Select agents. ${selectedCount} agent${selectedCount !== 1 ? "s" : ""} selected`}
+            aria-haspopup="dialog"
+          >
+            <Users className="w-4 h-4" aria-hidden="true" />
+            {selectedCount === 0 ? (
+              <span>Select Agents</span>
+            ) : selectedCount === 1 ? (
+              <span className="truncate max-w-[120px]">
+                {selectedAgents[0].name}
+              </span>
+            ) : (
+              <span>{selectedCount} Agents</span>
+            )}
+          </Button>
+        )}
       </PopoverTrigger>
 
       <PopoverContent

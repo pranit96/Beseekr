@@ -911,33 +911,128 @@ export const ChatInterface: React.FC<{
       {/* Top loader bar */}
       <TopBar active={isActive} />
 
-      {/* Compact Mode Header (Top Agents Bar) */}
+      {/* Compact Mode Header (Top Agents & Tooling Bar) */}
       {isCompactMode && (
-        <div className="flex items-center justify-between px-5 py-3 border-b border-border/30 bg-muted/5 shrink-0">
-          <div className="flex items-center gap-3 overflow-x-auto custom-scrollbar hide-scrollbar">
-            {/* Small stylized dots row for compact representation, as seen in image */}
-            <div className="flex items-center gap-3 text-xs text-muted-foreground/80">
-              <div className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-muted/50 border border-border/50 text-foreground font-medium">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#d97706]" />{" "}
-                Claude 3.5
-              </div>
-              <div className="flex items-center gap-1.5 opacity-70">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#10b981]" />{" "}
-                GPT-4o
-              </div>
-              <div className="flex items-center gap-1.5 opacity-70">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#8b5cf6]" />{" "}
-                Llama-3
-              </div>
-              <div className="flex items-center gap-1.5 opacity-70">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#0ea5e9]" />{" "}
-                Gemini 2.0
-              </div>
-            </div>
+        <div className="flex items-center justify-between px-5 py-3 border-b border-border/30 bg-muted/5 shrink-0 relative pr-12">
+          {/* Dynamic Real Agents Mapping */}
+          <div className="flex items-center gap-2.5 overflow-x-auto hide-scrollbar scroll-smooth flex-1 min-w-0 pr-4">
+            {/* Micro Selector for adding & exploring deeper choice queue */}
+            <AgentSelector
+              agents={agents}
+              selectedAgents={selectedAgents}
+              onAgentsChange={setSelectedAgents}
+              compactMode={true}
+            />
+
+            <div className="h-4 w-px bg-border/40 mx-0.5 shrink-0" />
+
+            {agents.map((agent) => {
+              const selectionIndex = selectedAgents.findIndex(
+                (a) => a.id === agent.id,
+              );
+              const isSelected = selectionIndex !== -1;
+              return (
+                <button
+                  key={agent.id}
+                  onClick={() => {
+                    setSelectedAgents((prev) =>
+                      isSelected
+                        ? prev.filter((a) => a.id !== agent.id)
+                        : [...prev, agent],
+                    );
+                  }}
+                  className={`flex-shrink-0 flex items-center gap-1.5 px-2 py-1 rounded-full border transition-all text-[11px] font-medium ${
+                    isSelected
+                      ? "bg-primary/10 border-primary/30 text-foreground shadow-sm"
+                      : "bg-transparent border-transparent opacity-60 hover:opacity-100 hover:bg-muted/30 text-muted-foreground"
+                  }`}
+                >
+                  {isSelected && (
+                    <span className="w-3.5 h-3.5 flex items-center justify-center bg-primary text-primary-foreground text-[9px] font-black rounded-full">
+                      {selectionIndex + 1}
+                    </span>
+                  )}
+                  <span
+                    className="w-1.5 h-1.5 rounded-full"
+                    style={{ backgroundColor: agent.color || "#d1d5db" }}
+                  />
+                  {agent.name}
+                </button>
+              );
+            })}
           </div>
-          <div className="flex items-center gap-1.5 text-[10px] tracking-wider uppercase font-bold text-primary/70 ml-4 select-none flex-shrink-0">
-            <span className="w-1 h-1 rounded-full bg-primary animate-pulse" />{" "}
-            streaming
+
+          {/* Functional Tooling */}
+          <div className="flex items-center gap-3 ml-auto flex-shrink-0">
+            <div className="flex items-center gap-2 border-r border-border/40 pr-3 mr-1.5 hidden sm:flex">
+              {/* Mini Execution Mode Toggle */}
+              <div className="flex bg-muted/50 p-0.5 rounded-md border border-border/30">
+                <button
+                  onClick={() => setExecutionMode("sequential")}
+                  className={`px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded transition-all ${executionMode === "sequential" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground/60 hover:text-foreground"}`}
+                >
+                  Seq
+                </button>
+                <button
+                  onClick={() => setExecutionMode("parallel")}
+                  className={`px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded transition-all ${executionMode === "parallel" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground/60 hover:text-foreground"}`}
+                >
+                  Par
+                </button>
+              </div>
+
+              {/* Workflow Trigger */}
+              <button
+                onClick={() => setWorkflowDialogOpen(true)}
+                className="h-6 w-6 flex items-center justify-center rounded bg-primary/10 border border-primary/20 text-primary hover:bg-primary/20 transition-colors"
+                title="Open Workflow"
+              >
+                <Workflow className="w-3 h-3" />
+              </button>
+
+              {/* Private Mode */}
+              <button
+                onClick={togglePrivateChat}
+                className={`h-6 w-6 flex items-center justify-center rounded border transition-colors ${!saveToConversation ? "bg-amber-500/10 border-amber-500/30 text-amber-500" : "bg-transparent border-border/30 text-muted-foreground hover:text-foreground"}`}
+                title={
+                  saveToConversation
+                    ? "Enable private mode"
+                    : "Disable private mode"
+                }
+              >
+                {saveToConversation ? (
+                  <LockOpen className="w-3 h-3" />
+                ) : (
+                  <Lock className="w-3 h-3" />
+                )}
+              </button>
+            </div>
+
+            {/* Actual Dynamic Socket Streaming Status */}
+            <div
+              className={`flex items-center gap-1.5 text-[10px] tracking-wider uppercase font-bold select-none transition-colors ${
+                connectionStatus === "connected"
+                  ? "text-primary/80"
+                  : connectionStatus === "connecting"
+                    ? "text-amber-500/80"
+                    : "text-destructive/80"
+              }`}
+            >
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${
+                  connectionStatus === "connected"
+                    ? "bg-primary"
+                    : connectionStatus === "connecting"
+                      ? "bg-amber-500"
+                      : "bg-destructive"
+                } ${isExecuting || connectionStatus === "connecting" ? "animate-pulse" : ""}`}
+              />
+              {connectionStatus === "connected"
+                ? isExecuting
+                  ? "STREAMING"
+                  : "READY"
+                : connectionStatus.toUpperCase()}
+            </div>
           </div>
         </div>
       )}
