@@ -25,13 +25,12 @@ export default function Home() {
       <GlobalHeader />
 
       {/* HERO */}
-      <section className="max-w-5xl mx-auto px-6 py-20">
-        <h1 className="text-4xl sm:text-5xl font-semibold tracking-tight mb-4">
+      <section className="max-w-5xl mx-auto px-6 py-24 sm:py-32">
+        <h1 className="text-5xl sm:text-7xl font-bold tracking-[-0.03em] text-foreground leading-[1.05] mb-6">
           Build with clarity.
         </h1>
-        <p className="text-muted-foreground max-w-xl text-lg">
-          Find real problems, validate ideas, and execute faster — without
-          noise.
+        <p className="text-lg sm:text-2xl font-medium text-muted-foreground/80 max-w-2xl leading-relaxed tracking-tight">
+          Find real problems, validate ideas, and execute faster — without noise.
         </p>
       </section>
 
@@ -40,51 +39,55 @@ export default function Home() {
         {/* MAIN CARD */}
         <motion.div
           onClick={() => go("/chat")}
-          whileHover={{ scale: 1.015 }}
-          transition={{ type: "spring", stiffness: 200, damping: 18 }}
-          className="md:col-span-2 border rounded-xl p-8 cursor-pointer transition bg-card hover:bg-muted/30"
+          whileHover={{ y: -4 }}
+          transition={{ type: "spring", stiffness: 200, damping: 22 }}
+          className="md:col-span-2 border border-border/30 rounded-2xl p-10 cursor-pointer transition bg-muted/10 backdrop-blur-md hover:bg-muted/20 group shadow-2xl shadow-black/5"
         >
-          <MessageSquare className="w-6 h-6 mb-4" />
+          <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary mb-6 group-hover:scale-110 transition-transform">
+            <MessageSquare className="w-6 h-6" />
+          </div>
 
-          <h2 className="text-2xl font-semibold mb-2">AI Chat</h2>
+          <h2 className="text-3xl font-bold mb-3 tracking-tight text-foreground">AI Chat</h2>
 
-          <p className="text-muted-foreground mb-6">
+          <p className="text-muted-foreground/80 text-lg mb-8 max-w-md leading-relaxed">
             Think, write, and execute faster with a focused AI workspace.
           </p>
 
-          <button className="text-sm font-medium flex items-center gap-2">
-            {user ? "Open Chat" : "Sign in"}
+          <div className="text-sm font-bold tracking-wider uppercase flex items-center gap-2 text-primary group-hover:translate-x-1 transition-transform">
+            {user ? "Enter Workspace" : "Sign In"}
             <ArrowRight className="w-4 h-4" />
-          </button>
+          </div>
         </motion.div>
 
         {/* SECONDARY CARD */}
         <motion.div
           onClick={() => go("/dashboard/problems")}
-          whileHover={{ scale: 1.06 }}
-          transition={{ type: "spring", stiffness: 220, damping: 16 }}
-          className="border rounded-xl p-6 cursor-pointer transition
-                               bg-card
+          whileHover={{ y: -4 }}
+          transition={{ type: "spring", stiffness: 220, damping: 20 }}
+          className="border border-border/30 rounded-2xl p-8 cursor-pointer transition
+                               bg-muted/10 backdrop-blur-md
                                hover:bg-blue-500/5
-                               hover:border-blue-400/40"
+                               hover:border-blue-500/30 group shadow-2xl shadow-black/5"
         >
-          <TrendingUp className="w-5 h-5 mb-3" />
+          <div className="h-10 w-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400 mb-4 group-hover:scale-110 transition-transform">
+            <TrendingUp className="w-5 h-5" />
+          </div>
 
-          <h3 className="font-medium mb-1">Problem Discovery</h3>
+          <h3 className="text-xl font-bold mb-2 tracking-tight text-foreground">Discover</h3>
 
-          <p className="text-sm text-muted-foreground mb-4">
-            Real startup ideas from real user pain.
+          <p className="text-muted-foreground/80 mb-6 leading-relaxed">
+            Real startup ideas from real user pain points.
           </p>
 
-          <button className="text-sm flex items-center gap-1">
+          <div className="text-xs font-bold tracking-wider uppercase flex items-center gap-1 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all">
             Explore
             <ArrowRight className="w-3 h-3" />
-          </button>
+          </div>
         </motion.div>
 
         {/* COMING SOON */}
-        <div className="border border-dashed rounded-xl p-6 text-sm text-muted-foreground flex items-center justify-center">
-          More tools coming soon
+        <div className="border border-dashed border-border/40 rounded-2xl p-8 text-sm font-medium text-muted-foreground/50 flex items-center justify-center bg-muted/[0.02]">
+          Expand stack coming soon
         </div>
       </section>
 
