@@ -374,7 +374,7 @@ export const ConversationHistory = memo(
       <div className="flex flex-col h-full bg-background/60 backdrop-blur-sm">
         {/* Header */}
         <div className="px-4 pt-4 pb-3">
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center justify-between mb-3 pr-8">
             <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/40 select-none">
               Conversations
             </span>

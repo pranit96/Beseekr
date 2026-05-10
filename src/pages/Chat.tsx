@@ -284,6 +284,7 @@ const Chat = () => {
       setCurrentConversationId(currentConversationId);
       sessionStorage.setItem("lastActiveConversation", currentConversationId!);
       setKey((prev) => prev + 1);
+      setIsChatActive(false);
       toast({
         title: "Ready to chat",
         description: "Start typing your message below.",
@@ -306,7 +307,7 @@ const Chat = () => {
     setCurrentConversationId(tempId);
     sessionStorage.setItem("lastActiveConversation", tempId);
     setKey((prev) => prev + 1);
-
+    setIsChatActive(false);
     toast({
       title: "New chat started",
       description: "You can now start messaging your agents.",
@@ -549,9 +550,13 @@ const Chat = () => {
       <div className="h-screen bg-[#09090b] flex flex-col overflow-hidden selection:bg-primary/30">
         <GlobalHeader />
 
-        <div className={`flex-1 flex flex-col mx-auto w-full overflow-hidden relative custom-scrollbar transition-all duration-700 ease-in-out ${isChatActive ? "max-w-full px-0 pt-0 pb-0" : "max-w-6xl px-4 sm:px-6 lg:px-8 pt-8 pb-10 overflow-y-auto"}`}>
+        <div
+          className={`flex-1 flex flex-col mx-auto w-full overflow-hidden relative custom-scrollbar transition-all duration-700 ease-in-out ${isChatActive ? "max-w-full px-0 pt-0 pb-0" : "max-w-6xl px-4 sm:px-6 lg:px-8 pt-8 pb-10 overflow-y-auto"}`}
+        >
           {/* Hero Header Outside Box - Autohides when active */}
-          <div className={`text-left shrink-0 transition-all duration-700 ease-in-out ${isChatActive ? "h-0 opacity-0 overflow-hidden mb-0" : "mb-8 md:mb-10 opacity-100"}`}>
+          <div
+            className={`text-left shrink-0 transition-all duration-700 ease-in-out ${isChatActive ? "h-0 opacity-0 overflow-hidden mb-0" : "mb-8 md:mb-10 opacity-100"}`}
+          >
             <div className="flex items-center gap-2 mb-3 sm:mb-4">
               <span className="text-[10px] sm:text-[11px] font-bold tracking-[0.2em] text-muted-foreground/60 uppercase flex items-center">
                 AI Chat <span className="mx-2 opacity-50 text-[8px]">•</span>{" "}
@@ -567,7 +572,9 @@ const Chat = () => {
           </div>
 
           {/* Main Container Framed Box - Containing the ChatInterface */}
-          <div className={`flex-1 flex flex-col transition-all duration-700 ease-in-out ${isChatActive ? "border-0 rounded-none bg-background min-h-screen" : "border border-border/30 rounded-2xl bg-card/5 backdrop-blur-xl shadow-2xl min-h-[500px]"} overflow-hidden relative group`}>
+          <div
+            className={`flex-1 flex flex-col transition-all duration-700 ease-in-out ${isChatActive ? "border-0 rounded-none bg-background min-h-screen" : "border border-border/30 rounded-2xl bg-card/5 backdrop-blur-xl shadow-2xl min-h-[500px]"} overflow-hidden relative group`}
+          >
             {/* Inner Box Sidebar Drawer Trigger */}
             <div className="absolute top-3.5 right-4 z-40">
               <Sheet>

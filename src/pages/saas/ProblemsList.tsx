@@ -267,10 +267,21 @@ function ProblemCard({
 }
 
 export function ProblemsList() {
-  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  const [isNewMode, setIsNewMode] = useState(false);
+  useEffect(() => {
+    const cookieValue = document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("IsNewChatPage="))
+      ?.split("=")[1];
+    if (cookieValue === "true") {
+      setIsNewMode(true);
+    }
+  }, []);
 
   // Initialize tab from URL query param
   const tabFromUrl = searchParams.get("tab");
@@ -807,27 +818,39 @@ export function ProblemsList() {
   return (
     <div className="space-y-8">
       {/* Hero Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="text-left max-w-3xl pt-6 pb-2 sm:pb-4"
-      >
-        <div className="flex items-center gap-2 mb-4 sm:mb-5">
-          <span className="text-[10px] sm:text-[11px] font-bold tracking-[0.2em] text-muted-foreground/70 uppercase flex items-center">
-            Discover <span className="mx-2 opacity-60 text-[8px]">•</span> The
-            Idea Engine
-          </span>
+      {isNewMode ? (
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="text-left max-w-3xl pt-6 pb-2 sm:pb-4"
+        >
+          <div className="flex items-center gap-2 mb-4 sm:mb-5">
+            <span className="text-[10px] sm:text-[11px] font-bold tracking-[0.2em] text-muted-foreground/70 uppercase flex items-center">
+              Discover <span className="mx-2 opacity-60 text-[8px]">•</span> The
+              Idea Engine
+            </span>
+          </div>
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-[1.1] flex flex-col gap-1">
+            <span className="text-foreground">Real problems.</span>
+            <span className="text-muted-foreground/50">Real user pain.</span>
+          </h1>
+          <p className="text-base sm:text-lg text-muted-foreground/80 mt-5 sm:mt-6 leading-relaxed max-w-2xl font-medium">
+            Validated startup ideas mined from millions of conversations.
+            Auto-scored for opportunity.
+          </p>
+        </motion.div>
+      ) : (
+        <div className="space-y-2 pt-6 pb-4 text-left">
+          <h1 className="text-2xl sm:text-4xl font-bold tracking-tight text-foreground">
+            Discover Validated Startup Problems
+          </h1>
+          <p className="text-sm sm:text-lg text-muted-foreground">
+            Real pain points extracted from Reddit, Hacker News & online
+            communities. Scored by opportunity potential.
+          </p>
         </div>
-        <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-[1.1] flex flex-col gap-1">
-          <span className="text-foreground">Real problems.</span>
-          <span className="text-muted-foreground/50">Real user pain.</span>
-        </h1>
-        <p className="text-base sm:text-lg text-muted-foreground/80 mt-5 sm:mt-6 leading-relaxed max-w-2xl font-medium">
-          Validated startup ideas mined from millions of conversations.
-          Auto-scored for opportunity.
-        </p>
-      </motion.div>
+      )}
 
       {/* Gated Content Banner - Show for anonymous users */}
       {data?.gated && !user && activeTab === "free" && (

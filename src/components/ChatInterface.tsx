@@ -108,22 +108,24 @@ const AgentLoadingCard = ({
   const pct = step && total ? Math.round((step / total) * 100) : null;
 
   return (
-    <div className={`mb-6 px-2 animate-in fade-in duration-700 ${isCompactMode ? "flex items-start gap-3" : ""}`}>
+    <div
+      className={`mb-6 px-2 animate-in fade-in duration-700 ${isCompactMode ? "flex items-start gap-3" : ""}`}
+    >
       {isCompactMode && (
-         <div className="w-8 h-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0 text-primary mt-1 shadow-lg shadow-primary/5 animate-pulse">
-            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-         </div>
+        <div className="w-8 h-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0 text-primary mt-1 shadow-lg shadow-primary/5 animate-pulse">
+          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+        </div>
       )}
-      
+
       <div
         className={cn(
           "relative overflow-hidden transition-all duration-500 ease-in-out",
-          isCompactMode 
+          isCompactMode
             ? "flex-1 rounded-2xl border border-primary/20 bg-primary/[0.02] backdrop-blur-sm px-5 py-4 shadow-sm"
-            : "w-full rounded-xl border border-border/50 bg-muted/10 p-4"
+            : "w-full rounded-xl border border-border/50 bg-muted/10 p-4",
         )}
         style={{
-          animation: "pulse-subtle 3s ease-in-out infinite"
+          animation: "pulse-subtle 3s ease-in-out infinite",
         }}
       >
         <style>{`
@@ -136,7 +138,7 @@ const AgentLoadingCard = ({
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
             {!isCompactMode && (
-               <Loader2 className="w-4 h-4 animate-spin text-primary/70" />
+              <Loader2 className="w-4 h-4 animate-spin text-primary/70" />
             )}
             <div className="flex flex-col">
               <span className="text-[13px] font-medium text-foreground/90 flex items-center gap-2">
@@ -147,13 +149,13 @@ const AgentLoadingCard = ({
                   Phase {step} of {total} completed
                 </span>
               ) : (
-                 <span className="text-[11px] text-muted-foreground/60 font-medium">
+                <span className="text-[11px] text-muted-foreground/60 font-medium">
                   Thinking and synthesizing data...
-                 </span>
+                </span>
               )}
             </div>
           </div>
-          
+
           {pct !== null && (
             <span className="text-[11px] font-black tracking-wider text-primary/80">
               {pct}%
@@ -163,15 +165,21 @@ const AgentLoadingCard = ({
 
         {/* High fidelity Progress Track */}
         <div className="mt-3 w-full h-1 bg-muted/50 rounded-full overflow-hidden relative">
-          <div 
+          <div
             className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer"
-            style={{ backgroundSize: '200% 100%', animation: 'shimmer-slide 1.5s infinite linear' }}
+            style={{
+              backgroundSize: "200% 100%",
+              animation: "shimmer-slide 1.5s infinite linear",
+            }}
           />
           <div
             className="h-full bg-primary transition-all duration-500 ease-out rounded-full shadow-glow"
-            style={{ 
+            style={{
               width: `${pct !== null ? pct : 30}%`,
-              animation: pct === null ? 'indeterminate-slide 2s infinite ease-in-out' : 'none'
+              animation:
+                pct === null
+                  ? "indeterminate-slide 2s infinite ease-in-out"
+                  : "none",
             }}
           />
         </div>
@@ -1038,7 +1046,9 @@ export const ChatInterface: React.FC<{
                 onClick={() => setAgentsToolbarExpanded(!agentsToolbarExpanded)}
                 className={`h-6 w-6 flex items-center justify-center rounded border transition-colors ${agentsToolbarExpanded ? "bg-muted text-foreground border-border" : "bg-transparent border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50"}`}
                 title={
-                  agentsToolbarExpanded ? "Collapse quick agents" : "View more agents"
+                  agentsToolbarExpanded
+                    ? "Collapse quick agents"
+                    : "View more agents"
                 }
               >
                 {agentsToolbarExpanded ? (
