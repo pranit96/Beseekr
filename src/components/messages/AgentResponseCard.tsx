@@ -23,6 +23,7 @@ interface Props {
   onForkAgent?: (agentId: string) => void;
   onRegenerate?: (response: AgentResponse) => void;
   onCancel?: (agentId: string) => void;
+  isCompactMode?: boolean;
 }
 
 const AgentResponseCard: React.FC<Props> = ({
@@ -31,6 +32,7 @@ const AgentResponseCard: React.FC<Props> = ({
   onForkAgent,
   onRegenerate,
   onCancel,
+  isCompactMode = false,
 }) => {
   const [copied, setCopied] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
@@ -135,12 +137,20 @@ const AgentResponseCard: React.FC<Props> = ({
   return (
     <div
       className={cn(
-        "w-full rounded-xl p-4 border shadow-sm transition-all",
+        isCompactMode
+          ? "w-full rounded-2xl p-5 border shadow-xl transition-all relative overflow-hidden backdrop-blur-md"
+          : "w-full rounded-xl p-4 border shadow-sm transition-all",
         response.status === "error"
-          ? "border-destructive/40 bg-destructive/5"
+          ? isCompactMode
+            ? "border-destructive/30 bg-destructive/[0.02]"
+            : "border-destructive/40 bg-destructive/5"
           : response.status === "pending"
-            ? "border-primary/30 bg-background/80"
-            : "border-border/60 bg-background/80",
+            ? isCompactMode
+              ? "border-primary/30 bg-muted/10"
+              : "border-primary/30 bg-background/80"
+            : isCompactMode
+              ? "border-border/30 bg-card/10 shadow-black/[0.03]"
+              : "border-border/60 bg-background/80",
       )}
       style={
         response.status === "pending"
@@ -165,13 +175,21 @@ const AgentResponseCard: React.FC<Props> = ({
         <div className="flex items-center gap-3">
           <div
             className={cn(
-              "h-9 w-9 rounded-full flex items-center justify-center text-white font-semibold text-sm shadow-sm",
+              isCompactMode
+                ? "h-9 w-9 rounded-xl flex items-center justify-center text-white font-bold text-xs shadow-lg"
+                : "h-9 w-9 rounded-full flex items-center justify-center text-white font-semibold text-sm shadow-sm",
               agentColor,
+              isCompactMode &&
+                "bg-gradient-to-br saturate-150 brightness-90 opacity-90",
               response.status === "pending" &&
-                "ring-2 ring-primary/30 ring-offset-2 ring-offset-background",
+                (isCompactMode
+                  ? "animate-pulse ring-2 ring-primary/20 ring-offset-1 ring-offset-background"
+                  : "ring-2 ring-primary/30 ring-offset-2 ring-offset-background"),
             )}
           >
-            {response.agentName?.charAt(0)?.toUpperCase() || "A"}
+            {isCompactMode
+              ? response.agentName?.substring(0, 2)?.toUpperCase() || "AI"
+              : response.agentName?.charAt(0)?.toUpperCase() || "A"}
           </div>
           <div>
             <div className="font-semibold text-sm text-foreground">
@@ -311,10 +329,20 @@ const AgentResponseCard: React.FC<Props> = ({
           </div>
         ) : (
           // Success — full markdown render
-          <div className="rounded-lg text-sm">
+          <div
+            className={
+              isCompactMode
+                ? "rounded-lg text-[15px] leading-relaxed text-foreground/90 font-light tracking-wide"
+                : "rounded-lg text-sm"
+            }
+          >
             <MarkdownRenderer
               content={response.content || ""}
-              className="leading-relaxed"
+              className={
+                isCompactMode
+                  ? "leading-relaxed prose-invert prose-p:leading-relaxed"
+                  : "leading-relaxed"
+              }
               showToc={false}
               enableCopy={true}
               maxHeight="none"

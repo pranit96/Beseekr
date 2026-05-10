@@ -143,11 +143,13 @@ export const ChatInterface: React.FC<{
   activeConversationId?: string;
   onConversationChange?: (conversationId: string | null) => void;
   onConversationCreated?: (conversationId: string) => void;
+  isCompactMode?: boolean;
 }> = ({
   agents,
   activeConversationId,
   onConversationChange,
   onConversationCreated,
+  isCompactMode = false,
 }) => {
   const [input, setInput] = useState("");
   const [selectedAgents, setSelectedAgents] = useState<Agent[]>([]);
@@ -766,70 +768,72 @@ export const ChatInterface: React.FC<{
   // ── Bottom input ─────────────────────────────────────────────────────────────
   const inputAreaNode = (
     <div className="input-area-root">
-      {/* Agent selector & toolbar row */}
-      <div className="input-toolbar flex-wrap md:flex-nowrap">
-        <div className="flex-1 min-w-0 flex items-center gap-2 overflow-x-auto custom-scrollbar pb-1 md:pb-0">
-          <AgentSelector
-            agents={agents}
-            selectedAgents={selectedAgents}
-            onAgentsChange={setSelectedAgents}
-          />
-        </div>
-        <div className="flex items-center gap-1.5 flex-shrink-0">
-          {/* Execution Mode Toggle */}
-          <div className="flex bg-muted/50 p-0.5 rounded-lg border border-border/50">
+      {/* Agent selector & toolbar row - hidden in compact mode as it lives at top */}
+      {!isCompactMode && (
+        <div className="input-toolbar flex-wrap md:flex-nowrap">
+          <div className="flex-1 min-w-0 flex items-center gap-2 overflow-x-auto custom-scrollbar pb-1 md:pb-0">
+            <AgentSelector
+              agents={agents}
+              selectedAgents={selectedAgents}
+              onAgentsChange={setSelectedAgents}
+            />
+          </div>
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            {/* Execution Mode Toggle */}
+            <div className="flex bg-muted/50 p-0.5 rounded-lg border border-border/50">
+              <button
+                onClick={() => setExecutionMode("sequential")}
+                className={`flex px-2.5 py-1 text-[11px] font-semibold rounded-md transition-all ${
+                  executionMode === "sequential"
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                aria-label="Sequential Mode"
+              >
+                Sequential
+              </button>
+              <button
+                onClick={() => setExecutionMode("parallel")}
+                className={`flex px-2.5 py-1 text-[11px] font-semibold rounded-md transition-all ${
+                  executionMode === "parallel"
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                aria-label="Parallel Mode"
+              >
+                Parallel
+              </button>
+            </div>
+            {/* Autonomous Workflow Button — opens intelligent workflow agent modal */}
             <button
-              onClick={() => setExecutionMode("sequential")}
-              className={`flex px-2.5 py-1 text-[11px] font-semibold rounded-md transition-all ${
-                executionMode === "sequential"
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-              aria-label="Sequential Mode"
+              onClick={() => setWorkflowDialogOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 text-primary hover:bg-primary/20"
+              title="Open Autonomous Workflow"
+              aria-label="Open autonomous workflow"
             >
-              Sequential
+              <Workflow className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Workflow</span>
             </button>
+            {/* Private mode */}
             <button
-              onClick={() => setExecutionMode("parallel")}
-              className={`flex px-2.5 py-1 text-[11px] font-semibold rounded-md transition-all ${
-                executionMode === "parallel"
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-              aria-label="Parallel Mode"
+              onClick={togglePrivateChat}
+              className={`toolbar-icon-btn ${!saveToConversation ? "toolbar-icon-btn-active" : ""}`}
+              title={
+                saveToConversation
+                  ? "Enable private mode"
+                  : "Disable private mode"
+              }
+              aria-label="Toggle private mode"
             >
-              Parallel
+              {saveToConversation ? (
+                <LockOpen className="w-3.5 h-3.5" />
+              ) : (
+                <Lock className="w-3.5 h-3.5" />
+              )}
             </button>
           </div>
-          {/* Autonomous Workflow Button — opens intelligent workflow agent modal */}
-          <button
-            onClick={() => setWorkflowDialogOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 text-primary hover:bg-primary/20"
-            title="Open Autonomous Workflow"
-            aria-label="Open autonomous workflow"
-          >
-            <Workflow className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Workflow</span>
-          </button>
-          {/* Private mode */}
-          <button
-            onClick={togglePrivateChat}
-            className={`toolbar-icon-btn ${!saveToConversation ? "toolbar-icon-btn-active" : ""}`}
-            title={
-              saveToConversation
-                ? "Enable private mode"
-                : "Disable private mode"
-            }
-            aria-label="Toggle private mode"
-          >
-            {saveToConversation ? (
-              <LockOpen className="w-3.5 h-3.5" />
-            ) : (
-              <Lock className="w-3.5 h-3.5" />
-            )}
-          </button>
         </div>
-      </div>
+      )}
 
       {/* Textarea row */}
       <div className="input-row">
@@ -907,6 +911,37 @@ export const ChatInterface: React.FC<{
       {/* Top loader bar */}
       <TopBar active={isActive} />
 
+      {/* Compact Mode Header (Top Agents Bar) */}
+      {isCompactMode && (
+        <div className="flex items-center justify-between px-5 py-3 border-b border-border/30 bg-muted/5 shrink-0">
+          <div className="flex items-center gap-3 overflow-x-auto custom-scrollbar hide-scrollbar">
+            {/* Small stylized dots row for compact representation, as seen in image */}
+            <div className="flex items-center gap-3 text-xs text-muted-foreground/80">
+              <div className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-muted/50 border border-border/50 text-foreground font-medium">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#d97706]" />{" "}
+                Claude 3.5
+              </div>
+              <div className="flex items-center gap-1.5 opacity-70">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#10b981]" />{" "}
+                GPT-4o
+              </div>
+              <div className="flex items-center gap-1.5 opacity-70">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#8b5cf6]" />{" "}
+                Llama-3
+              </div>
+              <div className="flex items-center gap-1.5 opacity-70">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#0ea5e9]" />{" "}
+                Gemini 2.0
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5 text-[10px] tracking-wider uppercase font-bold text-primary/70 ml-4 select-none flex-shrink-0">
+            <span className="w-1 h-1 rounded-full bg-primary animate-pulse" />{" "}
+            streaming
+          </div>
+        </div>
+      )}
+
       {messages.length === 0 &&
       !isExecuting &&
       !preparingMessage &&
@@ -919,6 +954,7 @@ export const ChatInterface: React.FC<{
               setInput(prompt);
               textareaRef.current?.focus();
             }}
+            hideHeader={isCompactMode}
           />
         </div>
       ) : (
@@ -943,6 +979,7 @@ export const ChatInterface: React.FC<{
               messages={messages}
               isLoading={isLoadingLocal || isExecuting}
               onRetryMessage={handleRetryMessage}
+              isCompactMode={isCompactMode}
             />
             {/* In-chat agent loading card — shown while executing */}
             {isExecuting && (

@@ -8,7 +8,14 @@ import { apiClient } from "@/lib/api";
 import { useAgents } from "@/hooks/use-agents";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { AlertCircle, RefreshCw, PanelLeftClose } from "lucide-react";
+import {
+  AlertCircle,
+  RefreshCw,
+  PanelLeftClose,
+  History,
+  Workflow as WorkflowIcon,
+} from "lucide-react";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { createLogger } from "@/services/logging";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -58,7 +65,10 @@ const ChatSkeleton = () => (
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-2xl mt-4">
             {[...Array(4)].map((_, i) => (
-              <Skeleton key={i} className="h-24 rounded-xl border border-border/50" />
+              <Skeleton
+                key={i}
+                className="h-24 rounded-xl border border-border/50"
+              />
             ))}
           </div>
         </div>
@@ -95,6 +105,18 @@ const Chat = () => {
   const [viewingWorkflowId, setViewingWorkflowId] = useState<string | null>(
     null,
   );
+  const [isNewMode, setIsNewMode] = useState(false);
+
+  // Cookie check for Experimental New Layout
+  useEffect(() => {
+    const cookieValue = document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("IsNewChatPage="))
+      ?.split("=")[1];
+    if (cookieValue === "true") {
+      setIsNewMode(true);
+    }
+  }, []);
 
   const { agents, loading: loadingAgents, reload } = useAgents();
   const { user, refreshAuth } = useAuth();
@@ -517,6 +539,88 @@ const Chat = () => {
             Reload Page
           </Button>
         </div>
+      </div>
+    );
+  }
+
+  if (isNewMode) {
+    return (
+      <div className="h-screen bg-[#09090b] flex flex-col overflow-hidden selection:bg-primary/30">
+        <GlobalHeader />
+
+        <div className="flex-1 flex flex-col max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-8 pb-10 overflow-y-auto relative custom-scrollbar scroll-smooth">
+          {/* Hero Header Outside Box */}
+          <div className="mb-8 md:mb-10 text-left shrink-0 animate-in fade-in slide-in-from-top-4 duration-500">
+            <div className="flex items-center gap-2 mb-3 sm:mb-4">
+              <span className="text-[10px] sm:text-[11px] font-bold tracking-[0.2em] text-muted-foreground/60 uppercase flex items-center">
+                AI Chat <span className="mx-2 opacity-50 text-[8px]">•</span>{" "}
+                The Orchestrator
+              </span>
+            </div>
+            <h1 className="text-3xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-[1.1] flex flex-col gap-1">
+              <span className="text-foreground">Think, write, execute.</span>
+              <span className="text-muted-foreground/40">
+                All in one workspace.
+              </span>
+            </h1>
+          </div>
+
+          {/* Main Container Framed Box - Containing the ChatInterface */}
+          <div className="flex-1 flex flex-col border border-border/30 rounded-2xl bg-card/5 backdrop-blur-xl shadow-2xl overflow-hidden min-h-[500px] relative group animate-in fade-in slide-in-from-bottom-6 duration-700 fill-mode-both">
+            {/* Inner Box Sidebar Drawer Trigger */}
+            <div className="absolute top-3.5 right-4 z-40">
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 rounded-full hover:bg-muted/50 text-muted-foreground/60 hover:text-foreground transition-colors"
+                    title="History"
+                  >
+                    <History className="h-3.5 w-3.5" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent
+                  side="left"
+                  className="w-80 p-0 border-r border-border bg-background/95 backdrop-blur-md shadow-xl"
+                >
+                  <ConversationHistory
+                    conversations={conversations}
+                    onSelectConversation={handleSelectConversation}
+                    onNewSession={handleNewSession}
+                    onConversationDeleted={handleConversationDeleted}
+                    onConversationArchived={handleConversationArchived}
+                    currentConversationId={currentConversationId}
+                    onSelectWorkflow={handleSelectWorkflow}
+                  />
+                </SheetContent>
+              </Sheet>
+            </div>
+
+            {/* Chat Interface filling inner box */}
+            <div className="flex-1 h-full overflow-hidden relative bg-background/30">
+              <ChatInterface
+                key={key}
+                agents={agents}
+                activeConversationId={currentConversationId}
+                onConversationChange={handleConversationChange}
+                onConversationCreated={handleConversationCreated}
+                isCompactMode={true}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* ── Workflow History Viewer Overlay ── */}
+        {viewingWorkflowId && (
+          <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm overflow-hidden">
+            <WorkflowHistoryViewer
+              executionId={viewingWorkflowId}
+              onBack={() => setViewingWorkflowId(null)}
+              onNewWorkflow={() => setViewingWorkflowId(null)}
+            />
+          </div>
+        )}
       </div>
     );
   }

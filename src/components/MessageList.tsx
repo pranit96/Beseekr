@@ -20,12 +20,14 @@ interface MessageListProps {
   messages: ChatMessage[];
   isLoading?: boolean;
   onRetryMessage?: (messageId: string) => void;
+  isCompactMode?: boolean;
 }
 
 const MessageList: React.FC<MessageListProps> = ({
   messages,
   isLoading = false,
   onRetryMessage,
+  isCompactMode = false,
 }) => {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const { toast } = useToast();
@@ -73,8 +75,18 @@ const MessageList: React.FC<MessageListProps> = ({
           {message.type === "user" && (
             <div className="flex justify-end mb-5 px-2 animate-fade-in">
               <div className="flex flex-col items-end gap-1.5 max-w-[80%] sm:max-w-[70%] md:max-w-[65%]">
-                <div className="rounded-2xl rounded-br-lg px-5 py-3.5 bg-primary text-primary-foreground shadow-sm">
-                  <p className="text-[15px] leading-relaxed whitespace-pre-wrap break-words">
+                <div
+                  className={
+                    isCompactMode
+                      ? "rounded-2xl px-5 py-3 bg-gradient-to-br from-foreground/10 via-foreground/[0.08] to-transparent border border-white/[0.06] backdrop-blur-sm shadow-lg"
+                      : "rounded-2xl rounded-br-lg px-5 py-3.5 bg-primary text-primary-foreground shadow-sm"
+                  }
+                >
+                  <p
+                    className={`text-[15px] leading-relaxed whitespace-pre-wrap break-words ${
+                      isCompactMode ? "text-foreground font-medium" : ""
+                    }`}
+                  >
                     {message.content}
                   </p>
                 </div>
@@ -158,32 +170,61 @@ const MessageList: React.FC<MessageListProps> = ({
                 </div>
 
                 {/* Synthesized Output */}
-                {(message.content ||
-                  message.workflowStatus === "completed") && (
-                  <div className="rounded-xl border border-border/50 bg-background shadow-sm p-4 text-sm mt-2">
-                    <MarkdownRenderer
-                      content={message.content || ""}
-                      className="leading-relaxed"
-                    />
+                {(message.content || message.workflowStatus === "completed") &&
+                  (isCompactMode ? (
+                    <div className="flex items-start gap-3 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                      {/* Themed Brand Avatar Indicator from user photo */}
+                      <div className="w-8 h-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0 text-primary mt-1 shadow-lg shadow-primary/5">
+                        <Bot className="w-4 h-4" />
+                      </div>
+                      <div className="flex-1 rounded-2xl border border-border/30 bg-muted/10 backdrop-blur-sm px-5 py-4 text-[15px] leading-relaxed shadow-sm group/res">
+                        <MarkdownRenderer
+                          content={message.content || ""}
+                          className="leading-relaxed prose-invert prose-p:leading-relaxed prose-pre:bg-zinc-900/50"
+                        />
 
-                    {/* Retry button for last message */}
-                    {onRetryMessage &&
-                      message.workflowStatus === "completed" && (
-                        <div className="mt-4 pt-3 border-t border-border/40 flex justify-end">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-7 text-xs text-muted-foreground hover:text-foreground gap-1.5"
-                            onClick={() => handleRetry(message.id)}
-                            disabled={isLoading}
-                          >
-                            <RotateCw className="w-3 h-3" />
-                            Retry
-                          </Button>
-                        </div>
-                      )}
-                  </div>
-                )}
+                        {/* Retry button for last message */}
+                        {onRetryMessage &&
+                          message.workflowStatus === "completed" && (
+                            <div className="mt-4 pt-3 border-t border-border/40 flex justify-end">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 text-xs text-muted-foreground hover:text-foreground gap-1.5"
+                                onClick={() => handleRetry(message.id)}
+                                disabled={isLoading}
+                              >
+                                <RotateCw className="w-3 h-3" />
+                                Retry
+                              </Button>
+                            </div>
+                          )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="rounded-xl border border-border/50 bg-background shadow-sm p-4 text-sm mt-2">
+                      <MarkdownRenderer
+                        content={message.content || ""}
+                        className="leading-relaxed"
+                      />
+                      {/* Retry button for last message */}
+                      {onRetryMessage &&
+                        message.workflowStatus === "completed" && (
+                          <div className="mt-4 pt-3 border-t border-border/40 flex justify-end">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 text-xs text-muted-foreground hover:text-foreground gap-1.5"
+                              onClick={() => handleRetry(message.id)}
+                              disabled={isLoading}
+                            >
+                              <RotateCw className="w-3 h-3" />
+                              Retry
+                            </Button>
+                          </div>
+                        )}
+                    </div>
+                  ))}
               </div>
             )}
 
@@ -201,6 +242,7 @@ const MessageList: React.FC<MessageListProps> = ({
                         key={`${message.id}-agent-${idx}`}
                         response={response as any}
                         index={idx}
+                        isCompactMode={isCompactMode}
                       />
                     ))}
                   </div>
@@ -212,6 +254,7 @@ const MessageList: React.FC<MessageListProps> = ({
                         key={`${message.id}-agent-${idx}`}
                         response={response as any}
                         index={idx}
+                        isCompactMode={isCompactMode}
                       />
                     ))}
                   </div>

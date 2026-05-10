@@ -815,7 +815,8 @@ export function ProblemsList() {
       >
         <div className="flex items-center gap-2 mb-4 sm:mb-5">
           <span className="text-[10px] sm:text-[11px] font-bold tracking-[0.2em] text-muted-foreground/70 uppercase flex items-center">
-            Discover <span className="mx-2 opacity-60 text-[8px]">•</span> The Idea Engine
+            Discover <span className="mx-2 opacity-60 text-[8px]">•</span> The
+            Idea Engine
           </span>
         </div>
         <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-[1.1] flex flex-col gap-1">
@@ -823,8 +824,8 @@ export function ProblemsList() {
           <span className="text-muted-foreground/50">Real user pain.</span>
         </h1>
         <p className="text-base sm:text-lg text-muted-foreground/80 mt-5 sm:mt-6 leading-relaxed max-w-2xl font-medium">
-          Validated startup ideas mined from millions of conversations. Auto-scored for
-          opportunity.
+          Validated startup ideas mined from millions of conversations.
+          Auto-scored for opportunity.
         </p>
       </motion.div>
 

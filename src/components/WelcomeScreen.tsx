@@ -46,10 +46,12 @@ const SUGGESTED_PROMPTS = [
 
 interface WelcomeScreenProps {
   onPromptSelect: (prompt: string) => void;
+  hideHeader?: boolean;
 }
 
 export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
   onPromptSelect,
+  hideHeader = false,
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -65,33 +67,59 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
   }, []);
 
   return (
-    <div className="flex flex-col items-start w-full max-w-4xl px-6 sm:px-12 py-12 sm:py-20 animate-welcome-in mx-auto">
-      {/* Background ambient blobs — GPU-composited, no layout cost */}
-      <div
-        aria-hidden
-        className="pointer-events-none fixed inset-0 overflow-hidden -z-10"
-      >
-        <div className="ambient-blob ambient-blob-1" />
-        <div className="ambient-blob ambient-blob-2" />
-      </div>
+    <div
+      className={`flex flex-col items-start w-full max-w-4xl animate-welcome-in mx-auto ${
+        hideHeader ? "px-4 sm:px-6 py-6" : "px-6 sm:px-12 py-12 sm:py-20"
+      }`}
+    >
+      {!hideHeader && (
+        <>
+          {/* Background ambient blobs — GPU-composited, no layout cost */}
+          <div
+            aria-hidden
+            className="pointer-events-none fixed inset-0 overflow-hidden -z-10"
+          >
+            <div className="ambient-blob ambient-blob-1" />
+            <div className="ambient-blob ambient-blob-2" />
+          </div>
 
-      {/* Eyebrow label */}
-      <div className="mb-5 flex items-center gap-2">
-        <span className="text-[10px] sm:text-[11px] font-bold tracking-[0.2em] text-muted-foreground/70 uppercase flex items-center select-none">
-          AI Chat <span className="mx-2 opacity-60 text-[8px]">•</span> The Orchestrator
-        </span>
-      </div>
+          {/* Eyebrow label */}
+          <div className="mb-5 flex items-center gap-2">
+            <span className="text-[10px] sm:text-[11px] font-bold tracking-[0.2em] text-muted-foreground/70 uppercase flex items-center select-none">
+              AI Chat <span className="mx-2 opacity-60 text-[8px]">•</span> The
+              Orchestrator
+            </span>
+          </div>
 
-      {/* Headline */}
-      <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-[1.1] flex flex-col gap-1 text-left mb-8">
-        <span className="text-foreground">Think, write, execute.</span>
-        <span className="text-muted-foreground/50">All in one workspace.</span>
-      </h1>
+          {/* Headline */}
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-[1.1] flex flex-col gap-1 text-left mb-8">
+            <span className="text-foreground">Think, write, execute.</span>
+            <span className="text-muted-foreground/50">
+              All in one workspace.
+            </span>
+          </h1>
 
-      {/* Sub-copy */}
-      <p className="text-base text-muted-foreground/70 text-left mb-8 max-w-md font-medium">
-        Select agents to get started or try a suggested prompt below.
-      </p>
+          {/* Sub-copy */}
+          <p className="text-base text-muted-foreground/70 text-left mb-8 max-w-md font-medium">
+            Select agents to get started or try a suggested prompt below.
+          </p>
+        </>
+      )}
+
+      {/* Custom intro message seen in compact design when no header is present */}
+      {hideHeader && (
+        <div className="flex flex-col items-start gap-4 mb-6 max-w-2xl">
+          <div className="flex gap-3 items-start p-4 rounded-2xl bg-muted/20 border border-border/30 animate-in fade-in slide-in-from-bottom-2 duration-500">
+            <div className="w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
+              <span className="font-bold text-sm">B</span>
+            </div>
+            <p className="text-sm leading-relaxed text-foreground/90">
+              Hi — I'm Beseekr. Ask me about a market, a pain point, or paste an
+              idea to validate.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Horizontal scrollable chip strip */}
       <div
