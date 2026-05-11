@@ -620,35 +620,6 @@ const Chat = () => {
             className={`flex-1 flex flex-col transition-all duration-700 ease-in-out ${isChatActive ? "border-0 rounded-none bg-background h-full" : "border border-border/30 rounded-2xl bg-card/5 backdrop-blur-xl shadow-2xl min-h-[500px]"} overflow-hidden relative group`}
           >
             {/* Inner Box Sidebar Drawer Trigger */}
-            <div className="absolute top-3.5 right-4 z-40">
-              <Sheet>
-                <SheetTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 rounded-full hover:bg-muted/50 text-muted-foreground/60 hover:text-foreground transition-colors"
-                    title="History"
-                  >
-                    <History className="h-3.5 w-3.5" />
-                  </Button>
-                </SheetTrigger>
-                <SheetContent
-                  side="left"
-                  className="w-80 p-0 border-r border-border bg-background/95 backdrop-blur-md shadow-xl"
-                >
-                  <ConversationHistory
-                    conversations={conversations}
-                    onSelectConversation={handleSelectConversation}
-                    onNewSession={handleNewSession}
-                    onConversationDeleted={handleConversationDeleted}
-                    onConversationArchived={handleConversationArchived}
-                    currentConversationId={currentConversationId}
-                    onSelectWorkflow={handleSelectWorkflow}
-                  />
-                </SheetContent>
-              </Sheet>
-            </div>
-
             {/* Chat Interface filling inner box */}
             <div className="flex-1 h-full overflow-hidden relative bg-background/30">
               <ChatInterface
@@ -660,6 +631,34 @@ const Chat = () => {
                 onConversationCreated={handleConversationCreated}
                 isCompactMode={true}
                 onChatStartedChange={setIsChatActive}
+                renderHistoryButton={
+                  <Sheet>
+                    <SheetTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 w-7 p-0 rounded-full bg-white/[0.05] border border-white/[0.1] text-foreground hover:bg-white/[0.1] hover:text-primary transition-all shrink-0"
+                        title="History"
+                      >
+                        <History className="w-3.5 h-3.5" />
+                      </Button>
+                    </SheetTrigger>
+                    <SheetContent
+                      side="left"
+                      className="w-80 p-0 border-r border-border bg-background/95 backdrop-blur-md shadow-xl"
+                    >
+                      <ConversationHistory
+                        conversations={conversations}
+                        onSelectConversation={handleSelectConversation}
+                        onNewSession={handleNewSession}
+                        onConversationDeleted={handleConversationDeleted}
+                        onConversationArchived={handleConversationArchived}
+                        currentConversationId={currentConversationId}
+                        onSelectWorkflow={handleSelectWorkflow}
+                      />
+                    </SheetContent>
+                  </Sheet>
+                }
               />
             </div>
           </div>

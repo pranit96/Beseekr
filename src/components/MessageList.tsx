@@ -1,5 +1,6 @@
 // src/components/MessageList.tsx
 import React, { useState } from "react";
+import { motion } from "framer-motion";
 import {
   Copy,
   RotateCw,
@@ -121,18 +122,64 @@ const MessageList: React.FC<MessageListProps> = ({
                 {isCompactMode ? (
                   /* Minimal Micro-Trace for New UI */
                   message.workflowStatus !== "completed" && (
-                    <div className="inline-flex items-center gap-3 py-2 px-4 self-start rounded-full bg-white/[0.02] border border-white/[0.06] backdrop-blur-md shadow-lg">
-                      <div className="relative flex h-2 w-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                    <motion.div
+                      initial={{ opacity: 0, y: 5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="relative overflow-hidden inline-flex items-center gap-3 py-2 px-4 self-start rounded-full bg-white/[0.02] border border-white/[0.06] backdrop-blur-md shadow-lg"
+                    >
+                      {/* Smooth persistent running shimmer beam behind text */}
+                      <motion.div
+                        className="absolute inset-0 w-[100px] h-full bg-gradient-to-r from-transparent via-white/[0.04] to-transparent -skew-x-[30deg]"
+                        animate={{ x: ["-150%", "400%"] }}
+                        transition={{
+                          repeat: Infinity,
+                          duration: 2.5,
+                          ease: "easeInOut",
+                          repeatDelay: 1,
+                        }}
+                      />
+
+                      {/* High-End Aesthetic Technical Orbital Loader */}
+                      <div className="relative flex items-center justify-center w-3 h-3 flex-shrink-0 z-10">
+                        <motion.div
+                          className="absolute inset-0 border border-primary/20 rounded-full"
+                          animate={{ rotate: 360 }}
+                          transition={{
+                            duration: 4,
+                            repeat: Infinity,
+                            ease: "linear",
+                          }}
+                        />
+                        <motion.div
+                          className="absolute inset-0 border-t-[1.5px] border-primary/70 rounded-full"
+                          animate={{ rotate: 360 }}
+                          transition={{
+                            duration: 1.5,
+                            repeat: Infinity,
+                            ease: "easeInOut",
+                          }}
+                        />
+                        <motion.div
+                          className="w-1 h-1 bg-primary rounded-full shadow-[0_0_6px_var(--primary)]"
+                          animate={{
+                            opacity: [0.5, 1, 0.5],
+                            scale: [0.8, 1.1, 0.8],
+                          }}
+                          transition={{
+                            duration: 2,
+                            repeat: Infinity,
+                            ease: "easeInOut",
+                          }}
+                        />
                       </div>
-                      <span className="text-[11px] font-medium text-muted-foreground flex items-center gap-1.5">
+
+                      <span className="relative z-10 text-[11px] font-medium text-muted-foreground flex items-center gap-1.5">
                         {message.workflowStatus === "synthesizing" ? (
                           <>Synthesizing intelligence...</>
                         ) : (
                           <>
                             Processing with{" "}
-                            <span className="text-red-500 font-bold">
+                            <span className="text-foreground font-bold">
                               {message.agentTraces?.find(
                                 (t) => t.status === "running",
                               )?.agentName || "Agents"}
@@ -140,7 +187,7 @@ const MessageList: React.FC<MessageListProps> = ({
                           </>
                         )}
                       </span>
-                    </div>
+                    </motion.div>
                   )
                 ) : (
                   /* Classic Fully Expanded Execution Trace */

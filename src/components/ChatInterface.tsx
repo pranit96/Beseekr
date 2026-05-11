@@ -204,6 +204,7 @@ export const ChatInterface: React.FC<{
   isCompactMode?: boolean;
   onChatStartedChange?: (started: boolean) => void;
   onNewSession?: () => void;
+  renderHistoryButton?: React.ReactNode;
 }> = ({
   agents,
   activeConversationId,
@@ -212,6 +213,7 @@ export const ChatInterface: React.FC<{
   isCompactMode = false,
   onChatStartedChange,
   onNewSession,
+  renderHistoryButton,
 }) => {
   const [input, setInput] = useState("");
   const [selectedAgents, setSelectedAgents] = useState<Agent[]>([]);
@@ -990,7 +992,7 @@ export const ChatInterface: React.FC<{
 
       {/* Compact Mode Header (Top Agents & Tooling Bar) */}
       {isCompactMode && (
-        <div className="flex items-center justify-between px-5 py-3 border-b border-border/30 bg-muted/5 shrink-0 relative pr-12">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-border/30 bg-muted/5 shrink-0 relative">
           {/* Dynamic Real Agents Mapping */}
           <div className="flex items-center gap-2.5 overflow-x-auto hide-scrollbar scroll-smooth flex-1 min-w-0 pr-4">
             {/* New Chat Action Button - Mirrored from Sidebar */}
@@ -1003,6 +1005,9 @@ export const ChatInterface: React.FC<{
             >
               <Plus className="w-3.5 h-3.5" />
             </Button>
+
+            {/* Render Injected History Sidebar Button */}
+            {renderHistoryButton}
 
             {/* Micro Selector for adding & exploring deeper choice queue */}
             <AgentSelector
@@ -1113,7 +1118,9 @@ export const ChatInterface: React.FC<{
                           backgroundColor: cyclingAgent.color || "#d1d5db",
                         }}
                       />
-                      {cyclingAgent.name}
+                      <span className="text-red-500 font-bold">
+                        {cyclingAgent.name}
+                      </span>
                     </button>
                   );
                 }
@@ -1123,9 +1130,9 @@ export const ChatInterface: React.FC<{
 
           {/* Functional Tooling */}
           <div className="flex items-center gap-3 ml-auto flex-shrink-0">
-            <div className="flex items-center gap-2 border-r border-border/40 pr-3 mr-1.5 hidden sm:flex">
+            <div className="flex items-center gap-2 border-r border-border/40 pr-3 mr-1.5">
               {/* Mini Execution Mode Toggle */}
-              <div className="flex bg-muted/50 p-0.5 rounded-md border border-border/30">
+              <div className="hidden sm:flex bg-muted/50 p-0.5 rounded-md border border-border/30">
                 <button
                   onClick={() => setExecutionMode("sequential")}
                   className={`px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded transition-all ${executionMode === "sequential" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground/60 hover:text-foreground"}`}
