@@ -184,7 +184,18 @@ const Chat = () => {
   const getEmptyCurrentConversation = (convs: Conversation[]) => {
     if (!currentConversationId) return false;
     const currentConv = convs.find((c) => c.id === currentConversationId);
-    return !currentConv?.last_message || currentConv.last_message.trim() === "";
+    // 1. If explicit last_message exists, it's NOT empty
+    if (currentConv?.last_message && currentConv.last_message.trim() !== "")
+      return false;
+    // 2. Check the cached message list for this ID to cover the window BEFORE backend list update
+    const cachedMsgs = queryClient.getQueryData<any[]>([
+      "messages",
+      currentConversationId,
+    ]);
+    if (cachedMsgs && cachedMsgs.length > 0) return false;
+
+    // If neither, consider empty
+    return true;
   };
 
   // Main Query for Conversations

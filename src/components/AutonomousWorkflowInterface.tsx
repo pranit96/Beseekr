@@ -2,6 +2,7 @@
 // Futuristic orbital workflow UI — single Phase state, proper cancel support
 
 import React, { useState, useRef } from "react";
+import { createPortal } from "react-dom";
 import {
   X,
   Sparkles,
@@ -590,8 +591,9 @@ export const AutonomousWorkflowInterface: React.FC<
   const isCancelling = phase === "cancelling";
 
   // ── Render ───────────────────────────────────────────────────────────────
+  if (typeof document === "undefined") return null;
 
-  return (
+  return createPortal(
     <div className="flex flex-col h-screen bg-background overflow-hidden">
       <AnimatePresence mode="wait">
         {/* ════════════════════════ PHASE: prompt ════════════════════════ */}
@@ -1169,7 +1171,8 @@ export const AutonomousWorkflowInterface: React.FC<
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </div>,
+    document.body,
   );
 };
 

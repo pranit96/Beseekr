@@ -1241,9 +1241,10 @@ export const ChatInterface: React.FC<{
               isLoading={isLoadingLocal || isExecuting}
               onRetryMessage={handleRetryMessage}
               isCompactMode={isCompactMode}
+              activeAgentName={orchestrationProgress?.agent_name}
             />
-            {/* In-chat agent loading card — shown while executing */}
-            {isExecuting && (
+            {/* In-chat agent loading card — only shown in classic mode while executing */}
+            {isExecuting && !isCompactMode && (
               <AgentLoadingCard
                 step={orchestrationProgress?.step}
                 total={orchestrationProgress?.total}

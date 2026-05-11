@@ -236,20 +236,6 @@ export function useConversation(
   //   3. Skip when isLoading is true — the query is fetching messages for a real
   //      conversation; convLoading already hides the welcome screen during this
   //      window, and hasStarted will be set true by the queryFn once data arrives.
-  useEffect(() => {
-    if (isActiveOrchestrationRef.current) return;
-    const cached = queryClient.getQueryData<ChatMessage[]>([
-      "messages",
-      conversationId,
-    ]);
-    if (cached && cached.length > 0) return;
-    // Only reset if we're NOT actively loading data for this conversation.
-    // isLoading is true when the query has no cached data and is fetching.
-    if (isLoading) return;
-    setHasStarted(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [conversationId, isLoading]);
-
   // When a conversationId first becomes available, migrate any locally-buffered
   // messages into the React Query cache so the chat doesn't go blank.
   const prevConvIdRef = useRef<string | null>(null);
@@ -284,6 +270,31 @@ export function useConversation(
       }
     }
   }, [conversationId, queryClient]);
+
+  // Reset hasStarted when the user switches to a DIFFERENT conversation.
+  // Guards:
+  //   1. Skip during active orchestration so we don't reset the flag mid-stream.
+  //   2. Skip if the cache already holds messages for this conversation ID —
+  //      prevents the welcome screen flashing after a fast response.
+  //   3. Skip if we have pending buffered messages waiting to be migrated above.
+  //   4. Skip when isLoading is true — the query is fetching messages for a real
+  //      conversation; convLoading already hides the welcome screen during this
+  //      window, and hasStarted will be set true by the queryFn once data arrives.
+  useEffect(() => {
+    if (isActiveOrchestrationRef.current) return;
+    const cached = queryClient.getQueryData<ChatMessage[]>([
+      "messages",
+      conversationId,
+    ]);
+    if (cached && cached.length > 0) return;
+    // Prevents resetting while transition logic is buffered but not yet cached
+    if (localMessagesRef.current.length > 0) return;
+
+    // Only reset if we're NOT actively loading data for this conversation.
+    if (isLoading) return;
+    setHasStarted(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [conversationId, isLoading]);
 
   // Effective messages: prefer React Query cache, fall back to localMessages
   const effectiveMessages = conversationId ? messages : localMessages;
