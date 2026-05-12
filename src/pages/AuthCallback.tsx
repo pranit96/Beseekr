@@ -55,7 +55,13 @@ export default function AuthCallback() {
         const searchParams = new URLSearchParams(window.location.search);
         const hasTokensInSearch = searchParams.has("access_token");
 
-        // URL Token Detection logs removed for privacy
+        // CRITICAL: Explicitly catch OAuth Errors (User Canceled, Consent Denied, etc.)
+        const errorInUrl = searchParams.get("error") || hashParams.get("error");
+        if (errorInUrl) {
+          const errorDesc = searchParams.get("error_description") || hashParams.get("error_description") || errorInUrl;
+          console.warn("OAuth flow halted by user or provider error:", errorInUrl);
+          throw new Error(errorDesc.replace(/\+/g, " "));
+        }
 
         if (hasTokensInUrl || hasTokensInSearch) {
           // Tokens are in URL - Supabase needs to process them
