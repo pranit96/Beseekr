@@ -165,9 +165,26 @@ export default function Profile() {
   const handleUpdateProfile = async () => {
     setIsUpdatingProfile(true);
     try {
-      const payload: any = { full_name: fullName };
-      if (timezone !== user?.timezone) payload.timezone = timezone;
-      if (language !== (user?.language || "en")) payload.language = language;
+    const payload: any = {};
+      
+      if (fullName !== (user?.full_name || user?.name || "")) {
+        payload.full_name = fullName;
+      }
+      if (avatarUrl !== (user as any)?.avatar) {
+        payload.avatar_url = avatarUrl;
+      }
+      if (timezone !== user?.timezone) {
+        payload.timezone = timezone;
+      }
+      if (language !== (user?.language || "en")) {
+        payload.language = language;
+      }
+
+      if (Object.keys(payload).length === 0) {
+        // Nothing changed, skip network request
+        setIsUpdatingProfile(false);
+        return;
+      }
 
       const response = await apiClient.updateProfile(payload);
       if (response.success) {
@@ -365,7 +382,8 @@ export default function Profile() {
                 onClick={handleUpdateProfile}
                 disabled={
                   isUpdatingProfile ||
-                  (fullName === user?.full_name &&
+                  (fullName === (user?.full_name || user?.name || "") &&
+                    avatarUrl === ((user as any)?.avatar || null) &&
                     timezone === (user?.timezone || timezone) &&
                     language === (user?.language || "en"))
                 }
