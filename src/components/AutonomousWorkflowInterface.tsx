@@ -594,8 +594,7 @@ export const AutonomousWorkflowInterface: React.FC<
   if (typeof document === "undefined") return null;
 
   return createPortal(
-    <div className="flex flex-col h-screen bg-background overflow-hidden">
-      <AnimatePresence mode="wait">
+    <AnimatePresence mode="wait">
         {/* ════════════════════════ PHASE: prompt ════════════════════════ */}
         {phase === "prompt" && (
           <motion.div
@@ -622,7 +621,10 @@ export const AutonomousWorkflowInterface: React.FC<
                 }}
               />
 
-              <div className="relative bg-background border border-border/60 rounded-2xl shadow-2xl p-7 sm:p-9">
+              <div className="relative bg-background/50 backdrop-blur-3xl border border-white/[0.08] rounded-[2rem] shadow-[0_0_60px_-15px_rgba(0,0,0,0.7)] p-8 sm:p-10 overflow-hidden group">
+                {/* High aesthetic border glow */}
+                <div className="absolute inset-0 rounded-[2rem] p-px bg-gradient-to-b from-white/[0.12] to-transparent -z-10 pointer-events-none" />
+                <div className="absolute -inset-20 bg-gradient-to-b from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 blur-3xl -z-10 pointer-events-none" />
                 {/* Dismiss entire modal */}
                 <button
                   onClick={handleDismiss}
@@ -1142,7 +1144,7 @@ export const AutonomousWorkflowInterface: React.FC<
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center relative bg-background p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-background/90 backdrop-blur-xl p-4"
           >
             <div className="text-center max-w-sm">
               <div className="w-16 h-16 rounded-2xl bg-destructive/10 flex items-center justify-center mx-auto mb-4">
@@ -1170,8 +1172,7 @@ export const AutonomousWorkflowInterface: React.FC<
             </div>
           </motion.div>
         )}
-      </AnimatePresence>
-    </div>,
+      </AnimatePresence>,
     document.body,
   );
 };
