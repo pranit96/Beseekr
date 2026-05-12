@@ -178,9 +178,12 @@ const Chat = () => {
     const savedSidebarState = sessionStorage.getItem("sidebarOpen");
     setSidebarOpen(savedSidebarState === "true");
 
-    const lastConversationId = sessionStorage.getItem("lastActiveConversation");
-    if (lastConversationId) setCurrentConversationId(lastConversationId);
-  }, []);
+    // Scope this key to current user ID to prevent accidental crosstalk between logins
+    if (user?.id) {
+      const lastConversationId = sessionStorage.getItem(`lastActiveConversation_${user.id}`);
+      if (lastConversationId) setCurrentConversationId(lastConversationId);
+    }
+  }, [user?.id]);
 
   useEffect(() => {
     sessionStorage.setItem("sidebarOpen", sidebarOpen.toString());
@@ -330,8 +333,10 @@ const Chat = () => {
   // Handlers
   const handleSelectConversation = useCallback((conversationId: string) => {
     setCurrentConversationId(conversationId);
-    sessionStorage.setItem("lastActiveConversation", conversationId);
-  }, []);
+    if (user?.id) {
+      sessionStorage.setItem(`lastActiveConversation_${user.id}`, conversationId);
+    }
+  }, [user?.id]);
 
   const handleSelectWorkflow = useCallback((id: string) => {
     setViewingWorkflowId(id);
@@ -366,7 +371,9 @@ const Chat = () => {
       (old: Conversation[] = []) => [tempConversation, ...old],
     );
     setCurrentConversationId(tempId);
-    sessionStorage.setItem("lastActiveConversation", tempId);
+    if (user?.id) {
+      sessionStorage.setItem(`lastActiveConversation_${user.id}`, tempId);
+    }
     setKey((prev) => prev + 1);
     setIsChatActive(false);
     toast({
@@ -402,7 +409,9 @@ const Chat = () => {
 
         setCurrentConversationId((prevId) => {
           if (prevId === tempId) {
-            sessionStorage.setItem("lastActiveConversation", realId);
+            if (user?.id) {
+              sessionStorage.setItem(`lastActiveConversation_${user.id}`, realId);
+            }
             return realId;
           }
           return prevId;
@@ -460,7 +469,9 @@ const Chat = () => {
       );
 
       setCurrentConversationId(conversationId);
-      sessionStorage.setItem("lastActiveConversation", conversationId);
+      if (user?.id) {
+        sessionStorage.setItem(`lastActiveConversation_${user.id}`, conversationId);
+      }
     },
     [queryClient, user?.id],
   );
@@ -469,13 +480,17 @@ const Chat = () => {
     (conversationId: string | null) => {
       if (conversationId) {
         setCurrentConversationId(conversationId);
-        sessionStorage.setItem("lastActiveConversation", conversationId);
+        if (user?.id) {
+          sessionStorage.setItem(`lastActiveConversation_${user.id}`, conversationId);
+        }
       } else {
         setCurrentConversationId(undefined);
-        sessionStorage.removeItem("lastActiveConversation");
+        if (user?.id) {
+          sessionStorage.removeItem(`lastActiveConversation_${user.id}`);
+        }
       }
     },
-    [],
+    [user?.id],
   );
 
   const handleConversationDeleted = useCallback(
@@ -483,7 +498,9 @@ const Chat = () => {
       const deletedConvId = deletedId || currentConversationId;
       if (deletedConvId === currentConversationId) {
         setCurrentConversationId(undefined);
-        sessionStorage.removeItem("lastActiveConversation");
+        if (user?.id) {
+          sessionStorage.removeItem(`lastActiveConversation_${user.id}`);
+        }
         setKey((prev) => prev + 1);
       }
 
@@ -506,12 +523,14 @@ const Chat = () => {
   const handleConversationArchived = useCallback(() => {
     fetchConversations();
     setCurrentConversationId(undefined);
-    sessionStorage.removeItem("lastActiveConversation");
+    if (user?.id) {
+      sessionStorage.removeItem(`lastActiveConversation_${user.id}`);
+    }
     toast({
       title: "Conversation archived",
       description: "The conversation has been archived.",
     });
-  }, [fetchConversations, toast]);
+  }, [fetchConversations, toast, user?.id]);
 
   const isLoading = loadingAgents || loadingConversations;
 
@@ -525,7 +544,9 @@ const Chat = () => {
 
       if (currentConversationId === notFoundId) {
         setCurrentConversationId(undefined);
-        sessionStorage.removeItem("lastActiveConversation");
+        if (user?.id) {
+          sessionStorage.removeItem(`lastActiveConversation_${user.id}`);
+        }
         setKey((prev) => prev + 1);
         toast({
           title: "Conversation not found",
