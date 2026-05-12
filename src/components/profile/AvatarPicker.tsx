@@ -135,7 +135,7 @@ export function AvatarPicker({
   };
 
   const handleUploadCropped = async () => {
-    if (!imageToCrop || !croppedAreaPixels) return;
+    if (isUploading || !imageToCrop || !croppedAreaPixels) return;
 
     setIsUploading(true);
     try {
