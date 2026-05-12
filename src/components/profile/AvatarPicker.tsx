@@ -223,7 +223,13 @@ export function AvatarPicker({
         </div>
       </div>
 
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog 
+        open={open} 
+        onOpenChange={(val) => {
+          setOpen(val);
+          if (!val) handleCloseCropper();
+        }}
+      >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>
