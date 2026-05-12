@@ -24,6 +24,7 @@ interface User {
   name?: string; // Google OAuth returns name instead of full_name
   language?: string;
   timezone?: string;
+  avatar?: string | null;
   tier?: string;
   providers?: string[];
   trial?: {

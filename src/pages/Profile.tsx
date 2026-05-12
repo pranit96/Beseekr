@@ -121,7 +121,7 @@ export default function Profile() {
 
   useEffect(() => {
     setFullName(user?.full_name || user?.name || "");
-    setAvatarUrl((user as any)?.avatar || null);
+    setAvatarUrl(user?.avatar || null);
   }, [user]);
 
   // React Query hooks
@@ -171,10 +171,9 @@ export default function Profile() {
         payload.full_name = fullName;
       }
 
-      const baselineAvatar = (user as any)?.avatar || null;
-      if (avatarUrl !== baselineAvatar) {
-        payload.avatar_url = avatarUrl;
-      }
+      const baselineAvatar = user?.avatar || null;
+      // No longer adding avatar_url to explicit batch save, as it auto-saves backgrounded now.
+      // This maintains clean stateless segregation between simple form fields and cloud assets.
 
       const baselineTz = user?.timezone || detectedTimezone;
       if (timezone !== baselineTz) {
@@ -211,6 +210,33 @@ export default function Profile() {
       });
     } finally {
       setIsUpdatingProfile(false);
+    }
+  };
+
+  const handleAvatarUpdate = async (url: string | null) => {
+    // 1. Instant Optimistic UI
+    setAvatarUrl(url); 
+    
+    // 2. Immediate Background Network Save
+    try {
+      const response = await apiClient.updateProfile({ avatar_url: url });
+      if (response.success) {
+        refreshAuth(true); // Keep global layout headers in sync instantly
+        toast({
+          title: url ? "Picture updated" : "Picture removed",
+          description: url 
+            ? "Your profile picture is active." 
+            : "Your profile picture has been cleared.",
+        });
+      }
+    } catch (e: any) {
+      toast({
+        title: "Failed to update photo",
+        description: e.message || "Could not sync with database.",
+        variant: "destructive",
+      });
+      // Revert optimistic UI on hard error
+      setAvatarUrl(user?.avatar || null);
     }
   };
 
@@ -299,7 +325,7 @@ export default function Profile() {
             <AvatarPicker
               currentAvatar={avatarUrl}
               userInitial={user?.full_name?.charAt(0) || user?.email?.charAt(0)}
-              onAvatarChange={(url) => setAvatarUrl(url)}
+              onAvatarChange={handleAvatarUpdate}
             />
 
             <Separator />
