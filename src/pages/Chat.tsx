@@ -20,6 +20,12 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { createLogger } from "@/services/logging";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const logger = createLogger("Chat");
 
@@ -644,16 +650,26 @@ const Chat = () => {
                 onChatStartedChange={setIsChatActive}
                 renderHistoryButton={
                   <Sheet>
-                    <SheetTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 w-7 p-0 rounded-full bg-white/[0.05] border border-white/[0.1] text-foreground hover:bg-white/[0.1] hover:text-primary transition-all shrink-0"
-                        title="History"
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <SheetTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0 rounded-full bg-white/[0.05] border border-white/[0.1] text-foreground hover:bg-white/[0.1] hover:text-primary transition-all shrink-0"
+                            title="History"
+                          >
+                            <History className="w-3.5 h-3.5" />
+                          </Button>
+                        </SheetTrigger>
+                      </TooltipTrigger>
+                      <TooltipContent
+                        side="bottom"
+                        className="text-xs font-medium"
                       >
-                        <History className="w-3.5 h-3.5" />
-                      </Button>
-                    </SheetTrigger>
+                        History
+                      </TooltipContent>
+                    </Tooltip>
                     <SheetContent
                       side="left"
                       className="w-80 p-0 border-r border-border bg-background/95 backdrop-blur-md shadow-xl"
