@@ -22,7 +22,9 @@ const Privacy = () => {
             className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
-            <span className="hidden sm:inline">{t("privacy.back", "Back")}</span>
+            <span className="hidden sm:inline">
+              {t("privacy.back", "Back")}
+            </span>
           </button>
           <Logo className="text-xl" />
           {!user ? (
@@ -44,7 +46,10 @@ const Privacy = () => {
             {t("privacy.title", "Privacy Policy")}
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            {t("privacy.desc", "Your privacy and data security are our top priorities. Learn how we handle your data in our autonomous AI agent platform.")}
+            {t(
+              "privacy.desc",
+              "Your privacy and data security are our top priorities. Learn how we handle your data in our autonomous AI agent platform.",
+            )}
           </p>
           <p className="text-sm text-muted-foreground mt-6 font-medium">
             Effective Date: December 13, 2025

@@ -115,9 +115,13 @@ class ApiClient {
     }
 
     const headers: HeadersInit = {
-      "Content-Type": "application/json",
       ...options.headers,
     };
+
+    // Only set default Content-Type if not overridden and not a FormData object
+    if (!headers["Content-Type"] && !(options.body instanceof FormData)) {
+      headers["Content-Type"] = "application/json";
+    }
 
     const requestPromise = (async () => {
       try {
@@ -1033,6 +1037,23 @@ class ApiClient {
     }>("/api/user/notifications", {
       method: "PUT",
       body: JSON.stringify(preferences),
+    });
+  }
+
+  async getAvatarGallery() {
+    // Requests static avatars from backend cached route
+    return this.request<Record<string, string[]>>("/api/user/avatar-gallery");
+  }
+
+  async uploadAvatar(file: File) {
+    const formData = new FormData();
+    formData.append("avatar", file);
+
+    return this.request<{
+      avatar_url: string;
+    }>("/api/user/avatar-upload", {
+      method: "POST",
+      body: formData, // Base class handles boundary if properly set or skipped header
     });
   }
   async updateProfile(profile: {

@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 
 export function GlobalFooter() {
   const { t } = useTranslation();
-  
+
   return (
     <footer className="relative z-10 border-t border-border/50 bg-background mt-auto">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 py-6 sm:py-8">
@@ -13,7 +13,8 @@ export function GlobalFooter() {
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Sparkles className="h-4 w-4 text-primary" />
             <span>
-              © {new Date().getFullYear()} beseekr. {t("footer.allRightsReserved", "All rights reserved.")}
+              © {new Date().getFullYear()} beseekr.{" "}
+              {t("footer.allRightsReserved", "All rights reserved.")}
             </span>
           </div>
 

@@ -418,7 +418,9 @@ export const ConversationHistory = memo(
             ) : filtered.length === 0 ? (
               <div className="px-3 py-8 text-center">
                 <p className="text-xs text-muted-foreground/40">
-                  {query ? t("history.noMatches") : t("history.noConversations")}
+                  {query
+                    ? t("history.noMatches")
+                    : t("history.noConversations")}
                 </p>
               </div>
             ) : (
@@ -489,7 +491,9 @@ export const ConversationHistory = memo(
                       ? t("history.time.justNow")
                       : mins < 60
                         ? t("history.time.mAgo", { count: mins })
-                        : t("history.time.hAgo", { count: Math.floor(mins / 60) });
+                        : t("history.time.hAgo", {
+                            count: Math.floor(mins / 60),
+                          });
 
                   return (
                     <div
@@ -552,9 +556,11 @@ export const ConversationHistory = memo(
         <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>{t("history.deleteConversation")}</AlertDialogTitle>
+              <AlertDialogTitle>
+                {t("history.deleteConversation")}
+              </AlertDialogTitle>
               <AlertDialogDescription>
-                {t("history.delete")} {" "}
+                {t("history.delete")}{" "}
                 <strong>
                   {selectedConversation?.title || t("history.untitled")}
                 </strong>
@@ -579,11 +585,15 @@ export const ConversationHistory = memo(
         >
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>{t("history.archiveConversation")}</AlertDialogTitle>
+              <AlertDialogTitle>
+                {t("history.archiveConversation")}
+              </AlertDialogTitle>
               <AlertDialogDescription>
-                {t("history.archiveConfirm")} (<strong>
+                {t("history.archiveConfirm")} (
+                <strong>
                   {selectedConversation?.title || t("history.untitled")}
-                </strong>)
+                </strong>
+                )
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

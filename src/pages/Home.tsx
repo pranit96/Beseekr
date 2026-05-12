@@ -37,7 +37,10 @@ export default function Home() {
             {t("home.heroHeadline", "Build with clarity.")}
           </h1>
           <p className="text-lg sm:text-2xl font-medium text-muted-foreground/80 max-w-2xl leading-relaxed tracking-tight">
-            {t("home.heroDesc", "Find real problems, validate ideas, and execute faster — without noise.")}
+            {t(
+              "home.heroDesc",
+              "Find real problems, validate ideas, and execute faster — without noise.",
+            )}
           </p>
         </section>
 
@@ -59,11 +62,16 @@ export default function Home() {
             </h2>
 
             <p className="text-muted-foreground/80 text-lg mb-8 max-w-md leading-relaxed">
-              {t("home.chatDesc", "Think, write, and execute faster with a focused AI workspace.")}
+              {t(
+                "home.chatDesc",
+                "Think, write, and execute faster with a focused AI workspace.",
+              )}
             </p>
 
             <div className="text-sm font-bold tracking-wider uppercase flex items-center gap-2 text-primary group-hover:translate-x-1 transition-transform">
-              {user ? t("home.enterWorkspace", "Enter Workspace") : t("home.signInNow", "Sign In")}
+              {user
+                ? t("home.enterWorkspace", "Enter Workspace")
+                : t("home.signInNow", "Sign In")}
               <ArrowRight className="w-4 h-4" />
             </div>
           </motion.div>
@@ -87,7 +95,10 @@ export default function Home() {
             </h3>
 
             <p className="text-muted-foreground/80 mb-6 leading-relaxed">
-              {t("home.discoverDesc", "Real startup ideas from real user pain points.")}
+              {t(
+                "home.discoverDesc",
+                "Real startup ideas from real user pain points.",
+              )}
             </p>
 
             <div className="text-xs font-bold tracking-wider uppercase flex items-center gap-1 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all">
@@ -139,7 +150,10 @@ export default function Home() {
             </h1>
 
             <p className="text-base sm:text-lg font-medium text-muted-foreground/70 max-w-xl tracking-tight">
-              {t("home.heroDesc", "Find real problems, test ideas instantly, and ship faster in one high-focus stack.")}
+              {t(
+                "home.heroDesc",
+                "Find real problems, test ideas instantly, and ship faster in one high-focus stack.",
+              )}
             </p>
           </section>
 
@@ -163,7 +177,10 @@ export default function Home() {
               </h2>
 
               <p className="text-muted-foreground/80 text-lg mb-10 max-w-sm leading-relaxed">
-                {t("home.chatDesc", "Think, write, and execute faster with a focused AI workspace.")}
+                {t(
+                  "home.chatDesc",
+                  "Think, write, and execute faster with a focused AI workspace.",
+                )}
               </p>
 
               <div className="text-xs font-bold tracking-widest uppercase flex items-center gap-2 text-primary group-hover:translate-x-1 transition-transform">
@@ -193,7 +210,10 @@ export default function Home() {
               </h3>
 
               <p className="text-muted-foreground/80 mb-8 leading-relaxed text-sm">
-                {t("home.discoverDesc", "Real startup ideas extracted from real user pain points.")}
+                {t(
+                  "home.discoverDesc",
+                  "Real startup ideas extracted from real user pain points.",
+                )}
               </p>
 
               <div className="text-xs font-bold tracking-widest uppercase flex items-center gap-1 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all">

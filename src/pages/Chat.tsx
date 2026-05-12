@@ -182,7 +182,9 @@ const Chat = () => {
 
     // Scope this key to current user ID to prevent accidental crosstalk between logins
     if (user?.id) {
-      const lastConversationId = sessionStorage.getItem(`lastActiveConversation_${user.id}`);
+      const lastConversationId = sessionStorage.getItem(
+        `lastActiveConversation_${user.id}`,
+      );
       if (lastConversationId) setCurrentConversationId(lastConversationId);
     }
   }, [user?.id]);
@@ -319,7 +321,10 @@ const Chat = () => {
       await fetchConversations();
       toast({
         title: t("chat.sessionRefreshed", "Session refreshed"),
-        description: t("chat.sessionRefreshedDesc", "You can continue using the app"),
+        description: t(
+          "chat.sessionRefreshedDesc",
+          "You can continue using the app",
+        ),
       });
     } catch {
       toast({
@@ -333,12 +338,18 @@ const Chat = () => {
   }, [refreshAuth, reload, fetchConversations, toast, t]);
 
   // Handlers
-  const handleSelectConversation = useCallback((conversationId: string) => {
-    setCurrentConversationId(conversationId);
-    if (user?.id) {
-      sessionStorage.setItem(`lastActiveConversation_${user.id}`, conversationId);
-    }
-  }, [user?.id]);
+  const handleSelectConversation = useCallback(
+    (conversationId: string) => {
+      setCurrentConversationId(conversationId);
+      if (user?.id) {
+        sessionStorage.setItem(
+          `lastActiveConversation_${user.id}`,
+          conversationId,
+        );
+      }
+    },
+    [user?.id],
+  );
 
   const handleSelectWorkflow = useCallback((id: string) => {
     setViewingWorkflowId(id);
@@ -351,7 +362,10 @@ const Chat = () => {
     if (getEmptyCurrentConversation(conversations)) {
       setCurrentConversationId(currentConversationId);
       if (user?.id) {
-        sessionStorage.setItem(`lastActiveConversation_${user.id}`, currentConversationId!);
+        sessionStorage.setItem(
+          `lastActiveConversation_${user.id}`,
+          currentConversationId!,
+        );
       }
       setKey((prev) => prev + 1);
       setIsChatActive(false);
@@ -414,7 +428,10 @@ const Chat = () => {
         setCurrentConversationId((prevId) => {
           if (prevId === tempId) {
             if (user?.id) {
-              sessionStorage.setItem(`lastActiveConversation_${user.id}`, realId);
+              sessionStorage.setItem(
+                `lastActiveConversation_${user.id}`,
+                realId,
+              );
             }
             return realId;
           }
@@ -474,7 +491,10 @@ const Chat = () => {
 
       setCurrentConversationId(conversationId);
       if (user?.id) {
-        sessionStorage.setItem(`lastActiveConversation_${user.id}`, conversationId);
+        sessionStorage.setItem(
+          `lastActiveConversation_${user.id}`,
+          conversationId,
+        );
       }
     },
     [queryClient, user?.id],
@@ -485,7 +505,10 @@ const Chat = () => {
       if (conversationId) {
         setCurrentConversationId(conversationId);
         if (user?.id) {
-          sessionStorage.setItem(`lastActiveConversation_${user.id}`, conversationId);
+          sessionStorage.setItem(
+            `lastActiveConversation_${user.id}`,
+            conversationId,
+          );
         }
       } else {
         setCurrentConversationId(undefined);
@@ -521,7 +544,14 @@ const Chat = () => {
         description: t("chat.convDeletedDesc"),
       });
     },
-    [currentConversationId, fetchConversations, queryClient, toast, user?.id, t],
+    [
+      currentConversationId,
+      fetchConversations,
+      queryClient,
+      toast,
+      user?.id,
+      t,
+    ],
   );
 
   const handleConversationArchived = useCallback(() => {
@@ -645,7 +675,8 @@ const Chat = () => {
           >
             <div className="flex items-center gap-2 mb-3 sm:mb-4">
               <span className="text-[10px] sm:text-[11px] font-bold tracking-[0.2em] text-muted-foreground/60 uppercase flex items-center">
-                {t("chat.aiChat")} <span className="mx-2 opacity-50 text-[8px]">•</span>{" "}
+                {t("chat.aiChat")}{" "}
+                <span className="mx-2 opacity-50 text-[8px]">•</span>{" "}
                 {t("chat.orchestrator")}
               </span>
             </div>
@@ -781,8 +812,16 @@ const Chat = () => {
                   ? "h-10 w-10 rounded-full border-border hover:bg-muted"
                   : "h-24 w-6 rounded-r-xl rounded-l-none border-border border-l-0 hover:w-8 hover:bg-muted/50 bg-gradient-to-b from-background via-muted/30 to-background hover:from-primary/10 hover:to-primary/5 hover:border-primary/30"
               }`}
-            aria-label={sidebarOpen ? t("chat.hideConversations") : t("chat.showConversations")}
-            title={sidebarOpen ? t("chat.hideConversations") : t("chat.showConversations")}
+            aria-label={
+              sidebarOpen
+                ? t("chat.hideConversations")
+                : t("chat.showConversations")
+            }
+            title={
+              sidebarOpen
+                ? t("chat.hideConversations")
+                : t("chat.showConversations")
+            }
           >
             {sidebarOpen ? (
               <PanelLeftClose className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />

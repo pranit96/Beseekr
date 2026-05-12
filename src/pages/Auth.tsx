@@ -445,7 +445,10 @@ const Auth = () => {
             {messages[currentMsg]}
           </h1>
           <p className="text-base md:text-lg text-slate-700 dark:text-white/80 max-w-2xl mx-auto">
-            {t("auth.bannerDesc", "Discover validated startup problems from real conversations. Turn market insights into your next big idea.")}
+            {t(
+              "auth.bannerDesc",
+              "Discover validated startup problems from real conversations. Turn market insights into your next big idea.",
+            )}
           </p>
         </div>
 
@@ -474,7 +477,10 @@ const Auth = () => {
 
             {/* Subheading */}
             <p className="mt-3 text-sm sm:text-base text-slate-500 dark:text-slate-400 max-w-md mx-auto">
-              {t("auth.subtagline", "Skip the guesswork. Explore ideas backed by real validation, traction, and demand.")}
+              {t(
+                "auth.subtagline",
+                "Skip the guesswork. Explore ideas backed by real validation, traction, and demand.",
+              )}
             </p>
           </div>
           {verificationPending ? (
@@ -500,9 +506,24 @@ const Auth = () => {
                   📧 {t("auth.nextSteps", "Next Steps:")}
                 </p>
                 <ol className="text-sm text-slate-600 dark:text-slate-400 space-y-1 list-decimal list-inside">
-                  <li>{t("auth.step1", "Check your email inbox (and spam folder)")}</li>
-                  <li>{t("auth.step2", "Click the verification link in the email")}</li>
-                  <li>{t("auth.step3", "Return here and log in with your credentials")}</li>
+                  <li>
+                    {t(
+                      "auth.step1",
+                      "Check your email inbox (and spam folder)",
+                    )}
+                  </li>
+                  <li>
+                    {t(
+                      "auth.step2",
+                      "Click the verification link in the email",
+                    )}
+                  </li>
+                  <li>
+                    {t(
+                      "auth.step3",
+                      "Return here and log in with your credentials",
+                    )}
+                  </li>
                 </ol>
               </div>
 
@@ -516,8 +537,14 @@ const Auth = () => {
                   {isResending
                     ? t("auth.sending", "Sending...")
                     : canResend
-                      ? t("auth.resendVerification", "Resend Verification Email")
-                      : t("auth.resendIn", { count: resendCountdown, defaultValue: `Resend available in ${resendCountdown}s` })}
+                      ? t(
+                          "auth.resendVerification",
+                          "Resend Verification Email",
+                        )
+                      : t("auth.resendIn", {
+                          count: resendCountdown,
+                          defaultValue: `Resend available in ${resendCountdown}s`,
+                        })}
                 </Button>
 
                 <Button
@@ -546,7 +573,10 @@ const Auth = () => {
                   {t("auth.mfaTitle", "Two-Factor Authentication")}
                 </h3>
                 <p className="text-sm text-slate-600 dark:text-muted-foreground">
-                  {t("auth.mfaDesc", "Enter the 6-digit code from your authenticator app to continue.")}
+                  {t(
+                    "auth.mfaDesc",
+                    "Enter the 6-digit code from your authenticator app to continue.",
+                  )}
                 </p>
               </div>
 
@@ -622,12 +652,17 @@ const Auth = () => {
                   {t("auth.resetPassword", "Reset Password")}
                 </h3>
                 <p className="text-sm text-slate-600 dark:text-muted-foreground mt-1">
-                  {t("auth.resetDesc", "Enter your email and we'll send you a reset link")}
+                  {t(
+                    "auth.resetDesc",
+                    "Enter your email and we'll send you a reset link",
+                  )}
                 </p>
               </div>
               <form onSubmit={handleForgotPassword} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="forgot-email">{t("auth.email", "Email")}</Label>
+                  <Label htmlFor="forgot-email">
+                    {t("auth.email", "Email")}
+                  </Label>
                   <Input
                     id="forgot-email"
                     type="email"
@@ -652,8 +687,12 @@ const Auth = () => {
           ) : (
             <Tabs defaultValue="login" className="w-full">
               <TabsList className="grid w-full grid-cols-2 mb-6">
-                <TabsTrigger value="login">{t("auth.login", "Login")}</TabsTrigger>
-                <TabsTrigger value="signup">{t("auth.signUp", "Sign Up")}</TabsTrigger>
+                <TabsTrigger value="login">
+                  {t("auth.login", "Login")}
+                </TabsTrigger>
+                <TabsTrigger value="signup">
+                  {t("auth.signUp", "Sign Up")}
+                </TabsTrigger>
               </TabsList>
 
               {/* LOGIN */}
@@ -714,7 +753,9 @@ const Auth = () => {
                   {/* Email/Password Form */}
                   <form onSubmit={handleLogin} className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="login-email">{t("auth.email", "Email")}</Label>
+                      <Label htmlFor="login-email">
+                        {t("auth.email", "Email")}
+                      </Label>
                       <div className="relative">
                         <Input
                           id="login-email"
@@ -730,7 +771,9 @@ const Auth = () => {
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="login-password">{t("auth.password", "Password")}</Label>
+                      <Label htmlFor="login-password">
+                        {t("auth.password", "Password")}
+                      </Label>
                       <div className="relative">
                         <Input
                           id="login-password"
@@ -837,7 +880,10 @@ const Auth = () => {
                     <div className="flex items-center gap-2 text-center justify-center">
                       <span className="text-lg">🎉</span>
                       <span className="text-sm font-medium text-foreground">
-                        {t("auth.freeTrialHighlight", "7 Days of Pro Access Free!")}
+                        {t(
+                          "auth.freeTrialHighlight",
+                          "7 Days of Pro Access Free!",
+                        )}
                       </span>
                     </div>
                     <p className="text-xs text-muted-foreground text-center mt-1">
@@ -860,7 +906,9 @@ const Auth = () => {
                   {/* Email/Password Form */}
                   <form onSubmit={handleSignup} className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="signup-name">{t("auth.fullName", "Full Name")}</Label>
+                      <Label htmlFor="signup-name">
+                        {t("auth.fullName", "Full Name")}
+                      </Label>
                       <Input
                         id="signup-name"
                         type="text"
@@ -872,7 +920,9 @@ const Auth = () => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="signup-email">{t("auth.email", "Email")}</Label>
+                      <Label htmlFor="signup-email">
+                        {t("auth.email", "Email")}
+                      </Label>
                       <div className="relative">
                         <Input
                           id="signup-email"
@@ -888,7 +938,9 @@ const Auth = () => {
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="signup-password">{t("auth.password", "Password")}</Label>
+                      <Label htmlFor="signup-password">
+                        {t("auth.password", "Password")}
+                      </Label>
                       <div className="relative">
                         <Input
                           id="signup-password"
@@ -1008,7 +1060,10 @@ const Auth = () => {
                                   : "text-gray-600 dark:text-gray-400"
                               }
                             >
-                              {t("auth.pwdSpecial", "One special character (!@#$%^&*...)")}
+                              {t(
+                                "auth.pwdSpecial",
+                                "One special character (!@#$%^&*...)",
+                              )}
                             </span>
                           </div>
                         </div>

@@ -96,32 +96,32 @@ export default function Profile() {
 
   const { t, i18n } = useTranslation();
 
-  const [timezone, setTimezone] = useState(() => {
+  const [detectedTimezone] = useState(() => {
     try {
       return Intl.DateTimeFormat().resolvedOptions().timeZone;
     } catch (e) {
       return "UTC";
     }
   });
-  const [language, setLanguage] = useState(i18n.resolvedLanguage || i18n.language || "en");
+  const [detectedLang] = useState(
+    i18n.resolvedLanguage || i18n.language || "en",
+  );
+
+  const [timezone, setTimezone] = useState(detectedTimezone);
+  const [language, setLanguage] = useState(detectedLang);
 
   const { user, loading, exportData, deleteAccount, refreshAuth } = useAuth();
 
   useEffect(() => {
     if (user?.timezone) setTimezone(user.timezone);
-    // Only overwrite language if backend explicitly differs from active resolved language
-    if (user?.language && user.language !== language) {
-      setLanguage(user.language);
-    }
+    if (user?.language) setLanguage(user.language);
   }, [user?.timezone, user?.language]);
 
   const { toast } = useToast();
 
   useEffect(() => {
-    if (user?.full_name || user?.name) {
-      setFullName(user.full_name || user?.name || "");
-    }
-    if ((user as any)?.avatar) setAvatarUrl((user as any).avatar);
+    setFullName(user?.full_name || user?.name || "");
+    setAvatarUrl((user as any)?.avatar || null);
   }, [user]);
 
   // React Query hooks
@@ -165,18 +165,24 @@ export default function Profile() {
   const handleUpdateProfile = async () => {
     setIsUpdatingProfile(true);
     try {
-    const payload: any = {};
-      
+      const payload: any = {};
+
       if (fullName !== (user?.full_name || user?.name || "")) {
         payload.full_name = fullName;
       }
-      if (avatarUrl !== (user as any)?.avatar) {
+
+      const baselineAvatar = (user as any)?.avatar || null;
+      if (avatarUrl !== baselineAvatar) {
         payload.avatar_url = avatarUrl;
       }
-      if (timezone !== user?.timezone) {
+
+      const baselineTz = user?.timezone || detectedTimezone;
+      if (timezone !== baselineTz) {
         payload.timezone = timezone;
       }
-      if (language !== (user?.language || "en")) {
+
+      const baselineLang = user?.language || detectedLang;
+      if (language !== baselineLang) {
         payload.language = language;
       }
 
@@ -386,8 +392,8 @@ export default function Profile() {
                   isUpdatingProfile ||
                   (fullName === (user?.full_name || user?.name || "") &&
                     avatarUrl === ((user as any)?.avatar || null) &&
-                    timezone === (user?.timezone || timezone) &&
-                    language === (user?.language || "en"))
+                    timezone === (user?.timezone || detectedTimezone) &&
+                    language === (user?.language || detectedLang))
                 }
               >
                 {isUpdatingProfile

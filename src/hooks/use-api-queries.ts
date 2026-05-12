@@ -596,3 +596,17 @@ export function useChangePassword() {
     },
   });
 }
+
+// ============= AVATARS =============
+
+export function useAvatarGallery() {
+  return useQuery({
+    queryKey: ["avatarGallery"] as const,
+    queryFn: async () => {
+      const response = await apiClient.getAvatarGallery();
+      return response.data || {};
+    },
+    staleTime: Infinity,
+    gcTime: 24 * 60 * 60 * 1000,
+  });
+}
