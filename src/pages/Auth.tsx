@@ -24,8 +24,10 @@ import {
 } from "@/lib/supabase";
 import { analytics } from "@/lib/analytics";
 import { Logo } from "@/components/Logo";
+import { useTranslation } from "react-i18next";
 
 const Auth = () => {
+  const { t } = useTranslation();
   const [isLoading, setIsLoading] = useState(false);
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
@@ -148,10 +150,10 @@ const Auth = () => {
     { id: number; x: number; y: number; size: number }[]
   >([]);
   const [messages] = useState([
-    "Find Real Problems.",
-    "Build What Matters.",
-    "Validated Opportunities.",
-    "Your Next Startup Idea.",
+    t("auth.messages.0", "Find Real Problems."),
+    t("auth.messages.1", "Build What Matters."),
+    t("auth.messages.2", "Validated Opportunities."),
+    t("auth.messages.3", "Your Next Startup Idea."),
   ]);
   const [currentMsg, setCurrentMsg] = useState(0);
 
@@ -443,8 +445,7 @@ const Auth = () => {
             {messages[currentMsg]}
           </h1>
           <p className="text-base md:text-lg text-slate-700 dark:text-white/80 max-w-2xl mx-auto">
-            Discover validated startup problems from real conversations. Turn
-            market insights into your next big idea.
+            {t("auth.bannerDesc", "Discover validated startup problems from real conversations. Turn market insights into your next big idea.")}
           </p>
         </div>
 
@@ -468,13 +469,12 @@ const Auth = () => {
 
             {/* Headline */}
             <h1 className="text-2xl sm:text-4xl font-semibold tracking-tight text-slate-900 dark:text-foreground">
-              Discover opportunities that already work.
+              {t("auth.tagline", "Discover opportunities that already work.")}
             </h1>
 
             {/* Subheading */}
             <p className="mt-3 text-sm sm:text-base text-slate-500 dark:text-slate-400 max-w-md mx-auto">
-              Skip the guesswork. Explore ideas backed by real validation,
-              traction, and demand.
+              {t("auth.subtagline", "Skip the guesswork. Explore ideas backed by real validation, traction, and demand.")}
             </p>
           </div>
           {verificationPending ? (
@@ -485,10 +485,10 @@ const Auth = () => {
 
               <div className="space-y-2">
                 <h3 className="text-xl font-bold text-slate-800 dark:text-foreground">
-                  Verification Email Sent!
+                  {t("auth.verificationEmailSent", "Verification Email Sent!")}
                 </h3>
                 <p className="text-sm text-slate-600 dark:text-muted-foreground">
-                  We've sent a verification link to:
+                  {t("auth.weSentLink", "We've sent a verification link to:")}
                 </p>
                 <p className="text-base font-semibold text-primary">
                   {verificationEmail}
@@ -497,12 +497,12 @@ const Auth = () => {
 
               <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4 space-y-2 text-left border border-slate-200 dark:border-slate-700">
                 <p className="text-sm text-slate-700 dark:text-slate-300 font-medium">
-                  📧 Next Steps:
+                  📧 {t("auth.nextSteps", "Next Steps:")}
                 </p>
                 <ol className="text-sm text-slate-600 dark:text-slate-400 space-y-1 list-decimal list-inside">
-                  <li>Check your email inbox (and spam folder)</li>
-                  <li>Click the verification link in the email</li>
-                  <li>Return here and log in with your credentials</li>
+                  <li>{t("auth.step1", "Check your email inbox (and spam folder)")}</li>
+                  <li>{t("auth.step2", "Click the verification link in the email")}</li>
+                  <li>{t("auth.step3", "Return here and log in with your credentials")}</li>
                 </ol>
               </div>
 
@@ -514,10 +514,10 @@ const Auth = () => {
                   variant={canResend ? "default" : "secondary"}
                 >
                   {isResending
-                    ? "Sending..."
+                    ? t("auth.sending", "Sending...")
                     : canResend
-                      ? "Resend Verification Email"
-                      : `Resend available in ${resendCountdown}s`}
+                      ? t("auth.resendVerification", "Resend Verification Email")
+                      : t("auth.resendIn", { count: resendCountdown, defaultValue: `Resend available in ${resendCountdown}s` })}
                 </Button>
 
                 <Button
@@ -531,7 +531,7 @@ const Auth = () => {
                   variant="outline"
                 >
                   <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back to Login
+                  {t("auth.backToLogin", "Back to Login")}
                 </Button>
               </div>
             </div>
@@ -543,11 +543,10 @@ const Auth = () => {
 
               <div className="space-y-2">
                 <h3 className="text-xl font-bold text-slate-800 dark:text-foreground">
-                  Two-Factor Authentication
+                  {t("auth.mfaTitle", "Two-Factor Authentication")}
                 </h3>
                 <p className="text-sm text-slate-600 dark:text-muted-foreground">
-                  Enter the 6-digit code from your authenticator app to
-                  continue.
+                  {t("auth.mfaDesc", "Enter the 6-digit code from your authenticator app to continue.")}
                 </p>
               </div>
 
@@ -588,7 +587,9 @@ const Auth = () => {
                     disabled={mfaCode.length !== 6 || isVerifyingMfa}
                     className="w-full h-11 shadow-medium hover:shadow-glow"
                   >
-                    {isVerifyingMfa ? "Verifying..." : "Verify & Login"}
+                    {isVerifyingMfa
+                      ? t("auth.verifying", "Verifying...")
+                      : t("auth.verifyLogin", "Verify & Login")}
                   </Button>
 
                   <Button
@@ -600,7 +601,7 @@ const Auth = () => {
                     variant="outline"
                   >
                     <ArrowLeft className="w-4 h-4 mr-2" />
-                    Back to Login
+                    {t("auth.backToLogin", "Back to Login")}
                   </Button>
                 </div>
               </div>
@@ -614,19 +615,19 @@ const Auth = () => {
                 className="mb-2"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Login
+                {t("auth.backToLogin", "Back to Login")}
               </Button>
               <div className="text-center mb-4">
                 <h3 className="text-lg font-semibold text-slate-700 dark:text-foreground">
-                  Reset Password
+                  {t("auth.resetPassword", "Reset Password")}
                 </h3>
                 <p className="text-sm text-slate-600 dark:text-muted-foreground mt-1">
-                  Enter your email and we'll send you a reset link
+                  {t("auth.resetDesc", "Enter your email and we'll send you a reset link")}
                 </p>
               </div>
               <form onSubmit={handleForgotPassword} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="forgot-email">Email</Label>
+                  <Label htmlFor="forgot-email">{t("auth.email", "Email")}</Label>
                   <Input
                     id="forgot-email"
                     type="email"
@@ -642,15 +643,17 @@ const Auth = () => {
                   className="w-full h-11 shadow-medium hover:shadow-glow"
                   disabled={isLoading}
                 >
-                  {isLoading ? "Sending..." : "Send Reset Link"}
+                  {isLoading
+                    ? t("auth.sending", "Sending...")
+                    : t("auth.sendResetLink", "Send Reset Link")}
                 </Button>
               </form>
             </div>
           ) : (
             <Tabs defaultValue="login" className="w-full">
               <TabsList className="grid w-full grid-cols-2 mb-6">
-                <TabsTrigger value="login">Login</TabsTrigger>
-                <TabsTrigger value="signup">Sign Up</TabsTrigger>
+                <TabsTrigger value="login">{t("auth.login", "Login")}</TabsTrigger>
+                <TabsTrigger value="signup">{t("auth.signUp", "Sign Up")}</TabsTrigger>
               </TabsList>
 
               {/* LOGIN */}
@@ -687,12 +690,12 @@ const Auth = () => {
                         </svg>
                       )}
                       {isGoogleLoading
-                        ? "Connecting..."
-                        : "Continue with Google"}
+                        ? t("auth.connecting", "Connecting...")
+                        : t("auth.continueGoogle", "Continue with Google")}
                     </Button>
                     <span className="absolute -top-2 left-4 px-2 py-0.5 text-[10px] font-semibold bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-full flex items-center gap-1">
                       <Zap className="w-3 h-3" />
-                      Fastest
+                      {t("auth.fastest", "Fastest")}
                     </span>
                   </div>
 
@@ -703,7 +706,7 @@ const Auth = () => {
                     </div>
                     <div className="relative flex justify-center text-xs uppercase">
                       <span className="bg-white dark:bg-card px-2 text-gray-500 dark:text-gray-400">
-                        Or use email
+                        {t("auth.orUseEmail", "Or use email")}
                       </span>
                     </div>
                   </div>
@@ -711,7 +714,7 @@ const Auth = () => {
                   {/* Email/Password Form */}
                   <form onSubmit={handleLogin} className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="login-email">Email</Label>
+                      <Label htmlFor="login-email">{t("auth.email", "Email")}</Label>
                       <div className="relative">
                         <Input
                           id="login-email"
@@ -727,7 +730,7 @@ const Auth = () => {
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="login-password">Password</Label>
+                      <Label htmlFor="login-password">{t("auth.password", "Password")}</Label>
                       <div className="relative">
                         <Input
                           id="login-password"
@@ -770,7 +773,7 @@ const Auth = () => {
                         onClick={() => setShowForgotPassword(true)}
                         className="text-xs text-primary hover:text-primary/80 p-0 h-auto"
                       >
-                        Forgot password?
+                        {t("auth.forgotPassword", "Forgot password?")}
                       </Button>
                     </div>
                     <Button
@@ -778,7 +781,9 @@ const Auth = () => {
                       className="w-full h-11 shadow-medium hover:shadow-glow"
                       disabled={isLoading}
                     >
-                      {isLoading ? "Logging in..." : "Login with Email"}
+                      {isLoading
+                        ? t("auth.connecting", "Logging in...")
+                        : t("auth.loginWithEmail", "Login with Email")}
                     </Button>
                   </form>
                 </div>
@@ -818,12 +823,12 @@ const Auth = () => {
                         </svg>
                       )}
                       {isGoogleLoading
-                        ? "Connecting..."
-                        : "Continue with Google"}
+                        ? t("auth.connecting", "Connecting...")
+                        : t("auth.continueGoogle", "Continue with Google")}
                     </Button>
                     <span className="absolute -top-2 left-4 px-2 py-0.5 text-[10px] font-semibold bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-full flex items-center gap-1">
                       <Zap className="w-3 h-3" />
-                      Fastest
+                      {t("auth.fastest", "Fastest")}
                     </span>
                   </div>
 
@@ -832,11 +837,11 @@ const Auth = () => {
                     <div className="flex items-center gap-2 text-center justify-center">
                       <span className="text-lg">🎉</span>
                       <span className="text-sm font-medium text-foreground">
-                        7 Days of Pro Access Free!
+                        {t("auth.freeTrialHighlight", "7 Days of Pro Access Free!")}
                       </span>
                     </div>
                     <p className="text-xs text-muted-foreground text-center mt-1">
-                      No credit card required
+                      {t("auth.noCardRequired", "No credit card required")}
                     </p>
                   </div>
 
@@ -847,7 +852,7 @@ const Auth = () => {
                     </div>
                     <div className="relative flex justify-center text-xs uppercase">
                       <span className="bg-white dark:bg-card px-2 text-gray-500 dark:text-gray-400">
-                        Or use email
+                        {t("auth.orUseEmail", "Or use email")}
                       </span>
                     </div>
                   </div>
@@ -855,7 +860,7 @@ const Auth = () => {
                   {/* Email/Password Form */}
                   <form onSubmit={handleSignup} className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="signup-name">Full Name</Label>
+                      <Label htmlFor="signup-name">{t("auth.fullName", "Full Name")}</Label>
                       <Input
                         id="signup-name"
                         type="text"
@@ -867,7 +872,7 @@ const Auth = () => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="signup-email">Email</Label>
+                      <Label htmlFor="signup-email">{t("auth.email", "Email")}</Label>
                       <div className="relative">
                         <Input
                           id="signup-email"
@@ -883,7 +888,7 @@ const Auth = () => {
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="signup-password">Password</Label>
+                      <Label htmlFor="signup-password">{t("auth.password", "Password")}</Label>
                       <div className="relative">
                         <Input
                           id="signup-password"
@@ -939,7 +944,7 @@ const Auth = () => {
                                   : "text-gray-600 dark:text-gray-400"
                               }
                             >
-                              At least 8 characters
+                              {t("auth.pwdMinChar", "At least 8 characters")}
                             </span>
                           </div>
                           <div className="flex items-center gap-2">
@@ -955,7 +960,7 @@ const Auth = () => {
                                   : "text-gray-600 dark:text-gray-400"
                               }
                             >
-                              One uppercase letter
+                              {t("auth.pwdUpper", "One uppercase letter")}
                             </span>
                           </div>
                           <div className="flex items-center gap-2">
@@ -971,7 +976,7 @@ const Auth = () => {
                                   : "text-gray-600 dark:text-gray-400"
                               }
                             >
-                              One lowercase letter
+                              {t("auth.pwdLower", "One lowercase letter")}
                             </span>
                           </div>
                           <div className="flex items-center gap-2">
@@ -987,7 +992,7 @@ const Auth = () => {
                                   : "text-gray-600 dark:text-gray-400"
                               }
                             >
-                              One number
+                              {t("auth.pwdNumber", "One number")}
                             </span>
                           </div>
                           <div className="flex items-center gap-2">
@@ -1003,7 +1008,7 @@ const Auth = () => {
                                   : "text-gray-600 dark:text-gray-400"
                               }
                             >
-                              One special character (!@#$%^&amp;*...)
+                              {t("auth.pwdSpecial", "One special character (!@#$%^&*...)")}
                             </span>
                           </div>
                         </div>
@@ -1021,7 +1026,9 @@ const Auth = () => {
                       className="w-full h-11 shadow-medium hover:shadow-glow"
                       disabled={isLoading}
                     >
-                      {isLoading ? "Creating account..." : "Sign Up with Email"}
+                      {isLoading
+                        ? t("auth.sending", "Creating account...")
+                        : t("auth.signUpWithEmail", "Sign Up with Email")}
                     </Button>
                   </form>
                 </div>

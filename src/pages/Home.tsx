@@ -6,9 +6,11 @@ import { MessageSquare, TrendingUp, ArrowRight } from "lucide-react";
 import { GlobalHeader } from "@/components/GlobalHeader";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { GlobalFooter } from "@/components/GlobalFooter";
 
 export default function Home() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user, loading } = useAuth();
 
@@ -32,11 +34,10 @@ export default function Home() {
         {/* HERO */}
         <section className="max-w-5xl mx-auto px-6 py-24 sm:py-32">
           <h1 className="text-5xl sm:text-7xl font-bold tracking-[-0.03em] text-foreground leading-[1.05] mb-6">
-            Build with clarity.
+            {t("home.heroHeadline", "Build with clarity.")}
           </h1>
           <p className="text-lg sm:text-2xl font-medium text-muted-foreground/80 max-w-2xl leading-relaxed tracking-tight">
-            Find real problems, validate ideas, and execute faster — without
-            noise.
+            {t("home.heroDesc", "Find real problems, validate ideas, and execute faster — without noise.")}
           </p>
         </section>
 
@@ -54,15 +55,15 @@ export default function Home() {
             </div>
 
             <h2 className="text-3xl font-bold mb-3 tracking-tight text-foreground">
-              AI Chat
+              {t("home.chatTitle", "AI Chat")}
             </h2>
 
             <p className="text-muted-foreground/80 text-lg mb-8 max-w-md leading-relaxed">
-              Think, write, and execute faster with a focused AI workspace.
+              {t("home.chatDesc", "Think, write, and execute faster with a focused AI workspace.")}
             </p>
 
             <div className="text-sm font-bold tracking-wider uppercase flex items-center gap-2 text-primary group-hover:translate-x-1 transition-transform">
-              {user ? "Enter Workspace" : "Sign In"}
+              {user ? t("home.enterWorkspace", "Enter Workspace") : t("home.signInNow", "Sign In")}
               <ArrowRight className="w-4 h-4" />
             </div>
           </motion.div>
@@ -82,22 +83,22 @@ export default function Home() {
             </div>
 
             <h3 className="text-xl font-bold mb-2 tracking-tight text-foreground">
-              Discover
+              {t("home.discoverTitle", "Discover")}
             </h3>
 
             <p className="text-muted-foreground/80 mb-6 leading-relaxed">
-              Real startup ideas from real user pain points.
+              {t("home.discoverDesc", "Real startup ideas from real user pain points.")}
             </p>
 
             <div className="text-xs font-bold tracking-wider uppercase flex items-center gap-1 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all">
-              Explore
+              {t("home.explore", "Explore")}
               <ArrowRight className="w-3 h-3" />
             </div>
           </motion.div>
 
           {/* COMING SOON */}
           <div className="border border-dashed border-border/40 rounded-2xl p-8 text-sm font-medium text-muted-foreground/50 flex items-center justify-center bg-muted/[0.02]">
-            Expand stack coming soon
+            {t("home.comingSoon", "Expand stack coming soon")}
           </div>
         </section>
 
@@ -121,22 +122,24 @@ export default function Home() {
             {/* Eyebrow */}
             <div className="mb-5 flex items-center gap-2">
               <span className="text-[10px] sm:text-[11px] font-bold tracking-[0.2em] text-muted-foreground/60 uppercase flex items-center select-none">
-                Welcome <span className="mx-2 opacity-50 text-[8px]">•</span>{" "}
-                The Ecosystem
+                {t("home.welcome", "Welcome")}{" "}
+                <span className="mx-2 opacity-50 text-[8px]">•</span>{" "}
+                {t("home.ecosystem", "The Ecosystem")}
               </span>
             </div>
 
             {/* Multi-stack Headline exactly like Chat */}
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.1] flex flex-col gap-1 text-left mb-6">
-              <span className="text-foreground">Build with clarity.</span>
+              <span className="text-foreground">
+                {t("home.heroHeadline", "Build with clarity.")}
+              </span>
               <span className="text-muted-foreground/30">
-                Validate without noise.
+                {t("home.heroSubHeadline", "Validate without noise.")}
               </span>
             </h1>
 
             <p className="text-base sm:text-lg font-medium text-muted-foreground/70 max-w-xl tracking-tight">
-              Find real problems, test ideas instantly, and ship faster in one
-              high-focus stack.
+              {t("home.heroDesc", "Find real problems, test ideas instantly, and ship faster in one high-focus stack.")}
             </p>
           </section>
 
@@ -156,15 +159,17 @@ export default function Home() {
               </div>
 
               <h2 className="text-3xl font-bold mb-3 tracking-tight text-foreground">
-                AI Chat
+                {t("home.chatTitle", "AI Chat")}
               </h2>
 
               <p className="text-muted-foreground/80 text-lg mb-10 max-w-sm leading-relaxed">
-                Think, write, and execute faster with a focused AI workspace.
+                {t("home.chatDesc", "Think, write, and execute faster with a focused AI workspace.")}
               </p>
 
               <div className="text-xs font-bold tracking-widest uppercase flex items-center gap-2 text-primary group-hover:translate-x-1 transition-transform">
-                {user ? "Enter Workspace" : "Sign In Now"}
+                {user
+                  ? t("home.enterWorkspace", "Enter Workspace")
+                  : t("home.signInNow", "Sign In Now")}
                 <ArrowRight className="w-4 h-4" />
               </div>
             </motion.div>
@@ -184,15 +189,15 @@ export default function Home() {
               </div>
 
               <h3 className="text-xl font-bold mb-2 tracking-tight text-foreground">
-                Discover
+                {t("home.discoverTitle", "Discover")}
               </h3>
 
               <p className="text-muted-foreground/80 mb-8 leading-relaxed text-sm">
-                Real startup ideas extracted from real user pain points.
+                {t("home.discoverDesc", "Real startup ideas extracted from real user pain points.")}
               </p>
 
               <div className="text-xs font-bold tracking-widest uppercase flex items-center gap-1 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all">
-                Explore
+                {t("home.explore", "Explore")}
                 <ArrowRight className="w-3 h-3" />
               </div>
             </motion.div>
@@ -200,7 +205,7 @@ export default function Home() {
             {/* COMING SOON (Re-integrated) */}
             <div className="border border-dashed border-border/20 rounded-3xl p-10 flex items-center justify-center bg-card/[0.02] shadow-xl">
               <span className="text-xs font-bold tracking-widest uppercase text-muted-foreground/40">
-                More tools coming
+                {t("home.comingSoon", "More tools coming")}
               </span>
             </div>
           </section>

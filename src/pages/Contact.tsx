@@ -10,6 +10,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { GlobalHeader } from "@/components/GlobalHeader";
 import { GlobalFooter } from "@/components/GlobalFooter";
+import { useTranslation } from "react-i18next";
 import {
   Send,
   Loader2,
@@ -30,6 +31,7 @@ interface ContactFormData {
 }
 
 export function Contact() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -131,14 +133,13 @@ export function Contact() {
                   <CheckCircle2 className="h-10 w-10 text-green-500" />
                 </div>
               </motion.div>
-              <h2 className="text-2xl font-bold mb-2">Message Sent!</h2>
+              <h2 className="text-2xl font-bold mb-2">{t("contact.messageSent", "Message Sent!")}</h2>
               <p className="text-muted-foreground mb-6">
-                Thank you for reaching out. We'll get back to you within 24-48
-                hours.
+                {t("contact.sentDesc", "Thank you for reaching out. We'll get back to you within 24-48 hours.")}
               </p>
               <Button onClick={() => navigate("/")} className="rounded-xl">
                 <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Home
+                {t("contact.backHome", "Back to Home")}
               </Button>
             </Card>
           </motion.div>
@@ -165,11 +166,10 @@ export function Contact() {
             <MessageSquare className="w-8 h-8" />
           </div>
           <h1 className="text-4xl sm:text-5xl font-semibold tracking-tight mb-4">
-            Let's get in touch.
+            {t("contact.subtitle", "Let's get in touch.")}
           </h1>
           <p className="text-muted-foreground text-lg max-w-xl mx-auto">
-            Have a question, feedback, or need support? Drop us a line. We're
-            always here to help you execute faster.
+            {t("contact.desc", "Have a question, feedback, or need support? Drop us a line.")}
           </p>
         </motion.div>
 
@@ -184,7 +184,7 @@ export function Contact() {
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Name *</Label>
+                  <Label htmlFor="name">{t("contact.name", "Name")} *</Label>
                   <Input
                     id="name"
                     name="name"
@@ -196,7 +196,7 @@ export function Contact() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email *</Label>
+                  <Label htmlFor="email">{t("contact.email", "Email")} *</Label>
                   <Input
                     id="email"
                     name="email"
@@ -211,7 +211,7 @@ export function Contact() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="subject">Subject</Label>
+                <Label htmlFor="subject">{t("contact.subject", "Subject")}</Label>
                 <Input
                   id="subject"
                   name="subject"
@@ -223,7 +223,7 @@ export function Contact() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="message">Message *</Label>
+                <Label htmlFor="message">{t("contact.message", "Message")} *</Label>
                 <Textarea
                   id="message"
                   name="message"
@@ -236,7 +236,7 @@ export function Contact() {
                 <p
                   className={`text-xs ${formData.message.length < 10 ? "text-muted-foreground" : "text-green-500"}`}
                 >
-                  {formData.message.length}/10 characters minimum
+                  {t("contact.minChar", { count: formData.message.length, defaultValue: `${formData.message.length}/10 characters minimum` })}
                 </p>
               </div>
 
@@ -248,12 +248,12 @@ export function Contact() {
                 {isSubmitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Sending...
+                    {t("contact.sending", "Sending...")}
                   </>
                 ) : (
                   <>
                     <Send className="mr-2 h-4 w-4" />
-                    Send Message
+                    {t("contact.send", "Send Message")}
                   </>
                 )}
               </Button>

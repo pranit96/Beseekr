@@ -5,8 +5,10 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { Logo } from "@/components/Logo";
 import { GlobalFooter } from "@/components/GlobalFooter";
+import { useTranslation } from "react-i18next";
 
 const Privacy = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -20,13 +22,13 @@ const Privacy = () => {
             className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
-            <span className="hidden sm:inline">Back</span>
+            <span className="hidden sm:inline">{t("privacy.back", "Back")}</span>
           </button>
           <Logo className="text-xl" />
           {!user ? (
             <Link to="/auth">
               <Button variant="outline" size="sm">
-                Sign In
+                {t("privacy.signIn", "Sign In")}
               </Button>
             </Link>
           ) : (
@@ -39,11 +41,10 @@ const Privacy = () => {
       <div className="relative overflow-hidden border-b border-border/50 bg-muted/30">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 py-16 sm:py-24 text-center">
           <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-foreground mb-4">
-            Privacy Policy
+            {t("privacy.title", "Privacy Policy")}
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Your privacy and data security are our top priorities. Learn how we
-            handle your data in our autonomous AI agent platform.
+            {t("privacy.desc", "Your privacy and data security are our top priorities. Learn how we handle your data in our autonomous AI agent platform.")}
           </p>
           <p className="text-sm text-muted-foreground mt-6 font-medium">
             Effective Date: December 13, 2025

@@ -24,13 +24,13 @@ import { useTheme } from "@/hooks/use-theme";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 
+import { useTranslation } from "react-i18next";
+
 const navigation = [
-  { name: "Home", href: "/" },
-  { name: "Chat", href: "/chat" },
-  { name: "Agents", href: "/agents" },
-  { name: "Analytics", href: "/analytics" },
-  // { name: 'MetaLayer', href: '/metaLayer' },
-  // { name: 'Deck', href: '/deck' },
+  { key: "home", name: "Home", href: "/" },
+  { key: "chat", name: "Chat", href: "/chat" },
+  { key: "agents", name: "Agents", href: "/agents" },
+  { key: "analytics", name: "Analytics", href: "/analytics" },
 ];
 
 interface TopBarProps {
@@ -44,6 +44,7 @@ export const TopBar = ({
   onToggleSidebar,
   showSidebarToggle,
 }: TopBarProps) => {
+  const { t } = useTranslation();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const location = useLocation();
   const { theme, setTheme } = useTheme();
@@ -96,7 +97,7 @@ export const TopBar = ({
                     : "text-muted-foreground hover:text-foreground hover:bg-muted",
                 )}
               >
-                {item.name}
+                {t(`nav.${item.key}`, item.name)}
               </Link>
             );
           })}
@@ -126,7 +127,7 @@ export const TopBar = ({
             variant="ghost"
             size="icon"
             onClick={() => window.dispatchEvent(new CustomEvent("open-help"))}
-            title="Keyboard shortcuts & help"
+            title={t("nav.help", "Keyboard shortcuts & help")}
             className="rounded-lg"
           >
             <HelpCircle className="h-5 w-5" />
@@ -168,7 +169,7 @@ export const TopBar = ({
                     className="flex items-center w-full cursor-pointer"
                   >
                     <Settings className="mr-2 h-4 w-4" />
-                    Profile Settings
+                    {t("nav.profileSettings", "Profile Settings")}
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
@@ -177,7 +178,7 @@ export const TopBar = ({
                   className="cursor-pointer text-destructive focus:text-destructive"
                 >
                   <LogOut className="mr-2 h-4 w-4" />
-                  Logout
+                  {t("nav.signOut", "Logout")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -187,7 +188,7 @@ export const TopBar = ({
                 size="sm"
                 className="rounded-lg bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity text-sm px-4 h-9"
               >
-                Login / Sign Up
+                {t("nav.loginSignUp", "Login / Sign Up")}
               </Button>
             </Link>
           )}
@@ -226,7 +227,7 @@ export const TopBar = ({
                         : "text-muted-foreground hover:text-foreground hover:bg-muted",
                     )}
                   >
-                    {item.name}
+                    {t(`nav.${item.key}`, item.name)}
                   </Link>
                 );
               })}

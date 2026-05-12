@@ -34,10 +34,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 
 const NAV_ITEMS = {
   home: {
+    key: "home",
     name: "Home",
     href: "/",
     icon: Home,
@@ -45,6 +47,7 @@ const NAV_ITEMS = {
     exact: true,
   },
   chat: {
+    key: "chat",
     name: "AI Chat",
     href: "/chat",
     icon: MessageSquare,
@@ -52,6 +55,7 @@ const NAV_ITEMS = {
     exact: false,
   },
   discover: {
+    key: "discover",
     name: "Discover",
     href: "/dashboard/problems",
     icon: Compass,
@@ -59,6 +63,7 @@ const NAV_ITEMS = {
     exact: false,
   },
   blog: {
+    key: "blog",
     name: "Blogs",
     href: "/blogs",
     icon: BookOpen,
@@ -66,6 +71,7 @@ const NAV_ITEMS = {
     exact: false,
   },
   agents: {
+    key: "agents",
     name: "Agents",
     href: "/agents",
     icon: Bot,
@@ -73,6 +79,7 @@ const NAV_ITEMS = {
     exact: false,
   },
   research: {
+    key: "research",
     name: "Research",
     href: "/dashboard/validate",
     icon: Zap,
@@ -80,6 +87,7 @@ const NAV_ITEMS = {
     exact: false,
   },
   watchlist: {
+    key: "watchlist",
     name: "Watchlist",
     href: "/dashboard/watchlist",
     icon: Bookmark,
@@ -87,26 +95,13 @@ const NAV_ITEMS = {
     exact: false,
   },
   pricing: {
+    key: "pricing",
     name: "Pricing",
     href: "/dashboard/pricing",
     icon: CreditCard,
     color: "from-amber-500 to-orange-500",
     exact: false,
   },
-  // trading: {
-  //   name: "Trading",
-  //   href: "/trading",
-  //   icon: TrendingUp,
-  //   color: "from-blue-500 to-indigo-500",
-  //   exact: false,
-  // },
-  // wellness: {
-  //   name: "Wellness",
-  //   href: "/wellness",
-  //   icon: Activity,
-  //   color: "from-emerald-500 to-sky-500",
-  //   exact: false,
-  // },
 };
 
 function isPathActive(pathname: string, href: string, exact?: boolean) {
@@ -145,6 +140,7 @@ function getNavigationContext(pathname: string, isPremium: boolean) {
 }
 
 export function GlobalHeader() {
+  const { t } = useTranslation();
   const location = useLocation();
   const { theme, setTheme } = useTheme();
   const { user, logout } = useAuth();
@@ -223,7 +219,7 @@ export function GlobalHeader() {
                             isActive ? "text-primary" : "text-muted-foreground",
                           )}
                         />
-                        {item.name}
+                        {t(`nav.${(item as any).key}`, item.name)}
                       </span>
                     </motion.div>
                   </NavLink>
@@ -244,7 +240,7 @@ export function GlobalHeader() {
                     key={item.href}
                     to={item.href}
                     className="relative"
-                    title={item.name}
+                    title={t(`nav.${(item as any).key}`, item.name)}
                   >
                     <motion.div
                       whileTap={{ scale: 0.95 }}
@@ -279,8 +275,10 @@ export function GlobalHeader() {
                 >
                   <Clock className="h-3 w-3 text-primary" />
                   <span className="text-xs font-medium text-primary">
-                    {user.trial.days_remaining}{" "}
-                    {user.trial.days_remaining === 1 ? "day" : "days"} left
+                    {t("nav.trial.full", {
+                      count: user.trial.days_remaining,
+                      defaultValue: `${user.trial.days_remaining} ${user.trial.days_remaining === 1 ? "day" : "days"} left`,
+                    })}
                   </span>
                 </motion.div>
               )}
@@ -297,8 +295,8 @@ export function GlobalHeader() {
                   className="rounded-lg sm:rounded-xl h-8 w-8 sm:h-9 sm:w-9"
                   aria-label={
                     theme === "dark"
-                      ? "Switch to light mode"
-                      : "Switch to dark mode"
+                      ? t("nav.theme.light", "Switch to light mode")
+                      : t("nav.theme.dark", "Switch to dark mode")
                   }
                 >
                   <AnimatePresence mode="wait">
@@ -331,7 +329,7 @@ export function GlobalHeader() {
                         variant="ghost"
                         size="icon"
                         className="rounded-lg sm:rounded-xl h-8 w-8 sm:h-9 sm:w-9"
-                        aria-label="User menu"
+                        aria-label={t("nav.userMenu", "User menu")}
                       >
                         <User className="h-4 w-4 sm:h-5 sm:w-5" />
                       </Button>
@@ -349,9 +347,11 @@ export function GlobalHeader() {
                         <div className="flex items-center gap-1.5 mt-2 px-2 py-1 rounded-md bg-primary/10 border border-primary/20 w-fit">
                           <Clock className="h-3 w-3 text-primary" />
                           <span className="text-xs font-medium text-primary">
-                            Trial: {user.trial.days_remaining}{" "}
-                            {user.trial.days_remaining === 1 ? "day" : "days"}{" "}
-                            left
+                            Trial:{" "}
+                            {t("nav.trial.full", {
+                              count: user.trial.days_remaining,
+                              defaultValue: `${user.trial.days_remaining} ${user.trial.days_remaining === 1 ? "day" : "days"} left`,
+                            })}
                           </span>
                         </div>
                       )}
@@ -366,7 +366,7 @@ export function GlobalHeader() {
                         className="flex items-center w-full"
                       >
                         <Settings className="mr-2 h-4 w-4" />
-                        Settings
+                        {t("nav.settings", "Settings")}
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
@@ -375,7 +375,7 @@ export function GlobalHeader() {
                       className="rounded-lg cursor-pointer text-destructive focus:text-destructive"
                     >
                       <LogOut className="mr-2 h-4 w-4" />
-                      Sign Out
+                      {t("nav.signOut", "Sign Out")}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -390,7 +390,7 @@ export function GlobalHeader() {
                       size="sm"
                       className="rounded-lg sm:rounded-xl bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity text-xs sm:text-sm px-3 sm:px-4 h-8 sm:h-9"
                     >
-                      Login / Sign Up
+                      {t("nav.loginSignUp", "Login / Sign Up")}
                     </Button>
                   </Link>
                 </motion.div>
@@ -403,7 +403,7 @@ export function GlobalHeader() {
                   size="icon"
                   onClick={() => setMobileOpen((prev) => !prev)}
                   className="rounded-lg h-8 w-8"
-                  aria-label="Toggle menu"
+                  aria-label={t("nav.userMenu", "Toggle menu")}
                 >
                   {mobileOpen ? (
                     <X className="h-5 w-5" />
@@ -463,7 +463,7 @@ export function GlobalHeader() {
                         )}
                       />
                     </div>
-                    {item.name}
+                    {t(`nav.${(item as any).key}`, item.name)}
                     {isActive && (
                       <div className="ml-auto h-1.5 w-1.5 rounded-full bg-primary" />
                     )}
@@ -483,7 +483,7 @@ export function GlobalHeader() {
                     }}
                     className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold bg-gradient-to-r from-primary to-accent text-white shadow-md"
                   >
-                    Login / Sign Up
+                    {t("nav.loginSignUp", "Login / Sign Up")}
                   </Link>
                 </>
               )}
@@ -500,7 +500,7 @@ export function GlobalHeader() {
                     className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-destructive hover:bg-destructive/10 w-full transition-colors"
                   >
                     <LogOut className="h-4 w-4" />
-                    Sign Out
+                    {t("nav.signOut", "Sign Out")}
                   </button>
                 </>
               )}
