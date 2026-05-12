@@ -1,0 +1,83 @@
+{
+  "profile": {
+    "settings": "Paramètres",
+    "manageAccount": "Gérez les paramètres et préférences de votre compte.",
+    "general": "Général",
+    "security": "Sécurité",
+    "notifications": "Notifications",
+    "appearance": "Apparence",
+    "data": "Données et Confidentialité",
+    "language": "Langue",
+    "timezone": "Fuseau horaire",
+    "saveChanges": "Enregistrer",
+    "savingChanges": "Enregistrement...",
+    "profileInformation": "Informations sur le Profil",
+    "manageDetails": "Gérez vos informations personnelles et votre apparence sur la plateforme.",
+    "fullName": "Nom complet",
+    "emailAddress": "Adresse e-mail",
+    "uploadPicture": "Télécharger une photo"
+  },
+  "sidebar": {
+    "chat": "Chat",
+    "agents": "Agents",
+    "analytics": "Analytique",
+    "profile": "Profil",
+    "title": "IA Multi-Agent",
+    "subtitle": "Orchestration intelligente",
+    "exportData": "Exporter les données"
+  },
+  "chat": {
+    "sessionExpired": "Session expirée",
+    "sessionExpiredDesc": "Votre session a expiré. Veuillez actualiser pour continuer.",
+    "refreshing": "Rafraîchissement...",
+    "refreshSession": "Actualiser la session",
+    "reloadPage": "Recharger la page",
+    "aiChat": "Chat IA",
+    "orchestrator": "L'Orchestrateur",
+    "heroTitle": "Penser, écrire, exécuter.",
+    "heroSubtitle": "Tout dans un seul espace de travail.",
+    "history": "Historique",
+    "hideConversations": "Masquer les conversations",
+    "showConversations": "Afficher les conversations",
+    "newConversation": "Nouvelle conversation",
+    "readyToChat": "Prêt à discuter",
+    "readyToChatDesc": "Commencez à taper votre message ci-dessous.",
+    "newChatStarted": "Nouveau chat démarré",
+    "newChatStartedDesc": "Vous pouvez maintenant envoyer des messages à vos agents.",
+    "convDeleted": "Conversation supprimée",
+    "convDeletedDesc": "La conversation a été supprimée.",
+    "convArchived": "Conversation archivée",
+    "convArchivedDesc": "La conversation a été archivée.",
+    "convNotFound": "Conversation non trouvée",
+    "convNotFoundDesc": "Cette conversation a peut-être été supprimée."
+  },
+  "history": {
+    "conversations": "Conversations",
+    "new": "Nouveau",
+    "search": "Rechercher...",
+    "noMatches": "Aucun résultat trouvé",
+    "noConversations": "Pas encore de conversations",
+    "workflows": "Workflows",
+    "noWorkflows": "Pas encore de workflows",
+    "untitled": "Sans titre",
+    "archive": "Archiver",
+    "delete": "Supprimer",
+    "deleteConversation": "Supprimer la conversation",
+    "deleteConfirm": "Cette action ne peut pas être annulée.",
+    "archiveConversation": "Archiver la conversation",
+    "archiveConfirm": "Déplacer vers les archives ?",
+    "time": {
+      "justNow": "à l'instant",
+      "mAgo": "il y a {{count}} min",
+      "hAgo": "il y a {{count}} h",
+      "dAgo": "il y a {{count}} j"
+    }
+  },
+  "common": {
+    "loading": "Chargement...",
+    "cancel": "Annuler",
+    "save": "Enregistrer",
+    "confirm": "Confirmer",
+    "delete": "Supprimer"
+  }
+}

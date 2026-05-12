@@ -26,6 +26,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useTranslation } from "react-i18next";
 
 const logger = createLogger("Chat");
 
@@ -172,6 +173,7 @@ const Chat = () => {
   const { agents, loading: loadingAgents, reload } = useAgents();
   const { user, refreshAuth } = useAuth();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   // Load sidebar and conversation preferences
   useEffect(() => {
@@ -316,19 +318,19 @@ const Chat = () => {
       apiClient.invalidateCache();
       await fetchConversations();
       toast({
-        title: "Session refreshed",
-        description: "You can continue using the app",
+        title: t("chat.sessionRefreshed", "Session refreshed"),
+        description: t("chat.sessionRefreshedDesc", "You can continue using the app"),
       });
     } catch {
       toast({
-        title: "Refresh failed",
-        description: "Please try logging in again",
+        title: t("chat.refreshFailed", "Refresh failed"),
+        description: t("chat.refreshFailedDesc", "Please try logging in again"),
         variant: "destructive",
       });
     } finally {
       setRetrying(false);
     }
-  }, [refreshAuth, reload, fetchConversations, toast]);
+  }, [refreshAuth, reload, fetchConversations, toast, t]);
 
   // Handlers
   const handleSelectConversation = useCallback((conversationId: string) => {
@@ -348,12 +350,14 @@ const Chat = () => {
 
     if (getEmptyCurrentConversation(conversations)) {
       setCurrentConversationId(currentConversationId);
-      sessionStorage.setItem("lastActiveConversation", currentConversationId!);
+      if (user?.id) {
+        sessionStorage.setItem(`lastActiveConversation_${user.id}`, currentConversationId!);
+      }
       setKey((prev) => prev + 1);
       setIsChatActive(false);
       toast({
-        title: "Ready to chat",
-        description: "Start typing your message below.",
+        title: t("chat.readyToChat"),
+        description: t("chat.readyToChatDesc"),
       });
       return;
     }
@@ -361,7 +365,7 @@ const Chat = () => {
     const tempId = `temp-${Date.now()}`;
     const tempConversation: Conversation = {
       id: tempId,
-      title: "New Conversation",
+      title: t("chat.newConversation"),
       last_message_at: new Date().toISOString(),
       status: "active",
     };
@@ -377,14 +381,14 @@ const Chat = () => {
     setKey((prev) => prev + 1);
     setIsChatActive(false);
     toast({
-      title: "New chat started",
-      description: "You can now start messaging your agents.",
+      title: t("chat.newChatStarted"),
+      description: t("chat.newChatStartedDesc"),
     });
 
     try {
       const response = await apiClient.createConversation({
         agent_id: null,
-        title: "New Conversation",
+        title: t("chat.newConversation"),
       });
       if (response.success && response.data?.id) {
         const realId = response.data.id;
@@ -459,7 +463,7 @@ const Chat = () => {
           return [
             {
               id: conversationId,
-              title: "New Conversation",
+              title: t("chat.newConversation"),
               last_message_at: new Date().toISOString(),
               status: "active",
             },
@@ -513,11 +517,11 @@ const Chat = () => {
 
       fetchConversations();
       toast({
-        title: "Conversation deleted",
-        description: "The conversation has been removed.",
+        title: t("chat.convDeleted"),
+        description: t("chat.convDeletedDesc"),
       });
     },
-    [currentConversationId, fetchConversations, queryClient, toast, user?.id],
+    [currentConversationId, fetchConversations, queryClient, toast, user?.id, t],
   );
 
   const handleConversationArchived = useCallback(() => {
@@ -527,10 +531,10 @@ const Chat = () => {
       sessionStorage.removeItem(`lastActiveConversation_${user.id}`);
     }
     toast({
-      title: "Conversation archived",
-      description: "The conversation has been archived.",
+      title: t("chat.convArchived"),
+      description: t("chat.convArchivedDesc"),
     });
-  }, [fetchConversations, toast, user?.id]);
+  }, [fetchConversations, toast, user?.id, t]);
 
   const isLoading = loadingAgents || loadingConversations;
 
@@ -549,8 +553,8 @@ const Chat = () => {
         }
         setKey((prev) => prev + 1);
         toast({
-          title: "Conversation not found",
-          description: "This conversation may have been deleted.",
+          title: t("chat.convNotFound"),
+          description: t("chat.convNotFoundDesc"),
         });
       }
     };
@@ -597,9 +601,9 @@ const Chat = () => {
         <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center">
           <AlertCircle className="w-8 h-8 text-destructive" />
         </div>
-        <h2 className="text-2xl font-bold">Session Expired</h2>
+        <h2 className="text-2xl font-bold">{t("chat.sessionExpired")}</h2>
         <p className="text-muted-foreground text-center max-w-md">
-          Your session has expired. Please refresh to continue.
+          {t("chat.sessionExpiredDesc")}
         </p>
         <div className="flex gap-3 mt-4">
           <Button
@@ -610,17 +614,17 @@ const Chat = () => {
             {retrying ? (
               <>
                 <RefreshCw className="w-4 h-4 animate-spin" />
-                Refreshing...
+                {t("chat.refreshing")}
               </>
             ) : (
               <>
                 <RefreshCw className="w-4 h-4" />
-                Refresh Session
+                {t("chat.refreshSession")}
               </>
             )}
           </Button>
           <Button onClick={() => window.location.reload()} variant="outline">
-            Reload Page
+            {t("chat.reloadPage")}
           </Button>
         </div>
       </div>
@@ -641,14 +645,14 @@ const Chat = () => {
           >
             <div className="flex items-center gap-2 mb-3 sm:mb-4">
               <span className="text-[10px] sm:text-[11px] font-bold tracking-[0.2em] text-muted-foreground/60 uppercase flex items-center">
-                AI Chat <span className="mx-2 opacity-50 text-[8px]">•</span>{" "}
-                The Orchestrator
+                {t("chat.aiChat")} <span className="mx-2 opacity-50 text-[8px]">•</span>{" "}
+                {t("chat.orchestrator")}
               </span>
             </div>
             <h1 className="text-3xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-[1.1] flex flex-col gap-1">
-              <span className="text-foreground">Think, write, execute.</span>
+              <span className="text-foreground">{t("chat.heroTitle")}</span>
               <span className="text-muted-foreground/40">
-                All in one workspace.
+                {t("chat.heroSubtitle")}
               </span>
             </h1>
           </div>
@@ -678,7 +682,7 @@ const Chat = () => {
                             variant="ghost"
                             size="sm"
                             className="h-7 w-7 p-0 rounded-full bg-white/[0.05] border border-white/[0.1] text-foreground hover:bg-white/[0.1] hover:text-primary transition-all shrink-0"
-                            title="History"
+                            title={t("chat.history")}
                           >
                             <History className="w-3.5 h-3.5" />
                           </Button>
@@ -688,7 +692,7 @@ const Chat = () => {
                         side="bottom"
                         className="text-xs font-medium"
                       >
-                        History
+                        {t("chat.history")}
                       </TooltipContent>
                     </Tooltip>
                     <SheetContent
@@ -777,8 +781,8 @@ const Chat = () => {
                   ? "h-10 w-10 rounded-full border-border hover:bg-muted"
                   : "h-24 w-6 rounded-r-xl rounded-l-none border-border border-l-0 hover:w-8 hover:bg-muted/50 bg-gradient-to-b from-background via-muted/30 to-background hover:from-primary/10 hover:to-primary/5 hover:border-primary/30"
               }`}
-            aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
-            title={sidebarOpen ? "Hide conversations" : "Show conversations"}
+            aria-label={sidebarOpen ? t("chat.hideConversations") : t("chat.showConversations")}
+            title={sidebarOpen ? t("chat.hideConversations") : t("chat.showConversations")}
           >
             {sidebarOpen ? (
               <PanelLeftClose className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />

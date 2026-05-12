@@ -3,24 +3,27 @@ import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { MessageSquare, Users, BarChart3, User, Download } from "lucide-react";
 
+import { useTranslation } from "react-i18next";
+
 const navigation = [
-  { name: "Chat", href: "/", icon: MessageSquare },
-  { name: "Agents", href: "/agents", icon: Users },
-  { name: "Analytics", href: "/analytics", icon: BarChart3 },
-  { name: "Profile", href: "/profile", icon: User },
+  { key: "chat", href: "/", icon: MessageSquare },
+  { key: "agents", href: "/agents", icon: Users },
+  { key: "analytics", href: "/analytics", icon: BarChart3 },
+  { key: "profile", href: "/profile", icon: User },
 ];
 
 export const Sidebar = () => {
   const location = useLocation();
+  const { t } = useTranslation();
 
   return (
     <aside className="w-72 2xl:w-96 border-r border-border bg-sidebar h-screen sticky top-0 flex flex-col">
       <div className="p-6 border-b border-border">
         <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-          Multi-Agent AI
+          {t("sidebar.title")}
         </h1>
         <p className="text-xs text-muted-foreground mt-1">
-          Intelligent orchestration
+          {t("sidebar.subtitle")}
         </p>
       </div>
 
@@ -29,7 +32,7 @@ export const Sidebar = () => {
           const isActive = location.pathname === item.href;
           return (
             <Link
-              key={item.name}
+              key={item.key}
               to={item.href}
               className={cn(
                 "flex items-center gap-3 px-3 py-2 rounded-lg transition-smooth group",
@@ -46,7 +49,7 @@ export const Sidebar = () => {
                     : "text-muted-foreground group-hover:text-sidebar-accent-foreground",
                 )}
               />
-              <span className="font-medium">{item.name}</span>
+              <span className="font-medium">{t(`sidebar.${item.key}`)}</span>
             </Link>
           );
         })}
@@ -55,7 +58,7 @@ export const Sidebar = () => {
       <div className="p-3 border-t border-border">
         <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-sidebar-accent transition-smooth text-sidebar-foreground group">
           <Download className="w-5 h-5 text-muted-foreground group-hover:text-sidebar-accent-foreground transition-smooth" />
-          <span className="font-medium">Export Data</span>
+          <span className="font-medium">{t("sidebar.exportData")}</span>
         </button>
       </div>
     </aside>

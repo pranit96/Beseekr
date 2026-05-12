@@ -35,6 +35,8 @@ import { apiClient } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
+import { TFunction } from "i18next";
 
 interface Conversation {
   id: string;
@@ -66,16 +68,16 @@ interface ConversationHistoryProps {
   onSelectWorkflow?: (id: string) => void;
 }
 
-function relativeTime(dateStr: string): string {
+function relativeTime(dateStr: string, t: TFunction): string {
   if (!dateStr) return "";
   const diff = Date.now() - new Date(dateStr).getTime();
   const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
+  if (mins < 1) return t("history.time.justNow");
+  if (mins < 60) return t("history.time.mAgo", { count: mins });
   const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
+  if (hrs < 24) return t("history.time.hAgo", { count: hrs });
   const days = Math.floor(hrs / 24);
-  if (days < 7) return `${days}d ago`;
+  if (days < 7) return t("history.time.dAgo", { count: days });
   return new Date(dateStr).toLocaleDateString(undefined, {
     month: "short",
     day: "numeric",
@@ -90,6 +92,7 @@ const ConversationRow = memo(
     onArchive,
     onDelete,
     onMouseEnter,
+    t,
   }: {
     conversation: Conversation;
     isActive: boolean;
@@ -97,8 +100,9 @@ const ConversationRow = memo(
     onArchive: () => void;
     onDelete: () => void;
     onMouseEnter: () => void;
+    t: TFunction;
   }) => {
-    const title = conversation.title || "Untitled";
+    const title = conversation.title || t("history.untitled");
     const trimmedTitle = title.length > 40 ? `${title.slice(0, 40)}...` : title;
     return (
       <div
@@ -131,7 +135,7 @@ const ConversationRow = memo(
           </p>
 
           <p className="text-[10px] text-muted-foreground/35 mt-1">
-            {relativeTime(conversation.last_message_at)}
+            {relativeTime(conversation.last_message_at, t)}
           </p>
         </div>
 
@@ -165,7 +169,7 @@ const ConversationRow = memo(
                 className="gap-2 text-xs cursor-pointer"
               >
                 <Archive className="w-3.5 h-3.5" />
-                Archive
+                {t("history.archive")}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
@@ -176,7 +180,7 @@ const ConversationRow = memo(
                 className="gap-2 text-xs cursor-pointer text-destructive focus:text-destructive"
               >
                 <Trash2 className="w-3.5 h-3.5" />
-                Delete
+                {t("history.delete")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -213,6 +217,7 @@ export const ConversationHistory = memo(
     const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
     const listRef = useRef<HTMLDivElement | null>(null);
     const { toast } = useToast();
+    const { t } = useTranslation();
 
     useEffect(() => {
       setLocalConversations(conversations);
@@ -376,15 +381,15 @@ export const ConversationHistory = memo(
         <div className="px-4 pt-4 pb-3">
           <div className="flex items-center justify-between mb-3 pr-8">
             <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/40 select-none">
-              Conversations
+              {t("history.conversations")}
             </span>
             <button
               onClick={onNewSession}
               className="sidebar-new-btn"
-              aria-label="New conversation"
+              aria-label={t("history.new")}
             >
               <Plus className="w-3 h-3 mr-1" />
-              New
+              {t("history.new")}
             </button>
           </div>
 
@@ -392,10 +397,10 @@ export const ConversationHistory = memo(
           <div className="relative">
             <Search className="absolute left-0 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/30" />
             <input
-              aria-label="Search conversations"
+              aria-label={t("history.search")}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search..."
+              placeholder={t("history.search")}
               className="sidebar-search"
             />
           </div>
@@ -413,7 +418,7 @@ export const ConversationHistory = memo(
             ) : filtered.length === 0 ? (
               <div className="px-3 py-8 text-center">
                 <p className="text-xs text-muted-foreground/40">
-                  {query ? "No matches found" : "No conversations yet"}
+                  {query ? t("history.noMatches") : t("history.noConversations")}
                 </p>
               </div>
             ) : (
@@ -432,6 +437,7 @@ export const ConversationHistory = memo(
                       setDeleteDialogOpen(true);
                     }}
                     onMouseEnter={() => setFocusedIndex(idx)}
+                    t={t}
                   />
                 </div>
               ))
@@ -449,7 +455,7 @@ export const ConversationHistory = memo(
             <div className="flex items-center gap-1.5">
               <Sparkles className="w-3 h-3 text-primary/70" />
               <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50 select-none">
-                Workflows
+                {t("history.workflows")}
               </span>
             </div>
             {workflowsExpanded ? (
@@ -468,7 +474,7 @@ export const ConversationHistory = memo(
                 </>
               ) : workflows.length === 0 ? (
                 <p className="px-3 py-3 text-[11px] text-muted-foreground/35 text-center">
-                  No workflows yet
+                  {t("history.noWorkflows")}
                 </p>
               ) : (
                 workflows.map((wf) => {
@@ -480,10 +486,10 @@ export const ConversationHistory = memo(
                   const mins = Math.floor(diff / 60000);
                   const relTime =
                     mins < 1
-                      ? "just now"
+                      ? t("history.time.justNow")
                       : mins < 60
-                        ? `${mins}m ago`
-                        : `${Math.floor(mins / 60)}h ago`;
+                        ? t("history.time.mAgo", { count: mins })
+                        : t("history.time.hAgo", { count: Math.floor(mins / 60) });
 
                   return (
                     <div
@@ -546,22 +552,22 @@ export const ConversationHistory = memo(
         <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Delete Conversation</AlertDialogTitle>
+              <AlertDialogTitle>{t("history.deleteConversation")}</AlertDialogTitle>
               <AlertDialogDescription>
-                Delete{" "}
+                {t("history.delete")} {" "}
                 <strong>
-                  {selectedConversation?.title || "this conversation"}
+                  {selectedConversation?.title || t("history.untitled")}
                 </strong>
-                ? This cannot be undone.
+                ? {t("history.deleteConfirm")}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
               <AlertDialogAction
                 onClick={handleDeleteConversation}
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               >
-                Delete
+                {t("history.delete")}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -573,19 +579,17 @@ export const ConversationHistory = memo(
         >
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Archive Conversation</AlertDialogTitle>
+              <AlertDialogTitle>{t("history.archiveConversation")}</AlertDialogTitle>
               <AlertDialogDescription>
-                Move{" "}
-                <strong>
-                  {selectedConversation?.title || "this conversation"}
-                </strong>{" "}
-                to archives?
+                {t("history.archiveConfirm")} (<strong>
+                  {selectedConversation?.title || t("history.untitled")}
+                </strong>)
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
               <AlertDialogAction onClick={handleArchiveConversation}>
-                Archive
+                {t("history.archive")}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

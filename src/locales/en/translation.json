@@ -1,0 +1,83 @@
+{
+  "profile": {
+    "settings": "Settings",
+    "manageAccount": "Manage your account settings and preferences.",
+    "general": "General",
+    "security": "Security",
+    "notifications": "Notifications",
+    "appearance": "Appearance",
+    "data": "Data & Privacy",
+    "language": "Language",
+    "timezone": "Timezone",
+    "saveChanges": "Save changes",
+    "savingChanges": "Saving changes...",
+    "profileInformation": "Profile Information",
+    "manageDetails": "Manage your personal details and how you appear on the platform.",
+    "fullName": "Full Name",
+    "emailAddress": "Email Address",
+    "uploadPicture": "Upload new picture"
+  },
+  "sidebar": {
+    "chat": "Chat",
+    "agents": "Agents",
+    "analytics": "Analytics",
+    "profile": "Profile",
+    "title": "Multi-Agent AI",
+    "subtitle": "Intelligent orchestration",
+    "exportData": "Export Data"
+  },
+  "chat": {
+    "sessionExpired": "Session Expired",
+    "sessionExpiredDesc": "Your session has expired. Please refresh to continue.",
+    "refreshing": "Refreshing...",
+    "refreshSession": "Refresh Session",
+    "reloadPage": "Reload Page",
+    "aiChat": "AI Chat",
+    "orchestrator": "The Orchestrator",
+    "heroTitle": "Think, write, execute.",
+    "heroSubtitle": "All in one workspace.",
+    "history": "History",
+    "hideConversations": "Hide conversations",
+    "showConversations": "Show conversations",
+    "newConversation": "New Conversation",
+    "readyToChat": "Ready to chat",
+    "readyToChatDesc": "Start typing your message below.",
+    "newChatStarted": "New chat started",
+    "newChatStartedDesc": "You can now start messaging your agents.",
+    "convDeleted": "Conversation deleted",
+    "convDeletedDesc": "The conversation has been removed.",
+    "convArchived": "Conversation archived",
+    "convArchivedDesc": "The conversation has been archived.",
+    "convNotFound": "Conversation not found",
+    "convNotFoundDesc": "This conversation may have been deleted."
+  },
+  "history": {
+    "conversations": "Conversations",
+    "new": "New",
+    "search": "Search...",
+    "noMatches": "No matches found",
+    "noConversations": "No conversations yet",
+    "workflows": "Workflows",
+    "noWorkflows": "No workflows yet",
+    "untitled": "Untitled",
+    "archive": "Archive",
+    "delete": "Delete",
+    "deleteConversation": "Delete Conversation",
+    "deleteConfirm": "This cannot be undone.",
+    "archiveConversation": "Archive Conversation",
+    "archiveConfirm": "Move this to archives?",
+    "time": {
+      "justNow": "just now",
+      "mAgo": "{{count}}m ago",
+      "hAgo": "{{count}}h ago",
+      "dAgo": "{{count}}d ago"
+    }
+  },
+  "common": {
+    "loading": "Loading...",
+    "cancel": "Cancel",
+    "save": "Save",
+    "confirm": "Confirm",
+    "delete": "Delete"
+  }
+}
