@@ -58,8 +58,14 @@ export default function AuthCallback() {
         // CRITICAL: Explicitly catch OAuth Errors (User Canceled, Consent Denied, etc.)
         const errorInUrl = searchParams.get("error") || hashParams.get("error");
         if (errorInUrl) {
-          const errorDesc = searchParams.get("error_description") || hashParams.get("error_description") || errorInUrl;
-          console.warn("OAuth flow halted by user or provider error:", errorInUrl);
+          const errorDesc =
+            searchParams.get("error_description") ||
+            hashParams.get("error_description") ||
+            errorInUrl;
+          console.warn(
+            "OAuth flow halted by user or provider error:",
+            errorInUrl,
+          );
           throw new Error(errorDesc.replace(/\+/g, " "));
         }
 
@@ -280,7 +286,9 @@ export default function AuthCallback() {
           err.message?.toLowerCase().includes("cancel");
 
         if (isUserCancellation) {
-          console.log("OAuth User Cancellation - redirecting straight back to Auth");
+          console.log(
+            "OAuth User Cancellation - redirecting straight back to Auth",
+          );
           // Clear storage to remove dirty temporary login data
           localStorage.removeItem("beseekr-auth-token");
           navigate("/auth", { replace: true });

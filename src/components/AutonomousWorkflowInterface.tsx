@@ -595,425 +595,418 @@ export const AutonomousWorkflowInterface: React.FC<
 
   return createPortal(
     <AnimatePresence mode="wait">
-        {/* ════════════════════════ PHASE: prompt ════════════════════════ */}
-        {phase === "prompt" && (
+      {/* ════════════════════════ PHASE: prompt ════════════════════════ */}
+      {phase === "prompt" && (
+        <motion.div
+          key="prompt"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0, scale: 0.97 }}
+          transition={{ duration: 0.15 }}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4"
+        >
+          <ParticleField />
+
           <motion.div
-            key="prompt"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0, scale: 0.97 }}
-            transition={{ duration: 0.15 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4"
+            initial={{ scale: 0.92, y: 24 }}
+            animate={{ scale: 1, y: 0 }}
+            transition={{ type: "spring", stiffness: 220, damping: 22 }}
+            className="w-full max-w-xl relative z-10"
           >
-            <ParticleField />
+            <div
+              className="absolute -inset-8 rounded-3xl pointer-events-none"
+              style={{
+                background:
+                  "radial-gradient(ellipse at 50% 60%, hsl(var(--primary)/0.12), transparent 70%)",
+              }}
+            />
 
-            <motion.div
-              initial={{ scale: 0.92, y: 24 }}
-              animate={{ scale: 1, y: 0 }}
-              transition={{ type: "spring", stiffness: 220, damping: 22 }}
-              className="w-full max-w-xl relative z-10"
-            >
-              <div
-                className="absolute -inset-8 rounded-3xl pointer-events-none"
-                style={{
-                  background:
-                    "radial-gradient(ellipse at 50% 60%, hsl(var(--primary)/0.12), transparent 70%)",
-                }}
-              />
-
-              <div className="relative bg-background/50 backdrop-blur-3xl border border-white/[0.08] rounded-[2rem] shadow-[0_0_60px_-15px_rgba(0,0,0,0.7)] p-8 sm:p-10 overflow-hidden group">
-                {/* High aesthetic border glow */}
-                <div className="absolute inset-0 rounded-[2rem] p-px bg-gradient-to-b from-white/[0.12] to-transparent -z-10 pointer-events-none" />
-                <div className="absolute -inset-20 bg-gradient-to-b from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 blur-3xl -z-10 pointer-events-none" />
-                {/* Dismiss entire modal */}
-                <button
-                  onClick={handleDismiss}
-                  className="absolute top-4 right-4 p-2 rounded-xl bg-muted/60 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors z-20"
-                  aria-label="Close"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-                {/* Icon */}
-                <div className="flex justify-center mb-6">
-                  <motion.div
-                    animate={{ rotate: [0, 8, -8, 0], scale: [1, 1.06, 1] }}
-                    transition={{
-                      duration: 4,
-                      repeat: Infinity,
-                      ease: "easeInOut",
-                    }}
-                    className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg"
-                    style={{
-                      background:
-                        "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)))",
-                    }}
-                  >
-                    <Sparkles className="w-8 h-8 text-white" />
-                  </motion.div>
-                </div>
-
-                <h2 className="text-2xl sm:text-3xl font-bold text-center mb-1 tracking-tight">
-                  Autonomous Workflow
-                </h2>
-                <p className="text-sm text-muted-foreground text-center mb-6">
-                  Describe your task — AI spawns specialized agents to solve it
-                </p>
-
-                <Textarea
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && (e.metaKey || e.ctrlKey))
-                      handleStartWorkflow();
+            <div className="relative bg-background/50 backdrop-blur-3xl border border-white/[0.08] rounded-[2rem] shadow-[0_0_60px_-15px_rgba(0,0,0,0.7)] p-8 sm:p-10 overflow-hidden group">
+              {/* High aesthetic border glow */}
+              <div className="absolute inset-0 rounded-[2rem] p-px bg-gradient-to-b from-white/[0.12] to-transparent -z-10 pointer-events-none" />
+              <div className="absolute -inset-20 bg-gradient-to-b from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 blur-3xl -z-10 pointer-events-none" />
+              {/* Dismiss entire modal */}
+              <button
+                onClick={handleDismiss}
+                className="absolute top-4 right-4 p-2 rounded-xl bg-muted/60 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors z-20"
+                aria-label="Close"
+              >
+                <X className="w-4 h-4" />
+              </button>
+              {/* Icon */}
+              <div className="flex justify-center mb-6">
+                <motion.div
+                  animate={{ rotate: [0, 8, -8, 0], scale: [1, 1.06, 1] }}
+                  transition={{
+                    duration: 4,
+                    repeat: Infinity,
+                    ease: "easeInOut",
                   }}
-                  placeholder="E.g., Research the latest AI trends, analyze them, and write a comprehensive report…"
-                  className="min-h-[110px] resize-none text-sm mb-4"
-                  autoFocus
-                />
-
-                <div className="mb-4">
-                  <div className="flex items-center gap-1.5 mb-2 text-muted-foreground/80">
-                    <TrendingUp className="w-3.5 h-3.5" />
-                    <span className="text-[11px] font-semibold uppercase tracking-wider">
-                      Trending Topics
-                    </span>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {TRENDING_TOPICS.map((topic, i) => (
-                      <button
-                        key={i}
-                        onClick={() => setPrompt(topic)}
-                        className="text-[11.5px] px-2.5 py-1.5 rounded-lg border border-border/50 bg-muted/40 hover:bg-muted/80 hover:border-border text-foreground/75 hover:text-foreground transition-all text-left"
-                      >
-                        {topic}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="mb-4">
-                  <ChatFileUpload
-                    onFilesUploaded={(files) =>
-                      setAttachedFiles((prev) => [...prev, ...files])
-                    }
-                    attachedFiles={attachedFiles}
-                    onRemoveFile={(id) =>
-                      setAttachedFiles((prev) =>
-                        prev.filter((f) => f.id !== id),
-                      )
-                    }
-                    disabled={false}
-                  />
-                </div>
-
-                <Button
-                  onClick={handleStartWorkflow}
-                  disabled={!prompt.trim()}
-                  size="lg"
-                  className="w-full gap-2 font-semibold"
+                  className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg"
                   style={{
                     background:
                       "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)))",
                   }}
                 >
-                  <Sparkles className="w-4 h-4" /> Start Workflow
-                </Button>
+                  <Sparkles className="w-8 h-8 text-white" />
+                </motion.div>
               </div>
-            </motion.div>
-          </motion.div>
-        )}
 
-        {/* ════════════════ PHASE: executing / cancelling ════════════════ */}
-        {(phase === "executing" || phase === "cancelling") && (
-          <motion.div
-            key="executing"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background/95 backdrop-blur-sm overflow-y-auto overflow-x-hidden p-4"
-          >
-            <button
-              onClick={handleDismiss}
-              className="fixed top-4 right-4 p-2 rounded-xl bg-background/60 hover:bg-background/90 border border-border/40 transition-colors z-50 cursor-pointer"
-              aria-label="Close workflow"
-              title="Close"
-            >
-              <X className="w-4 h-4" />
-            </button>
+              <h2 className="text-2xl sm:text-3xl font-bold text-center mb-1 tracking-tight">
+                Autonomous Workflow
+              </h2>
+              <p className="text-sm text-muted-foreground text-center mb-6">
+                Describe your task — AI spawns specialized agents to solve it
+              </p>
 
-            <div className="w-full max-w-[1400px] mx-auto px-4 relative flex flex-col items-center mt-12">
-              {/* ── Sleek Central Hub ── */}
-              <div className="flex flex-col items-center justify-center w-full mx-auto mb-8 relative z-10 px-4 mt-8">
-                {/* ── Before Plan Arrives (Queue/Planning) ────────────── */}
-                {agents.length === 0 && !isCancelling ? (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="flex flex-col items-center justify-center pt-8 pb-12 w-full max-w-sm"
-                  >
-                    <div className="relative mb-8 w-24 h-24 flex items-center justify-center">
-                      {/* Spinner rings */}
-                      <motion.div
-                        animate={{ rotate: 360 }}
-                        transition={{
-                          duration: 3,
-                          repeat: Infinity,
-                          ease: "linear",
-                        }}
-                        className="absolute inset-0 rounded-full border-t-2 border-primary border-opacity-30"
-                      />
-                      <motion.div
-                        animate={{ rotate: -360 }}
-                        transition={{
-                          duration: 2,
-                          repeat: Infinity,
-                          ease: "linear",
-                        }}
-                        className="absolute inset-2 rounded-full border-t-2 border-accent border-opacity-60"
-                      />
-                      <div className="relative z-10 w-14 h-14 rounded-full bg-background border border-border flex items-center justify-center shadow-[0_0_20px_rgba(var(--primary-glow),0.2)]">
-                        <Brain className="w-6 h-6 text-primary animate-pulse" />
-                      </div>
-                    </div>
+              <Textarea
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && (e.metaKey || e.ctrlKey))
+                    handleStartWorkflow();
+                }}
+                placeholder="E.g., Research the latest AI trends, analyze them, and write a comprehensive report…"
+                className="min-h-[110px] resize-none text-sm mb-4"
+                autoFocus
+              />
 
-                    {/* Animated Step Tracker */}
-                    <div className="w-full space-y-4">
-                      <div className="flex items-center gap-3">
-                        <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-                        <span className="text-sm font-medium text-foreground">
-                          Request queued
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        {workflowPhase === "planning" ||
-                        workflowPhase === "creating_agents" ? (
-                          <Loader2 className="w-5 h-5 text-primary animate-spin" />
-                        ) : workflowPhase === "queued" ? (
-                          <div className="w-5 h-5 rounded-full border-2 border-border" />
-                        ) : (
-                          <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-                        )}
-                        <span
-                          className={cn(
-                            "text-sm font-medium",
-                            ["planning", "creating_agents"].includes(
-                              workflowPhase,
-                            )
-                              ? "text-foreground"
-                              : "text-muted-foreground",
-                          )}
-                        >
-                          Architecting multi-agent workflow
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        {workflowPhase === "creating_agents" ? (
-                          <Loader2 className="w-5 h-5 text-primary animate-spin" />
-                        ) : (
-                          <div className="w-5 h-5 rounded-full border-2 border-border" />
-                        )}
-                        <span
-                          className={cn(
-                            "text-sm font-medium",
-                            workflowPhase === "creating_agents"
-                              ? "text-foreground"
-                              : "text-muted-foreground",
-                          )}
-                        >
-                          Spawning specialized agents
-                        </span>
-                      </div>
-                    </div>
-                  </motion.div>
-                ) : (
-                  /* ── After Plan Arrives (Orbital System) ────────────── */
-                  <div className="w-full max-w-5xl flex justify-center mt-4 mb-4">
-                    <LiveGraphVisualizer
-                      workflowPhase={workflowPhase}
-                      agents={agents}
-                      isSynthesizing={isSynthesizing}
-                      redTeamCritique={redTeamCritique}
-                    />
-                  </div>
-                )}
-
-                <div className="mt-6">
-                  <p
-                    className={cn(
-                      "text-lg font-semibold text-center mb-2 transition-colors duration-300",
-                      isCancelling
-                        ? "text-muted-foreground"
-                        : "text-foreground",
-                    )}
-                  >
-                    {isCancelling ? "Stopping workflow…" : status}
-                  </p>
-
-                  {executionPlan && !isCancelling && (
-                    <motion.p
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="text-xs text-muted-foreground text-center max-w-[400px]"
+              <div className="mb-4">
+                <div className="flex items-center gap-1.5 mb-2 text-muted-foreground/80">
+                  <TrendingUp className="w-3.5 h-3.5" />
+                  <span className="text-[11px] font-semibold uppercase tracking-wider">
+                    Trending Topics
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {TRENDING_TOPICS.map((topic, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setPrompt(topic)}
+                      className="text-[11.5px] px-2.5 py-1.5 rounded-lg border border-border/50 bg-muted/40 hover:bg-muted/80 hover:border-border text-foreground/75 hover:text-foreground transition-all text-left"
                     >
-                      {executionPlan.length > 100
-                        ? executionPlan.slice(0, 100) + "…"
-                        : executionPlan}
-                    </motion.p>
-                  )}
+                      {topic}
+                    </button>
+                  ))}
                 </div>
               </div>
 
-              {/* Live output preview removed because it is now natively rendered inside each block of the LiveGraphVisualizer. */}
+              <div className="mb-4">
+                <ChatFileUpload
+                  onFilesUploaded={(files) =>
+                    setAttachedFiles((prev) => [...prev, ...files])
+                  }
+                  attachedFiles={attachedFiles}
+                  onRemoveFile={(id) =>
+                    setAttachedFiles((prev) => prev.filter((f) => f.id !== id))
+                  }
+                  disabled={false}
+                />
+              </div>
 
-              {/* Stop Workflow Button */}
-              <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-                className="mt-6 w-full max-w-lg mx-auto flex justify-center"
+              <Button
+                onClick={handleStartWorkflow}
+                disabled={!prompt.trim()}
+                size="lg"
+                className="w-full gap-2 font-semibold"
+                style={{
+                  background:
+                    "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)))",
+                }}
               >
-                <button
-                  onClick={handleCancel}
-                  disabled={isCancelling}
-                  className={cn(
-                    "flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold border transition-all select-none",
-                    isCancelling
-                      ? "border-border/30 text-muted-foreground bg-muted/20 cursor-not-allowed"
-                      : "border-destructive/40 text-destructive bg-destructive/5 hover:bg-destructive/12 hover:border-destructive/70 active:scale-95",
-                  )}
-                  aria-label="Stop workflow"
-                >
-                  {isCancelling ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" /> Stopping…
-                    </>
-                  ) : (
-                    <>
-                      <Square className="w-3.5 h-3.5 fill-current" /> Stop
-                      Workflow
-                    </>
-                  )}
-                </button>
-              </motion.div>
+                <Sparkles className="w-4 h-4" /> Start Workflow
+              </Button>
             </div>
           </motion.div>
-        )}
+        </motion.div>
+      )}
 
-        {/* ════════════════════════ PHASE: complete ════════════════════════ */}
-        {phase === "complete" && finalAnswer && (
-          <motion.div
-            key="complete"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="fixed inset-0 z-50 overflow-y-auto bg-background/98 backdrop-blur-2xl p-4"
+      {/* ════════════════ PHASE: executing / cancelling ════════════════ */}
+      {(phase === "executing" || phase === "cancelling") && (
+        <motion.div
+          key="executing"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.3 }}
+          className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background/95 backdrop-blur-sm overflow-y-auto overflow-x-hidden p-4"
+        >
+          <button
+            onClick={handleDismiss}
+            className="fixed top-4 right-4 p-2 rounded-xl bg-background/60 hover:bg-background/90 border border-border/40 transition-colors z-50 cursor-pointer"
+            aria-label="Close workflow"
+            title="Close"
           >
-            <div className="max-w-5xl w-full mx-auto py-8 lg:py-12 px-4">
-              <motion.div
-                initial={{ scale: 0.95, y: 20 }}
-                animate={{ scale: 1, y: 0 }}
-                transition={{ type: "spring", stiffness: 200 }}
-                className="relative bg-background/80 backdrop-blur-3xl border border-primary/20 rounded-3xl shadow-[0_0_80px_rgba(var(--primary-glow,0,0,0),0.1)] p-8 sm:p-12 overflow-hidden"
-              >
-                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[120px] pointer-events-none -translate-y-1/2 translate-x-1/3" />
-                <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-accent/10 rounded-full blur-[100px] pointer-events-none translate-y-1/3 -translate-x-1/3" />
+            <X className="w-4 h-4" />
+          </button>
 
-                {/* Header */}
-                <div className="flex items-center gap-4 mb-6 pb-5 border-b border-border/30">
-                  <div
-                    className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg shrink-0"
-                    style={{
-                      background: "linear-gradient(135deg, #10b981, #059669)",
-                    }}
-                  >
-                    <CheckCircle2 className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-emerald-500">
-                      Workflow Complete
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      {agents.length} agent{agents.length !== 1 ? "s" : ""}{" "}
-                      collaborated · All tasks finished
-                    </p>
-                  </div>
-
-                  <div className="flex items-center ml-auto gap-4">
-                    {/* Confidence Score */}
-                    {confidenceScore !== null && (
-                      <div
-                        className="flex flex-col items-end justify-center mr-4 pr-4 border-r border-border/40 cursor-help"
-                        title={
-                          confidenceDeductions.length > 0
-                            ? "Potential Issues:\n" +
-                              confidenceDeductions
-                                .map((d) => "• " + d)
-                                .join("\n")
-                            : "High Trust: No major issues detected during generation."
-                        }
-                      >
-                        <span
-                          className={cn(
-                            "text-[9px] font-bold uppercase tracking-widest mb-0.5",
-                            confidenceScore >= 80
-                              ? "text-emerald-500"
-                              : confidenceScore >= 50
-                                ? "text-amber-500"
-                                : "text-rose-500",
-                          )}
-                        >
-                          Confidence
-                        </span>
-                        <span
-                          className={cn(
-                            "text-xl font-black leading-none",
-                            confidenceScore >= 80
-                              ? "text-emerald-400"
-                              : confidenceScore >= 50
-                                ? "text-amber-400"
-                                : "text-rose-400",
-                          )}
-                        >
-                          {confidenceScore}%
-                        </span>
-                      </div>
-                    )}
-
-                    {/* Agent chips */}
-                    <div className="hidden sm:flex flex-wrap gap-1.5 justify-end max-w-xs">
-                      {agents.map((a, i) => (
-                        <span
-                          key={a.id || i}
-                          className="text-[9px] px-2 py-0.5 rounded-full font-medium"
-                          style={{
-                            background: `${AGENT_PALETTES[i % AGENT_PALETTES.length].glow}22`,
-                            color:
-                              AGENT_PALETTES[i % AGENT_PALETTES.length].from,
-                            border: `1px solid ${AGENT_PALETTES[i % AGENT_PALETTES.length].from}44`,
-                          }}
-                        >
-                          {a.name}
-                        </span>
-                      ))}
+          <div className="w-full max-w-[1400px] mx-auto px-4 relative flex flex-col items-center mt-12">
+            {/* ── Sleek Central Hub ── */}
+            <div className="flex flex-col items-center justify-center w-full mx-auto mb-8 relative z-10 px-4 mt-8">
+              {/* ── Before Plan Arrives (Queue/Planning) ────────────── */}
+              {agents.length === 0 && !isCancelling ? (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="flex flex-col items-center justify-center pt-8 pb-12 w-full max-w-sm"
+                >
+                  <div className="relative mb-8 w-24 h-24 flex items-center justify-center">
+                    {/* Spinner rings */}
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{
+                        duration: 3,
+                        repeat: Infinity,
+                        ease: "linear",
+                      }}
+                      className="absolute inset-0 rounded-full border-t-2 border-primary border-opacity-30"
+                    />
+                    <motion.div
+                      animate={{ rotate: -360 }}
+                      transition={{
+                        duration: 2,
+                        repeat: Infinity,
+                        ease: "linear",
+                      }}
+                      className="absolute inset-2 rounded-full border-t-2 border-accent border-opacity-60"
+                    />
+                    <div className="relative z-10 w-14 h-14 rounded-full bg-background border border-border flex items-center justify-center shadow-[0_0_20px_rgba(var(--primary-glow),0.2)]">
+                      <Brain className="w-6 h-6 text-primary animate-pulse" />
                     </div>
-
-                    {/* Close Button */}
-                    <button
-                      onClick={handleDismiss}
-                      className="p-2 rounded-xl bg-muted/60 hover:bg-destructive/15 text-muted-foreground hover:text-destructive border border-transparent hover:border-destructive/30 transition-all shrink-0 cursor-pointer"
-                      title="Close Workflow Results"
-                      aria-label="Close"
-                    >
-                      <X className="w-5 h-5" />
-                    </button>
                   </div>
+
+                  {/* Animated Step Tracker */}
+                  <div className="w-full space-y-4">
+                    <div className="flex items-center gap-3">
+                      <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                      <span className="text-sm font-medium text-foreground">
+                        Request queued
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      {workflowPhase === "planning" ||
+                      workflowPhase === "creating_agents" ? (
+                        <Loader2 className="w-5 h-5 text-primary animate-spin" />
+                      ) : workflowPhase === "queued" ? (
+                        <div className="w-5 h-5 rounded-full border-2 border-border" />
+                      ) : (
+                        <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                      )}
+                      <span
+                        className={cn(
+                          "text-sm font-medium",
+                          ["planning", "creating_agents"].includes(
+                            workflowPhase,
+                          )
+                            ? "text-foreground"
+                            : "text-muted-foreground",
+                        )}
+                      >
+                        Architecting multi-agent workflow
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      {workflowPhase === "creating_agents" ? (
+                        <Loader2 className="w-5 h-5 text-primary animate-spin" />
+                      ) : (
+                        <div className="w-5 h-5 rounded-full border-2 border-border" />
+                      )}
+                      <span
+                        className={cn(
+                          "text-sm font-medium",
+                          workflowPhase === "creating_agents"
+                            ? "text-foreground"
+                            : "text-muted-foreground",
+                        )}
+                      >
+                        Spawning specialized agents
+                      </span>
+                    </div>
+                  </div>
+                </motion.div>
+              ) : (
+                /* ── After Plan Arrives (Orbital System) ────────────── */
+                <div className="w-full max-w-5xl flex justify-center mt-4 mb-4">
+                  <LiveGraphVisualizer
+                    workflowPhase={workflowPhase}
+                    agents={agents}
+                    isSynthesizing={isSynthesizing}
+                    redTeamCritique={redTeamCritique}
+                  />
+                </div>
+              )}
+
+              <div className="mt-6">
+                <p
+                  className={cn(
+                    "text-lg font-semibold text-center mb-2 transition-colors duration-300",
+                    isCancelling ? "text-muted-foreground" : "text-foreground",
+                  )}
+                >
+                  {isCancelling ? "Stopping workflow…" : status}
+                </p>
+
+                {executionPlan && !isCancelling && (
+                  <motion.p
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="text-xs text-muted-foreground text-center max-w-[400px]"
+                  >
+                    {executionPlan.length > 100
+                      ? executionPlan.slice(0, 100) + "…"
+                      : executionPlan}
+                  </motion.p>
+                )}
+              </div>
+            </div>
+
+            {/* Live output preview removed because it is now natively rendered inside each block of the LiveGraphVisualizer. */}
+
+            {/* Stop Workflow Button */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="mt-6 w-full max-w-lg mx-auto flex justify-center"
+            >
+              <button
+                onClick={handleCancel}
+                disabled={isCancelling}
+                className={cn(
+                  "flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold border transition-all select-none",
+                  isCancelling
+                    ? "border-border/30 text-muted-foreground bg-muted/20 cursor-not-allowed"
+                    : "border-destructive/40 text-destructive bg-destructive/5 hover:bg-destructive/12 hover:border-destructive/70 active:scale-95",
+                )}
+                aria-label="Stop workflow"
+              >
+                {isCancelling ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" /> Stopping…
+                  </>
+                ) : (
+                  <>
+                    <Square className="w-3.5 h-3.5 fill-current" /> Stop
+                    Workflow
+                  </>
+                )}
+              </button>
+            </motion.div>
+          </div>
+        </motion.div>
+      )}
+
+      {/* ════════════════════════ PHASE: complete ════════════════════════ */}
+      {phase === "complete" && finalAnswer && (
+        <motion.div
+          key="complete"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.3 }}
+          className="fixed inset-0 z-50 overflow-y-auto bg-background/98 backdrop-blur-2xl p-4"
+        >
+          <div className="max-w-5xl w-full mx-auto py-8 lg:py-12 px-4">
+            <motion.div
+              initial={{ scale: 0.95, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              transition={{ type: "spring", stiffness: 200 }}
+              className="relative bg-background/80 backdrop-blur-3xl border border-primary/20 rounded-3xl shadow-[0_0_80px_rgba(var(--primary-glow,0,0,0),0.1)] p-8 sm:p-12 overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[120px] pointer-events-none -translate-y-1/2 translate-x-1/3" />
+              <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-accent/10 rounded-full blur-[100px] pointer-events-none translate-y-1/3 -translate-x-1/3" />
+
+              {/* Header */}
+              <div className="flex items-center gap-4 mb-6 pb-5 border-b border-border/30">
+                <div
+                  className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg shrink-0"
+                  style={{
+                    background: "linear-gradient(135deg, #10b981, #059669)",
+                  }}
+                >
+                  <CheckCircle2 className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-emerald-500">
+                    Workflow Complete
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    {agents.length} agent{agents.length !== 1 ? "s" : ""}{" "}
+                    collaborated · All tasks finished
+                  </p>
                 </div>
 
-                {/* Markdown result */}
-                <div
-                  className="relative z-10 prose prose-sm sm:prose-base lg:prose-lg max-w-none dark:prose-invert mb-10
+                <div className="flex items-center ml-auto gap-4">
+                  {/* Confidence Score */}
+                  {confidenceScore !== null && (
+                    <div
+                      className="flex flex-col items-end justify-center mr-4 pr-4 border-r border-border/40 cursor-help"
+                      title={
+                        confidenceDeductions.length > 0
+                          ? "Potential Issues:\n" +
+                            confidenceDeductions.map((d) => "• " + d).join("\n")
+                          : "High Trust: No major issues detected during generation."
+                      }
+                    >
+                      <span
+                        className={cn(
+                          "text-[9px] font-bold uppercase tracking-widest mb-0.5",
+                          confidenceScore >= 80
+                            ? "text-emerald-500"
+                            : confidenceScore >= 50
+                              ? "text-amber-500"
+                              : "text-rose-500",
+                        )}
+                      >
+                        Confidence
+                      </span>
+                      <span
+                        className={cn(
+                          "text-xl font-black leading-none",
+                          confidenceScore >= 80
+                            ? "text-emerald-400"
+                            : confidenceScore >= 50
+                              ? "text-amber-400"
+                              : "text-rose-400",
+                        )}
+                      >
+                        {confidenceScore}%
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Agent chips */}
+                  <div className="hidden sm:flex flex-wrap gap-1.5 justify-end max-w-xs">
+                    {agents.map((a, i) => (
+                      <span
+                        key={a.id || i}
+                        className="text-[9px] px-2 py-0.5 rounded-full font-medium"
+                        style={{
+                          background: `${AGENT_PALETTES[i % AGENT_PALETTES.length].glow}22`,
+                          color: AGENT_PALETTES[i % AGENT_PALETTES.length].from,
+                          border: `1px solid ${AGENT_PALETTES[i % AGENT_PALETTES.length].from}44`,
+                        }}
+                      >
+                        {a.name}
+                      </span>
+                    ))}
+                  </div>
+
+                  {/* Close Button */}
+                  <button
+                    onClick={handleDismiss}
+                    className="p-2 rounded-xl bg-muted/60 hover:bg-destructive/15 text-muted-foreground hover:text-destructive border border-transparent hover:border-destructive/30 transition-all shrink-0 cursor-pointer"
+                    title="Close Workflow Results"
+                    aria-label="Close"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Markdown result */}
+              <div
+                className="relative z-10 prose prose-sm sm:prose-base lg:prose-lg max-w-none dark:prose-invert mb-10
                   prose-headings:font-bold prose-headings:tracking-tight
                   prose-h1:text-4xl prose-h1:mb-6 prose-h1:mt-8 prose-h1:bg-clip-text prose-h1:text-transparent prose-h1:bg-gradient-to-r prose-h1:from-primary prose-h1:to-accent
                   prose-h2:text-2xl prose-h2:mb-4 prose-h2:mt-10 prose-h2:text-foreground prose-h2:border-b-2 prose-h2:border-border/50 prose-h2:pb-2
@@ -1034,145 +1027,141 @@ export const AutonomousWorkflowInterface: React.FC<
                   prose-img:rounded-2xl prose-img:shadow-[0_0_40px_rgba(var(--primary-glow,0,0,0),0.15)] prose-img:border prose-img:border-primary/10 prose-img:my-8 prose-img:mx-auto prose-img:max-w-full
                   prose-hr:border-none prose-hr:h-px prose-hr:bg-gradient-to-r prose-hr:from-transparent prose-hr:via-primary/50 prose-hr:to-transparent prose-hr:my-10
                 "
-                >
-                  <ReactMarkdown
-                    remarkPlugins={[remarkGfm]}
-                    rehypePlugins={[rehypeRaw]}
-                    components={{
-                      img: ({ node, ...props }) => (
-                        <img
-                          {...props}
-                          className="rounded-lg shadow-md my-4 mx-auto max-w-full"
-                          loading="lazy"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).style.display =
-                              "none";
-                          }}
-                        />
-                      ),
-                      code: ({ node, className, children, ...props }: any) => {
-                        const match = /language-(\w+)/.exec(className || "");
-                        const codeString = String(children).replace(/\n$/, "");
-                        return match ? (
-                          <div className="relative my-4">
-                            <div className="flex items-center justify-between bg-muted/50 border-b border-border/50 px-4 py-2 rounded-t-lg">
-                              <span className="text-xs font-medium text-muted-foreground">
-                                {match[1]}
-                              </span>
-                              <button
-                                onClick={() => handleCopyCode(codeString)}
-                                className="text-xs flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
-                              >
-                                {copiedCode === codeString ? (
-                                  <>
-                                    <Check className="w-3 h-3" /> Copied
-                                  </>
-                                ) : (
-                                  <>
-                                    <Copy className="w-3 h-3" /> Copy
-                                  </>
-                                )}
-                              </button>
-                            </div>
-                            <pre className="bg-muted border border-border/50 rounded-b-lg p-4 overflow-x-auto">
-                              <code className={className} {...props}>
-                                {children}
-                              </code>
-                            </pre>
+              >
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  rehypePlugins={[rehypeRaw]}
+                  components={{
+                    img: ({ node, ...props }) => (
+                      <img
+                        {...props}
+                        className="rounded-lg shadow-md my-4 mx-auto max-w-full"
+                        loading="lazy"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = "none";
+                        }}
+                      />
+                    ),
+                    code: ({ node, className, children, ...props }: any) => {
+                      const match = /language-(\w+)/.exec(className || "");
+                      const codeString = String(children).replace(/\n$/, "");
+                      return match ? (
+                        <div className="relative my-4">
+                          <div className="flex items-center justify-between bg-muted/50 border-b border-border/50 px-4 py-2 rounded-t-lg">
+                            <span className="text-xs font-medium text-muted-foreground">
+                              {match[1]}
+                            </span>
+                            <button
+                              onClick={() => handleCopyCode(codeString)}
+                              className="text-xs flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                              {copiedCode === codeString ? (
+                                <>
+                                  <Check className="w-3 h-3" /> Copied
+                                </>
+                              ) : (
+                                <>
+                                  <Copy className="w-3 h-3" /> Copy
+                                </>
+                              )}
+                            </button>
                           </div>
-                        ) : (
-                          <code
-                            className="text-primary bg-muted px-1.5 py-0.5 rounded text-sm"
-                            {...props}
-                          >
-                            {children}
-                          </code>
-                        );
-                      },
-                      table: ({ node, ...props }) => (
-                        <div className="overflow-x-auto my-4 border border-border/50 rounded-lg">
-                          <table
-                            className="w-full border-collapse"
-                            {...props}
-                          />
+                          <pre className="bg-muted border border-border/50 rounded-b-lg p-4 overflow-x-auto">
+                            <code className={className} {...props}>
+                              {children}
+                            </code>
+                          </pre>
                         </div>
-                      ),
-                      a: ({ node, ...props }) => (
-                        <a
+                      ) : (
+                        <code
+                          className="text-primary bg-muted px-1.5 py-0.5 rounded text-sm"
                           {...props}
-                          className="text-primary hover:underline"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        />
-                      ),
-                      blockquote: ({ node, ...props }) => (
-                        <blockquote
-                          className="border-l-4 border-primary/30 pl-4 py-2 my-4 italic text-foreground/80 bg-muted/30 rounded-r-lg"
-                          {...props}
-                        />
-                      ),
-                    }}
-                  >
-                    {finalAnswer}
-                  </ReactMarkdown>
-                </div>
-
-                <div className="pt-5 border-t border-border/30">
-                  <Button
-                    onClick={() => {
-                      resetState();
-                      setPhase("prompt");
-                    }}
-                    size="lg"
-                    className="w-full font-semibold gap-2"
-                    style={{
-                      background: "linear-gradient(135deg, #10b981, #059669)",
-                    }}
-                  >
-                    <Sparkles className="w-4 h-4" /> Start New Workflow
-                  </Button>
-                </div>
-              </motion.div>
-            </div>
-          </motion.div>
-        )}
-
-        {/* ════════════════════════ PHASE: error ════════════════════════ */}
-        {phase === "error" && (
-          <motion.div
-            key="error"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-background/90 backdrop-blur-xl p-4"
-          >
-            <div className="text-center max-w-sm">
-              <div className="w-16 h-16 rounded-2xl bg-destructive/10 flex items-center justify-center mx-auto mb-4">
-                <AlertCircle className="w-8 h-8 text-destructive" />
+                        >
+                          {children}
+                        </code>
+                      );
+                    },
+                    table: ({ node, ...props }) => (
+                      <div className="overflow-x-auto my-4 border border-border/50 rounded-lg">
+                        <table className="w-full border-collapse" {...props} />
+                      </div>
+                    ),
+                    a: ({ node, ...props }) => (
+                      <a
+                        {...props}
+                        className="text-primary hover:underline"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      />
+                    ),
+                    blockquote: ({ node, ...props }) => (
+                      <blockquote
+                        className="border-l-4 border-primary/30 pl-4 py-2 my-4 italic text-foreground/80 bg-muted/30 rounded-r-lg"
+                        {...props}
+                      />
+                    ),
+                  }}
+                >
+                  {finalAnswer}
+                </ReactMarkdown>
               </div>
-              <h3 className="text-xl font-bold mb-2">Workflow Failed</h3>
-              <p className="text-sm text-muted-foreground mb-6">
-                Something went wrong during execution.
-              </p>
-              <div className="flex gap-3 justify-center">
+
+              <div className="pt-5 border-t border-border/30">
                 <Button
                   onClick={() => {
                     resetState();
                     setPhase("prompt");
                   }}
-                  variant="outline"
-                  className="gap-2"
+                  size="lg"
+                  className="w-full font-semibold gap-2"
+                  style={{
+                    background: "linear-gradient(135deg, #10b981, #059669)",
+                  }}
                 >
-                  <ArrowRight className="w-4 h-4" /> Try Again
-                </Button>
-                <Button onClick={handleDismiss} variant="ghost">
-                  Close
+                  <Sparkles className="w-4 h-4" /> Start New Workflow
                 </Button>
               </div>
+            </motion.div>
+          </div>
+        </motion.div>
+      )}
+
+      {/* ════════════════════════ PHASE: error ════════════════════════ */}
+      {phase === "error" && (
+        <motion.div
+          key="error"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-background/90 backdrop-blur-xl p-4"
+        >
+          <div className="text-center max-w-sm">
+            <div className="w-16 h-16 rounded-2xl bg-destructive/10 flex items-center justify-center mx-auto mb-4">
+              <AlertCircle className="w-8 h-8 text-destructive" />
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>,
+            <h3 className="text-xl font-bold mb-2">Workflow Failed</h3>
+            <p className="text-sm text-muted-foreground mb-6">
+              Something went wrong during execution.
+            </p>
+            <div className="flex gap-3 justify-center">
+              <Button
+                onClick={() => {
+                  resetState();
+                  setPhase("prompt");
+                }}
+                variant="outline"
+                className="gap-2"
+              >
+                <ArrowRight className="w-4 h-4" /> Try Again
+              </Button>
+              <Button onClick={handleDismiss} variant="ghost">
+                Close
+              </Button>
+            </div>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>,
     document.body,
   );
 };
