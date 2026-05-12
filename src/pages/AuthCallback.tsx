@@ -274,6 +274,19 @@ export default function AuthCallback() {
           err.message?.includes("not configured") ||
           err.message?.includes("environment");
 
+        // Check if this was a user cancellation
+        const isUserCancellation =
+          err.message?.toLowerCase().includes("denied") ||
+          err.message?.toLowerCase().includes("cancel");
+
+        if (isUserCancellation) {
+          console.log("OAuth User Cancellation - redirecting straight back to Auth");
+          // Clear storage to remove dirty temporary login data
+          localStorage.removeItem("beseekr-auth-token");
+          navigate("/auth", { replace: true });
+          return; // Halt early, don't show 3-second error screen
+        }
+
         if (isConfigError) {
           // Configuration error - redirect to auth with clear message
           console.log("OAuth Config Error - redirecting to auth page");
