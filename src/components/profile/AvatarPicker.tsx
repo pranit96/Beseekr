@@ -1,5 +1,12 @@
 import { useState, useRef, useCallback } from "react";
-import { Upload, CheckCircle2, Trash2, Loader2, ImagePlus, X } from "lucide-react";
+import {
+  Upload,
+  CheckCircle2,
+  Trash2,
+  Loader2,
+  ImagePlus,
+  X,
+} from "lucide-react";
 import Cropper, { Area } from "react-easy-crop";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -39,7 +46,7 @@ const createImage = (url: string): Promise<HTMLImageElement> =>
 // Helper utility: processes the crop from canvas and outputs a Blob file
 async function getCroppedImg(
   imageSrc: string,
-  pixelCrop: Area
+  pixelCrop: Area,
 ): Promise<Blob | null> {
   const image = await createImage(imageSrc);
   const canvas = document.createElement("canvas");
@@ -62,13 +69,17 @@ async function getCroppedImg(
     0,
     0,
     512,
-    512
+    512,
   );
 
   return new Promise((resolve) => {
-    canvas.toBlob((blob) => {
-      resolve(blob);
-    }, "image/jpeg", 0.9); // Generate standardized compressed JPEG
+    canvas.toBlob(
+      (blob) => {
+        resolve(blob);
+      },
+      "image/jpeg",
+      0.9,
+    ); // Generate standardized compressed JPEG
   });
 }
 
@@ -151,11 +162,14 @@ export function AvatarPicker({
       // 3. Push to secured backend route
       const res = await apiClient.uploadAvatar(croppedFile);
       if (res.success && res.data?.avatar_url) {
-        setSelected(res.data.avatar_url); // Sets active selection
-        setImageToCrop(null); // Closes cropper view
+        // IMMEDIATELY finalize choice, close modal, and apply to parent
+        onAvatarChange(res.data.avatar_url);
+        setOpen(false);
+        handleCloseCropper();
+
         toast({
-          title: "Upload successful",
-          description: "Image has been prepared and optimized.",
+          title: "Avatar updated",
+          description: "Your custom profile picture is set.",
         });
       }
     } catch (err: any) {
@@ -223,8 +237,8 @@ export function AvatarPicker({
         </div>
       </div>
 
-      <Dialog 
-        open={open} 
+      <Dialog
+        open={open}
         onOpenChange={(val) => {
           setOpen(val);
           if (!val) handleCloseCropper();
@@ -233,7 +247,9 @@ export function AvatarPicker({
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>
-              {imageToCrop ? "Crop Profile Picture" : "Choose a Profile Picture"}
+              {imageToCrop
+                ? "Crop Profile Picture"
+                : "Choose a Profile Picture"}
             </DialogTitle>
           </DialogHeader>
 
@@ -261,7 +277,7 @@ export function AvatarPicker({
                   onZoomChange={setZoom}
                 />
               </div>
-              
+
               <div className="flex items-center gap-4 px-2">
                 <span className="text-xs text-muted-foreground">Zoom</span>
                 <Slider
@@ -275,8 +291,8 @@ export function AvatarPicker({
               </div>
 
               <div className="flex gap-3 mt-2">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="flex-1 gap-2"
                   onClick={handleCloseCropper}
                   disabled={isUploading}
@@ -284,7 +300,7 @@ export function AvatarPicker({
                   <X className="w-4 h-4" />
                   Cancel
                 </Button>
-                <Button 
+                <Button
                   className="flex-1 gap-2"
                   onClick={handleUploadCropped}
                   disabled={isUploading}
