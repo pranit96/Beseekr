@@ -103,13 +103,16 @@ export default function Profile() {
       return "UTC";
     }
   });
-  const [language, setLanguage] = useState(i18n.language);
+  const [language, setLanguage] = useState(i18n.resolvedLanguage || i18n.language || "en");
 
   const { user, loading, exportData, deleteAccount, refreshAuth } = useAuth();
 
   useEffect(() => {
     if (user?.timezone) setTimezone(user.timezone);
-    if (user?.language) setLanguage(user.language);
+    // Only overwrite language if backend explicitly differs from active resolved language
+    if (user?.language && user.language !== language) {
+      setLanguage(user.language);
+    }
   }, [user?.timezone, user?.language]);
 
   const { toast } = useToast();
