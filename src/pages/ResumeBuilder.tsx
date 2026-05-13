@@ -20,6 +20,8 @@ import {
   CheckCircle2,
   X,
   ShieldCheck,
+  Laptop,
+  Palette,
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
@@ -106,11 +108,60 @@ const PRESET_TEMPLATE: ResumeSchema = {
   certifications: ["AWS Solutions Architect Associate"],
 };
 
+const RESUME_TEMPLATES = [
+  {
+    id: "tech_vanguard",
+    name: "Modern Tech Vanguard",
+    description: "Clean, modern sans-serif geometry with Emerald green accents. Highly recommended for Software Engineers, Data Scientists, and Product Managers.",
+    icon: Laptop,
+    styles: { primaryColor: "#065F46", accentColor: "#059669", fontFamily: "Sans" },
+    colorScheme: "emerald",
+    data: {
+      ...PRESET_TEMPLATE,
+      styles: { primaryColor: "#065F46", accentColor: "#059669", fontFamily: "Sans" }
+    }
+  },
+  {
+    id: "classic_executive",
+    name: "Classic Executive",
+    description: "A timeless Serif layout in Obsidian black. Maximum corporate legibility. Optimal for Finance, Legal, Sales, and C-Suite executive applications.",
+    icon: Briefcase,
+    styles: { primaryColor: "#111827", accentColor: "#4B5563", fontFamily: "Serif" },
+    colorScheme: "slate",
+    data: {
+      ...PRESET_TEMPLATE,
+      personal_info: {
+        ...PRESET_TEMPLATE.personal_info,
+        name: "Robert Sterling",
+        summary: "Dynamic senior professional with over 8 years leading cross-functional enterprise strategy. Proven record optimizing high-performing operational funnels.",
+      },
+      styles: { primaryColor: "#111827", accentColor: "#4B5563", fontFamily: "Serif" }
+    }
+  },
+  {
+    id: "creative_impact",
+    name: "Creative Impact Studio",
+    description: "An energetic layout utilizing Indigo accents to frame key information. Exceptional for Designers, Marketers, Creators, and Modern Startup hubs.",
+    icon: Palette,
+    styles: { primaryColor: "#1A365D", accentColor: "#3B82F6", fontFamily: "Sans" },
+    colorScheme: "indigo",
+    data: {
+      ...PRESET_TEMPLATE,
+      personal_info: {
+        ...PRESET_TEMPLATE.personal_info,
+        name: "Jordan Rivera",
+        summary: "Innovator specialized in human-centric visual frameworks. Combining brand narrative with robust digital architecture to create engaging consumer landscapes.",
+      },
+      styles: { primaryColor: "#1A365D", accentColor: "#3B82F6", fontFamily: "Sans" }
+    }
+  }
+];
+
 export default function ResumeBuilder() {
   const { toast } = useToast();
 
   // App flow state
-  const [step, setStep] = useState<"start" | "loading" | "workspace">("start");
+  const [step, setStep] = useState<"start" | "loading" | "workspace" | "template_select">("start");
   const [loadingMsg, setLoadingMsg] = useState("Parsing Resume...");
 
   // Core functional state
@@ -181,11 +232,18 @@ export default function ResumeBuilder() {
 
   // ── Handlers: Step 1 Start ──────────────────────────────────────────
   const handleStartBlank = () => {
-    setResumeData(PRESET_TEMPLATE);
+    setStep("template_select");
+  };
+
+  const handleSelectTemplate = (template: typeof RESUME_TEMPLATES[0]) => {
+    setResumeData(template.data);
+    // Force UI to clear any stale keyword checks from previous sessions
+    setInjectedKeywords([]);
     setStep("workspace");
+    
     toast({
-      title: "Template loaded!",
-      description: "Go ahead and start editing.",
+      title: `${template.name} Loaded!`,
+      description: "Industry-standard structural layout mapped successfully.",
     });
   };
 
@@ -457,15 +515,19 @@ export default function ResumeBuilder() {
   };
 
   const applyRefactor = (original: string, improved: string) => {
-    // 1. Try matching inside regular professional experience
+    // Normalize for robust fuzzy matching — strip punctuation, collapse whitespace
+    const normalize = (s: string) => s.toLowerCase().replace(/[^\w\s]/g, "").replace(/\s+/g, " ").trim();
+    const normalizedOriginal = normalize(original);
+
     let matched = false;
     setResumeData((prev) => {
       const updatedExp = prev.experience.map((job) => {
-        const bulletIdx = job.highlights.findIndex(
-          (h) =>
-            h.toLowerCase().trim() === original.toLowerCase().trim() ||
-            original.toLowerCase().trim().includes(h.toLowerCase().trim()),
-        );
+        const bulletIdx = job.highlights.findIndex((h) => {
+          const nh = normalize(h);
+          return nh === normalizedOriginal || 
+                 normalizedOriginal.includes(nh) || 
+                 nh.includes(normalizedOriginal);
+        });
         if (bulletIdx !== -1) {
           matched = true;
           const newHighlights = [...job.highlights];
@@ -475,16 +537,16 @@ export default function ResumeBuilder() {
         return job;
       });
 
-      // 2. Try matching inside key projects highlights
       const updatedProj = prev.projects.map((proj) => {
-        const bulletIdx = (proj.highlights || []).findIndex(
-          (h) =>
-            h.toLowerCase().trim() === original.toLowerCase().trim() ||
-            original.toLowerCase().trim().includes(h.toLowerCase().trim()),
-        );
+        const bulletIdx = (proj.highlights || []).findIndex((h) => {
+          const nh = normalize(h);
+          return nh === normalizedOriginal || 
+                 normalizedOriginal.includes(nh) || 
+                 nh.includes(normalizedOriginal);
+        });
         if (bulletIdx !== -1) {
           matched = true;
-          const newHighlights = [...proj.highlights];
+          const newHighlights = [...(proj.highlights || [])];
           newHighlights[bulletIdx] = improved;
           return { ...proj, highlights: newHighlights };
         }
@@ -496,17 +558,16 @@ export default function ResumeBuilder() {
 
     if (matched) {
       toast({
-        title: "Refactor Applied!",
-        description:
-          "Successfully injected the optimized bullet into your resume.",
+        title: "Suggestion Applied ✅",
+        description: "Bullet point upgraded successfully in your resume.",
       });
     } else {
-      // Manual copy fallback in case match string drifted
+      // Fallback: copy to clipboard
       navigator.clipboard.writeText(improved);
       toast({
         title: "Copied to Clipboard",
         description:
-          "Could not automatically match exactly; copied text so you can paste manually!",
+          "Couldn't auto-match the exact bullet — paste the improved text manually.",
       });
     }
   };
@@ -621,6 +682,130 @@ export default function ResumeBuilder() {
           </motion.div>
         )}
 
+        {/* ─── STEP 1B: TEMPLATE SELECTION GRID ─────────────────────────────── */}
+        {step === "template_select" && (
+          <motion.div
+            initial={{ opacity: 0, x: 30 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -30 }}
+            className="max-w-5xl mx-auto py-12 space-y-10"
+          >
+            {/* Top Control Header */}
+            <div className="flex items-center gap-4">
+              <Button
+                variant="ghost"
+                onClick={() => setStep("start")}
+                className="rounded-full h-10 w-10 p-0 bg-background/40 hover:bg-white/10 text-white border border-border/60 backdrop-blur-md transition-colors"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <div>
+                <h2 className="text-3xl font-black text-white tracking-tight">
+                  Select Workspace Layout
+                </h2>
+                <p className="text-sm text-muted-foreground mt-0.5 font-medium">
+                  Choose a pre-graded structural layout optimized for your target industry.
+                </p>
+              </div>
+            </div>
+
+            {/* 3-Column Premium Visual Grid */}
+            <div className="grid md:grid-cols-3 gap-8">
+              {RESUME_TEMPLATES.map((tmpl) => {
+                const IconComponent = tmpl.icon;
+                return (
+                  <Card 
+                    key={tmpl.id} 
+                    onClick={() => handleSelectTemplate(tmpl)}
+                    className="group relative overflow-hidden border border-border/40 bg-card/5 backdrop-blur-2xl rounded-3xl flex flex-col cursor-pointer hover:border-white/30 hover:bg-white/[0.01] transition-all duration-500 shadow-2xl flex-1 select-none"
+                  >
+                    {/* Visual Gradient Header Overlay */}
+                    <div className={`absolute top-0 inset-x-0 h-1.5 transition-all duration-500 ${
+                      tmpl.colorScheme === "emerald" ? "bg-emerald-500" : tmpl.colorScheme === "indigo" ? "bg-blue-500" : "bg-zinc-500"
+                    }`} />
+
+                    <div className="p-6 flex flex-col flex-1 space-y-6">
+                      {/* Icon Module */}
+                      <div className={`h-14 w-14 rounded-2xl border flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform duration-500 ${
+                        tmpl.colorScheme === "emerald" ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" : 
+                        tmpl.colorScheme === "indigo" ? "bg-blue-500/10 border-blue-500/20 text-blue-400" : 
+                        "bg-zinc-500/10 border-zinc-500/20 text-zinc-400"
+                      }`}>
+                        <IconComponent className="h-7 w-7" />
+                      </div>
+
+                      {/* Label and Metrics */}
+                      <div className="space-y-2 flex-1">
+                        <h3 className="text-xl font-bold text-white flex items-center gap-2 group-hover:text-white transition-colors">
+                          {tmpl.name}
+                        </h3>
+                        <p className="text-xs text-muted-foreground leading-relaxed font-medium min-h-[48px]">
+                          {tmpl.description}
+                        </p>
+                      </div>
+
+                      {/* Visual Structural Mimic (Decorative UI Skeleton representing template layout) */}
+                      <div className="bg-background/40 border border-border/30 rounded-2xl p-4 space-y-3 group-hover:border-white/20 transition-colors">
+                        {/* Mimic Name */}
+                        <div className="h-2.5 bg-muted-foreground/30 rounded-full w-1/3" />
+                        <hr className="border-border/20" />
+                        <div className="space-y-2">
+                          {/* Mimic Section Title */}
+                          <div className={`h-2 rounded-full w-1/4 ${
+                            tmpl.colorScheme === "emerald" ? "bg-emerald-500/40" :
+                            tmpl.colorScheme === "indigo" ? "bg-blue-500/40" :
+                            "bg-zinc-500/40"
+                          }`} />
+                          {/* Mimic Content Lines */}
+                          <div className="h-1.5 bg-muted-foreground/15 rounded-full w-full" />
+                          <div className="h-1.5 bg-muted-foreground/15 rounded-full w-5/6" />
+                        </div>
+                        <div className="space-y-2 mt-1">
+                          {/* Mimic Section Title 2 */}
+                          <div className={`h-2 rounded-full w-1/4 ${
+                            tmpl.colorScheme === "emerald" ? "bg-emerald-500/40" :
+                            tmpl.colorScheme === "indigo" ? "bg-blue-500/40" :
+                            "bg-zinc-500/40"
+                          }`} />
+                          <div className="flex gap-1.5">
+                            <div className="h-1.5 bg-muted-foreground/10 rounded-full w-1/4" />
+                            <div className="h-1.5 bg-muted-foreground/10 rounded-full w-1/3" />
+                            <div className="h-1.5 bg-muted-foreground/10 rounded-full w-1/5" />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Primary Font and Setup Badges */}
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary" className="text-[10px] font-bold bg-background/60 border-border/30 border text-muted-foreground">
+                          {tmpl.styles.fontFamily} Typography
+                        </Badge>
+                        <Badge variant="secondary" className="text-[10px] font-bold bg-background/60 border-border/30 border flex items-center gap-1 text-muted-foreground">
+                          <span className={`h-1.5 w-1.5 rounded-full ${
+                            tmpl.colorScheme === "emerald" ? "bg-emerald-400" : tmpl.colorScheme === "indigo" ? "bg-blue-400" : "bg-zinc-400"
+                          }`} />
+                          Accent Theme
+                        </Badge>
+                      </div>
+
+                      {/* Action Button */}
+                      <Button 
+                        className={`w-full rounded-2xl h-11 font-bold mt-2 transition-all duration-300 text-white cursor-pointer border border-transparent ${
+                          tmpl.colorScheme === "emerald" ? "bg-emerald-600 hover:bg-emerald-500 shadow-lg hover:shadow-emerald-500/20" : 
+                          tmpl.colorScheme === "indigo" ? "bg-blue-600 hover:bg-blue-500 shadow-lg hover:shadow-blue-500/20" : 
+                          "bg-zinc-800 hover:bg-zinc-700 shadow-lg border-border/50"
+                        }`}
+                      >
+                        Select & Initialize
+                      </Button>
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
+
         {/* ─── STEP 2: PROCESSING OVERLAY ────────────────────────────────── */}
         {step === "loading" && (
           <motion.div
@@ -701,22 +886,6 @@ export default function ResumeBuilder() {
                   Export PDF
                 </Button>
               </div>
-
-              {/* Job Description (Optional input box) */}
-              <Card className="p-5 border-border/50 bg-card/5 backdrop-blur-xl rounded-2xl">
-                <Label className="text-sm font-bold flex items-center gap-2 mb-2 text-white">
-                  💼 Target Job Description{" "}
-                  <span className="text-xs text-muted-foreground font-normal">
-                    (Optional but Recommended)
-                  </span>
-                </Label>
-                <Textarea
-                  placeholder="Paste the Target Job Listing copy here. We will scan it for required skills, compute an ATS matching ratio, and refactor your text keywords to match perfectly."
-                  value={jobDescription}
-                  onChange={(e) => setJobDescription(e.target.value)}
-                  className="min-h-[100px] bg-background/40 resize-none rounded-xl border-border/50"
-                />
-              </Card>
 
               {/* Accordion Fields */}
               <Accordion
@@ -1379,35 +1548,49 @@ export default function ResumeBuilder() {
             {/* RIGHT COLUMN: ATS Intelligence Hub & Actions (5 Cols) */}
             <div className="lg:col-span-5 space-y-6">
               <div className="sticky top-24 space-y-6">
-                {/* AI Action Pad */}
-                <Card className="p-6 border border-primary/20 bg-gradient-to-b from-primary/[0.05] to-card/5 backdrop-blur-xl rounded-3xl space-y-4 relative overflow-hidden">
+                {/* Job Description + ATS Trigger */}
+                <Card className="p-5 border border-primary/20 bg-gradient-to-b from-primary/[0.05] to-card/5 backdrop-blur-xl rounded-3xl space-y-4 relative overflow-hidden">
                   <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
 
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                      <Sparkles className="h-4 w-4 text-primary" /> Agent
-                      Workspace Toolkit
-                    </h3>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Trophy className="h-4 w-4 text-yellow-400" />
+                    <h3 className="text-sm font-extrabold text-white">ATS Score Engine</h3>
                   </div>
 
+                  {/* JD Input */}
+                  <div className="space-y-1.5">
+                    <Label className="text-[11px] font-bold text-muted-foreground pl-0.5">
+                      🎯 Target Job Description <span className="text-[9px] font-normal opacity-60">(paste for custom scoring)</span>
+                    </Label>
+                    <Textarea
+                      placeholder="Paste job description here to score your resume against specific keywords and requirements..."
+                      value={jobDescription}
+                      onChange={(e) => setJobDescription(e.target.value)}
+                      className="min-h-[80px] bg-background/30 border-border/40 focus:border-primary/50 focus:ring-0 text-xs text-white resize-none rounded-xl px-3 py-2.5 leading-relaxed placeholder:text-muted-foreground/40 transition-colors"
+                    />
+                  </div>
+
+                  {/* Primary ATS Button — Full Width, Impossible to Miss */}
+                  <Button
+                    onClick={handleRunATSAnalysis}
+                    disabled={isScoring}
+                    className="w-full rounded-xl h-11 font-extrabold text-sm bg-gradient-to-r from-yellow-500 via-amber-500 to-orange-500 hover:from-yellow-400 hover:via-amber-400 hover:to-orange-400 text-black shadow-lg shadow-amber-500/20 transition-all duration-300"
+                  >
+                    {isScoring ? (
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    ) : (
+                      <Trophy className="h-4 w-4 mr-2" />
+                    )}
+                    {isScoring ? "Analyzing Resume..." : "Compute ATS Score"}
+                  </Button>
+
+                  {/* Secondary Actions */}
                   <div className="grid grid-cols-2 gap-3">
-                    <Button
-                      onClick={handleRunATSAnalysis}
-                      disabled={isScoring}
-                      variant="outline"
-                      className="rounded-xl border-primary/30 hover:bg-primary/10 font-bold text-xs h-10 transition-all"
-                    >
-                      {isScoring ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
-                      ) : (
-                        <Trophy className="h-3.5 w-3.5 mr-1.5 text-yellow-400" />
-                      )}
-                      Compute ATS Grade
-                    </Button>
                     <Button
                       onClick={handleOptimizeBullets}
                       disabled={isOptimizing}
-                      className="rounded-xl bg-primary hover:bg-primary/90 font-bold text-xs h-10 transition-all text-white shadow-lg shadow-primary/10"
+                      variant="outline"
+                      className="rounded-xl border-primary/30 hover:bg-primary/10 font-bold text-xs h-10 transition-all"
                     >
                       {isOptimizing ? (
                         <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
@@ -1571,47 +1754,86 @@ export default function ResumeBuilder() {
                         </div>
 
                         {atsReport.bullet_point_suggestions.length > 0 && (
-                          <div className="space-y-2">
-                            <Label className="text-xs font-bold text-white">
-                              High-Impact Refactors (Examples)
-                            </Label>
-                            <div className="space-y-3">
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                              <Label className="text-xs font-bold text-white">
+                                ✏️ High-Impact Refactors
+                              </Label>
+                              <Button
+                                type="button"
+                                size="sm"
+                                onClick={() => {
+                                  atsReport.bullet_point_suggestions.forEach((sug) => {
+                                    applyRefactor(sug.original, sug.improved);
+                                  });
+                                }}
+                                className="h-6 px-3 rounded-md text-[9px] font-extrabold bg-emerald-600 hover:bg-emerald-500 text-white border-none shrink-0 select-none transition-all"
+                              >
+                                Apply All ({atsReport.bullet_point_suggestions.length})
+                              </Button>
+                            </div>
+                            <div className="space-y-2.5 max-h-[300px] overflow-y-auto pr-1 custom-scrollbar">
                               {atsReport.bullet_point_suggestions
-                                .slice(0, 2)
-                                .map((sug, idx) => (
-                                  <div
-                                    key={idx}
-                                    className="border border-border/30 rounded-xl overflow-hidden text-xs"
-                                  >
-                                    <div className="bg-red-500/5 text-red-400/90 px-3 py-2 border-b border-border/20 flex gap-2">
-                                      <span className="font-extrabold uppercase text-[10px] text-red-500 shrink-0 pt-0.5">
-                                        Was:
-                                      </span>
-                                      "{sug.original}"
-                                    </div>
-                                    <div className="bg-emerald-500/5 text-emerald-400/90 px-3 py-2 flex items-center justify-between gap-3">
-                                      <div className="flex-1 leading-relaxed">
-                                        <span className="font-extrabold uppercase text-[10px] text-emerald-500 shrink-0 mr-1">
-                                          Better:
+                                .map((sug, idx) => {
+                                  // Check if this suggestion has already been applied
+                                  const isApplied = resumeData.experience.some((job) =>
+                                    job.highlights.some((h) => h.trim().toLowerCase() === sug.improved.trim().toLowerCase())
+                                  ) || resumeData.projects.some((proj) =>
+                                    (proj.highlights || []).some((h) => h.trim().toLowerCase() === sug.improved.trim().toLowerCase())
+                                  );
+
+                                  return (
+                                    <div
+                                      key={idx}
+                                      className={`border rounded-xl overflow-hidden text-xs transition-all duration-300 ${
+                                        isApplied
+                                          ? "border-emerald-500/30 bg-emerald-500/[0.03]"
+                                          : "border-border/30"
+                                      }`}
+                                    >
+                                      <div className="bg-red-500/5 text-red-400/90 px-3 py-2 border-b border-border/20 flex gap-2 leading-relaxed">
+                                        <span className="font-extrabold uppercase text-[10px] text-red-500 shrink-0 pt-0.5">
+                                          Was:
                                         </span>
-                                        "{sug.improved}"
+                                        <span className={isApplied ? "line-through opacity-50" : ""}>
+                                          "{sug.original}"
+                                        </span>
                                       </div>
-                                      <Button
-                                        type="button"
-                                        size="sm"
-                                        onClick={() =>
-                                          applyRefactor(
-                                            sug.original,
-                                            sug.improved,
-                                          )
-                                        }
-                                        className="h-6 px-2 rounded-md text-[9px] font-extrabold bg-emerald-500/20 hover:bg-emerald-500 text-emerald-300 hover:text-white border border-emerald-500/30 shrink-0 select-none transition-all"
-                                      >
-                                        Apply Now
-                                      </Button>
+                                      <div className="bg-emerald-500/5 text-emerald-400/90 px-3 py-2 flex items-start justify-between gap-2">
+                                        <div className="flex-1 leading-relaxed">
+                                          <span className="font-extrabold uppercase text-[10px] text-emerald-500 shrink-0 mr-1">
+                                            Better:
+                                          </span>
+                                          "{sug.improved}"
+                                        </div>
+                                        {isApplied ? (
+                                          <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/40 text-[9px] font-bold shrink-0 select-none px-2 py-0.5 flex items-center gap-1">
+                                            <CheckCircle2 className="h-2.5 w-2.5" /> Applied
+                                          </Badge>
+                                        ) : (
+                                          <Button
+                                            type="button"
+                                            size="sm"
+                                            onClick={() =>
+                                              applyRefactor(
+                                                sug.original,
+                                                sug.improved,
+                                              )
+                                            }
+                                            className="h-6 px-2.5 rounded-md text-[9px] font-extrabold bg-emerald-500/20 hover:bg-emerald-500 text-emerald-300 hover:text-white border border-emerald-500/30 shrink-0 select-none transition-all mt-0.5"
+                                          >
+                                            Apply
+                                          </Button>
+                                        )}
+                                      </div>
+                                      {sug.reason && (
+                                        <div className="bg-background/30 px-3 py-1.5 border-t border-border/15 text-[10px] text-muted-foreground italic leading-relaxed">
+                                          💡 {sug.reason}
+                                        </div>
+                                      )}
                                     </div>
-                                  </div>
-                                ))}
+                                  );
+                                })}
                             </div>
                           </div>
                         )}
