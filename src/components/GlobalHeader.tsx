@@ -132,7 +132,6 @@ function getNavigationContext(pathname: string, isPremium: boolean) {
       NAV_ITEMS.home,
       NAV_ITEMS.discover,
       NAV_ITEMS.research,
-      NAV_ITEMS.resume,
       NAV_ITEMS.watchlist,
     ];
     if (!isPremium) items.push(NAV_ITEMS.pricing);

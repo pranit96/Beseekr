@@ -202,11 +202,26 @@ export default function ResumeBuilder() {
 
       setLoadingMsg("Formatting parsed output schemas...");
       setResumeData(parsed);
+
+      // Auto-scoring: If JD exists, run initial score on-the-fly for seamless workspace landing
+      if (jobDescription && jobDescription.trim().length > 0) {
+        try {
+          setLoadingMsg("Computing target ATS scores...");
+          const scoreResult = await resumeApi.scoreResume(parsed, jobDescription);
+          setAtsReport(scoreResult);
+        } catch (scoreErr) {
+          console.error("Pre-compute score failed during upload:", scoreErr);
+          // Fail silently, do not interrupt user workspace loading
+        }
+      }
+
       setStep("workspace");
 
       toast({
-        title: "Resume extracted!",
-        description: "Parsed flawlessly into the workspace editor.",
+        title: "Resume parsed!",
+        description: jobDescription 
+          ? "Extracted and custom scored against target Job Description!" 
+          : "Parsed flawlessly into the workspace editor.",
       });
     } catch (error: any) {
       setStep("start");
@@ -534,6 +549,23 @@ export default function ResumeBuilder() {
                   editor, compute an ATS matching grade, and recommend
                   refactors.
                 </p>
+
+                {/* Inline Job Description Collector (Optional) */}
+                <div className="w-full space-y-2 mt-2 mb-6 relative z-10 text-left">
+                  <Label className="text-[11px] font-bold text-muted-foreground flex items-center gap-1.5 pl-1">
+                    🎯 Target Job Description{" "}
+                    <span className="text-[9px] font-normal bg-white/5 px-1.5 py-0.5 rounded border border-white/5">
+                      Highly Recommended
+                    </span>
+                  </Label>
+                  <Textarea
+                    placeholder="Paste the target job description here before uploading your file to automatically compute custom ATS scores..."
+                    value={jobDescription}
+                    onChange={(e) => setJobDescription(e.target.value)}
+                    className="min-h-[90px] bg-background/30 border-border/40 focus:border-primary/50 focus:ring-0 text-xs text-white resize-none rounded-2xl px-3.5 py-2.5 leading-relaxed placeholder:text-muted-foreground/40 transition-colors"
+                  />
+                </div>
+
                 <div className="w-full relative">
                   <input
                     type="file"
