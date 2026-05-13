@@ -25,6 +25,7 @@ import {
   CreditCard,
   TrendingUp,
   Activity,
+  FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -94,6 +95,14 @@ const NAV_ITEMS = {
     color: "from-emerald-500 to-teal-500",
     exact: false,
   },
+  resume: {
+    key: "resume",
+    name: "Resume Builder",
+    href: "/dashboard/resume",
+    icon: FileText,
+    color: "from-indigo-500 to-pink-500",
+    exact: false,
+  },
   pricing: {
     key: "pricing",
     name: "Pricing",
@@ -123,6 +132,7 @@ function getNavigationContext(pathname: string, isPremium: boolean) {
       NAV_ITEMS.home,
       NAV_ITEMS.discover,
       NAV_ITEMS.research,
+      NAV_ITEMS.resume,
       NAV_ITEMS.watchlist,
     ];
     if (!isPremium) items.push(NAV_ITEMS.pricing);
@@ -133,6 +143,7 @@ function getNavigationContext(pathname: string, isPremium: boolean) {
     NAV_ITEMS.home,
     NAV_ITEMS.chat,
     NAV_ITEMS.discover,
+    NAV_ITEMS.resume,
     NAV_ITEMS.blog,
     // NAV_ITEMS.trading,
     // NAV_ITEMS.wellness,

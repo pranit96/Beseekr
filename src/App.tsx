@@ -129,6 +129,10 @@ const SaasWatchlist = lazyRetry(
   "Watchlist",
 );
 const Pricing = lazyRetry(() => import("./pages/saas/Pricing"), "Pricing");
+const ResumeBuilder = lazyRetry(
+  () => import("./pages/ResumeBuilder"),
+  "ResumeBuilder",
+);
 
 // Trading System pages with retry logic
 // const TradingOverview = lazyRetry(() => import("./pages/trading/Overview"), "TradingOverview");
@@ -419,6 +423,14 @@ const App = () => {
                       element={
                         <Suspense fallback={<PageLoader />}>
                           <Profile />
+                        </Suspense>
+                      }
+                    />
+                    <Route
+                      path="resume"
+                      element={
+                        <Suspense fallback={<PageLoader />}>
+                          <ResumeBuilder />
                         </Suspense>
                       }
                     />

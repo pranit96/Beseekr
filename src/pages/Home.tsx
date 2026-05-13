@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { getIsNewMode } from "@/utils/envFlags";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { MessageSquare, TrendingUp, ArrowRight } from "lucide-react";
+import { MessageSquare, TrendingUp, ArrowRight, FileText } from "lucide-react";
 import { GlobalHeader } from "@/components/GlobalHeader";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
@@ -107,10 +107,36 @@ export default function Home() {
             </div>
           </motion.div>
 
-          {/* COMING SOON */}
-          <div className="border border-dashed border-border/40 rounded-2xl p-8 text-sm font-medium text-muted-foreground/50 flex items-center justify-center bg-muted/[0.02]">
-            {t("home.comingSoon", "Expand stack coming soon")}
-          </div>
+          {/* OPTION 3 CARD */}
+          <motion.div
+            onClick={() => go("/dashboard/resume")}
+            whileHover={{ y: -4 }}
+            transition={{ type: "spring", stiffness: 220, damping: 20 }}
+            className="border border-border/30 rounded-2xl p-8 cursor-pointer transition
+                                bg-muted/10 backdrop-blur-md
+                                hover:bg-purple-500/5
+                                hover:border-purple-500/30 group shadow-2xl shadow-black/5"
+          >
+            <div className="h-10 w-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-400 mb-4 group-hover:scale-110 transition-transform">
+              <FileText className="w-5 h-5" />
+            </div>
+
+            <h3 className="text-xl font-bold mb-2 tracking-tight text-foreground">
+              {t("home.resumeTitle", "Resume ATS")}
+            </h3>
+
+            <p className="text-muted-foreground/80 mb-6 leading-relaxed">
+              {t(
+                "home.resumeDesc",
+                "Upload, grade and optimize your resume with elite AI agents.",
+              )}
+            </p>
+
+            <div className="text-xs font-bold tracking-wider uppercase flex items-center gap-1 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all">
+              {t("home.optimize", "Optimize")}
+              <ArrowRight className="w-3 h-3" />
+            </div>
+          </motion.div>
         </section>
 
         {/* FOOTER */}
@@ -222,12 +248,38 @@ export default function Home() {
               </div>
             </motion.div>
 
-            {/* COMING SOON (Re-integrated) */}
-            <div className="border border-dashed border-border/20 rounded-3xl p-10 flex items-center justify-center bg-card/[0.02] shadow-xl">
-              <span className="text-xs font-bold tracking-widest uppercase text-muted-foreground/40">
-                {t("home.comingSoon", "More tools coming")}
-              </span>
-            </div>
+            {/* RESUME CARD */}
+            <motion.div
+              onClick={() => go("/dashboard/resume")}
+              whileHover={{ y: -6 }}
+              transition={{ type: "spring", stiffness: 220, damping: 20 }}
+              className="border border-border/30 rounded-3xl p-10 cursor-pointer transition
+                               bg-card/5 backdrop-blur-xl
+                               hover:bg-purple-500/[0.03]
+                               hover:border-purple-500/20 group shadow-2xl shadow-black/20 relative overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 w-40 h-40 bg-purple-500/5 rounded-full blur-[60px] -mr-10 -mt-10 pointer-events-none" />
+
+              <div className="h-14 w-14 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 mb-8 group-hover:scale-110 transition-transform duration-500 shadow-lg shadow-purple-500/5">
+                <FileText className="w-6 h-6" />
+              </div>
+
+              <h3 className="text-xl font-bold mb-2 tracking-tight text-foreground">
+                {t("home.resumeTitle", "Resume Builder")}
+              </h3>
+
+              <p className="text-muted-foreground/80 mb-8 leading-relaxed text-sm">
+                {t(
+                  "home.resumeDesc",
+                  "Elite-grade ATS score evaluation, optimization and formatting pipeline.",
+                )}
+              </p>
+
+              <div className="text-xs font-bold tracking-widest uppercase flex items-center gap-1 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all">
+                {t("home.build", "Optimize")}
+                <ArrowRight className="w-3 h-3" />
+              </div>
+            </motion.div>
           </section>
         </div>
       </main>

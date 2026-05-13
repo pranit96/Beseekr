@@ -1,0 +1,167 @@
+// src/api/resume.ts
+import { apiClient } from "@/lib/api";
+
+export interface ResumePersonalInfo {
+  name: string;
+  email: string;
+  phone: string;
+  location: string;
+  website: string;
+  summary: string;
+}
+
+export interface ResumeExperience {
+  company: string;
+  position: string;
+  location: string;
+  period: string;
+  highlights: string[];
+}
+
+export interface ResumeEducation {
+  institution: string;
+  degree: string;
+  period: string;
+  location?: string;
+}
+
+export interface ResumeSkill {
+  category: string;
+  items: string[];
+}
+
+export interface ResumeProject {
+  name: string;
+  link?: string;
+  description: string;
+  highlights: string[];
+}
+
+export interface ResumeSchema {
+  personal_info: ResumePersonalInfo;
+  experience: ResumeExperience[];
+  education: ResumeEducation[];
+  skills: ResumeSkill[];
+  projects: ResumeProject[];
+  certifications: string[];
+  styles?: {
+    primaryColor?: string;
+    accentColor?: string;
+    fontFamily?: string;
+  };
+}
+
+export interface ATSAspect {
+  rating: number;
+  why: string;
+  how_to_improve: string;
+}
+
+export interface ATSAnalysis {
+  score: number;
+  aspects: {
+    impact: ATSAspect;
+    skills_match: ATSAspect;
+    formatting: ATSAspect;
+    language_tone: ATSAspect;
+  };
+  missing_keywords: string[];
+  bullet_point_suggestions: Array<{
+    original: string;
+    improved: string;
+    reason: string;
+  }>;
+  general_feedback: string;
+}
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+export async function uploadAndParseResume(file: File): Promise<ResumeSchema> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  // Use custom fetch for multi-part upload
+  const response = await fetch(`${API_BASE_URL}/api/resume/upload`, {
+    method: "POST",
+    body: formData,
+    credentials: "include",
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || "Failed to upload resume");
+  }
+  return data.data as ResumeSchema;
+}
+
+export async function scoreResume(
+  resume: ResumeSchema,
+  jobDescription?: string,
+): Promise<ATSAnalysis> {
+  const res = await apiClient.post("/api/resume/score", {
+    resume,
+    job_description: jobDescription || "",
+  });
+  return res.data as ATSAnalysis;
+}
+
+export async function optimizeResume(
+  resume: ResumeSchema,
+  jobDescription?: string,
+): Promise<ResumeSchema> {
+  const res = await apiClient.post("/api/resume/optimize", {
+    resume,
+    job_description: jobDescription || "",
+  });
+  return res.data as ResumeSchema;
+}
+
+export async function downloadResumePdf(resume: ResumeSchema): Promise<string> {
+  const res = await apiClient.post("/api/resume/download", { resume });
+
+  // Extract raw structural text buffer
+  const rawBase64 = (res.data as any)?.pdf_base64;
+  if (!rawBase64) {
+    throw new Error("Invalid PDF delivery packet from endpoint.");
+  }
+
+  // Reconstruct binary stream in-memory
+  const binaryString = window.atob(rawBase64);
+  const bytes = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+
+  const blob = new Blob([bytes], { type: "application/pdf" });
+  return window.URL.createObjectURL(blob);
+}
+
+export async function getResumeDraft(): Promise<{
+  resume_data: ResumeSchema;
+  job_description: string;
+} | null> {
+  const res = await apiClient.get("/api/resume/draft");
+  return res.data;
+}
+
+export async function saveResumeDraft(
+  resume: ResumeSchema,
+  jobDescription?: string,
+): Promise<boolean> {
+  const res = await apiClient.post("/api/resume/draft", {
+    resume,
+    job_description: jobDescription || "",
+  });
+  return res.success === true;
+}
+
+export const resumeApi = {
+  uploadAndParseResume,
+  scoreResume,
+  optimizeResume,
+  downloadResumePdf,
+  getResumeDraft,
+  saveResumeDraft,
+};
+
+export default resumeApi;

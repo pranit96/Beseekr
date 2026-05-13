@@ -215,8 +215,8 @@ export default function Profile() {
 
   const handleAvatarUpdate = async (url: string | null) => {
     // 1. Instant Optimistic UI
-    setAvatarUrl(url); 
-    
+    setAvatarUrl(url);
+
     // 2. Immediate Background Network Save
     try {
       const response = await apiClient.updateProfile({ avatar_url: url });
@@ -224,8 +224,8 @@ export default function Profile() {
         refreshAuth(true); // Keep global layout headers in sync instantly
         toast({
           title: url ? "Picture updated" : "Picture removed",
-          description: url 
-            ? "Your profile picture is active." 
+          description: url
+            ? "Your profile picture is active."
             : "Your profile picture has been cleared.",
         });
       }
