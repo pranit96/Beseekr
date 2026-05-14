@@ -364,78 +364,98 @@ export default function ResumeWorkspace() {
   };
 
   return (
-    <div className="w-full min-h-screen bg-[#030712] pb-12">
+    <div className="w-full py-6 px-2 sm:px-4 lg:px-6 selection:bg-primary/30">
+      {/* HERO & CONTROL HEADER OUTSIDE GRID (MATCHES CHAT PAGE STANDARD) */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10 animate-in fade-in slide-in-from-top-4 duration-500">
+        <div className="space-y-4 text-left">
+          <div className="flex items-center gap-3">
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={() => navigate("/dashboard/resume")}
+              className="h-8 w-8 rounded-full bg-white/[0.03] border border-white/[0.08] text-slate-400 hover:text-white hover:bg-white/[0.08] shrink-0 shadow-sm"
+              title="Back to Portal"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" />
+            </Button>
+            <span className="text-[10px] sm:text-[11px] font-bold tracking-[0.2em] text-muted-foreground/60 uppercase flex items-center select-none">
+              RESUME INTELLIGENCE <span className="mx-2 opacity-50 text-[8px]">•</span> WORKSPACE
+            </span>
+          </div>
+
+          <h1 className="text-3xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-[1.1] flex flex-col gap-1 text-foreground">
+            <span>Craft With Precision.</span>
+            <span className="text-muted-foreground/30">Optimize to ATS Perfection.</span>
+          </h1>
+        </div>
+
+        {/* TOP DOCK ACTIONS */}
+        <div className="flex items-center gap-3 flex-wrap justify-start md:justify-end shrink-0 pb-1">
+          {/* Persistent Sync Sentinel */}
+          <div className="mr-1">
+            {saveStatus === "saving" && (
+              <Badge className="bg-primary/10 text-primary border-none px-3.5 py-1 rounded-full text-[10px] font-semibold flex items-center gap-1.5 animate-pulse">
+                <Loader2 className="h-2.5 w-2.5 animate-spin" /> Auto-Saving
+              </Badge>
+            )}
+            {saveStatus === "saved" && (
+              <Badge className="bg-emerald-500/10 text-emerald-400 border-none px-3.5 py-1 rounded-full text-[10px] font-semibold flex items-center gap-1.5 select-none">
+                <ShieldCheck className="h-3 w-3" /> Secured
+              </Badge>
+            )}
+            {saveStatus === "error" && (
+              <Badge className="bg-red-500/10 text-red-400 border-none px-3.5 py-1 rounded-full text-[10px] font-semibold flex items-center gap-1.5">
+                <X className="h-3 w-3" /> Cloud Error
+              </Badge>
+            )}
+          </div>
+
+          <Button
+            onClick={handleBackupToVault}
+            disabled={isBackingUp}
+            variant="outline"
+            className="rounded-xl font-bold border-white/[0.08] bg-white/[0.03] text-slate-300 hover:text-white hover:bg-white/[0.08] shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 h-10 text-xs"
+          >
+            {isBackingUp ? (
+              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+            ) : (
+              <History className="h-4 w-4 mr-2 text-purple-400" />
+            )}
+            Archive Snapshot
+          </Button>
+
+          <Button
+            onClick={handleExportPdf}
+            disabled={isDownloading}
+            className="rounded-xl font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 h-10 text-xs"
+          >
+            {isDownloading ? (
+              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+            ) : (
+              <Download className="h-4 w-4 mr-2" />
+            )}
+            Export PDF
+          </Button>
+        </div>
+      </div>
+
+      {/* WORKSPACE SPLIT CANVAS GRID */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="grid lg:grid-cols-12 gap-8 py-4 px-4 sm:px-6 lg:px-8"
+        transition={{ delay: 0.1, duration: 0.5 }}
+        className="grid lg:grid-cols-12 gap-8"
       >
-        {/* LEFT COLUMN: Workspace Editor & Data Form (7 Cols) */}
+        {/* LEFT COLUMN: Workspace Editor Panel (7 Cols) */}
         <div className="lg:col-span-7 space-y-6">
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <div className="flex items-center gap-3">
-              <Button
-                size="icon"
-                variant="outline"
-                onClick={() => navigate("/dashboard/resume")}
-                className="rounded-xl h-9 w-9 shrink-0 bg-slate-900/50 border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800"
-              >
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-              <div>
-                <div className="flex items-center gap-2.5">
-                  <h2 className="text-2xl font-extrabold tracking-tight text-white">
-                    Resume Editor Workspace
-                  </h2>
-                  {/* Cloud Sync Status Pill */}
-                  {saveStatus === "saving" && (
-                    <Badge className="bg-yellow-500/10 text-yellow-400 border-none px-2 py-0.5 text-[10px] animate-pulse font-semibold">
-                      Saving Draft...
-                    </Badge>
-                  )}
-                  {saveStatus === "saved" && (
-                    <Badge className="bg-emerald-500/10 text-emerald-400 border-none px-2 py-0.5 text-[10px] font-semibold flex items-center gap-1">
-                      <CheckCircle2 className="h-2.5 w-2.5" /> Cloud Synced
-                    </Badge>
-                  )}
-                  {saveStatus === "error" && (
-                    <Badge className="bg-red-500/10 text-red-400 border-none px-2 py-0.5 text-[10px] font-semibold flex items-center gap-1">
-                      <X className="h-2.5 w-2.5" /> Cloud Sync Error
-                    </Badge>
-                  )}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Modify fields dynamically. Auto-formatted for exports.
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                onClick={handleBackupToVault}
-                disabled={isBackingUp}
-                variant="outline"
-                className="rounded-xl font-bold shadow-md border-slate-800 bg-slate-900 text-slate-300 hover:text-white hover:bg-slate-800"
-              >
-                {isBackingUp ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                ) : (
-                  <History className="h-4 w-4 mr-2 text-purple-400" />
-                )}
-                Archive Revision
-              </Button>
-
-              <Button
-                onClick={handleExportPdf}
-                disabled={isDownloading}
-                className="rounded-xl font-bold shadow-md bg-indigo-600 hover:bg-indigo-500"
-              >
-                {isDownloading ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                ) : (
-                  <Download className="h-4 w-4 mr-2" />
-                )}
-                Export PDF
-              </Button>
+          <div className="flex items-center justify-between mb-2">
+            <div>
+              <h2 className="text-lg font-bold tracking-tight text-foreground flex items-center gap-2">
+                <FileText className="h-4 w-4 text-indigo-400" /> Document Outline
+              </h2>
+              <p className="text-xs text-muted-foreground/80 mt-0.5">
+                Fields populate dynamic pdf render schema in real-time.
+              </p>
             </div>
           </div>
 
