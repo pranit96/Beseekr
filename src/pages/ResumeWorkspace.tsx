@@ -61,6 +61,7 @@ export default function ResumeWorkspace() {
 
   // Local Visual/Action States
   const [injectedKeywords, setInjectedKeywords] = useState<string[]>([]);
+  const [appliedSuggestions, setAppliedSuggestions] = useState<string[]>([]);
   const [isDownloading, setIsDownloading] = useState(false);
   const [isBackingUp, setIsBackingUp] = useState(false);
 
@@ -304,50 +305,64 @@ export default function ResumeWorkspace() {
         .replace(/[^\w\s]/g, "")
         .replace(/\s+/g, " ")
         .trim();
+    
     const normalizedOriginal = normalize(original);
+    const normalizedImproved = normalize(improved);
 
-    let matched = false;
-    setResumeData((prev) => {
-      const updatedExp = prev.experience.map((job) => {
-        const bulletIdx = job.highlights.findIndex((h) => {
-          const nh = normalize(h);
-          return (
-            nh === normalizedOriginal ||
-            normalizedOriginal.includes(nh) ||
-            nh.includes(normalizedOriginal)
-          );
-        });
-        if (bulletIdx !== -1) {
-          matched = true;
-          const newHighlights = [...job.highlights];
-          newHighlights[bulletIdx] = improved;
-          return { ...job, highlights: newHighlights };
-        }
-        return job;
+    let hasMatched = false;
+
+    // Compute updated structures synchronously before applying state
+    const updatedExp = resumeData.experience.map((job) => {
+      const bulletIdx = job.highlights.findIndex((h) => {
+        const nh = normalize(h);
+        return (
+          nh === normalizedOriginal ||
+          normalizedOriginal.includes(nh) ||
+          nh.includes(normalizedOriginal)
+        );
       });
-
-      const updatedProj = prev.projects.map((proj) => {
-        const bulletIdx = (proj.highlights || []).findIndex((h) => {
-          const nh = normalize(h);
-          return (
-            nh === normalizedOriginal ||
-            normalizedOriginal.includes(nh) ||
-            nh.includes(normalizedOriginal)
-          );
-        });
-        if (bulletIdx !== -1) {
-          matched = true;
-          const newHighlights = [...(proj.highlights || [])];
-          newHighlights[bulletIdx] = improved;
-          return { ...proj, highlights: newHighlights };
-        }
-        return proj;
-      });
-
-      return { ...prev, experience: updatedExp, projects: updatedProj };
+      if (bulletIdx !== -1) {
+        hasMatched = true;
+        const newHighlights = [...job.highlights];
+        newHighlights[bulletIdx] = improved;
+        return { ...job, highlights: newHighlights };
+      }
+      return job;
     });
 
-    if (matched) {
+    const updatedProj = resumeData.projects.map((proj) => {
+      const bulletIdx = (proj.highlights || []).findIndex((h) => {
+        const nh = normalize(h);
+        return (
+          nh === normalizedOriginal ||
+          normalizedOriginal.includes(nh) ||
+          nh.includes(normalizedOriginal)
+        );
+      });
+      if (bulletIdx !== -1) {
+        hasMatched = true;
+        const newHighlights = [...(proj.highlights || [])];
+        newHighlights[bulletIdx] = improved;
+        return { ...proj, highlights: newHighlights };
+      }
+      return proj;
+    });
+
+    // Record immediate tracking event for bulletproof visual persistence
+    setAppliedSuggestions((prev) => {
+      if (!prev.includes(normalizedImproved)) {
+        return [...prev, normalizedImproved];
+      }
+      return prev;
+    });
+
+    if (hasMatched) {
+      setResumeData((prev) => ({
+        ...prev,
+        experience: updatedExp,
+        projects: updatedProj,
+      }));
+
       toast({
         title: "Suggestion Applied ✅",
         description: "Bullet point upgraded successfully in your resume.",
@@ -358,13 +373,13 @@ export default function ResumeWorkspace() {
       toast({
         title: "Copied to Clipboard",
         description:
-          "Couldn't auto-match the exact bullet — paste the improved text manually.",
+          "Couldn't auto-match the exact bullet — copied to clipboard so you can paste manually.",
       });
     }
   };
 
   return (
-    <div className="w-full py-6 px-2 sm:px-4 lg:px-6 selection:bg-primary/30">
+    <div className="w-full py-6 px-2 sm:px-4 lg:px-6 selection:bg-white/10">
       {/* HERO & CONTROL HEADER OUTSIDE GRID (MATCHES CHAT PAGE STANDARD) */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10 animate-in fade-in slide-in-from-top-4 duration-500">
         <div className="space-y-4 text-left">
@@ -373,19 +388,19 @@ export default function ResumeWorkspace() {
               size="icon"
               variant="ghost"
               onClick={() => navigate("/dashboard/resume")}
-              className="h-8 w-8 rounded-full bg-white/[0.03] border border-white/[0.08] text-slate-400 hover:text-white hover:bg-white/[0.08] shrink-0 shadow-sm"
+              className="h-8 w-8 rounded-full bg-white/[0.03] border border-white/[0.08] text-zinc-400 hover:text-white hover:bg-white/[0.08] shrink-0 shadow-sm"
               title="Back to Portal"
             >
               <ArrowLeft className="h-3.5 w-3.5" />
             </Button>
-            <span className="text-[10px] sm:text-[11px] font-bold tracking-[0.2em] text-muted-foreground/60 uppercase flex items-center select-none">
+            <span className="text-[10px] sm:text-[11px] font-bold tracking-[0.2em] text-zinc-500 uppercase flex items-center select-none">
               RESUME INTELLIGENCE <span className="mx-2 opacity-50 text-[8px]">•</span> WORKSPACE
             </span>
           </div>
 
-          <h1 className="text-3xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-[1.1] flex flex-col gap-1 text-foreground">
+          <h1 className="text-3xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-[1.1] flex flex-col gap-1 text-white">
             <span>Craft With Precision.</span>
-            <span className="text-muted-foreground/30">Optimize to ATS Perfection.</span>
+            <span className="text-zinc-700">Optimize to ATS Perfection.</span>
           </h1>
         </div>
 
@@ -394,18 +409,18 @@ export default function ResumeWorkspace() {
           {/* Persistent Sync Sentinel */}
           <div className="mr-1">
             {saveStatus === "saving" && (
-              <Badge className="bg-primary/10 text-primary border-none px-3.5 py-1 rounded-full text-[10px] font-semibold flex items-center gap-1.5 animate-pulse">
+              <Badge className="bg-zinc-800 text-zinc-300 border-none px-3.5 py-1 rounded-full text-[10px] font-semibold flex items-center gap-1.5 animate-pulse font-mono">
                 <Loader2 className="h-2.5 w-2.5 animate-spin" /> Auto-Saving
               </Badge>
             )}
             {saveStatus === "saved" && (
-              <Badge className="bg-emerald-500/10 text-emerald-400 border-none px-3.5 py-1 rounded-full text-[10px] font-semibold flex items-center gap-1.5 select-none">
-                <ShieldCheck className="h-3 w-3" /> Secured
+              <Badge className="bg-zinc-900 border border-zinc-800 text-zinc-300 px-3.5 py-1 rounded-full text-[10px] font-semibold flex items-center gap-1.5 select-none font-mono">
+                <ShieldCheck className="h-3 w-3 text-white" /> Secured
               </Badge>
             )}
             {saveStatus === "error" && (
-              <Badge className="bg-red-500/10 text-red-400 border-none px-3.5 py-1 rounded-full text-[10px] font-semibold flex items-center gap-1.5">
-                <X className="h-3 w-3" /> Cloud Error
+              <Badge className="bg-zinc-950 border border-red-900 text-red-400 px-3.5 py-1 rounded-full text-[10px] font-semibold flex items-center gap-1.5 font-mono">
+                <X className="h-3 w-3" /> Sync Offline
               </Badge>
             )}
           </div>
@@ -414,12 +429,12 @@ export default function ResumeWorkspace() {
             onClick={handleBackupToVault}
             disabled={isBackingUp}
             variant="outline"
-            className="rounded-xl font-bold border-white/[0.08] bg-white/[0.03] text-slate-300 hover:text-white hover:bg-white/[0.08] shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 h-10 text-xs"
+            className="rounded-xl font-bold border-white/[0.08] bg-white/[0.03] text-zinc-300 hover:text-white hover:bg-white/[0.08] shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 h-10 text-xs tracking-tight"
           >
             {isBackingUp ? (
               <Loader2 className="h-4 w-4 animate-spin mr-2" />
             ) : (
-              <History className="h-4 w-4 mr-2 text-purple-400" />
+              <History className="h-4 w-4 mr-2 text-zinc-400" />
             )}
             Archive Snapshot
           </Button>
@@ -427,7 +442,7 @@ export default function ResumeWorkspace() {
           <Button
             onClick={handleExportPdf}
             disabled={isDownloading}
-            className="rounded-xl font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 h-10 text-xs"
+            className="rounded-xl font-bold bg-white text-black hover:bg-zinc-200 hover:text-black shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 h-10 text-xs tracking-tight border-none"
           >
             {isDownloading ? (
               <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -1174,75 +1189,47 @@ export default function ResumeWorkspace() {
                   defaultValue="overview"
                   className="w-full flex flex-col flex-1"
                 >
-                  <TabsList className="w-full bg-background/20 rounded-none border-b border-border/50 h-10">
+                  <TabsList className="w-full bg-background/20 rounded-none border-b border-border/50 h-11">
                     <TabsTrigger
                       value="overview"
-                      className="flex-1 text-xs font-bold"
+                      className="flex-1 text-xs font-bold data-[state=active]:bg-background/40 select-none tracking-tight"
                     >
-                      Overview
+                      ⚡ Analysis Hub
                     </TabsTrigger>
                     <TabsTrigger
-                      value="aspects"
-                      className="flex-1 text-xs font-bold"
+                      value="upgrades"
+                      className="flex-1 text-xs font-bold data-[state=active]:bg-background/40 select-none tracking-tight"
                     >
-                      Aspect Details
-                    </TabsTrigger>
-                    <TabsTrigger
-                      value="keywords"
-                      className="flex-1 text-xs font-bold"
-                    >
-                      Keywords
+                      🚀 Neural Upgrades
                     </TabsTrigger>
                   </TabsList>
 
-                  {/* Tab A: Overview */}
+                  {/* ── Tab A: Analysis Hub (Simplified Overview & Aspect Cards) ── */}
                   <TabsContent
                     value="overview"
-                    className="p-6 space-y-6 flex-1 mt-0"
+                    className="p-6 space-y-6 flex-1 mt-0 max-h-[650px] overflow-y-auto custom-scrollbar"
                   >
-                    <div className="flex items-center gap-6">
-                      {/* Interactive Gauge Graphic */}
+                    {/* MASSIVE CENTRALIZED GAUGE HERO */}
+                    <div className="flex flex-col items-center justify-center py-4 select-none">
                       {(() => {
                         const score = atsReport.score || 0;
-                        const colorClass =
-                          score >= 80
-                            ? "emerald"
-                            : score >= 60
-                              ? "amber"
-                              : "red";
-                        const strokeHex =
-                          score >= 80
-                            ? "#10b981"
-                            : score >= 60
-                              ? "#f59e0b"
-                              : "#ef4444";
 
                         return (
-                          <div className="relative h-24 w-24 flex items-center justify-center shrink-0">
-                            {/* Background Radial Glow */}
-                            <div
-                              className={`absolute inset-0 rounded-full blur-xl opacity-20 transition-colors duration-500 ${
-                                colorClass === "emerald"
-                                  ? "bg-emerald-500"
-                                  : colorClass === "amber"
-                                    ? "bg-amber-500"
-                                    : "bg-red-500"
-                              }`}
-                            />
-
+                          <div className="relative h-32 w-32 flex items-center justify-center animate-in zoom-in-75 duration-500">
+                            <div className="absolute inset-0 rounded-full bg-white/[0.02] blur-xl transition-all duration-700" />
                             <svg
-                              className="h-full w-full -rotate-90 drop-shadow-md relative z-10"
+                              className="h-full w-full -rotate-90 drop-shadow-2xl relative z-10"
                               viewBox="0 0 36 36"
                             >
                               <path
-                                className="stroke-white/5"
+                                className="stroke-zinc-900"
                                 strokeWidth="3.5"
                                 fill="none"
                                 d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                               />
                               <motion.path
-                                stroke={strokeHex}
-                                strokeWidth="3.5"
+                                stroke="#ffffff"
+                                strokeWidth="3"
                                 strokeDasharray={`${score}, 100`}
                                 strokeLinecap="round"
                                 fill="none"
@@ -1250,126 +1237,228 @@ export default function ResumeWorkspace() {
                                 initial={{ pathLength: 0 }}
                                 animate={{ pathLength: 1 }}
                                 transition={{
-                                  duration: 1.2,
+                                  duration: 1.5,
                                   ease: "easeOut",
                                 }}
-                                className="transition-all duration-500"
                               />
                             </svg>
-                            <div className="absolute flex flex-col items-center justify-center text-center z-10">
-                              <span
-                                className={`font-black text-2xl leading-none transition-colors duration-500 ${
-                                  colorClass === "emerald"
-                                    ? "text-emerald-400"
-                                    : colorClass === "amber"
-                                      ? "text-amber-400"
-                                      : "text-red-400"
-                                }`}
-                              >
+                            <div className="absolute flex flex-col items-center justify-center text-center z-10 mt-0.5">
+                              <span className="font-black text-4xl leading-none transition-all duration-500 text-white tracking-tighter">
                                 {score}
                               </span>
-                              <span className="text-[8px] text-muted-foreground font-bold tracking-wider uppercase mt-0.5">
-                                Index
+                              <span className="text-[8px] font-bold text-zinc-500 tracking-widest uppercase mt-1 select-none">
+                                ATS Index
                               </span>
                             </div>
                           </div>
                         );
                       })()}
-                      <div>
-                        <h4 className="font-bold text-white text-base">
-                          Overall Grade Index
-                        </h4>
-                        <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">
-                          Derived from deep NLP vector correlations, grammatical
-                          formatting fidelity, and target skill densities.
-                        </p>
-                      </div>
                     </div>
 
-                    <div className="space-y-2">
-                      <Label className="text-xs font-bold text-white">
-                        Executive Narrative Summary
+                    {/* 2X2 SIMPLIFIED METRICS GRID */}
+                    <div className="grid grid-cols-2 gap-3.5">
+                      {Object.entries(atsReport.aspects).map(
+                        ([key, aspect]: [string, any]) => {
+                          const cleanName = key.replace("_", " ");
+
+                          return (
+                            <div
+                              key={key}
+                              className="border border-zinc-800 bg-zinc-900/10 backdrop-blur-sm rounded-2xl p-3.5 transition-all duration-300 hover:scale-[1.01] hover:border-zinc-700"
+                            >
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="capitalize font-bold text-xs text-zinc-200 tracking-tight leading-none">
+                                  {cleanName}
+                                </span>
+                                <span className="text-xs font-black font-mono text-white">
+                                  {aspect.rating}
+                                </span>
+                              </div>
+                              <p
+                                className="text-[10px] text-zinc-400 leading-relaxed line-clamp-2 select-none hover:line-clamp-none cursor-pointer transition-all duration-300"
+                                title={aspect.why}
+                              >
+                                {aspect.why}
+                              </p>
+                            </div>
+                          );
+                        },
+                      )}
+                    </div>
+
+                    {/* Strategic Narrative */}
+                    <div className="space-y-2.5 border-t border-zinc-800/60 pt-5">
+                      <Label className="text-[11px] font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+                        <Sparkles className="h-3.5 w-3.5 text-white" />{" "}
+                        Strategic Narrative
                       </Label>
-                      <div className="text-xs bg-background/40 rounded-xl p-4 leading-relaxed border border-border/30 text-muted-foreground text-justify">
+                      <div className="text-xs bg-zinc-950/40 rounded-2xl p-4 leading-relaxed border border-zinc-800 text-zinc-400 text-justify select-none shadow-inner selection:bg-white/10">
                         {atsReport.general_feedback}
                       </div>
                     </div>
+                  </TabsContent>
 
+                  {/* ── Tab B: Neural Upgrades (Keywords + Recommendations Unified) ── */}
+                  <TabsContent
+                    value="upgrades"
+                    className="p-6 space-y-6 flex-1 mt-0 max-h-[650px] overflow-y-auto custom-scrollbar"
+                  >
+                    {/* INTERACTIVE KEYWORDS DOCK */}
+                    <div className="space-y-3 bg-zinc-950/20 rounded-2xl p-4 border border-zinc-800 relative overflow-hidden shadow-lg">
+                      <div className="space-y-1 relative z-10">
+                        <h4 className="font-bold text-white text-xs flex items-center gap-1.5 select-none">
+                          🔍 Deficit Keyword Matching
+                        </h4>
+                        <p className="text-[10px] text-zinc-400 leading-relaxed">
+                          Technical tags missing in your profile. Tap key to
+                          auto-inject into Skills ledger.
+                        </p>
+                      </div>
+
+                      {atsReport.missing_keywords.length === 0 ? (
+                        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-xs text-zinc-200 text-center flex items-center justify-center gap-1.5 select-none font-mono">
+                          <CheckCircle2 className="h-3.5 w-3.5 text-white animate-bounce" />{" "}
+                          Perfect match! No technical skill gaps detected.
+                        </div>
+                      ) : (
+                        <div className="flex flex-wrap gap-1.5 pt-1 relative z-10">
+                          {atsReport.missing_keywords.map((keyword, i) => {
+                            const isAlreadyAdded =
+                              injectedKeywords.includes(keyword);
+
+                            return (
+                              <Badge
+                                key={i}
+                                onClick={() => {
+                                  if (isAlreadyAdded) return;
+
+                                  setResumeData((prev) => {
+                                    const nextSkills = [...prev.skills];
+                                    if (nextSkills[0]) {
+                                      nextSkills[0] = {
+                                        ...nextSkills[0],
+                                        items: Array.from(
+                                          new Set([
+                                            ...nextSkills[0].items,
+                                            keyword,
+                                          ]),
+                                        ),
+                                      };
+                                    }
+                                    return { ...prev, skills: nextSkills };
+                                  });
+
+                                  setInjectedKeywords((p) => [...p, keyword]);
+                                  toast({
+                                    title: `Injected "${keyword}"`,
+                                    description:
+                                      "Successfully appended keyword to Tech Skills.",
+                                  });
+                                }}
+                                className={`transition-all duration-300 select-none px-2.5 py-1 rounded-lg flex items-center gap-1 text-[10px] border leading-none tracking-tight font-mono ${
+                                  isAlreadyAdded
+                                    ? "bg-zinc-800 text-zinc-300 border-zinc-700 cursor-default opacity-90"
+                                    : "bg-zinc-950 text-zinc-400 hover:bg-white hover:text-black hover:border-white border-zinc-800 cursor-pointer active:scale-95"
+                                }`}
+                              >
+                                {isAlreadyAdded ? (
+                                  <>
+                                    <CheckCircle2 className="h-2.5 w-2.5 animate-in zoom-in" />{" "}
+                                    Added
+                                  </>
+                                ) : (
+                                  <>
+                                    <Plus className="h-2.5 w-2.5 opacity-50" />{" "}
+                                    {keyword}
+                                  </>
+                                )}
+                              </Badge>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* BULLET POINT REFACTORS FEED */}
                     {atsReport.bullet_point_suggestions.length > 0 && (
-                      <div className="space-y-3">
+                      <div className="space-y-3.5 pt-1">
                         <div className="flex items-center justify-between">
-                          <Label className="text-xs font-bold text-white">
-                            ✏️ High-Impact Refactors
+                          <Label className="text-[11px] font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+                            ✏️ AI Quality Refactors
                           </Label>
                           <Button
                             type="button"
                             size="sm"
                             onClick={() => {
                               atsReport.bullet_point_suggestions.forEach(
-                                (sug) => {
-                                  applyRefactor(sug.original, sug.improved);
-                                },
+                                (sug) => applyRefactor(sug.original, sug.improved)
                               );
                             }}
-                            className="h-6 px-3 rounded-md text-[9px] font-extrabold bg-emerald-600 hover:bg-emerald-500 text-white border-none shrink-0 select-none transition-all"
+                            className="h-6 px-3 rounded-full text-[9px] font-extrabold bg-white hover:bg-zinc-200 text-black border-none shrink-0 transition-all shadow-md active:scale-95 tracking-tight"
                           >
-                            Apply All (
-                            {atsReport.bullet_point_suggestions.length})
+                            Batch Apply ({atsReport.bullet_point_suggestions.length})
                           </Button>
                         </div>
-                        <div className="space-y-2.5 max-h-[300px] overflow-y-auto pr-1 custom-scrollbar">
+
+                        <div className="space-y-3 pr-0.5">
                           {atsReport.bullet_point_suggestions.map(
                             (sug, idx) => {
-                              // Check if this suggestion has already been applied
+                              const norm = (s: string) =>
+                                s
+                                  .toLowerCase()
+                                  .replace(/[^\w\s]/g, "")
+                                  .replace(/\s+/g, " ")
+                                  .trim();
+                              const normalizedImproved = norm(sug.improved);
+
                               const isApplied =
+                                appliedSuggestions.includes(normalizedImproved) ||
                                 resumeData.experience.some((job) =>
                                   job.highlights.some(
-                                    (h) =>
-                                      h.trim().toLowerCase() ===
-                                      sug.improved.trim().toLowerCase(),
+                                    (h) => norm(h) === normalizedImproved,
                                   ),
                                 ) ||
                                 resumeData.projects.some((proj) =>
                                   (proj.highlights || []).some(
-                                    (h) =>
-                                      h.trim().toLowerCase() ===
-                                      sug.improved.trim().toLowerCase(),
+                                    (h) => norm(h) === normalizedImproved,
                                   ),
                                 );
 
                               return (
                                 <div
                                   key={idx}
-                                  className={`border rounded-xl overflow-hidden text-xs transition-all duration-300 ${
+                                  className={`border rounded-2xl overflow-hidden text-xs transition-all duration-500 group relative ${
                                     isApplied
-                                      ? "border-emerald-500/30 bg-emerald-500/[0.03]"
-                                      : "border-border/30"
+                                      ? "border-zinc-600 bg-zinc-900/20 shadow-lg"
+                                      : "border-zinc-800 bg-zinc-950/40 hover:border-zinc-700"
                                   }`}
                                 >
-                                  <div className="bg-red-500/5 text-red-400/90 px-3 py-2 border-b border-border/20 flex gap-2 leading-relaxed">
-                                    <span className="font-extrabold uppercase text-[10px] text-red-500 shrink-0 pt-0.5">
-                                      Was:
+                                  <div className="bg-zinc-950/80 text-zinc-400 px-4 py-3 border-b border-zinc-800/50 border-dashed flex gap-2 leading-relaxed text-left">
+                                    <span className="font-extrabold uppercase text-[9px] text-zinc-500 shrink-0 pt-0.5 tracking-widest select-none font-mono">
+                                      Original:
                                     </span>
                                     <span
                                       className={
                                         isApplied
-                                          ? "line-through opacity-50"
+                                          ? "line-through opacity-40 transition-opacity duration-500"
                                           : ""
                                       }
                                     >
                                       "{sug.original}"
                                     </span>
                                   </div>
-                                  <div className="bg-emerald-500/5 text-emerald-400/90 px-3 py-2 flex items-start justify-between gap-2">
+                                  <div className="bg-zinc-900/10 text-white px-4 py-3 flex items-start justify-between gap-3 text-left">
                                     <div className="flex-1 leading-relaxed">
-                                      <span className="font-extrabold uppercase text-[10px] text-emerald-500 shrink-0 mr-1">
-                                        Better:
+                                      <span className="font-extrabold uppercase text-[9px] text-zinc-400 shrink-0 mr-1.5 tracking-widest select-none font-mono">
+                                        Optimized:
                                       </span>
-                                      "{sug.improved}"
+                                      <span className="text-zinc-100 font-medium">
+                                        "{sug.improved}"
+                                      </span>
                                     </div>
                                     {isApplied ? (
-                                      <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/40 text-[9px] font-bold shrink-0 select-none px-2 py-0.5 flex items-center gap-1">
-                                        <CheckCircle2 className="h-2.5 w-2.5" />{" "}
+                                      <Badge className="bg-zinc-800 text-zinc-300 border border-zinc-700 text-[9px] font-bold shrink-0 select-none px-2.5 py-0.5 flex items-center gap-1 animate-in zoom-in-95 duration-300 rounded-lg font-mono">
+                                        <CheckCircle2 className="h-3 w-3 text-zinc-300" />{" "}
                                         Applied
                                       </Badge>
                                     ) : (
@@ -1382,15 +1471,16 @@ export default function ResumeWorkspace() {
                                             sug.improved,
                                           )
                                         }
-                                        className="h-6 px-2.5 rounded-md text-[9px] font-extrabold bg-emerald-500/20 hover:bg-emerald-500 text-emerald-300 hover:text-white border border-emerald-500/30 shrink-0 select-none transition-all mt-0.5"
+                                        className="h-7 px-3.5 rounded-lg text-[10px] font-extrabold bg-white hover:bg-zinc-200 text-black border-none shrink-0 transition-all mt-0.5 shadow-md active:scale-95 tracking-tight"
                                       >
                                         Apply
                                       </Button>
                                     )}
                                   </div>
                                   {sug.reason && (
-                                    <div className="bg-background/30 px-3 py-1.5 border-t border-border/15 text-[10px] text-muted-foreground italic leading-relaxed">
-                                      💡 {sug.reason}
+                                    <div className="bg-zinc-950/30 px-4 py-2 border-t border-zinc-800/60 text-[10px] text-zinc-500 italic flex items-center gap-1.5 leading-relaxed text-left select-none">
+                                      <Sparkles className="h-3 w-3 text-zinc-400 shrink-0" />{" "}
+                                      <span>{sug.reason}</span>
                                     </div>
                                   )}
                                 </div>
@@ -1398,139 +1488,6 @@ export default function ResumeWorkspace() {
                             },
                           )}
                         </div>
-                      </div>
-                    )}
-                  </TabsContent>
-
-                  {/* Tab B: Aspect Metrics */}
-                  <TabsContent
-                    value="aspects"
-                    className="p-6 flex-1 mt-0 max-h-[500px] overflow-y-auto custom-scrollbar"
-                  >
-                    <Accordion
-                      type="single"
-                      collapsible
-                      className="space-y-3 w-full border-none"
-                    >
-                      {Object.entries(atsReport.aspects).map(
-                        ([key, aspect]: [string, any]) => (
-                          <AccordionItem
-                            key={key}
-                            value={key}
-                            className="border border-border/30 bg-background/20 rounded-xl px-4 overflow-hidden"
-                          >
-                            <AccordionTrigger className="hover:no-underline py-3.5">
-                              <div className="flex justify-between items-center w-full pr-3">
-                                <span className="capitalize font-bold text-white text-sm">
-                                  {key.replace("_", " ")}
-                                </span>
-                                <Badge
-                                  variant="secondary"
-                                  className="text-xs bg-background/60 border border-border/40"
-                                >
-                                  {aspect.rating}/100
-                                </Badge>
-                              </div>
-                            </AccordionTrigger>
-                            <AccordionContent className="space-y-3 pb-4">
-                              <div className="space-y-1 text-[11px]">
-                                <div className="font-bold text-white flex items-center gap-1">
-                                  <AlertCircle className="h-3 w-3 text-yellow-500" />{" "}
-                                  The Why:
-                                </div>
-                                <p className="text-muted-foreground leading-relaxed pl-4">
-                                  {aspect.why}
-                                </p>
-                              </div>
-                              <div className="space-y-1 text-[11px]">
-                                <div className="font-bold text-white flex items-center gap-1">
-                                  <CheckCircle2 className="h-3 w-3 text-emerald-500" />{" "}
-                                  How to Optimize:
-                                </div>
-                                <p className="text-muted-foreground leading-relaxed pl-4">
-                                  {aspect.how_to_improve}
-                                </p>
-                              </div>
-                            </AccordionContent>
-                          </AccordionItem>
-                        ),
-                      )}
-                    </Accordion>
-                  </TabsContent>
-
-                  {/* Tab C: Keywords */}
-                  <TabsContent
-                    value="keywords"
-                    className="p-6 space-y-4 flex-1 mt-0"
-                  >
-                    <div className="space-y-2">
-                      <h4 className="font-bold text-white text-sm flex items-center gap-1.5">
-                        🔍 Deficit Keyword Density
-                      </h4>
-                      <p className="text-xs text-muted-foreground leading-relaxed">
-                        We scanned target requirements and found these critical
-                        technical tags missing or weak in your content. Clicking
-                        adds them to your primary skill grid.
-                      </p>
-                    </div>
-
-                    {atsReport.missing_keywords.length === 0 ? (
-                      <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-4 text-xs text-emerald-400 text-center">
-                        Perfect keyword matching! No major skill deficits
-                        detected.
-                      </div>
-                    ) : (
-                      <div className="flex flex-wrap gap-2 py-2">
-                        {atsReport.missing_keywords.map((keyword, i) => {
-                          const isAlreadyAdded =
-                            injectedKeywords.includes(keyword);
-
-                          return (
-                            <Badge
-                              key={i}
-                              onClick={() => {
-                                if (isAlreadyAdded) return;
-
-                                setResumeData((prev) => {
-                                  const nextSkills = [...prev.skills];
-                                  if (nextSkills[0]) {
-                                    nextSkills[0] = {
-                                      ...nextSkills[0],
-                                      items: Array.from(
-                                        new Set([
-                                          ...nextSkills[0].items,
-                                          keyword,
-                                        ]),
-                                      ),
-                                    };
-                                  }
-                                  return { ...prev, skills: nextSkills };
-                                });
-
-                                setInjectedKeywords((p) => [...p, keyword]);
-                                toast({
-                                  title: `Inserted "${keyword}"`,
-                                  description:
-                                    "Successfully injected into Technical Skills category.",
-                                });
-                              }}
-                              className={`transition-all duration-300 select-none px-3 py-1 rounded-lg flex items-center gap-1.5 border ${
-                                isAlreadyAdded
-                                  ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40 cursor-default shadow-[0_0_10px_rgba(16,185,129,0.1)]"
-                                  : "bg-background/50 hover:bg-primary/15 text-white hover:border-primary border-border/50 cursor-pointer"
-                              }`}
-                            >
-                              {isAlreadyAdded ? (
-                                <>
-                                  <CheckCircle2 className="h-3 w-3 animate-in zoom-in duration-300" />{" "}
-                                  Added
-                                </>
-                              ) : (
-                                <>+ {keyword}</>
-                              )}
-                            </Badge>
-                          );
-                        })}
                       </div>
                     )}
                   </TabsContent>

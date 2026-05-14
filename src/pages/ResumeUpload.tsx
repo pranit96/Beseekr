@@ -104,33 +104,31 @@ export default function ResumeUpload() {
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.4 }}
-      className="min-h-screen bg-[#030712] text-slate-100 pb-12 px-4 sm:px-6 lg:px-8 pt-6"
-    >
-      <div className="max-w-3xl mx-auto space-y-8">
-        {/* CONTROL BAR */}
-        <div className="flex items-center gap-4">
+    <div className="w-full py-6 px-2 sm:px-4 lg:px-6 selection:bg-white/10">
+      {/* HERO HEADER OUTSIDE CARD */}
+      <div className="flex flex-col gap-4 mb-10 animate-in fade-in slide-in-from-top-4 duration-500 text-left max-w-3xl mx-auto">
+        <div className="flex items-center gap-3">
           <Button
-            variant="outline"
             size="icon"
-            className="rounded-xl bg-slate-900/50 border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800 h-10 w-10"
+            variant="ghost"
             onClick={() => navigate("/dashboard/resume")}
+            className="h-8 w-8 rounded-full bg-white/[0.03] border border-white/[0.08] text-zinc-400 hover:text-white hover:bg-white/[0.08] shrink-0 shadow-sm"
+            title="Back to Portal"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="h-3.5 w-3.5" />
           </Button>
-          <div>
-            <h2 className="text-2xl font-extrabold tracking-tight text-slate-100">
-              Scan Existing Resume
-            </h2>
-            <p className="text-slate-400 text-xs mt-0.5">
-              Upload an existing layout to initiate neural score extraction.
-            </p>
-          </div>
+          <span className="text-[10px] sm:text-[11px] font-bold tracking-[0.2em] text-zinc-500 uppercase flex items-center select-none">
+            RESUME INTELLIGENCE <span className="mx-2 opacity-50 text-[8px]">•</span> INGESTION
+          </span>
         </div>
 
+        <h1 className="text-3xl sm:text-5xl font-bold tracking-tight leading-[1.1] flex flex-col gap-1 text-white">
+          <span>Scan Existing Profile.</span>
+          <span className="text-zinc-700">Extract Neural ATS Score.</span>
+        </h1>
+      </div>
+
+      <div className="max-w-3xl mx-auto space-y-8">
         <AnimatePresence mode="wait">
           {!isProcessing ? (
             <motion.div
@@ -142,14 +140,14 @@ export default function ResumeUpload() {
               className="space-y-6"
             >
               {/* TARGET JOB DESCRIPTION BLOCK */}
-              <div className="border border-slate-800 rounded-3xl p-6 bg-slate-900/20 backdrop-blur-xl relative overflow-hidden space-y-4">
-                <div className="flex items-center justify-between pb-2 border-b border-slate-800/50">
-                  <Label className="text-sm font-bold text-slate-200 flex items-center gap-2">
-                    <Target className="w-4 h-4 text-indigo-400" />
+              <div className="border border-zinc-800/80 rounded-3xl p-6 bg-zinc-900/20 backdrop-blur-xl relative overflow-hidden space-y-4">
+                <div className="flex items-center justify-between pb-2 border-b border-zinc-800/50">
+                  <Label className="text-sm font-bold text-zinc-200 flex items-center gap-2">
+                    <Target className="w-4 h-4 text-white" />
                     Target Job Description
                   </Label>
-                  <span className="text-[10px] px-2 py-0.5 rounded bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 font-semibold uppercase tracking-wider">
-                    Highly Recommended
+                  <span className="text-[10px] px-2.5 py-1 rounded-full bg-zinc-800 border border-zinc-700 text-zinc-300 font-semibold uppercase tracking-wider select-none">
+                    Recommended
                   </span>
                 </div>
 
@@ -157,26 +155,24 @@ export default function ResumeUpload() {
                   placeholder="Paste the complete text of your target job listing here. Our scanner cross-references this listing to yield exact ATS-match percentages and missing keyword lists."
                   value={jobDescription}
                   onChange={(e) => setJobDescription(e.target.value)}
-                  className="min-h-[160px] bg-slate-950/40 border-slate-800 hover:border-slate-700 focus:border-indigo-500 text-sm text-slate-100 resize-none rounded-2xl p-4 leading-relaxed placeholder:text-slate-600 transition-all"
+                  className="min-h-[160px] bg-zinc-950/40 border-zinc-800 hover:border-zinc-700 focus:ring-1 focus:ring-white/40 focus:border-white/40 text-sm text-white resize-none rounded-2xl p-4 leading-relaxed placeholder:text-zinc-600 transition-all duration-200"
                 />
-                <p className="text-[11px] text-slate-500">
+                <p className="text-[11px] text-zinc-500 tracking-wide">
                   We utilize high-fidelity semantic comparison. Paste as much
                   description text as possible for the best results.
                 </p>
               </div>
 
               {/* FILE UPLOAD ZONE */}
-              <div className="relative border-2 border-dashed border-slate-800 hover:border-indigo-500/50 rounded-3xl p-12 bg-slate-900/10 hover:bg-indigo-500/[0.01] transition-all group text-center flex flex-col items-center cursor-pointer overflow-hidden">
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[200px] h-[80px] bg-indigo-500/5 rounded-full blur-[40px] pointer-events-none group-hover:bg-indigo-500/10 transition-colors" />
-
-                <div className="w-16 h-16 bg-slate-900 border border-slate-800 rounded-2xl flex items-center justify-center text-slate-400 group-hover:text-indigo-400 group-hover:scale-105 transition-all shadow-xl mb-6 group-hover:border-indigo-500/30">
+              <div className="relative border-2 border-dashed border-zinc-800 hover:border-white/40 rounded-3xl p-12 bg-zinc-950/20 hover:bg-zinc-900/10 transition-all duration-300 group text-center flex flex-col items-center cursor-pointer overflow-hidden">
+                <div className="w-16 h-16 bg-zinc-900/80 border border-zinc-800 rounded-2xl flex items-center justify-center text-zinc-400 group-hover:text-white group-hover:scale-105 transition-all shadow-xl mb-6 group-hover:border-zinc-700">
                   <UploadCloud className="w-8 h-8" />
                 </div>
 
-                <h3 className="text-xl font-bold text-slate-200 mb-2">
+                <h3 className="text-xl font-bold text-zinc-200 mb-2">
                   Upload Document Container
                 </h3>
-                <p className="text-slate-500 text-xs max-w-xs mx-auto leading-relaxed mb-8">
+                <p className="text-zinc-500 text-xs max-w-xs mx-auto leading-relaxed mb-8">
                   Select a PDF, DOCX, or Markdown file. Limits: 5MB. Highly
                   structured elements parse best.
                 </p>
@@ -188,7 +184,7 @@ export default function ResumeUpload() {
                   className="absolute inset-0 opacity-0 cursor-pointer z-10"
                 />
 
-                <Button className="bg-indigo-600 hover:bg-indigo-500 text-white px-8 rounded-xl font-bold h-11 relative z-0 transition-all duration-300 group-hover:shadow-[0_0_20px_rgba(99,102,241,0.3)]">
+                <Button className="bg-white hover:bg-zinc-200 text-black px-8 rounded-xl font-bold h-11 relative z-0 transition-all duration-300 shadow-sm tracking-tight">
                   Select Document
                 </Button>
               </div>
@@ -199,24 +195,12 @@ export default function ResumeUpload() {
               initial={{ opacity: 0, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="border border-slate-800 rounded-3xl p-12 bg-slate-900/20 backdrop-blur-xl flex flex-col items-center text-center space-y-8 relative overflow-hidden min-h-[380px] justify-center"
+              className="border border-zinc-800 rounded-3xl p-12 bg-zinc-950/50 backdrop-blur-xl flex flex-col items-center text-center space-y-8 relative overflow-hidden min-h-[380px] justify-center shadow-2xl"
             >
-              <div className="absolute inset-0 bg-gradient-to-b from-indigo-500/[0.02] to-transparent pointer-events-none" />
-
               <div className="relative">
-                <div className="w-24 h-24 rounded-3xl border border-indigo-500/20 bg-indigo-500/5 flex items-center justify-center relative z-10">
-                  <Loader2 className="w-10 h-10 text-indigo-400 animate-spin" />
+                <div className="w-24 h-24 rounded-3xl border border-zinc-800 bg-zinc-900 flex items-center justify-center relative z-10 shadow-xl">
+                  <Loader2 className="w-10 h-10 text-white animate-spin" />
                 </div>
-                <motion.div
-                  initial={{ opacity: 0.3, scale: 0.8 }}
-                  animate={{ opacity: [0.3, 0.6, 0.3], scale: [0.8, 1.2, 0.8] }}
-                  transition={{
-                    repeat: Infinity,
-                    duration: 2.5,
-                    ease: "easeInOut",
-                  }}
-                  className="absolute inset-0 rounded-full bg-indigo-500/10 blur-xl z-0"
-                />
               </div>
 
               <div className="space-y-3 max-w-sm relative z-10">
@@ -224,14 +208,14 @@ export default function ResumeUpload() {
                   key={processStep}
                   initial={{ opacity: 0, y: 5 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="text-xl font-extrabold text-slate-100 uppercase tracking-wide"
+                  className="text-xl font-extrabold text-white uppercase tracking-widest"
                 >
                   {processStep === "reading" && "Reading Payload"}
                   {processStep === "parsing" && "Extracting Nodes"}
                   {processStep === "scoring" && "Evaluating Profile"}
                   {processStep === "done" && "Finalizing Draft"}
                 </motion.h3>
-                <p className="text-slate-400 text-sm min-h-[40px]">
+                <p className="text-zinc-400 text-sm min-h-[40px] tracking-wide">
                   {stepMessages[processStep]}
                 </p>
               </div>
@@ -255,15 +239,15 @@ export default function ResumeUpload() {
                       <div
                         className={`h-2 w-2 rounded-full transition-all duration-500 ${
                           isDone
-                            ? "bg-indigo-400 scale-100"
+                            ? "bg-zinc-400 scale-100"
                             : isActive
-                              ? "bg-indigo-500 animate-pulse scale-125 ring-4 ring-indigo-500/20"
-                              : "bg-slate-800 scale-90"
+                              ? "bg-white animate-pulse scale-125 ring-4 ring-white/10"
+                              : "bg-zinc-800 scale-90"
                         }`}
                       />
                       {i < 2 && (
                         <div
-                          className={`h-0.5 w-12 transition-all duration-500 ${currentIdx > targetIdx ? "bg-indigo-500/40" : "bg-slate-900"}`}
+                          className={`h-0.5 w-12 transition-all duration-500 ${currentIdx > targetIdx ? "bg-zinc-500" : "bg-zinc-800"}`}
                         />
                       )}
                     </div>
@@ -272,8 +256,8 @@ export default function ResumeUpload() {
               </div>
 
               {fileName && (
-                <div className="text-[11px] px-3 py-1 rounded-full bg-slate-950/50 border border-slate-800 text-slate-400 flex items-center gap-1.5">
-                  <FileText className="w-3.5 h-3.5 text-indigo-400" />
+                <div className="text-[11px] px-3 py-1.5 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-400 flex items-center gap-1.5 select-none shadow-lg font-mono">
+                  <FileText className="w-3.5 h-3.5 text-zinc-300" />
                   {fileName}
                 </div>
               )}
@@ -281,6 +265,6 @@ export default function ResumeUpload() {
           )}
         </AnimatePresence>
       </div>
-    </motion.div>
+    </div>
   );
 }
