@@ -136,9 +136,18 @@ export async function downloadResumePdf(resume: ResumeSchema): Promise<string> {
   return window.URL.createObjectURL(blob);
 }
 
+export interface ResumeRevision {
+  id: string;
+  name: string;
+  resume: ResumeSchema;
+  job_description: string;
+  saved_at: string;
+}
+
 export async function getResumeDraft(): Promise<{
   resume_data: ResumeSchema;
   job_description: string;
+  history: ResumeRevision[];
 } | null> {
   const res = await apiClient.get("/api/resume/draft");
   return res.data;
@@ -155,6 +164,35 @@ export async function saveResumeDraft(
   return res.success === true;
 }
 
+export async function saveResumeSnapshot(
+  resume: ResumeSchema,
+  jobDescription: string,
+  name?: string,
+): Promise<ResumeRevision> {
+  const res = await apiClient.post("/api/resume/history/save", {
+    resume,
+    job_description: jobDescription || "",
+    name,
+  });
+  return res.data;
+}
+
+export async function restoreResumeSnapshot(
+  revisionId: string,
+): Promise<{ resume_data: ResumeSchema; job_description: string }> {
+  const res = await apiClient.post("/api/resume/history/restore", {
+    revision_id: revisionId,
+  });
+  return res.data;
+}
+
+export async function deleteResumeSnapshot(
+  revisionId: string,
+): Promise<boolean> {
+  const res = await apiClient.delete(`/api/resume/history/${revisionId}`);
+  return res.success === true;
+}
+
 export const resumeApi = {
   uploadAndParseResume,
   scoreResume,
@@ -162,6 +200,9 @@ export const resumeApi = {
   downloadResumePdf,
   getResumeDraft,
   saveResumeDraft,
+  saveResumeSnapshot,
+  restoreResumeSnapshot,
+  deleteResumeSnapshot,
 };
 
 export default resumeApi;

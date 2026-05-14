@@ -8,9 +8,11 @@ import {
   Route,
   Navigate,
   useLocation,
+  Outlet,
 } from "react-router-dom";
 import { ThemeProvider } from "./hooks/use-theme";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { ResumeProvider } from "./contexts/ResumeContext";
 import { KeyboardShortcutsDialog } from "./components/KeyboardShortcutsDialog";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { Analytics as VercelAnalytics } from "@vercel/analytics/react";
@@ -129,9 +131,21 @@ const SaasWatchlist = lazyRetry(
   "Watchlist",
 );
 const Pricing = lazyRetry(() => import("./pages/saas/Pricing"), "Pricing");
-const ResumeBuilder = lazyRetry(
-  () => import("./pages/ResumeBuilder"),
-  "ResumeBuilder",
+const ResumePortal = lazyRetry(
+  () => import("./pages/ResumePortal"),
+  "ResumePortal",
+);
+const ResumeUpload = lazyRetry(
+  () => import("./pages/ResumeUpload"),
+  "ResumeUpload",
+);
+const ResumeTemplateSelect = lazyRetry(
+  () => import("./pages/ResumeTemplateSelect"),
+  "ResumeTemplateSelect",
+);
+const ResumeWorkspace = lazyRetry(
+  () => import("./pages/ResumeWorkspace"),
+  "ResumeWorkspace",
 );
 
 // Trading System pages with retry logic
@@ -429,11 +443,44 @@ const App = () => {
                     <Route
                       path="resume"
                       element={
-                        <Suspense fallback={<PageLoader />}>
-                          <ResumeBuilder />
-                        </Suspense>
+                        <ResumeProvider>
+                          <Outlet />
+                        </ResumeProvider>
                       }
-                    />
+                    >
+                      <Route
+                        index
+                        element={
+                          <Suspense fallback={<PageLoader />}>
+                            <ResumePortal />
+                          </Suspense>
+                        }
+                      />
+                      <Route
+                        path="upload"
+                        element={
+                          <Suspense fallback={<PageLoader />}>
+                            <ResumeUpload />
+                          </Suspense>
+                        }
+                      />
+                      <Route
+                        path="build"
+                        element={
+                          <Suspense fallback={<PageLoader />}>
+                            <ResumeTemplateSelect />
+                          </Suspense>
+                        }
+                      />
+                      <Route
+                        path="workspace"
+                        element={
+                          <Suspense fallback={<PageLoader />}>
+                            <ResumeWorkspace />
+                          </Suspense>
+                        }
+                      />
+                    </Route>
 
                     {/* OLD STOCK ROUTES - Redirect to new trading system */}
                     <Route
