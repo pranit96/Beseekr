@@ -112,56 +112,87 @@ const RESUME_TEMPLATES = [
   {
     id: "tech_vanguard",
     name: "Modern Tech Vanguard",
-    description: "Clean, modern sans-serif geometry with Emerald green accents. Highly recommended for Software Engineers, Data Scientists, and Product Managers.",
+    description:
+      "Clean, modern sans-serif geometry with Emerald green accents. Highly recommended for Software Engineers, Data Scientists, and Product Managers.",
     icon: Laptop,
-    styles: { primaryColor: "#065F46", accentColor: "#059669", fontFamily: "Sans" },
+    styles: {
+      primaryColor: "#065F46",
+      accentColor: "#059669",
+      fontFamily: "Sans",
+    },
     colorScheme: "emerald",
     data: {
       ...PRESET_TEMPLATE,
-      styles: { primaryColor: "#065F46", accentColor: "#059669", fontFamily: "Sans" }
-    }
+      styles: {
+        primaryColor: "#065F46",
+        accentColor: "#059669",
+        fontFamily: "Sans",
+      },
+    },
   },
   {
     id: "classic_executive",
     name: "Classic Executive",
-    description: "A timeless Serif layout in Obsidian black. Maximum corporate legibility. Optimal for Finance, Legal, Sales, and C-Suite executive applications.",
+    description:
+      "A timeless Serif layout in Obsidian black. Maximum corporate legibility. Optimal for Finance, Legal, Sales, and C-Suite executive applications.",
     icon: Briefcase,
-    styles: { primaryColor: "#111827", accentColor: "#4B5563", fontFamily: "Serif" },
+    styles: {
+      primaryColor: "#111827",
+      accentColor: "#4B5563",
+      fontFamily: "Serif",
+    },
     colorScheme: "slate",
     data: {
       ...PRESET_TEMPLATE,
       personal_info: {
         ...PRESET_TEMPLATE.personal_info,
         name: "Robert Sterling",
-        summary: "Dynamic senior professional with over 8 years leading cross-functional enterprise strategy. Proven record optimizing high-performing operational funnels.",
+        summary:
+          "Dynamic senior professional with over 8 years leading cross-functional enterprise strategy. Proven record optimizing high-performing operational funnels.",
       },
-      styles: { primaryColor: "#111827", accentColor: "#4B5563", fontFamily: "Serif" }
-    }
+      styles: {
+        primaryColor: "#111827",
+        accentColor: "#4B5563",
+        fontFamily: "Serif",
+      },
+    },
   },
   {
     id: "creative_impact",
     name: "Creative Impact Studio",
-    description: "An energetic layout utilizing Indigo accents to frame key information. Exceptional for Designers, Marketers, Creators, and Modern Startup hubs.",
+    description:
+      "An energetic layout utilizing Indigo accents to frame key information. Exceptional for Designers, Marketers, Creators, and Modern Startup hubs.",
     icon: Palette,
-    styles: { primaryColor: "#1A365D", accentColor: "#3B82F6", fontFamily: "Sans" },
+    styles: {
+      primaryColor: "#1A365D",
+      accentColor: "#3B82F6",
+      fontFamily: "Sans",
+    },
     colorScheme: "indigo",
     data: {
       ...PRESET_TEMPLATE,
       personal_info: {
         ...PRESET_TEMPLATE.personal_info,
         name: "Jordan Rivera",
-        summary: "Innovator specialized in human-centric visual frameworks. Combining brand narrative with robust digital architecture to create engaging consumer landscapes.",
+        summary:
+          "Innovator specialized in human-centric visual frameworks. Combining brand narrative with robust digital architecture to create engaging consumer landscapes.",
       },
-      styles: { primaryColor: "#1A365D", accentColor: "#3B82F6", fontFamily: "Sans" }
-    }
-  }
+      styles: {
+        primaryColor: "#1A365D",
+        accentColor: "#3B82F6",
+        fontFamily: "Sans",
+      },
+    },
+  },
 ];
 
 export default function ResumeBuilder() {
   const { toast } = useToast();
 
   // App flow state
-  const [step, setStep] = useState<"start" | "loading" | "workspace" | "template_select">("start");
+  const [step, setStep] = useState<
+    "start" | "loading" | "workspace" | "template_select"
+  >("start");
   const [loadingMsg, setLoadingMsg] = useState("Parsing Resume...");
 
   // Core functional state
@@ -235,12 +266,12 @@ export default function ResumeBuilder() {
     setStep("template_select");
   };
 
-  const handleSelectTemplate = (template: typeof RESUME_TEMPLATES[0]) => {
+  const handleSelectTemplate = (template: (typeof RESUME_TEMPLATES)[0]) => {
     setResumeData(template.data);
     // Force UI to clear any stale keyword checks from previous sessions
     setInjectedKeywords([]);
     setStep("workspace");
-    
+
     toast({
       title: `${template.name} Loaded!`,
       description: "Industry-standard structural layout mapped successfully.",
@@ -265,7 +296,10 @@ export default function ResumeBuilder() {
       if (jobDescription && jobDescription.trim().length > 0) {
         try {
           setLoadingMsg("Computing target ATS scores...");
-          const scoreResult = await resumeApi.scoreResume(parsed, jobDescription);
+          const scoreResult = await resumeApi.scoreResume(
+            parsed,
+            jobDescription,
+          );
           setAtsReport(scoreResult);
         } catch (scoreErr) {
           console.error("Pre-compute score failed during upload:", scoreErr);
@@ -277,8 +311,8 @@ export default function ResumeBuilder() {
 
       toast({
         title: "Resume parsed!",
-        description: jobDescription 
-          ? "Extracted and custom scored against target Job Description!" 
+        description: jobDescription
+          ? "Extracted and custom scored against target Job Description!"
           : "Parsed flawlessly into the workspace editor.",
       });
     } catch (error: any) {
@@ -516,7 +550,12 @@ export default function ResumeBuilder() {
 
   const applyRefactor = (original: string, improved: string) => {
     // Normalize for robust fuzzy matching — strip punctuation, collapse whitespace
-    const normalize = (s: string) => s.toLowerCase().replace(/[^\w\s]/g, "").replace(/\s+/g, " ").trim();
+    const normalize = (s: string) =>
+      s
+        .toLowerCase()
+        .replace(/[^\w\s]/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
     const normalizedOriginal = normalize(original);
 
     let matched = false;
@@ -524,9 +563,11 @@ export default function ResumeBuilder() {
       const updatedExp = prev.experience.map((job) => {
         const bulletIdx = job.highlights.findIndex((h) => {
           const nh = normalize(h);
-          return nh === normalizedOriginal || 
-                 normalizedOriginal.includes(nh) || 
-                 nh.includes(normalizedOriginal);
+          return (
+            nh === normalizedOriginal ||
+            normalizedOriginal.includes(nh) ||
+            nh.includes(normalizedOriginal)
+          );
         });
         if (bulletIdx !== -1) {
           matched = true;
@@ -540,9 +581,11 @@ export default function ResumeBuilder() {
       const updatedProj = prev.projects.map((proj) => {
         const bulletIdx = (proj.highlights || []).findIndex((h) => {
           const nh = normalize(h);
-          return nh === normalizedOriginal || 
-                 normalizedOriginal.includes(nh) || 
-                 nh.includes(normalizedOriginal);
+          return (
+            nh === normalizedOriginal ||
+            normalizedOriginal.includes(nh) ||
+            nh.includes(normalizedOriginal)
+          );
         });
         if (bulletIdx !== -1) {
           matched = true;
@@ -704,7 +747,8 @@ export default function ResumeBuilder() {
                   Select Workspace Layout
                 </h2>
                 <p className="text-sm text-muted-foreground mt-0.5 font-medium">
-                  Choose a pre-graded structural layout optimized for your target industry.
+                  Choose a pre-graded structural layout optimized for your
+                  target industry.
                 </p>
               </div>
             </div>
@@ -714,23 +758,33 @@ export default function ResumeBuilder() {
               {RESUME_TEMPLATES.map((tmpl) => {
                 const IconComponent = tmpl.icon;
                 return (
-                  <Card 
-                    key={tmpl.id} 
+                  <Card
+                    key={tmpl.id}
                     onClick={() => handleSelectTemplate(tmpl)}
                     className="group relative overflow-hidden border border-border/40 bg-card/5 backdrop-blur-2xl rounded-3xl flex flex-col cursor-pointer hover:border-white/30 hover:bg-white/[0.01] transition-all duration-500 shadow-2xl flex-1 select-none"
                   >
                     {/* Visual Gradient Header Overlay */}
-                    <div className={`absolute top-0 inset-x-0 h-1.5 transition-all duration-500 ${
-                      tmpl.colorScheme === "emerald" ? "bg-emerald-500" : tmpl.colorScheme === "indigo" ? "bg-blue-500" : "bg-zinc-500"
-                    }`} />
+                    <div
+                      className={`absolute top-0 inset-x-0 h-1.5 transition-all duration-500 ${
+                        tmpl.colorScheme === "emerald"
+                          ? "bg-emerald-500"
+                          : tmpl.colorScheme === "indigo"
+                            ? "bg-blue-500"
+                            : "bg-zinc-500"
+                      }`}
+                    />
 
                     <div className="p-6 flex flex-col flex-1 space-y-6">
                       {/* Icon Module */}
-                      <div className={`h-14 w-14 rounded-2xl border flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform duration-500 ${
-                        tmpl.colorScheme === "emerald" ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" : 
-                        tmpl.colorScheme === "indigo" ? "bg-blue-500/10 border-blue-500/20 text-blue-400" : 
-                        "bg-zinc-500/10 border-zinc-500/20 text-zinc-400"
-                      }`}>
+                      <div
+                        className={`h-14 w-14 rounded-2xl border flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform duration-500 ${
+                          tmpl.colorScheme === "emerald"
+                            ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+                            : tmpl.colorScheme === "indigo"
+                              ? "bg-blue-500/10 border-blue-500/20 text-blue-400"
+                              : "bg-zinc-500/10 border-zinc-500/20 text-zinc-400"
+                        }`}
+                      >
                         <IconComponent className="h-7 w-7" />
                       </div>
 
@@ -751,22 +805,30 @@ export default function ResumeBuilder() {
                         <hr className="border-border/20" />
                         <div className="space-y-2">
                           {/* Mimic Section Title */}
-                          <div className={`h-2 rounded-full w-1/4 ${
-                            tmpl.colorScheme === "emerald" ? "bg-emerald-500/40" :
-                            tmpl.colorScheme === "indigo" ? "bg-blue-500/40" :
-                            "bg-zinc-500/40"
-                          }`} />
+                          <div
+                            className={`h-2 rounded-full w-1/4 ${
+                              tmpl.colorScheme === "emerald"
+                                ? "bg-emerald-500/40"
+                                : tmpl.colorScheme === "indigo"
+                                  ? "bg-blue-500/40"
+                                  : "bg-zinc-500/40"
+                            }`}
+                          />
                           {/* Mimic Content Lines */}
                           <div className="h-1.5 bg-muted-foreground/15 rounded-full w-full" />
                           <div className="h-1.5 bg-muted-foreground/15 rounded-full w-5/6" />
                         </div>
                         <div className="space-y-2 mt-1">
                           {/* Mimic Section Title 2 */}
-                          <div className={`h-2 rounded-full w-1/4 ${
-                            tmpl.colorScheme === "emerald" ? "bg-emerald-500/40" :
-                            tmpl.colorScheme === "indigo" ? "bg-blue-500/40" :
-                            "bg-zinc-500/40"
-                          }`} />
+                          <div
+                            className={`h-2 rounded-full w-1/4 ${
+                              tmpl.colorScheme === "emerald"
+                                ? "bg-emerald-500/40"
+                                : tmpl.colorScheme === "indigo"
+                                  ? "bg-blue-500/40"
+                                  : "bg-zinc-500/40"
+                            }`}
+                          />
                           <div className="flex gap-1.5">
                             <div className="h-1.5 bg-muted-foreground/10 rounded-full w-1/4" />
                             <div className="h-1.5 bg-muted-foreground/10 rounded-full w-1/3" />
@@ -777,23 +839,37 @@ export default function ResumeBuilder() {
 
                       {/* Primary Font and Setup Badges */}
                       <div className="flex items-center gap-2">
-                        <Badge variant="secondary" className="text-[10px] font-bold bg-background/60 border-border/30 border text-muted-foreground">
+                        <Badge
+                          variant="secondary"
+                          className="text-[10px] font-bold bg-background/60 border-border/30 border text-muted-foreground"
+                        >
                           {tmpl.styles.fontFamily} Typography
                         </Badge>
-                        <Badge variant="secondary" className="text-[10px] font-bold bg-background/60 border-border/30 border flex items-center gap-1 text-muted-foreground">
-                          <span className={`h-1.5 w-1.5 rounded-full ${
-                            tmpl.colorScheme === "emerald" ? "bg-emerald-400" : tmpl.colorScheme === "indigo" ? "bg-blue-400" : "bg-zinc-400"
-                          }`} />
+                        <Badge
+                          variant="secondary"
+                          className="text-[10px] font-bold bg-background/60 border-border/30 border flex items-center gap-1 text-muted-foreground"
+                        >
+                          <span
+                            className={`h-1.5 w-1.5 rounded-full ${
+                              tmpl.colorScheme === "emerald"
+                                ? "bg-emerald-400"
+                                : tmpl.colorScheme === "indigo"
+                                  ? "bg-blue-400"
+                                  : "bg-zinc-400"
+                            }`}
+                          />
                           Accent Theme
                         </Badge>
                       </div>
 
                       {/* Action Button */}
-                      <Button 
+                      <Button
                         className={`w-full rounded-2xl h-11 font-bold mt-2 transition-all duration-300 text-white cursor-pointer border border-transparent ${
-                          tmpl.colorScheme === "emerald" ? "bg-emerald-600 hover:bg-emerald-500 shadow-lg hover:shadow-emerald-500/20" : 
-                          tmpl.colorScheme === "indigo" ? "bg-blue-600 hover:bg-blue-500 shadow-lg hover:shadow-blue-500/20" : 
-                          "bg-zinc-800 hover:bg-zinc-700 shadow-lg border-border/50"
+                          tmpl.colorScheme === "emerald"
+                            ? "bg-emerald-600 hover:bg-emerald-500 shadow-lg hover:shadow-emerald-500/20"
+                            : tmpl.colorScheme === "indigo"
+                              ? "bg-blue-600 hover:bg-blue-500 shadow-lg hover:shadow-blue-500/20"
+                              : "bg-zinc-800 hover:bg-zinc-700 shadow-lg border-border/50"
                         }`}
                       >
                         Select & Initialize
@@ -1554,13 +1630,18 @@ export default function ResumeBuilder() {
 
                   <div className="flex items-center gap-2 mb-1">
                     <Trophy className="h-4 w-4 text-yellow-400" />
-                    <h3 className="text-sm font-extrabold text-white">ATS Score Engine</h3>
+                    <h3 className="text-sm font-extrabold text-white">
+                      ATS Score Engine
+                    </h3>
                   </div>
 
                   {/* JD Input */}
                   <div className="space-y-1.5">
                     <Label className="text-[11px] font-bold text-muted-foreground pl-0.5">
-                      🎯 Target Job Description <span className="text-[9px] font-normal opacity-60">(paste for custom scoring)</span>
+                      🎯 Target Job Description{" "}
+                      <span className="text-[9px] font-normal opacity-60">
+                        (paste for custom scoring)
+                      </span>
                     </Label>
                     <Textarea
                       placeholder="Paste job description here to score your resume against specific keywords and requirements..."
@@ -1763,24 +1844,37 @@ export default function ResumeBuilder() {
                                 type="button"
                                 size="sm"
                                 onClick={() => {
-                                  atsReport.bullet_point_suggestions.forEach((sug) => {
-                                    applyRefactor(sug.original, sug.improved);
-                                  });
+                                  atsReport.bullet_point_suggestions.forEach(
+                                    (sug) => {
+                                      applyRefactor(sug.original, sug.improved);
+                                    },
+                                  );
                                 }}
                                 className="h-6 px-3 rounded-md text-[9px] font-extrabold bg-emerald-600 hover:bg-emerald-500 text-white border-none shrink-0 select-none transition-all"
                               >
-                                Apply All ({atsReport.bullet_point_suggestions.length})
+                                Apply All (
+                                {atsReport.bullet_point_suggestions.length})
                               </Button>
                             </div>
                             <div className="space-y-2.5 max-h-[300px] overflow-y-auto pr-1 custom-scrollbar">
-                              {atsReport.bullet_point_suggestions
-                                .map((sug, idx) => {
+                              {atsReport.bullet_point_suggestions.map(
+                                (sug, idx) => {
                                   // Check if this suggestion has already been applied
-                                  const isApplied = resumeData.experience.some((job) =>
-                                    job.highlights.some((h) => h.trim().toLowerCase() === sug.improved.trim().toLowerCase())
-                                  ) || resumeData.projects.some((proj) =>
-                                    (proj.highlights || []).some((h) => h.trim().toLowerCase() === sug.improved.trim().toLowerCase())
-                                  );
+                                  const isApplied =
+                                    resumeData.experience.some((job) =>
+                                      job.highlights.some(
+                                        (h) =>
+                                          h.trim().toLowerCase() ===
+                                          sug.improved.trim().toLowerCase(),
+                                      ),
+                                    ) ||
+                                    resumeData.projects.some((proj) =>
+                                      (proj.highlights || []).some(
+                                        (h) =>
+                                          h.trim().toLowerCase() ===
+                                          sug.improved.trim().toLowerCase(),
+                                      ),
+                                    );
 
                                   return (
                                     <div
@@ -1795,7 +1889,13 @@ export default function ResumeBuilder() {
                                         <span className="font-extrabold uppercase text-[10px] text-red-500 shrink-0 pt-0.5">
                                           Was:
                                         </span>
-                                        <span className={isApplied ? "line-through opacity-50" : ""}>
+                                        <span
+                                          className={
+                                            isApplied
+                                              ? "line-through opacity-50"
+                                              : ""
+                                          }
+                                        >
                                           "{sug.original}"
                                         </span>
                                       </div>
@@ -1808,7 +1908,8 @@ export default function ResumeBuilder() {
                                         </div>
                                         {isApplied ? (
                                           <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/40 text-[9px] font-bold shrink-0 select-none px-2 py-0.5 flex items-center gap-1">
-                                            <CheckCircle2 className="h-2.5 w-2.5" /> Applied
+                                            <CheckCircle2 className="h-2.5 w-2.5" />{" "}
+                                            Applied
                                           </Badge>
                                         ) : (
                                           <Button
@@ -1833,7 +1934,8 @@ export default function ResumeBuilder() {
                                       )}
                                     </div>
                                   );
-                                })}
+                                },
+                              )}
                             </div>
                           </div>
                         )}
