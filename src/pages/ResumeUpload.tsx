@@ -36,11 +36,53 @@ export default function ResumeUpload() {
   >("reading");
   const [fileName, setFileName] = useState<string | null>(null);
 
+  const ALLOWED_TYPES = new Set([
+    "application/pdf",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/msword",
+    "text/plain",
+    "text/markdown",
+  ]);
+  const ALLOWED_EXTENSIONS = /\.(pdf|docx|doc|txt|md)$/i;
+  const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB — matches server cap
+  const MAX_JD_LENGTH = 12_000;
+
   const handleFileSelection = async (
     e: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // ─── Client-side guards ────────────────────────────────────────────
+    if (!ALLOWED_TYPES.has(file.type) || !ALLOWED_EXTENSIONS.test(file.name)) {
+      toast({
+        title: "Unsupported File Type",
+        description: "Please upload a PDF, DOCX, TXT, or Markdown file.",
+        variant: "destructive",
+      });
+      e.target.value = "";
+      return;
+    }
+
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      toast({
+        title: "File Too Large",
+        description: "Maximum allowed file size is 5 MB.",
+        variant: "destructive",
+      });
+      e.target.value = "";
+      return;
+    }
+
+    if (jobDescription && jobDescription.length > MAX_JD_LENGTH) {
+      toast({
+        title: "Job Description Too Long",
+        description: `Please trim your job description to under ${MAX_JD_LENGTH.toLocaleString()} characters.`,
+        variant: "destructive",
+      });
+      return;
+    }
+    // ──────────────────────────────────────────────────────────────────
 
     // Instantly lock session context into the isolated Upload slot
     setWorkspaceMode("upload");
