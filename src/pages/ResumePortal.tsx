@@ -90,23 +90,18 @@ export default function ResumePortal() {
         <div className="space-y-4 text-left">
           <div className="flex items-center gap-2 mb-3 sm:mb-4">
             <span className="text-[10px] sm:text-[11px] font-bold tracking-[0.2em] text-zinc-500 uppercase flex items-center select-none">
-              RESUME INTELLIGENCE{" "}
-              <span className="mx-2 opacity-50 text-[8px]">•</span> VAULT PORTAL
+              RESUME BUILDER{" "}
+              <span className="mx-2 opacity-50 text-[8px]">•</span> HOME
             </span>
           </div>
 
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <h1 className="text-3xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-[1.1] flex flex-col gap-1">
-              <span className="text-white">Precision Vault.</span>
+              <span className="text-white">Your Resume.</span>
               <span className="text-zinc-700">
-                Access. Optimize. Accelerate.
+                Build it. Score it. Download it.
               </span>
             </h1>
-
-            <div className="flex items-center gap-2 bg-white/[0.02] border border-white/[0.05] px-3 py-1.5 rounded-full text-zinc-400 text-xs shrink-0">
-              <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
-              <span>ATS-Grade Intelligence v3.0</span>
-            </div>
           </div>
         </div>
 
@@ -129,23 +124,21 @@ export default function ResumePortal() {
 
               <div className="space-y-2">
                 <h3 className="text-xl font-bold tracking-tight text-zinc-100 flex items-center gap-2">
-                  Scan & Score
+                  Upload & Score
                   <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all text-zinc-500" />
                 </h3>
                 <p className="text-zinc-400 text-xs sm:text-sm leading-relaxed font-medium">
-                  Import an existing resume. Our algorithm breaks down
-                  hierarchy, verifies standard compliance, and generates
-                  optimization routes for target jobs.
+                  Upload your existing resume. We'll read it, score it against a job description, and show you what to improve.
                 </p>
               </div>
             </div>
 
             <div className="flex gap-2 pt-6 mt-auto">
               <Badge className="bg-white/[0.03] text-zinc-400 hover:bg-white/[0.05] border-white/[0.06] rounded-lg px-2.5 py-0.5 text-[10px] font-bold select-none">
-                PDF / DOCX Ingestion
+                PDF / DOCX
               </Badge>
               <Badge className="bg-white/[0.03] text-zinc-400 hover:bg-white/[0.05] border-white/[0.06] rounded-lg px-2.5 py-0.5 text-[10px] font-bold select-none">
-                Keyword Analysis
+                ATS Score
               </Badge>
             </div>
           </motion.div>
@@ -167,23 +160,21 @@ export default function ResumePortal() {
 
               <div className="space-y-2">
                 <h3 className="text-xl font-bold tracking-tight text-zinc-100 flex items-center gap-2">
-                  AI Template Builder
+                  Build from Template
                   <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all text-zinc-500" />
                 </h3>
                 <p className="text-zinc-400 text-xs sm:text-sm leading-relaxed font-medium">
-                  Launch a fresh interactive editor pre-configured with proven
-                  typographic templates. Harness structured fields to generate
-                  clean ATS PDF schemas.
+                  Start from a clean template, fill in your details, and download a polished PDF ready for job applications.
                 </p>
               </div>
             </div>
 
             <div className="flex gap-2 pt-6 mt-auto">
               <Badge className="bg-white/[0.03] text-zinc-400 hover:bg-white/[0.05] border-white/[0.06] rounded-lg px-2.5 py-0.5 text-[10px] font-bold select-none">
-                Premium Layouts
+                Ready-made Layouts
               </Badge>
               <Badge className="bg-white/[0.03] text-zinc-400 hover:bg-white/[0.05] border-white/[0.06] rounded-lg px-2.5 py-0.5 text-[10px] font-bold select-none">
-                Baseline Matrix Grid
+                PDF Export
               </Badge>
             </div>
           </motion.div>
@@ -204,14 +195,14 @@ export default function ResumePortal() {
               </div>
               <div className="text-left space-y-0.5">
                 <h4 className="text-base font-bold text-zinc-100">
-                  Active {workspaceMode === "upload" ? "Uploaded" : "Builder"}{" "}
-                  Workspace
+                  {workspaceMode === "upload" ? "Uploaded" : "Template"} Resume
+                  in Progress
                 </h4>
                 <p className="text-zinc-400 text-xs flex items-center gap-1.5">
                   <Clock className="w-3 h-3 opacity-70" />
-                  In flight:{" "}
+                  Editing:{" "}
                   <span className="text-zinc-200 font-semibold font-mono tracking-tight">
-                    {resumeData.personal_info?.name || "Untitled Document"}
+                    {resumeData.personal_info?.name || "Untitled"}
                   </span>
                 </p>
               </div>
@@ -247,14 +238,14 @@ export default function ResumePortal() {
               </div>
               <div>
                 <h2 className="text-lg font-bold text-zinc-100 tracking-tight flex items-center gap-2.5">
-                  Snapshot Repository
+                  Saved Versions
                   <Badge className="bg-purple-500/5 hover:bg-purple-500/10 text-purple-400 border border-purple-500/10 font-mono text-[9px] rounded-full px-2 py-0">
-                    45d Lifecycle
+                    45 days
                   </Badge>
                 </h2>
                 <p className="text-zinc-500 text-xs mt-0.5 flex items-center gap-1.5 select-none font-medium">
                   <ShieldCheck className="w-3.5 h-3.5 opacity-80 text-zinc-400" />
-                  End-to-end encryption applied.
+                  Your data is encrypted.
                 </p>
               </div>
             </div>
@@ -270,7 +261,7 @@ export default function ResumePortal() {
                 }`}
               >
                 <Sparkles className="w-3 h-3" />
-               Template drafts
+                Template drafts
               </button>
               <button
                 onClick={() => setWorkspaceMode("upload")}
@@ -301,11 +292,10 @@ export default function ResumePortal() {
                 <History className="w-5 h-5 opacity-70" />
               </div>
               <p className="text-zinc-400 text-xs sm:text-sm font-bold tracking-tight">
-                No encrypted snapshots archived
+                No saved versions yet
               </p>
               <p className="text-zinc-500 text-[11px] mt-1.5 max-w-xs mx-auto font-medium">
-                Snapshots created during workspace synchronization will reside
-                here securely.
+                Save a version while editing and it will appear here.
               </p>
             </div>
           ) : (
@@ -364,10 +354,10 @@ export default function ResumePortal() {
                   <div className="flex items-center justify-between pt-3 border-t border-white/[0.04] mt-1 select-none">
                     <div className="text-left space-y-0.5 min-w-0 flex-1 pr-2">
                       <span className="text-[8px] text-zinc-500 block tracking-[0.1em] font-black uppercase font-mono">
-                        METADATA OWNER
+                        NAME
                       </span>
                       <span className="text-xs text-zinc-400 font-bold tracking-tight line-clamp-1">
-                        {rev.resume.personal_info?.name || "Unknown Agent"}
+                        {rev.resume.personal_info?.name || "Untitled"}
                       </span>
                     </div>
 
@@ -394,27 +384,26 @@ export default function ResumePortal() {
               <AlertTriangle className="w-5 h-5" />
             </div>
             <AlertDialogTitle className="text-xl font-bold tracking-tight text-white">
-              Absolute Cloud Purge
+              Delete This Workspace?
             </AlertDialogTitle>
             <AlertDialogDescription className="text-zinc-400 text-sm leading-relaxed font-medium">
-              This will permanently evict your active{" "}
+              This will permanently delete your{" "}
               <span className="text-white font-bold tracking-tight">
-                {workspaceMode === "upload" ? "Scan & Score" : "AI Builder"}
+                {workspaceMode === "upload" ? "Upload & Score" : "Template Builder"}
               </span>{" "}
-              workspace container. All database pointers and snapshot logs for
-              this slot will be destroyed.
+              workspace and all saved versions in it. This cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-6 gap-3 flex-col sm:flex-row">
             <AlertDialogCancel className="bg-transparent border border-white/[0.08] text-zinc-400 hover:bg-white/[0.03] hover:text-white rounded-xl font-bold text-xs px-5 py-2 h-10 transition-all">
-              Cancel Sweep
+              Cancel
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={purgeWorkspace}
               className="bg-red-500 hover:bg-red-600 text-white rounded-xl font-bold text-xs px-5 py-2 h-10 transition-all border-none shadow-lg flex items-center gap-1.5 justify-center"
             >
               <Trash2 className="w-3.5 h-3.5" />
-              Confirm Purge
+              Yes, Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

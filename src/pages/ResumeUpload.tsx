@@ -143,10 +143,10 @@ export default function ResumeUpload() {
   };
 
   const stepMessages = {
-    reading: "Mounting binary blobs and decoding strings...",
-    parsing: "Orchestrating LLM context mapping...",
-    scoring: "Computing ATS-compatibility matching profiles...",
-    done: "Syncing structures to draft container...",
+    reading: "Reading your file...",
+    parsing: "Extracting resume data...",
+    scoring: "Scoring against the job description...",
+    done: "Saving to your workspace...",
   };
 
   return (
@@ -164,14 +164,14 @@ export default function ResumeUpload() {
             <ArrowLeft className="h-3.5 w-3.5" />
           </Button>
           <span className="text-[10px] sm:text-[11px] font-bold tracking-[0.2em] text-zinc-500 uppercase flex items-center select-none">
-            RESUME INTELLIGENCE{" "}
-            <span className="mx-2 opacity-50 text-[8px]">•</span> INGESTION
+            "Resume Builder"
+            <span className="mx-2 opacity-50 text-[8px]">•</span> UPLOAD
           </span>
         </div>
 
         <h1 className="text-3xl sm:text-5xl font-bold tracking-tight leading-[1.1] flex flex-col gap-1 text-white">
-          <span>Scan Existing Profile.</span>
-          <span className="text-zinc-700">Extract Neural ATS Score.</span>
+          <span>Upload Your Resume.</span>
+          <span className="text-zinc-700">Score it against a job.</span>
         </h1>
       </div>
 
@@ -199,14 +199,13 @@ export default function ResumeUpload() {
                 </div>
 
                 <Textarea
-                  placeholder="Paste the complete text of your target job listing here. Our scanner cross-references this listing to yield exact ATS-match percentages and missing keyword lists."
+                  placeholder="Paste the job description here (optional). We'll compare your resume against it and show a match score."
                   value={jobDescription}
                   onChange={(e) => setJobDescription(e.target.value)}
                   className="min-h-[160px] bg-zinc-950/40 border-zinc-800 hover:border-zinc-700 focus:ring-1 focus:ring-white/40 focus:border-white/40 text-sm text-white resize-none rounded-2xl p-4 leading-relaxed placeholder:text-zinc-600 transition-all duration-200"
                 />
                 <p className="text-[11px] text-zinc-500 tracking-wide">
-                  We utilize high-fidelity semantic comparison. Paste as much
-                  description text as possible for the best results.
+                  The more of the job description you paste, the more accurate the score.
                 </p>
               </div>
 
@@ -217,11 +216,10 @@ export default function ResumeUpload() {
                 </div>
 
                 <h3 className="text-xl font-bold text-zinc-200 mb-2">
-                  Upload Document Container
+                  Choose Your File
                 </h3>
                 <p className="text-zinc-500 text-xs max-w-xs mx-auto leading-relaxed mb-8">
-                  Select a PDF, DOCX, or Markdown file. Limits: 5MB. Highly
-                  structured elements parse best.
+                  PDF, DOCX, or TXT — up to 5 MB.
                 </p>
 
                 <input
@@ -257,10 +255,10 @@ export default function ResumeUpload() {
                   animate={{ opacity: 1, y: 0 }}
                   className="text-xl font-extrabold text-white uppercase tracking-widest"
                 >
-                  {processStep === "reading" && "Reading Payload"}
-                  {processStep === "parsing" && "Extracting Nodes"}
-                  {processStep === "scoring" && "Evaluating Profile"}
-                  {processStep === "done" && "Finalizing Draft"}
+                  {processStep === "reading" && "Reading File"}
+                  {processStep === "parsing" && "Extracting Data"}
+                  {processStep === "scoring" && "Scoring Resume"}
+                  {processStep === "done" && "Saving Draft"}
                 </motion.h3>
                 <p className="text-zinc-400 text-sm min-h-[40px] tracking-wide">
                   {stepMessages[processStep]}

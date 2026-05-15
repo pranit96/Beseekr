@@ -106,8 +106,8 @@ export default function ResumeWorkspace() {
       const result = await resumeApi.scoreResume(resumeData, jobDescription);
       setAtsReport(result);
       toast({
-        title: "Analysis Computed",
-        description: `Scored ${result.score}/100! Review improvement suggestions.`,
+        title: "Resume Scored",
+        description: `Your score is ${result.score}/100. Check the suggestions below.`,
       });
     } catch (error: any) {
       toast({
@@ -129,8 +129,8 @@ export default function ResumeWorkspace() {
       );
       setResumeData(optimized);
       toast({
-        title: "Agent Polish Applied!",
-        description: "Rewrote highlights for maximum professional impact.",
+        title: "AI Improvements Applied",
+        description: "Your bullet points have been rewritten for better impact.",
       });
       // Trigger automatic score refresh if report existed
       if (atsReport) handleRunATSAnalysis();
@@ -419,14 +419,14 @@ export default function ResumeWorkspace() {
               <ArrowLeft className="h-3.5 w-3.5" />
             </Button>
             <span className="text-[10px] sm:text-[11px] font-bold tracking-[0.2em] text-zinc-500 uppercase flex items-center select-none">
-              RESUME INTELLIGENCE{" "}
+              RESUME BUILDER{" "}
               <span className="mx-2 opacity-50 text-[8px]">•</span> WORKSPACE
             </span>
           </div>
 
           <h1 className="text-3xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-[1.1] flex flex-col gap-1 text-white">
-            <span>Craft With Precision.</span>
-            <span className="text-zinc-700">Optimize to ATS Perfection.</span>
+            <span>Edit Your Resume.</span>
+            <span className="text-zinc-700">Score it. Download it.</span>
           </h1>
         </div>
 
@@ -501,11 +501,11 @@ export default function ResumeWorkspace() {
           <div className="flex items-center justify-between mb-2">
             <div>
               <h2 className="text-lg font-bold tracking-tight text-foreground flex items-center gap-2">
-                <FileText className="h-4 w-4 text-indigo-400" /> Document
-                Outline
+                <FileText className="h-4 w-4 text-indigo-400" /> Resume
+                Editor
               </h2>
               <p className="text-xs text-muted-foreground/80 mt-0.5">
-                Fields populate dynamic pdf render schema in real-time.
+                Changes are saved automatically.
               </p>
             </div>
           </div>
@@ -533,7 +533,7 @@ export default function ResumeWorkspace() {
                 <div className="grid md:grid-cols-2 gap-6 border-t border-white/[0.03] pt-5">
                   <div className="space-y-3">
                     <Label className="text-[10px] font-extrabold tracking-wider uppercase text-zinc-500">
-                      Accent Color Block
+                      Header Color
                     </Label>
                     <div className="flex items-center gap-3 py-1">
                       {[
@@ -585,7 +585,7 @@ export default function ResumeWorkspace() {
 
                   <div className="space-y-3">
                     <Label className="text-[10px] font-extrabold tracking-wider uppercase text-zinc-500">
-                      Typography Engine
+                      Font Style
                     </Label>
                     <div className="grid grid-cols-2 gap-3">
                       <Button
@@ -642,7 +642,7 @@ export default function ResumeWorkspace() {
                       onChange={(e) =>
                         updatePersonalInfo("name", e.target.value)
                       }
-                      placeholder="Agent Identity"
+                      placeholder="Your full name"
                       className="bg-white/[0.02] focus:bg-white/[0.04] border-white/[0.06] focus:border-indigo-500/40 focus:ring-0 text-zinc-200 rounded-2xl h-11 px-4 transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.3)] text-sm"
                     />
                   </div>
@@ -655,7 +655,7 @@ export default function ResumeWorkspace() {
                       onChange={(e) =>
                         updatePersonalInfo("email", e.target.value)
                       }
-                      placeholder="mail@workspace.io"
+                      placeholder="you@email.com"
                       className="bg-white/[0.02] focus:bg-white/[0.04] border-white/[0.06] focus:border-indigo-500/40 focus:ring-0 text-zinc-200 rounded-2xl h-11 px-4 transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.3)] text-sm"
                     />
                   </div>
@@ -668,7 +668,7 @@ export default function ResumeWorkspace() {
                       onChange={(e) =>
                         updatePersonalInfo("phone", e.target.value)
                       }
-                      placeholder="Access Direct"
+                      placeholder="+1 234 567 8900"
                       className="bg-white/[0.02] focus:bg-white/[0.04] border-white/[0.06] focus:border-indigo-500/40 focus:ring-0 text-zinc-200 rounded-2xl h-11 px-4 transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.3)] text-sm"
                     />
                   </div>
@@ -688,14 +688,14 @@ export default function ResumeWorkspace() {
                 </div>
                 <div className="space-y-2 text-left">
                   <Label className="text-[10px] font-extrabold uppercase tracking-widest text-zinc-500 ml-1">
-                    Professional Narrative Summary
+                    Summary
                   </Label>
                   <Textarea
                     value={resumeData.personal_info.summary}
                     onChange={(e) =>
                       updatePersonalInfo("summary", e.target.value)
                     }
-                    placeholder="A high-end technical outline encapsulating core value delivery..."
+                    placeholder="A brief overview of your background and what you're looking for."
                     className="bg-white/[0.02] focus:bg-white/[0.04] border-white/[0.06] focus:border-indigo-500/40 focus:ring-0 text-zinc-200 rounded-2xl min-h-[90px] px-4 py-3 leading-relaxed transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.3)] text-sm resize-none"
                   />
                 </div>
@@ -712,7 +712,7 @@ export default function ResumeWorkspace() {
                   <div className="p-2 bg-sky-500/10 rounded-xl border border-sky-500/20">
                     <Briefcase className="h-4 w-4 text-sky-400" />
                   </div>
-                  Work Matrix
+                  Work Experience
                 </div>
               </AccordionTrigger>
               <AccordionContent className="space-y-6 pt-2 pb-6 border-t border-white/[0.03]">
@@ -733,7 +733,7 @@ export default function ResumeWorkspace() {
                     <div className="grid grid-cols-2 gap-4 text-left">
                       <div className="space-y-2">
                         <Label className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-500 ml-1">
-                          Company Entity
+                          Company
                         </Label>
                         <Input
                           value={exp.company}
@@ -759,7 +759,7 @@ export default function ResumeWorkspace() {
                       </div>
                       <div className="space-y-2">
                         <Label className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-500 ml-1">
-                          Timeline Period
+                          Dates
                         </Label>
                         <Input
                           value={exp.period}
@@ -772,7 +772,7 @@ export default function ResumeWorkspace() {
                       </div>
                       <div className="space-y-2">
                         <Label className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-500 ml-1">
-                          Locality Location
+                          City
                         </Label>
                         <Input
                           value={exp.location}
@@ -788,7 +788,7 @@ export default function ResumeWorkspace() {
                     <div className="space-y-3 text-left">
                       <Label className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5 ml-1 mt-1">
                         <Sparkles className="h-3 w-3 text-sky-400 animate-pulse" />{" "}
-                        Bulleted Highlights
+                        Bullet Points
                       </Label>
                       <div className="space-y-2.5">
                         {exp.highlights.map((bullet, bIdx) => (

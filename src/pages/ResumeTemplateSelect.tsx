@@ -22,9 +22,8 @@ export default function ResumeTemplateSelect() {
     await saveActiveDraft(template.data);
 
     toast({
-      title: `${template.name} Loaded!`,
-      description:
-        "Successfully initialized draft using target industry layout.",
+      title: `${template.name} Template Loaded`,
+      description: "Your workspace is ready. Start filling in your details.",
     });
 
     navigate("/dashboard/resume/workspace");
@@ -46,22 +45,22 @@ export default function ResumeTemplateSelect() {
               <ArrowLeft className="h-3.5 w-3.5" />
             </Button>
             <span className="text-[10px] sm:text-[11px] font-bold tracking-[0.2em] text-zinc-500 uppercase flex items-center select-none">
-              RESUME INTELLIGENCE{" "}
+              RESUME BUILDER{" "}
               <span className="mx-2 opacity-50 text-[8px]">•</span> TEMPLATES
             </span>
           </div>
 
           <h1 className="text-3xl sm:text-5xl font-bold tracking-tight leading-[1.1] flex flex-col gap-1 text-white">
-            <span>Choose Layout Structure.</span>
+            <span>Pick a Template.</span>
             <span className="text-zinc-700">
-              Accelerate Initial Extraction.
+              Fill it in, then download.
             </span>
           </h1>
         </div>
 
         <div className="shrink-0 pb-1">
           <Badge className="bg-zinc-900 hover:bg-zinc-900 border border-zinc-800 text-zinc-400 rounded-full px-3.5 py-1 font-semibold text-[10px] select-none tracking-widest">
-            ATS & RECRUITER OPTIMAL
+            ATS FRIENDLY
           </Badge>
         </div>
       </div>
@@ -153,7 +152,7 @@ export default function ResumeTemplateSelect() {
 
                   {/* Select CTA */}
                   <Button className="w-full rounded-xl h-10 font-bold bg-zinc-900 group-hover:bg-white group-hover:text-black text-zinc-300 hover:text-white border border-zinc-800 transition-all duration-300 shadow-sm text-xs tracking-tight">
-                    Initialize Template
+                    Use This Template
                   </Button>
                 </div>
               </Card>
