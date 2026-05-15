@@ -447,49 +447,46 @@ export default function ResumeWorkspace() {
   };
 
   return (
-    <div className="w-full py-6 px-2 sm:px-4 lg:px-6 selection:bg-white/10">
-      {/* HERO & CONTROL HEADER OUTSIDE GRID (MATCHES CHAT PAGE STANDARD) */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10 animate-in fade-in slide-in-from-top-4 duration-500">
-        <div className="space-y-4 text-left">
-          <div className="flex items-center gap-3">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full min-h-screen selection:bg-white/10 flex flex-col gap-8">
+      {/* Sleek Modern Page Header Toolbar */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 animate-in fade-in slide-in-from-top-4 duration-500">
+        <div className="space-y-2 text-left">
+          <div className="flex items-center gap-2.5">
             <Button
               size="icon"
               variant="ghost"
               onClick={() => navigate("/dashboard/resume")}
-              className="h-8 w-8 rounded-full bg-white/[0.03] border border-white/[0.08] text-zinc-400 hover:text-white hover:bg-white/[0.08] shrink-0 shadow-sm"
+              className="h-8 w-8 rounded-xl bg-white/[0.03] border border-white/[0.08] text-zinc-400 hover:text-white hover:bg-white/[0.08] shrink-0 transition-all"
               title="Back to Portal"
             >
               <ArrowLeft className="h-3.5 w-3.5" />
             </Button>
-            <span className="text-[10px] sm:text-[11px] font-bold tracking-[0.2em] text-zinc-500 uppercase flex items-center select-none">
-              RESUME BUILDER{" "}
-              <span className="mx-2 opacity-50 text-[8px]">•</span> WORKSPACE
+            <span className="text-[10px] font-extrabold tracking-[0.15em] text-zinc-500 uppercase select-none">
+              RESUME BUILDER <span className="text-zinc-700 px-1">/</span> WORKSPACE
             </span>
           </div>
-
-          <h1 className="text-3xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-[1.1] flex flex-col gap-1 text-white">
-            <span>Edit Your Resume.</span>
-            <span className="text-zinc-700">Score it. Download it.</span>
+          <h1 className="text-3xl font-black tracking-tight text-white">
+            Edit Your Resume
           </h1>
         </div>
 
-        {/* TOP DOCK ACTIONS */}
-        <div className="flex items-center gap-3 flex-wrap justify-start md:justify-end shrink-0 pb-1">
-          {/* Persistent Sync Sentinel */}
+        {/* TOOLBAR ACTION ROW */}
+        <div className="flex items-center gap-2.5 flex-wrap shrink-0">
+          {/* Auto-Save status indicator */}
           <div className="mr-1">
             {saveStatus === "saving" && (
-              <Badge className="bg-zinc-800 text-zinc-300 border-none px-3.5 py-1 rounded-full text-[10px] font-semibold flex items-center gap-1.5 animate-pulse font-mono">
-                <Loader2 className="h-2.5 w-2.5 animate-spin" /> Auto-Saving
+              <Badge className="bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 px-3 py-1 rounded-xl text-[9px] font-bold flex items-center gap-1.5 animate-pulse tracking-wider uppercase">
+                <Loader2 className="h-2.5 w-2.5 animate-spin" /> Saving
               </Badge>
             )}
             {saveStatus === "saved" && (
-              <Badge className="bg-zinc-900 border border-zinc-800 text-zinc-300 px-3.5 py-1 rounded-full text-[10px] font-semibold flex items-center gap-1.5 select-none font-mono">
-                <ShieldCheck className="h-3 w-3 text-white" /> Secured
+              <Badge className="bg-[#065F46]/5 border border-[#065F46]/20 text-emerald-400 px-3 py-1 rounded-xl text-[9px] font-bold flex items-center gap-1.5 select-none tracking-wider uppercase">
+                <ShieldCheck className="h-3 w-3" /> Secured
               </Badge>
             )}
             {saveStatus === "error" && (
-              <Badge className="bg-zinc-950 border border-red-900 text-red-400 px-3.5 py-1 rounded-full text-[10px] font-semibold flex items-center gap-1.5 font-mono">
-                <X className="h-3 w-3" /> Sync Offline
+              <Badge className="bg-red-500/5 border border-red-500/20 text-red-400 px-3 py-1 rounded-xl text-[9px] font-bold flex items-center gap-1.5 tracking-wider uppercase">
+                <X className="h-3 w-3" /> Offline
               </Badge>
             )}
           </div>
@@ -497,37 +494,47 @@ export default function ResumeWorkspace() {
           <Button
             onClick={handleClearWorkspace}
             variant="outline"
-            className="rounded-xl font-bold border-red-950/40 bg-red-950/[0.03] text-red-400 hover:bg-red-950/[0.08] hover:text-red-300 hover:border-red-900/60 shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 h-10 text-xs tracking-tight"
+            className="rounded-xl font-bold border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.06] text-zinc-400 hover:text-zinc-200 shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-all h-9 px-3 text-xs"
           >
-            <Trash2 className="h-4 w-4 mr-2" />
-            Reset Workspace
+            <Trash2 className="h-3.5 w-3.5 mr-1.5 text-zinc-500" />
+            Reset
           </Button>
 
           <Button
             onClick={handleBackupToVault}
             disabled={isBackingUp}
             variant="outline"
-            className="rounded-xl font-bold border-white/[0.08] bg-white/[0.03] text-zinc-300 hover:text-white hover:bg-white/[0.08] shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 h-10 text-xs tracking-tight"
+            className="rounded-xl font-bold border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.06] text-zinc-400 hover:text-zinc-200 shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-all h-9 px-3 text-xs"
           >
             {isBackingUp ? (
-              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
             ) : (
-              <History className="h-4 w-4 mr-2 text-zinc-400" />
+              <History className="h-3.5 w-3.5 mr-1.5 text-zinc-500" />
             )}
-            Archive Snapshot
+            Backup
           </Button>
 
+          {/* INTEGRATED AI OPTIMIZER BUTTON */}
+          <Button
+            onClick={() => setIsAiPanelOpen(true)}
+            className="rounded-xl font-extrabold border border-indigo-500/30 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 hover:text-white shadow-lg shadow-indigo-500/5 hover:scale-[1.02] active:scale-[0.98] transition-all h-9 px-3.5 text-xs tracking-tight"
+          >
+            <Sparkles className="h-3.5 w-3.5 mr-1.5 text-indigo-400 animate-pulse" />
+            AI Optimizer
+          </Button>
+
+          {/* PRIMARY CTA FOR PREVIEW & EXPORT */}
           <Button
             onClick={handleExportPdf}
             disabled={isPreviewLoading}
-            className="rounded-xl font-bold bg-white text-black hover:bg-zinc-200 hover:text-black shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 h-10 text-xs tracking-tight border-none"
+            className="rounded-xl font-black bg-white text-black hover:bg-zinc-200 shadow-[0_8px_24px_-8px_rgba(255,255,255,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all h-9 px-4 text-xs uppercase tracking-wider border-none"
           >
             {isPreviewLoading ? (
-              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
             ) : (
-              <Download className="h-4 w-4 mr-2" />
+              <Download className="h-3.5 w-3.5 mr-1.5" />
             )}
-            Preview & Download
+            Preview & Export
           </Button>
         </div>
       </div>
@@ -536,15 +543,16 @@ export default function ResumeWorkspace() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1, duration: 0.5 }}
-        className="max-w-3xl mx-auto pb-24 relative"
+        className="w-full pb-24 relative space-y-6"
       >
-        <div className="sticky top-20 z-30 flex items-center justify-center gap-1 p-1.5 bg-zinc-950/60 border border-white/[0.05] rounded-[20px] backdrop-blur-2xl shadow-2xl mb-10 overflow-x-auto max-w-fit mx-auto select-none">
+        {/* FULL WIDTH CAPSULE TAB LIST */}
+        <div className="flex items-center justify-between gap-1.5 p-1.5 bg-[#0c0c12]/40 border border-white/[0.05] rounded-2xl backdrop-blur-3xl shadow-lg w-full overflow-x-auto select-none">
           {[
-            { id: "personal", label: "Personal Details", icon: User },
-            { id: "experience", label: "Work History", icon: Briefcase },
+            { id: "personal", label: "Personal", icon: User },
+            { id: "experience", label: "Experience", icon: Briefcase },
             { id: "education", label: "Education", icon: GraduationCap },
             { id: "skills", label: "Skills & Projects", icon: Cpu },
-            { id: "design", label: "Theme Style", icon: Sparkles },
+            { id: "design", label: "Theme Settings", icon: Sparkles },
           ].map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -553,14 +561,14 @@ export default function ResumeWorkspace() {
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold transition-all duration-300 outline-none shrink-0 ${
+                className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-[11px] font-extrabold tracking-wide uppercase transition-all duration-200 outline-none min-w-[110px] ${
                   isActive
-                    ? "bg-white text-black shadow-[0_4px_12px_rgba(255,255,255,0.2)] scale-[1.02]"
-                    : "text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.03]"
+                    ? "bg-white text-black shadow-[0_4px_20px_rgba(255,255,255,0.15)] scale-[1.01]"
+                    : "text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.02]"
                 }`}
               >
                 <Icon
-                  className={`h-3.5 w-3.5 ${isActive ? "text-black" : "text-zinc-500"}`}
+                  className={`h-3.5 w-3.5 ${isActive ? "text-black" : "text-zinc-600 group-hover:text-zinc-400"}`}
                 />
                 {tab.label}
               </button>
@@ -568,7 +576,7 @@ export default function ResumeWorkspace() {
           })}
         </div>
 
-        <Card className="border border-white/[0.06] bg-[#0a0a0f]/40 backdrop-blur-3xl rounded-[32px] p-6 sm:p-10 shadow-[0_32px_64px_-24px_rgba(0,0,0,0.7)] min-h-[500px] transition-all duration-300">
+        <Card className="border border-white/[0.06] bg-[#07070b]/60 backdrop-blur-3xl rounded-[24px] p-6 sm:p-10 shadow-[0_32px_96px_-32px_rgba(0,0,0,0.8)] min-h-[500px] transition-all duration-300">
           {activeTab === "personal" && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
@@ -1341,16 +1349,7 @@ export default function ResumeWorkspace() {
         </Card>
       </motion.div>
 
-      <button
-        type="button"
-        onClick={() => setIsAiPanelOpen(true)}
-        className="fixed right-0 top-1/2 -translate-y-1/2 z-[40] bg-[#0c0c12] border border-indigo-500/30 border-r-0 hover:border-indigo-500/60 text-indigo-400 hover:text-indigo-300 font-bold text-[10px] tracking-widest uppercase py-6 px-2.5 rounded-l-2xl shadow-[0_12px_48px_rgba(0,0,0,0.5)] transition-all duration-300 flex flex-col items-center gap-3 hover:-translate-x-1 group backdrop-blur-md"
-      >
-        <Sparkles className="w-4 h-4 animate-pulse group-hover:scale-125 transition-all" />
-        <span className="[writing-mode:vertical-lr] select-none flex items-center gap-1">
-          AI OPTIMIZER
-        </span>
-      </button>
+
 
       {isAiPanelOpen && (
         <>
@@ -1830,22 +1829,27 @@ export default function ResumeWorkspace() {
             </div>
           </div>
 
-          {/* PDF Iframe */}
-          <div className="flex-1 relative overflow-hidden">
+          {/* Centered High Fidelity PDF Preview Dock */}
+          <div className="flex-1 relative overflow-y-auto bg-[#09090c] flex justify-center p-6 sm:p-10 selection:bg-white/5 custom-scrollbar">
             {isPreviewLoading ? (
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
-                <Loader2 className="h-10 w-10 text-white animate-spin" />
-                <p className="text-zinc-400 text-sm font-medium">
-                  Generating preview...
+              <div className="my-auto flex flex-col items-center justify-center gap-4 animate-pulse">
+                <Loader2 className="h-10 w-10 text-indigo-400 animate-spin" />
+                <p className="text-zinc-500 text-xs font-bold tracking-widest uppercase font-mono">
+                  Assembling Vector Paths...
                 </p>
               </div>
             ) : previewUrl ? (
-              <iframe
-                key={previewUrl}
-                src={previewUrl}
-                className="w-full h-full border-0"
-                title="Resume PDF Preview"
-              />
+              <div 
+                className="relative w-full max-w-[850px] bg-black border border-white/[0.08] rounded-2xl overflow-hidden shadow-[0_32px_80px_rgba(0,0,0,0.95)] animate-in zoom-in-95 duration-300 flex flex-col my-auto shrink-0" 
+                style={{ aspectRatio: '1 / 1.4142' }}
+              >
+                <iframe
+                  key={previewUrl}
+                  src={`${previewUrl}#toolbar=0&navpanes=0`}
+                  className="w-full h-full border-0 opacity-95 hover:opacity-100 transition-opacity bg-[#07070a]"
+                  title="Resume PDF Preview"
+                />
+              </div>
             ) : null}
           </div>
 
