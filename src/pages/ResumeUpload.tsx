@@ -118,7 +118,8 @@ export default function ResumeUpload() {
             <ArrowLeft className="h-3.5 w-3.5" />
           </Button>
           <span className="text-[10px] sm:text-[11px] font-bold tracking-[0.2em] text-zinc-500 uppercase flex items-center select-none">
-            RESUME INTELLIGENCE <span className="mx-2 opacity-50 text-[8px]">•</span> INGESTION
+            RESUME INTELLIGENCE{" "}
+            <span className="mx-2 opacity-50 text-[8px]">•</span> INGESTION
           </span>
         </div>
 

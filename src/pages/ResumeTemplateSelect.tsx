@@ -43,13 +43,16 @@ export default function ResumeTemplateSelect() {
               <ArrowLeft className="h-3.5 w-3.5" />
             </Button>
             <span className="text-[10px] sm:text-[11px] font-bold tracking-[0.2em] text-zinc-500 uppercase flex items-center select-none">
-              RESUME INTELLIGENCE <span className="mx-2 opacity-50 text-[8px]">•</span> TEMPLATES
+              RESUME INTELLIGENCE{" "}
+              <span className="mx-2 opacity-50 text-[8px]">•</span> TEMPLATES
             </span>
           </div>
 
           <h1 className="text-3xl sm:text-5xl font-bold tracking-tight leading-[1.1] flex flex-col gap-1 text-white">
             <span>Choose Layout Structure.</span>
-            <span className="text-zinc-700">Accelerate Initial Extraction.</span>
+            <span className="text-zinc-700">
+              Accelerate Initial Extraction.
+            </span>
           </h1>
         </div>
 

@@ -26,6 +26,7 @@ import {
   TrendingUp,
   Activity,
   FileText,
+  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -103,6 +104,14 @@ const NAV_ITEMS = {
     color: "from-indigo-500 to-pink-500",
     exact: false,
   },
+  resumeWorkspace: {
+    key: "resumeWorkspace",
+    name: "Workspace",
+    href: "/dashboard/resume/workspace",
+    icon: Sparkles,
+    color: "from-sky-400 to-indigo-500",
+    exact: false,
+  },
   pricing: {
     key: "pricing",
     name: "Pricing",
@@ -115,23 +124,34 @@ const NAV_ITEMS = {
 
 function isPathActive(pathname: string, href: string, exact?: boolean) {
   if (exact) return pathname === href;
+  // Special case: Do not highlight the general Resume Builder tab when viewing the active editor Workspace
+  if (
+    href === "/dashboard/resume" &&
+    pathname.startsWith("/dashboard/resume/workspace")
+  ) {
+    return false;
+  }
   return pathname === href || pathname.startsWith(href + "/");
 }
 
 function getNavigationContext(pathname: string, isPremium: boolean) {
   const isChatContext =
     pathname.startsWith("/chat") || pathname.startsWith("/agents");
+  const isResumeContext = pathname.startsWith("/dashboard/resume");
   const isDiscoverContext =
     pathname.startsWith("/dashboard") &&
     !pathname.startsWith("/dashboard/profile");
 
   if (isChatContext) {
     return [NAV_ITEMS.home, NAV_ITEMS.chat, NAV_ITEMS.agents];
+  } else if (isResumeContext) {
+    return [NAV_ITEMS.home, NAV_ITEMS.resume, NAV_ITEMS.resumeWorkspace];
   } else if (isDiscoverContext) {
     const items = [
       NAV_ITEMS.home,
       NAV_ITEMS.discover,
       NAV_ITEMS.research,
+      NAV_ITEMS.resume,
       NAV_ITEMS.watchlist,
     ];
     if (!isPremium) items.push(NAV_ITEMS.pricing);

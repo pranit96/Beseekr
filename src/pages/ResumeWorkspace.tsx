@@ -305,7 +305,7 @@ export default function ResumeWorkspace() {
         .replace(/[^\w\s]/g, "")
         .replace(/\s+/g, " ")
         .trim();
-    
+
     const normalizedOriginal = normalize(original);
     const normalizedImproved = normalize(improved);
 
@@ -394,7 +394,8 @@ export default function ResumeWorkspace() {
               <ArrowLeft className="h-3.5 w-3.5" />
             </Button>
             <span className="text-[10px] sm:text-[11px] font-bold tracking-[0.2em] text-zinc-500 uppercase flex items-center select-none">
-              RESUME INTELLIGENCE <span className="mx-2 opacity-50 text-[8px]">•</span> WORKSPACE
+              RESUME INTELLIGENCE{" "}
+              <span className="mx-2 opacity-50 text-[8px]">•</span> WORKSPACE
             </span>
           </div>
 
@@ -466,7 +467,8 @@ export default function ResumeWorkspace() {
           <div className="flex items-center justify-between mb-2">
             <div>
               <h2 className="text-lg font-bold tracking-tight text-foreground flex items-center gap-2">
-                <FileText className="h-4 w-4 text-indigo-400" /> Document Outline
+                <FileText className="h-4 w-4 text-indigo-400" /> Document
+                Outline
               </h2>
               <p className="text-xs text-muted-foreground/80 mt-0.5">
                 Fields populate dynamic pdf render schema in real-time.
@@ -598,7 +600,9 @@ export default function ResumeWorkspace() {
               <AccordionContent className="space-y-5 pt-2 pb-6 border-t border-white/[0.03]">
                 <div className="grid grid-cols-2 gap-5 mt-5">
                   <div className="space-y-2 text-left">
-                    <Label className="text-[10px] font-extrabold uppercase tracking-widest text-zinc-500 ml-1">Full Name</Label>
+                    <Label className="text-[10px] font-extrabold uppercase tracking-widest text-zinc-500 ml-1">
+                      Full Name
+                    </Label>
                     <Input
                       value={resumeData.personal_info.name}
                       onChange={(e) =>
@@ -609,7 +613,9 @@ export default function ResumeWorkspace() {
                     />
                   </div>
                   <div className="space-y-2 text-left">
-                    <Label className="text-[10px] font-extrabold uppercase tracking-widest text-zinc-500 ml-1">Email Address</Label>
+                    <Label className="text-[10px] font-extrabold uppercase tracking-widest text-zinc-500 ml-1">
+                      Email Address
+                    </Label>
                     <Input
                       value={resumeData.personal_info.email}
                       onChange={(e) =>
@@ -620,7 +626,9 @@ export default function ResumeWorkspace() {
                     />
                   </div>
                   <div className="space-y-2 text-left">
-                    <Label className="text-[10px] font-extrabold uppercase tracking-widest text-zinc-500 ml-1">Phone Number</Label>
+                    <Label className="text-[10px] font-extrabold uppercase tracking-widest text-zinc-500 ml-1">
+                      Phone Number
+                    </Label>
                     <Input
                       value={resumeData.personal_info.phone}
                       onChange={(e) =>
@@ -631,7 +639,9 @@ export default function ResumeWorkspace() {
                     />
                   </div>
                   <div className="space-y-2 text-left">
-                    <Label className="text-[10px] font-extrabold uppercase tracking-widest text-zinc-500 ml-1">Website / Link</Label>
+                    <Label className="text-[10px] font-extrabold uppercase tracking-widest text-zinc-500 ml-1">
+                      Website / Link
+                    </Label>
                     <Input
                       value={resumeData.personal_info.website}
                       onChange={(e) =>
@@ -643,7 +653,9 @@ export default function ResumeWorkspace() {
                   </div>
                 </div>
                 <div className="space-y-2 text-left">
-                  <Label className="text-[10px] font-extrabold uppercase tracking-widest text-zinc-500 ml-1">Professional Narrative Summary</Label>
+                  <Label className="text-[10px] font-extrabold uppercase tracking-widest text-zinc-500 ml-1">
+                    Professional Narrative Summary
+                  </Label>
                   <Textarea
                     value={resumeData.personal_info.summary}
                     onChange={(e) =>
@@ -686,7 +698,9 @@ export default function ResumeWorkspace() {
 
                     <div className="grid grid-cols-2 gap-4 text-left">
                       <div className="space-y-2">
-                        <Label className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-500 ml-1">Company Entity</Label>
+                        <Label className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-500 ml-1">
+                          Company Entity
+                        </Label>
                         <Input
                           value={exp.company}
                           onChange={(e) =>
@@ -697,7 +711,9 @@ export default function ResumeWorkspace() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-500 ml-1">Position / Title</Label>
+                        <Label className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-500 ml-1">
+                          Position / Title
+                        </Label>
                         <Input
                           value={exp.position}
                           onChange={(e) =>
@@ -708,7 +724,9 @@ export default function ResumeWorkspace() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-500 ml-1">Timeline Period</Label>
+                        <Label className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-500 ml-1">
+                          Timeline Period
+                        </Label>
                         <Input
                           value={exp.period}
                           onChange={(e) =>
@@ -719,7 +737,9 @@ export default function ResumeWorkspace() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-500 ml-1">Locality Location</Label>
+                        <Label className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-500 ml-1">
+                          Locality Location
+                        </Label>
                         <Input
                           value={exp.location}
                           onChange={(e) =>
@@ -733,7 +753,8 @@ export default function ResumeWorkspace() {
 
                     <div className="space-y-3 text-left">
                       <Label className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5 ml-1 mt-1">
-                        <Sparkles className="h-3 w-3 text-sky-400 animate-pulse" /> Bulleted Highlights
+                        <Sparkles className="h-3 w-3 text-sky-400 animate-pulse" />{" "}
+                        Bulleted Highlights
                       </Label>
                       <div className="space-y-2.5">
                         {exp.highlights.map((bullet, bIdx) => (
@@ -794,7 +815,8 @@ export default function ResumeWorkspace() {
                   variant="outline"
                   className="w-full h-12 border-dashed border-white/[0.06] bg-white/[0.01] hover:bg-white/[0.02] hover:border-white/[0.12] text-zinc-400 hover:text-zinc-200 rounded-2xl text-xs font-bold transition-all shadow-inner"
                 >
-                  <Plus className="h-4 w-4 mr-2 opacity-60" /> Add New Experience Matrix Row
+                  <Plus className="h-4 w-4 mr-2 opacity-60" /> Add New
+                  Experience Matrix Row
                 </Button>
               </AccordionContent>
             </AccordionItem>
@@ -815,9 +837,14 @@ export default function ResumeWorkspace() {
               <AccordionContent className="space-y-4 pt-2 pb-6 border-t border-white/[0.03]">
                 <div className="space-y-4 pt-4">
                   {resumeData.skills.map((skill, idx) => (
-                    <div key={idx} className="flex gap-4 items-start group/skill relative bg-white/[0.01] hover:bg-white/[0.02] p-4 border border-white/[0.04] rounded-2xl transition-all">
+                    <div
+                      key={idx}
+                      className="flex gap-4 items-start group/skill relative bg-white/[0.01] hover:bg-white/[0.02] p-4 border border-white/[0.04] rounded-2xl transition-all"
+                    >
                       <div className="w-1/3 space-y-1.5 text-left">
-                        <Label className="text-[10px] font-extrabold tracking-wider uppercase text-zinc-500 ml-1">Skill Class</Label>
+                        <Label className="text-[10px] font-extrabold tracking-wider uppercase text-zinc-500 ml-1">
+                          Skill Class
+                        </Label>
                         <Input
                           value={skill.category}
                           onChange={(e) =>
@@ -832,11 +859,17 @@ export default function ResumeWorkspace() {
                         />
                       </div>
                       <div className="flex-1 space-y-1.5 text-left">
-                        <Label className="text-[10px] font-extrabold tracking-wider uppercase text-zinc-500 ml-1">Proficiencies</Label>
+                        <Label className="text-[10px] font-extrabold tracking-wider uppercase text-zinc-500 ml-1">
+                          Proficiencies
+                        </Label>
                         <Input
                           value={skill.items.join(", ")}
                           onChange={(e) =>
-                            updateSkillGroup(idx, skill.category, e.target.value)
+                            updateSkillGroup(
+                              idx,
+                              skill.category,
+                              e.target.value,
+                            )
                           }
                           placeholder="React, TypeScript, CSS..."
                           className="bg-white/[0.02] focus:bg-white/[0.04] border-white/[0.06] focus:border-purple-500/40 text-xs text-zinc-200 rounded-xl h-10 transition-all"
@@ -863,7 +896,8 @@ export default function ResumeWorkspace() {
                   variant="outline"
                   className="w-full h-11 mt-3 border-dashed border-white/[0.06] bg-white/[0.01] hover:bg-white/[0.02] hover:border-white/[0.12] text-zinc-400 hover:text-zinc-200 rounded-xl text-xs font-bold transition-all"
                 >
-                  <Plus className="h-3.5 w-3.5 mr-1.5" /> Inject Skills Classifier Set
+                  <Plus className="h-3.5 w-3.5 mr-1.5" /> Inject Skills
+                  Classifier Set
                 </Button>
               </AccordionContent>
             </AccordionItem>
@@ -910,7 +944,9 @@ export default function ResumeWorkspace() {
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <Label className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-500 ml-1">Degree / Credential</Label>
+                        <Label className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-500 ml-1">
+                          Degree / Credential
+                        </Label>
                         <Input
                           value={edu.degree}
                           onChange={(e) =>
@@ -921,7 +957,9 @@ export default function ResumeWorkspace() {
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <Label className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-500 ml-1">Term Interval</Label>
+                        <Label className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-500 ml-1">
+                          Term Interval
+                        </Label>
                         <Input
                           value={edu.period}
                           onChange={(e) =>
@@ -932,7 +970,9 @@ export default function ResumeWorkspace() {
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <Label className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-500 ml-1">Locality</Label>
+                        <Label className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-500 ml-1">
+                          Locality
+                        </Label>
                         <Input
                           value={edu.location}
                           onChange={(e) =>
@@ -950,7 +990,8 @@ export default function ResumeWorkspace() {
                   variant="outline"
                   className="w-full h-12 border-dashed border-white/[0.06] bg-white/[0.01] hover:bg-white/[0.02] hover:border-white/[0.12] text-zinc-400 hover:text-zinc-200 rounded-2xl text-xs font-bold transition-all shadow-inner"
                 >
-                  <Plus className="h-4 w-4 mr-2 opacity-60" /> Add Academic Matrix Node
+                  <Plus className="h-4 w-4 mr-2 opacity-60" /> Add Academic
+                  Matrix Node
                 </Button>
               </AccordionContent>
             </AccordionItem>
@@ -984,7 +1025,9 @@ export default function ResumeWorkspace() {
                     </Button>
                     <div className="grid grid-cols-2 gap-4 text-left">
                       <div className="space-y-1.5">
-                        <Label className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-500 ml-1">Project Title</Label>
+                        <Label className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-500 ml-1">
+                          Project Title
+                        </Label>
                         <Input
                           value={proj.name}
                           onChange={(e) =>
@@ -996,7 +1039,10 @@ export default function ResumeWorkspace() {
                       </div>
                       <div className="space-y-1.5">
                         <Label className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-500 ml-1 flex items-center gap-1">
-                          Target Link <span className="text-[8px] opacity-40">(Optional)</span>
+                          Target Link{" "}
+                          <span className="text-[8px] opacity-40">
+                            (Optional)
+                          </span>
                         </Label>
                         <Input
                           value={proj.link}
@@ -1009,7 +1055,9 @@ export default function ResumeWorkspace() {
                       </div>
                     </div>
                     <div className="space-y-1.5 text-left">
-                      <Label className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-500 ml-1">Architecture Summary</Label>
+                      <Label className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-500 ml-1">
+                        Architecture Summary
+                      </Label>
                       <Input
                         value={proj.description}
                         onChange={(e) =>
@@ -1025,7 +1073,10 @@ export default function ResumeWorkspace() {
                       </Label>
                       <div className="space-y-2.5">
                         {proj.highlights?.map((b, bIdx) => (
-                          <div key={bIdx} className="flex gap-2 group/proj-bullet">
+                          <div
+                            key={bIdx}
+                            className="flex gap-2 group/proj-bullet"
+                          >
                             <Input
                               value={b}
                               onChange={(e) => {
@@ -1073,7 +1124,8 @@ export default function ResumeWorkspace() {
                   variant="outline"
                   className="w-full h-12 border-dashed border-white/[0.06] bg-white/[0.01] hover:bg-white/[0.02] hover:border-white/[0.12] text-zinc-400 hover:text-zinc-200 rounded-2xl text-xs font-bold transition-all shadow-inner"
                 >
-                  <Plus className="h-4 w-4 mr-2 opacity-60" /> Append Project Matrix Node
+                  <Plus className="h-4 w-4 mr-2 opacity-60" /> Append Project
+                  Matrix Node
                 </Button>
               </AccordionContent>
             </AccordionItem>
@@ -1097,7 +1149,9 @@ export default function ResumeWorkspace() {
                     <div key={idx} className="flex gap-3 group/cert">
                       <Input
                         value={cert}
-                        onChange={(e) => updateCertification(idx, e.target.value)}
+                        onChange={(e) =>
+                          updateCertification(idx, e.target.value)
+                        }
                         placeholder="e.g., AWS Certified Architect"
                         className="bg-white/[0.02] focus:bg-white/[0.04] border-white/[0.06] focus:border-amber-500/40 text-sm text-zinc-200 rounded-xl h-11 px-3.5 transition-all flex-1"
                       />
@@ -1249,7 +1303,13 @@ export default function ResumeWorkspace() {
                               viewBox="0 0 36 36"
                             >
                               <defs>
-                                <linearGradient id="atsNeonGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <linearGradient
+                                  id="atsNeonGrad"
+                                  x1="0%"
+                                  y1="0%"
+                                  x2="100%"
+                                  y2="100%"
+                                >
                                   <stop offset="0%" stopColor="#a855f7" />
                                   <stop offset="50%" stopColor="#6366f1" />
                                   <stop offset="100%" stopColor="#06b6d4" />
@@ -1344,7 +1404,8 @@ export default function ResumeWorkspace() {
                           🔍 Deficit Keyword Matrix
                         </h4>
                         <p className="text-[10px] text-zinc-500 font-medium leading-relaxed">
-                          Technical tokens missing from active node schemas. Tap classifier to inject automatically.
+                          Technical tokens missing from active node schemas. Tap
+                          classifier to inject automatically.
                         </p>
                       </div>
 
@@ -1424,12 +1485,14 @@ export default function ResumeWorkspace() {
                             size="sm"
                             onClick={() => {
                               atsReport.bullet_point_suggestions.forEach(
-                                (sug) => applyRefactor(sug.original, sug.improved)
+                                (sug) =>
+                                  applyRefactor(sug.original, sug.improved),
                               );
                             }}
                             className="h-6 px-3 rounded-full text-[9px] font-black tracking-wider uppercase bg-white hover:bg-zinc-200 text-black border-none shrink-0 transition-all shadow-sm active:scale-95"
                           >
-                            Batch Deploy ({atsReport.bullet_point_suggestions.length})
+                            Batch Deploy (
+                            {atsReport.bullet_point_suggestions.length})
                           </Button>
                         </div>
 
@@ -1445,7 +1508,9 @@ export default function ResumeWorkspace() {
                               const normalizedImproved = norm(sug.improved);
 
                               const isApplied =
-                                appliedSuggestions.includes(normalizedImproved) ||
+                                appliedSuggestions.includes(
+                                  normalizedImproved,
+                                ) ||
                                 resumeData.experience.some((job) =>
                                   job.highlights.some(
                                     (h) => norm(h) === normalizedImproved,

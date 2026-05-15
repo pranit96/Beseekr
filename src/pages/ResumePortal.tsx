@@ -43,13 +43,15 @@ export default function ResumePortal() {
       navigate("/dashboard/resume/workspace");
       toast({
         title: "Version Restored",
-        description: "Successfully synchronized the workspace with the selected historical snapshot.",
+        description:
+          "Successfully synchronized the workspace with the selected historical snapshot.",
       });
     } catch (error: any) {
       toast({
         variant: "destructive",
         title: "Restoration Failed",
-        description: error.message || "Could not recover the archived snapshot.",
+        description:
+          error.message || "Could not recover the archived snapshot.",
       });
     }
   };
@@ -57,21 +59,23 @@ export default function ResumePortal() {
   return (
     <div className="min-h-screen bg-[#09090b] text-zinc-100 py-8 px-4 sm:px-6 lg:px-8 overflow-y-auto">
       <div className="max-w-6xl mx-auto space-y-12 animate-in fade-in slide-in-from-top-4 duration-500">
-        
         {/* HERO & CONTROL HEADER */}
         <div className="space-y-4 text-left">
           <div className="flex items-center gap-2 mb-3 sm:mb-4">
             <span className="text-[10px] sm:text-[11px] font-bold tracking-[0.2em] text-zinc-500 uppercase flex items-center select-none">
-              RESUME INTELLIGENCE <span className="mx-2 opacity-50 text-[8px]">•</span> VAULT PORTAL
+              RESUME INTELLIGENCE{" "}
+              <span className="mx-2 opacity-50 text-[8px]">•</span> VAULT PORTAL
             </span>
           </div>
 
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <h1 className="text-3xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-[1.1] flex flex-col gap-1">
               <span className="text-white">Precision Vault.</span>
-              <span className="text-zinc-700">Access. Optimize. Accelerate.</span>
+              <span className="text-zinc-700">
+                Access. Optimize. Accelerate.
+              </span>
             </h1>
-            
+
             <div className="flex items-center gap-2 bg-white/[0.02] border border-white/[0.05] px-3 py-1.5 rounded-full text-zinc-400 text-xs shrink-0">
               <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
               <span>ATS-Grade Intelligence v3.0</span>
@@ -102,7 +106,9 @@ export default function ResumePortal() {
                   <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all text-zinc-500" />
                 </h3>
                 <p className="text-zinc-400 text-xs sm:text-sm leading-relaxed font-medium">
-                  Import an existing resume. Our algorithm breaks down hierarchy, verifies standard compliance, and generates optimization routes for target jobs.
+                  Import an existing resume. Our algorithm breaks down
+                  hierarchy, verifies standard compliance, and generates
+                  optimization routes for target jobs.
                 </p>
               </div>
             </div>
@@ -138,7 +144,9 @@ export default function ResumePortal() {
                   <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all text-zinc-500" />
                 </h3>
                 <p className="text-zinc-400 text-xs sm:text-sm leading-relaxed font-medium">
-                  Launch a fresh interactive editor pre-configured with proven typographic templates. Harness structured fields to generate clean ATS PDF schemas.
+                  Launch a fresh interactive editor pre-configured with proven
+                  typographic templates. Harness structured fields to generate
+                  clean ATS PDF schemas.
                 </p>
               </div>
             </div>
@@ -162,7 +170,7 @@ export default function ResumePortal() {
             className="relative border border-white/[0.08] bg-gradient-to-r from-white/[0.01] to-transparent rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-6 backdrop-blur-xl shadow-xl group overflow-hidden"
           >
             <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-indigo-500/40 group-hover:bg-indigo-500 transition-all" />
-            
+
             <div className="flex items-center gap-4 w-full md:w-auto">
               <div className="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/[0.08] flex items-center justify-center text-indigo-400 shrink-0">
                 <FileText className="w-5 h-5" />
@@ -207,7 +215,8 @@ export default function ResumePortal() {
                 </h2>
                 <p className="text-zinc-500 text-xs mt-0.5 flex items-center gap-1.5 select-none font-medium">
                   <ShieldCheck className="w-3.5 h-3.5 opacity-80 text-zinc-400" />
-                  End-to-end encryption applied. Inactive revisions drop after 45 days.
+                  End-to-end encryption applied. Inactive revisions drop after
+                  45 days.
                 </p>
               </div>
             </div>
@@ -231,7 +240,8 @@ export default function ResumePortal() {
                 No encrypted snapshots archived
               </p>
               <p className="text-zinc-500 text-[11px] mt-1.5 max-w-xs mx-auto font-medium">
-                Snapshots created during workspace synchronization will reside here securely.
+                Snapshots created during workspace synchronization will reside
+                here securely.
               </p>
             </div>
           ) : (
@@ -265,11 +275,11 @@ export default function ResumePortal() {
                         REVISION
                       </span>
                     </div>
-                    
+
                     <h4 className="font-bold text-zinc-200 line-clamp-1 text-sm group-hover:text-white transition-colors tracking-tight">
                       {rev.name}
                     </h4>
-                    
+
                     <div className="flex items-center gap-1.5 text-zinc-500 text-[11px] font-medium font-mono">
                       <Clock className="w-3 h-3" />
                       <span>
