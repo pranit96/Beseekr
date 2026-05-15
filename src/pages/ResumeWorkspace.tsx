@@ -21,6 +21,7 @@ import {
   X,
   ShieldCheck,
   History,
+  RotateCcw,
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
@@ -37,6 +38,16 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { ATSAnalysis, resumeApi } from "@/api/resume";
 
 export default function ResumeWorkspace() {
@@ -65,6 +76,7 @@ export default function ResumeWorkspace() {
   const [appliedSuggestions, setAppliedSuggestions] = useState<string[]>([]);
   const [isDownloading, setIsDownloading] = useState(false);
   const [isBackingUp, setIsBackingUp] = useState(false);
+  const [isClearDialogOpen, setIsClearDialogOpen] = useState(false);
 
   const handleBackupToVault = async () => {
     setIsBackingUp(true);
@@ -76,17 +88,15 @@ export default function ResumeWorkspace() {
   };
 
   const handleClearWorkspace = () => {
-    if (
-      window.confirm(
-        "Are you sure you want to reset the workspace? This will wipe the current draft. (Hint: You can use 'Archive Snapshot' to back it up first!)",
-      )
-    ) {
-      resetWorkspace();
-      toast({
-        title: "Workspace Reset",
-        description: "A fresh, empty resume slate has been initialized.",
-      });
-    }
+    setIsClearDialogOpen(true);
+  };
+
+  const confirmClearWorkspace = () => {
+    resetWorkspace();
+    toast({
+      title: "Workspace Reset",
+      description: "A fresh, empty resume slate has been initialized.",
+    });
   };
 
   // ── Handlers: Workspace Operations ─────────────────────────────────
@@ -1619,6 +1629,40 @@ export default function ResumeWorkspace() {
           </div>
         </div>
       </motion.div>
+
+      <AlertDialog open={isClearDialogOpen} onOpenChange={setIsClearDialogOpen}>
+        <AlertDialogContent className="bg-[#0c0c0e] border border-white/[0.08] rounded-3xl max-w-md p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+          <AlertDialogHeader className="space-y-3">
+            <div className="w-12 h-12 rounded-2xl bg-white/[0.03] border border-white/[0.08] flex items-center justify-center text-zinc-400 mb-2">
+              <RotateCcw className="w-5 h-5" />
+            </div>
+            <AlertDialogTitle className="text-xl font-bold tracking-tight text-white">
+              Initialize Fresh Slate?
+            </AlertDialogTitle>
+            <div className="text-zinc-400 text-sm leading-relaxed font-medium space-y-2 select-none">
+              <p>
+                Are you sure you want to reset your active workspace? This will
+                completely wipe your current uncommitted edits.
+              </p>
+              <div className="text-indigo-400/90 text-xs flex items-center gap-1.5 pt-1 font-semibold">
+                <Sparkles className="w-3 h-3" />
+                <span>Pro-tip: Back it up via 'Archive Snapshot' first!</span>
+              </div>
+            </div>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-6 gap-3 flex-col sm:flex-row">
+            <AlertDialogCancel className="bg-transparent border border-white/[0.08] text-zinc-400 hover:bg-white/[0.03] hover:text-white rounded-xl font-bold text-xs px-5 py-2 h-10 transition-all">
+              Keep Working
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmClearWorkspace}
+              className="bg-white hover:bg-zinc-200 text-black rounded-xl font-bold text-xs px-5 py-2 h-10 transition-all border-none shadow-lg"
+            >
+              Wipe Active Slate
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

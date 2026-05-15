@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useResume } from "@/contexts/ResumeContext";
@@ -12,14 +13,27 @@ import {
   Clock,
   Sparkles,
   ShieldCheck,
+  AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function ResumePortal() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [isPurgeDialogOpen, setIsPurgeDialogOpen] = useState(false);
+
   const {
     resumeData,
     revisionHistory,
@@ -32,15 +46,8 @@ export default function ResumePortal() {
     purgeWorkspace,
   } = useResume();
 
-  const handlePurgeWorkspace = async () => {
-    const confirmed = window.confirm(
-      `🚨 CRITICAL DELETION WARNING 🚨\n\nAre you absolutely sure you want to completely purge your ${
-        workspaceMode === "upload" ? "SCAN & SCORE" : "AI BUILDER"
-      } cloud workspace and ALL associated revision logs?\n\nThis operation is absolute, destructive, and CANNOT be undone.`,
-    );
-    if (confirmed) {
-      await purgeWorkspace();
-    }
+  const handlePurgeWorkspace = () => {
+    setIsPurgeDialogOpen(true);
   };
 
   const hasActiveDraft =
@@ -217,7 +224,7 @@ export default function ResumePortal() {
                 className="border-red-900/30 hover:border-red-500/50 bg-red-500/5 hover:bg-red-500/10 text-red-400 font-bold px-4 py-2 h-9 text-[11px] sm:text-xs rounded-xl shadow-2xl active:scale-[0.98] transition-all flex items-center gap-1.5 w-full sm:w-auto justify-center select-none"
               >
                 <Trash2 className="w-3.5 h-3.5" />
-                Wipe Workspace
+                Delete Workspace
               </Button>
 
               <Button
@@ -379,6 +386,39 @@ export default function ResumePortal() {
           )}
         </div>
       </div>
+
+      <AlertDialog open={isPurgeDialogOpen} onOpenChange={setIsPurgeDialogOpen}>
+        <AlertDialogContent className="bg-[#0c0c0e] border border-white/[0.08] rounded-3xl max-w-md p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+          <AlertDialogHeader className="space-y-3">
+            <div className="w-12 h-12 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 mb-2">
+              <AlertTriangle className="w-5 h-5" />
+            </div>
+            <AlertDialogTitle className="text-xl font-bold tracking-tight text-white">
+              Absolute Cloud Purge
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-zinc-400 text-sm leading-relaxed font-medium">
+              This will permanently evict your active{" "}
+              <span className="text-white font-bold tracking-tight">
+                {workspaceMode === "upload" ? "Scan & Score" : "AI Builder"}
+              </span>{" "}
+              workspace container. All database pointers and snapshot logs for
+              this slot will be destroyed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-6 gap-3 flex-col sm:flex-row">
+            <AlertDialogCancel className="bg-transparent border border-white/[0.08] text-zinc-400 hover:bg-white/[0.03] hover:text-white rounded-xl font-bold text-xs px-5 py-2 h-10 transition-all">
+              Cancel Sweep
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={purgeWorkspace}
+              className="bg-red-500 hover:bg-red-600 text-white rounded-xl font-bold text-xs px-5 py-2 h-10 transition-all border-none shadow-lg flex items-center gap-1.5 justify-center"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              Confirm Purge
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
