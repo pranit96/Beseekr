@@ -77,6 +77,10 @@ export default function ResumeWorkspace() {
   const [isDownloading, setIsDownloading] = useState(false);
   const [isBackingUp, setIsBackingUp] = useState(false);
   const [isClearDialogOpen, setIsClearDialogOpen] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
+  const [previewOutdated, setPreviewOutdated] = useState(false);
 
   const handleBackupToVault = async () => {
     setIsBackingUp(true);
@@ -145,35 +149,69 @@ export default function ResumeWorkspace() {
     }
   };
 
+  // Open preview modal — generates PDF blob and renders in iframe
   const handleExportPdf = async () => {
-    setIsDownloading(true);
+    setIsPreviewLoading(true);
     try {
       const url = await resumeApi.downloadResumePdf(resumeData);
+      // Revoke any previous blob URL to free memory
+      if (previewUrl) window.URL.revokeObjectURL(previewUrl);
+      setPreviewUrl(url);
+      setPreviewOutdated(false);
+      setIsPreviewOpen(true);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Preview Failed",
+        description: error.message || "Could not generate the PDF preview.",
+      });
+    } finally {
+      setIsPreviewLoading(false);
+    }
+  };
 
-      // Auto download trigger
+  // Triggered from inside the preview modal
+  const handleDownloadFromPreview = () => {
+    if (!previewUrl) return;
+    setIsDownloading(true);
+    try {
       const link = document.createElement("a");
-      link.href = url;
+      link.href = previewUrl;
       link.setAttribute(
         "download",
-        `${resumeData.personal_info.name || "User"}_Resume.pdf`,
+        `${resumeData.personal_info.name || "Resume"}_Resume.pdf`,
       );
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-
-      toast({
-        title: "Exported Successfully!",
-        description: "Your dynamic resume is ready.",
-      });
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Export Failed",
-        description: error.message,
-      });
+      toast({ title: "Downloaded!", description: "Your resume PDF is saved." });
     } finally {
       setIsDownloading(false);
     }
+  };
+
+  // Refresh preview with latest resume data
+  const handleRefreshPreview = async () => {
+    setIsPreviewLoading(true);
+    try {
+      const url = await resumeApi.downloadResumePdf(resumeData);
+      if (previewUrl) window.URL.revokeObjectURL(previewUrl);
+      setPreviewUrl(url);
+      setPreviewOutdated(false);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Refresh Failed",
+        description: error.message || "Could not regenerate the preview.",
+      });
+    } finally {
+      setIsPreviewLoading(false);
+    }
+  };
+
+  const closePreview = () => {
+    setIsPreviewOpen(false);
+    // Note: keep blob URL alive until next generation so user can re-open
   };
 
   // ── Handlers: Sub-field Mutators ────────────────────────────────────
@@ -476,15 +514,15 @@ export default function ResumeWorkspace() {
 
           <Button
             onClick={handleExportPdf}
-            disabled={isDownloading}
+            disabled={isPreviewLoading}
             className="rounded-xl font-bold bg-white text-black hover:bg-zinc-200 hover:text-black shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 h-10 text-xs tracking-tight border-none"
           >
-            {isDownloading ? (
+            {isPreviewLoading ? (
               <Loader2 className="h-4 w-4 animate-spin mr-2" />
             ) : (
               <Download className="h-4 w-4 mr-2" />
             )}
-            Export PDF
+            Preview & Download
           </Button>
         </div>
       </div>
@@ -1637,16 +1675,16 @@ export default function ResumeWorkspace() {
               <RotateCcw className="w-5 h-5" />
             </div>
             <AlertDialogTitle className="text-xl font-bold tracking-tight text-white">
-              Initialize Fresh Slate?
+              Reset Your Workspace?
             </AlertDialogTitle>
             <div className="text-zinc-400 text-sm leading-relaxed font-medium space-y-2 select-none">
               <p>
-                Are you sure you want to reset your active workspace? This will
-                completely wipe your current uncommitted edits.
+                This will clear all your current edits. Save a version first if
+                you want to keep them.
               </p>
               <div className="text-indigo-400/90 text-xs flex items-center gap-1.5 pt-1 font-semibold">
                 <Sparkles className="w-3 h-3" />
-                <span>Pro-tip: Back it up via 'Archive Snapshot' first!</span>
+                <span>Tip: click "Save Version" before resetting.</span>
               </div>
             </div>
           </AlertDialogHeader>
@@ -1658,11 +1696,102 @@ export default function ResumeWorkspace() {
               onClick={confirmClearWorkspace}
               className="bg-white hover:bg-zinc-200 text-black rounded-xl font-bold text-xs px-5 py-2 h-10 transition-all border-none shadow-lg"
             >
-              Wipe Active Slate
+              Yes, Reset
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* ── PDF Preview Modal ─────────────────────────────────────────── */}
+      {isPreviewOpen && (
+        <div
+          className="fixed inset-0 z-50 flex flex-col bg-black/90 backdrop-blur-md animate-in fade-in duration-200"
+          role="dialog"
+          aria-label="PDF Preview"
+        >
+          {/* Top Bar */}
+          <div className="flex items-center justify-between px-5 py-3 border-b border-white/[0.06] bg-[#09090b]/80 shrink-0">
+            <div className="flex items-center gap-3">
+              <FileText className="h-4 w-4 text-zinc-400" />
+              <span className="text-sm font-bold text-zinc-100 tracking-tight">
+                {resumeData.personal_info.name
+                  ? `${resumeData.personal_info.name} — Resume Preview`
+                  : "Resume Preview"}
+              </span>
+              {previewOutdated && (
+                <span className="text-[10px] font-semibold text-amber-400 bg-amber-400/10 border border-amber-400/20 px-2 py-0.5 rounded-full">
+                  Outdated — refresh to see latest edits
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRefreshPreview}
+                disabled={isPreviewLoading}
+                className="h-8 text-xs font-bold rounded-xl border-white/[0.08] bg-white/[0.03] text-zinc-300 hover:text-white hover:bg-white/[0.08] transition-all"
+              >
+                {isPreviewLoading ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
+                ) : (
+                  <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
+                )}
+                Refresh
+              </Button>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={closePreview}
+                className="h-8 text-xs font-bold rounded-xl border-white/[0.08] bg-white/[0.03] text-zinc-300 hover:text-white hover:bg-white/[0.08] transition-all"
+              >
+                <X className="h-3.5 w-3.5 mr-1.5" />
+                Back to Edit
+              </Button>
+
+              <Button
+                size="sm"
+                onClick={handleDownloadFromPreview}
+                disabled={isDownloading || isPreviewLoading}
+                className="h-8 text-xs font-bold rounded-xl bg-white text-black hover:bg-zinc-200 transition-all border-none shadow-md"
+              >
+                {isDownloading ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
+                ) : (
+                  <Download className="h-3.5 w-3.5 mr-1.5" />
+                )}
+                Download PDF
+              </Button>
+            </div>
+          </div>
+
+          {/* PDF Iframe */}
+          <div className="flex-1 relative overflow-hidden">
+            {isPreviewLoading ? (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
+                <Loader2 className="h-10 w-10 text-white animate-spin" />
+                <p className="text-zinc-400 text-sm font-medium">Generating preview...</p>
+              </div>
+            ) : previewUrl ? (
+              <iframe
+                key={previewUrl}
+                src={previewUrl}
+                className="w-full h-full border-0"
+                title="Resume PDF Preview"
+              />
+            ) : null}
+          </div>
+
+          {/* Bottom hint bar */}
+          <div className="px-5 py-2.5 border-t border-white/[0.04] bg-[#09090b]/60 text-center shrink-0">
+            <p className="text-zinc-600 text-[11px] font-medium">
+              Made a change? Click <span className="text-zinc-400">Refresh</span> to regenerate the preview, then <span className="text-zinc-400">Download PDF</span> to save.
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
