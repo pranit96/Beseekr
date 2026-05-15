@@ -462,7 +462,8 @@ export default function ResumeWorkspace() {
               <ArrowLeft className="h-3.5 w-3.5" />
             </Button>
             <span className="text-[10px] font-extrabold tracking-[0.15em] text-zinc-500 uppercase select-none">
-              RESUME BUILDER <span className="text-zinc-700 px-1">/</span> WORKSPACE
+              RESUME BUILDER <span className="text-zinc-700 px-1">/</span>{" "}
+              WORKSPACE
             </span>
           </div>
           <h1 className="text-3xl font-black tracking-tight text-white">
@@ -1349,16 +1350,14 @@ export default function ResumeWorkspace() {
         </Card>
       </motion.div>
 
-
-
       {isAiPanelOpen && (
         <>
           <div
-            className="fixed inset-0 z-[80] bg-black/40 backdrop-blur-sm animate-in fade-in duration-300"
+            className="fixed inset-x-0 bottom-0 top-[72px] sm:top-[82px] z-[40] bg-black/30 backdrop-blur-sm animate-in fade-in duration-300"
             onClick={() => setIsAiPanelOpen(false)}
           />
 
-          <div className="fixed top-0 right-0 bottom-0 w-full max-w-[450px] z-[90] bg-zinc-950/95 border-l border-white/[0.08] shadow-2xl flex flex-col animate-in slide-in-from-right duration-300 backdrop-blur-2xl">
+          <div className="fixed top-[72px] sm:top-[82px] right-0 bottom-0 w-full max-w-[450px] z-[45] bg-zinc-950/95 border-l border-white/[0.08] shadow-2xl flex flex-col animate-in slide-in-from-right duration-300 backdrop-blur-2xl">
             <div className="flex items-center justify-between px-6 py-5 border-b border-white/[0.06] shrink-0 select-none">
               <div className="flex items-center gap-2.5">
                 <div className="p-1.5 bg-indigo-500/10 border border-indigo-500/20 rounded-xl">
@@ -1767,7 +1766,7 @@ export default function ResumeWorkspace() {
       {/* ── PDF Preview Modal ─────────────────────────────────────────── */}
       {isPreviewOpen && (
         <div
-          className="fixed inset-0 z-[9999] flex flex-col bg-black/90 backdrop-blur-md animate-in fade-in duration-200"
+          className="fixed inset-x-0 bottom-0 top-[72px] sm:top-[82px] z-[45] flex flex-col bg-[#09090c]/98 border-t border-white/[0.06] backdrop-blur-3xl animate-in slide-in-from-bottom duration-300"
           role="dialog"
           aria-label="PDF Preview"
         >
@@ -1829,19 +1828,19 @@ export default function ResumeWorkspace() {
             </div>
           </div>
 
-          {/* Centered High Fidelity PDF Preview Dock */}
-          <div className="flex-1 relative overflow-y-auto bg-[#09090c] flex justify-center p-6 sm:p-10 selection:bg-white/5 custom-scrollbar">
+          {/* Centered Responsive PDF Preview Dock */}
+          <div className="flex-1 relative bg-[#09090c] flex items-center justify-center p-5 sm:p-8 selection:bg-white/5 overflow-hidden">
             {isPreviewLoading ? (
-              <div className="my-auto flex flex-col items-center justify-center gap-4 animate-pulse">
+              <div className="flex flex-col items-center justify-center gap-4 animate-pulse">
                 <Loader2 className="h-10 w-10 text-indigo-400 animate-spin" />
                 <p className="text-zinc-500 text-xs font-bold tracking-widest uppercase font-mono">
                   Assembling Vector Paths...
                 </p>
               </div>
             ) : previewUrl ? (
-              <div 
-                className="relative w-full max-w-[850px] bg-black border border-white/[0.08] rounded-2xl overflow-hidden shadow-[0_32px_80px_rgba(0,0,0,0.95)] animate-in zoom-in-95 duration-300 flex flex-col my-auto shrink-0" 
-                style={{ aspectRatio: '1 / 1.4142' }}
+              <div
+                className="relative w-auto h-full max-w-full max-h-full bg-black border border-white/[0.08] rounded-2xl overflow-hidden shadow-[0_32px_96px_rgba(0,0,0,0.95)] animate-in zoom-in-95 duration-300 flex flex-col my-auto shrink"
+                style={{ aspectRatio: "1 / 1.4142" }}
               >
                 <iframe
                   key={previewUrl}
