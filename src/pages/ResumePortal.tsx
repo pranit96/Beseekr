@@ -270,7 +270,7 @@ export default function ResumePortal() {
                 }`}
               >
                 <Sparkles className="w-3 h-3" />
-                AI Builder Vault
+               Template drafts
               </button>
               <button
                 onClick={() => setWorkspaceMode("upload")}
@@ -281,7 +281,7 @@ export default function ResumePortal() {
                 }`}
               >
                 <UploadCloud className="w-3 h-3" />
-                Scan & Score Vault
+                Uploaded Resume Drafts
               </button>
             </div>
           </div>
