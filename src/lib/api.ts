@@ -1190,9 +1190,23 @@ class ApiClient {
 
   public async delete<T = any>(
     endpoint: string,
-    options?: { headers?: HeadersInit },
+    options?: { params?: Record<string, any>; headers?: HeadersInit },
   ) {
-    return this.request<T>(endpoint, {
+    let url = endpoint;
+    if (options?.params) {
+      const cleanParams = Object.fromEntries(
+        Object.entries(options.params).filter(
+          ([_, v]) => v !== undefined && v !== null,
+        ),
+      );
+      const query = new URLSearchParams(
+        cleanParams as Record<string, string>,
+      ).toString();
+      if (query) {
+        url += `${url.includes("?") ? "&" : "?"}${query}`;
+      }
+    }
+    return this.request<T>(url, {
       method: "DELETE",
       headers: options?.headers,
     });

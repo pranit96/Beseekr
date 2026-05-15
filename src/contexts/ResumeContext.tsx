@@ -13,7 +13,7 @@ import {
   ResumeRevision,
 } from "@/api/resume";
 import { useToast } from "@/hooks/use-toast";
-import { Laptop, Briefcase, GraduationCap } from "lucide-react";
+import { Laptop, Briefcase, GraduationCap, File } from "lucide-react";
 
 // Define Resume Templates and empty states here so all routed pages can leverage them.
 export const EMPTY_RESUME: ResumeSchema = {
@@ -85,6 +85,27 @@ export const PRESET_TEMPLATE: ResumeSchema = {
 };
 
 export const RESUME_TEMPLATES = [
+  {
+    id: "blank_master",
+    name: "Blank Slate (From Scratch)",
+    description:
+      "Start from zero with an entirely clean workspace. Perfect for experienced builders or copying existing structures precisely.",
+    icon: File,
+    styles: {
+      primaryColor: "#1e293b",
+      accentColor: "#64748b",
+      fontFamily: "Sans",
+    },
+    colorScheme: "slate",
+    data: {
+      ...EMPTY_RESUME,
+      styles: {
+        primaryColor: "#1e293b",
+        accentColor: "#64748b",
+        fontFamily: "Sans",
+      },
+    },
+  },
   {
     id: "tech_vanguard",
     name: "Modern Tech Vanguard",
@@ -169,14 +190,16 @@ export interface ResumeContextType {
   saveStatus: "idle" | "saving" | "saved" | "error";
   isScoring: boolean;
   isOptimizing: boolean;
+  workspaceMode: "template" | "upload";
 
   setResumeData: React.Dispatch<React.SetStateAction<ResumeSchema>>;
   setJobDescription: React.Dispatch<React.SetStateAction<string>>;
   setAtsReport: React.Dispatch<React.SetStateAction<ATSAnalysis | null>>;
   setIsScoring: React.Dispatch<React.SetStateAction<boolean>>;
   setIsOptimizing: React.Dispatch<React.SetStateAction<boolean>>;
+  setWorkspaceMode: (mode: "template" | "upload") => void;
 
-  fetchDraft: () => Promise<void>;
+  fetchDraft: (forcedMode?: "template" | "upload") => Promise<void>;
   saveActiveDraft: (
     forcedData?: ResumeSchema,
     forcedJD?: string,
@@ -184,6 +207,7 @@ export interface ResumeContextType {
   saveSnapshot: (name?: string) => Promise<void>;
   restoreSnapshot: (revisionId: string) => Promise<void>;
   deleteSnapshot: (revisionId: string) => Promise<void>;
+  purgeWorkspace: () => Promise<void>;
   resetWorkspace: () => void;
 }
 
@@ -191,6 +215,14 @@ const ResumeContext = createContext<ResumeContextType | undefined>(undefined);
 
 export const ResumeProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
+
+  // Multi-Workspace Isolation Layer State
+  const [workspaceMode, setWorkspaceModeState] = useState<
+    "template" | "upload"
+  >(() => {
+    const saved = localStorage.getItem("resume-active-mode");
+    return saved === "upload" || saved === "template" ? saved : "template";
+  });
 
   const [resumeData, setResumeData] = useState<ResumeSchema>(EMPTY_RESUME);
   const [jobDescription, setJobDescription] = useState("");
@@ -204,32 +236,50 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
   const [isScoring, setIsScoring] = useState(false);
   const [isOptimizing, setIsOptimizing] = useState(false);
 
-  const fetchDraft = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      const draft = await resumeApi.getResumeDraft();
-      if (draft) {
-        if (
-          draft.resume_data &&
-          Object.keys(draft.resume_data.personal_info || {}).length > 0
-        ) {
-          setResumeData(draft.resume_data);
-          setSaveStatus("saved");
-        }
-        setJobDescription(draft.job_description || "");
-        setRevisionHistory(draft.history || []);
-      }
-    } catch (error) {
-      console.error("[ResumeContext] Failed to fetch cloud draft:", error);
-    } finally {
-      setIsLoading(false);
-    }
+  const setWorkspaceMode = useCallback((mode: "template" | "upload") => {
+    setWorkspaceModeState(mode);
+    localStorage.setItem("resume-active-mode", mode);
   }, []);
 
-  // Auto-fetch on initial mount
+  const fetchDraft = useCallback(
+    async (forcedMode?: "template" | "upload") => {
+      const targetMode = forcedMode || workspaceMode;
+      try {
+        setIsLoading(true);
+        const draft = await resumeApi.getResumeDraft(targetMode);
+        if (draft) {
+          if (
+            draft.resume_data &&
+            Object.keys(draft.resume_data.personal_info || {}).length > 0
+          ) {
+            setResumeData(draft.resume_data);
+            setSaveStatus("saved");
+          } else {
+            // Handle cases where slot is completely new
+            setResumeData(EMPTY_RESUME);
+            setSaveStatus("idle");
+          }
+          setJobDescription(draft.job_description || "");
+          setRevisionHistory(draft.history || []);
+        } else {
+          // New account / no draft
+          setResumeData(EMPTY_RESUME);
+          setJobDescription("");
+          setRevisionHistory([]);
+          setSaveStatus("idle");
+        }
+      } catch (error) {
+        console.error("[ResumeContext] Failed to fetch cloud draft:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [workspaceMode],
+  );
+  // Multi-Workspace Persistence Linkage
   useEffect(() => {
     fetchDraft();
-  }, [fetchDraft]);
+  }, [workspaceMode, fetchDraft]);
 
   const saveActiveDraft = async (
     forcedData?: ResumeSchema,
@@ -240,7 +290,7 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
       const dataToSave = forcedData || resumeData;
       const jdToSave = forcedJD !== undefined ? forcedJD : jobDescription;
 
-      // Only save if there's data to prevent wiping
+      // Prevent wiping new slots
       if (
         !dataToSave.personal_info?.name &&
         dataToSave.experience.length === 0
@@ -249,7 +299,11 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
 
-      const success = await resumeApi.saveResumeDraft(dataToSave, jdToSave);
+      const success = await resumeApi.saveResumeDraft(
+        dataToSave,
+        jdToSave,
+        workspaceMode,
+      );
       if (success) {
         setSaveStatus("saved");
       } else {
@@ -271,6 +325,7 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
         resumeData,
         jobDescription,
         snapshotName,
+        workspaceMode,
       );
 
       // Append new snapshot locally
@@ -296,7 +351,10 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
   const restoreSnapshot = async (revisionId: string) => {
     try {
       setIsLoading(true);
-      const restored = await resumeApi.restoreResumeSnapshot(revisionId);
+      const restored = await resumeApi.restoreResumeSnapshot(
+        revisionId,
+        workspaceMode,
+      );
       setResumeData(restored.resume_data);
       setJobDescription(restored.job_description);
       setSaveStatus("saved");
@@ -318,7 +376,10 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
 
   const deleteSnapshot = async (revisionId: string) => {
     try {
-      const success = await resumeApi.deleteResumeSnapshot(revisionId);
+      const success = await resumeApi.deleteResumeSnapshot(
+        revisionId,
+        workspaceMode,
+      );
       if (success) {
         setRevisionHistory((prev) => prev.filter((r) => r.id !== revisionId));
         toast({
@@ -333,6 +394,37 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
         description: "Could not purge this archive snapshot.",
         variant: "destructive",
       });
+    }
+  };
+
+  const purgeWorkspace = async () => {
+    try {
+      setIsLoading(true);
+      const success = await resumeApi.purgeResumeDraft(workspaceMode);
+      if (success) {
+        // Synced Cloud Wipe completed - apply Local Cold Wipe
+        setResumeData(EMPTY_RESUME);
+        setJobDescription("");
+        setAtsReport(null);
+        setRevisionHistory([]);
+        setSaveStatus("idle");
+
+        toast({
+          title: "Workspace Terminated",
+          description: `Your complete ${
+            workspaceMode === "upload" ? "Upload & Score" : "AI Builder"
+          } cloud workspace container and all historic revisions have been fully deleted.`,
+        });
+      }
+    } catch (error: any) {
+      console.error("[ResumeContext] Complete workspace purge failed:", error);
+      toast({
+        title: "Purge Operation Failed",
+        description: "Unable to safely evict cloud dataset right now.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -369,16 +461,19 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
         saveStatus,
         isScoring,
         isOptimizing,
+        workspaceMode,
         setResumeData,
         setJobDescription,
         setAtsReport,
         setIsScoring,
         setIsOptimizing,
+        setWorkspaceMode,
         fetchDraft,
         saveActiveDraft,
         saveSnapshot,
         restoreSnapshot,
         deleteSnapshot,
+        purgeWorkspace,
         resetWorkspace,
       }}
     >

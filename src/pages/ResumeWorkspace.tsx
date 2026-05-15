@@ -57,6 +57,7 @@ export default function ResumeWorkspace() {
     setIsOptimizing,
     saveStatus,
     saveSnapshot,
+    resetWorkspace,
   } = useResume();
 
   // Local Visual/Action States
@@ -71,6 +72,20 @@ export default function ResumeWorkspace() {
       await saveSnapshot();
     } finally {
       setIsBackingUp(false);
+    }
+  };
+
+  const handleClearWorkspace = () => {
+    if (
+      window.confirm(
+        "Are you sure you want to reset the workspace? This will wipe the current draft. (Hint: You can use 'Archive Snapshot' to back it up first!)",
+      )
+    ) {
+      resetWorkspace();
+      toast({
+        title: "Workspace Reset",
+        description: "A fresh, empty resume slate has been initialized.",
+      });
     }
   };
 
@@ -425,6 +440,15 @@ export default function ResumeWorkspace() {
               </Badge>
             )}
           </div>
+
+          <Button
+            onClick={handleClearWorkspace}
+            variant="outline"
+            className="rounded-xl font-bold border-red-950/40 bg-red-950/[0.03] text-red-400 hover:bg-red-950/[0.08] hover:text-red-300 hover:border-red-900/60 shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 h-10 text-xs tracking-tight"
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            Reset Workspace
+          </Button>
 
           <Button
             onClick={handleBackupToVault}

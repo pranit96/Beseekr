@@ -10,9 +10,12 @@ import { useToast } from "@/hooks/use-toast";
 export default function ResumeTemplateSelect() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { setResumeData, saveActiveDraft } = useResume();
+  const { setResumeData, saveActiveDraft, setWorkspaceMode } = useResume();
 
   const handleSelect = async (template: (typeof RESUME_TEMPLATES)[0]) => {
+    // Enforce alignment to Template Workspace context
+    setWorkspaceMode("template");
+
     setResumeData(template.data);
 
     // Write the template choice instantly back to cloud draft container

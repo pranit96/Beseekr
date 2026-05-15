@@ -27,6 +27,7 @@ export default function ResumeUpload() {
     setJobDescription,
     setAtsReport,
     saveActiveDraft,
+    setWorkspaceMode,
   } = useResume();
 
   const [isProcessing, setIsProcessing] = useState(false);
@@ -40,6 +41,9 @@ export default function ResumeUpload() {
   ) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // Instantly lock session context into the isolated Upload slot
+    setWorkspaceMode("upload");
 
     setFileName(file.name);
     setIsProcessing(true);

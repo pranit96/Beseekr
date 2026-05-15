@@ -144,23 +144,32 @@ export interface ResumeRevision {
   saved_at: string;
 }
 
-export async function getResumeDraft(): Promise<{
+export async function getResumeDraft(type?: "template" | "upload"): Promise<{
   resume_data: ResumeSchema;
   job_description: string;
   history: ResumeRevision[];
 } | null> {
-  const res = await apiClient.get("/api/resume/draft");
+  const res = await apiClient.get("/api/resume/draft", { params: { type } });
   return res.data;
 }
 
 export async function saveResumeDraft(
   resume: ResumeSchema,
   jobDescription?: string,
+  type?: "template" | "upload",
 ): Promise<boolean> {
   const res = await apiClient.post("/api/resume/draft", {
     resume,
     job_description: jobDescription || "",
+    type,
   });
+  return res.success === true;
+}
+
+export async function purgeResumeDraft(
+  type?: "template" | "upload",
+): Promise<boolean> {
+  const res = await apiClient.delete("/api/resume/draft", { params: { type } });
   return res.success === true;
 }
 
@@ -168,28 +177,35 @@ export async function saveResumeSnapshot(
   resume: ResumeSchema,
   jobDescription: string,
   name?: string,
+  type?: "template" | "upload",
 ): Promise<ResumeRevision> {
   const res = await apiClient.post("/api/resume/history/save", {
     resume,
     job_description: jobDescription || "",
     name,
+    type,
   });
   return res.data;
 }
 
 export async function restoreResumeSnapshot(
   revisionId: string,
+  type?: "template" | "upload",
 ): Promise<{ resume_data: ResumeSchema; job_description: string }> {
   const res = await apiClient.post("/api/resume/history/restore", {
     revision_id: revisionId,
+    type,
   });
   return res.data;
 }
 
 export async function deleteResumeSnapshot(
   revisionId: string,
+  type?: "template" | "upload",
 ): Promise<boolean> {
-  const res = await apiClient.delete(`/api/resume/history/${revisionId}`);
+  const res = await apiClient.delete(`/api/resume/history/${revisionId}`, {
+    params: { type },
+  });
   return res.success === true;
 }
 
@@ -200,6 +216,7 @@ export const resumeApi = {
   downloadResumePdf,
   getResumeDraft,
   saveResumeDraft,
+  purgeResumeDraft,
   saveResumeSnapshot,
   restoreResumeSnapshot,
   deleteResumeSnapshot,
