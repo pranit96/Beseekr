@@ -52,9 +52,7 @@ export default function ResumeTemplateSelect() {
 
           <h1 className="text-3xl sm:text-5xl font-bold tracking-tight leading-[1.1] flex flex-col gap-1 text-white">
             <span>Pick a Template.</span>
-            <span className="text-zinc-700">
-              Fill it in, then download.
-            </span>
+            <span className="text-zinc-700">Fill it in, then download.</span>
           </h1>
         </div>
 
@@ -143,10 +141,9 @@ export default function ResumeTemplateSelect() {
                     </Badge>
                     <Badge
                       variant="outline"
-                      className="text-[10px] font-bold bg-zinc-900/60 border-zinc-800 flex items-center gap-1.5 text-zinc-400 font-mono"
+                      className="text-[10px] font-bold bg-zinc-900/60 border-zinc-800 text-zinc-400"
                     >
-                      <span className="h-1.5 w-1.5 rounded-full bg-zinc-500" />
-                      Layout Config
+                      ATS Friendly
                     </Badge>
                   </div>
 

@@ -205,7 +205,8 @@ export default function ResumeUpload() {
                   className="min-h-[160px] bg-zinc-950/40 border-zinc-800 hover:border-zinc-700 focus:ring-1 focus:ring-white/40 focus:border-white/40 text-sm text-white resize-none rounded-2xl p-4 leading-relaxed placeholder:text-zinc-600 transition-all duration-200"
                 />
                 <p className="text-[11px] text-zinc-500 tracking-wide">
-                  The more of the job description you paste, the more accurate the score.
+                  The more of the job description you paste, the more accurate
+                  the score.
                 </p>
               </div>
 

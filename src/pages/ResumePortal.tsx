@@ -128,7 +128,8 @@ export default function ResumePortal() {
                   <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all text-zinc-500" />
                 </h3>
                 <p className="text-zinc-400 text-xs sm:text-sm leading-relaxed font-medium">
-                  Upload your existing resume. We'll read it, score it against a job description, and show you what to improve.
+                  Upload your existing resume. We'll read it, score it against a
+                  job description, and show you what to improve.
                 </p>
               </div>
             </div>
@@ -164,7 +165,8 @@ export default function ResumePortal() {
                   <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all text-zinc-500" />
                 </h3>
                 <p className="text-zinc-400 text-xs sm:text-sm leading-relaxed font-medium">
-                  Start from a clean template, fill in your details, and download a polished PDF ready for job applications.
+                  Start from a clean template, fill in your details, and
+                  download a polished PDF ready for job applications.
                 </p>
               </div>
             </div>
@@ -389,7 +391,9 @@ export default function ResumePortal() {
             <AlertDialogDescription className="text-zinc-400 text-sm leading-relaxed font-medium">
               This will permanently delete your{" "}
               <span className="text-white font-bold tracking-tight">
-                {workspaceMode === "upload" ? "Upload & Score" : "Template Builder"}
+                {workspaceMode === "upload"
+                  ? "Upload & Score"
+                  : "Template Builder"}
               </span>{" "}
               workspace and all saved versions in it. This cannot be undone.
             </AlertDialogDescription>
