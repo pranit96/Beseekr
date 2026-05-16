@@ -1173,6 +1173,42 @@ class ApiClient {
     });
   }
 
+  // Admin & Monitoring Endpoints
+  async getAdminConfig() {
+    return this.request<any>("/api/admin/config");
+  }
+
+  async updateAdminConfig(
+    key: string,
+    payload: { value: any; type: string; description?: string },
+  ) {
+    this.invalidateCache("/api/admin/config");
+    return this.request<any>(`/api/admin/config/${key}`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async getAdminMemoryStats() {
+    return this.request<any>("/api/monitoring/memory");
+  }
+
+  async getAdminLogs(params?: {
+    source?: string;
+    level?: string;
+    limit?: number;
+    offset?: number;
+  }) {
+    const queryParams = new URLSearchParams();
+    if (params?.source) queryParams.append("source", params.source);
+    if (params?.level) queryParams.append("level", params.level);
+    if (params?.limit) queryParams.append("limit", params.limit.toString());
+    if (params?.offset) queryParams.append("offset", params.offset.toString());
+
+    const query = queryParams.toString();
+    return this.request<any>(`/api/monitoring/logs${query ? `?${query}` : ""}`);
+  }
+
   // Generic HTTP methods to support modular API files
   public async get<T = any>(
     endpoint: string,

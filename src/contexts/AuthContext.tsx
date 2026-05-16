@@ -32,6 +32,7 @@ interface User {
     ends_at: string;
     days_remaining: number;
   };
+  role?: string;
 }
 
 interface AuthContextType {

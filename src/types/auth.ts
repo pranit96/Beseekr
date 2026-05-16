@@ -13,6 +13,7 @@ export interface User {
     ends_at: string;
     days_remaining: number;
   };
+  role?: string;
 }
 
 export interface AuthResponse {

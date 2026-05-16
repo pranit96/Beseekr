@@ -27,6 +27,7 @@ import {
   Activity,
   FileText,
   Sparkles,
+  Shield,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -399,6 +400,18 @@ export function GlobalHeader() {
                         {t("nav.settings", "Settings")}
                       </Link>
                     </DropdownMenuItem>
+
+                    {user.role === "admin" && (
+                      <DropdownMenuItem
+                        asChild
+                        className="rounded-lg cursor-pointer bg-primary/5 hover:bg-primary/10"
+                      >
+                        <Link to="/admin" className="flex items-center w-full">
+                          <Shield className="mr-2 h-4 w-4 text-primary" />
+                          {t("nav.admin", "Admin Console")}
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                       onClick={logout}

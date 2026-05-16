@@ -15,6 +15,7 @@ import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { ResumeProvider } from "./contexts/ResumeContext";
 import { KeyboardShortcutsDialog } from "./components/KeyboardShortcutsDialog";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { RoleGuard } from "./components/RoleGuard";
 import { Analytics as VercelAnalytics } from "@vercel/analytics/react";
 import { SpeedInsightsTracker } from "@/components/SpeedInsightsTracker";
 import { useEffect, lazy, Suspense } from "react";
@@ -95,6 +96,10 @@ const AutonomousWorkflow = lazyRetry(
 const AuthCallback = lazyRetry(
   () => import("./pages/AuthCallback"),
   "AuthCallback",
+);
+const AdminDashboard = lazyRetry(
+  () => import("./pages/admin/AdminDashboard"),
+  "AdminDashboard",
 );
 // const WellnessDashboard = lazyRetry(() => import("./pages/health/WellnessDashboard"), "WellnessDashboard");
 // const WellnessOnboarding = lazyRetry(() => import("./pages/health/WellnessOnboarding"), "WellnessOnboarding");
@@ -627,10 +632,20 @@ const App = () => {
                     path="/profile"
                     element={<Navigate to="/dashboard/profile" replace />}
                   />
-                  {/* <Route
-                    path="/deck"
-                    element={<ProtectedRoute><Suspense fallback={<PageLoader />}><Deck /></Suspense></ProtectedRoute>}
-                  /> */}
+                  
+                  {/* =============================================
+                      ADMIN CONSOLE - SECURE ACCESS
+                      ============================================= */}
+                  <Route
+                    path="/admin"
+                    element={
+                      <RoleGuard>
+                        <Suspense fallback={<PageLoader />}>
+                          <AdminDashboard />
+                        </Suspense>
+                      </RoleGuard>
+                    }
+                  />
 
                   {/* 404 */}
                   <Route path="*" element={<NotFound />} />
