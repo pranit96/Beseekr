@@ -1198,20 +1198,21 @@ class ApiClient {
     return this.request<any>("/api/monitoring/memory");
   }
 
-  async getAdminLogs(params?: {
-    source?: string;
-    level?: string;
-    limit?: number;
-    offset?: number;
-  }) {
-    const queryParams = new URLSearchParams();
-    if (params?.source) queryParams.append("source", params.source);
-    if (params?.level) queryParams.append("level", params.level);
-    if (params?.limit) queryParams.append("limit", params.limit.toString());
-    if (params?.offset) queryParams.append("offset", params.offset.toString());
+  async getAdminQueueStatus() {
+    return this.request<any>("/api/monitor/queues");
+  }
 
-    const query = queryParams.toString();
-    return this.request<any>(`/api/monitoring/logs${query ? `?${query}` : ""}`);
+  async cleanAdminQueues() {
+    return this.request<any>("/api/admin/queues/clean", {
+      method: "POST",
+      body: JSON.stringify({ olderThanHours: 0 }),
+    });
+  }
+
+  async triggerAdminPipeline() {
+    return this.request<any>("/api/admin/pipeline/trigger", {
+      method: "POST"
+    });
   }
 
   // Generic HTTP methods to support modular API files

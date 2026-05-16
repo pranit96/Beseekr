@@ -15,7 +15,7 @@ import {
   Cpu,
   Zap,
 } from "lucide-react";
-import { AdminMonitoring, AdminSettings, AdminLogs } from "./components";
+import { AdminMonitoring, AdminSettings } from "./components";
 
 const NAV = [
   {
@@ -29,12 +29,6 @@ const NAV = [
     label: "Feature Flags",
     icon: Settings,
     description: "Live config & toggles",
-  },
-  {
-    id: "logs",
-    label: "Server Logs",
-    icon: Terminal,
-    description: "Error & request audit",
   },
 ];
 
@@ -149,7 +143,6 @@ export default function AdminDashboard() {
             >
               {activeTab === "overview" && <AdminMonitoring />}
               {activeTab === "settings" && <AdminSettings />}
-              {activeTab === "logs" && <AdminLogs />}
             </motion.div>
           </AnimatePresence>
         </div>
