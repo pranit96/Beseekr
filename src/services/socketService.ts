@@ -12,15 +12,51 @@ interface ConnectionStatusData {
 
 interface OrchestrationCallbacks {
   onAck?: (data: { requestId: string; [key: string]: any }) => void;
-  onToken?: (agentId: string, token: string, raw: { requestId: string; [key: string]: any }) => void;
-  onAgentStart?: (agentId: string, agentName: string, raw: { requestId: string; [key: string]: any }) => void;
-  onAgentToken?: (agentId: string, token: string, raw: { requestId: string; [key: string]: any }) => void;
-  onAgentDone?: (agentId: string, usage: any, raw: { requestId: string; [key: string]: any }) => void;
-  onAgentError?: (agentId: string, error: any, raw: { requestId: string; [key: string]: any }) => void;
-  onDone?: (data: { requestId: string; results: any[]; [key: string]: any }) => void;
-  onError?: (data: { requestId: string; error: string; [key: string]: any }) => void;
-  onWarning?: (data: { requestId: string; message: string; [key: string]: any }) => void;
-  onRateLimit?: (data: { requestId?: string; reason: string; [key: string]: any }) => void;
+  onToken?: (
+    agentId: string,
+    token: string,
+    raw: { requestId: string; [key: string]: any },
+  ) => void;
+  onAgentStart?: (
+    agentId: string,
+    agentName: string,
+    raw: { requestId: string; [key: string]: any },
+  ) => void;
+  onAgentToken?: (
+    agentId: string,
+    token: string,
+    raw: { requestId: string; [key: string]: any },
+  ) => void;
+  onAgentDone?: (
+    agentId: string,
+    usage: any,
+    raw: { requestId: string; [key: string]: any },
+  ) => void;
+  onAgentError?: (
+    agentId: string,
+    error: any,
+    raw: { requestId: string; [key: string]: any },
+  ) => void;
+  onDone?: (data: {
+    requestId: string;
+    results: any[];
+    [key: string]: any;
+  }) => void;
+  onError?: (data: {
+    requestId: string;
+    error: string;
+    [key: string]: any;
+  }) => void;
+  onWarning?: (data: {
+    requestId: string;
+    message: string;
+    [key: string]: any;
+  }) => void;
+  onRateLimit?: (data: {
+    requestId?: string;
+    reason: string;
+    [key: string]: any;
+  }) => void;
   onProgress?: (data: {
     requestId: string;
     step: number;

@@ -15,13 +15,23 @@ interface WorkflowCallbacks {
   onPhase?: (data: WorkflowEvent & { phase: string }) => void;
   onStatus?: (data: WorkflowEvent & { status: string }) => void;
   onPlan?: (data: WorkflowEvent & { plan: any }) => void;
-  onAgentCreated?: (data: WorkflowEvent & { agent_id: string; agent_name: string }) => void;
-  onAgentStart?: (data: WorkflowEvent & { agent_id: string; agent_name: string }) => void;
-  onAgentToken?: (data: WorkflowEvent & { agent_id: string; token: string }) => void;
+  onAgentCreated?: (
+    data: WorkflowEvent & { agent_id: string; agent_name: string },
+  ) => void;
+  onAgentStart?: (
+    data: WorkflowEvent & { agent_id: string; agent_name: string },
+  ) => void;
+  onAgentToken?: (
+    data: WorkflowEvent & { agent_id: string; token: string },
+  ) => void;
   onAgentProgress?: (data: WorkflowEvent & { progress: number }) => void;
-  onAgentDone?: (data: WorkflowEvent & { agent_id: string; usage: any }) => void;
+  onAgentDone?: (
+    data: WorkflowEvent & { agent_id: string; usage: any },
+  ) => void;
   onToolStart?: (data: WorkflowEvent & { tool_name: string }) => void;
-  onToolResult?: (data: WorkflowEvent & { tool_name: string; success: boolean }) => void;
+  onToolResult?: (
+    data: WorkflowEvent & { tool_name: string; success: boolean },
+  ) => void;
   onAdversarialStart?: (data: WorkflowEvent) => void;
   onAdversarialToken?: (data: WorkflowEvent & { token: string }) => void;
   onAdversarialDone?: (data: WorkflowEvent) => void;
@@ -119,25 +129,35 @@ const useAutonomousWorkflow = () => {
       const onPlan = (data: WorkflowEvent & { plan: any }) => {
         if (data.requestId === requestId) callbacks.onPlan?.(data);
       };
-      const onAgentCreated = (data: WorkflowEvent & { agent_id: string; agent_name: string }) => {
+      const onAgentCreated = (
+        data: WorkflowEvent & { agent_id: string; agent_name: string },
+      ) => {
         if (data.requestId === requestId) callbacks.onAgentCreated?.(data);
       };
-      const onAgentStart = (data: WorkflowEvent & { agent_id: string; agent_name: string }) => {
+      const onAgentStart = (
+        data: WorkflowEvent & { agent_id: string; agent_name: string },
+      ) => {
         if (data.requestId === requestId) callbacks.onAgentStart?.(data);
       };
-      const onAgentToken = (data: WorkflowEvent & { agent_id: string; token: string }) => {
+      const onAgentToken = (
+        data: WorkflowEvent & { agent_id: string; token: string },
+      ) => {
         if (data.requestId === requestId) callbacks.onAgentToken?.(data);
       };
       const onAgentProgress = (data: WorkflowEvent & { progress: number }) => {
         if (data.requestId === requestId) callbacks.onAgentProgress?.(data);
       };
-      const onAgentDone = (data: WorkflowEvent & { agent_id: string; usage: any }) => {
+      const onAgentDone = (
+        data: WorkflowEvent & { agent_id: string; usage: any },
+      ) => {
         if (data.requestId === requestId) callbacks.onAgentDone?.(data);
       };
       const onToolStart = (data: WorkflowEvent & { tool_name: string }) => {
         if (data.requestId === requestId) callbacks.onToolStart?.(data);
       };
-      const onToolResult = (data: WorkflowEvent & { tool_name: string; success: boolean }) => {
+      const onToolResult = (
+        data: WorkflowEvent & { tool_name: string; success: boolean },
+      ) => {
         if (data.requestId === requestId) callbacks.onToolResult?.(data);
       };
       const onAdversarialStart = (data: WorkflowEvent) => {

@@ -29,12 +29,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { GlobalFooter } from "@/components/GlobalFooter";
 
@@ -65,7 +60,8 @@ export default function InterviewPrep() {
         description: "AI has analyzed your rounds and skill gaps.",
       });
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+      const errorMessage =
+        error instanceof Error ? error.message : "An unknown error occurred";
       toast({
         variant: "destructive",
         title: "Prep failed",

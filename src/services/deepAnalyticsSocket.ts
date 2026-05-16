@@ -219,7 +219,8 @@ class DeepAnalyticsSocketService {
         this.socket.removeAllListeners();
         this.socket.disconnect();
       } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
         logger.error("Error during disconnect", { error: errorMessage });
       }
       this.socket = null;

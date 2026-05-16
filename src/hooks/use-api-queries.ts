@@ -21,10 +21,15 @@ export const queryKeys = {
     ["messages", conversationId, page] as const,
   usageStats: (startDate?: string, endDate?: string) =>
     ["usage", "stats", startDate, endDate] as const,
-  usageLogs: (params?: { start_date?: string; end_date?: string; page?: number }) => ["usage", "logs", params] as const,
+  usageLogs: (params?: {
+    start_date?: string;
+    end_date?: string;
+    page?: number;
+  }) => ["usage", "logs", params] as const,
   sessionDetails: (sessionId: string) =>
     ["thinkers", "sessions", sessionId] as const,
-  sessions: (params?: { limit?: number; page?: number }) => ["thinkers", "sessions", params] as const,
+  sessions: (params?: { limit?: number; page?: number }) =>
+    ["thinkers", "sessions", params] as const,
   currentUser: ["auth", "me"] as const,
   blogs: (topic?: string, search?: string) => ["blogs", topic, search] as const,
   blog: (slug: string) => ["blog", slug] as const,

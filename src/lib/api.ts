@@ -1,5 +1,10 @@
 import { createLogger } from "@/services/logging";
-import { User, AuthResponse, SignupResponse, LoginResponse } from "@/types/auth";
+import {
+  User,
+  AuthResponse,
+  SignupResponse,
+  LoginResponse,
+} from "@/types/auth";
 import { Agent, AgentTemplate, AgentStats } from "@/types/agent";
 import { Conversation, Message } from "@/types/conversation";
 
@@ -29,8 +34,10 @@ interface PendingRequest<T = any> {
 class ApiClient {
   private baseUrl: string;
   private onUnauthorized?: () => void;
-  private requestCache: Map<string, { data: ApiResponse<any>; timestamp: number }> =
-    new Map();
+  private requestCache: Map<
+    string,
+    { data: ApiResponse<any>; timestamp: number }
+  > = new Map();
   private pendingRequests: Map<string, Promise<ApiResponse<any>>> = new Map();
   private readonly CACHE_TTL = 30000; // 30 seconds cache
   private isRefreshingSession = false;
@@ -298,7 +305,11 @@ class ApiClient {
   }
 
   // Auth endpoints
-  async signup(email: string, password: string, full_name: string): Promise<SignupResponse> {
+  async signup(
+    email: string,
+    password: string,
+    full_name: string,
+  ): Promise<SignupResponse> {
     this.clearCache();
     return this.request<any>("/api/auth/signup", {
       method: "POST",
@@ -377,7 +388,11 @@ class ApiClient {
     });
   }
 
-  async getAgents(params?: { domain?: string; page?: number; limit?: number }): Promise<ApiResponse<{ agents: Agent[] }>> {
+  async getAgents(params?: {
+    domain?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<ApiResponse<{ agents: Agent[] }>> {
     const query = new URLSearchParams(params as any).toString();
     return this.request<any>(`/api/agents?${query}`);
   }
@@ -401,7 +416,10 @@ class ApiClient {
     });
   }
 
-  async updateAgent(id: string, agent: Partial<Agent>): Promise<ApiResponse<Agent>> {
+  async updateAgent(
+    id: string,
+    agent: Partial<Agent>,
+  ): Promise<ApiResponse<Agent>> {
     this.invalidateCache("/api/agents");
     return this.request<Agent>(`/api/agents/${id}`, {
       method: "PATCH",
@@ -592,7 +610,11 @@ class ApiClient {
   }
 
   // Message endpoints
-  async getMessages(conversation_id: string, page?: number, limit?: number): Promise<ApiResponse<{ messages: Message[] }>> {
+  async getMessages(
+    conversation_id: string,
+    page?: number,
+    limit?: number,
+  ): Promise<ApiResponse<{ messages: Message[] }>> {
     const queryParams = new URLSearchParams();
     queryParams.append("page", (page || 1).toString());
     queryParams.append("limit", (limit || 50).toString());
@@ -636,7 +658,10 @@ class ApiClient {
     }>(`/api/thinkers/sessions/${sessionId}`);
   }
 
-  async getSessions(params?: { limit?: number; page?: number }): Promise<ApiResponse<{ sessions: any[]; pagination?: any }>> {
+  async getSessions(params?: {
+    limit?: number;
+    page?: number;
+  }): Promise<ApiResponse<{ sessions: any[]; pagination?: any }>> {
     const query = new URLSearchParams(params as any).toString();
     const response: any = await this.request<any>(
       `/api/thinkers/sessions${query ? `?${query}` : ""}`,
@@ -722,13 +747,18 @@ class ApiClient {
     });
   }
 
-  async submitSupplementalInputs(sessionId: string, data: Record<string, unknown>): Promise<ApiResponse<{
-    success: boolean;
-    message: string;
-    sessionId: string;
-    jobId: string;
-    reprocessing: boolean;
-  }>> {
+  async submitSupplementalInputs(
+    sessionId: string,
+    data: Record<string, unknown>,
+  ): Promise<
+    ApiResponse<{
+      success: boolean;
+      message: string;
+      sessionId: string;
+      jobId: string;
+      reprocessing: boolean;
+    }>
+  > {
     this.invalidateCache("/api/thinkers/sessions");
     return this.request<any>(`/api/thinkers/sessions/${sessionId}/inputs`, {
       method: "POST",
