@@ -152,30 +152,32 @@ export const AdminSettings = () => {
           />
         </div>
 
+        <Button 
+          className="flex items-center gap-2"
+          onClick={() => setIsAddDialogOpen(true)}
+        >
+          <Plus className="h-4 w-4" />
+          <span>Add New Feature Flag</span>
+        </Button>
+
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              <span>Add New Feature Flag</span>
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl w-[90vw] z-[10001] p-8">
-            <DialogHeader className="mb-6">
-              <DialogTitle className="text-2xl">Add System Flag</DialogTitle>
-              <DialogDescription className="text-base">
+          <DialogContent className="max-w-2xl w-[95vw] z-[10001] p-8 bg-background border-2 border-primary/20 shadow-2xl shadow-primary/10">
+            <DialogHeader className="mb-6 text-left">
+              <DialogTitle className="text-3xl font-bold">Add System Flag</DialogTitle>
+              <DialogDescription className="text-lg text-muted-foreground">
                 Define a new operational flag or configuration parameter.
               </DialogDescription>
             </DialogHeader>
-            <div className="grid gap-6 py-4">
-              <div className="grid grid-cols-4 items-center gap-6">
-                <Label htmlFor="key" className="text-right text-sm font-semibold">
+            <div className="grid gap-8 py-4">
+              <div className="grid grid-cols-4 items-center gap-8">
+                <Label htmlFor="key" className="text-right text-base font-bold">
                   Key
                 </Label>
                 <div className="col-span-3">
                   <Input
                     id="key"
                     placeholder="enable_new_feature"
-                    className="text-sm h-11"
+                    className="text-base h-12 bg-muted/30"
                     maxLength={64}
                     value={newSetting.key}
                     onChange={(e) =>
@@ -187,20 +189,20 @@ export const AdminSettings = () => {
                       })
                     }
                   />
-                  <p className="text-xs text-muted-foreground mt-2">
+                  <p className="text-sm text-muted-foreground mt-2">
                     Snake_case only. Max 64 chars.
                   </p>
                 </div>
               </div>
 
-              <div className="grid grid-cols-4 items-center gap-6">
-                <Label htmlFor="category" className="text-right text-sm font-semibold">
+              <div className="grid grid-cols-4 items-center gap-8">
+                <Label htmlFor="category" className="text-right text-base font-bold">
                   Category
                 </Label>
                 <Input
                   id="category"
                   placeholder="ai, security, infrastructure..."
-                  className="col-span-3 text-sm h-11"
+                  className="col-span-3 text-base h-12 bg-muted/30"
                   maxLength={32}
                   value={newSetting.category}
                   onChange={(e) =>
@@ -209,35 +211,35 @@ export const AdminSettings = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-4 items-center gap-6">
-                <Label htmlFor="value" className="text-right text-sm font-semibold">
+              <div className="grid grid-cols-4 items-center gap-8">
+                <Label htmlFor="value" className="text-right text-base font-bold">
                   Value
                 </Label>
                 <div className="col-span-3">
                   <Input
                     id="value"
                     placeholder="true, 100, or some text"
-                    className="text-sm h-11"
+                    className="text-base h-12 bg-muted/30"
                     maxLength={2048}
                     value={newSetting.value}
                     onChange={(e) =>
                       setNewSetting({ ...newSetting, value: e.target.value })
                     }
                   />
-                  <p className="text-xs text-muted-foreground mt-2">
+                  <p className="text-sm text-muted-foreground mt-2">
                     Type is auto-detected (boolean, number, or string).
                   </p>
                 </div>
               </div>
 
-              <div className="grid grid-cols-4 items-center gap-6">
-                <Label htmlFor="desc" className="text-right text-sm font-semibold">
+              <div className="grid grid-cols-4 items-center gap-8">
+                <Label htmlFor="desc" className="text-right text-base font-bold">
                   Purpose
                 </Label>
                 <Input
                   id="desc"
                   placeholder="What does this flag do?"
-                  className="col-span-3 text-sm h-11"
+                  className="col-span-3 text-base h-12 bg-muted/30"
                   maxLength={500}
                   value={newSetting.description}
                   onChange={(e) =>
@@ -249,10 +251,10 @@ export const AdminSettings = () => {
                 />
               </div>
             </div>
-            <DialogFooter className="mt-8">
+            <DialogFooter className="mt-10">
               <Button
                 size="lg"
-                className="w-full sm:w-auto px-12"
+                className="w-full sm:w-auto px-16 h-12 text-lg font-bold"
                 onClick={handleAddSetting}
                 disabled={updating === "new" || !newSetting.key}
               >
