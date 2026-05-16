@@ -15,6 +15,8 @@ import {
   Target,
   Trophy,
   Search,
+  AlertTriangle,
+  CheckCircle2,
 } from "lucide-react";
 import { Badge } from "../../components/ui/badge";
 import { Card } from "../../components/ui/card";
@@ -25,6 +27,8 @@ export default function GetHiredPortal() {
   const navigate = useNavigate();
   const { resumeData, revisionHistory, setWorkspaceMode, resetWorkspace } =
     useResume();
+
+  const hasResume = Boolean(resumeData?.personal_info?.name);
 
   const features = [
     {
@@ -58,8 +62,8 @@ export default function GetHiredPortal() {
       description:
         "Generate highly tailored cover letters for any job description.",
       icon: <Sparkles className="w-6 h-6 text-amber-400" />,
-      action: () => navigate("resume"), // Cover letter is currently inside resume workspace
-      badges: ["AI Tailoring", "PDF Export"],
+      action: () => navigate("cover-letter"),
+      badges: ["Tone Control", "One-Click Generate"],
       color: "amber",
     },
     {
@@ -97,7 +101,30 @@ export default function GetHiredPortal() {
             </p>
           </div>
 
-          {/* FEATURE GRID */}
+          {/* RESUME STATUS BANNER — UX-03 */}
+          {!hasResume ? (
+            <div className="flex items-center gap-3 bg-amber-500/[0.07] border border-amber-500/20 rounded-2xl px-5 py-3.5">
+              <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+              <p className="text-sm text-amber-300/80 font-medium flex-1">
+                No resume loaded. Upload or build your resume first — AI Prep
+                Kit and Cover Letter require it.
+              </p>
+              <button
+                onClick={() => navigate("resume")}
+                className="text-[11px] font-black uppercase tracking-widest text-amber-400 hover:text-amber-300 transition-colors whitespace-nowrap"
+              >
+                Load Resume →
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 bg-emerald-500/[0.05] border border-emerald-500/15 rounded-2xl px-5 py-3">
+              <CheckCircle2 className="w-4 h-4 text-emerald-500/70 shrink-0" />
+              <p className="text-xs text-emerald-400/70 font-bold">
+                Resume loaded — {resumeData.personal_info.name} · All AI
+                features active
+              </p>
+            </div>
+          )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-12">
             {features.map((feature, idx) => (
               <motion.div

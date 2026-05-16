@@ -159,6 +159,10 @@ const CareerResearch = lazyRetry(
   () => import("./pages/hired/CareerResearch"),
   "CareerResearch",
 );
+const CoverLetter = lazyRetry(
+  () => import("./pages/hired/CoverLetter"),
+  "CoverLetter",
+);
 
 // Trading System pages with retry logic
 // const TradingOverview = lazyRetry(() => import("./pages/trading/Overview"), "TradingOverview");
@@ -517,6 +521,14 @@ const App = () => {
                         element={
                           <Suspense fallback={<PageLoader />}>
                             <CareerResearch />
+                          </Suspense>
+                        }
+                      />
+                      <Route
+                        path="cover-letter"
+                        element={
+                          <Suspense fallback={<PageLoader />}>
+                            <CoverLetter />
                           </Suspense>
                         }
                       />

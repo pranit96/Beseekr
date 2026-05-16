@@ -10,13 +10,14 @@ import {
   ArrowLeft,
   ChevronRight,
   Zap,
+  Sparkles,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { resumeApi } from "@/api/resume";
+import { resumeApi, ResearchSummary } from "@/api/resume";
 import { toast } from "@/hooks/use-toast";
 
 import { GlobalFooter } from "@/components/GlobalFooter";
@@ -26,15 +27,30 @@ export default function CareerResearch() {
   const [query, setQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [results, setResults] = useState<any>(null);
+  const [summary, setSummary] = useState<ResearchSummary | null>(null);
 
   const handleSearch = async (e?: React.FormEvent) => {
     e?.preventDefault();
     if (!query.trim()) return;
 
     setIsLoading(true);
+    setResults(null);
+    setSummary(null);
     try {
       const data = await resumeApi.performCareerResearch(query);
       setResults(data.data);
+
+      // FEAT-06: Summarize the raw data into actionable insights
+      if (
+        data.data &&
+        (data.data.reddit?.posts?.length > 0 || data.data.web?.length > 0)
+      ) {
+        const sumData = await resumeApi.summarizeResearch({
+          reddit: data.data.reddit,
+          web: data.data.web,
+        });
+        setSummary(sumData);
+      }
     } catch (error) {
       toast({
         variant: "destructive",
@@ -122,6 +138,78 @@ export default function CareerResearch() {
                 animate={{ opacity: 1, y: 0 }}
                 className="space-y-12 pt-8 pb-12"
               >
+                {/* AI SUMMARY SECTION */}
+                {summary && (
+                  <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-[32px] p-8 space-y-6 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-8 opacity-10">
+                      <Sparkles className="w-24 h-24 text-indigo-400" />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="w-5 h-5 text-indigo-400" />
+                      <h2 className="text-xl font-bold tracking-tight text-indigo-100">
+                        AI Executive Summary
+                      </h2>
+                    </div>
+                    <p className="text-indigo-200/80 leading-relaxed font-medium">
+                      {summary.key_insight}
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-3">
+                        <h3 className="text-xs font-black uppercase tracking-widest text-indigo-400">
+                          Interview Themes
+                        </h3>
+                        <ul className="space-y-2">
+                          {summary.interview_themes.map((theme, i) => (
+                            <li
+                              key={i}
+                              className="flex items-start gap-2 text-sm text-indigo-100"
+                            >
+                              <span className="text-indigo-400 mt-0.5">•</span>
+                              {theme}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                      <div className="space-y-3">
+                        <h3 className="text-xs font-black uppercase tracking-widest text-indigo-400">
+                          Culture Signals
+                        </h3>
+                        <ul className="space-y-2">
+                          {summary.culture_signals.map((signal, i) => (
+                            <li
+                              key={i}
+                              className="flex items-start gap-2 text-sm text-indigo-100"
+                            >
+                              <span className="text-indigo-400 mt-0.5">•</span>
+                              {signal}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                    <div className="flex gap-4 pt-4 border-t border-indigo-500/20">
+                      <div className="bg-black/20 rounded-xl px-4 py-2">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400 block mb-1">
+                          Difficulty
+                        </span>
+                        <span className="text-sm font-bold text-white">
+                          {summary.difficulty_rating}
+                        </span>
+                      </div>
+                      {summary.salary_range && (
+                        <div className="bg-black/20 rounded-xl px-4 py-2">
+                          <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400 block mb-1">
+                            Salary Range
+                          </span>
+                          <span className="text-sm font-bold text-white">
+                            {summary.salary_range}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {/* REDDIT SECTION */}
                 {results.reddit && results.reddit.posts?.length > 0 && (
                   <div className="space-y-6">

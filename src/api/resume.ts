@@ -323,6 +323,22 @@ export async function performCareerResearch(
   return res.data;
 }
 
+export interface ResearchSummary {
+  interview_themes: string[];
+  culture_signals: string[];
+  difficulty_rating: string;
+  salary_range: string | null;
+  key_insight: string;
+}
+
+export async function summarizeResearch(results: {
+  reddit: any;
+  web: any;
+}): Promise<ResearchSummary> {
+  const res = await apiClient.post("/api/resume/research/summarize", results);
+  return res.data as ResearchSummary;
+}
+
 export const resumeApi = {
   uploadAndParseResume,
   scoreResume,
@@ -342,6 +358,7 @@ export const resumeApi = {
   generateCoverLetter,
   generateInterviewPrep,
   performCareerResearch,
+  summarizeResearch,
 };
 
 export default resumeApi;

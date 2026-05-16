@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
@@ -43,8 +43,10 @@ export default function InterviewPrep() {
   const [activeApp, setActiveApp] = useState<JobApplication | null>(
     location.state?.app || null,
   );
+  // For the app-selector shown when no app is pre-selected
+  const [recentApps, setRecentApps] = useState<JobApplication[]>([]);
 
-  const generateKit = async () => {
+  const generateKit = useCallback(async () => {
     if (!activeApp || !resumeData) return;
     setIsLoading(true);
     try {
@@ -55,6 +57,10 @@ export default function InterviewPrep() {
         job_title: activeApp.job_title,
       });
       setPrepKit(kit);
+      // FEAT-03: Persist so back-navigation avoids regenerating (skips 5-8s LLM call)
+      try {
+        sessionStorage.setItem(`prepKit:${activeApp.id}`, JSON.stringify(kit));
+      } catch (_) {}
       toast({
         title: "Prep Kit Ready",
         description: "AI has analyzed your rounds and skill gaps.",
@@ -70,12 +76,25 @@ export default function InterviewPrep() {
     } finally {
       setIsLoading(false);
     }
-  };
-
+  }, [activeApp, resumeData, toast]);
+  // FEAT-03: Restore from sessionStorage first, then fall back to LLM call
+  // UX-01: Load recent apps for selector when no app is pre-selected
   useEffect(() => {
-    if (activeApp && !prepKit) {
-      generateKit();
+    if (!activeApp) {
+      resumeApi
+        .getApplications()
+        .then(setRecentApps)
+        .catch(() => {});
+      return;
     }
+    try {
+      const cached = sessionStorage.getItem(`prepKit:${activeApp.id}`);
+      if (cached) {
+        setPrepKit(JSON.parse(cached));
+        return;
+      }
+    } catch (_) {}
+    if (!prepKit) generateKit();
   }, [activeApp]);
 
   return (
@@ -83,21 +102,55 @@ export default function InterviewPrep() {
       <main className="flex-1 overflow-y-auto custom-scrollbar">
         <div className="max-w-6xl mx-auto space-y-12 py-10 px-4 sm:px-6 lg:px-8">
           {!activeApp ? (
-            <div className="py-32 flex flex-col items-center justify-center p-6 text-center">
-              <Building2 className="w-16 h-16 text-zinc-800 mb-6 opacity-40" />
-              <h2 className="text-2xl font-bold text-white mb-2">
-                No Active Application
-              </h2>
-              <p className="text-zinc-500 max-w-md mb-8">
-                Select a job from your tracker to generate a tailored interview
-                prep kit.
-              </p>
-              <Button
-                onClick={() => navigate("/dashboard/hired/tracker")}
-                className="bg-indigo-600 hover:bg-indigo-500 rounded-xl px-8 font-bold"
-              >
-                Go to Job Tracker
-              </Button>
+            <div className="py-20 flex flex-col items-center justify-center p-6 text-center space-y-8">
+              <Building2 className="w-16 h-16 text-zinc-800 opacity-40" />
+              <div className="space-y-2">
+                <h2 className="text-2xl font-bold text-white">
+                  Select an Application
+                </h2>
+                <p className="text-zinc-500 max-w-md">
+                  Choose a job from your tracker to generate a tailored prep
+                  kit.
+                </p>
+              </div>
+              {recentApps.length > 0 ? (
+                <div className="w-full max-w-md space-y-3 text-left">
+                  <p className="text-[11px] font-black uppercase tracking-widest text-zinc-600">
+                    Recent Applications
+                  </p>
+                  {recentApps.slice(0, 6).map((app) => (
+                    <button
+                      key={app.id}
+                      onClick={() => setActiveApp(app)}
+                      className="w-full flex items-center justify-between bg-white/[0.02] hover:bg-white/[0.05] border border-white/[0.08] hover:border-indigo-500/30 rounded-2xl p-4 transition-all text-left group"
+                    >
+                      <div>
+                        <p className="text-sm font-bold text-white group-hover:text-indigo-300 transition-colors">
+                          {app.job_title}
+                        </p>
+                        <p className="text-xs text-zinc-500 font-medium">
+                          {app.company_name}
+                        </p>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-zinc-600 group-hover:text-indigo-400 transition-colors" />
+                    </button>
+                  ))}
+                  <Button
+                    variant="ghost"
+                    onClick={() => navigate("/dashboard/hired/tracker")}
+                    className="w-full text-zinc-500 hover:text-white text-xs font-bold"
+                  >
+                    View All Applications
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  onClick={() => navigate("/dashboard/hired/tracker")}
+                  className="bg-indigo-600 hover:bg-indigo-500 rounded-xl px-8 font-bold"
+                >
+                  Go to Job Tracker
+                </Button>
+              )}
             </div>
           ) : (
             <>
@@ -358,7 +411,7 @@ export default function InterviewPrep() {
                             </p>
                           </div>
                           <p className="text-lg text-zinc-300 leading-relaxed font-serif italic relative z-10">
-                            "{prepKit.elevator_pitch}"
+                            &ldquo;{prepKit.elevator_pitch}&rdquo;
                           </p>
                           <div className="flex items-center gap-4 pt-4">
                             <Badge className="bg-indigo-500/20 text-indigo-400 border-none rounded-full px-3 py-1 text-[10px] font-bold">
