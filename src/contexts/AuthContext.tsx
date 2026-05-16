@@ -33,6 +33,7 @@ interface User {
     days_remaining: number;
   };
   role?: string;
+  email_confirmed_at?: string;
 }
 
 interface AuthContextType {
@@ -425,9 +426,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         // 1. OPTIMISTIC: Immediately show cached user (instant UI)
         const cachedUser = getCachedUser();
-        if (cachedUser) {
+        // Only use cache if it has a role field (means it's from the new auth version)
+        if (cachedUser && cachedUser.role) {
           logger.info("Using cached user for instant load", {
             userId: cachedUser.id,
+            role: cachedUser.role,
           });
           setUser(cachedUser);
           setLoading(false); // Show content immediately
@@ -435,6 +438,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           if (cachedUser.language && cachedUser.language !== i18n.language) {
             i18n.changeLanguage(cachedUser.language);
           }
+        } else if (cachedUser) {
+          logger.info(
+            "Cached user found but lacks role metadata, skipping optimistic load",
+          );
         }
 
         // Set up API client unauthorized handler

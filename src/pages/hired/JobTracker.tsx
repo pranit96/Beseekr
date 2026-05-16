@@ -789,7 +789,6 @@ export default function JobTracker() {
             )}
           </div>
         </main>
-
       </div>
     </>
   );

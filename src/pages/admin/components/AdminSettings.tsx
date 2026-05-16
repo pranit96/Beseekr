@@ -1,5 +1,12 @@
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState, useEffect, useMemo } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,12 +30,17 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Plus } from "lucide-react";
 
 export function AdminSettings() {
-  const [settings, setSettings] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [updating, setUpdating] = useState<string | null>(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -36,133 +48,118 @@ export function AdminSettings() {
     key: "",
     category: "general",
     description: "",
-    value: ""
+    value: "",
   });
 
-  useEffect(() => {
-    fetchSettings();
-  }, []);
+  const {
+    data: settingsData,
+    isLoading: loading,
+    refetch: fetchSettings,
+  } = useQuery({
+    queryKey: ["admin", "config"],
+    queryFn: () => apiClient.getAdminConfig(),
+    select: (res) => (res.success ? res.data : []),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
 
-  const fetchSettings = async () => {
-    try {
-      const res = await apiClient.getAdminConfig();
-      if (res.success) {
-        setSettings(res.data);
-      }
-    } catch (error) {
-      console.error("Failed to fetch settings:", error);
+  const settings = settingsData || [];
+
+  const updateMutation = useMutation({
+    mutationFn: ({ key, payload }: { key: string; payload: any }) =>
+      apiClient.updateAdminConfig(key, payload),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "config"] });
       toast({
-        title: "Error",
-        description: "Failed to load system configurations.",
+        title: "Success",
+        description: `Setting ${variables.key} updated.`,
+      });
+      setUpdating(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Update Failed",
+        description: error.message,
         variant: "destructive",
       });
-    } finally {
-      setLoading(false);
-    }
-  };
+      setUpdating(null);
+    },
+  });
 
   const handleToggle = async (key: string, currentValue: boolean) => {
     setUpdating(key);
-    try {
-      const res = await apiClient.updateAdminConfig(key, { 
-        value: !currentValue, 
-        type: 'boolean' 
-      });
-      if (res.success) {
-        setSettings(prev => prev.map(s => s.key === key ? { ...s, value_boolean: !currentValue } : s));
-        toast({
-          title: "Setting Updated",
-          description: `${key} is now ${!currentValue ? 'ENABLED' : 'DISABLED'}.`,
-        });
-      }
-    } catch (error: any) {
-      toast({
-        title: "Update Failed",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setUpdating(null);
-    }
+    updateMutation.mutate({
+      key,
+      payload: { value: !currentValue, type: "boolean" },
+    });
   };
 
-  const handleValueChange = async (key: string, value: string | number, type: string) => {
+  const handleValueChange = async (
+    key: string,
+    value: string | number,
+    type: string,
+  ) => {
     setUpdating(key);
-    try {
-      const val = type === 'number' ? Number(value) : value;
-      const res = await apiClient.updateAdminConfig(key, { value: val, type });
-      if (res.success) {
-        setSettings(prev => prev.map(s => s.key === key ? { 
-          ...s, 
-          value_string: type === 'string' ? val : s.value_string,
-          value_number: type === 'number' ? val : s.value_number
-        } : s));
-        toast({
-          title: "Setting Updated",
-          description: `${key} value saved.`,
-        });
-      }
-    } catch (error: any) {
-      toast({
-        title: "Update Failed",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setUpdating(null);
-    }
+    const val = type === "number" ? Number(value) : value;
+    updateMutation.mutate({
+      key,
+      payload: { value: val, type },
+    });
   };
 
   const handleAddSetting = async () => {
     if (!newSetting.key) return;
-    
-    setUpdating("new");
-    try {
-      const res = await apiClient.updateAdminConfig(newSetting.key, {
-        value: newSetting.value,
-        category: newSetting.category,
-        description: newSetting.description
-      });
 
-      if (res.success) {
-        toast({
-          title: "Setting Created",
-          description: `Successfully added ${newSetting.key}.`,
-        });
-        setIsAddDialogOpen(false);
-        setNewSetting({ key: "", category: "general", description: "", value: "" });
-        fetchSettings();
-      }
-    } catch (error: any) {
-      toast({
-        title: "Creation Failed",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setUpdating(null);
-    }
+    setUpdating("new");
+    updateMutation.mutate(
+      {
+        key: newSetting.key,
+        payload: {
+          value: newSetting.value,
+          category: newSetting.category,
+          description: newSetting.description,
+        },
+      },
+      {
+        onSuccess: () => {
+          setIsAddDialogOpen(false);
+          setNewSetting({
+            key: "",
+            category: "general",
+            description: "",
+            value: "",
+          });
+        },
+      },
+    );
   };
 
-  const filteredSettings = settings.filter(s => 
-    s.key.toLowerCase().includes(search.toLowerCase()) || 
-    s.category.toLowerCase().includes(search.toLowerCase()) ||
-    s.description?.toLowerCase().includes(search.toLowerCase())
+  const filteredSettings = settings.filter(
+    (s) =>
+      s.key.toLowerCase().includes(search.toLowerCase()) ||
+      s.category.toLowerCase().includes(search.toLowerCase()) ||
+      s.description?.toLowerCase().includes(search.toLowerCase()),
   );
 
-  const categories = Array.from(new Set(settings.map(s => s.category)));
+  const categories = Array.from(
+    new Set(settings.map((s) => s.category)),
+  ) as string[];
 
-  if (loading) return <div className="space-y-4">
-    {[1, 2, 3].map(i => <div key={i} className="h-40 bg-muted rounded-xl animate-pulse" />)}
-  </div>;
+  if (loading)
+    return (
+      <div className="space-y-4">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="h-40 bg-muted rounded-xl animate-pulse" />
+        ))}
+      </div>
+    );
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div className="relative max-w-md w-full">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input 
-            placeholder="Search settings by name, category, or purpose..." 
+          <Input
+            placeholder="Search settings by name, category, or purpose..."
             className="pl-10 bg-muted/50 border-none"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -185,7 +182,9 @@ export function AdminSettings() {
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="key" className="text-right text-xs">Key</Label>
+                <Label htmlFor="key" className="text-right text-xs">
+                  Key
+                </Label>
                 <div className="col-span-3">
                   <Input
                     id="key"
@@ -193,26 +192,41 @@ export function AdminSettings() {
                     className="text-xs"
                     maxLength={64}
                     value={newSetting.key}
-                    onChange={(e) => setNewSetting({...newSetting, key: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '')})}
+                    onChange={(e) =>
+                      setNewSetting({
+                        ...newSetting,
+                        key: e.target.value
+                          .toLowerCase()
+                          .replace(/[^a-z0-9_]/g, ""),
+                      })
+                    }
                   />
-                  <p className="text-[10px] text-muted-foreground mt-1">Snake_case only. Max 64 chars.</p>
+                  <p className="text-[10px] text-muted-foreground mt-1">
+                    Snake_case only. Max 64 chars.
+                  </p>
                 </div>
               </div>
-              
+
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="category" className="text-right text-xs">Category</Label>
+                <Label htmlFor="category" className="text-right text-xs">
+                  Category
+                </Label>
                 <Input
                   id="category"
                   placeholder="ai, security, infrastructure..."
                   className="col-span-3 text-xs"
                   maxLength={32}
                   value={newSetting.category}
-                  onChange={(e) => setNewSetting({...newSetting, category: e.target.value})}
+                  onChange={(e) =>
+                    setNewSetting({ ...newSetting, category: e.target.value })
+                  }
                 />
               </div>
 
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="value" className="text-right text-xs">Value</Label>
+                <Label htmlFor="value" className="text-right text-xs">
+                  Value
+                </Label>
                 <div className="col-span-3">
                   <Input
                     id="value"
@@ -220,27 +234,41 @@ export function AdminSettings() {
                     className="text-xs"
                     maxLength={2048}
                     value={newSetting.value}
-                    onChange={(e) => setNewSetting({...newSetting, value: e.target.value})}
+                    onChange={(e) =>
+                      setNewSetting({ ...newSetting, value: e.target.value })
+                    }
                   />
-                  <p className="text-[10px] text-muted-foreground mt-1">Type is auto-detected (boolean, number, or string).</p>
+                  <p className="text-[10px] text-muted-foreground mt-1">
+                    Type is auto-detected (boolean, number, or string).
+                  </p>
                 </div>
               </div>
 
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="desc" className="text-right text-xs">Purpose</Label>
+                <Label htmlFor="desc" className="text-right text-xs">
+                  Purpose
+                </Label>
                 <Input
                   id="desc"
                   placeholder="What does this flag do?"
                   className="col-span-3 text-xs"
                   maxLength={500}
                   value={newSetting.description}
-                  onChange={(e) => setNewSetting({...newSetting, description: e.target.value})}
+                  onChange={(e) =>
+                    setNewSetting({
+                      ...newSetting,
+                      description: e.target.value,
+                    })
+                  }
                 />
               </div>
             </div>
             <DialogFooter>
-              <Button onClick={handleAddSetting} disabled={updating === 'new' || !newSetting.key}>
-                {updating === 'new' ? 'Creating...' : 'Create Setting'}
+              <Button
+                onClick={handleAddSetting}
+                disabled={updating === "new" || !newSetting.key}
+              >
+                {updating === "new" ? "Creating..." : "Create Setting"}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -248,8 +276,10 @@ export function AdminSettings() {
       </div>
 
       <div className="grid grid-cols-1 gap-8">
-        {categories.map(category => {
-          const catSettings = filteredSettings.filter(s => s.category === category);
+        {categories.map((category) => {
+          const catSettings = filteredSettings.filter(
+            (s) => s.category === category,
+          );
           if (catSettings.length === 0) return null;
 
           return (
@@ -257,18 +287,27 @@ export function AdminSettings() {
               <div className="flex items-center gap-2 px-1">
                 <SlidersHorizontal className="h-4 w-4 text-primary" />
                 <h3 className="text-lg font-semibold capitalize">{category}</h3>
-                <Badge variant="secondary" className="ml-2 bg-primary/10 text-primary border-none">
+                <Badge
+                  variant="secondary"
+                  className="ml-2 bg-primary/10 text-primary border-none"
+                >
                   {catSettings.length}
                 </Badge>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {catSettings.map(setting => (
-                  <Card key={setting.key} className="border-none shadow-sm hover:shadow-md transition-all duration-300 group">
+                {catSettings.map((setting) => (
+                  <Card
+                    key={setting.key}
+                    className="border-none shadow-sm hover:shadow-md transition-all duration-300 group"
+                  >
                     <CardHeader className="pb-2">
                       <div className="flex justify-between items-start">
-                        <Label className="text-sm font-bold truncate pr-4" title={setting.key}>
-                          {setting.key.replace(/_/g, ' ')}
+                        <Label
+                          className="text-sm font-bold truncate pr-4"
+                          title={setting.key}
+                        >
+                          {setting.key.replace(/_/g, " ")}
                         </Label>
                         <TooltipProvider>
                           <Tooltip>
@@ -276,30 +315,47 @@ export function AdminSettings() {
                               <Info className="h-4 w-4 text-muted-foreground cursor-help opacity-0 group-hover:opacity-100 transition-opacity" />
                             </TooltipTrigger>
                             <TooltipContent side="top" className="max-w-xs">
-                              <p className="text-xs">{setting.description || 'No description provided.'}</p>
+                              <p className="text-xs">
+                                {setting.description ||
+                                  "No description provided."}
+                              </p>
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
                       </div>
                     </CardHeader>
                     <CardContent>
-                      {setting.type === 'boolean' ? (
+                      {setting.type === "boolean" ? (
                         <div className="flex items-center justify-between mt-2">
-                          <span className={`text-xs font-medium ${setting.value_boolean ? 'text-green-500' : 'text-muted-foreground'}`}>
-                            {setting.value_boolean ? 'Active' : 'Disabled'}
+                          <span
+                            className={`text-xs font-medium ${setting.value_boolean ? "text-green-500" : "text-muted-foreground"}`}
+                          >
+                            {setting.value_boolean ? "Active" : "Disabled"}
                           </span>
-                          <Switch 
-                            checked={setting.value_boolean} 
-                            onCheckedChange={() => handleToggle(setting.key, setting.value_boolean)}
+                          <Switch
+                            checked={setting.value_boolean}
+                            onCheckedChange={() =>
+                              handleToggle(setting.key, setting.value_boolean)
+                            }
                             disabled={updating === setting.key}
                           />
                         </div>
                       ) : (
                         <div className="mt-1">
-                          <Input 
-                            type={setting.type === 'number' ? 'number' : 'text'}
-                            defaultValue={setting.type === 'number' ? setting.value_number : setting.value_string}
-                            onBlur={(e) => handleValueChange(setting.key, e.target.value, setting.type)}
+                          <Input
+                            type={setting.type === "number" ? "number" : "text"}
+                            defaultValue={
+                              setting.type === "number"
+                                ? setting.value_number
+                                : setting.value_string
+                            }
+                            onBlur={(e) =>
+                              handleValueChange(
+                                setting.key,
+                                e.target.value,
+                                setting.type,
+                              )
+                            }
                             disabled={updating === setting.key}
                             className="h-8 text-xs bg-muted/30 border-none focus-visible:ring-1"
                           />
@@ -318,7 +374,9 @@ export function AdminSettings() {
             <AlertCircle className="h-12 w-12 text-muted-foreground/30" />
             <div>
               <h3 className="text-lg font-medium">No settings found</h3>
-              <p className="text-muted-foreground">Try adjusting your search or category filters.</p>
+              <p className="text-muted-foreground">
+                Try adjusting your search or category filters.
+              </p>
             </div>
           </div>
         )}

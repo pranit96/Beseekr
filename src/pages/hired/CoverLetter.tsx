@@ -331,7 +331,6 @@ export default function CoverLetter() {
           </div>
         </div>
       </main>
-
     </div>
   );
 }

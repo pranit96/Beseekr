@@ -14,6 +14,7 @@ export interface User {
     days_remaining: number;
   };
   role?: string;
+  email_confirmed_at?: string;
 }
 
 export interface AuthResponse {

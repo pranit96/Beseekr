@@ -632,7 +632,7 @@ const App = () => {
                     path="/profile"
                     element={<Navigate to="/dashboard/profile" replace />}
                   />
-                  
+
                   {/* =============================================
                       ADMIN CONSOLE - SECURE ACCESS
                       ============================================= */}

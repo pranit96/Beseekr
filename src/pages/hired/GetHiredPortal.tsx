@@ -169,7 +169,6 @@ export default function GetHiredPortal() {
           </div>
         </div>
       </main>
-
     </div>
   );
 }

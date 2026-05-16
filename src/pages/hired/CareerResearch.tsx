@@ -321,7 +321,6 @@ export default function CareerResearch() {
           </AnimatePresence>
         </div>
       </main>
-
     </div>
   );
 }
