@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   Card,
   CardContent,
@@ -22,8 +23,13 @@ import { apiClient } from "@/lib/api";
 import { AdminMonitoring, AdminSettings, AdminLogs } from "./components";
 
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState("overview");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get("tab") || "overview";
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleTabChange = (value: string) => {
+    setSearchParams({ tab: value });
+  };
 
   const handleRefreshAll = async () => {
     setIsRefreshing(true);
@@ -74,9 +80,9 @@ export default function AdminDashboard() {
       </div>
 
       <Tabs
-        defaultValue="overview"
+        value={activeTab}
         className="w-full"
-        onValueChange={setActiveTab}
+        onValueChange={handleTabChange}
       >
         <TabsList className="grid w-full max-w-md grid-cols-3 mb-8">
           <TabsTrigger value="overview" className="flex items-center gap-2">
