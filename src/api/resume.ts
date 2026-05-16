@@ -74,6 +74,44 @@ export interface ATSAnalysis {
   general_feedback: string;
 }
 
+export interface JobApplication {
+  id: string;
+  company_name: string;
+  job_title: string;
+  status: "Applied" | "Interviewing" | "Offer" | "Rejected" | "Bookmarked";
+  job_url?: string;
+  jd_text?: string;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface InterviewPrepKit {
+  rounds: Array<{
+    name: string;
+    focus: string;
+    likely_topics: string[];
+    difficulty: string;
+  }>;
+  culture: string;
+  red_flags: string[];
+  skill_gaps: Array<{
+    skill: string;
+    gap_severity: string;
+    revision_topic: string;
+    practice_source: string;
+  }>;
+  technical_questions: Array<{
+    question: string;
+    ideal_answer_concept: string;
+  }>;
+  hr_behavioral_questions: Array<{
+    question: string;
+    intent: string;
+  }>;
+  elevator_pitch: string;
+}
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export async function uploadAndParseResume(file: File): Promise<ResumeSchema> {
@@ -133,6 +171,28 @@ export async function downloadResumePdf(resume: ResumeSchema): Promise<string> {
   }
 
   const blob = new Blob([bytes], { type: "application/pdf" });
+  return window.URL.createObjectURL(blob);
+}
+
+export async function downloadResumeWord(
+  resume: ResumeSchema,
+): Promise<string> {
+  const res = await apiClient.post("/api/resume/download/word", { resume });
+
+  const rawBase64 = (res.data as any)?.word_base64;
+  if (!rawBase64) {
+    throw new Error("Invalid Word delivery packet from endpoint.");
+  }
+
+  const binaryString = window.atob(rawBase64);
+  const bytes = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+
+  const blob = new Blob([bytes], {
+    type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  });
   return window.URL.createObjectURL(blob);
 }
 
@@ -209,17 +269,70 @@ export async function deleteResumeSnapshot(
   return res.success === true;
 }
 
+export async function getApplications(): Promise<JobApplication[]> {
+  const res = await apiClient.get("/api/resume/applications");
+  return res.data;
+}
+
+export async function createApplication(
+  data: Partial<JobApplication>,
+): Promise<JobApplication> {
+  const res = await apiClient.post("/api/resume/applications", data);
+  return res.data;
+}
+
+export async function updateApplication(
+  id: string,
+  data: Partial<JobApplication>,
+): Promise<JobApplication> {
+  const res = await apiClient.patch(`/api/resume/applications/${id}`, data);
+  return res.data;
+}
+
+export async function deleteApplication(id: string): Promise<boolean> {
+  const res = await apiClient.delete(`/api/resume/applications/${id}`);
+  return res.success === true;
+}
+
+export async function generateCoverLetter(payload: {
+  resume: ResumeSchema;
+  job_description: string;
+  company_name?: string;
+  job_title?: string;
+  tone?: string;
+}): Promise<string> {
+  const res = await apiClient.post("/api/resume/cover-letter", payload);
+  return res.data;
+}
+
+export async function generateInterviewPrep(payload: {
+  resume: ResumeSchema;
+  job_description: string;
+  company_name: string;
+  job_title: string;
+}): Promise<InterviewPrepKit> {
+  const res = await apiClient.post("/api/resume/interview-prep", payload);
+  return res.data;
+}
+
 export const resumeApi = {
   uploadAndParseResume,
   scoreResume,
   optimizeResume,
   downloadResumePdf,
+  downloadResumeWord,
   getResumeDraft,
   saveResumeDraft,
   purgeResumeDraft,
   saveResumeSnapshot,
   restoreResumeSnapshot,
   deleteResumeSnapshot,
+  getApplications,
+  createApplication,
+  updateApplication,
+  deleteApplication,
+  generateCoverLetter,
+  generateInterviewPrep,
 };
 
 export default resumeApi;

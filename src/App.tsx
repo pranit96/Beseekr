@@ -131,9 +131,9 @@ const SaasWatchlist = lazyRetry(
   "Watchlist",
 );
 const Pricing = lazyRetry(() => import("./pages/saas/Pricing"), "Pricing");
-const ResumePortal = lazyRetry(
-  () => import("./pages/ResumePortal"),
-  "ResumePortal",
+const GetHiredPortal = lazyRetry(
+  () => import("./pages/GetHiredPortal"),
+  "GetHiredPortal",
 );
 const ResumeUpload = lazyRetry(
   () => import("./pages/ResumeUpload"),
@@ -146,6 +146,11 @@ const ResumeTemplateSelect = lazyRetry(
 const ResumeWorkspace = lazyRetry(
   () => import("./pages/ResumeWorkspace"),
   "ResumeWorkspace",
+);
+const JobTracker = lazyRetry(() => import("./pages/JobTracker"), "JobTracker");
+const InterviewPrep = lazyRetry(
+  () => import("./pages/InterviewPrep"),
+  "InterviewPrep",
 );
 
 // Trading System pages with retry logic
@@ -442,6 +447,10 @@ const App = () => {
                     />
                     <Route
                       path="resume"
+                      element={<Navigate to="../hired" replace />}
+                    />
+                    <Route
+                      path="hired"
                       element={
                         <ResumeProvider>
                           <Outlet />
@@ -452,7 +461,15 @@ const App = () => {
                         index
                         element={
                           <Suspense fallback={<PageLoader />}>
-                            <ResumePortal />
+                            <GetHiredPortal />
+                          </Suspense>
+                        }
+                      />
+                      <Route
+                        path="resume"
+                        element={
+                          <Suspense fallback={<PageLoader />}>
+                            <ResumeWorkspace />
                           </Suspense>
                         }
                       />
@@ -465,7 +482,7 @@ const App = () => {
                         }
                       />
                       <Route
-                        path="build"
+                        path="templates"
                         element={
                           <Suspense fallback={<PageLoader />}>
                             <ResumeTemplateSelect />
@@ -473,10 +490,18 @@ const App = () => {
                         }
                       />
                       <Route
-                        path="workspace"
+                        path="tracker"
                         element={
                           <Suspense fallback={<PageLoader />}>
-                            <ResumeWorkspace />
+                            <JobTracker />
+                          </Suspense>
+                        }
+                      />
+                      <Route
+                        path="prep"
+                        element={
+                          <Suspense fallback={<PageLoader />}>
+                            <InterviewPrep />
                           </Suspense>
                         }
                       />

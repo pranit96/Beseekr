@@ -23,6 +23,12 @@ import {
   History,
   RotateCcw,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -85,6 +91,62 @@ export default function ResumeWorkspace() {
   // Navigation & Panel states for Designer UI
   const [activeTab, setActiveTab] = useState("personal");
   const [isAiPanelOpen, setIsAiPanelOpen] = useState(false);
+  const [coverLetter, setCoverLetter] = useState<string | null>(null);
+  const [isGeneratingCL, setIsGeneratingCL] = useState(false);
+
+  const handleExportWord = async () => {
+    setIsDownloading(true);
+    try {
+      const url = await resumeApi.downloadResumeWord(resumeData);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute(
+        "download",
+        `${resumeData.personal_info.name || "Resume"}_Resume.docx`,
+      );
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      toast({
+        title: "Word File Ready!",
+        description: "Your editable resume has been saved.",
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Word Export Failed",
+        description: error.message,
+      });
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  const handleGenerateCoverLetter = async () => {
+    setIsGeneratingCL(true);
+    try {
+      const content = await resumeApi.generateCoverLetter({
+        resume: resumeData,
+        job_description: jobDescription,
+        company_name: "", // Will be filled from JD analysis if possible
+        job_title: resumeData.personal_info.summary.split(" ")[0], // Fallback
+      });
+      setCoverLetter(content);
+      setActiveTab("coverletter");
+      toast({
+        title: "Cover Letter Generated",
+        description: "Your tailored letter is ready to review.",
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Generation failed",
+        description: error.message,
+      });
+    } finally {
+      setIsGeneratingCL(false);
+    }
+  };
 
   const handleBackupToVault = async () => {
     setIsBackingUp(true);
@@ -525,18 +587,37 @@ export default function ResumeWorkspace() {
           </Button>
 
           {/* PRIMARY CTA FOR PREVIEW & EXPORT */}
-          <Button
-            onClick={handleExportPdf}
-            disabled={isPreviewLoading}
-            className="rounded-xl font-black bg-white text-black hover:bg-zinc-200 shadow-[0_8px_24px_-8px_rgba(255,255,255,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all h-9 px-4 text-xs uppercase tracking-wider border-none"
-          >
-            {isPreviewLoading ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
-            ) : (
-              <Download className="h-3.5 w-3.5 mr-1.5" />
-            )}
-            Preview & Export
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                disabled={isDownloading || isPreviewLoading}
+                className="rounded-xl font-black bg-white text-black hover:bg-zinc-200 shadow-[0_8px_24px_-8px_rgba(255,255,255,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all h-9 px-4 text-xs uppercase tracking-wider border-none flex items-center gap-2"
+              >
+                {isDownloading || isPreviewLoading ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Download className="h-3.5 w-3.5" />
+                )}
+                Export
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="bg-zinc-950 border-white/[0.1] text-zinc-300 rounded-xl">
+              <DropdownMenuItem
+                onClick={handleExportPdf}
+                className="font-bold text-xs py-2.5"
+              >
+                <FileText className="w-3.5 h-3.5 mr-2 opacity-60" /> Download
+                PDF
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={handleExportWord}
+                className="font-bold text-xs py-2.5"
+              >
+                <Briefcase className="w-3.5 h-3.5 mr-2 opacity-60" /> Download
+                Word (.docx)
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
@@ -554,6 +635,7 @@ export default function ResumeWorkspace() {
             { id: "education", label: "Education", icon: GraduationCap },
             { id: "skills", label: "Skills & Projects", icon: Cpu },
             { id: "design", label: "Theme Settings", icon: Sparkles },
+            { id: "coverletter", label: "Cover Letter", icon: MessageSquare },
           ].map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -1345,6 +1427,81 @@ export default function ResumeWorkspace() {
                   </div>
                 </div>
               </div>
+            </motion.div>
+          )}
+
+          {activeTab === "coverletter" && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-8"
+            >
+              <div className="flex items-center justify-between border-b border-white/[0.03] pb-6">
+                <div className="space-y-1.5 text-left">
+                  <h2 className="text-xl font-bold text-white flex items-center gap-3">
+                    <div className="p-2 bg-amber-500/10 border border-amber-500/20 rounded-xl">
+                      <Sparkles className="h-5 w-5 text-amber-400" />
+                    </div>
+                    Cover Letter Studio
+                  </h2>
+                  <p className="text-sm text-zinc-500 font-medium leading-relaxed max-w-md">
+                    Generate a high-impact, tailored cover letter based on your
+                    current resume and job description.
+                  </p>
+                </div>
+                <Button
+                  disabled={isGeneratingCL || !jobDescription}
+                  onClick={handleGenerateCoverLetter}
+                  className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold h-11 px-8 rounded-2xl flex items-center gap-2.5 shadow-xl shadow-indigo-500/20 active:scale-95 transition-all"
+                >
+                  {isGeneratingCL ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="w-4 h-4" />
+                  )}
+                  {coverLetter ? "Regenerate Letter" : "Generate with AI"}
+                </Button>
+              </div>
+
+              {!coverLetter ? (
+                <div className="py-24 text-center space-y-6 bg-white/[0.01] border border-dashed border-white/[0.08] rounded-[32px]">
+                  <div className="w-20 h-20 bg-white/[0.02] border border-white/[0.06] rounded-3xl mx-auto flex items-center justify-center text-zinc-700">
+                    <Sparkles className="w-10 h-10 opacity-40" />
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-zinc-400 font-bold text-lg tracking-tight">
+                      Your tailored letter is one click away
+                    </p>
+                    <p className="text-zinc-500 text-sm max-w-sm mx-auto font-medium leading-relaxed">
+                      {!jobDescription
+                        ? "Please add a Job Description in the 'AI Tools' panel first to personalize your letter."
+                        : "We'll analyze your achievements and match them to the job requirements."}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  <Textarea
+                    value={coverLetter}
+                    onChange={(e) => setCoverLetter(e.target.value)}
+                    className="min-h-[500px] bg-white/[0.02] border-white/[0.08] focus:border-indigo-500/40 text-zinc-200 text-sm p-8 leading-[1.8] font-serif rounded-[32px] transition-all resize-none shadow-inner"
+                    placeholder="Dear Hiring Manager..."
+                  />
+                  <div className="flex items-center justify-between pt-4 opacity-70">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
+                      AI Draft • Professional Tone •{" "}
+                      {coverLetter.split(" ").length} Words
+                    </span>
+                    <Button
+                      variant="ghost"
+                      className="text-xs font-bold text-zinc-400 hover:text-white"
+                      onClick={() => setCoverLetter(null)}
+                    >
+                      Discard & Restart
+                    </Button>
+                  </div>
+                </div>
+              )}
             </motion.div>
           )}
         </Card>
