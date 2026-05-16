@@ -161,7 +161,7 @@ export const AdminSettings = () => {
         </Button>
 
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogContent className="max-w-2xl w-[95vw] z-[10001] p-8 bg-background border-2 border-primary/20 shadow-2xl shadow-primary/10">
+          <DialogContent className="fixed left-1/2 top-[10vh] -translate-x-1/2 translate-y-0 max-w-2xl w-[95vw] z-[10001] p-8 bg-background border-2 border-primary/20 shadow-2xl shadow-primary/10">
             <DialogHeader className="mb-6 text-left">
               <DialogTitle className="text-3xl font-bold">Add System Flag</DialogTitle>
               <DialogDescription className="text-lg text-muted-foreground">
