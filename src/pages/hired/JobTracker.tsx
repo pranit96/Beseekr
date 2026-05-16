@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, ChangeEvent } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { resumeApi, JobApplication } from "../../api/resume";
+import { resumeApi, type JobApplication } from "../../api/resume";
 import {
   Briefcase,
   Plus,
@@ -38,11 +38,7 @@ export default function JobTracker() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
 
-  useEffect(() => {
-    fetchApplications();
-  }, []);
-
-  const fetchApplications = async () => {
+  const fetchApplications = useCallback(async () => {
     setIsLoading(true);
     try {
       const data = await resumeApi.getApplications();
@@ -56,7 +52,11 @@ export default function JobTracker() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    fetchApplications();
+  }, [fetchApplications]);
 
   const handleUpdateStatus = async (
     id: string,

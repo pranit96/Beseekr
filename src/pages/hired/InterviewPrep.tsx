@@ -6,8 +6,8 @@ import {
   InterviewPrepKit,
   JobApplication,
   ResumeSchema,
-} from "../../api/resume";
-import { useResume } from "../../contexts/ResumeContext";
+} from "@/api/resume";
+import { useResume } from "@/contexts/ResumeContext";
 import {
   Target,
   ArrowLeft,
@@ -24,19 +24,19 @@ import {
   ChevronRight,
   RefreshCcw,
 } from "lucide-react";
-import { Button } from "../../components/ui/button";
-import { Badge } from "../../components/ui/badge";
-import { Progress } from "../../components/ui/progress";
-import { Card } from "../../components/ui/card";
-import { useToast } from "../../hooks/use-toast";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Card } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-} from "../../components/ui/tabs";
+} from "@/components/ui/tabs";
 
-import { GlobalFooter } from "../../components/GlobalFooter";
+import { GlobalFooter } from "@/components/GlobalFooter";
 
 export default function InterviewPrep() {
   const location = useLocation();
@@ -64,11 +64,12 @@ export default function InterviewPrep() {
         title: "Prep Kit Ready",
         description: "AI has analyzed your rounds and skill gaps.",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
       toast({
         variant: "destructive",
         title: "Prep failed",
-        description: error.message,
+        description: errorMessage,
       });
     } finally {
       setIsLoading(false);

@@ -34,7 +34,7 @@ export interface ProgressUpdate {
   timestamp: string;
   message?: string;
   progress?: number; // Backend sends this directly
-  [key: string]: any; // Additional stage-specific data
+  [key: string]: unknown; // Additional stage-specific data
 }
 
 // ✅ Backend sends this structure
@@ -55,7 +55,7 @@ export interface SessionResult {
     tokens_consumed: number;
     avg_specialist_quality: string;
   };
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 // ✅ Backend sends this structure
@@ -218,8 +218,9 @@ class DeepAnalyticsSocketService {
       try {
         this.socket.removeAllListeners();
         this.socket.disconnect();
-      } catch (error: any) {
-        logger.error("Error during disconnect", { error: error.message });
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        logger.error("Error during disconnect", { error: errorMessage });
       }
       this.socket = null;
     }
@@ -490,7 +491,7 @@ class DeepAnalyticsSocketService {
     });
 
     // ✅ Backend emits 'stats' (pro only)
-    this.socket.on("stats", (data: any) => {
+    this.socket.on("stats", (data: unknown) => {
       logger.info("📊 Stats", data);
     });
   }

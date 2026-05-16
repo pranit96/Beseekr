@@ -11,29 +11,32 @@ interface ConnectionStatusData {
 }
 
 interface OrchestrationCallbacks {
-  onAck?: (data: any) => void;
-  onToken?: (agentId: string, token: string, raw: any) => void;
-  onAgentStart?: (agentId: string, agentName: string, raw: any) => void;
-  onAgentToken?: (agentId: string, token: string, raw: any) => void;
-  onAgentDone?: (agentId: string, usage: any, raw: any) => void;
-  onAgentError?: (agentId: string, error: any, raw: any) => void;
-  onDone?: (data: any) => void;
-  onError?: (data: any) => void;
-  onWarning?: (data: any) => void;
-  onRateLimit?: (data: any) => void;
+  onAck?: (data: { requestId: string; [key: string]: any }) => void;
+  onToken?: (agentId: string, token: string, raw: { requestId: string; [key: string]: any }) => void;
+  onAgentStart?: (agentId: string, agentName: string, raw: { requestId: string; [key: string]: any }) => void;
+  onAgentToken?: (agentId: string, token: string, raw: { requestId: string; [key: string]: any }) => void;
+  onAgentDone?: (agentId: string, usage: any, raw: { requestId: string; [key: string]: any }) => void;
+  onAgentError?: (agentId: string, error: any, raw: { requestId: string; [key: string]: any }) => void;
+  onDone?: (data: { requestId: string; results: any[]; [key: string]: any }) => void;
+  onError?: (data: { requestId: string; error: string; [key: string]: any }) => void;
+  onWarning?: (data: { requestId: string; message: string; [key: string]: any }) => void;
+  onRateLimit?: (data: { requestId?: string; reason: string; [key: string]: any }) => void;
   onProgress?: (data: {
+    requestId: string;
     step: number;
     total: number;
     agent_id?: string;
     agent_name?: string;
   }) => void;
-  onCancelled?: (data: any) => void;
+  onCancelled?: (data: { requestId: string; [key: string]: any }) => void;
   onToolStart?: (data: {
+    requestId: string;
     call_id: string;
     tool_name: string;
     agent_id: string;
   }) => void;
   onToolResult?: (data: {
+    requestId: string;
     call_id: string;
     tool_name: string;
     agent_id: string;

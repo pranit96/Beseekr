@@ -5,24 +5,29 @@ import { createLogger } from "@/services/logging";
 
 const logger = createLogger("useAutonomousWorkflow");
 
+interface WorkflowEvent {
+  requestId: string;
+  [key: string]: any;
+}
+
 interface WorkflowCallbacks {
-  onAck?: (data: any) => void;
-  onPhase?: (data: any) => void;
-  onStatus?: (data: any) => void;
-  onPlan?: (data: any) => void;
-  onAgentCreated?: (data: any) => void;
-  onAgentStart?: (data: any) => void;
-  onAgentToken?: (data: any) => void;
-  onAgentProgress?: (data: any) => void;
-  onAgentDone?: (data: any) => void;
-  onToolStart?: (data: any) => void;
-  onToolResult?: (data: any) => void;
-  onAdversarialStart?: (data: any) => void;
-  onAdversarialToken?: (data: any) => void;
-  onAdversarialDone?: (data: any) => void;
-  onSynthesisToken?: (data: any) => void;
-  onDone?: (data: any) => void;
-  onError?: (data: any) => void;
+  onAck?: (data: WorkflowEvent) => void;
+  onPhase?: (data: WorkflowEvent & { phase: string }) => void;
+  onStatus?: (data: WorkflowEvent & { status: string }) => void;
+  onPlan?: (data: WorkflowEvent & { plan: any }) => void;
+  onAgentCreated?: (data: WorkflowEvent & { agent_id: string; agent_name: string }) => void;
+  onAgentStart?: (data: WorkflowEvent & { agent_id: string; agent_name: string }) => void;
+  onAgentToken?: (data: WorkflowEvent & { agent_id: string; token: string }) => void;
+  onAgentProgress?: (data: WorkflowEvent & { progress: number }) => void;
+  onAgentDone?: (data: WorkflowEvent & { agent_id: string; usage: any }) => void;
+  onToolStart?: (data: WorkflowEvent & { tool_name: string }) => void;
+  onToolResult?: (data: WorkflowEvent & { tool_name: string; success: boolean }) => void;
+  onAdversarialStart?: (data: WorkflowEvent) => void;
+  onAdversarialToken?: (data: WorkflowEvent & { token: string }) => void;
+  onAdversarialDone?: (data: WorkflowEvent) => void;
+  onSynthesisToken?: (data: WorkflowEvent & { token: string }) => void;
+  onDone?: (data: WorkflowEvent & { output: string }) => void;
+  onError?: (data: WorkflowEvent & { error: string }) => void;
   onCancelReady?: (fn: () => void) => void;
   onCancelled?: () => void;
 }
@@ -102,64 +107,64 @@ const useAutonomousWorkflow = () => {
         cleanup();
       };
 
-      const onAck = (data: any) => {
+      const onAck = (data: WorkflowEvent) => {
         if (data.requestId === requestId) callbacks.onAck?.(data);
       };
-      const onPhase = (data: any) => {
+      const onPhase = (data: WorkflowEvent & { phase: string }) => {
         if (data.requestId === requestId) callbacks.onPhase?.(data);
       };
-      const onStatus = (data: any) => {
+      const onStatus = (data: WorkflowEvent & { status: string }) => {
         if (data.requestId === requestId) callbacks.onStatus?.(data);
       };
-      const onPlan = (data: any) => {
+      const onPlan = (data: WorkflowEvent & { plan: any }) => {
         if (data.requestId === requestId) callbacks.onPlan?.(data);
       };
-      const onAgentCreated = (data: any) => {
+      const onAgentCreated = (data: WorkflowEvent & { agent_id: string; agent_name: string }) => {
         if (data.requestId === requestId) callbacks.onAgentCreated?.(data);
       };
-      const onAgentStart = (data: any) => {
+      const onAgentStart = (data: WorkflowEvent & { agent_id: string; agent_name: string }) => {
         if (data.requestId === requestId) callbacks.onAgentStart?.(data);
       };
-      const onAgentToken = (data: any) => {
+      const onAgentToken = (data: WorkflowEvent & { agent_id: string; token: string }) => {
         if (data.requestId === requestId) callbacks.onAgentToken?.(data);
       };
-      const onAgentProgress = (data: any) => {
+      const onAgentProgress = (data: WorkflowEvent & { progress: number }) => {
         if (data.requestId === requestId) callbacks.onAgentProgress?.(data);
       };
-      const onAgentDone = (data: any) => {
+      const onAgentDone = (data: WorkflowEvent & { agent_id: string; usage: any }) => {
         if (data.requestId === requestId) callbacks.onAgentDone?.(data);
       };
-      const onToolStart = (data: any) => {
+      const onToolStart = (data: WorkflowEvent & { tool_name: string }) => {
         if (data.requestId === requestId) callbacks.onToolStart?.(data);
       };
-      const onToolResult = (data: any) => {
+      const onToolResult = (data: WorkflowEvent & { tool_name: string; success: boolean }) => {
         if (data.requestId === requestId) callbacks.onToolResult?.(data);
       };
-      const onAdversarialStart = (data: any) => {
+      const onAdversarialStart = (data: WorkflowEvent) => {
         if (data.requestId === requestId) callbacks.onAdversarialStart?.(data);
       };
-      const onAdversarialToken = (data: any) => {
+      const onAdversarialToken = (data: WorkflowEvent & { token: string }) => {
         if (data.requestId === requestId) callbacks.onAdversarialToken?.(data);
       };
-      const onAdversarialDone = (data: any) => {
+      const onAdversarialDone = (data: WorkflowEvent) => {
         if (data.requestId === requestId) callbacks.onAdversarialDone?.(data);
       };
-      const onSynthesisToken = (data: any) => {
+      const onSynthesisToken = (data: WorkflowEvent & { token: string }) => {
         if (data.requestId === requestId) callbacks.onSynthesisToken?.(data);
       };
-      const onDone = (data: any) => {
+      const onDone = (data: WorkflowEvent & { output: string }) => {
         if (data.requestId === requestId) {
           callbacks.onDone?.(data);
           cleanup();
         }
       };
-      const onError = (data: any) => {
+      const onError = (data: WorkflowEvent & { error: string }) => {
         if (data.requestId === requestId) {
           callbacks.onError?.(data);
           cleanup();
         }
       };
-      const onCancelled = (data: any) => {
+      const onCancelled = (data: WorkflowEvent) => {
         // Some backends don't send requestId on cancel ACK — accept both
         if (!data?.requestId || data.requestId === requestId) {
           callbacks.onCancelled?.();

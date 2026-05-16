@@ -1,5 +1,7 @@
-// API Client Configuration with Enhanced Error Handling
 import { createLogger } from "@/services/logging";
+import { User, AuthResponse, SignupResponse, LoginResponse } from "@/types/auth";
+import { Agent, AgentTemplate, AgentStats } from "@/types/agent";
+import { Conversation, Message } from "@/types/conversation";
 
 const logger = createLogger("APIClient");
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -17,8 +19,8 @@ interface ApiResponse<T> {
   };
 }
 
-interface PendingRequest {
-  resolve: (value: any) => void;
+interface PendingRequest<T = any> {
+  resolve: (value: ApiResponse<T>) => void;
   reject: (error: any) => void;
   endpoint: string;
   options: RequestInit;
@@ -27,9 +29,9 @@ interface PendingRequest {
 class ApiClient {
   private baseUrl: string;
   private onUnauthorized?: () => void;
-  private requestCache: Map<string, { data: any; timestamp: number }> =
+  private requestCache: Map<string, { data: ApiResponse<any>; timestamp: number }> =
     new Map();
-  private pendingRequests: Map<string, Promise<any>> = new Map();
+  private pendingRequests: Map<string, Promise<ApiResponse<any>>> = new Map();
   private readonly CACHE_TTL = 30000; // 30 seconds cache
   private isRefreshingSession = false;
   private refreshPromise: Promise<void> | null = null;
@@ -296,30 +298,30 @@ class ApiClient {
   }
 
   // Auth endpoints
-  async signup(email: string, password: string, full_name: string) {
+  async signup(email: string, password: string, full_name: string): Promise<SignupResponse> {
     this.clearCache();
     return this.request<any>("/api/auth/signup", {
       method: "POST",
       body: JSON.stringify({ email, password, full_name }),
-    });
+    }) as Promise<SignupResponse>;
   }
 
-  async login(email: string, password: string) {
+  async login(email: string, password: string): Promise<LoginResponse> {
     this.clearCache();
     return this.request<any>("/api/auth/login", {
       method: "POST",
       body: JSON.stringify({ email, password }),
-    });
+    }) as Promise<LoginResponse>;
   }
 
-  async logout() {
+  async logout(): Promise<ApiResponse<void>> {
     this.clearCache();
-    return this.request<any>("/api/auth/logout", {
+    return this.request<void>("/api/auth/logout", {
       method: "POST",
     });
   }
 
-  async getCurrentUser() {
+  async getCurrentUser(): Promise<AuthResponse> {
     // Don't cache this - always fetch fresh
     // Adding timestamp to bypass deduplication of pending requests
     return this.request<any>(`/api/auth/me?t=${Date.now()}`, {
@@ -327,7 +329,7 @@ class ApiClient {
         "Cache-Control": "no-cache, no-store, must-revalidate",
         Pragma: "no-cache",
       },
-    });
+    }) as Promise<AuthResponse>;
   }
   async exportData() {
     return this.request<any>("/api/auth/export");
@@ -375,49 +377,48 @@ class ApiClient {
     });
   }
 
-  // Agent endpoints
-  async getAgents(params?: { domain?: string; page?: number; limit?: number }) {
+  async getAgents(params?: { domain?: string; page?: number; limit?: number }): Promise<ApiResponse<{ agents: Agent[] }>> {
     const query = new URLSearchParams(params as any).toString();
     return this.request<any>(`/api/agents?${query}`);
   }
 
-  async getMyAgents() {
-    return this.request<any>("/api/agents/my");
+  async getMyAgents(): Promise<ApiResponse<Agent[]>> {
+    return this.request<Agent[]>("/api/agents/my");
   }
 
-  async createAgent(agent: any) {
+  async createAgent(agent: Partial<Agent>): Promise<ApiResponse<Agent>> {
     this.invalidateCache("/api/agents");
-    return this.request<any>("/api/agents", {
+    return this.request<Agent>("/api/agents", {
       method: "POST",
       body: JSON.stringify(agent),
     });
   }
 
-  async generateAgent(description: string) {
-    return this.request<any>("/api/agents/generate", {
+  async generateAgent(description: string): Promise<ApiResponse<Agent>> {
+    return this.request<Agent>("/api/agents/generate", {
       method: "POST",
       body: JSON.stringify({ description }),
     });
   }
 
-  async updateAgent(id: string, agent: any) {
+  async updateAgent(id: string, agent: Partial<Agent>): Promise<ApiResponse<Agent>> {
     this.invalidateCache("/api/agents");
-    return this.request<any>(`/api/agents/${id}`, {
+    return this.request<Agent>(`/api/agents/${id}`, {
       method: "PATCH",
       body: JSON.stringify(agent),
     });
   }
 
-  async deleteAgent(id: string) {
+  async deleteAgent(id: string): Promise<ApiResponse<void>> {
     this.invalidateCache("/api/agents");
-    return this.request<any>(`/api/agents/${id}`, {
+    return this.request<void>(`/api/agents/${id}`, {
       method: "DELETE",
     });
   }
 
-  async duplicateAgent(id: string) {
+  async duplicateAgent(id: string): Promise<ApiResponse<Agent>> {
     this.invalidateCache("/api/agents");
-    return this.request<any>(`/api/agents/${id}/duplicate`, {
+    return this.request<Agent>(`/api/agents/${id}/duplicate`, {
       method: "POST",
     });
   }
@@ -443,12 +444,12 @@ class ApiClient {
     });
   }
 
-  async getAgentTemplates() {
-    return this.request<any>("/api/agents/templates");
+  async getAgentTemplates(): Promise<ApiResponse<AgentTemplate[]>> {
+    return this.request<AgentTemplate[]>("/api/agents/templates");
   }
 
-  async getAgentStats(id: string) {
-    return this.request<any>(`/api/agents/${id}/stats`);
+  async getAgentStats(id: string): Promise<ApiResponse<AgentStats>> {
+    return this.request<AgentStats>(`/api/agents/${id}/stats`);
   }
 
   async enhanceAgentPrompt(
@@ -551,7 +552,7 @@ class ApiClient {
     status?: "active" | "archived";
     page?: number;
     limit?: number;
-  }) {
+  }): Promise<ApiResponse<{ conversations: Conversation[] }>> {
     const queryParams = new URLSearchParams();
     if (params?.status) queryParams.append("status", params.status);
     if (params?.page) queryParams.append("page", params.page.toString());
@@ -564,17 +565,17 @@ class ApiClient {
   async createConversation(conversation: {
     agent_id?: string | null;
     title?: string;
-  }) {
+  }): Promise<ApiResponse<Conversation>> {
     this.invalidateCache("/api/conversations");
-    return this.request<any>("/api/conversations", {
+    return this.request<Conversation>("/api/conversations", {
       method: "POST",
       body: JSON.stringify(conversation),
     });
   }
 
-  async deleteConversation(conversationId: string) {
+  async deleteConversation(conversationId: string): Promise<ApiResponse<void>> {
     this.invalidateCache("/api/conversations");
-    return this.request<any>(`/api/conversations/${conversationId}`, {
+    return this.request<void>(`/api/conversations/${conversationId}`, {
       method: "DELETE",
     });
   }
@@ -582,16 +583,16 @@ class ApiClient {
   async updateConversationStatus(
     conversationId: string,
     status: "active" | "archived",
-  ) {
+  ): Promise<ApiResponse<Conversation>> {
     this.invalidateCache("/api/conversations");
-    return this.request<any>(`/api/conversations/${conversationId}`, {
+    return this.request<Conversation>(`/api/conversations/${conversationId}`, {
       method: "PUT",
       body: JSON.stringify({ status }),
     });
   }
 
   // Message endpoints
-  async getMessages(conversation_id: string, page?: number, limit?: number) {
+  async getMessages(conversation_id: string, page?: number, limit?: number): Promise<ApiResponse<{ messages: Message[] }>> {
     const queryParams = new URLSearchParams();
     queryParams.append("page", (page || 1).toString());
     queryParams.append("limit", (limit || 50).toString());
@@ -635,7 +636,7 @@ class ApiClient {
     }>(`/api/thinkers/sessions/${sessionId}`);
   }
 
-  async getSessions(params?: { limit?: number; page?: number }) {
+  async getSessions(params?: { limit?: number; page?: number }): Promise<ApiResponse<{ sessions: any[]; pagination?: any }>> {
     const query = new URLSearchParams(params as any).toString();
     const response: any = await this.request<any>(
       `/api/thinkers/sessions${query ? `?${query}` : ""}`,
@@ -721,15 +722,15 @@ class ApiClient {
     });
   }
 
-  async submitSupplementalInputs(sessionId: string, data: Record<string, any>) {
+  async submitSupplementalInputs(sessionId: string, data: Record<string, unknown>): Promise<ApiResponse<{
+    success: boolean;
+    message: string;
+    sessionId: string;
+    jobId: string;
+    reprocessing: boolean;
+  }>> {
     this.invalidateCache("/api/thinkers/sessions");
-    return this.request<{
-      success: boolean;
-      message: string;
-      sessionId: string;
-      jobId: string;
-      reprocessing: boolean;
-    }>(`/api/thinkers/sessions/${sessionId}/inputs`, {
+    return this.request<any>(`/api/thinkers/sessions/${sessionId}/inputs`, {
       method: "POST",
       body: JSON.stringify(data),
     });

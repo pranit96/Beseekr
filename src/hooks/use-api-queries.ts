@@ -8,6 +8,8 @@ import {
 import { apiClient } from "@/lib/api";
 import { getBlogs, getBlog, getTopics, subscribeNewsletter } from "@/api/blogs";
 import { useToast } from "@/hooks/use-toast";
+import { Agent, AgentTemplate, AgentStats } from "@/types/agent";
+import { Conversation, Message } from "@/types/conversation";
 
 // Query Keys
 export const queryKeys = {
@@ -19,10 +21,10 @@ export const queryKeys = {
     ["messages", conversationId, page] as const,
   usageStats: (startDate?: string, endDate?: string) =>
     ["usage", "stats", startDate, endDate] as const,
-  usageLogs: (params?: any) => ["usage", "logs", params] as const,
+  usageLogs: (params?: { start_date?: string; end_date?: string; page?: number }) => ["usage", "logs", params] as const,
   sessionDetails: (sessionId: string) =>
     ["thinkers", "sessions", sessionId] as const,
-  sessions: (params?: any) => ["thinkers", "sessions", params] as const,
+  sessions: (params?: { limit?: number; page?: number }) => ["thinkers", "sessions", params] as const,
   currentUser: ["auth", "me"] as const,
   blogs: (topic?: string, search?: string) => ["blogs", topic, search] as const,
   blog: (slug: string) => ["blog", slug] as const,
@@ -61,7 +63,7 @@ export function useCreateAgent() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: (agent: any) => apiClient.createAgent(agent),
+    mutationFn: (agent: Partial<Agent>) => apiClient.createAgent(agent),
     onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.myAgents });
       queryClient.invalidateQueries({ queryKey: queryKeys.agents });
@@ -72,7 +74,7 @@ export function useCreateAgent() {
         });
       }
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({
         title: "Failed to create agent",
         description: error.message,
@@ -87,7 +89,7 @@ export function useUpdateAgent() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: ({ id, agent }: { id: string; agent: any }) =>
+    mutationFn: ({ id, agent }: { id: string; agent: Partial<Agent> }) =>
       apiClient.updateAgent(id, agent),
     onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.myAgents });
@@ -99,7 +101,7 @@ export function useUpdateAgent() {
         });
       }
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({
         title: "Failed to update agent",
         description: error.message,
@@ -123,7 +125,7 @@ export function useDeleteAgent() {
         description: "The agent has been permanently deleted.",
       });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({
         title: "Failed to delete agent",
         description: error.message,
@@ -174,7 +176,7 @@ export function useDeleteConversation() {
         description: "The conversation has been permanently deleted.",
       });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({
         title: "Failed to delete conversation",
         description: error.message,
@@ -209,7 +211,7 @@ export function useUpdateConversationStatus() {
             : "The conversation has been restored to active list.",
       });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({
         title: "Failed to update conversation",
         description: error.message,

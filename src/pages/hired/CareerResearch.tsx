@@ -12,14 +12,14 @@ import {
   Zap,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "../../components/ui/button";
-import { Input } from "../../components/ui/input";
-import { Badge } from "../../components/ui/badge";
-import { Card } from "../../components/ui/card";
-import { resumeApi } from "../../api/resume";
-import { toast } from "../../hooks/use-toast";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { resumeApi } from "@/api/resume";
+import { toast } from "@/hooks/use-toast";
 
-import { GlobalFooter } from "../../components/GlobalFooter";
+import { GlobalFooter } from "@/components/GlobalFooter";
 
 export default function CareerResearch() {
   const navigate = useNavigate();
