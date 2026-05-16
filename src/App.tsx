@@ -132,7 +132,7 @@ const SaasWatchlist = lazyRetry(
 );
 const Pricing = lazyRetry(() => import("./pages/saas/Pricing"), "Pricing");
 const GetHiredPortal = lazyRetry(
-  () => import("./pages/GetHiredPortal"),
+  () => import("./pages/hired/GetHiredPortal"),
   "GetHiredPortal",
 );
 const ResumeUpload = lazyRetry(
@@ -147,10 +147,17 @@ const ResumeWorkspace = lazyRetry(
   () => import("./pages/ResumeWorkspace"),
   "ResumeWorkspace",
 );
-const JobTracker = lazyRetry(() => import("./pages/JobTracker"), "JobTracker");
+const JobTracker = lazyRetry(
+  () => import("./pages/hired/JobTracker"),
+  "JobTracker",
+);
 const InterviewPrep = lazyRetry(
-  () => import("./pages/InterviewPrep"),
+  () => import("./pages/hired/InterviewPrep"),
   "InterviewPrep",
+);
+const CareerResearch = lazyRetry(
+  () => import("./pages/hired/CareerResearch"),
+  "CareerResearch",
 );
 
 // Trading System pages with retry logic
@@ -502,6 +509,14 @@ const App = () => {
                         element={
                           <Suspense fallback={<PageLoader />}>
                             <InterviewPrep />
+                          </Suspense>
+                        }
+                      />
+                      <Route
+                        path="research"
+                        element={
+                          <Suspense fallback={<PageLoader />}>
+                            <CareerResearch />
                           </Suspense>
                         }
                       />

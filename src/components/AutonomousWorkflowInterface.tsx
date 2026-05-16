@@ -208,36 +208,6 @@ const AgentNode: React.FC<AgentNodeProps> = ({
         {isRunning && <Loader2 className="w-6 h-6 animate-spin" />}
         {agent.status === "pending" && <Icon className="w-5 h-5 opacity-80" />}
       </motion.div>
-
-      {/* Label — hidden to keep UI clean */}
-      {false && (
-        <div
-          className="mt-2 text-center"
-          style={{ width: 80, marginLeft: -12 }}
-        >
-          <p className="text-[10px] font-semibold leading-tight text-foreground/80 truncate">
-            {agent.name}
-          </p>
-          <p
-            className="text-[9px] leading-tight mt-0.5 font-medium"
-            style={{
-              color: isRunning
-                ? palette.from
-                : isDone
-                  ? "#10b981"
-                  : "var(--muted-foreground)",
-            }}
-          >
-            {isRunning
-              ? "Running"
-              : isDone
-                ? "Done"
-                : isError
-                  ? "Error"
-                  : "Waiting"}
-          </p>
-        </div>
-      )}
     </motion.div>
   );
 };

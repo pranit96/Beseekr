@@ -98,8 +98,8 @@ const NAV_ITEMS = {
   },
   resume: {
     key: "resume",
-    name: "Resume Builder",
-    href: "/dashboard/resume",
+    name: "Get Hired",
+    href: "/dashboard/hired",
     icon: FileText,
     color: "from-indigo-500 to-pink-500",
     exact: false,
@@ -107,7 +107,7 @@ const NAV_ITEMS = {
   resumeWorkspace: {
     key: "resumeWorkspace",
     name: "Workspace",
-    href: "/dashboard/resume/workspace",
+    href: "/dashboard/hired/resume",
     icon: Sparkles,
     color: "from-sky-400 to-indigo-500",
     exact: false,
@@ -126,8 +126,8 @@ function isPathActive(pathname: string, href: string, exact?: boolean) {
   if (exact) return pathname === href;
   // Special case: Do not highlight the general Resume Builder tab when viewing the active editor Workspace
   if (
-    href === "/dashboard/resume" &&
-    pathname.startsWith("/dashboard/resume/workspace")
+    href === "/dashboard/hired" &&
+    pathname.startsWith("/dashboard/hired/resume")
   ) {
     return false;
   }
@@ -137,7 +137,7 @@ function isPathActive(pathname: string, href: string, exact?: boolean) {
 function getNavigationContext(pathname: string, isPremium: boolean) {
   const isChatContext =
     pathname.startsWith("/chat") || pathname.startsWith("/agents");
-  const isResumeContext = pathname.startsWith("/dashboard/resume");
+  const isResumeContext = pathname.startsWith("/dashboard/hired");
   const isDiscoverContext =
     pathname.startsWith("/dashboard") &&
     !pathname.startsWith("/dashboard/profile");

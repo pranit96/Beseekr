@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/rules-of-hooks */
 // e2e/fixtures/auth.fixture.ts
 // Authentication fixtures for tests that require logged-in state
 

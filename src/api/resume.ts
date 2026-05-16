@@ -315,6 +315,14 @@ export async function generateInterviewPrep(payload: {
   return res.data;
 }
 
+export async function performCareerResearch(
+  query: string,
+  filters?: string[],
+): Promise<any> {
+  const res = await apiClient.post("/api/resume/research", { query, filters });
+  return res.data;
+}
+
 export const resumeApi = {
   uploadAndParseResume,
   scoreResume,
@@ -333,6 +341,7 @@ export const resumeApi = {
   deleteApplication,
   generateCoverLetter,
   generateInterviewPrep,
+  performCareerResearch,
 };
 
 export default resumeApi;

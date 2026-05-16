@@ -56,7 +56,7 @@ export default function MarkdownRenderer({
     const out: string[] = [];
 
     for (let i = 0; i < lines.length; i++) {
-      let line = lines[i];
+      const line = lines[i];
       const trimmedLine = line.trim();
       const nextLine = (lines[i + 1] || "").trim();
 

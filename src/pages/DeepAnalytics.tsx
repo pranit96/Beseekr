@@ -188,45 +188,6 @@ const DeepAnalytics = () => {
     }
   }, [user, authLoading, navigate, toast]);
 
-  // Show loading while checking auth
-  if (authLoading) {
-    return (
-      <div className="min-h-screen bg-background flex flex-col">
-        <GlobalHeader />
-        <div className="flex-1 flex items-center justify-center">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        </div>
-      </div>
-    );
-  }
-
-  // Don't render if not authenticated (will redirect)
-  if (!user) {
-    return null;
-  }
-
-  const result: FullSession | null =
-    sessionData?.success && sessionData.data
-      ? {
-          id: sessionData.data.id,
-          problem: sessionData.data.problem,
-          status: sessionData.data.status,
-          created_at: sessionData.data.created_at || new Date().toISOString(),
-          tier: sessionData.data.tier,
-          context: sessionData.data.context || undefined,
-          final_solution: {
-            content: sessionData.data.final_solution || "",
-            format: sessionData.data.output_format || "markdown",
-          },
-          files: sessionData.data.files || [],
-          thinking_ideations: sessionData.data.thinking_ideations || [],
-          execution_metrics: sessionData.data.execution_metrics,
-        }
-      : null;
-
-  const showResult =
-    (!!result && !isProcessing) || (isCompleted && socketResult);
-
   // Load sidebar state from sessionStorage
   useEffect(() => {
     const savedSidebarState = sessionStorage.getItem(
@@ -380,6 +341,78 @@ const DeepAnalytics = () => {
       }
     }
   }, [sessionError, currentSessionId, toast]);
+
+  const loadedSessionRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (
+      result &&
+      isPreviewing &&
+      currentSessionId &&
+      result.id !== loadedSessionRef.current
+    ) {
+      loadedSessionRef.current = result.id;
+      setProblem(result.problem || "");
+      setContext(result.context || "");
+      if (result.files && Array.isArray(result.files)) {
+        const sessionFiles: UploadedFile[] = result.files.map(
+          (f: SessionFile) => ({
+            id: f.id,
+            name: f.filename,
+            size: f.file_size,
+            type: f.content_type,
+          }),
+        );
+        setFiles(sessionFiles);
+        setUploadedFileIds(result.files.map((f) => f.id));
+      } else {
+        setFiles([]);
+        setUploadedFileIds([]);
+      }
+    }
+    if (!isPreviewing) {
+      loadedSessionRef.current = null;
+    }
+  }, [result, isPreviewing, currentSessionId]);
+
+  // Show loading while checking auth
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col">
+        <GlobalHeader />
+        <div className="flex-1 flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render if not authenticated (will redirect)
+  if (!user) {
+    return null;
+  }
+
+  const result: FullSession | null =
+    sessionData?.success && sessionData.data
+      ? {
+          id: sessionData.data.id,
+          problem: sessionData.data.problem,
+          status: sessionData.data.status,
+          created_at: sessionData.data.created_at || new Date().toISOString(),
+          tier: sessionData.data.tier,
+          context: sessionData.data.context || undefined,
+          final_solution: {
+            content: sessionData.data.final_solution || "",
+            format: sessionData.data.output_format || "markdown",
+          },
+          files: sessionData.data.files || [],
+          thinking_ideations: sessionData.data.thinking_ideations || [],
+          execution_metrics: sessionData.data.execution_metrics,
+        }
+      : null;
+
+  const showResult =
+    (!!result && !isProcessing) || (isCompleted && socketResult);
 
   // FILE HANDLING
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -875,39 +908,6 @@ const DeepAnalytics = () => {
       description: "Ready to start a new analysis",
     });
   };
-
-  const loadedSessionRef = useRef<string | null>(null);
-
-  useEffect(() => {
-    if (
-      result &&
-      isPreviewing &&
-      currentSessionId &&
-      result.id !== loadedSessionRef.current
-    ) {
-      loadedSessionRef.current = result.id;
-      setProblem(result.problem || "");
-      setContext(result.context || "");
-      if (result.files && Array.isArray(result.files)) {
-        const sessionFiles: UploadedFile[] = result.files.map(
-          (f: SessionFile) => ({
-            id: f.id,
-            name: f.filename,
-            size: f.file_size,
-            type: f.content_type,
-          }),
-        );
-        setFiles(sessionFiles);
-        setUploadedFileIds(result.files.map((f) => f.id));
-      } else {
-        setFiles([]);
-        setUploadedFileIds([]);
-      }
-    }
-    if (!isPreviewing) {
-      loadedSessionRef.current = null;
-    }
-  }, [result, isPreviewing, currentSessionId]);
 
   // DOWNLOAD HANDLING
   const handleDownload = (

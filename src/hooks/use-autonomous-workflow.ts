@@ -92,7 +92,7 @@ const useAutonomousWorkflow = () => {
 
       const cancel = () => {
         try {
-          // @ts-ignore - accessing private socket property
+          // @ts-expect-error - accessing private socket property
           socketService.socket?.emit("autonomous_workflow:cancel", {
             requestId,
           });
@@ -200,7 +200,7 @@ const useAutonomousWorkflow = () => {
       callbacks.onCancelReady?.(cancel);
 
       // Emit execute request
-      // @ts-ignore - accessing private socket property
+      // @ts-expect-error - accessing private socket property
       socketService.socket?.emit("autonomous_workflow:execute", payload);
 
       return { cleanup, cancel };

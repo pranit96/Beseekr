@@ -20,15 +20,6 @@ export const useLayout = (): LayoutContextType => {
 export const ProtectedLayout: React.FC = () => {
   const { user, loading } = useAuth();
 
-  // auth gating similar to what you had before
-  if (loading)
-    return (
-      <div className="flex items-center justify-center h-screen">
-        Loading...
-      </div>
-    );
-  if (!user) return <Navigate to="/auth" replace />;
-
   // Sidebar state lives here now
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(() => {
     const saved =
@@ -41,6 +32,15 @@ export const ProtectedLayout: React.FC = () => {
   useEffect(() => {
     sessionStorage.setItem("sidebarOpen", sidebarOpen.toString());
   }, [sidebarOpen]);
+
+  // auth gating similar to what you had before
+  if (loading)
+    return (
+      <div className="flex items-center justify-center h-screen">
+        Loading...
+      </div>
+    );
+  if (!user) return <Navigate to="/auth" replace />;
 
   return (
     <LayoutContext.Provider value={{ sidebarOpen, setSidebarOpen }}>

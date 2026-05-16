@@ -22,6 +22,7 @@ import {
   ShieldCheck,
   History,
   RotateCcw,
+  MessageSquare,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -55,6 +56,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { ATSAnalysis, resumeApi } from "@/api/resume";
+import { GlobalFooter } from "@/components/GlobalFooter";
 
 export default function ResumeWorkspace() {
   const { toast } = useToast();
@@ -509,1517 +511,1598 @@ export default function ResumeWorkspace() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full min-h-screen selection:bg-white/10 flex flex-col gap-8">
-      {/* Sleek Modern Page Header Toolbar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 animate-in fade-in slide-in-from-top-4 duration-500">
-        <div className="space-y-2 text-left">
-          <div className="flex items-center gap-2.5">
-            <Button
-              size="icon"
-              variant="ghost"
-              onClick={() => navigate("/dashboard/resume")}
-              className="h-8 w-8 rounded-xl bg-white/[0.03] border border-white/[0.08] text-zinc-400 hover:text-white hover:bg-white/[0.08] shrink-0 transition-all"
-              title="Back to Portal"
-            >
-              <ArrowLeft className="h-3.5 w-3.5" />
-            </Button>
-            <span className="text-[10px] font-extrabold tracking-[0.15em] text-zinc-500 uppercase select-none">
-              RESUME BUILDER <span className="text-zinc-700 px-1">/</span>{" "}
-              WORKSPACE
-            </span>
-          </div>
-          <h1 className="text-3xl font-black tracking-tight text-white">
-            Edit Your Resume
-          </h1>
-        </div>
+    <div className="h-screen flex flex-col bg-[#09090b] text-foreground overflow-hidden selection:bg-white/10">
+      {/* ── STICKY HEADER TOOLBAR ───────────────────────────────────── */}
+      <div className="sticky top-0 z-50 bg-[#09090b]/80 backdrop-blur-xl border-b border-white/[0.05] shrink-0">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="space-y-1 text-left">
+              <div className="flex items-center gap-2.5">
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={() => navigate("/dashboard/hired")}
+                  className="h-7 w-7 rounded-lg bg-white/[0.03] border border-white/[0.08] text-zinc-400 hover:text-white hover:bg-white/[0.08] shrink-0 transition-all"
+                  title="Back to Portal"
+                >
+                  <ArrowLeft className="h-3 w-3" />
+                </Button>
+                <span className="text-[9px] font-black tracking-[0.2em] text-zinc-500 uppercase select-none">
+                  GET HIRED <span className="text-zinc-700 px-0.5">/</span>{" "}
+                  WORKSPACE
+                </span>
+              </div>
+              <h1 className="text-xl font-black tracking-tight text-white leading-none">
+                {resumeData.personal_info.name || "Untitled Resume"}
+              </h1>
+            </div>
 
-        {/* TOOLBAR ACTION ROW */}
-        <div className="flex items-center gap-2.5 flex-wrap shrink-0">
-          {/* Auto-Save status indicator */}
-          <div className="mr-1">
-            {saveStatus === "saving" && (
-              <Badge className="bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 px-3 py-1 rounded-xl text-[9px] font-bold flex items-center gap-1.5 animate-pulse tracking-wider uppercase">
-                <Loader2 className="h-2.5 w-2.5 animate-spin" /> Saving
-              </Badge>
-            )}
-            {saveStatus === "saved" && (
-              <Badge className="bg-[#065F46]/5 border border-[#065F46]/20 text-emerald-400 px-3 py-1 rounded-xl text-[9px] font-bold flex items-center gap-1.5 select-none tracking-wider uppercase">
-                <ShieldCheck className="h-3 w-3" /> Secured
-              </Badge>
-            )}
-            {saveStatus === "error" && (
-              <Badge className="bg-red-500/5 border border-red-500/20 text-red-400 px-3 py-1 rounded-xl text-[9px] font-bold flex items-center gap-1.5 tracking-wider uppercase">
-                <X className="h-3 w-3" /> Offline
-              </Badge>
-            )}
-          </div>
-
-          <Button
-            onClick={handleClearWorkspace}
-            variant="outline"
-            className="rounded-xl font-bold border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.06] text-zinc-400 hover:text-zinc-200 shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-all h-9 px-3 text-xs"
-          >
-            <Trash2 className="h-3.5 w-3.5 mr-1.5 text-zinc-500" />
-            Reset
-          </Button>
-
-          <Button
-            onClick={handleBackupToVault}
-            disabled={isBackingUp}
-            variant="outline"
-            className="rounded-xl font-bold border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.06] text-zinc-400 hover:text-zinc-200 shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-all h-9 px-3 text-xs"
-          >
-            {isBackingUp ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
-            ) : (
-              <History className="h-3.5 w-3.5 mr-1.5 text-zinc-500" />
-            )}
-            Backup
-          </Button>
-
-          {/* INTEGRATED AI OPTIMIZER BUTTON */}
-          <Button
-            onClick={() => setIsAiPanelOpen(true)}
-            className="rounded-xl font-extrabold border border-indigo-500/30 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 hover:text-white shadow-lg shadow-indigo-500/5 hover:scale-[1.02] active:scale-[0.98] transition-all h-9 px-3.5 text-xs tracking-tight"
-          >
-            <Sparkles className="h-3.5 w-3.5 mr-1.5 text-indigo-400 animate-pulse" />
-            AI Optimizer
-          </Button>
-
-          {/* PRIMARY CTA FOR PREVIEW & EXPORT */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                disabled={isDownloading || isPreviewLoading}
-                className="rounded-xl font-black bg-white text-black hover:bg-zinc-200 shadow-[0_8px_24px_-8px_rgba(255,255,255,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all h-9 px-4 text-xs uppercase tracking-wider border-none flex items-center gap-2"
-              >
-                {isDownloading || isPreviewLoading ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <Download className="h-3.5 w-3.5" />
+            {/* TOOLBAR ACTION ROW */}
+            <div className="flex items-center gap-2 flex-wrap shrink-0">
+              {/* Auto-Save status indicator */}
+              <div className="mr-2">
+                {saveStatus === "saving" && (
+                  <div className="flex items-center gap-1.5 text-indigo-400 animate-pulse">
+                    <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                    <span className="text-[9px] font-black uppercase tracking-tighter">
+                      Saving
+                    </span>
+                  </div>
                 )}
-                Export
+                {saveStatus === "saved" && (
+                  <div className="flex items-center gap-1.5 text-emerald-500/80">
+                    <ShieldCheck className="h-3 w-3" />
+                    <span className="text-[9px] font-black uppercase tracking-tighter">
+                      Synced
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              <div className="h-4 w-px bg-white/[0.08] mx-1 hidden sm:block" />
+
+              <Button
+                onClick={handleClearWorkspace}
+                variant="ghost"
+                className="rounded-lg font-bold text-zinc-500 hover:text-red-400 hover:bg-red-500/5 transition-all h-8 px-2.5 text-[10px] uppercase tracking-wider"
+              >
+                Reset
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="bg-zinc-950 border-white/[0.1] text-zinc-300 rounded-xl">
-              <DropdownMenuItem
-                onClick={handleExportPdf}
-                className="font-bold text-xs py-2.5"
+
+              <Button
+                onClick={handleBackupToVault}
+                disabled={isBackingUp}
+                variant="ghost"
+                className="rounded-lg font-bold text-zinc-500 hover:text-white hover:bg-white/5 transition-all h-8 px-2.5 text-[10px] uppercase tracking-wider"
               >
-                <FileText className="w-3.5 h-3.5 mr-2 opacity-60" /> Download
-                PDF
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={handleExportWord}
-                className="font-bold text-xs py-2.5"
+                {isBackingUp ? (
+                  <Loader2 className="h-3 w-3 animate-spin mr-1.5" />
+                ) : (
+                  <History className="h-3 w-3 mr-1.5 opacity-50" />
+                )}
+                Backup
+              </Button>
+
+              <div className="h-4 w-px bg-white/[0.08] mx-1 hidden sm:block" />
+
+              {/* INTEGRATED AI OPTIMIZER BUTTON */}
+              <Button
+                onClick={() => setIsAiPanelOpen(true)}
+                className="rounded-lg font-black bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 hover:text-white border border-indigo-500/20 transition-all h-8 px-3 text-[10px] uppercase tracking-wider"
               >
-                <Briefcase className="w-3.5 h-3.5 mr-2 opacity-60" /> Download
-                Word (.docx)
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                <Sparkles className="h-3 w-3 mr-1.5 text-indigo-400 animate-pulse" />
+                AI Optimizer
+              </Button>
+
+              {/* PRIMARY CTA FOR PREVIEW & EXPORT */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    disabled={isDownloading || isPreviewLoading}
+                    className="rounded-lg font-black bg-white text-black hover:bg-zinc-200 transition-all h-8 px-4 text-[10px] uppercase tracking-widest border-none shadow-xl shadow-white/5"
+                  >
+                    Export
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="bg-zinc-950 border-white/[0.1] text-zinc-300 rounded-xl">
+                  <DropdownMenuItem
+                    onClick={handleExportPdf}
+                    className="font-bold text-xs py-2.5"
+                  >
+                    <FileText className="w-3.5 h-3.5 mr-2 opacity-60" /> PDF
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={handleExportWord}
+                    className="font-bold text-xs py-2.5"
+                  >
+                    <Briefcase className="w-3.5 h-3.5 mr-2 opacity-60" /> Word
+                    (.docx)
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
         </div>
       </div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1, duration: 0.5 }}
-        className="w-full pb-24 relative space-y-6"
-      >
-        {/* FULL WIDTH CAPSULE TAB LIST */}
-        <div className="flex items-center justify-between gap-1.5 p-1.5 bg-[#0c0c12]/40 border border-white/[0.05] rounded-2xl backdrop-blur-3xl shadow-lg w-full overflow-x-auto select-none">
-          {[
-            { id: "personal", label: "Personal", icon: User },
-            { id: "experience", label: "Experience", icon: Briefcase },
-            { id: "education", label: "Education", icon: GraduationCap },
-            { id: "skills", label: "Skills & Projects", icon: Cpu },
-            { id: "design", label: "Theme Settings", icon: Sparkles },
-            { id: "coverletter", label: "Cover Letter", icon: MessageSquare },
-          ].map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-[11px] font-extrabold tracking-wide uppercase transition-all duration-200 outline-none min-w-[110px] ${
-                  isActive
-                    ? "bg-white text-black shadow-[0_4px_20px_rgba(255,255,255,0.15)] scale-[1.01]"
-                    : "text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.02]"
-                }`}
-              >
-                <Icon
-                  className={`h-3.5 w-3.5 ${isActive ? "text-black" : "text-zinc-600 group-hover:text-zinc-400"}`}
-                />
-                {tab.label}
-              </button>
-            );
-          })}
-        </div>
+      {/* ── SCROLLABLE MAIN CONTENT ────────────────────────────────── */}
+      <main className="flex-1 overflow-y-auto custom-scrollbar relative">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1, duration: 0.5 }}
+            className="w-full relative space-y-6"
+          >
+            {/* FULL WIDTH CAPSULE TAB LIST */}
+            <div className="flex items-center justify-between gap-1.5 p-1.5 bg-[#0c0c12]/40 border border-white/[0.05] rounded-2xl backdrop-blur-3xl shadow-lg w-full overflow-x-auto select-none">
+              {[
+                { id: "personal", label: "Personal", icon: User },
+                { id: "experience", label: "Experience", icon: Briefcase },
+                { id: "education", label: "Education", icon: GraduationCap },
+                { id: "skills", label: "Skills & Projects", icon: Cpu },
+                { id: "design", label: "Theme Settings", icon: Sparkles },
+                {
+                  id: "coverletter",
+                  label: "Cover Letter",
+                  icon: MessageSquare,
+                },
+              ].map((tab) => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-[11px] font-extrabold tracking-wide uppercase transition-all duration-200 outline-none min-w-[110px] ${
+                      isActive
+                        ? "bg-white text-black shadow-[0_4px_20px_rgba(255,255,255,0.15)] scale-[1.01]"
+                        : "text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.02]"
+                    }`}
+                  >
+                    <Icon
+                      className={`h-3.5 w-3.5 ${isActive ? "text-black" : "text-zinc-600 group-hover:text-zinc-400"}`}
+                    />
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
 
-        <Card className="border border-white/[0.06] bg-[#07070b]/60 backdrop-blur-3xl rounded-[24px] p-6 sm:p-10 shadow-[0_32px_96px_-32px_rgba(0,0,0,0.8)] min-h-[500px] transition-all duration-300">
-          {activeTab === "personal" && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="space-y-8"
-            >
-              <div className="space-y-1.5 text-left">
-                <h2 className="text-lg font-bold text-white flex items-center gap-2.5">
-                  <div className="p-1.5 bg-indigo-500/10 border border-indigo-500/20 rounded-lg">
-                    <User className="h-4 w-4 text-indigo-400" />
-                  </div>
-                  Personal Details
-                </h2>
-                <p className="text-xs text-zinc-500 font-medium">
-                  Tell employers who you are and how to reach you.
-                </p>
-              </div>
-
-              <div className="grid sm:grid-cols-2 gap-6 border-t border-white/[0.03] pt-6">
-                <div className="space-y-2 text-left">
-                  <Label className="text-[10px] font-extrabold uppercase tracking-widest text-zinc-500 ml-1">
-                    Full Name
-                  </Label>
-                  <Input
-                    value={resumeData.personal_info.name}
-                    onChange={(e) => updatePersonalInfo("name", e.target.value)}
-                    placeholder="Your full name"
-                    className="bg-white/[0.02] focus:bg-white/[0.04] border-white/[0.06] focus:border-indigo-500/40 focus:ring-0 text-zinc-200 rounded-2xl h-12 px-4 transition-all text-sm"
-                  />
-                </div>
-                <div className="space-y-2 text-left">
-                  <Label className="text-[10px] font-extrabold uppercase tracking-widest text-zinc-500 ml-1">
-                    Email Address
-                  </Label>
-                  <Input
-                    value={resumeData.personal_info.email}
-                    onChange={(e) =>
-                      updatePersonalInfo("email", e.target.value)
-                    }
-                    placeholder="you@email.com"
-                    className="bg-white/[0.02] focus:bg-white/[0.04] border-white/[0.06] focus:border-indigo-500/40 focus:ring-0 text-zinc-200 rounded-2xl h-12 px-4 transition-all text-sm"
-                  />
-                </div>
-                <div className="space-y-2 text-left">
-                  <Label className="text-[10px] font-extrabold uppercase tracking-widest text-zinc-500 ml-1">
-                    Phone Number
-                  </Label>
-                  <Input
-                    value={resumeData.personal_info.phone}
-                    onChange={(e) =>
-                      updatePersonalInfo("phone", e.target.value)
-                    }
-                    placeholder="+1 234 567 8900"
-                    className="bg-white/[0.02] focus:bg-white/[0.04] border-white/[0.06] focus:border-indigo-500/40 focus:ring-0 text-zinc-200 rounded-2xl h-12 px-4 transition-all text-sm"
-                  />
-                </div>
-                <div className="space-y-2 text-left">
-                  <Label className="text-[10px] font-extrabold uppercase tracking-widest text-zinc-500 ml-1">
-                    Website / Link
-                  </Label>
-                  <Input
-                    value={resumeData.personal_info.website}
-                    onChange={(e) =>
-                      updatePersonalInfo("website", e.target.value)
-                    }
-                    placeholder="github.com/alias"
-                    className="bg-white/[0.02] focus:bg-white/[0.04] border-white/[0.06] focus:border-indigo-500/40 focus:ring-0 text-zinc-200 rounded-2xl h-12 px-4 transition-all text-sm"
-                  />
-                </div>
-              </div>
-              <div className="space-y-2 text-left border-t border-white/[0.03] pt-6">
-                <Label className="text-[10px] font-extrabold uppercase tracking-widest text-zinc-500 ml-1">
-                  Summary
-                </Label>
-                <Textarea
-                  value={resumeData.personal_info.summary}
-                  onChange={(e) =>
-                    updatePersonalInfo("summary", e.target.value)
-                  }
-                  placeholder="A brief overview of your professional background and core strengths."
-                  className="bg-white/[0.02] focus:bg-white/[0.04] border-white/[0.06] focus:border-indigo-500/40 focus:ring-0 text-zinc-200 rounded-2xl min-h-[120px] px-4 py-3 leading-relaxed transition-all text-sm resize-none shadow-inner"
-                />
-              </div>
-            </motion.div>
-          )}
-
-          {activeTab === "experience" && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="space-y-8"
-            >
-              <div className="flex items-center justify-between border-b border-white/[0.03] pb-5">
-                <div className="space-y-1.5 text-left">
-                  <h2 className="text-lg font-bold text-white flex items-center gap-2.5">
-                    <div className="p-1.5 bg-sky-500/10 border border-sky-500/20 rounded-lg">
-                      <Briefcase className="h-4 w-4 text-sky-400" />
-                    </div>
-                    Work Experience
-                  </h2>
-                  <p className="text-xs text-zinc-500 font-medium">
-                    Highlight your previous roles and impact.
-                  </p>
-                </div>
-                <Button
-                  size="sm"
-                  onClick={addExperience}
-                  className="h-9 font-bold text-xs bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-zinc-200 rounded-xl flex items-center gap-1.5 px-4 transition-all"
+            <Card className="border border-white/[0.06] bg-[#07070b]/60 backdrop-blur-3xl rounded-[24px] p-6 sm:p-10 shadow-[0_32px_96px_-32px_rgba(0,0,0,0.8)] min-h-[500px] transition-all duration-300">
+              {activeTab === "personal" && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="space-y-8"
                 >
-                  <Plus className="w-3.5 h-3.5" /> Add Role
-                </Button>
-              </div>
-
-              <div className="space-y-6 pt-2">
-                {resumeData.experience.length === 0 ? (
-                  <div className="text-center py-12 border border-dashed border-white/[0.05] rounded-[24px] text-zinc-500 text-xs bg-white/[0.01]">
-                    No work history items added yet.
-                  </div>
-                ) : (
-                  resumeData.experience.map((exp, idx) => (
-                    <div
-                      key={idx}
-                      className="p-6 rounded-[24px] bg-white/[0.01] hover:bg-white/[0.02] border border-white/[0.05] relative space-y-6 transition-all group/exp text-left shadow-md"
-                    >
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => deleteExperience(idx)}
-                        className="absolute top-4 right-4 text-zinc-500 hover:text-red-400 hover:bg-red-500/10 opacity-0 group-hover/exp:opacity-100 transition-all duration-300 h-8 w-8 rounded-lg"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-
-                      <div className="grid sm:grid-cols-2 gap-5">
-                        <div className="space-y-2">
-                          <Label className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-500 ml-1">
-                            Company
-                          </Label>
-                          <Input
-                            value={exp.company}
-                            onChange={(e) =>
-                              updateExperience(idx, "company", e.target.value)
-                            }
-                            placeholder="e.g., Stripe"
-                            className="bg-white/[0.02] focus:bg-white/[0.04] border-white/[0.06] focus:border-sky-500/40 text-sm text-zinc-200 rounded-2xl h-11 px-3.5 transition-all"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-500 ml-1">
-                            Position / Title
-                          </Label>
-                          <Input
-                            value={exp.position}
-                            onChange={(e) =>
-                              updateExperience(idx, "position", e.target.value)
-                            }
-                            placeholder="Staff Software Engineer"
-                            className="bg-white/[0.02] focus:bg-white/[0.04] border-white/[0.06] focus:border-sky-500/40 text-sm text-zinc-200 rounded-2xl h-11 px-3.5 transition-all"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-500 ml-1">
-                            Dates
-                          </Label>
-                          <Input
-                            value={exp.period}
-                            onChange={(e) =>
-                              updateExperience(idx, "period", e.target.value)
-                            }
-                            placeholder="Jan 2022 - Present"
-                            className="bg-white/[0.02] focus:bg-white/[0.04] border-white/[0.06] focus:border-sky-500/40 text-sm text-zinc-200 rounded-2xl h-11 px-3.5 transition-all font-mono"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-500 ml-1">
-                            Location / City
-                          </Label>
-                          <Input
-                            value={exp.location}
-                            onChange={(e) =>
-                              updateExperience(idx, "location", e.target.value)
-                            }
-                            placeholder="San Francisco, CA"
-                            className="bg-white/[0.02] focus:bg-white/[0.04] border-white/[0.06] focus:border-sky-500/40 text-sm text-zinc-200 rounded-2xl h-11 px-3.5 transition-all"
-                          />
-                        </div>
+                  <div className="space-y-1.5 text-left">
+                    <h2 className="text-lg font-bold text-white flex items-center gap-2.5">
+                      <div className="p-1.5 bg-indigo-500/10 border border-indigo-500/20 rounded-lg">
+                        <User className="h-4 w-4 text-indigo-400" />
                       </div>
-
-                      <div className="space-y-3 pt-2">
-                        <Label className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5 ml-1">
-                          <Sparkles className="h-3 w-3 text-sky-400 animate-pulse" />{" "}
-                          Role Achievements
-                        </Label>
-                        <div className="space-y-2.5">
-                          {exp.highlights.map((bullet, bIdx) => (
-                            <div
-                              key={bIdx}
-                              className="flex gap-2 group/bullet items-start"
-                            >
-                              <Textarea
-                                value={bullet}
-                                onChange={(e) => {
-                                  const nextHighlights = [...exp.highlights];
-                                  nextHighlights[bIdx] = e.target.value;
-                                  updateExperience(
-                                    idx,
-                                    "highlights",
-                                    nextHighlights,
-                                  );
-                                }}
-                                className="bg-white/[0.01] border-white/[0.06] focus:border-sky-500/40 min-h-[64px] text-sm text-zinc-200 rounded-xl px-3 py-2 leading-relaxed resize-none transition-all flex-1"
-                                placeholder="Designed highly available microservices processing 50k payloads/sec..."
-                              />
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                onClick={() => {
-                                  const nextHighlights = exp.highlights.filter(
-                                    (_, i) => i !== bIdx,
-                                  );
-                                  updateExperience(
-                                    idx,
-                                    "highlights",
-                                    nextHighlights,
-                                  );
-                                }}
-                                className="h-8 w-8 text-zinc-600 hover:text-red-400 hover:bg-red-500/10 rounded-lg opacity-0 group-hover/bullet:opacity-100 transition-all mt-1 shrink-0"
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </Button>
-                            </div>
-                          ))}
-                        </div>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() =>
-                            updateExperience(idx, "highlights", [
-                              ...exp.highlights,
-                              "",
-                            ])
-                          }
-                          className="text-[11px] text-sky-400 hover:text-sky-300 font-bold px-1.5 hover:bg-sky-500/5 transition-all flex items-center gap-1.5 mt-1 rounded-lg"
-                        >
-                          <Plus className="h-3.5 w-3.5" /> Add Bullet Point
-                        </Button>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </motion.div>
-          )}
-
-          {activeTab === "education" && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="space-y-8"
-            >
-              <div className="flex items-center justify-between border-b border-white/[0.03] pb-5">
-                <div className="space-y-1.5 text-left">
-                  <h2 className="text-lg font-bold text-white flex items-center gap-2.5">
-                    <div className="p-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
-                      <GraduationCap className="h-4 w-4 text-emerald-400" />
-                    </div>
-                    Education History
-                  </h2>
-                  <p className="text-xs text-zinc-500 font-medium">
-                    Degrees, certifications and institutions.
-                  </p>
-                </div>
-                <Button
-                  size="sm"
-                  onClick={addEducation}
-                  className="h-9 font-bold text-xs bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-zinc-200 rounded-xl flex items-center gap-1.5 px-4 transition-all"
-                >
-                  <Plus className="w-3.5 h-3.5" /> Add Degree
-                </Button>
-              </div>
-
-              <div className="space-y-6 pt-2">
-                {resumeData.education.length === 0 ? (
-                  <div className="text-center py-12 border border-dashed border-white/[0.05] rounded-[24px] text-zinc-500 text-xs bg-white/[0.01]">
-                    No education records added yet.
-                  </div>
-                ) : (
-                  resumeData.education.map((edu, idx) => (
-                    <div
-                      key={idx}
-                      className="p-6 rounded-[24px] bg-white/[0.01] hover:bg-white/[0.02] border border-white/[0.05] relative space-y-4 transition-all group/edu text-left shadow-md"
-                    >
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => deleteEducation(idx)}
-                        className="absolute top-4 right-4 text-zinc-500 hover:text-red-400 hover:bg-red-500/10 opacity-0 group-hover/edu:opacity-100 transition-all duration-300 h-8 w-8 rounded-lg"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                      <div className="grid sm:grid-cols-2 gap-5">
-                        <div className="space-y-2">
-                          <Label className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-500 ml-1">
-                            Institution Name
-                          </Label>
-                          <Input
-                            value={edu.institution}
-                            onChange={(e) =>
-                              updateEducation(
-                                idx,
-                                "institution",
-                                e.target.value,
-                              )
-                            }
-                            placeholder="e.g., Stanford University"
-                            className="bg-white/[0.02] focus:bg-white/[0.04] border-white/[0.06] focus:border-emerald-500/40 text-sm text-zinc-200 rounded-2xl h-11 px-3.5 transition-all"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-500 ml-1">
-                            Degree / Discipline
-                          </Label>
-                          <Input
-                            value={edu.degree}
-                            onChange={(e) =>
-                              updateEducation(idx, "degree", e.target.value)
-                            }
-                            placeholder="Bachelor of Science in Computer Science"
-                            className="bg-white/[0.02] focus:bg-white/[0.04] border-white/[0.06] focus:border-emerald-500/40 text-sm text-zinc-200 rounded-2xl h-11 px-3.5 transition-all"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-500 ml-1">
-                            Term Period
-                          </Label>
-                          <Input
-                            value={edu.period}
-                            onChange={(e) =>
-                              updateEducation(idx, "period", e.target.value)
-                            }
-                            placeholder="2018 - 2022"
-                            className="bg-white/[0.02] focus:bg-white/[0.04] border-white/[0.06] focus:border-emerald-500/40 text-sm text-zinc-200 font-mono rounded-2xl h-11 px-3.5 transition-all"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-500 ml-1">
-                            City / Country
-                          </Label>
-                          <Input
-                            value={edu.location}
-                            onChange={(e) =>
-                              updateEducation(idx, "location", e.target.value)
-                            }
-                            placeholder="Stanford, CA"
-                            className="bg-white/[0.02] focus:bg-white/[0.04] border-white/[0.06] focus:border-emerald-500/40 text-sm text-zinc-200 rounded-2xl h-11 px-3.5 transition-all"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </motion.div>
-          )}
-
-          {activeTab === "skills" && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="space-y-12 text-left"
-            >
-              <div className="space-y-6">
-                <div className="flex items-center justify-between border-b border-white/[0.03] pb-4">
-                  <div className="space-y-1">
-                    <h2 className="text-base font-bold text-zinc-100 flex items-center gap-2.5">
-                      <div className="p-1.5 bg-purple-500/10 border border-purple-500/20 rounded-lg">
-                        <Cpu className="h-4 w-4 text-purple-400" />
-                      </div>
-                      Skills
+                      Personal Details
                     </h2>
-                    <p className="text-[11px] text-zinc-500 font-medium">
-                      Categorized tech stacks and keywords.
+                    <p className="text-xs text-zinc-500 font-medium">
+                      Tell employers who you are and how to reach you.
                     </p>
                   </div>
-                  <Button
-                    size="sm"
-                    onClick={addSkillCategory}
-                    className="h-8 font-bold text-[11px] bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 transition-all"
-                  >
-                    <Plus className="w-3 h-3 mr-1" /> Add Category
-                  </Button>
-                </div>
 
-                <div className="space-y-4 pt-2">
-                  {resumeData.skills.map((skill, idx) => (
-                    <div
-                      key={idx}
-                      className="flex gap-4 items-start group/skill bg-white/[0.01] hover:bg-white/[0.02] p-5 border border-white/[0.04] rounded-2xl transition-all"
-                    >
-                      <div className="w-1/3 space-y-1.5">
-                        <Label className="text-[10px] font-extrabold tracking-wider uppercase text-zinc-500 ml-1">
-                          Skill Category
-                        </Label>
-                        <Input
-                          value={skill.category}
-                          onChange={(e) =>
-                            updateSkillGroup(
-                              idx,
-                              e.target.value,
-                              skill.items.join(", "),
-                            )
-                          }
-                          placeholder="e.g., Languages"
-                          className="bg-white/[0.02] focus:bg-white/[0.04] border-white/[0.06] text-xs text-zinc-200 font-bold rounded-xl h-10 transition-all"
-                        />
-                      </div>
-                      <div className="flex-1 space-y-1.5">
-                        <Label className="text-[10px] font-extrabold tracking-wider uppercase text-zinc-500 ml-1">
-                          List (Comma Separated)
-                        </Label>
-                        <Input
-                          value={skill.items.join(", ")}
-                          onChange={(e) =>
-                            updateSkillGroup(
-                              idx,
-                              skill.category,
-                              e.target.value,
-                            )
-                          }
-                          placeholder="TypeScript, Python, Rust..."
-                          className="bg-white/[0.02] focus:bg-white/[0.04] border-white/[0.06] text-xs text-zinc-200 rounded-xl h-10 transition-all"
-                        />
-                      </div>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() =>
-                          setResumeData((p) => ({
-                            ...p,
-                            skills: p.skills.filter((_, i) => i !== idx),
-                          }))
-                        }
-                        className="mt-6 h-9 w-9 shrink-0 text-zinc-500 hover:text-red-400 hover:bg-red-500/10 rounded-xl opacity-0 group-hover/skill:opacity-100 transition-all"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-6 border-t border-white/[0.03] pt-10">
-                <div className="flex items-center justify-between border-b border-white/[0.03] pb-4">
-                  <div className="space-y-1">
-                    <h2 className="text-base font-bold text-zinc-100 flex items-center gap-2.5">
-                      <div className="p-1.5 bg-sky-500/10 border border-sky-500/20 rounded-lg">
-                        <FileText className="h-4 w-4 text-sky-400" />
-                      </div>
-                      Key Projects
-                    </h2>
-                    <p className="text-[11px] text-zinc-500 font-medium">
-                      Demonstrate capability via built deliverables.
-                    </p>
-                  </div>
-                  <Button
-                    size="sm"
-                    onClick={addProject}
-                    className="h-8 font-bold text-[11px] bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 transition-all"
-                  >
-                    <Plus className="w-3 h-3 mr-1" /> Add Project
-                  </Button>
-                </div>
-
-                <div className="space-y-6 pt-2">
-                  {resumeData.projects.map((proj, idx) => (
-                    <div
-                      key={idx}
-                      className="p-5 rounded-[24px] bg-white/[0.01] hover:bg-white/[0.02] border border-white/[0.05] relative space-y-4 transition-all group/proj shadow-sm"
-                    >
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => deleteProject(idx)}
-                        className="absolute top-4 right-4 text-zinc-500 hover:text-red-400 hover:bg-red-500/10 opacity-0 group-hover/proj:opacity-100 transition-all duration-300 h-8 w-8 rounded-lg"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-
-                      <div className="grid sm:grid-cols-2 gap-4">
-                        <div className="space-y-1.5">
-                          <Label className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-500 ml-1">
-                            Project Title
-                          </Label>
-                          <Input
-                            value={proj.name}
-                            onChange={(e) =>
-                              updateProject(idx, "name", e.target.value)
-                            }
-                            placeholder="Task Scheduler Suite"
-                            className="bg-white/[0.02] focus:bg-white/[0.04] border-white/[0.06] focus:border-sky-500/40 text-sm text-zinc-200 rounded-xl h-10 px-3.5 transition-all"
-                          />
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-500 ml-1 flex items-center gap-1">
-                            Link{" "}
-                            <span className="text-[8px] opacity-40">
-                              (Optional)
-                            </span>
-                          </Label>
-                          <Input
-                            value={proj.link}
-                            onChange={(e) =>
-                              updateProject(idx, "link", e.target.value)
-                            }
-                            placeholder="github.com/owner/repo"
-                            className="bg-white/[0.02] focus:bg-white/[0.04] border-white/[0.06] focus:border-sky-500/40 text-sm text-zinc-200 font-mono rounded-xl h-10 px-3.5 transition-all"
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-500 ml-1">
-                          Brief Description
-                        </Label>
-                        <Input
-                          value={proj.description}
-                          onChange={(e) =>
-                            updateProject(idx, "description", e.target.value)
-                          }
-                          placeholder="High-performance workflow engine built with Rust and Redis..."
-                          className="bg-white/[0.02] focus:bg-white/[0.04] border-white/[0.06] focus:border-sky-500/40 text-sm text-zinc-200 rounded-xl h-10 px-3.5 transition-all"
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-400 ml-1">
-                          Project Highlights
-                        </Label>
-                        <div className="space-y-2">
-                          {proj.highlights?.map((b, bIdx) => (
-                            <div
-                              key={bIdx}
-                              className="flex gap-2 group/proj-bullet items-start"
-                            >
-                              <Input
-                                value={b}
-                                onChange={(e) => {
-                                  const nextH = [...(proj.highlights || [])];
-                                  nextH[bIdx] = e.target.value;
-                                  updateProject(idx, "highlights", nextH);
-                                }}
-                                className="bg-white/[0.01] border-white/[0.06] focus:border-sky-500/40 text-sm text-zinc-200 rounded-xl px-3.5 h-10 transition-all flex-1"
-                                placeholder="Achieved latency reduction of 40% in cluster operations..."
-                              />
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                onClick={() => {
-                                  const nextH = proj.highlights.filter(
-                                    (_, i) => i !== bIdx,
-                                  );
-                                  updateProject(idx, "highlights", nextH);
-                                }}
-                                className="h-9 w-9 text-zinc-600 hover:text-red-400 hover:bg-red-500/10 rounded-xl opacity-0 group-hover/proj-bullet:opacity-100 transition-all"
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </Button>
-                            </div>
-                          ))}
-                        </div>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() =>
-                            updateProject(idx, "highlights", [
-                              ...(proj.highlights || []),
-                              "",
-                            ])
-                          }
-                          className="text-[11px] text-sky-400 hover:text-sky-300 font-bold px-1.5 hover:bg-sky-500/5 flex items-center gap-1.5 rounded-lg"
-                        >
-                          <Plus className="h-3.5 w-3.5" /> Add Highlight
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-6 border-t border-white/[0.03] pt-10">
-                <div className="flex items-center justify-between border-b border-white/[0.03] pb-4">
-                  <div className="space-y-1">
-                    <h2 className="text-base font-bold text-zinc-100 flex items-center gap-2.5">
-                      <div className="p-1.5 bg-amber-500/10 border border-amber-500/20 rounded-lg">
-                        <Trophy className="h-4 w-4 text-amber-400" />
-                      </div>
-                      Certifications
-                    </h2>
-                    <p className="text-[11px] text-zinc-500 font-medium">
-                      Relevant professional certifications.
-                    </p>
-                  </div>
-                  <Button
-                    size="sm"
-                    onClick={addCertification}
-                    className="h-8 font-bold text-[11px] bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 transition-all"
-                  >
-                    <Plus className="w-3 h-3 mr-1" /> Add Cert
-                  </Button>
-                </div>
-
-                <div className="grid sm:grid-cols-2 gap-4 pt-2">
-                  {resumeData.certifications.map((cert, idx) => (
-                    <div
-                      key={idx}
-                      className="flex gap-2 group/cert bg-white/[0.01] hover:bg-white/[0.02] border border-white/[0.04] p-3 rounded-2xl transition-all"
-                    >
+                  <div className="grid sm:grid-cols-2 gap-6 border-t border-white/[0.03] pt-6">
+                    <div className="space-y-2 text-left">
+                      <Label className="text-[10px] font-extrabold uppercase tracking-widest text-zinc-500 ml-1">
+                        Full Name
+                      </Label>
                       <Input
-                        value={cert}
+                        value={resumeData.personal_info.name}
                         onChange={(e) =>
-                          updateCertification(idx, e.target.value)
+                          updatePersonalInfo("name", e.target.value)
                         }
-                        placeholder="e.g., AWS Architect Associate"
-                        className="bg-transparent focus:bg-white/[0.02] border-none focus:ring-0 text-sm text-zinc-200 h-9 flex-1 px-1.5 transition-all"
+                        placeholder="Your full name"
+                        className="bg-white/[0.02] focus:bg-white/[0.04] border-white/[0.06] focus:border-indigo-500/40 focus:ring-0 text-zinc-200 rounded-2xl h-12 px-4 transition-all text-sm"
                       />
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => deleteCertification(idx)}
-                        className="text-zinc-600 hover:text-red-400 opacity-0 group-hover/cert:opacity-100 transition-all h-9 w-9 rounded-xl"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
                     </div>
-                  ))}
-                </div>
-              </div>
-            </motion.div>
-          )}
-
-          {activeTab === "design" && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="space-y-8"
-            >
-              <div className="space-y-1.5 text-left">
-                <h2 className="text-lg font-bold text-white flex items-center gap-2.5">
-                  <div className="p-1.5 bg-amber-500/10 border border-amber-500/20 rounded-lg">
-                    <Sparkles className="h-4 w-4 text-amber-400 animate-pulse" />
-                  </div>
-                  Theme Options
-                </h2>
-                <p className="text-xs text-zinc-500 font-medium">
-                  Customize typography and header highlights.
-                </p>
-              </div>
-
-              <div className="grid sm:grid-cols-2 gap-8 border-t border-white/[0.03] pt-8 text-left">
-                <div className="space-y-4">
-                  <Label className="text-[10px] font-extrabold tracking-widest uppercase text-zinc-500 ml-1">
-                    Theme / Header Accent
-                  </Label>
-                  <div className="grid grid-cols-2 gap-3">
-                    {[
-                      {
-                        name: "Classic Navy",
-                        primary: "#1A365D",
-                        accent: "#3182CE",
-                      },
-                      {
-                        name: "Modern Emerald",
-                        primary: "#065F46",
-                        accent: "#059669",
-                      },
-                      {
-                        name: "Ruby Burgundy",
-                        primary: "#7F1D1D",
-                        accent: "#DC2626",
-                      },
-                      {
-                        name: "Deep Onyx",
-                        primary: "#111827",
-                        accent: "#4B5563",
-                      },
-                    ].map((theme) => {
-                      const isSelected =
-                        (resumeData.styles?.primaryColor || "#1A365D") ===
-                        theme.primary;
-                      return (
-                        <button
-                          key={theme.name}
-                          type="button"
-                          onClick={() => {
-                            updateStyleConfig("primaryColor", theme.primary);
-                            updateStyleConfig("accentColor", theme.accent);
-                          }}
-                          className={`flex items-center gap-3 p-3 rounded-2xl bg-white/[0.01] border transition-all text-left shadow-sm hover:bg-white/[0.03] ${
-                            isSelected
-                              ? "border-indigo-500/40 bg-indigo-500/5 ring-1 ring-indigo-500/20"
-                              : "border-white/[0.05]"
-                          }`}
-                        >
-                          <div
-                            className="h-6 w-6 rounded-full border border-white/10 shrink-0 shadow-inner flex items-center justify-center"
-                            style={{ backgroundColor: theme.primary }}
-                          >
-                            {isSelected && (
-                              <CheckCircle2 className="w-3 h-3 text-white bg-black/20 rounded-full" />
-                            )}
-                          </div>
-                          <span
-                            className={`text-xs font-bold ${isSelected ? "text-white" : "text-zinc-400"}`}
-                          >
-                            {theme.name}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <Label className="text-[10px] font-extrabold tracking-widest uppercase text-zinc-500 ml-1">
-                    Font Family
-                  </Label>
-                  <div className="grid grid-cols-2 gap-3">
-                    {[
-                      {
-                        id: "Sans",
-                        name: "Sans-Serif",
-                        class: "font-sans font-bold",
-                      },
-                      {
-                        id: "Serif",
-                        name: "Serif Modern",
-                        class: "font-serif font-black",
-                      },
-                    ].map((font) => {
-                      const isSelected =
-                        (resumeData.styles?.fontFamily || "Sans") === font.id;
-                      return (
-                        <button
-                          key={font.id}
-                          type="button"
-                          onClick={() =>
-                            updateStyleConfig("fontFamily", font.id)
-                          }
-                          className={`p-4 rounded-2xl border flex flex-col items-center justify-center gap-2 text-center transition-all bg-white/[0.01] hover:bg-white/[0.03] ${
-                            isSelected
-                              ? "border-indigo-500/40 bg-indigo-500/5 text-white shadow-md ring-1 ring-indigo-500/20"
-                              : "border-white/[0.05] text-zinc-400"
-                          }`}
-                        >
-                          <span
-                            className={`text-2xl leading-none ${font.class}`}
-                          >
-                            Aa
-                          </span>
-                          <span className="text-[11px] font-bold">
-                            {font.name}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          )}
-
-          {activeTab === "coverletter" && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="space-y-8"
-            >
-              <div className="flex items-center justify-between border-b border-white/[0.03] pb-6">
-                <div className="space-y-1.5 text-left">
-                  <h2 className="text-xl font-bold text-white flex items-center gap-3">
-                    <div className="p-2 bg-amber-500/10 border border-amber-500/20 rounded-xl">
-                      <Sparkles className="h-5 w-5 text-amber-400" />
+                    <div className="space-y-2 text-left">
+                      <Label className="text-[10px] font-extrabold uppercase tracking-widest text-zinc-500 ml-1">
+                        Email Address
+                      </Label>
+                      <Input
+                        value={resumeData.personal_info.email}
+                        onChange={(e) =>
+                          updatePersonalInfo("email", e.target.value)
+                        }
+                        placeholder="you@email.com"
+                        className="bg-white/[0.02] focus:bg-white/[0.04] border-white/[0.06] focus:border-indigo-500/40 focus:ring-0 text-zinc-200 rounded-2xl h-12 px-4 transition-all text-sm"
+                      />
                     </div>
-                    Cover Letter Studio
-                  </h2>
-                  <p className="text-sm text-zinc-500 font-medium leading-relaxed max-w-md">
-                    Generate a high-impact, tailored cover letter based on your
-                    current resume and job description.
-                  </p>
-                </div>
-                <Button
-                  disabled={isGeneratingCL || !jobDescription}
-                  onClick={handleGenerateCoverLetter}
-                  className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold h-11 px-8 rounded-2xl flex items-center gap-2.5 shadow-xl shadow-indigo-500/20 active:scale-95 transition-all"
+                    <div className="space-y-2 text-left">
+                      <Label className="text-[10px] font-extrabold uppercase tracking-widest text-zinc-500 ml-1">
+                        Phone Number
+                      </Label>
+                      <Input
+                        value={resumeData.personal_info.phone}
+                        onChange={(e) =>
+                          updatePersonalInfo("phone", e.target.value)
+                        }
+                        placeholder="+1 234 567 8900"
+                        className="bg-white/[0.02] focus:bg-white/[0.04] border-white/[0.06] focus:border-indigo-500/40 focus:ring-0 text-zinc-200 rounded-2xl h-12 px-4 transition-all text-sm"
+                      />
+                    </div>
+                    <div className="space-y-2 text-left">
+                      <Label className="text-[10px] font-extrabold uppercase tracking-widest text-zinc-500 ml-1">
+                        Website / Link
+                      </Label>
+                      <Input
+                        value={resumeData.personal_info.website}
+                        onChange={(e) =>
+                          updatePersonalInfo("website", e.target.value)
+                        }
+                        placeholder="github.com/alias"
+                        className="bg-white/[0.02] focus:bg-white/[0.04] border-white/[0.06] focus:border-indigo-500/40 focus:ring-0 text-zinc-200 rounded-2xl h-12 px-4 transition-all text-sm"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2 text-left border-t border-white/[0.03] pt-6">
+                    <Label className="text-[10px] font-extrabold uppercase tracking-widest text-zinc-500 ml-1">
+                      Summary
+                    </Label>
+                    <Textarea
+                      value={resumeData.personal_info.summary}
+                      onChange={(e) =>
+                        updatePersonalInfo("summary", e.target.value)
+                      }
+                      placeholder="A brief overview of your professional background and core strengths."
+                      className="bg-white/[0.02] focus:bg-white/[0.04] border-white/[0.06] focus:border-indigo-500/40 focus:ring-0 text-zinc-200 rounded-2xl min-h-[120px] px-4 py-3 leading-relaxed transition-all text-sm resize-none shadow-inner"
+                    />
+                  </div>
+                </motion.div>
+              )}
+
+              {activeTab === "experience" && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="space-y-8"
                 >
-                  {isGeneratingCL ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Sparkles className="w-4 h-4" />
-                  )}
-                  {coverLetter ? "Regenerate Letter" : "Generate with AI"}
-                </Button>
-              </div>
-
-              {!coverLetter ? (
-                <div className="py-24 text-center space-y-6 bg-white/[0.01] border border-dashed border-white/[0.08] rounded-[32px]">
-                  <div className="w-20 h-20 bg-white/[0.02] border border-white/[0.06] rounded-3xl mx-auto flex items-center justify-center text-zinc-700">
-                    <Sparkles className="w-10 h-10 opacity-40" />
-                  </div>
-                  <div className="space-y-2">
-                    <p className="text-zinc-400 font-bold text-lg tracking-tight">
-                      Your tailored letter is one click away
-                    </p>
-                    <p className="text-zinc-500 text-sm max-w-sm mx-auto font-medium leading-relaxed">
-                      {!jobDescription
-                        ? "Please add a Job Description in the 'AI Tools' panel first to personalize your letter."
-                        : "We'll analyze your achievements and match them to the job requirements."}
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-6">
-                  <Textarea
-                    value={coverLetter}
-                    onChange={(e) => setCoverLetter(e.target.value)}
-                    className="min-h-[500px] bg-white/[0.02] border-white/[0.08] focus:border-indigo-500/40 text-zinc-200 text-sm p-8 leading-[1.8] font-serif rounded-[32px] transition-all resize-none shadow-inner"
-                    placeholder="Dear Hiring Manager..."
-                  />
-                  <div className="flex items-center justify-between pt-4 opacity-70">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
-                      AI Draft • Professional Tone •{" "}
-                      {coverLetter.split(" ").length} Words
-                    </span>
+                  <div className="flex items-center justify-between border-b border-white/[0.03] pb-5">
+                    <div className="space-y-1.5 text-left">
+                      <h2 className="text-lg font-bold text-white flex items-center gap-2.5">
+                        <div className="p-1.5 bg-sky-500/10 border border-sky-500/20 rounded-lg">
+                          <Briefcase className="h-4 w-4 text-sky-400" />
+                        </div>
+                        Work Experience
+                      </h2>
+                      <p className="text-xs text-zinc-500 font-medium">
+                        Highlight your previous roles and impact.
+                      </p>
+                    </div>
                     <Button
-                      variant="ghost"
-                      className="text-xs font-bold text-zinc-400 hover:text-white"
-                      onClick={() => setCoverLetter(null)}
+                      size="sm"
+                      onClick={addExperience}
+                      className="h-9 font-bold text-xs bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-zinc-200 rounded-xl flex items-center gap-1.5 px-4 transition-all"
                     >
-                      Discard & Restart
+                      <Plus className="w-3.5 h-3.5" /> Add Role
                     </Button>
                   </div>
-                </div>
-              )}
-            </motion.div>
-          )}
-        </Card>
-      </motion.div>
 
-      {isAiPanelOpen && (
-        <>
-          <div
-            className="fixed inset-x-0 bottom-0 top-[72px] sm:top-[82px] z-[40] bg-black/30 backdrop-blur-sm animate-in fade-in duration-300"
-            onClick={() => setIsAiPanelOpen(false)}
-          />
+                  <div className="space-y-6 pt-2">
+                    {resumeData.experience.length === 0 ? (
+                      <div className="text-center py-12 border border-dashed border-white/[0.05] rounded-[24px] text-zinc-500 text-xs bg-white/[0.01]">
+                        No work history items added yet.
+                      </div>
+                    ) : (
+                      resumeData.experience.map((exp, idx) => (
+                        <div
+                          key={idx}
+                          className="p-6 rounded-[24px] bg-white/[0.01] hover:bg-white/[0.02] border border-white/[0.05] relative space-y-6 transition-all group/exp text-left shadow-md"
+                        >
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => deleteExperience(idx)}
+                            className="absolute top-4 right-4 text-zinc-500 hover:text-red-400 hover:bg-red-500/10 opacity-0 group-hover/exp:opacity-100 transition-all duration-300 h-8 w-8 rounded-lg"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
 
-          <div className="fixed top-[72px] sm:top-[82px] right-0 bottom-0 w-full max-w-[450px] z-[45] bg-zinc-950/95 border-l border-white/[0.08] shadow-2xl flex flex-col animate-in slide-in-from-right duration-300 backdrop-blur-2xl">
-            <div className="flex items-center justify-between px-6 py-5 border-b border-white/[0.06] shrink-0 select-none">
-              <div className="flex items-center gap-2.5">
-                <div className="p-1.5 bg-indigo-500/10 border border-indigo-500/20 rounded-xl">
-                  <Sparkles className="w-4 h-4 text-indigo-400" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-zinc-100 tracking-tight">
-                    AI Analysis & Tools
-                  </h3>
-                  <p className="text-[10px] text-zinc-500 font-semibold uppercase tracking-wider">
-                    ATS Scorer Engine
-                  </p>
-                </div>
-              </div>
-              <Button
-                size="icon"
-                variant="ghost"
-                onClick={() => setIsAiPanelOpen(false)}
-                className="h-8 w-8 text-zinc-400 hover:text-white hover:bg-white/[0.05] rounded-xl transition-all"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
+                          <div className="grid sm:grid-cols-2 gap-5">
+                            <div className="space-y-2">
+                              <Label className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-500 ml-1">
+                                Company
+                              </Label>
+                              <Input
+                                value={exp.company}
+                                onChange={(e) =>
+                                  updateExperience(
+                                    idx,
+                                    "company",
+                                    e.target.value,
+                                  )
+                                }
+                                placeholder="e.g., Stripe"
+                                className="bg-white/[0.02] focus:bg-white/[0.04] border-white/[0.06] focus:border-sky-500/40 text-sm text-zinc-200 rounded-2xl h-11 px-3.5 transition-all"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-500 ml-1">
+                                Position / Title
+                              </Label>
+                              <Input
+                                value={exp.position}
+                                onChange={(e) =>
+                                  updateExperience(
+                                    idx,
+                                    "position",
+                                    e.target.value,
+                                  )
+                                }
+                                placeholder="Staff Software Engineer"
+                                className="bg-white/[0.02] focus:bg-white/[0.04] border-white/[0.06] focus:border-sky-500/40 text-sm text-zinc-200 rounded-2xl h-11 px-3.5 transition-all"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-500 ml-1">
+                                Dates
+                              </Label>
+                              <Input
+                                value={exp.period}
+                                onChange={(e) =>
+                                  updateExperience(
+                                    idx,
+                                    "period",
+                                    e.target.value,
+                                  )
+                                }
+                                placeholder="Jan 2022 - Present"
+                                className="bg-white/[0.02] focus:bg-white/[0.04] border-white/[0.06] focus:border-sky-500/40 text-sm text-zinc-200 rounded-2xl h-11 px-3.5 transition-all font-mono"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-500 ml-1">
+                                Location / City
+                              </Label>
+                              <Input
+                                value={exp.location}
+                                onChange={(e) =>
+                                  updateExperience(
+                                    idx,
+                                    "location",
+                                    e.target.value,
+                                  )
+                                }
+                                placeholder="San Francisco, CA"
+                                className="bg-white/[0.02] focus:bg-white/[0.04] border-white/[0.06] focus:border-sky-500/40 text-sm text-zinc-200 rounded-2xl h-11 px-3.5 transition-all"
+                              />
+                            </div>
+                          </div>
 
-            <div className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar pb-16">
-              <Card className="p-5 border border-white/[0.06] bg-[#0c0c12] backdrop-blur-md rounded-2xl space-y-4 shadow-inner relative overflow-hidden">
-                <div className="flex items-center gap-2 mb-1 select-none text-left">
-                  <div className="p-1.5 bg-white/[0.02] border border-white/[0.08] rounded-lg text-zinc-400">
-                    <Trophy className="h-3.5 w-3.5 text-emerald-400" />
+                          <div className="space-y-3 pt-2">
+                            <Label className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5 ml-1">
+                              <Sparkles className="h-3 w-3 text-sky-400 animate-pulse" />{" "}
+                              Role Achievements
+                            </Label>
+                            <div className="space-y-2.5">
+                              {exp.highlights.map((bullet, bIdx) => (
+                                <div
+                                  key={bIdx}
+                                  className="flex gap-2 group/bullet items-start"
+                                >
+                                  <Textarea
+                                    value={bullet}
+                                    onChange={(e) => {
+                                      const nextHighlights = [
+                                        ...exp.highlights,
+                                      ];
+                                      nextHighlights[bIdx] = e.target.value;
+                                      updateExperience(
+                                        idx,
+                                        "highlights",
+                                        nextHighlights,
+                                      );
+                                    }}
+                                    className="bg-white/[0.01] border-white/[0.06] focus:border-sky-500/40 min-h-[64px] text-sm text-zinc-200 rounded-xl px-3 py-2 leading-relaxed resize-none transition-all flex-1"
+                                    placeholder="Designed highly available microservices processing 50k payloads/sec..."
+                                  />
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    onClick={() => {
+                                      const nextHighlights =
+                                        exp.highlights.filter(
+                                          (_, i) => i !== bIdx,
+                                        );
+                                      updateExperience(
+                                        idx,
+                                        "highlights",
+                                        nextHighlights,
+                                      );
+                                    }}
+                                    className="h-8 w-8 text-zinc-600 hover:text-red-400 hover:bg-red-500/10 rounded-lg opacity-0 group-hover/bullet:opacity-100 transition-all mt-1 shrink-0"
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() =>
+                                updateExperience(idx, "highlights", [
+                                  ...exp.highlights,
+                                  "",
+                                ])
+                              }
+                              className="text-[11px] text-sky-400 hover:text-sky-300 font-bold px-1.5 hover:bg-sky-500/5 transition-all flex items-center gap-1.5 mt-1 rounded-lg"
+                            >
+                              <Plus className="h-3.5 w-3.5" /> Add Bullet Point
+                            </Button>
+                          </div>
+                        </div>
+                      ))
+                    )}
                   </div>
-                  <h3 className="text-[10px] font-black tracking-wider uppercase text-zinc-400 font-mono">
-                    Target Job calibrate
-                  </h3>
-                </div>
+                </motion.div>
+              )}
 
-                <div className="space-y-2 text-left">
-                  <Label className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-500 flex items-center gap-1.5">
-                    <span>Paste Job Description</span>
-                  </Label>
-                  <Textarea
-                    placeholder="Paste raw target job description here to calibrate your ATS score..."
-                    value={jobDescription}
-                    onChange={(e) => setJobDescription(e.target.value)}
-                    className="min-h-[100px] bg-white/[0.01] border-white/[0.05] focus:bg-white/[0.03] text-sm text-zinc-200 resize-none rounded-xl px-3.5 py-2.5 leading-relaxed placeholder:text-zinc-700 transition-all shadow-inner border"
-                  />
-                </div>
-
-                <Button
-                  onClick={handleRunATSAnalysis}
-                  disabled={isScoring}
-                  className="w-full rounded-xl h-11 font-black text-xs tracking-wider uppercase bg-white text-black hover:bg-zinc-200 transition-all flex items-center justify-center gap-2 border-none shadow-lg"
+              {activeTab === "education" && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="space-y-8"
                 >
-                  {isScoring ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
-                  ) : (
-                    <Trophy className="h-4 w-4 mr-1.5" />
-                  )}
-                  {isScoring ? "Computing Score..." : "Run ATS Analysis"}
-                </Button>
-
-                <Button
-                  onClick={handleOptimizeBullets}
-                  disabled={isOptimizing}
-                  variant="outline"
-                  className="w-full rounded-xl border-white/[0.08] bg-white/[0.02] hover:bg-white/[0.05] text-zinc-300 font-bold text-xs h-10 transition-all flex items-center justify-center gap-2"
-                >
-                  {isOptimizing ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
-                  ) : (
-                    <Sparkles className="h-3.5 w-3.5 text-indigo-400 mr-1" />
-                  )}
-                  Refine with AI Optimizer
-                </Button>
-              </Card>
-
-              <div className="space-y-4">
-                {!atsReport ? (
-                  <div className="text-center py-16 border border-dashed border-white/[0.05] rounded-[24px] text-zinc-500 space-y-3 select-none bg-white/[0.01]">
-                    <AlertCircle className="h-8 w-8 mx-auto opacity-30 text-zinc-400" />
-                    <div className="space-y-1">
-                      <p className="text-xs font-bold text-zinc-400">
-                        No Analysis Computed
+                  <div className="flex items-center justify-between border-b border-white/[0.03] pb-5">
+                    <div className="space-y-1.5 text-left">
+                      <h2 className="text-lg font-bold text-white flex items-center gap-2.5">
+                        <div className="p-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
+                          <GraduationCap className="h-4 w-4 text-emerald-400" />
+                        </div>
+                        Education History
+                      </h2>
+                      <p className="text-xs text-zinc-500 font-medium">
+                        Degrees, certifications and institutions.
                       </p>
-                      <p className="text-[10px] text-zinc-600 max-w-[200px] mx-auto leading-relaxed">
-                        Paste a job description above and click "Run ATS
-                        Analysis" to trigger LLM diagnostic feed.
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={addEducation}
+                      className="h-9 font-bold text-xs bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-zinc-200 rounded-xl flex items-center gap-1.5 px-4 transition-all"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> Add Degree
+                    </Button>
+                  </div>
+
+                  <div className="space-y-6 pt-2">
+                    {resumeData.education.length === 0 ? (
+                      <div className="text-center py-12 border border-dashed border-white/[0.05] rounded-[24px] text-zinc-500 text-xs bg-white/[0.01]">
+                        No education records added yet.
+                      </div>
+                    ) : (
+                      resumeData.education.map((edu, idx) => (
+                        <div
+                          key={idx}
+                          className="p-6 rounded-[24px] bg-white/[0.01] hover:bg-white/[0.02] border border-white/[0.05] relative space-y-4 transition-all group/edu text-left shadow-md"
+                        >
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => deleteEducation(idx)}
+                            className="absolute top-4 right-4 text-zinc-500 hover:text-red-400 hover:bg-red-500/10 opacity-0 group-hover/edu:opacity-100 transition-all duration-300 h-8 w-8 rounded-lg"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                          <div className="grid sm:grid-cols-2 gap-5">
+                            <div className="space-y-2">
+                              <Label className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-500 ml-1">
+                                Institution Name
+                              </Label>
+                              <Input
+                                value={edu.institution}
+                                onChange={(e) =>
+                                  updateEducation(
+                                    idx,
+                                    "institution",
+                                    e.target.value,
+                                  )
+                                }
+                                placeholder="e.g., Stanford University"
+                                className="bg-white/[0.02] focus:bg-white/[0.04] border-white/[0.06] focus:border-emerald-500/40 text-sm text-zinc-200 rounded-2xl h-11 px-3.5 transition-all"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-500 ml-1">
+                                Degree / Discipline
+                              </Label>
+                              <Input
+                                value={edu.degree}
+                                onChange={(e) =>
+                                  updateEducation(idx, "degree", e.target.value)
+                                }
+                                placeholder="Bachelor of Science in Computer Science"
+                                className="bg-white/[0.02] focus:bg-white/[0.04] border-white/[0.06] focus:border-emerald-500/40 text-sm text-zinc-200 rounded-2xl h-11 px-3.5 transition-all"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-500 ml-1">
+                                Term Period
+                              </Label>
+                              <Input
+                                value={edu.period}
+                                onChange={(e) =>
+                                  updateEducation(idx, "period", e.target.value)
+                                }
+                                placeholder="2018 - 2022"
+                                className="bg-white/[0.02] focus:bg-white/[0.04] border-white/[0.06] focus:border-emerald-500/40 text-sm text-zinc-200 font-mono rounded-2xl h-11 px-3.5 transition-all"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-500 ml-1">
+                                City / Country
+                              </Label>
+                              <Input
+                                value={edu.location}
+                                onChange={(e) =>
+                                  updateEducation(
+                                    idx,
+                                    "location",
+                                    e.target.value,
+                                  )
+                                }
+                                placeholder="Stanford, CA"
+                                className="bg-white/[0.02] focus:bg-white/[0.04] border-white/[0.06] focus:border-emerald-500/40 text-sm text-zinc-200 rounded-2xl h-11 px-3.5 transition-all"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </motion.div>
+              )}
+
+              {activeTab === "skills" && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="space-y-12 text-left"
+                >
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between border-b border-white/[0.03] pb-4">
+                      <div className="space-y-1">
+                        <h2 className="text-base font-bold text-zinc-100 flex items-center gap-2.5">
+                          <div className="p-1.5 bg-purple-500/10 border border-purple-500/20 rounded-lg">
+                            <Cpu className="h-4 w-4 text-purple-400" />
+                          </div>
+                          Skills
+                        </h2>
+                        <p className="text-[11px] text-zinc-500 font-medium">
+                          Categorized tech stacks and keywords.
+                        </p>
+                      </div>
+                      <Button
+                        size="sm"
+                        onClick={addSkillCategory}
+                        className="h-8 font-bold text-[11px] bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 transition-all"
+                      >
+                        <Plus className="w-3 h-3 mr-1" /> Add Category
+                      </Button>
+                    </div>
+
+                    <div className="space-y-4 pt-2">
+                      {resumeData.skills.map((skill, idx) => (
+                        <div
+                          key={idx}
+                          className="flex gap-4 items-start group/skill bg-white/[0.01] hover:bg-white/[0.02] p-5 border border-white/[0.04] rounded-2xl transition-all"
+                        >
+                          <div className="w-1/3 space-y-1.5">
+                            <Label className="text-[10px] font-extrabold tracking-wider uppercase text-zinc-500 ml-1">
+                              Skill Category
+                            </Label>
+                            <Input
+                              value={skill.category}
+                              onChange={(e) =>
+                                updateSkillGroup(
+                                  idx,
+                                  e.target.value,
+                                  skill.items.join(", "),
+                                )
+                              }
+                              placeholder="e.g., Languages"
+                              className="bg-white/[0.02] focus:bg-white/[0.04] border-white/[0.06] text-xs text-zinc-200 font-bold rounded-xl h-10 transition-all"
+                            />
+                          </div>
+                          <div className="flex-1 space-y-1.5">
+                            <Label className="text-[10px] font-extrabold tracking-wider uppercase text-zinc-500 ml-1">
+                              List (Comma Separated)
+                            </Label>
+                            <Input
+                              value={skill.items.join(", ")}
+                              onChange={(e) =>
+                                updateSkillGroup(
+                                  idx,
+                                  skill.category,
+                                  e.target.value,
+                                )
+                              }
+                              placeholder="TypeScript, Python, Rust..."
+                              className="bg-white/[0.02] focus:bg-white/[0.04] border-white/[0.06] text-xs text-zinc-200 rounded-xl h-10 transition-all"
+                            />
+                          </div>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() =>
+                              setResumeData((p) => ({
+                                ...p,
+                                skills: p.skills.filter((_, i) => i !== idx),
+                              }))
+                            }
+                            className="mt-6 h-9 w-9 shrink-0 text-zinc-500 hover:text-red-400 hover:bg-red-500/10 rounded-xl opacity-0 group-hover/skill:opacity-100 transition-all"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-6 border-t border-white/[0.03] pt-10">
+                    <div className="flex items-center justify-between border-b border-white/[0.03] pb-4">
+                      <div className="space-y-1">
+                        <h2 className="text-base font-bold text-zinc-100 flex items-center gap-2.5">
+                          <div className="p-1.5 bg-sky-500/10 border border-sky-500/20 rounded-lg">
+                            <FileText className="h-4 w-4 text-sky-400" />
+                          </div>
+                          Key Projects
+                        </h2>
+                        <p className="text-[11px] text-zinc-500 font-medium">
+                          Demonstrate capability via built deliverables.
+                        </p>
+                      </div>
+                      <Button
+                        size="sm"
+                        onClick={addProject}
+                        className="h-8 font-bold text-[11px] bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 transition-all"
+                      >
+                        <Plus className="w-3 h-3 mr-1" /> Add Project
+                      </Button>
+                    </div>
+
+                    <div className="space-y-6 pt-2">
+                      {resumeData.projects.map((proj, idx) => (
+                        <div
+                          key={idx}
+                          className="p-5 rounded-[24px] bg-white/[0.01] hover:bg-white/[0.02] border border-white/[0.05] relative space-y-4 transition-all group/proj shadow-sm"
+                        >
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => deleteProject(idx)}
+                            className="absolute top-4 right-4 text-zinc-500 hover:text-red-400 hover:bg-red-500/10 opacity-0 group-hover/proj:opacity-100 transition-all duration-300 h-8 w-8 rounded-lg"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+
+                          <div className="grid sm:grid-cols-2 gap-4">
+                            <div className="space-y-1.5">
+                              <Label className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-500 ml-1">
+                                Project Title
+                              </Label>
+                              <Input
+                                value={proj.name}
+                                onChange={(e) =>
+                                  updateProject(idx, "name", e.target.value)
+                                }
+                                placeholder="Task Scheduler Suite"
+                                className="bg-white/[0.02] focus:bg-white/[0.04] border-white/[0.06] focus:border-sky-500/40 text-sm text-zinc-200 rounded-xl h-10 px-3.5 transition-all"
+                              />
+                            </div>
+                            <div className="space-y-1.5">
+                              <Label className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-500 ml-1 flex items-center gap-1">
+                                Link{" "}
+                                <span className="text-[8px] opacity-40">
+                                  (Optional)
+                                </span>
+                              </Label>
+                              <Input
+                                value={proj.link}
+                                onChange={(e) =>
+                                  updateProject(idx, "link", e.target.value)
+                                }
+                                placeholder="github.com/owner/repo"
+                                className="bg-white/[0.02] focus:bg-white/[0.04] border-white/[0.06] focus:border-sky-500/40 text-sm text-zinc-200 font-mono rounded-xl h-10 px-3.5 transition-all"
+                              />
+                            </div>
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-500 ml-1">
+                              Brief Description
+                            </Label>
+                            <Input
+                              value={proj.description}
+                              onChange={(e) =>
+                                updateProject(
+                                  idx,
+                                  "description",
+                                  e.target.value,
+                                )
+                              }
+                              placeholder="High-performance workflow engine built with Rust and Redis..."
+                              className="bg-white/[0.02] focus:bg-white/[0.04] border-white/[0.06] focus:border-sky-500/40 text-sm text-zinc-200 rounded-xl h-10 px-3.5 transition-all"
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-400 ml-1">
+                              Project Highlights
+                            </Label>
+                            <div className="space-y-2">
+                              {proj.highlights?.map((b, bIdx) => (
+                                <div
+                                  key={bIdx}
+                                  className="flex gap-2 group/proj-bullet items-start"
+                                >
+                                  <Input
+                                    value={b}
+                                    onChange={(e) => {
+                                      const nextH = [
+                                        ...(proj.highlights || []),
+                                      ];
+                                      nextH[bIdx] = e.target.value;
+                                      updateProject(idx, "highlights", nextH);
+                                    }}
+                                    className="bg-white/[0.01] border-white/[0.06] focus:border-sky-500/40 text-sm text-zinc-200 rounded-xl px-3.5 h-10 transition-all flex-1"
+                                    placeholder="Achieved latency reduction of 40% in cluster operations..."
+                                  />
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    onClick={() => {
+                                      const nextH = proj.highlights.filter(
+                                        (_, i) => i !== bIdx,
+                                      );
+                                      updateProject(idx, "highlights", nextH);
+                                    }}
+                                    className="h-9 w-9 text-zinc-600 hover:text-red-400 hover:bg-red-500/10 rounded-xl opacity-0 group-hover/proj-bullet:opacity-100 transition-all"
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() =>
+                                updateProject(idx, "highlights", [
+                                  ...(proj.highlights || []),
+                                  "",
+                                ])
+                              }
+                              className="text-[11px] text-sky-400 hover:text-sky-300 font-bold px-1.5 hover:bg-sky-500/5 flex items-center gap-1.5 rounded-lg"
+                            >
+                              <Plus className="h-3.5 w-3.5" /> Add Highlight
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-6 border-t border-white/[0.03] pt-10">
+                    <div className="flex items-center justify-between border-b border-white/[0.03] pb-4">
+                      <div className="space-y-1">
+                        <h2 className="text-base font-bold text-zinc-100 flex items-center gap-2.5">
+                          <div className="p-1.5 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+                            <Trophy className="h-4 w-4 text-amber-400" />
+                          </div>
+                          Certifications
+                        </h2>
+                        <p className="text-[11px] text-zinc-500 font-medium">
+                          Relevant professional certifications.
+                        </p>
+                      </div>
+                      <Button
+                        size="sm"
+                        onClick={addCertification}
+                        className="h-8 font-bold text-[11px] bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 transition-all"
+                      >
+                        <Plus className="w-3 h-3 mr-1" /> Add Cert
+                      </Button>
+                    </div>
+
+                    <div className="grid sm:grid-cols-2 gap-4 pt-2">
+                      {resumeData.certifications.map((cert, idx) => (
+                        <div
+                          key={idx}
+                          className="flex gap-2 group/cert bg-white/[0.01] hover:bg-white/[0.02] border border-white/[0.04] p-3 rounded-2xl transition-all"
+                        >
+                          <Input
+                            value={cert}
+                            onChange={(e) =>
+                              updateCertification(idx, e.target.value)
+                            }
+                            placeholder="e.g., AWS Architect Associate"
+                            className="bg-transparent focus:bg-white/[0.02] border-none focus:ring-0 text-sm text-zinc-200 h-9 flex-1 px-1.5 transition-all"
+                          />
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => deleteCertification(idx)}
+                            className="text-zinc-600 hover:text-red-400 opacity-0 group-hover/cert:opacity-100 transition-all h-9 w-9 rounded-xl"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {activeTab === "design" && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="space-y-8"
+                >
+                  <div className="space-y-1.5 text-left">
+                    <h2 className="text-lg font-bold text-white flex items-center gap-2.5">
+                      <div className="p-1.5 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+                        <Sparkles className="h-4 w-4 text-amber-400 animate-pulse" />
+                      </div>
+                      Theme Options
+                    </h2>
+                    <p className="text-xs text-zinc-500 font-medium">
+                      Customize typography and header highlights.
+                    </p>
+                  </div>
+
+                  <div className="grid sm:grid-cols-2 gap-8 border-t border-white/[0.03] pt-8 text-left">
+                    <div className="space-y-4">
+                      <Label className="text-[10px] font-extrabold tracking-widest uppercase text-zinc-500 ml-1">
+                        Theme / Header Accent
+                      </Label>
+                      <div className="grid grid-cols-2 gap-3">
+                        {[
+                          {
+                            name: "Classic Navy",
+                            primary: "#1A365D",
+                            accent: "#3182CE",
+                          },
+                          {
+                            name: "Modern Emerald",
+                            primary: "#065F46",
+                            accent: "#059669",
+                          },
+                          {
+                            name: "Ruby Burgundy",
+                            primary: "#7F1D1D",
+                            accent: "#DC2626",
+                          },
+                          {
+                            name: "Deep Onyx",
+                            primary: "#111827",
+                            accent: "#4B5563",
+                          },
+                        ].map((theme) => {
+                          const isSelected =
+                            (resumeData.styles?.primaryColor || "#1A365D") ===
+                            theme.primary;
+                          return (
+                            <button
+                              key={theme.name}
+                              type="button"
+                              onClick={() => {
+                                updateStyleConfig(
+                                  "primaryColor",
+                                  theme.primary,
+                                );
+                                updateStyleConfig("accentColor", theme.accent);
+                              }}
+                              className={`flex items-center gap-3 p-3 rounded-2xl bg-white/[0.01] border transition-all text-left shadow-sm hover:bg-white/[0.03] ${
+                                isSelected
+                                  ? "border-indigo-500/40 bg-indigo-500/5 ring-1 ring-indigo-500/20"
+                                  : "border-white/[0.05]"
+                              }`}
+                            >
+                              <div
+                                className="h-6 w-6 rounded-full border border-white/10 shrink-0 shadow-inner flex items-center justify-center"
+                                style={{ backgroundColor: theme.primary }}
+                              >
+                                {isSelected && (
+                                  <CheckCircle2 className="w-3 h-3 text-white bg-black/20 rounded-full" />
+                                )}
+                              </div>
+                              <span
+                                className={`text-xs font-bold ${isSelected ? "text-white" : "text-zinc-400"}`}
+                              >
+                                {theme.name}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <Label className="text-[10px] font-extrabold tracking-widest uppercase text-zinc-500 ml-1">
+                        Font Family
+                      </Label>
+                      <div className="grid grid-cols-2 gap-3">
+                        {[
+                          {
+                            id: "Sans",
+                            name: "Sans-Serif",
+                            class: "font-sans font-bold",
+                          },
+                          {
+                            id: "Serif",
+                            name: "Serif Modern",
+                            class: "font-serif font-black",
+                          },
+                        ].map((font) => {
+                          const isSelected =
+                            (resumeData.styles?.fontFamily || "Sans") ===
+                            font.id;
+                          return (
+                            <button
+                              key={font.id}
+                              type="button"
+                              onClick={() =>
+                                updateStyleConfig("fontFamily", font.id)
+                              }
+                              className={`p-4 rounded-2xl border flex flex-col items-center justify-center gap-2 text-center transition-all bg-white/[0.01] hover:bg-white/[0.03] ${
+                                isSelected
+                                  ? "border-indigo-500/40 bg-indigo-500/5 text-white shadow-md ring-1 ring-indigo-500/20"
+                                  : "border-white/[0.05] text-zinc-400"
+                              }`}
+                            >
+                              <span
+                                className={`text-2xl leading-none ${font.class}`}
+                              >
+                                Aa
+                              </span>
+                              <span className="text-[11px] font-bold">
+                                {font.name}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {activeTab === "coverletter" && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="space-y-8"
+                >
+                  <div className="flex items-center justify-between border-b border-white/[0.03] pb-6">
+                    <div className="space-y-1.5 text-left">
+                      <h2 className="text-xl font-bold text-white flex items-center gap-3">
+                        <div className="p-2 bg-amber-500/10 border border-amber-500/20 rounded-xl">
+                          <Sparkles className="h-5 w-5 text-amber-400" />
+                        </div>
+                        Cover Letter Studio
+                      </h2>
+                      <p className="text-sm text-zinc-500 font-medium leading-relaxed max-w-md">
+                        Generate a high-impact, tailored cover letter based on
+                        your current resume and job description.
+                      </p>
+                    </div>
+                    <Button
+                      disabled={isGeneratingCL || !jobDescription}
+                      onClick={handleGenerateCoverLetter}
+                      className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold h-11 px-8 rounded-2xl flex items-center gap-2.5 shadow-xl shadow-indigo-500/20 active:scale-95 transition-all"
+                    >
+                      {isGeneratingCL ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Sparkles className="w-4 h-4" />
+                      )}
+                      {coverLetter ? "Regenerate Letter" : "Generate with AI"}
+                    </Button>
+                  </div>
+
+                  {!coverLetter ? (
+                    <div className="py-24 text-center space-y-6 bg-white/[0.01] border border-dashed border-white/[0.08] rounded-[32px]">
+                      <div className="w-20 h-20 bg-white/[0.02] border border-white/[0.06] rounded-3xl mx-auto flex items-center justify-center text-zinc-700">
+                        <Sparkles className="w-10 h-10 opacity-40" />
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-zinc-400 font-bold text-lg tracking-tight">
+                          Your tailored letter is one click away
+                        </p>
+                        <p className="text-zinc-500 text-sm max-w-sm mx-auto font-medium leading-relaxed">
+                          {!jobDescription
+                            ? "Please add a Job Description in the 'AI Tools' panel first to personalize your letter."
+                            : "We'll analyze your achievements and match them to the job requirements."}
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-6">
+                      <Textarea
+                        value={coverLetter}
+                        onChange={(e) => setCoverLetter(e.target.value)}
+                        className="min-h-[500px] bg-white/[0.02] border-white/[0.08] focus:border-indigo-500/40 text-zinc-200 text-sm p-8 leading-[1.8] font-serif rounded-[32px] transition-all resize-none shadow-inner"
+                        placeholder="Dear Hiring Manager..."
+                      />
+                      <div className="flex items-center justify-between pt-4 opacity-70">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
+                          AI Draft • Professional Tone •{" "}
+                          {coverLetter.split(" ").length} Words
+                        </span>
+                        <Button
+                          variant="ghost"
+                          className="text-xs font-bold text-zinc-400 hover:text-white"
+                          onClick={() => setCoverLetter(null)}
+                        >
+                          Discard & Restart
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </motion.div>
+              )}
+            </Card>
+          </motion.div>
+
+          {isAiPanelOpen && (
+            <>
+              <div
+                className="fixed inset-x-0 bottom-0 top-[72px] sm:top-[82px] z-[40] bg-black/30 backdrop-blur-sm animate-in fade-in duration-300"
+                onClick={() => setIsAiPanelOpen(false)}
+              />
+
+              <div className="fixed top-[72px] sm:top-[82px] right-0 bottom-0 w-full max-w-[450px] z-[45] bg-zinc-950/95 border-l border-white/[0.08] shadow-2xl flex flex-col animate-in slide-in-from-right duration-300 backdrop-blur-2xl">
+                <div className="flex items-center justify-between px-6 py-5 border-b border-white/[0.06] shrink-0 select-none">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-1.5 bg-indigo-500/10 border border-indigo-500/20 rounded-xl">
+                      <Sparkles className="w-4 h-4 text-indigo-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-zinc-100 tracking-tight">
+                        AI Analysis & Tools
+                      </h3>
+                      <p className="text-[10px] text-zinc-500 font-semibold uppercase tracking-wider">
+                        ATS Scorer Engine
                       </p>
                     </div>
                   </div>
-                ) : (
-                  <Tabs
-                    defaultValue="overview"
-                    className="w-full flex flex-col"
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => setIsAiPanelOpen(false)}
+                    className="h-8 w-8 text-zinc-400 hover:text-white hover:bg-white/[0.05] rounded-xl transition-all"
                   >
-                    <TabsList className="w-full bg-white/[0.02] rounded-xl border border-white/[0.05] h-9 p-0.5 mb-4">
-                      <TabsTrigger
-                        value="overview"
-                        className="flex-1 text-[10px] font-bold rounded-[9px] select-none data-[state=active]:bg-white/[0.05] text-zinc-400 data-[state=active]:text-white transition-all"
-                      >
-                        ⚡ Overview
-                      </TabsTrigger>
-                      <TabsTrigger
-                        value="upgrades"
-                        className="flex-1 text-[10px] font-bold rounded-[9px] select-none data-[state=active]:bg-white/[0.05] text-zinc-400 data-[state=active]:text-white transition-all"
-                      >
-                        🚀 Bullet Upgrades
-                      </TabsTrigger>
-                    </TabsList>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
 
-                    <TabsContent
-                      value="overview"
-                      className="space-y-5 mt-0 text-left"
+                <div className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar pb-16">
+                  <Card className="p-5 border border-white/[0.06] bg-[#0c0c12] backdrop-blur-md rounded-2xl space-y-4 shadow-inner relative overflow-hidden">
+                    <div className="flex items-center gap-2 mb-1 select-none text-left">
+                      <div className="p-1.5 bg-white/[0.02] border border-white/[0.08] rounded-lg text-zinc-400">
+                        <Trophy className="h-3.5 w-3.5 text-emerald-400" />
+                      </div>
+                      <h3 className="text-[10px] font-black tracking-wider uppercase text-zinc-400 font-mono">
+                        Target Job calibrate
+                      </h3>
+                    </div>
+
+                    <div className="space-y-2 text-left">
+                      <Label className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-500 flex items-center gap-1.5">
+                        <span>Paste Job Description</span>
+                      </Label>
+                      <Textarea
+                        placeholder="Paste raw target job description here to calibrate your ATS score..."
+                        value={jobDescription}
+                        onChange={(e) => setJobDescription(e.target.value)}
+                        className="min-h-[100px] bg-white/[0.01] border-white/[0.05] focus:bg-white/[0.03] text-sm text-zinc-200 resize-none rounded-xl px-3.5 py-2.5 leading-relaxed placeholder:text-zinc-700 transition-all shadow-inner border"
+                      />
+                    </div>
+
+                    <Button
+                      onClick={handleRunATSAnalysis}
+                      disabled={isScoring}
+                      className="w-full rounded-xl h-11 font-black text-xs tracking-wider uppercase bg-white text-black hover:bg-zinc-200 transition-all flex items-center justify-center gap-2 border-none shadow-lg"
                     >
-                      <div className="flex flex-col items-center justify-center py-3 bg-white/[0.01] border border-white/[0.04] rounded-2xl relative select-none">
-                        {(() => {
-                          const score = atsReport.score || 0;
-                          return (
-                            <div className="relative h-28 w-28 flex items-center justify-center animate-in zoom-in-90 duration-300">
-                              <svg
-                                className="h-full w-full -rotate-90 drop-shadow-[0_0_16px_rgba(99,102,241,0.25)]"
-                                viewBox="0 0 36 36"
-                              >
-                                <defs>
-                                  <linearGradient
-                                    id="atsNeonGradDrawer"
-                                    x1="0%"
-                                    y1="0%"
-                                    x2="100%"
-                                    y2="100%"
-                                  >
-                                    <stop offset="0%" stopColor="#a855f7" />
-                                    <stop offset="100%" stopColor="#6366f1" />
-                                  </linearGradient>
-                                </defs>
-                                <path
-                                  className="stroke-white/[0.02]"
-                                  strokeWidth="3"
-                                  fill="none"
-                                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                                />
-                                <motion.path
-                                  stroke="url(#atsNeonGradDrawer)"
-                                  strokeWidth="3"
-                                  strokeDasharray={`${score}, 100`}
-                                  strokeLinecap="round"
-                                  fill="none"
-                                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                                  initial={{ pathLength: 0 }}
-                                  animate={{ pathLength: 1 }}
-                                  transition={{
-                                    duration: 1.2,
-                                    ease: "easeOut",
-                                  }}
-                                />
-                              </svg>
-                              <div className="absolute flex flex-col items-center text-center">
-                                <span className="font-black text-3xl text-white tracking-tighter">
-                                  {score}
-                                </span>
-                                <span className="text-[7px] font-bold text-zinc-500 uppercase tracking-widest">
-                                  ATS INDEX
-                                </span>
-                              </div>
-                            </div>
-                          );
-                        })()}
-                      </div>
+                      {isScoring ? (
+                        <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
+                      ) : (
+                        <Trophy className="h-4 w-4 mr-1.5" />
+                      )}
+                      {isScoring ? "Computing Score..." : "Run ATS Analysis"}
+                    </Button>
 
-                      <div className="grid grid-cols-2 gap-3">
-                        {Object.entries(atsReport.aspects).map(
-                          ([key, aspect]: [string, any]) => (
-                            <div
-                              key={key}
-                              className="border border-white/[0.03] bg-white/[0.01] rounded-xl p-3.5 transition-all hover:bg-white/[0.02]"
-                            >
-                              <div className="flex items-center justify-between mb-2">
-                                <span className="capitalize font-bold text-[10px] text-zinc-400 tracking-tight leading-none font-mono">
-                                  {key.replace("_", " ")}
-                                </span>
-                                <span className="text-[10px] font-black font-mono text-zinc-200 bg-white/[0.03] border border-white/[0.06] px-1 py-0.5 rounded">
-                                  {aspect.rating}/10
-                                </span>
-                              </div>
-                              <p
-                                className="text-[9px] text-zinc-500 leading-relaxed font-medium line-clamp-2 hover:line-clamp-none cursor-pointer transition-all"
-                                title={aspect.why}
-                              >
-                                {aspect.why}
-                              </p>
-                            </div>
-                          ),
-                        )}
-                      </div>
+                    <Button
+                      onClick={handleOptimizeBullets}
+                      disabled={isOptimizing}
+                      variant="outline"
+                      className="w-full rounded-xl border-white/[0.08] bg-white/[0.02] hover:bg-white/[0.05] text-zinc-300 font-bold text-xs h-10 transition-all flex items-center justify-center gap-2"
+                    >
+                      {isOptimizing ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
+                      ) : (
+                        <Sparkles className="h-3.5 w-3.5 text-indigo-400 mr-1" />
+                      )}
+                      Refine with AI Optimizer
+                    </Button>
+                  </Card>
 
-                      <div className="space-y-2 border-t border-white/[0.03] pt-4">
-                        <Label className="text-[9px] font-extrabold tracking-widest uppercase text-zinc-500 flex items-center gap-1.5 select-none ml-1">
-                          <Sparkles className="h-3 w-3 text-indigo-400" />{" "}
-                          Overall Assessment Summary
-                        </Label>
-                        <div className="text-[11px] leading-relaxed font-medium bg-white/[0.01] border border-white/[0.03] rounded-xl p-3.5 text-zinc-400 leading-relaxed">
-                          {atsReport.general_feedback}
+                  <div className="space-y-4">
+                    {!atsReport ? (
+                      <div className="text-center py-16 border border-dashed border-white/[0.05] rounded-[24px] text-zinc-500 space-y-3 select-none bg-white/[0.01]">
+                        <AlertCircle className="h-8 w-8 mx-auto opacity-30 text-zinc-400" />
+                        <div className="space-y-1">
+                          <p className="text-xs font-bold text-zinc-400">
+                            No Analysis Computed
+                          </p>
+                          <p className="text-[10px] text-zinc-600 max-w-[200px] mx-auto leading-relaxed">
+                            Paste a job description above and click "Run ATS
+                            Analysis" to trigger LLM diagnostic feed.
+                          </p>
                         </div>
                       </div>
-                    </TabsContent>
+                    ) : (
+                      <Tabs
+                        defaultValue="overview"
+                        className="w-full flex flex-col"
+                      >
+                        <TabsList className="w-full bg-white/[0.02] rounded-xl border border-white/[0.05] h-9 p-0.5 mb-4">
+                          <TabsTrigger
+                            value="overview"
+                            className="flex-1 text-[10px] font-bold rounded-[9px] select-none data-[state=active]:bg-white/[0.05] text-zinc-400 data-[state=active]:text-white transition-all"
+                          >
+                            ⚡ Overview
+                          </TabsTrigger>
+                          <TabsTrigger
+                            value="upgrades"
+                            className="flex-1 text-[10px] font-bold rounded-[9px] select-none data-[state=active]:bg-white/[0.05] text-zinc-400 data-[state=active]:text-white transition-all"
+                          >
+                            🚀 Bullet Upgrades
+                          </TabsTrigger>
+                        </TabsList>
 
-                    <TabsContent
-                      value="upgrades"
-                      className="space-y-6 mt-0 text-left"
-                    >
-                      <div className="space-y-3 bg-white/[0.01] rounded-2xl p-4 border border-white/[0.03]">
-                        <h4 className="font-bold text-zinc-200 text-[10px] flex items-center gap-1.5 font-mono uppercase tracking-wider">
-                          🔍 Missing Keywords
-                        </h4>
-                        <p className="text-[9px] text-zinc-500 font-medium">
-                          Terms that can boost your score. Click one to
-                          automatically append to skills category.
-                        </p>
-
-                        {atsReport.missing_keywords.length === 0 ? (
-                          <div className="bg-emerald-500/5 border border-emerald-500/10 rounded-xl p-3 text-[10px] text-emerald-400 text-center flex items-center justify-center gap-1.5 font-mono">
-                            <CheckCircle2 className="h-3.5 w-3.5" /> Full
-                            Coverage Achieved
-                          </div>
-                        ) : (
-                          <div className="flex flex-wrap gap-1.5 pt-1">
-                            {atsReport.missing_keywords.map((keyword, i) => {
-                              const isAlreadyAdded =
-                                injectedKeywords.includes(keyword);
+                        <TabsContent
+                          value="overview"
+                          className="space-y-5 mt-0 text-left"
+                        >
+                          <div className="flex flex-col items-center justify-center py-3 bg-white/[0.01] border border-white/[0.04] rounded-2xl relative select-none">
+                            {(() => {
+                              const score = atsReport.score || 0;
                               return (
-                                <Badge
-                                  key={i}
-                                  onClick={() => {
-                                    if (isAlreadyAdded) return;
-                                    setResumeData((prev) => {
-                                      const nextSkills = [...prev.skills];
-                                      if (nextSkills[0]) {
-                                        nextSkills[0] = {
-                                          ...nextSkills[0],
-                                          items: Array.from(
-                                            new Set([
-                                              ...nextSkills[0].items,
-                                              keyword,
-                                            ]),
-                                          ),
-                                        };
-                                      }
-                                      return { ...prev, skills: nextSkills };
-                                    });
-                                    setInjectedKeywords((p) => [...p, keyword]);
-                                    toast({
-                                      title: `Added: ${keyword}`,
-                                      description:
-                                        "Appended to your skills classification list.",
-                                    });
-                                  }}
-                                  className={`text-[9px] font-extrabold px-2.5 py-1 cursor-pointer transition-all rounded-lg tracking-tight border ${
-                                    isAlreadyAdded
-                                      ? "bg-emerald-500/10 text-emerald-400/80 border-emerald-500/20 line-through cursor-not-allowed opacity-50"
-                                      : "bg-white/[0.02] hover:bg-white/[0.08] text-zinc-400 hover:text-white border-white/[0.06] hover:scale-[1.02] active:scale-95"
-                                  }`}
-                                >
-                                  + {keyword}
-                                </Badge>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="space-y-4 pt-1">
-                        <Label className="text-[9px] font-extrabold tracking-widest uppercase text-zinc-500 flex items-center gap-1.5 ml-1">
-                          🛠 Smart Bullet Refactors
-                        </Label>
-
-                        {atsReport.bullet_point_suggestions.length === 0 ? (
-                          <div className="text-center py-10 text-zinc-500 text-[10px] border border-dashed border-white/[0.04] rounded-xl bg-white/[0.01]">
-                            No suggestions available. Try refining with
-                            optimizer.
-                          </div>
-                        ) : (
-                          <div className="space-y-3">
-                            {atsReport.bullet_point_suggestions.map(
-                              (sug, sIdx) => {
-                                const normalizedOriginal = sug.original
-                                  .trim()
-                                  .toLowerCase();
-                                const normalizedImproved = sug.improved
-                                  .trim()
-                                  .toLowerCase();
-
-                                const isApplied =
-                                  appliedSuggestions.includes(
-                                    normalizedImproved,
-                                  ) ||
-                                  resumeData.experience.some((e) =>
-                                    e.highlights.some(
-                                      (h) =>
-                                        h.trim().toLowerCase() ===
-                                        normalizedImproved,
-                                    ),
-                                  ) ||
-                                  resumeData.projects.some((p) =>
-                                    p.highlights.some(
-                                      (h) =>
-                                        h.trim().toLowerCase() ===
-                                        normalizedImproved,
-                                    ),
-                                  );
-
-                                return (
-                                  <div
-                                    key={sIdx}
-                                    className={`rounded-xl border overflow-hidden transition-all shadow-sm flex flex-col ${
-                                      isApplied
-                                        ? "bg-[#065F46]/5 border-[#065F46]/20"
-                                        : "bg-white/[0.01] hover:bg-white/[0.02] border-white/[0.04] hover:border-white/[0.08]"
-                                    }`}
+                                <div className="relative h-28 w-28 flex items-center justify-center animate-in zoom-in-90 duration-300">
+                                  <svg
+                                    className="h-full w-full -rotate-90 drop-shadow-[0_0_16px_rgba(99,102,241,0.25)]"
+                                    viewBox="0 0 36 36"
                                   >
-                                    <div className="bg-white/[0.01] border-b border-white/[0.03] px-3.5 py-2 text-[10px] font-medium text-zinc-500 italic truncate leading-relaxed">
-                                      "{sug.original}"
-                                    </div>
-
-                                    <div className="p-3.5 flex flex-col gap-3.5">
-                                      <p className="text-[11px] font-bold text-zinc-200 leading-relaxed">
-                                        "{sug.improved}"
-                                      </p>
-
-                                      {sug.reason && (
-                                        <p className="text-[9px] text-zinc-500 italic flex items-center gap-1 leading-relaxed font-medium select-none">
-                                          <Sparkles className="h-3 w-3 text-indigo-400/60 shrink-0" />{" "}
-                                          {sug.reason}
-                                        </p>
-                                      )}
-
-                                      {isApplied ? (
-                                        <Badge className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[9px] font-bold shrink-0 w-fit px-2 py-0.5 flex items-center gap-1 rounded-md">
-                                          <CheckCircle2 className="h-3 w-3" />{" "}
-                                          Applied
-                                        </Badge>
-                                      ) : (
-                                        <Button
-                                          type="button"
-                                          size="sm"
-                                          onClick={() =>
-                                            applyRefactor(
-                                              sug.original,
-                                              sug.improved,
-                                            )
-                                          }
-                                          className="h-7 px-3.5 rounded-lg text-[9px] font-black bg-white hover:bg-zinc-200 text-black border-none w-fit transition-all shadow-md"
-                                        >
-                                          Apply Suggestion
-                                        </Button>
-                                      )}
-                                    </div>
+                                    <defs>
+                                      <linearGradient
+                                        id="atsNeonGradDrawer"
+                                        x1="0%"
+                                        y1="0%"
+                                        x2="100%"
+                                        y2="100%"
+                                      >
+                                        <stop offset="0%" stopColor="#a855f7" />
+                                        <stop
+                                          offset="100%"
+                                          stopColor="#6366f1"
+                                        />
+                                      </linearGradient>
+                                    </defs>
+                                    <path
+                                      className="stroke-white/[0.02]"
+                                      strokeWidth="3"
+                                      fill="none"
+                                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                    />
+                                    <motion.path
+                                      stroke="url(#atsNeonGradDrawer)"
+                                      strokeWidth="3"
+                                      strokeDasharray={`${score}, 100`}
+                                      strokeLinecap="round"
+                                      fill="none"
+                                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                      initial={{ pathLength: 0 }}
+                                      animate={{ pathLength: 1 }}
+                                      transition={{
+                                        duration: 1.2,
+                                        ease: "easeOut",
+                                      }}
+                                    />
+                                  </svg>
+                                  <div className="absolute flex flex-col items-center text-center">
+                                    <span className="font-black text-3xl text-white tracking-tighter">
+                                      {score}
+                                    </span>
+                                    <span className="text-[7px] font-bold text-zinc-500 uppercase tracking-widest">
+                                      ATS INDEX
+                                    </span>
                                   </div>
-                                );
-                              },
+                                </div>
+                              );
+                            })()}
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-3">
+                            {Object.entries(atsReport.aspects).map(
+                              ([key, aspect]: [string, any]) => (
+                                <div
+                                  key={key}
+                                  className="border border-white/[0.03] bg-white/[0.01] rounded-xl p-3.5 transition-all hover:bg-white/[0.02]"
+                                >
+                                  <div className="flex items-center justify-between mb-2">
+                                    <span className="capitalize font-bold text-[10px] text-zinc-400 tracking-tight leading-none font-mono">
+                                      {key.replace("_", " ")}
+                                    </span>
+                                    <span className="text-[10px] font-black font-mono text-zinc-200 bg-white/[0.03] border border-white/[0.06] px-1 py-0.5 rounded">
+                                      {aspect.rating}/10
+                                    </span>
+                                  </div>
+                                  <p
+                                    className="text-[9px] text-zinc-500 leading-relaxed font-medium line-clamp-2 hover:line-clamp-none cursor-pointer transition-all"
+                                    title={aspect.why}
+                                  >
+                                    {aspect.why}
+                                  </p>
+                                </div>
+                              ),
                             )}
                           </div>
-                        )}
-                      </div>
-                    </TabsContent>
-                  </Tabs>
-                )}
-              </div>
-            </div>
-          </div>
-        </>
-      )}
 
-      <AlertDialog open={isClearDialogOpen} onOpenChange={setIsClearDialogOpen}>
-        <AlertDialogContent className="bg-[#0c0c0e] border border-white/[0.08] rounded-3xl max-w-md p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-          <AlertDialogHeader className="space-y-3">
-            <div className="w-12 h-12 rounded-2xl bg-white/[0.03] border border-white/[0.08] flex items-center justify-center text-zinc-400 mb-2">
-              <RotateCcw className="w-5 h-5" />
-            </div>
-            <AlertDialogTitle className="text-xl font-bold tracking-tight text-white">
-              Reset Your Workspace?
-            </AlertDialogTitle>
-            <div className="text-zinc-400 text-sm leading-relaxed font-medium space-y-2 select-none">
-              <p>
-                This will clear all your current edits. Save a version first if
-                you want to keep them.
-              </p>
-              <div className="text-indigo-400/90 text-xs flex items-center gap-1.5 pt-1 font-semibold">
-                <Sparkles className="w-3 h-3" />
-                <span>Tip: click "Save Version" before resetting.</span>
+                          <div className="space-y-2 border-t border-white/[0.03] pt-4">
+                            <Label className="text-[9px] font-extrabold tracking-widest uppercase text-zinc-500 flex items-center gap-1.5 select-none ml-1">
+                              <Sparkles className="h-3 w-3 text-indigo-400" />{" "}
+                              Overall Assessment Summary
+                            </Label>
+                            <div className="text-[11px] leading-relaxed font-medium bg-white/[0.01] border border-white/[0.03] rounded-xl p-3.5 text-zinc-400 leading-relaxed">
+                              {atsReport.general_feedback}
+                            </div>
+                          </div>
+                        </TabsContent>
+
+                        <TabsContent
+                          value="upgrades"
+                          className="space-y-6 mt-0 text-left"
+                        >
+                          <div className="space-y-3 bg-white/[0.01] rounded-2xl p-4 border border-white/[0.03]">
+                            <h4 className="font-bold text-zinc-200 text-[10px] flex items-center gap-1.5 font-mono uppercase tracking-wider">
+                              🔍 Missing Keywords
+                            </h4>
+                            <p className="text-[9px] text-zinc-500 font-medium">
+                              Terms that can boost your score. Click one to
+                              automatically append to skills category.
+                            </p>
+
+                            {atsReport.missing_keywords.length === 0 ? (
+                              <div className="bg-emerald-500/5 border border-emerald-500/10 rounded-xl p-3 text-[10px] text-emerald-400 text-center flex items-center justify-center gap-1.5 font-mono">
+                                <CheckCircle2 className="h-3.5 w-3.5" /> Full
+                                Coverage Achieved
+                              </div>
+                            ) : (
+                              <div className="flex flex-wrap gap-1.5 pt-1">
+                                {atsReport.missing_keywords.map(
+                                  (keyword, i) => {
+                                    const isAlreadyAdded =
+                                      injectedKeywords.includes(keyword);
+                                    return (
+                                      <Badge
+                                        key={i}
+                                        onClick={() => {
+                                          if (isAlreadyAdded) return;
+                                          setResumeData((prev) => {
+                                            const nextSkills = [...prev.skills];
+                                            if (nextSkills[0]) {
+                                              nextSkills[0] = {
+                                                ...nextSkills[0],
+                                                items: Array.from(
+                                                  new Set([
+                                                    ...nextSkills[0].items,
+                                                    keyword,
+                                                  ]),
+                                                ),
+                                              };
+                                            }
+                                            return {
+                                              ...prev,
+                                              skills: nextSkills,
+                                            };
+                                          });
+                                          setInjectedKeywords((p) => [
+                                            ...p,
+                                            keyword,
+                                          ]);
+                                          toast({
+                                            title: `Added: ${keyword}`,
+                                            description:
+                                              "Appended to your skills classification list.",
+                                          });
+                                        }}
+                                        className={`text-[9px] font-extrabold px-2.5 py-1 cursor-pointer transition-all rounded-lg tracking-tight border ${
+                                          isAlreadyAdded
+                                            ? "bg-emerald-500/10 text-emerald-400/80 border-emerald-500/20 line-through cursor-not-allowed opacity-50"
+                                            : "bg-white/[0.02] hover:bg-white/[0.08] text-zinc-400 hover:text-white border-white/[0.06] hover:scale-[1.02] active:scale-95"
+                                        }`}
+                                      >
+                                        + {keyword}
+                                      </Badge>
+                                    );
+                                  },
+                                )}
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="space-y-4 pt-1">
+                            <Label className="text-[9px] font-extrabold tracking-widest uppercase text-zinc-500 flex items-center gap-1.5 ml-1">
+                              🛠 Smart Bullet Refactors
+                            </Label>
+
+                            {atsReport.bullet_point_suggestions.length === 0 ? (
+                              <div className="text-center py-10 text-zinc-500 text-[10px] border border-dashed border-white/[0.04] rounded-xl bg-white/[0.01]">
+                                No suggestions available. Try refining with
+                                optimizer.
+                              </div>
+                            ) : (
+                              <div className="space-y-3">
+                                {atsReport.bullet_point_suggestions.map(
+                                  (sug, sIdx) => {
+                                    const normalizedOriginal = sug.original
+                                      .trim()
+                                      .toLowerCase();
+                                    const normalizedImproved = sug.improved
+                                      .trim()
+                                      .toLowerCase();
+
+                                    const isApplied =
+                                      appliedSuggestions.includes(
+                                        normalizedImproved,
+                                      ) ||
+                                      resumeData.experience.some((e) =>
+                                        e.highlights.some(
+                                          (h) =>
+                                            h.trim().toLowerCase() ===
+                                            normalizedImproved,
+                                        ),
+                                      ) ||
+                                      resumeData.projects.some((p) =>
+                                        p.highlights.some(
+                                          (h) =>
+                                            h.trim().toLowerCase() ===
+                                            normalizedImproved,
+                                        ),
+                                      );
+
+                                    return (
+                                      <div
+                                        key={sIdx}
+                                        className={`rounded-xl border overflow-hidden transition-all shadow-sm flex flex-col ${
+                                          isApplied
+                                            ? "bg-[#065F46]/5 border-[#065F46]/20"
+                                            : "bg-white/[0.01] hover:bg-white/[0.02] border-white/[0.04] hover:border-white/[0.08]"
+                                        }`}
+                                      >
+                                        <div className="bg-white/[0.01] border-b border-white/[0.03] px-3.5 py-2 text-[10px] font-medium text-zinc-500 italic truncate leading-relaxed">
+                                          "{sug.original}"
+                                        </div>
+
+                                        <div className="p-3.5 flex flex-col gap-3.5">
+                                          <p className="text-[11px] font-bold text-zinc-200 leading-relaxed">
+                                            "{sug.improved}"
+                                          </p>
+
+                                          {sug.reason && (
+                                            <p className="text-[9px] text-zinc-500 italic flex items-center gap-1 leading-relaxed font-medium select-none">
+                                              <Sparkles className="h-3 w-3 text-indigo-400/60 shrink-0" />{" "}
+                                              {sug.reason}
+                                            </p>
+                                          )}
+
+                                          {isApplied ? (
+                                            <Badge className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[9px] font-bold shrink-0 w-fit px-2 py-0.5 flex items-center gap-1 rounded-md">
+                                              <CheckCircle2 className="h-3 w-3" />{" "}
+                                              Applied
+                                            </Badge>
+                                          ) : (
+                                            <Button
+                                              type="button"
+                                              size="sm"
+                                              onClick={() =>
+                                                applyRefactor(
+                                                  sug.original,
+                                                  sug.improved,
+                                                )
+                                              }
+                                              className="h-7 px-3.5 rounded-lg text-[9px] font-black bg-white hover:bg-zinc-200 text-black border-none w-fit transition-all shadow-md"
+                                            >
+                                              Apply Suggestion
+                                            </Button>
+                                          )}
+                                        </div>
+                                      </div>
+                                    );
+                                  },
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </TabsContent>
+                      </Tabs>
+                    )}
+                  </div>
+                </div>
               </div>
-            </div>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="mt-6 gap-3 flex-col sm:flex-row">
-            <AlertDialogCancel className="bg-transparent border border-white/[0.08] text-zinc-400 hover:bg-white/[0.03] hover:text-white rounded-xl font-bold text-xs px-5 py-2 h-10 transition-all">
-              Keep Working
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmClearWorkspace}
-              className="bg-white hover:bg-zinc-200 text-black rounded-xl font-bold text-xs px-5 py-2 h-10 transition-all border-none shadow-lg"
+            </>
+          )}
+
+          <AlertDialog
+            open={isClearDialogOpen}
+            onOpenChange={setIsClearDialogOpen}
+          >
+            <AlertDialogContent className="bg-[#0c0c0e] border border-white/[0.08] rounded-3xl max-w-md p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+              <AlertDialogHeader className="space-y-3">
+                <div className="w-12 h-12 rounded-2xl bg-white/[0.03] border border-white/[0.08] flex items-center justify-center text-zinc-400 mb-2">
+                  <RotateCcw className="w-5 h-5" />
+                </div>
+                <AlertDialogTitle className="text-xl font-bold tracking-tight text-white">
+                  Reset Your Workspace?
+                </AlertDialogTitle>
+                <div className="text-zinc-400 text-sm leading-relaxed font-medium space-y-2 select-none">
+                  <p>
+                    This will clear all your current edits. Save a version first
+                    if you want to keep them.
+                  </p>
+                  <div className="text-indigo-400/90 text-xs flex items-center gap-1.5 pt-1 font-semibold">
+                    <Sparkles className="w-3 h-3" />
+                    <span>Tip: click "Save Version" before resetting.</span>
+                  </div>
+                </div>
+              </AlertDialogHeader>
+              <AlertDialogFooter className="mt-6 gap-3 flex-col sm:flex-row">
+                <AlertDialogCancel className="bg-transparent border border-white/[0.08] text-zinc-400 hover:bg-white/[0.03] hover:text-white rounded-xl font-bold text-xs px-5 py-2 h-10 transition-all">
+                  Keep Working
+                </AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={confirmClearWorkspace}
+                  className="bg-white hover:bg-zinc-200 text-black rounded-xl font-bold text-xs px-5 py-2 h-10 transition-all border-none shadow-lg"
+                >
+                  Yes, Reset
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
+          {/* ── PDF Preview Modal ─────────────────────────────────────────── */}
+          {isPreviewOpen && (
+            <div
+              className="fixed inset-x-0 bottom-0 top-[72px] sm:top-[82px] z-[45] flex flex-col bg-[#09090c]/98 border-t border-white/[0.06] backdrop-blur-3xl animate-in slide-in-from-bottom duration-300"
+              role="dialog"
+              aria-label="PDF Preview"
             >
-              Yes, Reset
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+              {/* Top Bar */}
+              <div className="flex items-center justify-between px-5 py-3 border-b border-white/[0.06] bg-[#09090b]/80 shrink-0">
+                <div className="flex items-center gap-3">
+                  <FileText className="h-4 w-4 text-zinc-400" />
+                  <span className="text-sm font-bold text-zinc-100 tracking-tight">
+                    {resumeData.personal_info.name
+                      ? `${resumeData.personal_info.name} — Resume Preview`
+                      : "Resume Preview"}
+                  </span>
+                  {previewOutdated && (
+                    <span className="text-[10px] font-semibold text-amber-400 bg-amber-400/10 border border-amber-400/20 px-2 py-0.5 rounded-full">
+                      Outdated — refresh to see latest edits
+                    </span>
+                  )}
+                </div>
 
-      {/* ── PDF Preview Modal ─────────────────────────────────────────── */}
-      {isPreviewOpen && (
-        <div
-          className="fixed inset-x-0 bottom-0 top-[72px] sm:top-[82px] z-[45] flex flex-col bg-[#09090c]/98 border-t border-white/[0.06] backdrop-blur-3xl animate-in slide-in-from-bottom duration-300"
-          role="dialog"
-          aria-label="PDF Preview"
-        >
-          {/* Top Bar */}
-          <div className="flex items-center justify-between px-5 py-3 border-b border-white/[0.06] bg-[#09090b]/80 shrink-0">
-            <div className="flex items-center gap-3">
-              <FileText className="h-4 w-4 text-zinc-400" />
-              <span className="text-sm font-bold text-zinc-100 tracking-tight">
-                {resumeData.personal_info.name
-                  ? `${resumeData.personal_info.name} — Resume Preview`
-                  : "Resume Preview"}
-              </span>
-              {previewOutdated && (
-                <span className="text-[10px] font-semibold text-amber-400 bg-amber-400/10 border border-amber-400/20 px-2 py-0.5 rounded-full">
-                  Outdated — refresh to see latest edits
-                </span>
-              )}
-            </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleRefreshPreview}
+                    disabled={isPreviewLoading}
+                    className="h-8 text-xs font-bold rounded-xl border-white/[0.08] bg-white/[0.03] text-zinc-300 hover:text-white hover:bg-white/[0.08] transition-all"
+                  >
+                    {isPreviewLoading ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
+                    ) : (
+                      <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
+                    )}
+                    Refresh
+                  </Button>
 
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleRefreshPreview}
-                disabled={isPreviewLoading}
-                className="h-8 text-xs font-bold rounded-xl border-white/[0.08] bg-white/[0.03] text-zinc-300 hover:text-white hover:bg-white/[0.08] transition-all"
-              >
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={closePreview}
+                    className="h-8 text-xs font-bold rounded-xl border-white/[0.08] bg-white/[0.03] text-zinc-300 hover:text-white hover:bg-white/[0.08] transition-all"
+                  >
+                    <X className="h-3.5 w-3.5 mr-1.5" />
+                    Back to Edit
+                  </Button>
+
+                  <Button
+                    size="sm"
+                    onClick={handleDownloadFromPreview}
+                    disabled={isDownloading || isPreviewLoading}
+                    className="h-8 text-xs font-bold rounded-xl bg-white text-black hover:bg-zinc-200 transition-all border-none shadow-md"
+                  >
+                    {isDownloading ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
+                    ) : (
+                      <Download className="h-3.5 w-3.5 mr-1.5" />
+                    )}
+                    Download PDF
+                  </Button>
+                </div>
+              </div>
+
+              {/* Centered Responsive PDF Preview Dock */}
+              <div className="flex-1 relative bg-[#09090c] flex items-center justify-center p-5 sm:p-8 selection:bg-white/5 overflow-hidden">
                 {isPreviewLoading ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
-                ) : (
-                  <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
-                )}
-                Refresh
-              </Button>
+                  <div className="flex flex-col items-center justify-center gap-4 animate-pulse">
+                    <Loader2 className="h-10 w-10 text-indigo-400 animate-spin" />
+                    <p className="text-zinc-500 text-xs font-bold tracking-widest uppercase font-mono">
+                      Assembling Vector Paths...
+                    </p>
+                  </div>
+                ) : previewUrl ? (
+                  <div
+                    className="relative w-auto h-full max-w-full max-h-full bg-black border border-white/[0.08] rounded-2xl overflow-hidden shadow-[0_32px_96px_rgba(0,0,0,0.95)] animate-in zoom-in-95 duration-300 flex flex-col my-auto shrink"
+                    style={{ aspectRatio: "1 / 1.4142" }}
+                  >
+                    <iframe
+                      key={previewUrl}
+                      src={`${previewUrl}#toolbar=0&navpanes=0`}
+                      className="w-full h-full border-0 opacity-95 hover:opacity-100 transition-opacity bg-[#07070a]"
+                      title="Resume PDF Preview"
+                    />
+                  </div>
+                ) : null}
+              </div>
 
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={closePreview}
-                className="h-8 text-xs font-bold rounded-xl border-white/[0.08] bg-white/[0.03] text-zinc-300 hover:text-white hover:bg-white/[0.08] transition-all"
-              >
-                <X className="h-3.5 w-3.5 mr-1.5" />
-                Back to Edit
-              </Button>
-
-              <Button
-                size="sm"
-                onClick={handleDownloadFromPreview}
-                disabled={isDownloading || isPreviewLoading}
-                className="h-8 text-xs font-bold rounded-xl bg-white text-black hover:bg-zinc-200 transition-all border-none shadow-md"
-              >
-                {isDownloading ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
-                ) : (
-                  <Download className="h-3.5 w-3.5 mr-1.5" />
-                )}
-                Download PDF
-              </Button>
-            </div>
-          </div>
-
-          {/* Centered Responsive PDF Preview Dock */}
-          <div className="flex-1 relative bg-[#09090c] flex items-center justify-center p-5 sm:p-8 selection:bg-white/5 overflow-hidden">
-            {isPreviewLoading ? (
-              <div className="flex flex-col items-center justify-center gap-4 animate-pulse">
-                <Loader2 className="h-10 w-10 text-indigo-400 animate-spin" />
-                <p className="text-zinc-500 text-xs font-bold tracking-widest uppercase font-mono">
-                  Assembling Vector Paths...
+              {/* Bottom hint bar */}
+              <div className="px-5 py-2.5 border-t border-white/[0.04] bg-[#09090b]/60 text-center shrink-0">
+                <p className="text-zinc-600 text-[11px] font-medium">
+                  Made a change? Click{" "}
+                  <span className="text-zinc-400">Refresh</span> to regenerate
+                  the preview, then{" "}
+                  <span className="text-zinc-400">Download PDF</span> to save.
                 </p>
               </div>
-            ) : previewUrl ? (
-              <div
-                className="relative w-auto h-full max-w-full max-h-full bg-black border border-white/[0.08] rounded-2xl overflow-hidden shadow-[0_32px_96px_rgba(0,0,0,0.95)] animate-in zoom-in-95 duration-300 flex flex-col my-auto shrink"
-                style={{ aspectRatio: "1 / 1.4142" }}
-              >
-                <iframe
-                  key={previewUrl}
-                  src={`${previewUrl}#toolbar=0&navpanes=0`}
-                  className="w-full h-full border-0 opacity-95 hover:opacity-100 transition-opacity bg-[#07070a]"
-                  title="Resume PDF Preview"
-                />
-              </div>
-            ) : null}
-          </div>
-
-          {/* Bottom hint bar */}
-          <div className="px-5 py-2.5 border-t border-white/[0.04] bg-[#09090b]/60 text-center shrink-0">
-            <p className="text-zinc-600 text-[11px] font-medium">
-              Made a change? Click{" "}
-              <span className="text-zinc-400">Refresh</span> to regenerate the
-              preview, then <span className="text-zinc-400">Download PDF</span>{" "}
-              to save.
-            </p>
-          </div>
+            </div>
+          )}
         </div>
-      )}
+      </main>
+
+      {/* ── GLOBAL FOOTER WITH WORKSPACE STATUS ────────────────────── */}
+      <div className="flex-shrink-0">
+        <GlobalFooter>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1.5 text-[9px] font-black text-zinc-600 uppercase tracking-widest">
+              <ShieldCheck className="w-3 h-3 text-emerald-500/50" />
+              Encrypted
+            </div>
+            <div className="flex items-center gap-1.5 text-[9px] font-black text-zinc-600 uppercase tracking-[0.2em]">
+              <span className="hidden sm:inline">
+                Synced:{" "}
+                {new Date().toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </span>
+            </div>
+          </div>
+        </GlobalFooter>
+      </div>
     </div>
   );
 }

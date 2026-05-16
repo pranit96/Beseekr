@@ -32,7 +32,7 @@ export default function Home() {
         <GlobalHeader />
 
         {/* HERO */}
-        <section className="max-w-5xl mx-auto px-6 py-24 sm:py-32">
+        <section className="max-w-5xl mx-auto px-6 py-12 sm:py-16">
           <h1 className="text-5xl sm:text-7xl font-bold tracking-[-0.03em] text-foreground leading-[1.05] mb-6">
             {t("home.heroHeadline", "Build with clarity.")}
           </h1>
@@ -122,7 +122,7 @@ export default function Home() {
             </div>
 
             <h3 className="text-xl font-bold mb-2 tracking-tight text-foreground">
-              {t("home.resumeTitle", "Resume ATS")}
+              {t("home.resumeTitle", "Get Hired")}
             </h3>
 
             <p className="text-muted-foreground/80 mb-6 leading-relaxed">
@@ -153,7 +153,7 @@ export default function Home() {
 
       {/* CENTER CONTENT: SCROLLABLE ONLY IF NECESSARY */}
       <main className="flex-1 overflow-y-auto overflow-x-hidden flex flex-col min-h-0 custom-scrollbar relative">
-        <div className="max-w-5xl mx-auto w-full px-6 pt-32 pb-12 md:pt-40 md:pb-16">
+        <div className="max-w-5xl mx-auto w-full px-6 pt-8 pb-12 md:pt-10 md:pb-16">
           {/* HERO WITH SAME TYPOGRAPHY AS CHAT PAGE */}
           <section className="mb-12 md:mb-16 animate-in fade-in slide-in-from-top-4 duration-500">
             {/* Eyebrow */}
@@ -265,7 +265,7 @@ export default function Home() {
               </div>
 
               <h3 className="text-xl font-bold mb-2 tracking-tight text-foreground">
-                {t("home.resumeTitle", "Resume Builder")}
+                {t("home.resumeTitle", "Get Hired")}
               </h3>
 
               <p className="text-muted-foreground/80 mb-8 leading-relaxed text-sm">

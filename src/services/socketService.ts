@@ -64,7 +64,7 @@ interface OrchestrationControl {
 class SocketService {
   private socket: Socket | null = null;
   private connected: boolean = false;
-  private listeners: Map<string, Function[]> = new Map();
+  private listeners: Map<string, ((...args: any[]) => void)[]> = new Map();
   private reconnectAttempts: number = 0;
   private maxReconnectAttempts: number = 5;
   private activeRequests: Map<string, OrchestrationControl> = new Map();
@@ -570,7 +570,7 @@ class SocketService {
   /**
    * Register event listener
    */
-  on(event: string, cb: Function): void {
+  on(event: string, cb: (...args: any[]) => void): void {
     if (!this.listeners.has(event)) {
       this.listeners.set(event, []);
     }
@@ -584,7 +584,7 @@ class SocketService {
   /**
    * Unregister event listener
    */
-  off(event: string, cb: Function): void {
+  off(event: string, cb: (...args: any[]) => void): void {
     const arr = this.listeners.get(event) || [];
     const idx = arr.indexOf(cb);
     if (idx > -1) arr.splice(idx, 1);

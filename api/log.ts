@@ -135,10 +135,13 @@ function sanitizeLogEntry(entry: LogEntry): LogEntry {
 
 function sanitizeString(str: string, maxLength: number): string {
   // Remove control characters and trim
-  return str
-    .replace(/[\x00-\x1F\x7F]/g, "")
-    .slice(0, maxLength)
-    .trim();
+  return (
+    str
+      // eslint-disable-next-line no-control-regex
+      .replace(/[\x00-\x1F\x7F]/g, "")
+      .slice(0, maxLength)
+      .trim()
+  );
 }
 
 function sanitizeUrl(url: string): string {

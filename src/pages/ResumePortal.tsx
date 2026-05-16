@@ -90,8 +90,8 @@ export default function ResumePortal() {
         <div className="space-y-4 text-left">
           <div className="flex items-center gap-2 mb-3 sm:mb-4">
             <span className="text-[10px] sm:text-[11px] font-bold tracking-[0.2em] text-zinc-500 uppercase flex items-center select-none">
-              RESUME BUILDER{" "}
-              <span className="mx-2 opacity-50 text-[8px]">•</span> HOME
+              GET HIRED <span className="mx-2 opacity-50 text-[8px]">•</span>{" "}
+              HOME
             </span>
           </div>
 
