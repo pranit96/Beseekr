@@ -21,8 +21,6 @@ import {
 import { Badge } from "../../components/ui/badge";
 import { Card } from "../../components/ui/card";
 
-import { GlobalFooter } from "../../components/GlobalFooter";
-
 export default function GetHiredPortal() {
   const navigate = useNavigate();
   const { resumeData, revisionHistory, setWorkspaceMode, resetWorkspace } =
@@ -172,14 +170,6 @@ export default function GetHiredPortal() {
         </div>
       </main>
 
-      <div className="flex-shrink-0">
-        <GlobalFooter>
-          <div className="flex items-center gap-2 text-xs font-bold text-zinc-500 uppercase tracking-widest">
-            <ShieldCheck className="w-4 h-4 text-emerald-500/60" />
-            Security Shield Active
-          </div>
-        </GlobalFooter>
-      </div>
     </div>
   );
 }

@@ -33,8 +33,6 @@ import {
   DropdownMenuTrigger,
 } from "../../components/ui/dropdown-menu";
 
-import { GlobalFooter } from "../../components/GlobalFooter";
-
 // ─── Add Application Modal ──────────────────────────────────────────────────
 interface AddApplicationModalProps {
   open: boolean;
@@ -792,14 +790,6 @@ export default function JobTracker() {
           </div>
         </main>
 
-        <div className="flex-shrink-0">
-          <GlobalFooter>
-            <div className="flex items-center gap-2 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
-              <Clock className="w-3 h-3" />
-              Live Syncing Active
-            </div>
-          </GlobalFooter>
-        </div>
       </div>
     </>
   );

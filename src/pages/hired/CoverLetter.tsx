@@ -17,7 +17,6 @@ import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Badge } from "../../components/ui/badge";
 import { useToast } from "../../hooks/use-toast";
-import { GlobalFooter } from "../../components/GlobalFooter";
 
 const TONES = [
   { id: "professional", label: "Professional", desc: "Formal & polished" },
@@ -333,14 +332,6 @@ export default function CoverLetter() {
         </div>
       </main>
 
-      <div className="flex-shrink-0">
-        <GlobalFooter>
-          <div className="flex items-center gap-2 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
-            <Wand2 className="w-3 h-3 text-amber-400" />
-            Cover Letter Engine Ready
-          </div>
-        </GlobalFooter>
-      </div>
     </div>
   );
 }

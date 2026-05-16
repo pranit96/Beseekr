@@ -31,8 +31,6 @@ import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-import { GlobalFooter } from "@/components/GlobalFooter";
-
 export default function InterviewPrep() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -453,14 +451,6 @@ export default function InterviewPrep() {
         </div>
       </main>
 
-      <div className="flex-shrink-0">
-        <GlobalFooter>
-          <div className="flex items-center gap-2 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
-            <Target className="w-3 h-3 text-indigo-400" />
-            Interview Strategy Engine Ready
-          </div>
-        </GlobalFooter>
-      </div>
     </div>
   );
 }

@@ -20,8 +20,6 @@ import { Card } from "@/components/ui/card";
 import { resumeApi, ResearchSummary } from "@/api/resume";
 import { toast } from "@/hooks/use-toast";
 
-import { GlobalFooter } from "@/components/GlobalFooter";
-
 export default function CareerResearch() {
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
@@ -324,14 +322,6 @@ export default function CareerResearch() {
         </div>
       </main>
 
-      <div className="flex-shrink-0">
-        <GlobalFooter>
-          <div className="flex items-center gap-2 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
-            <Zap className="w-3 h-3 text-indigo-400" />
-            AI Intelligence Engine Ready
-          </div>
-        </GlobalFooter>
-      </div>
     </div>
   );
 }
