@@ -7,18 +7,28 @@ import {
   MessageSquare,
   TrendingUp,
   Globe,
-  ArrowLeft,
-  ChevronRight,
-  Zap,
   Sparkles,
+  Zap,
+  ArrowUpRight,
+  ChevronUp,
+  Hash,
+  DollarSign,
+  AlertCircle,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
 import { resumeApi, ResearchSummary } from "@/api/resume";
 import { toast } from "@/hooks/use-toast";
+import HiredShell from "@/pages/hired/HiredShell";
+
+const QUICK_SEARCHES = [
+  "Google L4 Software Engineer",
+  "Accenture interview",
+  "Amazon SDE2 culture",
+  "Microsoft senior PM salary",
+];
 
 export default function CareerResearch() {
   const navigate = useNavigate();
@@ -26,19 +36,21 @@ export default function CareerResearch() {
   const [isLoading, setIsLoading] = useState(false);
   const [results, setResults] = useState<any>(null);
   const [summary, setSummary] = useState<ResearchSummary | null>(null);
+  const [searchedQuery, setSearchedQuery] = useState("");
 
-  const handleSearch = async (e?: React.FormEvent) => {
-    e?.preventDefault();
-    if (!query.trim()) return;
+  const handleSearch = async (q?: string) => {
+    const finalQuery = q || query;
+    if (!finalQuery.trim()) return;
+    if (q) setQuery(q);
 
     setIsLoading(true);
     setResults(null);
     setSummary(null);
-    try {
-      const data = await resumeApi.performCareerResearch(query);
-      setResults(data.data);
+    setSearchedQuery(finalQuery);
 
-      // FEAT-06: Summarize the raw data into actionable insights
+    try {
+      const data = await resumeApi.performCareerResearch(finalQuery);
+      setResults(data.data);
       if (
         data.data &&
         (data.data.reddit?.posts?.length > 0 || data.data.web?.length > 0)
@@ -49,7 +61,7 @@ export default function CareerResearch() {
         });
         setSummary(sumData);
       }
-    } catch (error) {
+    } catch {
       toast({
         variant: "destructive",
         title: "Research failed",
@@ -60,50 +72,59 @@ export default function CareerResearch() {
     }
   };
 
+  const hasResults =
+    results && (results.reddit?.posts?.length > 0 || results.web?.length > 0);
+
   return (
-    <div className="h-screen flex flex-col bg-[#09090b] text-zinc-100 overflow-hidden">
-      <main className="flex-1 overflow-y-auto custom-scrollbar">
-        <div className="max-w-5xl mx-auto space-y-12 py-12 px-4 sm:px-6 lg:px-8">
-          {/* TOP NAV */}
-          <div className="flex items-center justify-between">
-            <Button
-              variant="ghost"
-              onClick={() => navigate("/dashboard/hired")}
-              className="text-zinc-500 hover:text-white hover:bg-white/5 rounded-2xl gap-2"
+    <HiredShell>
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pb-10">
+        {/* ── HERO SEARCH ─────────────────────────────────────────── */}
+        <div
+          className={`transition-all duration-500 ${hasResults || isLoading ? "pt-6 pb-8" : "pt-16 pb-12"}`}
+        >
+          <div
+            className={`text-center transition-all duration-500 ${hasResults || isLoading ? "mb-6" : "mb-8"}`}
+          >
+            {!hasResults && !isLoading && (
+              <>
+                <div className="inline-flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/20 rounded-full px-4 py-1.5 mb-5">
+                  <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+                  <span className="text-xs font-bold text-indigo-300">
+                    AI-powered · Reddit + HN + Web
+                  </span>
+                </div>
+                <h1 className="text-4xl sm:text-5xl font-bold tracking-tighter mb-3">
+                  Deep{" "}
+                  <span className="text-indigo-400">Company Research.</span>
+                </h1>
+                <p className="text-zinc-500 text-sm font-medium max-w-md mx-auto leading-relaxed">
+                  Real interview experiences, salary data, and culture signals —
+                  sourced from Reddit, HN, and the web.
+                </p>
+              </>
+            )}
+
+            {/* Search bar */}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSearch();
+              }}
+              className="relative group max-w-2xl mx-auto"
             >
-              <ArrowLeft className="w-4 h-4" /> Back to Portal
-            </Button>
-            <Badge className="bg-indigo-500/10 text-indigo-400 border-indigo-500/20 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">
-              Market Intelligence v1.0
-            </Badge>
-          </div>
-
-          {/* HEADER & SEARCH */}
-          <div className="space-y-8 text-center max-w-2xl mx-auto">
-            <div className="space-y-4">
-              <h1 className="text-4xl sm:text-5xl font-bold tracking-tighter">
-                Deep <span className="text-indigo-400">Company Research.</span>
-              </h1>
-              <p className="text-zinc-500 font-medium">
-                Search for interview experiences, salary discussions, and
-                company culture across Reddit, HN, and the web.
-              </p>
-            </div>
-
-            <form onSubmit={handleSearch} className="relative group">
               <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none">
                 <Search className="w-5 h-5 text-zinc-500 group-focus-within:text-indigo-400 transition-colors" />
               </div>
               <Input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search e.g. 'Google Software Engineer Interview'..."
-                className="w-full h-16 pl-14 pr-32 bg-white/[0.03] border-white/[0.08] focus:border-indigo-500/50 rounded-[24px] text-lg font-medium placeholder:text-zinc-600 transition-all shadow-2xl"
+                placeholder="e.g. 'Google Software Engineer Interview' or 'Stripe culture'"
+                className="w-full h-14 pl-14 pr-36 bg-white/[0.03] border-white/[0.08] focus:border-indigo-500/40 rounded-2xl text-base font-medium placeholder:text-zinc-600 transition-all"
               />
               <Button
                 type="submit"
-                disabled={isLoading}
-                className="absolute right-2 top-2 bottom-2 bg-white text-black hover:bg-zinc-200 rounded-[18px] px-6 font-black uppercase text-xs tracking-widest transition-all active:scale-95"
+                disabled={isLoading || !query.trim()}
+                className="absolute right-2 top-2 bottom-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl px-6 font-bold text-xs tracking-wider transition-all active:scale-95"
               >
                 {isLoading ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -112,215 +133,279 @@ export default function CareerResearch() {
                 )}
               </Button>
             </form>
-          </div>
 
-          {/* RESULTS SECTION */}
-          <AnimatePresence mode="wait">
-            {isLoading ? (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-8 animate-pulse"
-              >
+            {/* Quick searches */}
+            {!hasResults && !isLoading && (
+              <div className="flex flex-wrap items-center justify-center gap-2 mt-4">
+                <span className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest">
+                  Try:
+                </span>
+                {QUICK_SEARCHES.map((q) => (
+                  <button
+                    key={q}
+                    onClick={() => handleSearch(q)}
+                    className="text-xs text-zinc-500 hover:text-zinc-200 bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.07] rounded-full px-3 py-1 transition-all font-medium"
+                  >
+                    {q}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ── LOADING SKELETON ─────────────────────────────────────── */}
+        <AnimatePresence mode="wait">
+          {isLoading && (
+            <motion.div
+              key="loading"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="space-y-4"
+            >
+              {/* AI summary skeleton */}
+              <div className="h-48 bg-indigo-500/5 border border-indigo-500/10 rounded-2xl animate-pulse" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {[1, 2, 3, 4].map((i) => (
                   <div
                     key={i}
-                    className="h-64 bg-white/[0.02] border border-white/[0.08] rounded-[32px]"
+                    className="h-28 bg-white/[0.02] border border-white/[0.06] rounded-2xl animate-pulse"
                   />
                 ))}
-              </motion.div>
-            ) : results ? (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="space-y-12 pt-8 pb-12"
-              >
-                {/* AI SUMMARY SECTION */}
-                {summary && (
-                  <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-[32px] p-8 space-y-6 relative overflow-hidden">
-                    <div className="absolute top-0 right-0 p-8 opacity-10">
-                      <Sparkles className="w-24 h-24 text-indigo-400" />
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Sparkles className="w-5 h-5 text-indigo-400" />
-                      <h2 className="text-xl font-bold tracking-tight text-indigo-100">
+              </div>
+            </motion.div>
+          )}
+
+          {/* ── RESULTS ──────────────────────────────────────────────── */}
+          {!isLoading && results && (
+            <motion.div
+              key="results"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-8 pb-8"
+            >
+              {/* Result header */}
+              <div className="flex items-center gap-3">
+                <div className="h-px flex-1 bg-white/[0.05]" />
+                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-600">
+                  Results for "{searchedQuery}"
+                </span>
+                <div className="h-px flex-1 bg-white/[0.05]" />
+              </div>
+
+              {/* ── AI SUMMARY ───────────────────────────────────────── */}
+              {summary && (
+                <div className="relative overflow-hidden rounded-2xl border border-indigo-500/20 bg-gradient-to-br from-indigo-500/10 via-indigo-500/5 to-transparent p-6">
+                  {/* BG decoration */}
+                  <div className="absolute -right-8 -top-8 w-40 h-40 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+                  <div className="relative space-y-5">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-7 h-7 rounded-lg bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center">
+                        <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+                      </div>
+                      <h2 className="text-sm font-black uppercase tracking-widest text-indigo-300">
                         AI Executive Summary
                       </h2>
                     </div>
-                    <p className="text-indigo-200/80 leading-relaxed font-medium">
+
+                    <p className="text-zinc-200 leading-relaxed font-medium text-sm">
                       {summary.key_insight}
                     </p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-3">
-                        <h3 className="text-xs font-black uppercase tracking-widest text-indigo-400">
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="bg-black/20 rounded-xl p-4 space-y-2.5">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400">
                           Interview Themes
-                        </h3>
-                        <ul className="space-y-2">
+                        </span>
+                        <ul className="space-y-1.5">
                           {summary.interview_themes.map((theme, i) => (
                             <li
                               key={i}
-                              className="flex items-start gap-2 text-sm text-indigo-100"
+                              className="flex items-start gap-2 text-xs text-zinc-300 font-medium"
                             >
-                              <span className="text-indigo-400 mt-0.5">•</span>
+                              <span className="text-indigo-500 mt-0.5 shrink-0">
+                                ▸
+                              </span>
                               {theme}
                             </li>
                           ))}
                         </ul>
                       </div>
-                      <div className="space-y-3">
-                        <h3 className="text-xs font-black uppercase tracking-widest text-indigo-400">
+                      <div className="bg-black/20 rounded-xl p-4 space-y-2.5">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400">
                           Culture Signals
-                        </h3>
-                        <ul className="space-y-2">
+                        </span>
+                        <ul className="space-y-1.5">
                           {summary.culture_signals.map((signal, i) => (
                             <li
                               key={i}
-                              className="flex items-start gap-2 text-sm text-indigo-100"
+                              className="flex items-start gap-2 text-xs text-zinc-300 font-medium"
                             >
-                              <span className="text-indigo-400 mt-0.5">•</span>
+                              <span className="text-indigo-500 mt-0.5 shrink-0">
+                                ▸
+                              </span>
                               {signal}
                             </li>
                           ))}
                         </ul>
                       </div>
                     </div>
-                    <div className="flex gap-4 pt-4 border-t border-indigo-500/20">
-                      <div className="bg-black/20 rounded-xl px-4 py-2">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400 block mb-1">
-                          Difficulty
-                        </span>
-                        <span className="text-sm font-bold text-white">
-                          {summary.difficulty_rating}
+
+                    <div className="flex flex-wrap gap-3 pt-2 border-t border-indigo-500/15">
+                      <div className="flex items-center gap-2">
+                        <AlertCircle className="w-3.5 h-3.5 text-indigo-400" />
+                        <span className="text-xs font-medium text-zinc-400">
+                          Difficulty:{" "}
+                          <span className="text-white font-bold">
+                            {summary.difficulty_rating}
+                          </span>
                         </span>
                       </div>
                       {summary.salary_range && (
-                        <div className="bg-black/20 rounded-xl px-4 py-2">
-                          <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400 block mb-1">
-                            Salary Range
-                          </span>
-                          <span className="text-sm font-bold text-white">
-                            {summary.salary_range}
+                        <div className="flex items-center gap-2">
+                          <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
+                          <span className="text-xs font-medium text-zinc-400">
+                            Salary:{" "}
+                            <span className="text-white font-bold">
+                              {summary.salary_range}
+                            </span>
                           </span>
                         </div>
                       )}
                     </div>
                   </div>
-                )}
+                </div>
+              )}
 
-                {/* REDDIT SECTION */}
-                {results.reddit && results.reddit.posts?.length > 0 && (
-                  <div className="space-y-6">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-[#FF4500]/10 flex items-center justify-center">
-                        <MessageSquare className="w-4 h-4 text-[#FF4500]" />
-                      </div>
-                      <h2 className="text-xl font-bold tracking-tight">
-                        Reddit Discussions
-                      </h2>
-                      <Badge
-                        variant="outline"
-                        className="text-[10px] opacity-60 uppercase"
-                      >
-                        {results.reddit.totalPosts} threads
-                      </Badge>
+              {/* ── REDDIT ────────────────────────────────────────────── */}
+              {results.reddit?.posts?.length > 0 && (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-7 h-7 rounded-lg bg-orange-500/10 border border-orange-500/20 flex items-center justify-center">
+                      <MessageSquare className="w-3.5 h-3.5 text-orange-500" />
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {results.reddit.posts.slice(0, 4).map((post: any) => (
-                        <Card
-                          key={post.id}
-                          className="p-6 bg-white/[0.02] border-white/[0.08] rounded-[24px] hover:border-white/20 transition-all group"
-                        >
-                          <div className="space-y-4">
-                            <div className="flex justify-between items-start gap-4">
-                              <h3 className="font-bold text-sm leading-tight line-clamp-2 group-hover:text-indigo-400 transition-colors">
-                                {post.title}
-                              </h3>
-                              <a
-                                href={post.permalink}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-zinc-600 hover:text-white"
-                              >
-                                <ExternalLink className="w-4 h-4" />
-                              </a>
-                            </div>
-                            <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-wider text-zinc-500">
-                              <span className="flex items-center gap-1">
-                                <TrendingUp className="w-3 h-3 text-emerald-500" />{" "}
-                                {post.ups} upvotes
-                              </span>
-                              <span>r/{post.subreddit}</span>
-                            </div>
-                          </div>
-                        </Card>
-                      ))}
-                    </div>
+                    <h2 className="text-sm font-bold text-white">
+                      Reddit Discussions
+                    </h2>
+                    <span className="text-[10px] font-bold text-zinc-600 bg-white/[0.03] border border-white/[0.07] rounded-full px-2 py-0.5">
+                      {results.reddit.totalPosts} threads
+                    </span>
                   </div>
-                )}
 
-                {/* WEB SECTION */}
-                {results.web && results.web.length > 0 && (
-                  <div className="space-y-6">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-sky-500/10 flex items-center justify-center">
-                        <Globe className="w-4 h-4 text-sky-400" />
-                      </div>
-                      <h2 className="text-xl font-bold tracking-tight">
-                        Web Intelligence
-                      </h2>
-                    </div>
-                    <div className="space-y-4">
-                      {results.web.map((res: any, idx: number) => (
-                        <a
-                          key={idx}
-                          href={res.url}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {results.reddit.posts
+                      .slice(0, 6)
+                      .map((post: any, i: number) => (
+                        <motion.a
+                          key={post.id}
+                          href={post.permalink}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="block group"
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: i * 0.04 }}
+                          className="group flex flex-col justify-between bg-white/[0.02] border border-white/[0.07] hover:border-orange-500/25 hover:bg-orange-500/[0.02] rounded-2xl p-4 transition-all duration-200"
                         >
-                          <Card className="p-6 bg-white/[0.02] border-white/[0.08] rounded-[24px] group-hover:border-sky-500/30 group-hover:bg-sky-500/[0.02] transition-all">
-                            <div className="flex items-start justify-between gap-6">
-                              <div className="space-y-2">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-[10px] font-black uppercase tracking-widest text-sky-500">
-                                    {res.source}
-                                  </span>
-                                  <ChevronRight className="w-3 h-3 text-zinc-700" />
-                                </div>
-                                <h3 className="font-bold text-lg leading-tight text-zinc-200 group-hover:text-white transition-colors">
-                                  {res.title}
-                                </h3>
-                                <p className="text-zinc-500 text-sm line-clamp-2 leading-relaxed">
-                                  {res.snippet}
-                                </p>
-                              </div>
-                              <div className="w-10 h-10 rounded-xl bg-white/[0.03] flex items-center justify-center group-hover:bg-sky-500/10 transition-all">
-                                <ExternalLink className="w-4 h-4 text-zinc-600 group-hover:text-sky-400" />
-                              </div>
+                          <div className="space-y-2 mb-3">
+                            <p className="text-xs font-bold text-zinc-600 uppercase tracking-wider">
+                              r/{post.subreddit}
+                            </p>
+                            <h3 className="text-sm font-semibold text-zinc-200 leading-snug line-clamp-2 group-hover:text-white transition-colors">
+                              {post.title}
+                            </h3>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3 text-[10px] font-bold text-zinc-600">
+                              <span className="flex items-center gap-1">
+                                <ChevronUp className="w-3 h-3 text-emerald-600" />
+                                {post.ups?.toLocaleString()}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Hash className="w-3 h-3" />
+                                {post.num_comments}
+                              </span>
                             </div>
-                          </Card>
-                        </a>
+                            <ArrowUpRight className="w-3.5 h-3.5 text-zinc-700 group-hover:text-orange-400 transition-colors" />
+                          </div>
+                        </motion.a>
                       ))}
-                    </div>
                   </div>
-                )}
+                </div>
+              )}
 
-                {/* EMPTY STATE */}
-                {!results.reddit?.posts?.length && !results.web?.length && (
-                  <div className="py-24 text-center space-y-4">
-                    <Zap className="w-12 h-12 text-zinc-800 mx-auto" />
-                    <p className="text-zinc-600 font-medium italic">
-                      No deep insights found for this query. Try adjusting your
-                      keywords.
-                    </p>
+              {/* ── WEB ───────────────────────────────────────────────── */}
+              {results.web?.length > 0 && (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-7 h-7 rounded-lg bg-sky-500/10 border border-sky-500/20 flex items-center justify-center">
+                      <Globe className="w-3.5 h-3.5 text-sky-400" />
+                    </div>
+                    <h2 className="text-sm font-bold text-white">
+                      Web Intelligence
+                    </h2>
+                    <span className="text-[10px] font-bold text-zinc-600 bg-white/[0.03] border border-white/[0.07] rounded-full px-2 py-0.5">
+                      {results.web.length} sources
+                    </span>
                   </div>
-                )}
-              </motion.div>
-            ) : null}
-          </AnimatePresence>
-        </div>
-      </main>
-    </div>
+
+                  <div className="space-y-2">
+                    {results.web.map((res: any, idx: number) => (
+                      <motion.a
+                        key={idx}
+                        href={res.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        initial={{ opacity: 0, x: -8 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: idx * 0.04 }}
+                        className="group flex items-start gap-4 bg-white/[0.02] border border-white/[0.07] hover:border-sky-500/25 hover:bg-sky-500/[0.02] rounded-2xl p-4 transition-all duration-200"
+                      >
+                        <div className="w-9 h-9 rounded-xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-center shrink-0 group-hover:border-sky-500/25 transition-colors">
+                          <Globe className="w-4 h-4 text-zinc-600 group-hover:text-sky-400 transition-colors" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-[10px] font-black uppercase tracking-wider text-sky-500/70">
+                              {res.source}
+                            </span>
+                          </div>
+                          <h3 className="text-sm font-semibold text-zinc-200 group-hover:text-white transition-colors leading-tight line-clamp-1 mb-1">
+                            {res.title}
+                          </h3>
+                          <p className="text-xs text-zinc-500 line-clamp-2 leading-relaxed">
+                            {res.snippet}
+                          </p>
+                        </div>
+                        <ArrowUpRight className="w-4 h-4 text-zinc-700 group-hover:text-sky-400 transition-colors shrink-0 mt-0.5" />
+                      </motion.a>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* ── EMPTY ─────────────────────────────────────────────── */}
+              {!hasResults && (
+                <div className="py-20 text-center space-y-3">
+                  <Zap className="w-10 h-10 text-zinc-800 mx-auto" />
+                  <p className="text-zinc-600 font-medium text-sm">
+                    No results for "{searchedQuery}". Try a more specific query.
+                  </p>
+                  <button
+                    onClick={() => {
+                      setResults(null);
+                      setQuery("");
+                    }}
+                    className="text-xs text-indigo-400 hover:text-indigo-300 font-bold"
+                  >
+                    Clear & search again →
+                  </button>
+                </div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </HiredShell>
   );
 }
