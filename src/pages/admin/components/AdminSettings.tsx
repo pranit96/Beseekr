@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
 import { apiClient } from "@/lib/api";
 import { Info, Search, SlidersHorizontal, AlertCircle } from "lucide-react";
 import {
@@ -13,12 +14,30 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Plus } from "lucide-react";
 
 export function AdminSettings() {
   const [settings, setSettings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [updating, setUpdating] = useState<string | null>(null);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [newSetting, setNewSetting] = useState({
+    key: "",
+    category: "general",
+    description: "",
+    value: ""
+  });
 
   useEffect(() => {
     fetchSettings();
@@ -94,6 +113,37 @@ export function AdminSettings() {
     }
   };
 
+  const handleAddSetting = async () => {
+    if (!newSetting.key) return;
+    
+    setUpdating("new");
+    try {
+      const res = await apiClient.updateAdminConfig(newSetting.key, {
+        value: newSetting.value,
+        category: newSetting.category,
+        description: newSetting.description
+      });
+
+      if (res.success) {
+        toast({
+          title: "Setting Created",
+          description: `Successfully added ${newSetting.key}.`,
+        });
+        setIsAddDialogOpen(false);
+        setNewSetting({ key: "", category: "general", description: "", value: "" });
+        fetchSettings();
+      }
+    } catch (error: any) {
+      toast({
+        title: "Creation Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setUpdating(null);
+    }
+  };
+
   const filteredSettings = settings.filter(s => 
     s.key.toLowerCase().includes(search.toLowerCase()) || 
     s.category.toLowerCase().includes(search.toLowerCase()) ||
@@ -108,14 +158,93 @@ export function AdminSettings() {
 
   return (
     <div className="space-y-6">
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input 
-          placeholder="Search settings by name, category, or purpose..." 
-          className="pl-10 bg-muted/50 border-none"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div className="relative max-w-md w-full">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input 
+            placeholder="Search settings by name, category, or purpose..." 
+            className="pl-10 bg-muted/50 border-none"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              Add New Setting
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Add System Setting</DialogTitle>
+              <DialogDescription>
+                Define a new operational flag or configuration parameter.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="key" className="text-right text-xs">Key</Label>
+                <div className="col-span-3">
+                  <Input
+                    id="key"
+                    placeholder="enable_new_feature"
+                    className="text-xs"
+                    maxLength={64}
+                    value={newSetting.key}
+                    onChange={(e) => setNewSetting({...newSetting, key: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '')})}
+                  />
+                  <p className="text-[10px] text-muted-foreground mt-1">Snake_case only. Max 64 chars.</p>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="category" className="text-right text-xs">Category</Label>
+                <Input
+                  id="category"
+                  placeholder="ai, security, infrastructure..."
+                  className="col-span-3 text-xs"
+                  maxLength={32}
+                  value={newSetting.category}
+                  onChange={(e) => setNewSetting({...newSetting, category: e.target.value})}
+                />
+              </div>
+
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="value" className="text-right text-xs">Value</Label>
+                <div className="col-span-3">
+                  <Input
+                    id="value"
+                    placeholder="true, 100, or some text"
+                    className="text-xs"
+                    maxLength={2048}
+                    value={newSetting.value}
+                    onChange={(e) => setNewSetting({...newSetting, value: e.target.value})}
+                  />
+                  <p className="text-[10px] text-muted-foreground mt-1">Type is auto-detected (boolean, number, or string).</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="desc" className="text-right text-xs">Purpose</Label>
+                <Input
+                  id="desc"
+                  placeholder="What does this flag do?"
+                  className="col-span-3 text-xs"
+                  maxLength={500}
+                  value={newSetting.description}
+                  onChange={(e) => setNewSetting({...newSetting, description: e.target.value})}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button onClick={handleAddSetting} disabled={updating === 'new' || !newSetting.key}>
+                {updating === 'new' ? 'Creating...' : 'Create Setting'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div className="grid grid-cols-1 gap-8">

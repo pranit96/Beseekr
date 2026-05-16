@@ -1180,7 +1180,7 @@ class ApiClient {
 
   async updateAdminConfig(
     key: string,
-    payload: { value: any; type: string; description?: string },
+    payload: { value: any; type?: string; description?: string; category?: string },
   ) {
     this.invalidateCache("/api/admin/config");
     return this.request<any>(`/api/admin/config/${key}`, {
