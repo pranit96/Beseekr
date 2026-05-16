@@ -134,7 +134,9 @@ export const AdminSettings = () => {
   }, [settings, search]);
 
   const categories = useMemo(() => {
-    return Array.from(new Set(settings.map((s: any) => s.category))) as string[];
+    return Array.from(
+      new Set(settings.map((s: any) => s.category)),
+    ) as string[];
   }, [settings]);
 
   return (
@@ -277,7 +279,9 @@ export const AdminSettings = () => {
               <div key={category} className="space-y-4">
                 <div className="flex items-center gap-2 px-1">
                   <SlidersHorizontal className="h-4 w-4 text-primary" />
-                  <h3 className="text-lg font-semibold capitalize">{category}</h3>
+                  <h3 className="text-lg font-semibold capitalize">
+                    {category}
+                  </h3>
                   <Badge
                     variant="secondary"
                     className="ml-2 bg-primary/10 text-primary border-none"
@@ -325,7 +329,9 @@ export const AdminSettings = () => {
                                   ? setting.value_number
                                   : setting.value_string
                               }
-                              type={setting.type === "number" ? "number" : "text"}
+                              type={
+                                setting.type === "number" ? "number" : "text"
+                              }
                               className="h-8 text-xs bg-muted/30 border-none"
                               onBlur={(e) =>
                                 handleValueChange(
@@ -340,7 +346,9 @@ export const AdminSettings = () => {
                               {setting.type === "number" ? (
                                 <span className="text-[10px] font-bold">#</span>
                               ) : (
-                                <span className="text-[10px] font-bold">Aa</span>
+                                <span className="text-[10px] font-bold">
+                                  Aa
+                                </span>
                               )}
                             </div>
                           </div>
