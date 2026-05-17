@@ -33,6 +33,7 @@ import { useToast } from "../../hooks/use-toast";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuContentNonPortalled,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
@@ -107,7 +108,7 @@ const StatusMenu = React.memo(function StatusMenu({
           <MoreVertical className="w-3.5 h-3.5" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent
+      <DropdownMenuContentNonPortalled
         side="bottom"
         align="end"
         sideOffset={4}
@@ -146,7 +147,7 @@ const StatusMenu = React.memo(function StatusMenu({
         >
           Delete
         </DropdownMenuItem>
-      </DropdownMenuContent>
+      </DropdownMenuContentNonPortalled>
     </DropdownMenu>
   );
 });
