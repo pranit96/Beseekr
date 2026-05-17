@@ -1211,7 +1211,7 @@ class ApiClient {
 
   async triggerAdminPipeline() {
     return this.request<any>("/api/admin/pipeline/trigger", {
-      method: "POST"
+      method: "POST",
     });
   }
 

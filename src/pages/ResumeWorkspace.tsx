@@ -521,7 +521,7 @@ export default function ResumeWorkspace() {
                 <Button
                   size="icon"
                   variant="ghost"
-                  onClick={() => navigate("/dashboard/hired")}
+                  onClick={() => navigate("/dashboard/hired/resume")}
                   className="h-7 w-7 rounded-lg bg-white/[0.03] border border-white/[0.08] text-zinc-400 hover:text-white hover:bg-white/[0.08] shrink-0 transition-all"
                   title="Back to Portal"
                 >

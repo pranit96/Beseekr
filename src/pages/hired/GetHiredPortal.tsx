@@ -40,10 +40,10 @@ export default function GetHiredPortal() {
     {
       title: "Interview Intelligence",
       description:
-        "Predict rounds and surface skill gaps before your interview.",
+        "Predict interview rounds, practice questions, and research company insights across Reddit and the web.",
       icon: <Target className="w-6 h-6 text-purple-400" />,
       action: () => navigate("prep"),
-      badges: ["Round Analysis", "Prep Kits"],
+      badges: ["Round Analysis", "Reddit Insights", "Web Research"],
       color: "purple",
       requiresResume: true,
     },
@@ -56,15 +56,6 @@ export default function GetHiredPortal() {
       badges: ["Tone Control", "One-Click Generate"],
       color: "amber",
       requiresResume: true,
-    },
-    {
-      title: "Market Intelligence",
-      description:
-        "Research companies across Reddit, HN, and the web for real interview insights.",
-      icon: <Search className="w-6 h-6 text-indigo-400" />,
-      action: () => navigate("research"),
-      badges: ["Reddit Search", "Interview Reviews"],
-      color: "indigo",
     },
   ];
 

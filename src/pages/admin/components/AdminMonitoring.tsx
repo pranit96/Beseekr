@@ -230,7 +230,9 @@ export function AdminMonitoring() {
                 onClick={handleCleanQueues}
                 disabled={isCleaning}
               >
-                <Trash2 className={`w-3 h-3 mr-2 ${isCleaning ? "animate-pulse" : ""}`} />
+                <Trash2
+                  className={`w-3 h-3 mr-2 ${isCleaning ? "animate-pulse" : ""}`}
+                />
                 {isCleaning ? "Cleaning..." : "Purge Queues"}
               </Button>
               <Button
@@ -240,7 +242,9 @@ export function AdminMonitoring() {
                 onClick={handleTriggerPipeline}
                 disabled={isTriggering}
               >
-                <Play className={`w-3 h-3 mr-2 ${isTriggering ? "animate-spin" : ""}`} />
+                <Play
+                  className={`w-3 h-3 mr-2 ${isTriggering ? "animate-spin" : ""}`}
+                />
                 {isTriggering ? "Triggering..." : "Run Pipeline"}
               </Button>
             </div>

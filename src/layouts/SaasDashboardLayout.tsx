@@ -10,6 +10,18 @@ export function SaasDashboardLayout() {
   const location = useLocation();
   const { user } = useAuth();
 
+  const isWorkspace = location.pathname.includes("/resume/workspace");
+
+  if (isWorkspace) {
+    return (
+      <div className="h-screen bg-[#09090b] text-zinc-100 flex flex-col overflow-hidden selection:bg-white/10">
+        <main className="flex-1 flex flex-col min-h-0 relative z-10">
+          <Outlet />
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex flex-col">
       {/* Ambient Background */}

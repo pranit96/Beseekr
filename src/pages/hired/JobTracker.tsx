@@ -380,32 +380,46 @@ export default function JobTracker() {
         <Button
           variant="ghost"
           size="icon"
-          className="h-7 w-7 text-zinc-500 hover:text-white rounded-lg shrink-0"
+          onClick={(e) => {
+            e.stopPropagation();
+          }}
+          className="h-7 w-7 text-zinc-500 hover:text-white rounded-lg shrink-0 relative z-20"
         >
-          <MoreVertical className="w-3.5 h-3.5" />
+          <MoreVertical className="w-3.5 h-3.5 text-zinc-400 hover:text-zinc-200" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="end"
-        className="bg-[#111113] border-white/[0.1] text-zinc-300 rounded-xl"
+        className="bg-[#111113] border border-white/[0.08] text-zinc-300 rounded-xl p-1 shadow-2xl relative z-50 min-w-[120px]"
+        onClick={(e) => e.stopPropagation()}
       >
         {["Applied", "Interviewing", "Offer", "Bookmarked"].map((s) => (
           <DropdownMenuItem
             key={s}
-            onClick={() => updateStatus(app.id, s as any)}
+            onClick={(e) => {
+              e.stopPropagation();
+              updateStatus(app.id, s as any);
+            }}
+            className="flex items-center px-3 py-2 text-xs font-bold text-zinc-300 hover:bg-white/[0.05] hover:text-white rounded-lg cursor-pointer transition-colors outline-none"
           >
             Set {s}
           </DropdownMenuItem>
         ))}
         <DropdownMenuItem
-          onClick={() => updateStatus(app.id, "Rejected")}
-          className="text-red-400"
+          onClick={(e) => {
+            e.stopPropagation();
+            updateStatus(app.id, "Rejected");
+          }}
+          className="flex items-center px-3 py-2 text-xs font-bold text-red-400 hover:bg-red-500/10 hover:text-red-300 rounded-lg cursor-pointer transition-colors outline-none"
         >
           Set Rejected
         </DropdownMenuItem>
         <DropdownMenuItem
-          onClick={() => handleDelete(app.id)}
-          className="text-red-400"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleDelete(app.id);
+          }}
+          className="flex items-center px-3 py-2 text-xs font-bold text-red-500 hover:bg-red-600/10 hover:text-red-400 rounded-lg cursor-pointer transition-colors outline-none"
         >
           Delete
         </DropdownMenuItem>

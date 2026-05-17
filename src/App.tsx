@@ -144,6 +144,10 @@ const ResumeUpload = lazyRetry(
   () => import("./pages/ResumeUpload"),
   "ResumeUpload",
 );
+const ResumePortal = lazyRetry(
+  () => import("./pages/ResumePortal"),
+  "ResumePortal",
+);
 const ResumeTemplateSelect = lazyRetry(
   () => import("./pages/ResumeTemplateSelect"),
   "ResumeTemplateSelect",
@@ -160,10 +164,7 @@ const InterviewPrep = lazyRetry(
   () => import("./pages/hired/InterviewPrep"),
   "InterviewPrep",
 );
-const CareerResearch = lazyRetry(
-  () => import("./pages/hired/CareerResearch"),
-  "CareerResearch",
-);
+
 const CoverLetter = lazyRetry(
   () => import("./pages/hired/CoverLetter"),
   "CoverLetter",
@@ -485,12 +486,20 @@ const App = () => {
                         path="resume"
                         element={
                           <Suspense fallback={<PageLoader />}>
+                            <ResumePortal />
+                          </Suspense>
+                        }
+                      />
+                      <Route
+                        path="resume/workspace"
+                        element={
+                          <Suspense fallback={<PageLoader />}>
                             <ResumeWorkspace />
                           </Suspense>
                         }
                       />
                       <Route
-                        path="upload"
+                        path="resume/upload"
                         element={
                           <Suspense fallback={<PageLoader />}>
                             <ResumeUpload />
@@ -498,7 +507,7 @@ const App = () => {
                         }
                       />
                       <Route
-                        path="templates"
+                        path="resume/templates"
                         element={
                           <Suspense fallback={<PageLoader />}>
                             <ResumeTemplateSelect />
@@ -523,11 +532,7 @@ const App = () => {
                       />
                       <Route
                         path="research"
-                        element={
-                          <Suspense fallback={<PageLoader />}>
-                            <CareerResearch />
-                          </Suspense>
-                        }
+                        element={<Navigate to="../prep?tab=research" replace />}
                       />
                       <Route
                         path="cover-letter"
