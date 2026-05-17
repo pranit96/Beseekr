@@ -339,6 +339,23 @@ export async function summarizeResearch(results: {
   return res.data as ResearchSummary;
 }
 
+export async function parseJobUrl(url: string): Promise<{ company_name: string; job_title: string; jd_text: string }> {
+  const res = await apiClient.post("/api/resume/applications/parse-url", { url });
+  return res.data;
+}
+
+export interface CoachInsights {
+  pep_talk: string;
+  streaks_encouragement: string;
+  checklist: Array<{ id: string; text: string; completed?: boolean }>;
+  next_strategic_steps: string[];
+}
+
+export async function getCoachInsights(): Promise<CoachInsights> {
+  const res = await apiClient.post("/api/resume/applications/coach-insights");
+  return res.data;
+}
+
 export const resumeApi = {
   uploadAndParseResume,
   scoreResume,
@@ -359,6 +376,8 @@ export const resumeApi = {
   generateInterviewPrep,
   performCareerResearch,
   summarizeResearch,
+  parseJobUrl,
+  getCoachInsights,
 };
 
 export default resumeApi;

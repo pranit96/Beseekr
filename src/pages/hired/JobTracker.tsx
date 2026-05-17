@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import confetti from "canvas-confetti";
 import { resumeApi, type JobApplication } from "../../api/resume";
 import {
   Briefcase,
@@ -22,6 +23,9 @@ import {
   CheckCircle2,
   XCircle,
   Bookmark,
+  Flame,
+  Trophy,
+  RefreshCw,
 } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
@@ -88,6 +92,35 @@ function AddModal({
     jd_text: "",
     notes: "",
   });
+  const [isParsingUrl, setIsParsingUrl] = useState(false);
+  const { toast } = useToast();
+
+  const handleAiAutofill = async () => {
+    if (!form.job_url) return;
+    setIsParsingUrl(true);
+    try {
+      const parsed = await resumeApi.parseJobUrl(form.job_url);
+      setForm((p) => ({
+        ...p,
+        company_name: parsed.company_name || p.company_name,
+        job_title: parsed.job_title || p.job_title,
+        jd_text: parsed.jd_text || p.jd_text,
+      }));
+      toast({
+        title: "Autofilled from AI 🪄",
+        description: `Successfully extracted details for ${parsed.company_name || "the company"}.`,
+      });
+    } catch (e: any) {
+      toast({
+        variant: "destructive",
+        title: "Autofill failed",
+        description: e.message || "Failed to extract job details from the URL.",
+      });
+    } finally {
+      setIsParsingUrl(false);
+    }
+  };
+
   const set = (k: string, v: string) => setForm((p) => ({ ...p, [k]: v }));
 
   if (!open) return null;
@@ -185,9 +218,31 @@ function AddModal({
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 flex items-center gap-1.5">
-                <Link className="w-3 h-3" /> Job URL
-              </label>
+              <div className="flex justify-between items-center">
+                <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 flex items-center gap-1.5">
+                  <Link className="w-3 h-3" /> Job URL
+                </label>
+                {form.job_url && (
+                  <button
+                    type="button"
+                    onClick={handleAiAutofill}
+                    disabled={isParsingUrl}
+                    className="text-[10px] font-bold text-indigo-400 hover:text-indigo-300 disabled:text-zinc-600 flex items-center gap-1 transition-colors"
+                  >
+                    {isParsingUrl ? (
+                      <>
+                        <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                        AI Autofilling...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-2.5 h-2.5" />
+                        AI Autofill 🪄
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
               <Input
                 value={form.job_url}
                 onChange={(e) => set("job_url", e.target.value)}
@@ -297,6 +352,52 @@ export default function JobTracker() {
     return () => clearTimeout(t);
   }, [hoveredAppId, applications]);
 
+  const [coachInsights, setCoachInsights] = useState<any>(null);
+  const [isLoadingCoach, setIsLoadingCoach] = useState(false);
+  const [streak, setStreak] = useState(0);
+  const [completedChecklist, setCompletedChecklist] = useState<Set<string>>(new Set());
+
+  const fetchCoachInsights = useCallback(async () => {
+    setIsLoadingCoach(true);
+    try {
+      const res = await resumeApi.getCoachInsights();
+      setCoachInsights(res);
+      // Pre-populate completed tasks if they are saved in localStorage
+      const savedCompleted = localStorage.getItem("job_tracker_completed_tasks");
+      if (savedCompleted) {
+        try {
+          const parsed = JSON.parse(savedCompleted);
+          setCompletedChecklist(new Set(parsed));
+        } catch {
+          // ignore
+        }
+      }
+    } catch {
+      console.warn("Failed to fetch AI Coach insights");
+    } finally {
+      setIsLoadingCoach(false);
+    }
+  }, []);
+
+  const handleToggleTask = (taskId: string) => {
+    setCompletedChecklist((prev) => {
+      const updated = new Set(prev);
+      if (updated.has(taskId)) {
+        updated.delete(taskId);
+      } else {
+        updated.add(taskId);
+        // Trigger satisfying confetti blast on check!
+        confetti({
+          particleCount: 80,
+          spread: 60,
+          origin: { y: 0.8 },
+        });
+      }
+      localStorage.setItem("job_tracker_completed_tasks", JSON.stringify(Array.from(updated)));
+      return updated;
+    });
+  };
+
   const fetch = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -310,7 +411,34 @@ export default function JobTracker() {
 
   useEffect(() => {
     fetch();
-  }, [fetch]);
+    fetchCoachInsights();
+
+    // Calculate/Retrieve Streak
+    const today = new Date().toDateString();
+    const lastActive = localStorage.getItem("job_tracker_last_active");
+    const savedStreak = localStorage.getItem("job_tracker_streak");
+    let currentStreak = savedStreak ? parseInt(savedStreak, 10) : 0;
+
+    if (lastActive) {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = yesterday.toDateString();
+
+      if (lastActive === yesterdayStr) {
+        currentStreak += 1;
+        localStorage.setItem("job_tracker_streak", currentStreak.toString());
+      } else if (lastActive !== today) {
+        currentStreak = 1;
+        localStorage.setItem("job_tracker_streak", "1");
+      }
+    } else {
+      currentStreak = 1;
+      localStorage.setItem("job_tracker_streak", "1");
+    }
+
+    setStreak(currentStreak);
+    localStorage.setItem("job_tracker_last_active", today);
+  }, [fetch, fetchCoachInsights]);
 
   const flash = (id: string) => {
     setUpdatedIds((p) => new Set(p).add(id));
@@ -388,34 +516,24 @@ export default function JobTracker() {
       <DropdownMenuContent
         align="end"
         className="bg-[#111113] border border-white/[0.08] text-zinc-300 rounded-xl p-1 shadow-2xl relative z-50 min-w-[120px]"
-        onClick={(e) => e.stopPropagation()}
       >
         {["Applied", "Interviewing", "Offer", "Bookmarked"].map((s) => (
           <DropdownMenuItem
             key={s}
-            onClick={(e) => {
-              e.stopPropagation();
-              updateStatus(app.id, s as any);
-            }}
+            onSelect={() => updateStatus(app.id, s as any)}
             className="flex items-center px-3 py-2 text-xs font-bold text-zinc-300 hover:bg-white/[0.05] hover:text-white rounded-lg cursor-pointer transition-colors outline-none"
           >
             Set {s}
           </DropdownMenuItem>
         ))}
         <DropdownMenuItem
-          onClick={(e) => {
-            e.stopPropagation();
-            updateStatus(app.id, "Rejected");
-          }}
+          onSelect={() => updateStatus(app.id, "Rejected")}
           className="flex items-center px-3 py-2 text-xs font-bold text-red-400 hover:bg-red-500/10 hover:text-red-300 rounded-lg cursor-pointer transition-colors outline-none"
         >
           Set Rejected
         </DropdownMenuItem>
         <DropdownMenuItem
-          onClick={(e) => {
-            e.stopPropagation();
-            handleDelete(app.id);
-          }}
+          onSelect={() => handleDelete(app.id)}
           className="flex items-center px-3 py-2 text-xs font-bold text-red-500 hover:bg-red-600/10 hover:text-red-400 rounded-lg cursor-pointer transition-colors outline-none"
         >
           Delete
@@ -486,6 +604,142 @@ export default function JobTracker() {
               />
             </div>
           )}
+
+          {/* ── AI CAREER COACH & HABIT PANELS ───────────────────── */}
+          <div className="bg-[#131316] border border-white/[0.06] rounded-[24px] p-6 shadow-xl relative overflow-hidden transition-all duration-300">
+            {/* Gradient Glow */}
+            <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-10 -left-10 w-[200px] h-[200px] bg-purple-500/5 rounded-full blur-2xl pointer-events-none" />
+
+            <div className="flex flex-col md:flex-row gap-6 justify-between items-start md:items-center border-b border-white/[0.05] pb-5 mb-5 relative z-10">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                  <Sparkles className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-base font-black text-white tracking-tight">AI Career Coach</h2>
+                    <Badge variant="secondary" className="bg-indigo-500/10 border-indigo-500/20 text-indigo-400 font-bold text-[10px] uppercase py-0 px-2 rounded-full">Active</Badge>
+                  </div>
+                  <p className="text-xs text-zinc-500 mt-0.5">Your personalized habit streak and daily action planner.</p>
+                </div>
+              </div>
+
+              {/* Streak Widget */}
+              <div className="flex items-center gap-4 bg-white/[0.03] border border-white/[0.06] p-2.5 px-4 rounded-2xl shrink-0">
+                <div className="flex items-center gap-2">
+                  <Flame className="w-5 h-5 text-orange-500 animate-pulse" />
+                  <div>
+                    <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest leading-none">Streak</p>
+                    <p className="text-sm font-black text-white mt-1 leading-none">{streak} Days</p>
+                  </div>
+                </div>
+                <div className="h-6 w-px bg-white/[0.08]" />
+                <div className="flex items-center gap-2">
+                  <Trophy className="w-5 h-5 text-yellow-500" />
+                  <div>
+                    <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest leading-none">Level</p>
+                    <p className="text-sm font-black text-white mt-1 leading-none">
+                      {counts.total === 0 ? "Novice" : counts.total < 5 ? "Amateur" : "Pro Finder"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {isLoadingCoach ? (
+              <div className="flex flex-col items-center justify-center py-8">
+                <Loader2 className="w-6 h-6 text-indigo-500 animate-spin" />
+                <p className="text-xs text-zinc-500 font-bold mt-2.5">AI Coach is analyzing your pipeline...</p>
+              </div>
+            ) : coachInsights ? (
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 relative z-10">
+                {/* Daily Checklist Column */}
+                <div className="lg:col-span-2 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xs font-black uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-indigo-400" />
+                      AI Daily Actions Checklist
+                    </h3>
+                    <span className="text-[10px] font-bold text-zinc-500">
+                      {completedChecklist.size} / {coachInsights.checklist?.length || 3} Completed
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {coachInsights.checklist?.map((task: any) => {
+                      const isCompleted = completedChecklist.has(task.id);
+                      return (
+                        <div
+                          key={task.id}
+                          onClick={() => handleToggleTask(task.id)}
+                          className={`group cursor-pointer flex items-start gap-3 p-3.5 rounded-xl border transition-all duration-300 ${isCompleted ? "bg-indigo-500/5 border-indigo-500/20 text-zinc-500" : "bg-white/[0.02] border-white/[0.06] hover:bg-white/[0.04] hover:border-white/[0.12] text-zinc-300"}`}
+                        >
+                          <div className={`w-5 h-5 rounded-lg border flex items-center justify-center shrink-0 mt-0.5 transition-all ${isCompleted ? "bg-indigo-500 border-indigo-500 text-white" : "border-white/[0.15] group-hover:border-indigo-500/50"}`}>
+                            {isCompleted && <CheckCircle2 className="w-3.5 h-3.5 fill-current" />}
+                          </div>
+                          <span className={`text-xs font-bold leading-relaxed transition-all ${isCompleted ? "line-through text-zinc-600 animate-pulse" : ""}`}>
+                            {task.text}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Pep Talk */}
+                  <div className="bg-white/[0.02] border border-white/[0.05] rounded-2xl p-4 mt-3">
+                    <p className="text-xs italic text-zinc-400 leading-relaxed">
+                      "{coachInsights.pep_talk}"
+                    </p>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-indigo-400 mt-2">
+                      — AI Coach Assistant
+                    </p>
+                  </div>
+                </div>
+
+                {/* Strategy Column */}
+                <div className="space-y-4 lg:border-l lg:border-white/[0.05] lg:pl-6">
+                  <h3 className="text-xs font-black uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
+                    <Target className="w-3.5 h-3.5 text-purple-400" />
+                    AI Search Strategy
+                  </h3>
+                  <div className="space-y-3">
+                    {coachInsights.next_strategic_steps?.map((step: string, i: number) => (
+                      <div key={i} className="flex gap-2.5 items-start">
+                        <div className="w-5 h-5 rounded-full bg-purple-500/10 border border-purple-500/20 flex items-center justify-center shrink-0 text-[10px] font-bold text-purple-400 mt-0.5">
+                          {i + 1}
+                        </div>
+                        <p className="text-xs text-zinc-400 leading-relaxed font-bold">
+                          {step}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="pt-2">
+                    <Button
+                      onClick={fetchCoachInsights}
+                      variant="ghost"
+                      size="sm"
+                      className="w-full text-xs font-bold text-zinc-500 hover:text-white hover:bg-white/[0.05] rounded-xl flex items-center gap-1.5 h-9"
+                    >
+                      <RefreshCw className="w-3 h-3" /> Refresh AI Strategy
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-6 text-center">
+                <p className="text-xs text-zinc-500 font-bold">Start adding jobs to generate a tailored AI Coaching pipeline checklist!</p>
+                <Button
+                  onClick={fetchCoachInsights}
+                  className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl mt-3 h-9 text-xs px-4"
+                >
+                  Load AI Coach Insights
+                </Button>
+              </div>
+            )}
+          </div>
 
           {/* ── TOOLBAR ────────────────────────────────────────────── */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
