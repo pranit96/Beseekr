@@ -96,7 +96,7 @@ const StatusMenu = React.memo(function StatusMenu({
   onDelete,
 }: StatusMenuProps) {
   return (
-    <DropdownMenu>
+    <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
@@ -108,32 +108,38 @@ const StatusMenu = React.memo(function StatusMenu({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
+        side="bottom"
         align="end"
+        sideOffset={4}
         className="bg-[#111113] border border-white/[0.08] text-zinc-300 rounded-xl p-1 shadow-2xl min-w-[140px]"
       >
         <p className="px-3 py-1 text-[10px] font-black uppercase tracking-widest text-zinc-600">
           Move to
         </p>
-        {(
-          ["Applied", "Interviewing", "Offer", "Bookmarked"] as AppStatus[]
-        ).map((s) => (
-          <DropdownMenuItem
-            key={s}
-            onSelect={() => onUpdateStatus(app.id, s)}
-            className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-zinc-300 hover:bg-white/[0.05] hover:text-white rounded-lg cursor-pointer transition-colors outline-none"
-          >
-            <div className={`w-1.5 h-1.5 rounded-full ${getCfg(s).dot}`} />
-            {s}
-          </DropdownMenuItem>
-        ))}
-        <DropdownMenuSeparator className="my-1 bg-white/[0.06]" />
-        <DropdownMenuItem
-          onSelect={() => onUpdateStatus(app.id, "Rejected")}
-          className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-red-400 hover:bg-red-500/10 hover:text-red-300 rounded-lg cursor-pointer transition-colors outline-none"
-        >
-          <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
-          Rejected
-        </DropdownMenuItem>
+        {ALL_STATUSES.filter((s) => s !== "Rejected" && s !== app.status).map(
+          (s) => (
+            <DropdownMenuItem
+              key={s}
+              onSelect={() => onUpdateStatus(app.id, s)}
+              className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-zinc-300 hover:bg-white/[0.05] hover:text-white rounded-lg cursor-pointer transition-colors outline-none"
+            >
+              <div className={`w-1.5 h-1.5 rounded-full ${getCfg(s).dot}`} />
+              {s}
+            </DropdownMenuItem>
+          ),
+        )}
+        {app.status !== "Rejected" && (
+          <>
+            <DropdownMenuSeparator className="my-1 bg-white/[0.06]" />
+            <DropdownMenuItem
+              onSelect={() => onUpdateStatus(app.id, "Rejected")}
+              className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-red-400 hover:bg-red-500/10 hover:text-red-300 rounded-lg cursor-pointer transition-colors outline-none"
+            >
+              <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
+              Rejected
+            </DropdownMenuItem>
+          </>
+        )}
         <DropdownMenuItem
           onSelect={() => onDelete(app.id)}
           className="flex items-center px-3 py-2 text-xs font-bold text-red-500/70 hover:bg-red-600/10 hover:text-red-400 rounded-lg cursor-pointer transition-colors outline-none"

@@ -44,12 +44,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import HiredShell from "./HiredShell";
 
-const QUICK_SEARCHES = [
-  "Accenture",
-  "Google",
-  "Amazon",
-  "Microsoft",
-];
+const QUICK_SEARCHES = ["Accenture", "Google", "Amazon", "Microsoft"];
 
 /**
  * Organizes raw Reddit posts into Hired-specific intelligence categories.
@@ -69,7 +64,7 @@ const getCategorizedPosts = (posts: any[]) => {
       " " +
       (post.subreddit || "")
     ).toLowerCase();
-    
+
     if (
       text.includes("salary") ||
       text.includes("compensation") ||
@@ -124,12 +119,13 @@ export default function InterviewPrep() {
   const [recentApps, setRecentApps] = useState<JobApplication[]>([]);
   const [revealedTechAnswers, setRevealedTechAnswers] = useState<number[]>([]);
   const [copiedPitch, setCopiedPitch] = useState(false);
-  const [completedReadinessTasks, setCompletedReadinessTasks] = useState<string[]>([
-    "Review resume basics",
-  ]);
+  const [completedReadinessTasks, setCompletedReadinessTasks] = useState<
+    string[]
+  >(["Review resume basics"]);
 
   // Workspace sub-tab navigation
-  const [activeWorkspaceTab, setActiveWorkspaceTab] = useState<string>("overview");
+  const [activeWorkspaceTab, setActiveWorkspaceTab] =
+    useState<string>("overview");
 
   // Sync sub-tab from query params
   useEffect(() => {
@@ -146,7 +142,8 @@ export default function InterviewPrep() {
   const [researchQuery, setResearchQuery] = useState("");
   const [isResearchLoading, setIsResearchLoading] = useState(false);
   const [researchResults, setResearchResults] = useState<any>(null);
-  const [researchSummary, setResearchSummary] = useState<ResearchSummary | null>(null);
+  const [researchSummary, setResearchSummary] =
+    useState<ResearchSummary | null>(null);
   const [searchedQuery, setSearchedQuery] = useState("");
 
   const toggleReadinessTask = (task: string) => {
@@ -206,7 +203,7 @@ export default function InterviewPrep() {
         .catch(() => {});
       return;
     }
-    
+
     try {
       const cached = sessionStorage.getItem(`prepKit:${activeApp.id}`);
       if (cached) {
@@ -214,13 +211,14 @@ export default function InterviewPrep() {
         return;
       }
     } catch (_) {}
-    
+
     if (!prepKit) generateKit();
   }, [activeApp]);
 
   // ── DEEP CAREER MARKET RESEARCH HANDLER ───────────────────────────
   const handleResearchSearch = async (q?: string) => {
-    const finalQuery = q || researchQuery || (activeApp ? activeApp.company_name : "");
+    const finalQuery =
+      q || researchQuery || (activeApp ? activeApp.company_name : "");
     if (!finalQuery.trim()) return;
 
     setIsResearchLoading(true);
@@ -277,7 +275,9 @@ export default function InterviewPrep() {
               Resume Required
             </h2>
             <p className="text-zinc-500 text-sm leading-relaxed max-w-sm font-semibold">
-              Interview Intelligence maps your resume to target job descriptions to predict rounds and surface real skill gaps. Add your resume first.
+              Interview Intelligence maps your resume to target job descriptions
+              to predict rounds and surface real skill gaps. Add your resume
+              first.
             </p>
           </div>
           <div className="flex gap-3">
@@ -303,7 +303,6 @@ export default function InterviewPrep() {
   return (
     <HiredShell>
       <div className="max-w-5xl mx-auto space-y-7 py-7 px-4 sm:px-6 lg:px-8">
-        
         {!activeApp ? (
           /* ── UNIFIED SELECTION ENTRY DASHBOARD ───────────────────────── */
           <div className="py-8 space-y-10 text-left animate-in fade-in duration-300">
@@ -319,12 +318,13 @@ export default function InterviewPrep() {
                 Interview <span className="text-indigo-400">Intelligence.</span>
               </h1>
               <p className="text-zinc-500 text-sm font-semibold leading-relaxed max-w-lg mx-auto">
-                Predict interview rounds, generate specialized QA prep blueprints, and automatically load Reddit salary indices, WLB reports, and culture warnings—all consolidated in one workflow.
+                Predict interview rounds, generate specialized QA prep
+                blueprints, and automatically load Reddit salary indices, WLB
+                reports, and culture warnings—all consolidated in one workflow.
               </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch">
-              
               {/* Left Wing: Target a tracked Application */}
               <div className="bg-[#0b0b12]/40 border border-white/[0.05] rounded-3xl p-6 sm:p-8 space-y-6 flex flex-col justify-between shadow-xl relative overflow-hidden">
                 <div className="absolute -left-6 -bottom-6 w-32 h-32 bg-purple-500/[0.02] rounded-full blur-2xl pointer-events-none" />
@@ -343,7 +343,7 @@ export default function InterviewPrep() {
                     </div>
                   </div>
                   <div className="h-px bg-white/[0.05]" />
-                  
+
                   {recentApps.length > 0 ? (
                     <div className="space-y-2.5 max-h-[220px] overflow-y-auto custom-scrollbar pr-1">
                       {recentApps.slice(0, 4).map((app) => (
@@ -369,11 +369,12 @@ export default function InterviewPrep() {
                     </div>
                   ) : (
                     <div className="py-12 text-center text-zinc-600 text-xs font-semibold bg-white/[0.01] border border-white/[0.04] rounded-2xl">
-                      No applications found. Add target roles in your tracker first!
+                      No applications found. Add target roles in your tracker
+                      first!
                     </div>
                   )}
                 </div>
-                
+
                 <Button
                   onClick={() => navigate("/dashboard/hired/tracker")}
                   className="w-full bg-white text-black hover:bg-zinc-200 font-bold h-10 rounded-xl text-xs uppercase tracking-wider shadow-md cursor-pointer border-none"
@@ -400,7 +401,7 @@ export default function InterviewPrep() {
                     </div>
                   </div>
                   <div className="h-px bg-white/[0.05]" />
-                  
+
                   <form
                     onSubmit={(e) => {
                       e.preventDefault();
@@ -410,9 +411,10 @@ export default function InterviewPrep() {
                           company_name: researchQuery,
                           job_title: "Software Engineer",
                           status: "Applied",
-                          jd_text: "General engineering culture, interview process, and technical expectations.",
+                          jd_text:
+                            "General engineering culture, interview process, and technical expectations.",
                           created_at: new Date().toISOString(),
-                          updated_at: new Date().toISOString()
+                          updated_at: new Date().toISOString(),
                         };
                         setPrepKit(null);
                         setActiveApp(tempApp);
@@ -431,7 +433,7 @@ export default function InterviewPrep() {
                         <Search className="w-4 h-4 text-zinc-600" />
                       </div>
                     </div>
-                    
+
                     <Button
                       type="submit"
                       disabled={!researchQuery.trim()}
@@ -440,7 +442,7 @@ export default function InterviewPrep() {
                       Analyze & Prepare
                     </Button>
                   </form>
-                  
+
                   <div className="space-y-2 pt-1">
                     <span className="text-[9px] font-black uppercase tracking-widest text-zinc-600 block">
                       Quick Hotkeys:
@@ -456,9 +458,10 @@ export default function InterviewPrep() {
                               company_name: q,
                               job_title: "Software Engineer",
                               status: "Applied",
-                              jd_text: "General engineering culture, interview process, and technical expectations.",
+                              jd_text:
+                                "General engineering culture, interview process, and technical expectations.",
                               created_at: new Date().toISOString(),
-                              updated_at: new Date().toISOString()
+                              updated_at: new Date().toISOString(),
                             };
                             setPrepKit(null);
                             setActiveApp(tempApp);
@@ -472,7 +475,6 @@ export default function InterviewPrep() {
                   </div>
                 </div>
               </div>
-
             </div>
           </div>
         ) : (
@@ -492,7 +494,8 @@ export default function InterviewPrep() {
                     }}
                     className="text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:text-white transition-colors flex items-center gap-1.5 cursor-pointer bg-transparent border-none p-0 outline-none"
                   >
-                    <ArrowLeft className="w-3.5 h-3.5" /> Back to Intelligence Hub
+                    <ArrowLeft className="w-3.5 h-3.5" /> Back to Intelligence
+                    Hub
                   </button>
                   <span className="text-zinc-800">/</span>
                   <span className="text-[10px] font-black text-indigo-400 truncate max-w-[200px] uppercase tracking-wider">
@@ -543,7 +546,6 @@ export default function InterviewPrep() {
               </div>
             ) : prepKit ? (
               <div className="space-y-8 animate-in fade-in duration-300 pb-16 text-left">
-                
                 {/* predicted rounds horizontal track */}
                 <div className="bg-[#0b0b12]/50 border border-white/[0.05] rounded-3xl p-6 shadow-xl relative overflow-hidden">
                   <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/[0.02] rounded-full blur-3xl pointer-events-none" />
@@ -554,7 +556,8 @@ export default function InterviewPrep() {
                         Predicted Hiring Journey
                       </h3>
                       <p className="text-[11px] text-zinc-500 mt-0.5">
-                        Predicted hiring track mapped dynamically based on target company process logs.
+                        Predicted hiring track mapped dynamically based on
+                        target company process logs.
                       </p>
                     </div>
                     <Badge className="bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-[10px] font-black tracking-widest px-3 py-1 self-start md:self-auto uppercase">
@@ -616,7 +619,6 @@ export default function InterviewPrep() {
 
                 {/* Main dynamic workspace */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-                  
                   {/* Left Sidebar: Vibe & flag alerts */}
                   <div className="lg:col-span-4 space-y-6">
                     {/* Vibe focus */}
@@ -654,7 +656,8 @@ export default function InterviewPrep() {
                         </h4>
                       </div>
                       <p className="text-[11px] text-zinc-500 leading-relaxed font-semibold">
-                        Avoid mentioning these keywords or concepts during your discussions to secure cultural alignment.
+                        Avoid mentioning these keywords or concepts during your
+                        discussions to secure cultural alignment.
                       </p>
                       <div className="flex flex-col gap-2">
                         {prepKit.red_flags.map((flag, idx) => (
@@ -670,7 +673,6 @@ export default function InterviewPrep() {
                         ))}
                       </div>
                     </div>
-
                   </div>
 
                   {/* Right Panel: Tab Modules */}
@@ -739,7 +741,8 @@ export default function InterviewPrep() {
                                 Your Interview Readiness Score
                               </h3>
                               <p className="text-xs text-indigo-200/60 leading-relaxed font-semibold">
-                                Live prediction computed against target profile requirements, watchouts, and prep completeness.
+                                Live prediction computed against target profile
+                                requirements, watchouts, and prep completeness.
                               </p>
                             </div>
                             <div className="flex items-baseline gap-1 bg-white/[0.03] border border-white/[0.08] rounded-2xl px-5 py-2.5 shrink-0">
@@ -791,7 +794,8 @@ export default function InterviewPrep() {
                               Readiness Checklist
                             </h3>
                             <p className="text-[11px] text-zinc-600 mt-0.5 font-semibold">
-                              Complete these essential milestones to secure technical and behavioral alignment.
+                              Complete these essential milestones to secure
+                              technical and behavioral alignment.
                             </p>
                           </div>
                           <div className="space-y-2">
@@ -847,7 +851,9 @@ export default function InterviewPrep() {
                             Technical QA Blueprint
                           </h3>
                           <p className="text-xs text-zinc-600 font-semibold mt-1">
-                            Review core technology questions compiled specifically for your profile against target JD specifications.
+                            Review core technology questions compiled
+                            specifically for your profile against target JD
+                            specifications.
                           </p>
                         </div>
                         <div className="space-y-4">
@@ -921,7 +927,8 @@ export default function InterviewPrep() {
                             Behavioral fit & strategy
                           </h3>
                           <p className="text-xs text-zinc-600 font-semibold mt-1">
-                            Prepare STAR alignment examples mapped to core target company values.
+                            Prepare STAR alignment examples mapped to core
+                            target company values.
                           </p>
                         </div>
                         <div className="space-y-4">
@@ -958,10 +965,11 @@ export default function InterviewPrep() {
                               Market & Community Intelligence
                             </h3>
                             <p className="text-xs text-zinc-600 font-semibold mt-1">
-                              Real-world employee feedback, salaries, and hiring experiences for {activeApp.company_name}.
+                              Real-world employee feedback, salaries, and hiring
+                              experiences for {activeApp.company_name}.
                             </p>
                           </div>
-                          
+
                           {/* Inline research search */}
                           <form
                             onSubmit={(e) => {
@@ -998,13 +1006,15 @@ export default function InterviewPrep() {
                             <div className="h-32 bg-indigo-500/5 border border-indigo-500/10 rounded-2xl" />
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                               {[1, 2].map((i) => (
-                                <div key={i} className="h-24 bg-white/[0.02] border border-white/[0.06] rounded-2xl" />
+                                <div
+                                  key={i}
+                                  className="h-24 bg-white/[0.02] border border-white/[0.06] rounded-2xl"
+                                />
                               ))}
                             </div>
                           </div>
                         ) : researchResults ? (
                           <div className="space-y-6">
-                            
                             {/* AI summary briefing */}
                             {researchSummary && (
                               <div className="relative overflow-hidden rounded-2xl border border-indigo-500/20 bg-gradient-to-br from-indigo-500/10 via-indigo-500/5 to-transparent p-5">
@@ -1019,19 +1029,26 @@ export default function InterviewPrep() {
                                   <p className="text-zinc-200 leading-relaxed font-semibold text-xs">
                                     {researchSummary.key_insight}
                                   </p>
-                                  
+
                                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     <div className="bg-black/20 rounded-xl p-3 space-y-1.5">
                                       <span className="text-[9px] font-black uppercase tracking-widest text-indigo-400">
                                         Interview Process Themes
                                       </span>
                                       <ul className="space-y-1">
-                                        {researchSummary.interview_themes.slice(0, 3).map((theme, i) => (
-                                          <li key={i} className="flex items-start gap-1.5 text-[11px] text-zinc-300 font-medium">
-                                            <span className="text-indigo-500 mt-0.5 shrink-0">▸</span>
-                                            {theme}
-                                          </li>
-                                        ))}
+                                        {researchSummary.interview_themes
+                                          .slice(0, 3)
+                                          .map((theme, i) => (
+                                            <li
+                                              key={i}
+                                              className="flex items-start gap-1.5 text-[11px] text-zinc-300 font-medium"
+                                            >
+                                              <span className="text-indigo-500 mt-0.5 shrink-0">
+                                                ▸
+                                              </span>
+                                              {theme}
+                                            </li>
+                                          ))}
                                       </ul>
                                     </div>
                                     <div className="bg-black/20 rounded-xl p-3 space-y-1.5">
@@ -1039,12 +1056,19 @@ export default function InterviewPrep() {
                                         Culture & WLB signals
                                       </span>
                                       <ul className="space-y-1">
-                                        {researchSummary.culture_signals.slice(0, 3).map((sig, i) => (
-                                          <li key={i} className="flex items-start gap-1.5 text-[11px] text-zinc-300 font-medium">
-                                            <span className="text-indigo-500 mt-0.5 shrink-0">▸</span>
-                                            {sig}
-                                          </li>
-                                        ))}
+                                        {researchSummary.culture_signals
+                                          .slice(0, 3)
+                                          .map((sig, i) => (
+                                            <li
+                                              key={i}
+                                              className="flex items-start gap-1.5 text-[11px] text-zinc-300 font-medium"
+                                            >
+                                              <span className="text-indigo-500 mt-0.5 shrink-0">
+                                                ▸
+                                              </span>
+                                              {sig}
+                                            </li>
+                                          ))}
                                       </ul>
                                     </div>
                                   </div>
@@ -1054,7 +1078,9 @@ export default function InterviewPrep() {
                                       <AlertCircle className="w-3.5 h-3.5 text-indigo-400" />
                                       <span className="font-semibold text-zinc-400">
                                         Difficulty Index:{" "}
-                                        <span className="text-white font-bold">{researchSummary.difficulty_rating}</span>
+                                        <span className="text-white font-bold">
+                                          {researchSummary.difficulty_rating}
+                                        </span>
                                       </span>
                                     </div>
                                     {researchSummary.salary_range && (
@@ -1062,7 +1088,9 @@ export default function InterviewPrep() {
                                         <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
                                         <span className="font-semibold text-zinc-400">
                                           Compensation Index:{" "}
-                                          <span className="text-white font-bold">{researchSummary.salary_range}</span>
+                                          <span className="text-white font-bold">
+                                            {researchSummary.salary_range}
+                                          </span>
                                         </span>
                                       </div>
                                     )}
@@ -1081,27 +1109,47 @@ export default function InterviewPrep() {
                                   </h4>
                                 </div>
 
-                                <Tabs defaultValue="hiring" className="w-full space-y-4">
+                                <Tabs
+                                  defaultValue="hiring"
+                                  className="w-full space-y-4"
+                                >
                                   <TabsList className="bg-white/[0.02] border border-white/[0.05] p-1 rounded-xl flex w-full max-w-sm shrink-0">
-                                    <TabsTrigger value="hiring" className="flex-1 text-[10px] font-bold py-1.5 rounded-lg cursor-pointer border-none outline-none">
+                                    <TabsTrigger
+                                      value="hiring"
+                                      className="flex-1 text-[10px] font-bold py-1.5 rounded-lg cursor-pointer border-none outline-none"
+                                    >
                                       💼 Interview
                                     </TabsTrigger>
-                                    <TabsTrigger value="comp" className="flex-1 text-[10px] font-bold py-1.5 rounded-lg cursor-pointer border-none outline-none">
+                                    <TabsTrigger
+                                      value="comp"
+                                      className="flex-1 text-[10px] font-bold py-1.5 rounded-lg cursor-pointer border-none outline-none"
+                                    >
                                       💰 Compensation
                                     </TabsTrigger>
-                                    <TabsTrigger value="culture" className="flex-1 text-[10px] font-bold py-1.5 rounded-lg cursor-pointer border-none outline-none">
+                                    <TabsTrigger
+                                      value="culture"
+                                      className="flex-1 text-[10px] font-bold py-1.5 rounded-lg cursor-pointer border-none outline-none"
+                                    >
                                       🏢 Culture & WLB
                                     </TabsTrigger>
                                   </TabsList>
 
                                   {(() => {
-                                    const { comp, hiring, culture } = getCategorizedPosts(researchResults.reddit.posts);
-                                    
-                                    const renderPostGrid = (postsList: any[]) => {
+                                    const { comp, hiring, culture } =
+                                      getCategorizedPosts(
+                                        researchResults.reddit.posts,
+                                      );
+
+                                    const renderPostGrid = (
+                                      postsList: any[],
+                                    ) => {
                                       if (postsList.length === 0) {
                                         return (
                                           <div className="py-8 text-center bg-white/[0.01] border border-white/[0.04] rounded-2xl">
-                                            <p className="text-xs text-zinc-500 font-semibold">No community discussions loaded in this category.</p>
+                                            <p className="text-xs text-zinc-500 font-semibold">
+                                              No community discussions loaded in
+                                              this category.
+                                            </p>
                                           </div>
                                         );
                                       }
@@ -1149,13 +1197,22 @@ export default function InterviewPrep() {
 
                                     return (
                                       <>
-                                        <TabsContent value="hiring" className="outline-none">
+                                        <TabsContent
+                                          value="hiring"
+                                          className="outline-none"
+                                        >
                                           {renderPostGrid(hiring)}
                                         </TabsContent>
-                                        <TabsContent value="comp" className="outline-none">
+                                        <TabsContent
+                                          value="comp"
+                                          className="outline-none"
+                                        >
                                           {renderPostGrid(comp)}
                                         </TabsContent>
-                                        <TabsContent value="culture" className="outline-none">
+                                        <TabsContent
+                                          value="culture"
+                                          className="outline-none"
+                                        >
                                           {renderPostGrid(culture)}
                                         </TabsContent>
                                       </>
@@ -1175,31 +1232,33 @@ export default function InterviewPrep() {
                                   </h4>
                                 </div>
                                 <div className="space-y-2">
-                                  {researchResults.web.slice(0, 4).map((res: any, idx: number) => (
-                                    <a
-                                      key={idx}
-                                      href={res.url}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="group flex items-start gap-4 bg-white/[0.02] border border-white/[0.07] hover:border-sky-500/25 hover:bg-sky-500/[0.02] rounded-2xl p-4 transition-all duration-200"
-                                    >
-                                      <div className="w-8 h-8 rounded-lg bg-white/[0.03] border border-white/[0.06] flex items-center justify-center shrink-0 group-hover:border-sky-500/25 transition-colors">
-                                        <Globe className="w-3.5 h-3.5 text-zinc-600 group-hover:text-sky-400 transition-colors" />
-                                      </div>
-                                      <div className="flex-1 min-w-0 font-left text-left">
-                                        <span className="text-[9px] font-black uppercase tracking-wider text-sky-500/70 block mb-0.5">
-                                          {res.source}
-                                        </span>
-                                        <h5 className="text-xs font-bold text-zinc-200 group-hover:text-white transition-colors leading-tight line-clamp-1 mb-1">
-                                          {res.title}
-                                        </h5>
-                                        <p className="text-[11px] text-zinc-500 line-clamp-2 leading-relaxed font-semibold">
-                                          {res.snippet}
-                                        </p>
-                                      </div>
-                                      <ArrowUpRight className="w-3.5 h-3.5 text-zinc-700 group-hover:text-sky-400 transition-colors shrink-0 mt-0.5" />
-                                    </a>
-                                  ))}
+                                  {researchResults.web
+                                    .slice(0, 4)
+                                    .map((res: any, idx: number) => (
+                                      <a
+                                        key={idx}
+                                        href={res.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="group flex items-start gap-4 bg-white/[0.02] border border-white/[0.07] hover:border-sky-500/25 hover:bg-sky-500/[0.02] rounded-2xl p-4 transition-all duration-200"
+                                      >
+                                        <div className="w-8 h-8 rounded-lg bg-white/[0.03] border border-white/[0.06] flex items-center justify-center shrink-0 group-hover:border-sky-500/25 transition-colors">
+                                          <Globe className="w-3.5 h-3.5 text-zinc-600 group-hover:text-sky-400 transition-colors" />
+                                        </div>
+                                        <div className="flex-1 min-w-0 font-left text-left">
+                                          <span className="text-[9px] font-black uppercase tracking-wider text-sky-500/70 block mb-0.5">
+                                            {res.source}
+                                          </span>
+                                          <h5 className="text-xs font-bold text-zinc-200 group-hover:text-white transition-colors leading-tight line-clamp-1 mb-1">
+                                            {res.title}
+                                          </h5>
+                                          <p className="text-[11px] text-zinc-500 line-clamp-2 leading-relaxed font-semibold">
+                                            {res.snippet}
+                                          </p>
+                                        </div>
+                                        <ArrowUpRight className="w-3.5 h-3.5 text-zinc-700 group-hover:text-sky-400 transition-colors shrink-0 mt-0.5" />
+                                      </a>
+                                    ))}
                                 </div>
                               </div>
                             )}
@@ -1207,12 +1266,17 @@ export default function InterviewPrep() {
                         ) : (
                           <div className="py-16 text-center space-y-3 bg-white/[0.01] border border-white/[0.05] rounded-3xl">
                             <Zap className="w-8 h-8 text-zinc-700 mx-auto animate-pulse" />
-                            <h5 className="text-sm font-bold text-white">No Market Insights Loaded</h5>
+                            <h5 className="text-sm font-bold text-white">
+                              No Market Insights Loaded
+                            </h5>
                             <p className="text-zinc-500 text-xs max-w-xs mx-auto">
-                              Launch background queries to compile salary indexes, community rumors, and interview logs.
+                              Launch background queries to compile salary
+                              indexes, community rumors, and interview logs.
                             </p>
                             <Button
-                              onClick={() => handleResearchSearch(activeApp.company_name)}
+                              onClick={() =>
+                                handleResearchSearch(activeApp.company_name)
+                              }
                               className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold h-9 px-6 rounded-xl text-xs mt-2 border-none cursor-pointer"
                             >
                               Scan Community Intelligence
@@ -1232,7 +1296,8 @@ export default function InterviewPrep() {
                             Profile Gap Revision Plan
                           </h3>
                           <p className="text-xs text-zinc-600 font-semibold mt-1">
-                            Bridge key resume gaps identified against role qualifications.
+                            Bridge key resume gaps identified against role
+                            qualifications.
                           </p>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1269,9 +1334,7 @@ export default function InterviewPrep() {
                                   </p>
                                 </div>
                                 <div className="pt-3 border-t border-white/[0.04] flex items-center gap-1.5 text-[10px] text-zinc-500">
-                                  <span className="font-bold">
-                                    Resource:
-                                  </span>
+                                  <span className="font-bold">Resource:</span>
                                   <span className="text-indigo-400 font-black truncate">
                                     {gap.practice_source}
                                   </span>
@@ -1308,7 +1371,9 @@ export default function InterviewPrep() {
                               ) : (
                                 <Copy className="w-3.5 h-3.5" />
                               )}
-                              <span>{copiedPitch ? "Copied" : "Copy Pitch"}</span>
+                              <span>
+                                {copiedPitch ? "Copied" : "Copy Pitch"}
+                              </span>
                             </Button>
                           </div>
 
@@ -1321,8 +1386,7 @@ export default function InterviewPrep() {
                               Voice Modulation:
                             </span>
                             {[
-                              10, 24, 18, 28, 12, 22, 16, 26, 10, 18, 14,
-                              22, 8,
+                              10, 24, 18, 28, 12, 22, 16, 26, 10, 18, 14, 22, 8,
                             ].map((h, i) => (
                               <div
                                 key={i}
@@ -1336,12 +1400,9 @@ export default function InterviewPrep() {
                           </div>
                         </div>
                       </TabsContent>
-
                     </Tabs>
                   </div>
-
                 </div>
-
               </div>
             ) : (
               <div className="py-24 flex flex-col items-center justify-center space-y-6 text-center">
@@ -1353,7 +1414,8 @@ export default function InterviewPrep() {
                     Generate Your Strategy
                   </h3>
                   <p className="text-zinc-500 text-sm max-w-sm font-semibold">
-                    Ready to ace your target interviews? Let AI compile your custom, end-to-end readiness blueprint.
+                    Ready to ace your target interviews? Let AI compile your
+                    custom, end-to-end readiness blueprint.
                   </p>
                 </div>
                 <Button
@@ -1366,7 +1428,6 @@ export default function InterviewPrep() {
             )}
           </>
         )}
-
       </div>
     </HiredShell>
   );

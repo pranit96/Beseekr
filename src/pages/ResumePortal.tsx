@@ -40,7 +40,7 @@ import { resumeApi, ResumeSchema } from "@/api/resume";
 export default function ResumePortal() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  
+
   const {
     revisionHistory,
     isLoading: isGlobalLoading,
@@ -55,14 +55,16 @@ export default function ResumePortal() {
     resume_data: ResumeSchema;
     job_description: string;
   } | null>(null);
-  
+
   const [uploadDraft, setUploadDraft] = useState<{
     resume_data: ResumeSchema;
     job_description: string;
   } | null>(null);
-  
+
   const [isWorkspaceLoading, setIsWorkspaceLoading] = useState(true);
-  const [purgeTargetMode, setPurgeTargetMode] = useState<"template" | "upload" | null>(null);
+  const [purgeTargetMode, setPurgeTargetMode] = useState<
+    "template" | "upload" | null
+  >(null);
   const [isPurgeDialogOpen, setIsPurgeDialogOpen] = useState(false);
 
   // Load both workspaces on mount
@@ -98,9 +100,13 @@ export default function ResumePortal() {
     templateDraft.resume_data &&
     (templateDraft.resume_data.personal_info?.name ||
       templateDraft.resume_data.experience?.length > 0 ||
-      templateDraft.resume_data.skills?.flatMap((s) => s.items || []).length > 0);
+      templateDraft.resume_data.skills?.flatMap((s) => s.items || []).length >
+        0);
 
-  const openWorkspace = (mode: "template" | "upload", action: "edit" | "create") => {
+  const openWorkspace = (
+    mode: "template" | "upload",
+    action: "edit" | "create",
+  ) => {
     setWorkspaceMode(mode);
     if (action === "create" && mode === "template") {
       resetWorkspace();
@@ -128,16 +134,18 @@ export default function ResumePortal() {
       } else {
         setUploadDraft(null);
       }
-      
+
       // If current active context mode matches, reset it too
       if (workspaceMode === purgeTargetMode) {
         resetWorkspace();
       }
-      
+
       toast({
         title: "Workspace Purged",
         description: `Successfully wiped the ${
-          purgeTargetMode === "template" ? "AI Template Builder" : "Upload & Score"
+          purgeTargetMode === "template"
+            ? "AI Template Builder"
+            : "Upload & Score"
         } workspace.`,
       });
     } catch (err) {
@@ -159,13 +167,15 @@ export default function ResumePortal() {
       navigate("/dashboard/hired/resume/workspace");
       toast({
         title: "Version Restored",
-        description: "Successfully synchronized active workspace draft with target snapshot.",
+        description:
+          "Successfully synchronized active workspace draft with target snapshot.",
       });
     } catch (error: any) {
       toast({
         variant: "destructive",
         title: "Restoration Failed",
-        description: error.message || "Could not recover the archived snapshot.",
+        description:
+          error.message || "Could not recover the archived snapshot.",
       });
     }
   };
@@ -173,12 +183,12 @@ export default function ResumePortal() {
   return (
     <div className="w-full text-zinc-100 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto space-y-10 animate-in fade-in slide-in-from-top-4 duration-500">
-        
         {/* HERO HEADER */}
         <div className="space-y-4 text-left">
           <div className="flex items-center gap-2 mb-3">
             <span className="text-[10px] sm:text-[11px] font-bold tracking-[0.2em] text-zinc-500 uppercase flex items-center select-none">
-              GET HIRED <span className="mx-2 opacity-50 text-[8px]">•</span> RESUME INTELLIGENCE
+              GET HIRED <span className="mx-2 opacity-50 text-[8px]">•</span>{" "}
+              RESUME INTELLIGENCE
             </span>
           </div>
 
@@ -187,7 +197,8 @@ export default function ResumePortal() {
               <h1 className="text-3xl sm:text-5xl font-black tracking-tight leading-[1.1] flex flex-col gap-1">
                 <span className="text-white">Resume Intelligence</span>
                 <span className="text-zinc-600 text-lg sm:text-2xl font-bold mt-2">
-                  Build and score your resumes in two dedicated, secure workspaces.
+                  Build and score your resumes in two dedicated, secure
+                  workspaces.
                 </span>
               </h1>
             </div>
@@ -216,8 +227,8 @@ export default function ResumePortal() {
                 desc: "Optimize content blocks, achievements, and technical stack.",
                 active: !!(hasUploadDraft || hasTemplateDraft),
                 completed: !!(
-                  (uploadDraft?.resume_data?.experience?.length) ||
-                  (templateDraft?.resume_data?.experience?.length)
+                  uploadDraft?.resume_data?.experience?.length ||
+                  templateDraft?.resume_data?.experience?.length
                 ),
               },
               {
@@ -225,13 +236,17 @@ export default function ResumePortal() {
                 title: "Paste Target JD",
                 desc: "Paste your target job description to match keywords.",
                 active: !!(hasUploadDraft || hasTemplateDraft),
-                completed: !!(uploadDraft?.job_description || templateDraft?.job_description),
+                completed: !!(
+                  uploadDraft?.job_description || templateDraft?.job_description
+                ),
               },
               {
                 step: "4",
                 title: "AI ATS Audit",
                 desc: "Trigger high-performance ATS scoring and review gaps.",
-                active: !!(uploadDraft?.job_description || templateDraft?.job_description),
+                active: !!(
+                  uploadDraft?.job_description || templateDraft?.job_description
+                ),
                 completed: false, // interactive score
               },
               {
@@ -285,7 +300,6 @@ export default function ResumePortal() {
 
         {/* WORKSPACE SELECTION PILLARS */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          
           {/* UPLOAD & SCORE WORKSPACE CARD */}
           <motion.div
             whileHover={{ y: -4 }}
@@ -294,7 +308,7 @@ export default function ResumePortal() {
           >
             <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-500/[0.02] rounded-full blur-[80px] group-hover:bg-indigo-500/[0.04] transition-all duration-500 pointer-events-none" />
             <div className="absolute top-0 left-0 bottom-0 w-[4px] bg-indigo-500/40 rounded-l-3xl" />
-            
+
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <div className="w-12 h-12 rounded-2xl bg-white/[0.03] border border-white/[0.08] flex items-center justify-center text-zinc-400 group-hover:text-indigo-400 group-hover:border-indigo-500/30 transition-all duration-300">
@@ -310,7 +324,9 @@ export default function ResumePortal() {
                   Upload & Score Workspace
                 </h3>
                 <p className="text-zinc-400 text-xs sm:text-sm leading-relaxed font-medium">
-                  Upload your existing PDF or Word resume. Run automated keywords audits, verify ATS compatibility, and refine against target JDs.
+                  Upload your existing PDF or Word resume. Run automated
+                  keywords audits, verify ATS compatibility, and refine against
+                  target JDs.
                 </p>
               </div>
 
@@ -323,10 +339,12 @@ export default function ResumePortal() {
                     <div className="flex items-start justify-between gap-4">
                       <div>
                         <p className="text-xs font-black text-white leading-tight">
-                          {uploadDraft?.resume_data?.personal_info?.name || "Anonymous Candidate"}
+                          {uploadDraft?.resume_data?.personal_info?.name ||
+                            "Anonymous Candidate"}
                         </p>
                         <p className="text-[10px] text-zinc-500 font-semibold truncate mt-0.5 max-w-[180px] sm:max-w-none">
-                          {uploadDraft?.resume_data?.personal_info?.email || "No email mapped"}
+                          {uploadDraft?.resume_data?.personal_info?.email ||
+                            "No email mapped"}
                         </p>
                       </div>
                       <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 bg-white/[0.03] border border-white/[0.07] px-2 py-0.5 rounded font-mono">
@@ -336,20 +354,32 @@ export default function ResumePortal() {
 
                     <div className="grid grid-cols-2 gap-3 pt-1">
                       <div className="bg-white/[0.02] border border-white/[0.06] px-3 py-2 rounded-xl text-left">
-                        <span className="text-[8px] font-black text-zinc-500 uppercase tracking-widest block">Experiences</span>
-                        <span className="text-xs font-bold text-zinc-300">{uploadDraft?.resume_data?.experience?.length || 0} Entries</span>
+                        <span className="text-[8px] font-black text-zinc-500 uppercase tracking-widest block">
+                          Experiences
+                        </span>
+                        <span className="text-xs font-bold text-zinc-300">
+                          {uploadDraft?.resume_data?.experience?.length || 0}{" "}
+                          Entries
+                        </span>
                       </div>
                       <div className="bg-white/[0.02] border border-white/[0.06] px-3 py-2 rounded-xl text-left">
-                        <span className="text-[8px] font-black text-zinc-500 uppercase tracking-widest block">Skills Mapped</span>
+                        <span className="text-[8px] font-black text-zinc-500 uppercase tracking-widest block">
+                          Skills Mapped
+                        </span>
                         <span className="text-xs font-bold text-zinc-300">
-                          {uploadDraft?.resume_data?.skills?.flatMap((s) => s.items || []).length || 0} Skills
+                          {uploadDraft?.resume_data?.skills?.flatMap(
+                            (s) => s.items || [],
+                          ).length || 0}{" "}
+                          Skills
                         </span>
                       </div>
                     </div>
                   </div>
                 ) : (
                   <div className="py-6 border border-dashed border-white/[0.06] rounded-2xl bg-white/[0.01] text-center">
-                    <p className="text-[11px] text-zinc-500 font-bold uppercase tracking-wider">No Active Upload Draft</p>
+                    <p className="text-[11px] text-zinc-500 font-bold uppercase tracking-wider">
+                      No Active Upload Draft
+                    </p>
                     <p className="text-[10px] text-zinc-600 font-semibold mt-0.5 max-w-[240px] mx-auto">
                       Import your resume to benchmark ATS gaps.
                     </p>
@@ -413,7 +443,9 @@ export default function ResumePortal() {
                   Template Builder Workspace
                 </h3>
                 <p className="text-zinc-400 text-xs sm:text-sm leading-relaxed font-medium">
-                  Build a premium resume from scratch. Pick a design template, add sections with real-time AI styling assistance, and export a high-fidelity PDF.
+                  Build a premium resume from scratch. Pick a design template,
+                  add sections with real-time AI styling assistance, and export
+                  a high-fidelity PDF.
                 </p>
               </div>
 
@@ -426,10 +458,12 @@ export default function ResumePortal() {
                     <div className="flex items-start justify-between gap-4">
                       <div>
                         <p className="text-xs font-black text-white leading-tight">
-                          {templateDraft?.resume_data?.personal_info?.name || "Anonymous Candidate"}
+                          {templateDraft?.resume_data?.personal_info?.name ||
+                            "Anonymous Candidate"}
                         </p>
                         <p className="text-[10px] text-zinc-500 font-semibold truncate mt-0.5 max-w-[180px] sm:max-w-none">
-                          {templateDraft?.resume_data?.personal_info?.email || "No email mapped"}
+                          {templateDraft?.resume_data?.personal_info?.email ||
+                            "No email mapped"}
                         </p>
                       </div>
                       <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 bg-white/[0.03] border border-white/[0.07] px-2 py-0.5 rounded font-mono">
@@ -439,20 +473,32 @@ export default function ResumePortal() {
 
                     <div className="grid grid-cols-2 gap-3 pt-1">
                       <div className="bg-white/[0.02] border border-white/[0.06] px-3 py-2 rounded-xl text-left">
-                        <span className="text-[8px] font-black text-zinc-500 uppercase tracking-widest block">Experiences</span>
-                        <span className="text-xs font-bold text-zinc-300">{templateDraft?.resume_data?.experience?.length || 0} Entries</span>
+                        <span className="text-[8px] font-black text-zinc-500 uppercase tracking-widest block">
+                          Experiences
+                        </span>
+                        <span className="text-xs font-bold text-zinc-300">
+                          {templateDraft?.resume_data?.experience?.length || 0}{" "}
+                          Entries
+                        </span>
                       </div>
                       <div className="bg-white/[0.02] border border-white/[0.06] px-3 py-2 rounded-xl text-left">
-                        <span className="text-[8px] font-black text-zinc-500 uppercase tracking-widest block">Skills Mapped</span>
+                        <span className="text-[8px] font-black text-zinc-500 uppercase tracking-widest block">
+                          Skills Mapped
+                        </span>
                         <span className="text-xs font-bold text-zinc-300">
-                          {templateDraft?.resume_data?.skills?.flatMap((s) => s.items || []).length || 0} Skills
+                          {templateDraft?.resume_data?.skills?.flatMap(
+                            (s) => s.items || [],
+                          ).length || 0}{" "}
+                          Skills
                         </span>
                       </div>
                     </div>
                   </div>
                 ) : (
                   <div className="py-6 border border-dashed border-white/[0.06] rounded-2xl bg-white/[0.01] text-center">
-                    <p className="text-[11px] text-zinc-500 font-bold uppercase tracking-wider">No Active Template Draft</p>
+                    <p className="text-[11px] text-zinc-500 font-bold uppercase tracking-wider">
+                      No Active Template Draft
+                    </p>
                     <p className="text-[10px] text-zinc-600 font-semibold mt-0.5 max-w-[240px] mx-auto">
                       Build your profile using designer layouts.
                     </p>
@@ -559,7 +605,8 @@ export default function ResumePortal() {
                 No archived checkpoints yet
               </p>
               <p className="text-zinc-500 text-[11px] mt-1.5 max-w-xs mx-auto font-medium">
-                Save manual checkpoints inside the workspace editor, and they will securely archive here.
+                Save manual checkpoints inside the workspace editor, and they
+                will securely archive here.
               </p>
             </div>
           ) : (
@@ -653,7 +700,9 @@ export default function ResumePortal() {
             <AlertDialogDescription className="text-zinc-400 text-sm leading-relaxed font-medium text-left">
               This will permanently delete your{" "}
               <span className="text-white font-bold tracking-tight">
-                {purgeTargetMode === "upload" ? "Upload & Score" : "Template Builder"}
+                {purgeTargetMode === "upload"
+                  ? "Upload & Score"
+                  : "Template Builder"}
               </span>{" "}
               workspace and all saved versions in it. This cannot be undone.
             </AlertDialogDescription>
