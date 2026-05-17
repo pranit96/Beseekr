@@ -380,9 +380,6 @@ export default function JobTracker() {
         <Button
           variant="ghost"
           size="icon"
-          onClick={(e) => {
-            e.stopPropagation();
-          }}
           className="h-7 w-7 text-zinc-500 hover:text-white rounded-lg shrink-0 relative z-20"
         >
           <MoreVertical className="w-3.5 h-3.5 text-zinc-400 hover:text-zinc-200" />

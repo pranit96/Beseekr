@@ -23,6 +23,7 @@ import {
   History,
   RotateCcw,
   MessageSquare,
+  Copy,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -57,6 +58,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ATSAnalysis, resumeApi } from "@/api/resume";
 import { GlobalFooter } from "@/components/GlobalFooter";
+import { generateLatexResume } from "@/utils/latexGenerator";
 
 export default function ResumeWorkspace() {
   const { toast } = useToast();
@@ -95,6 +97,75 @@ export default function ResumeWorkspace() {
   const [isAiPanelOpen, setIsAiPanelOpen] = useState(false);
   const [coverLetter, setCoverLetter] = useState<string | null>(null);
   const [isGeneratingCL, setIsGeneratingCL] = useState(false);
+
+  // LaTeX Export States
+  const [isLatexOpen, setIsLatexOpen] = useState(false);
+  const [latexCode, setLatexCode] = useState("");
+  const [isCopied, setIsCopied] = useState(false);
+
+  const handleExportLatex = () => {
+    try {
+      const code = generateLatexResume(resumeData);
+      setLatexCode(code);
+      setIsCopied(false);
+      setIsLatexOpen(true);
+      toast({
+        title: "LaTeX Generated!",
+        description: "Review and copy your LaTeX source code.",
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "LaTeX Generation Failed",
+        description: error.message || "Failed to compile LaTeX structure.",
+      });
+    }
+  };
+
+  const handleDownloadLatex = () => {
+    try {
+      const blob = new Blob([latexCode], { type: "text/x-tex;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute(
+        "download",
+        `${resumeData.personal_info?.name || "Resume"}_Resume.tex`,
+      );
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      toast({
+        title: "File Saved!",
+        description: "Your .tex document was downloaded successfully.",
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Download Failed",
+        description: error.message || "Failed to download the .tex file.",
+      });
+    }
+  };
+
+  const handleCopyLatex = async () => {
+    try {
+      await navigator.clipboard.writeText(latexCode);
+      setIsCopied(true);
+      toast({
+        title: "Copied!",
+        description: "LaTeX code has been copied to your clipboard.",
+      });
+      setTimeout(() => setIsCopied(false), 2000);
+    } catch (err) {
+      toast({
+        variant: "destructive",
+        title: "Copy Failed",
+        description: "Could not copy code to clipboard.",
+      });
+    }
+  };
 
   const handleExportWord = async () => {
     setIsDownloading(true);
@@ -607,16 +678,23 @@ export default function ResumeWorkspace() {
                 <DropdownMenuContent className="bg-zinc-950 border-white/[0.1] text-zinc-300 rounded-xl">
                   <DropdownMenuItem
                     onClick={handleExportPdf}
-                    className="font-bold text-xs py-2.5"
+                    className="font-bold text-xs py-2.5 cursor-pointer hover:bg-white/[0.05]"
                   >
                     <FileText className="w-3.5 h-3.5 mr-2 opacity-60" /> PDF
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={handleExportWord}
-                    className="font-bold text-xs py-2.5"
+                    className="font-bold text-xs py-2.5 cursor-pointer hover:bg-white/[0.05]"
                   >
                     <Briefcase className="w-3.5 h-3.5 mr-2 opacity-60" /> Word
                     (.docx)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={handleExportLatex}
+                    className="font-bold text-xs py-2.5 cursor-pointer hover:bg-white/[0.05] text-indigo-300 hover:text-white"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 mr-2 opacity-60 text-indigo-400" />{" "}
+                    LaTeX (.tex)
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -2077,6 +2155,141 @@ export default function ResumeWorkspace() {
                   the preview, then{" "}
                   <span className="text-zinc-400">Download PDF</span> to save.
                 </p>
+              </div>
+            </div>
+          )}
+
+          {/* LaTeX Preview Modal */}
+          {isLatexOpen && (
+            <div
+              className="fixed inset-0 z-50 flex flex-col bg-black/95 animate-in fade-in duration-300"
+              role="dialog"
+              aria-label="LaTeX Code Export"
+            >
+              {/* Modal Top Bar */}
+              <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.08] bg-[#0c0c0e]/80 backdrop-blur-md shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="h-8 w-8 rounded-xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 shadow-inner">
+                    <Sparkles className="h-4 w-4 text-indigo-400" />
+                  </div>
+                  <div className="text-left">
+                    <h2 className="text-sm font-black text-white tracking-wide uppercase">
+                      LaTeX Document Export
+                    </h2>
+                    <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">
+                      Jake's Template Structure • ATS Ready
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCopyLatex}
+                    className="h-8 text-xs font-bold rounded-xl border-white/[0.08] bg-white/[0.03] text-zinc-300 hover:text-white hover:bg-white/[0.08] transition-all"
+                  >
+                    {isCopied ? (
+                      <CheckCircle2 className="h-3.5 w-3.5 mr-1.5 text-emerald-400" />
+                    ) : (
+                      <Copy className="h-3.5 w-3.5 mr-1.5" />
+                    )}
+                    {isCopied ? "Copied" : "Copy Code"}
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleDownloadLatex}
+                    className="h-8 text-xs font-bold rounded-xl border-white/[0.08] bg-white/[0.03] text-zinc-300 hover:text-white hover:bg-white/[0.08] transition-all"
+                  >
+                    <Download className="h-3.5 w-3.5 mr-1.5" />
+                    Download .tex
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsLatexOpen(false)}
+                    className="h-8 text-xs font-bold rounded-xl border-white/[0.08] bg-white/[0.03] text-zinc-300 hover:text-white hover:bg-white/[0.08] transition-all"
+                  >
+                    <X className="h-3.5 w-3.5 mr-1.5" />
+                    Close
+                  </Button>
+                </div>
+              </div>
+
+              {/* Centered Responsive LaTeX View */}
+              <div className="flex-1 flex flex-col md:flex-row gap-6 p-6 overflow-hidden">
+                {/* Left panel: Info & Compile tips */}
+                <div className="w-full md:w-80 flex flex-col justify-between p-5 border border-white/[0.05] rounded-2xl bg-white/[0.01] shrink-0 text-left">
+                  <div className="space-y-4">
+                    <Badge className="bg-indigo-500/10 text-indigo-300 border-indigo-500/20 text-[9px] uppercase tracking-wider font-bold">
+                      Why Use LaTeX?
+                    </Badge>
+                    <h3 className="text-white text-xs font-bold uppercase tracking-wider">
+                      The Gold Standard for Engineers
+                    </h3>
+                    <p className="text-[11px] text-zinc-400 leading-relaxed">
+                      LaTeX compiled resumes produce highly semantic PDFs with a
+                      clean horizontal text reading grid. Applicant Tracking
+                      Systems (ATS) can parse 100% of the content accurately
+                      without coordinates shifting.
+                    </p>
+                    <div className="h-px bg-white/[0.05]" />
+                    <h3 className="text-white text-xs font-bold uppercase tracking-wider">
+                      How to Compile:
+                    </h3>
+                    <ol className="list-decimal pl-4 text-[11px] text-zinc-400 space-y-2">
+                      <li>
+                        Download the{" "}
+                        <code className="text-indigo-400 bg-white/[0.03] px-1 py-0.5 rounded">
+                          .tex
+                        </code>{" "}
+                        file using the top button.
+                      </li>
+                      <li>
+                        Go to{" "}
+                        <a
+                          href="https://www.overleaf.com"
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-indigo-400 hover:underline"
+                        >
+                          Overleaf.com
+                        </a>{" "}
+                        (Free online editor).
+                      </li>
+                      <li>Create a new blank project and upload the file.</li>
+                      <li>
+                        Click <strong>Recompile</strong> to download your
+                        flawless PDF resume!
+                      </li>
+                    </ol>
+                  </div>
+
+                  <div className="pt-4 text-center border-t border-white/[0.04] text-[10px] text-zinc-500">
+                    BeSeekr Premium Export Engine
+                  </div>
+                </div>
+
+                {/* Right panel: Raw scrollable code view */}
+                <div className="flex-1 border border-white/[0.08] rounded-2xl bg-zinc-950 overflow-hidden flex flex-col shadow-inner">
+                  <div className="px-4 py-2 border-b border-white/[0.05] bg-zinc-900/50 flex items-center justify-between shrink-0">
+                    <span className="text-[10px] font-mono font-bold text-zinc-500">
+                      source_code.tex
+                    </span>
+                    <Badge
+                      variant="outline"
+                      className="text-[9px] font-mono text-zinc-400 border-white/[0.08]"
+                    >
+                      LaTeX
+                    </Badge>
+                  </div>
+                  <pre className="flex-1 p-5 overflow-auto font-mono text-xs text-zinc-300 leading-relaxed text-left selection:bg-indigo-500/20 custom-scrollbar">
+                    <code>{latexCode}</code>
+                  </pre>
+                </div>
               </div>
             </div>
           )}
