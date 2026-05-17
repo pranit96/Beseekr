@@ -96,7 +96,7 @@ const StatusMenu = React.memo(function StatusMenu({
   onDelete,
 }: StatusMenuProps) {
   return (
-    <DropdownMenu modal={false}>
+    <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
