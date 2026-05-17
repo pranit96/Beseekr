@@ -86,7 +86,8 @@ const DropdownMenuContentNonPortalled = React.forwardRef<
     {...props}
   />
 ));
-DropdownMenuContentNonPortalled.displayName = DropdownMenuPrimitive.Content.displayName;
+DropdownMenuContentNonPortalled.displayName =
+  DropdownMenuPrimitive.Content.displayName;
 
 const DropdownMenuItem = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.Item>,

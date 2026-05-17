@@ -240,7 +240,8 @@ export function AdminMonitoring() {
           <div>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-sm font-bold text-white flex items-center gap-2">
-                <Server className="w-4 h-4 text-sky-400" /> Infrastructure Health
+                <Server className="w-4 h-4 text-sky-400" /> Infrastructure
+                Health
               </h2>
               <div
                 className={`px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-widest ${
@@ -255,25 +256,51 @@ export function AdminMonitoring() {
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <StatCard
                 label="Database"
-                value={healthData.checks?.database === "healthy" ? "Online" : "Degraded"}
+                value={
+                  healthData.checks?.database === "healthy"
+                    ? "Online"
+                    : "Degraded"
+                }
                 sub="Supabase Connection"
-                accent={healthData.checks?.database === "healthy" ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-red-500/10 text-red-400 border-red-500/20"}
+                accent={
+                  healthData.checks?.database === "healthy"
+                    ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                    : "bg-red-500/10 text-red-400 border-red-500/20"
+                }
                 icon={HardDrive}
                 tooltip="PostgreSQL connection via Supabase"
               />
               <StatCard
                 label="Redis Cache"
-                value={healthData.checks?.redis === "healthy" ? "Online" : "Degraded"}
+                value={
+                  healthData.checks?.redis === "healthy" ? "Online" : "Degraded"
+                }
                 sub="In-memory datastore"
-                accent={healthData.checks?.redis === "healthy" ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-red-500/10 text-red-400 border-red-500/20"}
+                accent={
+                  healthData.checks?.redis === "healthy"
+                    ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                    : "bg-red-500/10 text-red-400 border-red-500/20"
+                }
                 icon={Database}
                 tooltip="Redis connection status"
               />
               <StatCard
                 label="Vector DB"
-                value={healthData.checks?.pinecone === "not_configured" ? "Unset" : healthData.checks?.pinecone === "healthy" ? "Online" : "Degraded"}
+                value={
+                  healthData.checks?.pinecone === "not_configured"
+                    ? "Unset"
+                    : healthData.checks?.pinecone === "healthy"
+                      ? "Online"
+                      : "Degraded"
+                }
                 sub="Pinecone Index"
-                accent={healthData.checks?.pinecone === "not_configured" ? "bg-zinc-500/10 text-zinc-400 border-zinc-500/20" : healthData.checks?.pinecone === "healthy" ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-red-500/10 text-red-400 border-red-500/20"}
+                accent={
+                  healthData.checks?.pinecone === "not_configured"
+                    ? "bg-zinc-500/10 text-zinc-400 border-zinc-500/20"
+                    : healthData.checks?.pinecone === "healthy"
+                      ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                      : "bg-red-500/10 text-red-400 border-red-500/20"
+                }
                 icon={Layers}
                 tooltip="Pinecone Vector Database status"
               />
