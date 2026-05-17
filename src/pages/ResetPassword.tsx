@@ -20,8 +20,32 @@ const ResetPassword = () => {
   useEffect(() => {
     // Parse hash parameters (Supabase sends tokens in URL hash)
     const hashParams = new URLSearchParams(location.hash.substring(1));
-    const accessToken = hashParams.get("access_token");
-    const type = hashParams.get("type");
+    // Also check standard query parameters as a fallback
+    const queryParams = new URLSearchParams(location.search);
+
+    // Supabase might send access_token (implicit flow) or code (PKCE flow)
+    const accessToken =
+      hashParams.get("access_token") ||
+      queryParams.get("access_token") ||
+      queryParams.get("token") ||
+      queryParams.get("code");
+
+    const type =
+      hashParams.get("type") || queryParams.get("type") || "recovery";
+    const errorDesc =
+      hashParams.get("error_description") ||
+      queryParams.get("error_description");
+
+    // Handle explicit errors from Supabase (e.g. "Email link is invalid or has expired")
+    if (errorDesc) {
+      toast({
+        title: "Reset Link Error",
+        description: errorDesc.replace(/\+/g, " "),
+        variant: "destructive",
+      });
+      setTimeout(() => navigate("/auth"), 3500);
+      return;
+    }
 
     // Check if this is a recovery/reset password link
     if (accessToken && type === "recovery") {
@@ -31,7 +55,7 @@ const ResetPassword = () => {
     } else {
       toast({
         title: "Invalid reset link",
-        description: "This password reset link is invalid or has expired.",
+        description: "This password reset link is missing a valid token.",
         variant: "destructive",
       });
       setTimeout(() => navigate("/auth"), 2000);
@@ -61,7 +85,10 @@ const ResetPassword = () => {
 
     setIsLoading(true);
     try {
-      const response = await apiClient.resetPassword(password);
+      const token = sessionStorage.getItem("reset_token");
+      if (!token) throw new Error("Reset token missing");
+
+      const response = await apiClient.resetPassword(password, token);
       if (response.success) {
         toast({
           title: "Password reset successful",

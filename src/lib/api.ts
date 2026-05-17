@@ -361,11 +361,11 @@ class ApiClient {
     });
   }
 
-  async resetPassword(password: string) {
+  async resetPassword(password: string, access_token: string) {
     this.clearCache();
     return this.request<any>("/api/auth/reset-password", {
       method: "POST",
-      body: JSON.stringify({ password }),
+      body: JSON.stringify({ password, access_token }),
     });
   }
 
@@ -1216,11 +1216,11 @@ class ApiClient {
   }
 
   async getSystemHealth() {
-    return this.request<any>("/health");
+    return fetch(`${this.baseUrl}/api/health`).then((r) => r.json());
   }
 
   async getSystemReady() {
-    return this.request<any>("/health/ready");
+    return fetch(`${this.baseUrl}/api/health/ready`).then((r) => r.json());
   }
 
   // Generic HTTP methods to support modular API files
