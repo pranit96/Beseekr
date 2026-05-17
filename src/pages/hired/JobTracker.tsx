@@ -33,7 +33,6 @@ import { useToast } from "../../hooks/use-toast";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuContentNonPortalled,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
@@ -108,10 +107,11 @@ const StatusMenu = React.memo(function StatusMenu({
           <MoreVertical className="w-3.5 h-3.5" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContentNonPortalled
+      <DropdownMenuContent
         side="bottom"
         align="end"
         sideOffset={4}
+        avoidCollisions={false}
         className="bg-[#111113] border border-white/[0.08] text-zinc-300 rounded-xl p-1 shadow-2xl min-w-[140px]"
       >
         <p className="px-3 py-1 text-[10px] font-black uppercase tracking-widest text-zinc-600">
@@ -147,7 +147,7 @@ const StatusMenu = React.memo(function StatusMenu({
         >
           Delete
         </DropdownMenuItem>
-      </DropdownMenuContentNonPortalled>
+      </DropdownMenuContent>
     </DropdownMenu>
   );
 });
@@ -412,7 +412,7 @@ const AppCard = React.memo(function AppCard({
       exit={{ opacity: 0, scale: 0.92 }}
       onMouseEnter={() => onHover(app.id)}
       onMouseLeave={() => onHover(null)}
-      className={`group relative bg-white/[0.02] border rounded-2xl p-5 transition-all duration-300 hover:shadow-xl hover:shadow-black/30 ${
+      className={`group relative bg-white/[0.02] border rounded-2xl p-5 transition-colors duration-300 hover:shadow-xl hover:shadow-black/30 ${
         isFlashing
           ? "border-indigo-500/50 shadow-indigo-500/10 shadow-lg"
           : "border-white/[0.07] hover:border-white/[0.13]"
