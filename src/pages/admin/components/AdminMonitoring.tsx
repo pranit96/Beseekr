@@ -279,7 +279,7 @@ export function AdminMonitoring() {
               />
               <StatCard
                 label="Uptime"
-                value={formatUptime(healthData.uptime)}
+                value={healthData.uptime}
                 sub={`v${healthData.version}`}
                 accent="bg-indigo-500/10 text-indigo-400 border-indigo-500/20"
                 icon={Clock}
