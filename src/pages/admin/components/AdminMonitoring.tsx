@@ -33,6 +33,9 @@ import {
   Trash2,
   Play,
   RefreshCw,
+  Database,
+  Layers,
+  Clock,
 } from "lucide-react";
 
 const StatCard = ({
@@ -80,6 +83,16 @@ const StatCard = ({
   </UITooltip>
 );
 
+const formatUptime = (seconds: number) => {
+  if (!seconds) return "0s";
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = Math.floor(seconds % 60);
+  if (h > 0) return `${h}h ${m}m ${s}s`;
+  if (m > 0) return `${m}m ${s}s`;
+  return `${s}s`;
+};
+
 export function AdminMonitoring() {
   const { toast } = useToast();
   const [isCleaning, setIsCleaning] = useState(false);
@@ -91,6 +104,13 @@ export function AdminMonitoring() {
     queryKey: ["admin", "monitoring", "memory"],
     queryFn: () => apiClient.getAdminMemoryStats().then((res) => res.data),
     refetchInterval: 5000,
+  });
+
+  // Fetch System Health
+  const { data: healthData } = useQuery<any>({
+    queryKey: ["admin", "monitoring", "health"],
+    queryFn: () => apiClient.getSystemHealth(),
+    refetchInterval: 15000,
   });
 
   // Fetch Queue/Worker Stats
@@ -215,6 +235,60 @@ export function AdminMonitoring() {
   return (
     <UITooltipProvider>
       <div className="space-y-8">
+        {/* GLOBAL INFRASTRUCTURE HEALTH */}
+        {healthData && (
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-sm font-bold text-white flex items-center gap-2">
+                <Server className="w-4 h-4 text-sky-400" /> Infrastructure Health
+              </h2>
+              <div
+                className={`px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-widest ${
+                  healthData.status === "OK"
+                    ? "bg-emerald-500/10 text-emerald-400"
+                    : "bg-red-500/10 text-red-400"
+                }`}
+              >
+                {healthData.status}
+              </div>
+            </div>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <StatCard
+                label="Database"
+                value={healthData.checks?.database === "healthy" ? "Online" : "Degraded"}
+                sub="Supabase Connection"
+                accent={healthData.checks?.database === "healthy" ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-red-500/10 text-red-400 border-red-500/20"}
+                icon={HardDrive}
+                tooltip="PostgreSQL connection via Supabase"
+              />
+              <StatCard
+                label="Redis Cache"
+                value={healthData.checks?.redis === "healthy" ? "Online" : "Degraded"}
+                sub="In-memory datastore"
+                accent={healthData.checks?.redis === "healthy" ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-red-500/10 text-red-400 border-red-500/20"}
+                icon={Database}
+                tooltip="Redis connection status"
+              />
+              <StatCard
+                label="Vector DB"
+                value={healthData.checks?.pinecone === "not_configured" ? "Unset" : healthData.checks?.pinecone === "healthy" ? "Online" : "Degraded"}
+                sub="Pinecone Index"
+                accent={healthData.checks?.pinecone === "not_configured" ? "bg-zinc-500/10 text-zinc-400 border-zinc-500/20" : healthData.checks?.pinecone === "healthy" ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-red-500/10 text-red-400 border-red-500/20"}
+                icon={Layers}
+                tooltip="Pinecone Vector Database status"
+              />
+              <StatCard
+                label="Uptime"
+                value={formatUptime(healthData.uptime)}
+                sub={`v${healthData.version}`}
+                accent="bg-indigo-500/10 text-indigo-400 border-indigo-500/20"
+                icon={Clock}
+                tooltip="Time since last server restart"
+              />
+            </div>
+          </div>
+        )}
+
         {/* CORE WORKER & CACHE METRICS */}
         <div>
           <div className="flex items-center justify-between mb-4">

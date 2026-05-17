@@ -1215,6 +1215,14 @@ class ApiClient {
     });
   }
 
+  async getSystemHealth() {
+    return this.request<any>("/health");
+  }
+
+  async getSystemReady() {
+    return this.request<any>("/health/ready");
+  }
+
   // Generic HTTP methods to support modular API files
   public async get<T = any>(
     endpoint: string,
