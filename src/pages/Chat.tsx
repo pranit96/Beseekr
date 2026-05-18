@@ -576,10 +576,6 @@ const Chat = () => {
     return () => window.removeEventListener("keydown", handleKeyboard);
   }, [handleNewSession, hasQueryError, handleRetryAuth]);
 
-  if (isLoading && !hasQueryError && conversations.length === 0) {
-    return <ChatSkeleton isNewMode={isNewMode} />;
-  }
-
   useEffect(() => {
     if (hasQueryError && conversations.length > 0) {
       const isRateLimitError =
@@ -603,6 +599,10 @@ const Chat = () => {
       }
     }
   }, [hasQueryError, conversations.length, queryError, toast]);
+
+  if (isLoading && !hasQueryError && conversations.length === 0) {
+    return <ChatSkeleton isNewMode={isNewMode} />;
+  }
 
   if (hasQueryError && conversations.length === 0) {
     const isAuthError =
