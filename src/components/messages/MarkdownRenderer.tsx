@@ -96,7 +96,8 @@ export default function MarkdownRenderer({
         }
       }
 
-      if (/:$/.test(trimmedLine)) {
+      // Auto-convert lines ending in colon to h3, UNLESS they already have markdown formatting
+      if (/:$/.test(trimmedLine) && !/^([#\-\*]|\d+\.)/.test(trimmedLine)) {
         out.push(`### ${trimmedLine.replace(/:$/, "")}`);
         out.push("");
         continue;
@@ -107,6 +108,7 @@ export default function MarkdownRenderer({
         trimmedLine.length <= 60 &&
         /^[A-Z][A-Za-z0-9 ',-]+$/.test(trimmedLine) &&
         !/[.?!]$/.test(trimmedLine) &&
+        !/^([#\-\*]|\d+\.)/.test(trimmedLine) &&
         nextLine &&
         /^[A-Z0-9"']/.test(nextLine) &&
         nextLine.length > 10;
@@ -195,6 +197,30 @@ export default function MarkdownRenderer({
       >
         {children}
       </h3>
+    ),
+    h4: ({ children, ...props }: any) => (
+      <h4
+        className="text-base font-semibold mt-5 mb-2 text-foreground/90"
+        {...props}
+      >
+        {children}
+      </h4>
+    ),
+    h5: ({ children, ...props }: any) => (
+      <h5
+        className="text-sm font-semibold mt-4 mb-2 text-foreground/80 uppercase tracking-wider"
+        {...props}
+      >
+        {children}
+      </h5>
+    ),
+    h6: ({ children, ...props }: any) => (
+      <h6
+        className="text-sm font-medium mt-4 mb-2 text-foreground/80 uppercase tracking-widest"
+        {...props}
+      >
+        {children}
+      </h6>
     ),
     ul: ({ children, ...props }: any) => (
       <ul
