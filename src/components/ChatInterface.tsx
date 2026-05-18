@@ -365,23 +365,35 @@ export const ChatInterface: React.FC<{
   useEffect(() => {
     const currentId = activeConversationId || "temp";
     if (hasRestoredAgentsRef.current !== currentId && messages.length > 0) {
-      const lastAgentMsg = [...messages].reverse().find(m => m.type === "agent" && m.agentTraces && m.agentTraces.length > 0);
-      
+      const lastAgentMsg = [...messages]
+        .reverse()
+        .find(
+          (m) =>
+            m.type === "agent" && m.agentTraces && m.agentTraces.length > 0,
+        );
+
       if (lastAgentMsg && lastAgentMsg.agentTraces) {
-        const previousAgentIds = lastAgentMsg.agentTraces.map(t => t.agentId).filter(Boolean);
-        const agentsToSelect = agents.filter(a => previousAgentIds.includes(a.id));
-        
+        const previousAgentIds = lastAgentMsg.agentTraces
+          .map((t) => t.agentId)
+          .filter(Boolean);
+        const agentsToSelect = agents.filter((a) =>
+          previousAgentIds.includes(a.id),
+        );
+
         if (agentsToSelect.length > 0) {
           // Sort them to match the original execution order
-          agentsToSelect.sort((a, b) => previousAgentIds.indexOf(a.id) - previousAgentIds.indexOf(b.id));
+          agentsToSelect.sort(
+            (a, b) =>
+              previousAgentIds.indexOf(a.id) - previousAgentIds.indexOf(b.id),
+          );
           setSelectedAgents(agentsToSelect);
-          
+
           if (lastAgentMsg.executionMode) {
             setExecutionMode(lastAgentMsg.executionMode);
           }
         }
       }
-      
+
       hasRestoredAgentsRef.current = currentId;
     }
   }, [messages, agents, activeConversationId]);
@@ -402,7 +414,10 @@ export const ChatInterface: React.FC<{
     }, 500);
   };
 
-  const handleSubmit = async (overrideMessage?: string, overrideAgents?: Agent[]) => {
+  const handleSubmit = async (
+    overrideMessage?: string,
+    overrideAgents?: Agent[],
+  ) => {
     const finalAgents = overrideAgents || selectedAgents;
     const messageText = overrideMessage || input;
 
@@ -810,14 +825,18 @@ export const ChatInterface: React.FC<{
       if (idx > 0 && messages[idx - 1].type === "user") {
         const prev = messages[idx - 1];
         const failed = messages[idx];
-        
+
         let agentsToRetry: Agent[] = [];
         if (failed.agentTraces && failed.agentTraces.length > 0) {
-          agentsToRetry = failed.agentTraces.map((t) => agents.find((a) => a.id === t.agentId)).filter(Boolean) as Agent[];
+          agentsToRetry = failed.agentTraces
+            .map((t) => agents.find((a) => a.id === t.agentId))
+            .filter(Boolean) as Agent[];
         } else if (failed.agentResponses && failed.agentResponses.length > 0) {
-          agentsToRetry = failed.agentResponses.map((ar) => agents.find((a) => a.id === ar.agentId)).filter(Boolean) as Agent[];
+          agentsToRetry = failed.agentResponses
+            .map((ar) => agents.find((a) => a.id === ar.agentId))
+            .filter(Boolean) as Agent[];
         }
-        
+
         if (agentsToRetry.length === 0) {
           agentsToRetry = selectedAgents;
         }
@@ -830,9 +849,9 @@ export const ChatInterface: React.FC<{
           });
           return;
         }
-        
+
         setSelectedAgents(agentsToRetry);
-        
+
         // Execute the retry using handleSubmit directly
         handleSubmit(prev.content, agentsToRetry);
       }

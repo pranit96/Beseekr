@@ -237,21 +237,27 @@ const Chat = () => {
 
       let rawConversations: Conversation[] = [];
       type ServerConv = import("@/types/conversation").Conversation;
-      const resData = response.data as unknown as { conversations?: ServerConv[], data?: ServerConv[] } | ServerConv[];
-      
+      const resData = response.data as unknown as
+        | { conversations?: ServerConv[]; data?: ServerConv[] }
+        | ServerConv[];
+
       if (response.success && resData) {
         let serverConvs: ServerConv[] = [];
         if (Array.isArray(resData)) serverConvs = resData;
-        else if ("conversations" in resData && Array.isArray(resData.conversations))
+        else if (
+          "conversations" in resData &&
+          Array.isArray(resData.conversations)
+        )
           serverConvs = resData.conversations;
         else if ("data" in resData && Array.isArray(resData.data))
           serverConvs = resData.data;
-          
-        rawConversations = serverConvs.map(c => ({
+
+        rawConversations = serverConvs.map((c) => ({
           id: c.id,
           title: c.title,
           status: c.status,
-          last_message_at: c.updated_at || c.created_at || new Date().toISOString()
+          last_message_at:
+            c.updated_at || c.created_at || new Date().toISOString(),
         }));
       } else {
         throw new Error(response.error || "Failed to fetch conversations");
@@ -576,26 +582,37 @@ const Chat = () => {
 
   useEffect(() => {
     if (hasQueryError && conversations.length > 0) {
-      const isRateLimitError = (queryError as any)?.message?.toLowerCase().includes("too many requests") || (queryError as any)?.message?.includes("429");
+      const isRateLimitError =
+        (queryError as any)?.message
+          ?.toLowerCase()
+          .includes("too many requests") ||
+        (queryError as any)?.message?.includes("429");
       if (isRateLimitError) {
         toast({
           title: "Rate Limit Exceeded",
           description: "You have made too many requests. Please wait a moment.",
-          variant: "destructive"
+          variant: "destructive",
         });
       } else {
         toast({
           title: "Connection Issue",
-          description: "Could not refresh conversations. Please try again later.",
-          variant: "destructive"
+          description:
+            "Could not refresh conversations. Please try again later.",
+          variant: "destructive",
         });
       }
     }
   }, [hasQueryError, conversations.length, queryError, toast]);
 
   if (hasQueryError && conversations.length === 0) {
-    const isAuthError = (queryError as any)?.message?.toLowerCase().includes("session expired") || (queryError as any)?.message?.includes("401");
-    const isRateLimitError = (queryError as any)?.message?.toLowerCase().includes("too many requests") || (queryError as any)?.message?.includes("429");
+    const isAuthError =
+      (queryError as any)?.message?.toLowerCase().includes("session expired") ||
+      (queryError as any)?.message?.includes("401");
+    const isRateLimitError =
+      (queryError as any)?.message
+        ?.toLowerCase()
+        .includes("too many requests") ||
+      (queryError as any)?.message?.includes("429");
 
     return (
       <div className="h-screen flex flex-col items-center justify-center gap-4 bg-background p-6">
@@ -603,12 +620,18 @@ const Chat = () => {
           <AlertCircle className="w-8 h-8 text-destructive" />
         </div>
         <h2 className="text-2xl font-bold">
-          {isRateLimitError ? "Rate Limit Exceeded" : (isAuthError ? t("chat.sessionExpired") : "Something went wrong")}
+          {isRateLimitError
+            ? "Rate Limit Exceeded"
+            : isAuthError
+              ? t("chat.sessionExpired")
+              : "Something went wrong"}
         </h2>
         <p className="text-muted-foreground text-center max-w-md">
-          {isRateLimitError 
-            ? "You have made too many requests. Please wait a moment and try again." 
-            : (isAuthError ? t("chat.sessionExpiredDesc") : ((queryError as any)?.message || "Failed to load conversations"))}
+          {isRateLimitError
+            ? "You have made too many requests. Please wait a moment and try again."
+            : isAuthError
+              ? t("chat.sessionExpiredDesc")
+              : (queryError as any)?.message || "Failed to load conversations"}
         </p>
         <div className="flex gap-3 mt-4">
           <Button
