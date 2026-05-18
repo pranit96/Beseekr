@@ -707,7 +707,18 @@ export const ChatInterface: React.FC<{
                     ? { ...at, status: "success" }
                     : at,
                 ),
-                agentResponses: doneData.results || m.agentResponses,
+                agentResponses: doneData.results?.map((r: any) => ({
+                  agentId: r.agent_id,
+                  agentName: r.agent_name,
+                  content: r.response_sanitized || r.response || "",
+                  timestamp: new Date(),
+                  status: r.error ? "error" : "success",
+                  metadata: {
+                    usage: r.usage,
+                    execution_time_ms: r.execution_time_ms,
+                    agent_domain: r.agent_domain
+                  }
+                })) || m.agentResponses,
                 markdownOutput: doneData.final_markdown || m.markdownOutput,
                 finalOutput: doneData.final_markdown || m.finalOutput,
                 content:

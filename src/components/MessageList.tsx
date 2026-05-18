@@ -12,6 +12,8 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { ChatMessage } from "@/types/agent";
 import { useToast } from "@/hooks/use-toast";
 import AgentResponseCard from "./messages/AgentResponseCard";
@@ -337,18 +339,38 @@ const MessageList: React.FC<MessageListProps> = ({
               message.agentResponses.length > 0 &&
               (!message.agentTraces || message.agentTraces.length === 0 || message.executionMode === "parallel") && (
                 <div className="mb-6 px-2 animate-fade-in">
-                  {/* Parallel mode: side-by-side grid */}
+                  {/* Parallel mode: side-by-side scaleable Tabs */}
                   {message.executionMode === "parallel" ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <Tabs defaultValue={`agent-${message.agentResponses[0]?.agentId}`} className="w-full">
+                      <ScrollArea className="w-full mb-4">
+                        <TabsList className="inline-flex w-max min-w-full justify-start border-b border-border/20 p-1 bg-muted/10 backdrop-blur-sm rounded-lg h-12">
+                          {message.agentResponses.map((response, idx) => (
+                            <TabsTrigger
+                              key={`trigger-${message.id}-agent-${idx}`}
+                              value={`agent-${response.agentId}`}
+                              className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-sm rounded-md transition-all px-4 py-2 flex items-center gap-2"
+                            >
+                              <div className="w-2 h-2 rounded-full bg-primary/80" />
+                              <span className="text-sm font-medium">{response.agentName}</span>
+                            </TabsTrigger>
+                          ))}
+                        </TabsList>
+                        <ScrollBar orientation="horizontal" className="opacity-50 hover:opacity-100" />
+                      </ScrollArea>
                       {message.agentResponses.map((response, idx) => (
-                        <AgentResponseCard
-                          key={`${message.id}-agent-${idx}`}
-                          response={response as any}
-                          index={idx}
-                          isCompactMode={isCompactMode}
-                        />
+                        <TabsContent
+                          key={`content-${message.id}-agent-${idx}`}
+                          value={`agent-${response.agentId}`}
+                          className="mt-0 outline-none animate-in fade-in slide-in-from-bottom-2 duration-300"
+                        >
+                          <AgentResponseCard
+                            response={response as any}
+                            index={idx}
+                            isCompactMode={isCompactMode}
+                          />
+                        </TabsContent>
                       ))}
-                    </div>
+                    </Tabs>
                   ) : (
                     /* Sequential mode: stacked full-width */
                     <div className="flex flex-col gap-4 max-w-[90%] sm:max-w-[85%] md:max-w-[80%]">
