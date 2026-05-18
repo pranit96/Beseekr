@@ -1,5 +1,5 @@
 // src/pages/ResumeWorkspace.tsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useResume, EMPTY_RESUME } from "@/contexts/ResumeContext";
@@ -79,6 +79,7 @@ export default function ResumeWorkspace() {
     saveStatus,
     saveSnapshot,
     resetWorkspace,
+    workspaceMode,
   } = useResume();
 
   // Local Visual/Action States
@@ -91,6 +92,41 @@ export default function ResumeWorkspace() {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isPreviewLoading, setIsPreviewLoading] = useState(false);
   const [previewOutdated, setPreviewOutdated] = useState(false);
+
+  // Auto-generate preview on mount
+  useEffect(() => {
+    let active = true;
+    const initPreview = async () => {
+      setIsPreviewLoading(true);
+      try {
+        const url = await resumeApi.downloadResumePdf(resumeData);
+        if (active) {
+          setPreviewUrl(url);
+          setPreviewOutdated(false);
+        }
+      } catch (error) {
+        console.error("Failed to generate initial preview:", error);
+      } finally {
+        if (active) setIsPreviewLoading(false);
+      }
+    };
+    if (resumeData && resumeData.personal_info?.name) {
+      initPreview();
+    }
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  // Track edits to flag outdated preview
+  const [isFirstRender, setIsFirstRender] = useState(true);
+  useEffect(() => {
+    if (isFirstRender) {
+      setIsFirstRender(false);
+      return;
+    }
+    setPreviewOutdated(true);
+  }, [resumeData]);
 
   // Navigation & Panel states for Designer UI
   const [activeTab, setActiveTab] = useState("personal");
@@ -289,24 +325,33 @@ export default function ResumeWorkspace() {
     }
   };
 
-  // Open preview modal — generates PDF blob and renders in iframe
+  // Directly download PDF on export click
   const handleExportPdf = async () => {
-    setIsPreviewLoading(true);
+    setIsDownloading(true);
     try {
       const url = await resumeApi.downloadResumePdf(resumeData);
-      // Revoke any previous blob URL to free memory
-      if (previewUrl) window.URL.revokeObjectURL(previewUrl);
-      setPreviewUrl(url);
-      setPreviewOutdated(false);
-      setIsPreviewOpen(true);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute(
+        "download",
+        `${resumeData.personal_info.name || "Resume"}_Resume.pdf`,
+      );
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      toast({
+        title: "Export Successful 🚀",
+        description: "Your PDF resume is saved to your device.",
+      });
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Preview Failed",
-        description: error.message || "Could not generate the PDF preview.",
+        title: "Export Failed",
+        description: error.message || "Could not export PDF.",
       });
     } finally {
-      setIsPreviewLoading(false);
+      setIsDownloading(false);
     }
   };
 
@@ -603,7 +648,7 @@ export default function ResumeWorkspace() {
     <div className="h-screen flex flex-col bg-[#09090b] text-foreground overflow-hidden selection:bg-white/10">
       {/* ── STICKY HEADER TOOLBAR ───────────────────────────────────── */}
       <div className="sticky top-0 z-50 bg-[#09090b]/80 backdrop-blur-xl border-b border-white/[0.05] shrink-0">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div className="w-full px-6 py-4">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="space-y-1 text-left">
               <div className="flex items-center gap-2.5">
@@ -649,6 +694,16 @@ export default function ResumeWorkspace() {
               </div>
 
               <div className="h-4 w-px bg-white/[0.08] mx-1 hidden sm:block" />
+
+              {workspaceMode === "template" && (
+                <Button
+                  onClick={() => navigate("/dashboard/hired/resume/templates")}
+                  variant="ghost"
+                  className="rounded-lg font-bold text-zinc-500 hover:text-white hover:bg-white/5 transition-all h-8 px-2.5 text-[10px] uppercase tracking-wider"
+                >
+                  Templates
+                </Button>
+              )}
 
               <Button
                 onClick={handleClearWorkspace}
@@ -722,14 +777,16 @@ export default function ResumeWorkspace() {
       </div>
 
       {/* ── SCROLLABLE MAIN CONTENT ────────────────────────────────── */}
-      <main className="flex-1 overflow-y-auto custom-scrollbar relative">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1, duration: 0.5 }}
-            className="w-full relative space-y-6"
-          >
+      <main className="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
+        {/* Left Column: Form Editor */}
+        <div className="flex-1 h-full overflow-y-auto custom-scrollbar px-4 sm:px-6 lg:px-8 py-6 sm:py-10 border-r border-white/[0.05]">
+          <div className="max-w-3xl mx-auto">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1, duration: 0.5 }}
+              className="w-full relative space-y-6"
+            >
             {/* FULL WIDTH CAPSULE TAB LIST */}
             <div className="flex items-center justify-between gap-1.5 p-1.5 bg-[#0c0c12]/40 border border-white/[0.05] rounded-2xl backdrop-blur-3xl shadow-lg w-full overflow-x-auto select-none">
               {[
@@ -2075,108 +2132,99 @@ export default function ResumeWorkspace() {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
+        </div>
 
-          {/* ── PDF Preview Modal ─────────────────────────────────────────── */}
-          {isPreviewOpen && (
-            <div
-              className="fixed inset-x-0 bottom-0 top-[72px] sm:top-[82px] z-[45] flex flex-col bg-[#09090c]/98 border-t border-white/[0.06] backdrop-blur-3xl animate-in slide-in-from-bottom duration-300"
-              role="dialog"
-              aria-label="PDF Preview"
-            >
-              {/* Top Bar */}
-              <div className="flex items-center justify-between px-5 py-3 border-b border-white/[0.06] bg-[#09090b]/80 shrink-0">
-                <div className="flex items-center gap-3">
-                  <FileText className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-bold text-foreground tracking-tight">
-                    {resumeData.personal_info.name
-                      ? `${resumeData.personal_info.name} — Resume Preview`
-                      : "Resume Preview"}
-                  </span>
-                  {previewOutdated && (
-                    <span className="text-[10px] font-semibold text-amber-400 bg-amber-400/10 border border-amber-400/20 px-2 py-0.5 rounded-full">
-                      Outdated — refresh to see latest edits
-                    </span>
-                  )}
-                </div>
+        {/* Right Column: Live PDF Preview */}
+        <div className="w-full lg:w-[45%] xl:w-[50%] bg-[#07070a]/90 backdrop-blur-3xl border-t lg:border-t-0 lg:border-l border-white/[0.06] flex flex-col h-full overflow-hidden shrink-0">
+          {/* Live Preview Top Bar */}
+          <div className="flex items-center justify-between px-5 py-3 border-b border-white/[0.06] bg-[#09090b]/80 shrink-0 select-none">
+            <div className="flex items-center gap-2">
+              <FileText className="h-4 w-4 text-zinc-400" />
+              <span className="text-xs font-bold text-white tracking-tight">
+                Live Preview
+              </span>
+              {previewOutdated && (
+                <span className="text-[9px] font-semibold text-amber-400 bg-amber-400/10 border border-amber-400/20 px-2 py-0.5 rounded-full animate-pulse">
+                  Outdated — refresh
+                </span>
+              )}
+            </div>
 
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleRefreshPreview}
-                    disabled={isPreviewLoading}
-                    className="h-8 text-xs font-bold rounded-xl border-white/[0.08] bg-white/[0.03] text-muted-foreground hover:text-white hover:bg-white/[0.08] transition-all"
-                  >
-                    {isPreviewLoading ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
-                    ) : (
-                      <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
-                    )}
-                    Refresh
-                  </Button>
-
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={closePreview}
-                    className="h-8 text-xs font-bold rounded-xl border-white/[0.08] bg-white/[0.03] text-muted-foreground hover:text-white hover:bg-white/[0.08] transition-all"
-                  >
-                    <X className="h-3.5 w-3.5 mr-1.5" />
-                    Back to Edit
-                  </Button>
-
-                  <Button
-                    size="sm"
-                    onClick={handleDownloadFromPreview}
-                    disabled={isDownloading || isPreviewLoading}
-                    className="h-8 text-xs font-bold rounded-xl bg-white text-black hover:bg-zinc-200 transition-all border-none shadow-md"
-                  >
-                    {isDownloading ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
-                    ) : (
-                      <Download className="h-3.5 w-3.5 mr-1.5" />
-                    )}
-                    Download PDF
-                  </Button>
-                </div>
-              </div>
-
-              {/* Centered Responsive PDF Preview Dock */}
-              <div className="flex-1 relative bg-[#09090c] flex items-center justify-center p-5 sm:p-8 selection:bg-white/5 overflow-hidden">
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRefreshPreview}
+                disabled={isPreviewLoading}
+                className="h-7 text-[10px] font-bold rounded-lg border-white/[0.08] bg-white/[0.03] text-zinc-300 hover:text-white hover:bg-white/[0.08] transition-all px-2.5"
+              >
                 {isPreviewLoading ? (
-                  <div className="flex flex-col items-center justify-center gap-4 animate-pulse">
-                    <Loader2 className="h-10 w-10 text-indigo-400 animate-spin" />
-                    <p className="text-zinc-500 text-xs font-bold tracking-widest uppercase font-mono">
-                      Assembling Vector Paths...
-                    </p>
-                  </div>
-                ) : previewUrl ? (
-                  <div
-                    className="relative w-auto h-full max-w-full max-h-full bg-background border border-white/[0.08] rounded-2xl overflow-hidden shadow-[0_32px_96px_rgba(0,0,0,0.95)] animate-in zoom-in-95 duration-300 flex flex-col my-auto shrink"
-                    style={{ aspectRatio: "1 / 1.4142" }}
-                  >
-                    <iframe
-                      key={previewUrl}
-                      src={`${previewUrl}#toolbar=0&navpanes=0`}
-                      className="w-full h-full border-0 opacity-95 hover:opacity-100 transition-opacity bg-[#07070a]"
-                      title="Resume PDF Preview"
-                    />
-                  </div>
-                ) : null}
-              </div>
+                  <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                ) : (
+                  <RotateCcw className="h-3 w-3 mr-1" />
+                )}
+                Refresh
+              </Button>
 
-              {/* Bottom hint bar */}
-              <div className="px-5 py-2.5 border-t border-white/[0.04] bg-[#09090b]/60 text-center shrink-0">
-                <p className="text-zinc-600 text-[11px] font-medium">
-                  Made a change? Click{" "}
-                  <span className="text-muted-foreground">Refresh</span> to
-                  regenerate the preview, then{" "}
-                  <span className="text-muted-foreground">Download PDF</span> to
-                  save.
+              <Button
+                size="sm"
+                onClick={handleDownloadFromPreview}
+                disabled={isDownloading || isPreviewLoading}
+                className="h-7 text-[10px] font-black rounded-lg bg-white text-black hover:bg-zinc-200 transition-all border-none shadow-md px-3"
+              >
+                {isDownloading ? (
+                  <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                ) : (
+                  <Download className="h-3 w-3 mr-1" />
+                )}
+                Download PDF
+              </Button>
+            </div>
+          </div>
+
+          {/* Interactive PDF view dock */}
+          <div className="flex-1 relative bg-[#09090c] flex items-center justify-center p-4 selection:bg-white/5 overflow-y-auto custom-scrollbar">
+            {isPreviewLoading ? (
+              <div className="flex flex-col items-center justify-center gap-3 py-12 animate-pulse">
+                <Loader2 className="h-8 w-8 text-indigo-400 animate-spin" />
+                <p className="text-zinc-500 text-[10px] font-bold tracking-widest uppercase font-mono">
+                  Assembling Vector Paths...
                 </p>
               </div>
-            </div>
-          )}
+            ) : previewUrl ? (
+              <div
+                className="relative w-full h-[640px] max-w-lg bg-background border border-white/[0.08] rounded-xl overflow-hidden shadow-[0_16px_48px_rgba(0,0,0,0.8)] animate-in zoom-in-95 duration-300 flex flex-col shrink"
+                style={{ aspectRatio: "1 / 1.4142" }}
+              >
+                <iframe
+                  key={previewUrl}
+                  src={`${previewUrl}#toolbar=0&navpanes=0`}
+                  className="w-full h-full border-0 opacity-95 hover:opacity-100 transition-opacity bg-[#07070a]"
+                  title="Resume PDF Preview"
+                />
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center gap-3 py-12 text-center select-none text-zinc-500">
+                <FileText className="h-10 w-10 opacity-30 text-muted-foreground animate-pulse" />
+                <div>
+                  <p className="text-xs font-bold text-muted-foreground">
+                    No Preview Generated
+                  </p>
+                  <p className="text-[10px] text-zinc-600 max-w-[200px] mx-auto mt-1 leading-relaxed">
+                    Click "Refresh" above to assemble the PDF preview.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Bottom hint bar */}
+          <div className="px-5 py-2 border-t border-white/[0.04] bg-[#09090b]/60 text-center shrink-0">
+            <p className="text-zinc-600 text-[9px] font-bold tracking-wider uppercase">
+              Made a change? Click <span className="text-zinc-400">Refresh</span> to update live view.
+            </p>
+          </div>
+        </div>
 
           {/* LaTeX Preview Modal */}
           {isLatexOpen && (

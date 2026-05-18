@@ -18,14 +18,31 @@ export default function ResumeTemplateSelect() {
     // Enforce alignment to Template Workspace context
     setWorkspaceMode("template");
 
-    setResumeData(template.data);
+    setResumeData((prev) => {
+      // Determine if they have already entered personal details or experience
+      const hasContent =
+        (prev.personal_info?.name &&
+          prev.personal_info.name !== "Alex Johnson" &&
+          prev.personal_info.name !== "Robert Sterling" &&
+          prev.personal_info.name !== "Jordan Casey") ||
+        (prev.experience?.length > 0 &&
+          prev.experience[0]?.company !== "Stripe");
 
-    // Write the template choice instantly back to cloud draft container
-    await saveActiveDraft(template.data);
+      const targetData = hasContent
+        ? {
+            ...prev,
+            styles: template.data.styles,
+          }
+        : template.data;
+
+      // Write the template choice instantly back to cloud draft container
+      saveActiveDraft(targetData);
+      return targetData;
+    });
 
     toast({
       title: `${template.name} Template Loaded`,
-      description: "Your workspace is ready. Start filling in your details.",
+      description: "Your workspace style is ready. Start filling in your details.",
     });
 
     navigate("/dashboard/hired/resume/workspace");
