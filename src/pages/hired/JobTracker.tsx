@@ -35,7 +35,6 @@ import {
   DropdownMenuTrigger,
 } from "../../components/ui/dropdown-menu";
 import HiredShell from "./HiredShell";
-
 // ─── Types ────────────────────────────────────────────────────────────────────
 type AppStatus = JobApplication["status"];
 
@@ -45,27 +44,27 @@ const STATUS_CFG: Record<
   { color: string; dot: string; icon: React.ElementType }
 > = {
   Offer: {
-    color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/25",
+    color: "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/25",
     dot: "bg-emerald-500",
     icon: CheckCircle2,
   },
   Interviewing: {
-    color: "text-purple-400 bg-purple-500/10 border-purple-500/25",
+    color: "text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-500/10 border-purple-200 dark:border-purple-500/25",
     dot: "bg-purple-500",
     icon: Target,
   },
   Applied: {
-    color: "text-sky-400 bg-sky-500/10 border-sky-500/25",
-    dot: "bg-sky-500",
+    color: "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 border-indigo-200 dark:border-indigo-500/25",
+    dot: "bg-indigo-500",
     icon: TrendingUp,
   },
   Rejected: {
-    color: "text-red-400 bg-red-500/10 border-red-500/25",
+    color: "text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/25",
     dot: "bg-red-500",
     icon: XCircle,
   },
   Bookmarked: {
-    color: "text-amber-400 bg-amber-500/10 border-amber-500/25",
+    color: "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/25",
     dot: "bg-amber-500",
     icon: Bookmark,
   },
@@ -98,7 +97,7 @@ const StatusMenu = React.memo(function StatusMenu({
         <Button
           variant="ghost"
           size="icon"
-          className="h-7 w-7 text-zinc-500 hover:text-white rounded-lg shrink-0 relative z-20"
+          className="h-7 w-7 text-zinc-400 hover:text-zinc-950 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.06] rounded-lg shrink-0 relative z-20"
           aria-label="Application options"
         >
           <MoreVertical className="w-3.5 h-3.5" />
@@ -109,9 +108,9 @@ const StatusMenu = React.memo(function StatusMenu({
         align="end"
         sideOffset={4}
         avoidCollisions={false}
-        className="bg-[#111113] border border-white/[0.08] text-muted-foreground rounded-xl p-1 shadow-2xl min-w-[140px]"
+        className="bg-white dark:bg-[#111113] border border-zinc-200 dark:border-white/[0.08] text-zinc-700 dark:text-muted-foreground rounded-xl p-1 shadow-2xl min-w-[140px]"
       >
-        <p className="px-3 py-1 text-[10px] font-black uppercase tracking-widest text-zinc-600">
+        <p className="px-3 py-1 text-[10px] font-black uppercase tracking-widest text-zinc-400 dark:text-zinc-600">
           Move to
         </p>
         {ALL_STATUSES.filter((s) => s !== "Rejected" && s !== app.status).map(
@@ -119,7 +118,7 @@ const StatusMenu = React.memo(function StatusMenu({
             <DropdownMenuItem
               key={s}
               onSelect={() => onUpdateStatus(app.id, s)}
-              className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-muted-foreground hover:bg-white/[0.05] hover:text-white rounded-lg cursor-pointer transition-colors outline-none"
+              className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-zinc-700 dark:text-muted-foreground hover:bg-zinc-100 dark:hover:bg-white/[0.05] hover:text-zinc-950 dark:hover:text-white rounded-lg cursor-pointer transition-colors outline-none"
             >
               <div className={`w-1.5 h-1.5 rounded-full ${getCfg(s).dot}`} />
               {s}
@@ -128,19 +127,20 @@ const StatusMenu = React.memo(function StatusMenu({
         )}
         {app.status !== "Rejected" && (
           <>
-            <DropdownMenuSeparator className="my-1 bg-white/[0.06]" />
+            <DropdownMenuSeparator className="my-1 bg-zinc-200 dark:bg-white/[0.06]" />
             <DropdownMenuItem
               onSelect={() => onUpdateStatus(app.id, "Rejected")}
-              className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-red-400 hover:bg-red-500/10 hover:text-red-300 rounded-lg cursor-pointer transition-colors outline-none"
+              className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-300 rounded-lg cursor-pointer transition-colors outline-none"
             >
               <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
               Rejected
             </DropdownMenuItem>
           </>
         )}
+        <DropdownMenuSeparator className="my-1 bg-zinc-200 dark:bg-white/[0.06]" />
         <DropdownMenuItem
           onSelect={() => onDelete(app.id)}
-          className="flex items-center px-3 py-2 text-xs font-bold text-red-500/70 hover:bg-red-600/10 hover:text-red-400 rounded-lg cursor-pointer transition-colors outline-none"
+          className="flex items-center px-3 py-2 text-xs font-bold text-red-500 hover:bg-red-100 dark:hover:bg-red-600/10 hover:text-red-600 dark:hover:text-red-400 rounded-lg cursor-pointer transition-colors outline-none"
         >
           Delete
         </DropdownMenuItem>
@@ -221,7 +221,7 @@ function AddModal({ open, onClose, onSave, isSaving }: AddModalProps) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 bg-background/75 backdrop-blur-sm flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-black/50 dark:bg-background/75 backdrop-blur-sm flex items-center justify-center p-4"
           onClick={onClose}
         >
           <motion.div
@@ -229,12 +229,12 @@ function AddModal({ open, onClose, onSave, isSaving }: AddModalProps) {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 16 }}
             transition={{ duration: 0.2 }}
-            className="w-full max-w-lg bg-[#111113] border border-white/[0.09] rounded-[28px] p-7 shadow-2xl"
+            className="w-full max-w-lg bg-white dark:bg-[#111113] border border-zinc-200 dark:border-white/[0.09] rounded-[28px] p-7 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h2 className="text-lg font-bold text-white tracking-tight">
+                <h2 className="text-lg font-bold text-zinc-900 dark:text-white tracking-tight">
                   New Application
                 </h2>
                 <p className="text-xs text-zinc-500 mt-0.5">
@@ -243,7 +243,7 @@ function AddModal({ open, onClose, onSave, isSaving }: AddModalProps) {
               </div>
               <button
                 onClick={onClose}
-                className="w-8 h-8 rounded-xl flex items-center justify-center text-zinc-500 hover:text-white hover:bg-white/[0.06] transition-colors"
+                className="w-8 h-8 rounded-xl flex items-center justify-center text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -256,7 +256,7 @@ function AddModal({ open, onClose, onSave, isSaving }: AddModalProps) {
                   { k: "job_title", label: "Role", ph: "SWE II" },
                 ].map((f) => (
                   <div key={f.k} className="space-y-1.5">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
                       {f.label} *
                     </label>
                     <Input
@@ -264,7 +264,7 @@ function AddModal({ open, onClose, onSave, isSaving }: AddModalProps) {
                       onChange={(e) => set(f.k, e.target.value)}
                       placeholder={f.ph}
                       required
-                      className="bg-white/[0.03] border-white/[0.08] focus:border-indigo-500/50 rounded-xl h-10 text-sm text-zinc-200"
+                      className="bg-zinc-50 dark:bg-white/[0.03] border-zinc-200 dark:border-white/[0.08] focus:border-indigo-500/50 rounded-xl h-10 text-sm text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 dark:placeholder:text-zinc-650"
                     />
                   </div>
                 ))}
@@ -272,16 +272,16 @@ function AddModal({ open, onClose, onSave, isSaving }: AddModalProps) {
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5 text-left">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
                     Status
                   </label>
                   <select
                     value={form.status}
                     onChange={(e) => set("status", e.target.value)}
-                    className="w-full h-10 bg-white/[0.03] border border-white/[0.08] focus:border-indigo-500/50 rounded-xl px-3 text-sm text-zinc-200 font-medium outline-none"
+                    className="w-full h-10 bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.08] focus:border-indigo-500/50 rounded-xl px-3 text-sm text-zinc-800 dark:text-zinc-200 font-medium outline-none"
                   >
                     {ALL_STATUSES.map((s) => (
-                      <option key={s} value={s} className="bg-card">
+                      <option key={s} value={s} className="bg-white dark:bg-[#111113] text-zinc-800 dark:text-zinc-200">
                         {s}
                       </option>
                     ))}
@@ -289,21 +289,21 @@ function AddModal({ open, onClose, onSave, isSaving }: AddModalProps) {
                 </div>
 
                 <div className="space-y-1.5 text-left">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
                     Applied Date
                   </label>
                   <Input
                     type="date"
                     value={form.created_at}
                     onChange={(e) => set("created_at", e.target.value)}
-                    className="bg-white/[0.03] border-white/[0.08] focus:border-indigo-500/50 rounded-xl h-10 text-sm text-zinc-200"
+                    className="bg-zinc-50 dark:bg-white/[0.03] border-zinc-200 dark:border-white/[0.08] focus:border-indigo-500/50 rounded-xl h-10 text-sm text-zinc-800 dark:text-zinc-200"
                   />
                 </div>
               </div>
 
               <div className="space-y-1.5">
                 <div className="flex justify-between items-center">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 flex items-center gap-1.5">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 dark:text-zinc-500 flex items-center gap-1.5">
                     <Link className="w-3 h-3" /> Job URL
                   </label>
                   {form.job_url && (
@@ -311,7 +311,7 @@ function AddModal({ open, onClose, onSave, isSaving }: AddModalProps) {
                       type="button"
                       onClick={handleAiAutofill}
                       disabled={isParsingUrl}
-                      className="text-[10px] font-bold text-indigo-400 hover:text-indigo-300 disabled:text-zinc-600 flex items-center gap-1 transition-colors"
+                      className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 disabled:text-zinc-400 dark:disabled:text-zinc-650 flex items-center gap-1 transition-colors"
                     >
                       {isParsingUrl ? (
                         <>
@@ -332,14 +332,14 @@ function AddModal({ open, onClose, onSave, isSaving }: AddModalProps) {
                   onChange={(e) => set("job_url", e.target.value)}
                   placeholder="https://..."
                   type="url"
-                  className="bg-white/[0.03] border-white/[0.08] focus:border-indigo-500/50 rounded-xl h-10 text-sm text-zinc-200"
+                  className="bg-zinc-50 dark:bg-white/[0.03] border-zinc-200 dark:border-white/[0.08] focus:border-indigo-500/50 rounded-xl h-10 text-sm text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 dark:placeholder:text-zinc-650"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 flex items-center gap-1.5">
+                <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 dark:text-zinc-500 flex items-center gap-1.5">
                   <FileText className="w-3 h-3" /> Job Description
-                  <span className="text-indigo-400 font-bold normal-case tracking-normal text-[10px]">
+                  <span className="text-indigo-600 dark:text-indigo-400 font-bold normal-case tracking-normal text-[10px]">
                     → powers AI Prep Kit
                   </span>
                 </label>
@@ -349,7 +349,7 @@ function AddModal({ open, onClose, onSave, isSaving }: AddModalProps) {
                   placeholder="Paste the full JD here…"
                   rows={4}
                   maxLength={12000}
-                  className="w-full bg-white/[0.03] border border-white/[0.08] focus:border-indigo-500/50 rounded-xl p-3 text-sm text-zinc-200 placeholder:text-zinc-600 outline-none resize-none font-medium leading-relaxed transition-colors"
+                  className="w-full bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.08] focus:border-indigo-500/50 rounded-xl p-3 text-sm text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 dark:placeholder:text-zinc-650 outline-none resize-none font-medium leading-relaxed transition-colors"
                 />
               </div>
 
@@ -358,7 +358,7 @@ function AddModal({ open, onClose, onSave, isSaving }: AddModalProps) {
                   type="button"
                   variant="ghost"
                   onClick={onClose}
-                  className="flex-1 h-11 text-zinc-500 hover:text-white rounded-xl font-bold"
+                  className="flex-1 h-11 text-zinc-500 hover:text-zinc-950 dark:hover:text-white rounded-xl font-bold bg-transparent border border-zinc-200 dark:border-white/[0.05]"
                 >
                   Cancel
                 </Button>
@@ -428,10 +428,10 @@ const AppCard = React.memo(function AppCard({
       exit={{ opacity: 0, scale: 0.92 }}
       onMouseEnter={() => onHover(app.id)}
       onMouseLeave={() => onHover(null)}
-      className={`group relative bg-white/[0.02] border rounded-2xl p-5 transition-colors duration-300 hover:shadow-xl hover:shadow-black/30 ${
+      className={`group relative bg-zinc-50/50 dark:bg-white/[0.02] border rounded-2xl p-5 transition-colors duration-300 hover:shadow-xl hover:shadow-black/5 dark:hover:shadow-black/30 ${
         isFlashing
           ? "border-indigo-500/50 shadow-indigo-500/10 shadow-lg"
-          : "border-white/[0.07] hover:border-white/[0.13]"
+          : "border-zinc-200 dark:border-white/[0.07] hover:border-zinc-300 dark:hover:border-white/[0.13]"
       }`}
     >
       {/* Status accent bar */}
@@ -453,7 +453,7 @@ const AppCard = React.memo(function AppCard({
       </div>
 
       <div className="space-y-0.5 mb-4">
-        <h3 className="text-base font-bold text-white tracking-tight line-clamp-1">
+        <h3 className="text-base font-bold text-zinc-900 dark:text-white tracking-tight line-clamp-1">
           {app.job_title}
         </h3>
         <p className="text-xs text-zinc-500 font-bold uppercase tracking-widest flex items-center gap-1.5 truncate">
@@ -470,7 +470,7 @@ const AppCard = React.memo(function AppCard({
           {app.status}
         </span>
         {app.jd_text && (
-          <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-600 dark:text-indigo-400">
             JD Ready
           </span>
         )}
@@ -480,21 +480,21 @@ const AppCard = React.memo(function AppCard({
             target="_blank"
             rel="noreferrer"
             onClick={(e) => e.stopPropagation()}
-            className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-lg border border-white/[0.08] text-zinc-500 hover:text-white transition-colors"
+            className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-lg border border-zinc-200 dark:border-white/[0.08] text-zinc-500 hover:text-zinc-800 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors"
           >
             <ExternalLink className="w-2.5 h-2.5" /> Link
           </a>
         )}
       </div>
 
-      <div className="flex items-center justify-between border-t border-white/[0.05] pt-3">
-        <span className="text-[10px] text-zinc-700 font-bold flex items-center gap-1">
+      <div className="flex items-center justify-between border-t border-zinc-200/50 dark:border-white/[0.05] pt-3">
+        <span className="text-[10px] text-zinc-400 dark:text-zinc-700 font-bold flex items-center gap-1">
           <Clock className="w-3 h-3" />
           {new Date(app.created_at).toLocaleDateString()}
         </span>
         <button
           onClick={() => onPrepKit(app)}
-          className="flex items-center gap-1.5 text-[10px] font-bold text-zinc-500 hover:text-indigo-400 transition-colors"
+          className="flex items-center gap-1.5 text-[10px] font-bold text-zinc-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
         >
           <Sparkles className="w-3 h-3" /> Prep Kit
         </button>
@@ -523,17 +523,17 @@ const KanbanCard = React.memo(function KanbanCard({
 }: KanbanCardProps) {
   return (
     <div
-      className={`bg-white/[0.02] border rounded-xl p-3.5 transition-all ${
+      className={`bg-zinc-50/50 dark:bg-white/[0.02] border rounded-xl p-3.5 transition-all ${
         isFlashing
-          ? "border-indigo-500/40"
-          : "border-white/[0.07] hover:border-white/[0.12]"
+          ? "border-indigo-500/40 shadow-sm"
+          : "border-zinc-200 dark:border-white/[0.07] hover:border-zinc-300 dark:hover:border-white/[0.12]"
       }`}
       onMouseEnter={() => onHover(app.id)}
       onMouseLeave={() => onHover(null)}
     >
       <div className="flex items-start justify-between gap-2 mb-2">
         <div className="min-w-0">
-          <p className="text-sm font-bold text-white line-clamp-1">
+          <p className="text-sm font-bold text-zinc-900 dark:text-white line-clamp-1">
             {app.job_title}
           </p>
           <p className="text-xs text-zinc-500 font-medium truncate">
@@ -546,13 +546,13 @@ const KanbanCard = React.memo(function KanbanCard({
           onDelete={onDelete}
         />
       </div>
-      <div className="flex items-center justify-between border-t border-white/[0.05] pt-2 mt-2">
-        <span className="text-[10px] text-zinc-700 font-bold">
+      <div className="flex items-center justify-between border-t border-zinc-200/50 dark:border-white/[0.05] pt-2 mt-2">
+        <span className="text-[10px] text-zinc-400 dark:text-zinc-700 font-bold">
           {new Date(app.created_at).toLocaleDateString()}
         </span>
         <button
           onClick={() => onPrepKit(app)}
-          className="text-[10px] font-bold text-zinc-600 hover:text-indigo-400 flex items-center gap-1 transition-colors"
+          className="text-[10px] font-bold text-zinc-500 hover:text-indigo-600 dark:hover:text-indigo-400 flex items-center gap-1 transition-colors"
         >
           <Sparkles className="w-3 h-3" /> Prep Kit
         </button>
@@ -739,9 +739,6 @@ export default function JobTracker() {
     rejected: applications.filter((a) => a.status === "Rejected").length,
   };
 
-  const level =
-    counts.total === 0 ? "Novice" : counts.total < 5 ? "Amateur" : "Pro Finder";
-
   // ── Render ───────────────────────────────────────────────────────────────
   return (
     <>
@@ -755,8 +752,8 @@ export default function JobTracker() {
         <div className="max-w-6xl mx-auto space-y-6 py-7 px-4 sm:px-6 lg:px-8">
           {/* HEADER */}
           <div className="flex items-start justify-between gap-4">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight text-white">
+            <div className="text-left">
+              <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-white">
                 Job Tracker
               </h1>
               <p className="text-zinc-500 text-sm mt-0.5">
@@ -765,19 +762,20 @@ export default function JobTracker() {
             </div>
             <Button
               onClick={() => setShowAddModal(true)}
-              className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl h-10 px-5 shadow-lg shadow-indigo-500/20 flex items-center gap-2 shrink-0"
+              className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl h-10 px-5 shadow-lg shadow-indigo-500/20 flex items-center gap-2 shrink-0 transition-all active:scale-95"
             >
               <Plus className="w-4 h-4" /> Add Application
             </Button>
           </div>
+
           {/* AI QUICK IMPORTER FROM URL */}
-          <div className="bg-[#111113]/40 border border-white/[0.06] p-5 rounded-[24px] space-y-3.5 text-left">
+          <div className="bg-zinc-50 dark:bg-[#111113]/40 border border-zinc-200 dark:border-white/[0.06] p-5 rounded-[24px] space-y-3.5 text-left">
             <div className="flex items-center gap-2.5">
-              <div className="p-2 bg-indigo-500/10 border border-indigo-500/20 rounded-xl">
-                <Sparkles className="w-4 h-4 text-indigo-400" />
+              <div className="p-2 bg-indigo-100 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 rounded-xl">
+                <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-white tracking-tight">AI Quick Import from URL</h3>
+                <h3 className="text-sm font-bold text-zinc-900 dark:text-white tracking-tight">AI Quick Import from URL</h3>
                 <p className="text-[11px] text-zinc-500 font-medium">Paste any job posting URL to auto-extract role details and log it as "Applied".</p>
               </div>
             </div>
@@ -787,12 +785,12 @@ export default function JobTracker() {
                 value={quickUrl}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuickUrl(e.target.value)}
                 disabled={isQuickParsing}
-                className="bg-white/[0.02] border-white/[0.08] focus:border-indigo-500/40 rounded-xl h-11 text-sm text-zinc-200 flex-1 placeholder:text-zinc-600"
+                className="bg-white dark:bg-white/[0.02] border-zinc-200 dark:border-white/[0.08] focus:border-indigo-500/40 rounded-xl h-11 text-sm text-zinc-800 dark:text-zinc-200 flex-1 placeholder:text-zinc-400 dark:placeholder:text-zinc-650"
               />
               <Button
                 onClick={handleQuickImport}
                 disabled={isQuickParsing || !quickUrl}
-                className="bg-indigo-600 hover:bg-indigo-500 disabled:bg-zinc-800 disabled:text-zinc-500 text-white font-bold rounded-xl h-11 px-6 shadow-lg shadow-indigo-500/20 transition-all flex items-center gap-2"
+                className="bg-indigo-600 hover:bg-indigo-500 disabled:bg-zinc-100 dark:disabled:bg-zinc-800 disabled:text-zinc-400 dark:disabled:text-zinc-500 text-white font-bold rounded-xl h-11 px-6 shadow-lg shadow-indigo-500/20 transition-all flex items-center gap-2"
               >
                 {isQuickParsing ? (
                   <>
@@ -811,55 +809,53 @@ export default function JobTracker() {
 
           {/* STATS */}
           {!isLoading && applications.length > 0 && (
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 justify-start">
               <Stat
                 label="total"
                 value={counts.total}
-                accent="text-muted-foreground bg-white/[0.03] border-white/[0.07]"
+                accent="text-zinc-700 dark:text-muted-foreground bg-zinc-100 dark:bg-white/[0.03] border-zinc-200 dark:border-white/[0.07]"
               />
               <Stat
                 label="interviewing"
                 value={counts.interviewing}
-                accent="text-purple-400 bg-purple-500/10 border-purple-500/20"
+                accent="text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-500/10 border-purple-200 dark:border-purple-500/20"
               />
               <Stat
                 label="offers"
                 value={counts.offer}
-                accent="text-emerald-400 bg-emerald-500/10 border-emerald-500/20"
+                accent="text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20"
               />
               <Stat
                 label="rejected"
                 value={counts.rejected}
-                accent="text-red-400 bg-red-500/10 border-red-500/20"
+                accent="text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/20"
               />
             </div>
           )}
 
-
-
           {/* TOOLBAR */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-            <div className="relative flex-1 group max-w-xs">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-500 group-focus-within:text-indigo-400 transition-colors" />
+            <div className="relative flex-1 group max-w-xs w-full">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-400 group-focus-within:text-indigo-600 dark:group-focus-within:text-indigo-400 transition-colors" />
               <Input
                 placeholder="Search company or role…"
                 value={searchQuery}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                   setSearchQuery(e.target.value)
                 }
-                className="bg-white/[0.03] border-white/[0.08] focus:border-indigo-500/50 pl-9 h-9 rounded-xl text-sm text-zinc-200"
+                className="bg-zinc-50 dark:bg-white/[0.03] border-zinc-200 dark:border-white/[0.08] focus:border-indigo-500/50 pl-9 h-9 rounded-xl text-sm text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 dark:placeholder:text-zinc-650"
               />
             </div>
 
-            <div className="flex items-center gap-1.5 bg-white/[0.02] border border-white/[0.07] rounded-xl p-1 overflow-x-auto">
+            <div className="flex items-center gap-1.5 bg-zinc-100 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.07] rounded-xl p-1 overflow-x-auto w-full sm:w-auto">
               {["all", ...ALL_STATUSES].map((s) => (
                 <button
                   key={s}
                   onClick={() => setFilterStatus(s)}
                   className={`h-7 px-3 rounded-lg text-xs font-bold capitalize whitespace-nowrap transition-all ${
                     filterStatus === s
-                      ? "bg-white text-black"
-                      : "text-zinc-500 hover:text-white"
+                      ? "bg-white dark:bg-white text-zinc-950 dark:text-black shadow-sm"
+                      : "text-zinc-500 hover:text-zinc-900 dark:hover:text-white"
                   }`}
                 >
                   {s}
@@ -867,7 +863,7 @@ export default function JobTracker() {
               ))}
             </div>
 
-            <div className="flex bg-white/[0.03] border border-white/[0.07] p-1 rounded-xl gap-0.5">
+            <div className="flex bg-zinc-100 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.07] p-1 rounded-xl gap-0.5 ml-auto sm:ml-0 shrink-0">
               {(
                 [
                   { mode: "grid", Icon: LayoutGrid },
@@ -879,8 +875,8 @@ export default function JobTracker() {
                   onClick={() => setViewMode(mode)}
                   className={`p-1.5 rounded-lg transition-all ${
                     viewMode === mode
-                      ? "bg-white/[0.1] text-white"
-                      : "text-zinc-500 hover:text-white"
+                      ? "bg-white dark:bg-white/[0.1] text-zinc-900 dark:text-white shadow-sm"
+                      : "text-zinc-500 hover:text-zinc-950 dark:hover:text-white"
                   }`}
                   aria-label={`${mode} view`}
                 >
@@ -896,21 +892,21 @@ export default function JobTracker() {
               {Array.from({ length: 6 }).map((_, i) => (
                 <div
                   key={i}
-                  className="h-40 bg-white/[0.02] border border-white/[0.06] rounded-2xl animate-pulse"
+                  className="h-40 bg-zinc-100 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.06] rounded-2xl animate-pulse"
                 />
               ))}
             </div>
           ) : filtered.length === 0 ? (
-            <div className="py-20 text-center border border-dashed border-white/[0.07] rounded-2xl bg-white/[0.01] space-y-4">
-              <div className="w-14 h-14 rounded-2xl bg-white/[0.03] border border-white/[0.07] flex items-center justify-center mx-auto">
-                <Building2 className="w-6 h-6 text-zinc-700" />
+            <div className="py-20 text-center border border-dashed border-zinc-200 dark:border-white/[0.07] rounded-2xl bg-zinc-50/50 dark:bg-white/[0.01] space-y-4">
+              <div className="w-14 h-14 rounded-2xl bg-zinc-100 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.07] flex items-center justify-center mx-auto">
+                <Building2 className="w-6 h-6 text-zinc-400 dark:text-zinc-700" />
               </div>
               <div>
-                <p className="text-muted-foreground font-bold">
+                <p className="text-zinc-700 dark:text-muted-foreground font-bold">
                   No applications
                   {applications.length > 0 ? " matching filters" : " yet"}
                 </p>
-                <p className="text-zinc-600 text-sm mt-1">
+                <p className="text-zinc-500 dark:text-zinc-650 text-sm mt-1">
                   {applications.length === 0
                     ? "Start tracking your job search."
                     : "Try adjusting the filter or search."}
@@ -919,7 +915,7 @@ export default function JobTracker() {
               {applications.length === 0 && (
                 <Button
                   onClick={() => setShowAddModal(true)}
-                  className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl px-5 h-10"
+                  className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl px-5 h-10 shadow-lg shadow-indigo-500/20"
                 >
                   <Plus className="w-4 h-4 mr-2" /> Add First Application
                 </Button>
@@ -932,10 +928,10 @@ export default function JobTracker() {
                 const col = filtered.filter((a) => a.status === status);
                 const cfg = getCfg(status);
                 return (
-                  <div key={status} className="flex-none w-[280px] snap-start">
+                  <div key={status} className="flex-none w-[280px] snap-start text-left">
                     <div className="flex items-center gap-2 mb-3 px-1">
                       <div className={`w-2 h-2 rounded-full ${cfg.dot}`} />
-                      <span className="text-xs font-black uppercase tracking-wider text-muted-foreground">
+                      <span className="text-xs font-black uppercase tracking-wider text-zinc-500 dark:text-muted-foreground">
                         {status}
                       </span>
                       <span
@@ -957,8 +953,8 @@ export default function JobTracker() {
                         />
                       ))}
                       {col.length === 0 && (
-                        <div className="h-20 border border-dashed border-white/[0.05] rounded-xl flex items-center justify-center">
-                          <span className="text-[10px] text-zinc-700 font-bold uppercase tracking-wider">
+                        <div className="h-20 border border-dashed border-zinc-200 dark:border-white/[0.05] rounded-xl flex items-center justify-center bg-zinc-50/20 dark:bg-transparent">
+                          <span className="text-[10px] text-zinc-400 dark:text-zinc-700 font-bold uppercase tracking-wider">
                             Empty
                           </span>
                         </div>
