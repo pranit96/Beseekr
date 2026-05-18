@@ -28,6 +28,9 @@ import {
   FileText,
   Sparkles,
   Shield,
+  Trophy,
+  LayoutDashboard,
+  Target,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -105,12 +108,44 @@ const NAV_ITEMS = {
     color: "from-indigo-500 to-pink-500",
     exact: false,
   },
-  resumeWorkspace: {
-    key: "resumeWorkspace",
-    name: "Workspace",
+  hiredOverview: {
+    key: "hiredOverview",
+    name: "Overview",
+    href: "/dashboard/hired",
+    icon: Trophy,
+    color: "from-indigo-500 to-pink-500",
+    exact: true,
+  },
+  hiredResume: {
+    key: "hiredResume",
+    name: "Resume",
     href: "/dashboard/hired/resume",
-    icon: Sparkles,
+    icon: FileText,
     color: "from-sky-400 to-indigo-500",
+    exact: false,
+  },
+  hiredTracker: {
+    key: "hiredTracker",
+    name: "Tracker",
+    href: "/dashboard/hired/tracker",
+    icon: LayoutDashboard,
+    color: "from-purple-500 to-indigo-500",
+    exact: false,
+  },
+  hiredPrep: {
+    key: "hiredPrep",
+    name: "Interview Intel",
+    href: "/dashboard/hired/prep",
+    icon: Target,
+    color: "from-rose-500 to-red-500",
+    exact: false,
+  },
+  hiredCoverLetter: {
+    key: "hiredCoverLetter",
+    name: "Cover Letter",
+    href: "/dashboard/hired/cover-letter",
+    icon: Sparkles,
+    color: "from-amber-500 to-orange-500",
     exact: false,
   },
   pricing: {
@@ -125,13 +160,6 @@ const NAV_ITEMS = {
 
 function isPathActive(pathname: string, href: string, exact?: boolean) {
   if (exact) return pathname === href;
-  // Special case: Do not highlight the general Resume Builder tab when viewing the active editor Workspace
-  if (
-    href === "/dashboard/hired" &&
-    pathname.startsWith("/dashboard/hired/resume")
-  ) {
-    return false;
-  }
   return pathname === href || pathname.startsWith(href + "/");
 }
 
@@ -146,13 +174,19 @@ function getNavigationContext(pathname: string, isPremium: boolean) {
   if (isChatContext) {
     return [NAV_ITEMS.home, NAV_ITEMS.chat, NAV_ITEMS.agents];
   } else if (isResumeContext) {
-    return [NAV_ITEMS.home, NAV_ITEMS.resume, NAV_ITEMS.resumeWorkspace];
+    return [
+      NAV_ITEMS.home,
+      NAV_ITEMS.hiredOverview,
+      NAV_ITEMS.hiredResume,
+      NAV_ITEMS.hiredTracker,
+      NAV_ITEMS.hiredPrep,
+      NAV_ITEMS.hiredCoverLetter,
+    ];
   } else if (isDiscoverContext) {
     const items = [
       NAV_ITEMS.home,
       NAV_ITEMS.discover,
       NAV_ITEMS.research,
-      NAV_ITEMS.resume,
       NAV_ITEMS.watchlist,
     ];
     if (!isPremium) items.push(NAV_ITEMS.pricing);
