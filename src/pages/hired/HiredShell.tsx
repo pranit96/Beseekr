@@ -51,7 +51,7 @@ export default function HiredShell({ children }: HiredShellProps) {
   return (
     <div className="w-full flex flex-col text-foreground">
       {/* ── STICKY SUB-TABS ROW ─────────────────────────────────────────────────── */}
-      <div className="sticky top-0 z-30 bg-[#09090b]/80 backdrop-blur-xl border-b border-white/[0.05] py-3 -mx-2 sm:-mx-4 px-2 sm:px-4">
+      <div className="sticky top-0 z-30 bg-white/80 dark:bg-[#09090b]/80 backdrop-blur-xl border-b border-zinc-200 dark:border-white/[0.05] py-3 -mx-2 sm:-mx-4 px-2 sm:px-4">
         <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
           {/* Nav items */}
           <nav className="flex items-center gap-1 overflow-x-auto no-scrollbar">
@@ -65,7 +65,7 @@ export default function HiredShell({ children }: HiredShellProps) {
                   className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-200 cursor-pointer ${
                     active
                       ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/10"
-                      : "text-zinc-500 hover:text-muted-foreground hover:bg-white/[0.04]"
+                      : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/[0.04]"
                   }`}
                 >
                   <Icon className="w-3.5 h-3.5" />
@@ -78,19 +78,19 @@ export default function HiredShell({ children }: HiredShellProps) {
           {/* Resume status pill */}
           <div className="shrink-0">
             {hasResume ? (
-              <div className="flex items-center gap-1.5 bg-emerald-500/[0.08] border border-emerald-500/20 rounded-full px-3 py-1.5">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                <span className="text-[10px] font-bold text-emerald-400 truncate max-w-[120px] select-none">
+              <div className="flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-500/[0.08] border border-emerald-200 dark:border-emerald-500/20 rounded-full px-3 py-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-500" />
+                <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 truncate max-w-[120px] select-none">
                   {resumeData.personal_info.name}
                 </span>
               </div>
             ) : (
               <button
                 onClick={() => navigate("/dashboard/hired/resume")}
-                className="flex items-center gap-1.5 bg-amber-500/[0.08] border border-amber-500/20 rounded-full px-3 py-1.5 hover:bg-amber-500/15 transition-colors cursor-pointer"
+                className="flex items-center gap-1.5 bg-amber-50 dark:bg-amber-500/[0.08] border border-amber-200 dark:border-amber-500/20 rounded-full px-3 py-1.5 hover:bg-amber-100 dark:hover:bg-amber-500/15 transition-colors cursor-pointer"
               >
-                <UploadCloud className="w-3.5 h-3.5 text-amber-400" />
-                <span className="text-[10px] font-bold text-amber-400">
+                <UploadCloud className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400">
                   Load Resume
                 </span>
               </button>
@@ -101,15 +101,15 @@ export default function HiredShell({ children }: HiredShellProps) {
 
       {/* ── RESUME REQUIRED BANNER ───────────────────────────────────────────── */}
       {showResumeBanner && (
-        <div className="border-b border-amber-500/15 bg-amber-500/[0.06] -mx-2 sm:-mx-4">
+        <div className="border-b border-amber-200 dark:border-amber-500/15 bg-amber-50 dark:bg-amber-500/[0.06] -mx-2 sm:-mx-4">
           <div className="max-w-6xl mx-auto px-4 py-2 flex items-center gap-3">
-            <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-            <p className="text-xs text-amber-300/80 font-medium flex-1 text-left">
+            <AlertTriangle className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400 shrink-0" />
+            <p className="text-xs text-amber-800 dark:text-amber-300/80 font-medium flex-1 text-left">
               This feature requires a resume. Upload or build one to continue.
             </p>
             <button
               onClick={() => navigate("/dashboard/hired/resume")}
-              className="text-[10px] font-black uppercase tracking-widest text-amber-400 hover:text-amber-300 transition-colors whitespace-nowrap cursor-pointer"
+              className="text-[10px] font-black uppercase tracking-widest text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300 transition-colors whitespace-nowrap cursor-pointer"
             >
               Go to Resume →
             </button>
