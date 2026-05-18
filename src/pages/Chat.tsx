@@ -215,7 +215,8 @@ const Chat = () => {
   const {
     data: conversations = [],
     isLoading: loadingConversations,
-    isError: authError,
+    isError: hasQueryError,
+    error: queryError,
     refetch: fetchConversations,
   } = useQuery({
     queryKey: ["conversations", user?.id],
@@ -256,75 +257,9 @@ const Chat = () => {
         throw new Error(response.error || "Failed to fetch conversations");
       }
 
-      // Fetch last_message in background without blocking render
-      setTimeout(() => fetchLastMessagesPreviews(rawConversations), 100);
       return rawConversations;
     },
   });
-
-  const fetchLastMessagesPreviews = async (convs: Conversation[]) => {
-    for (const conv of convs) {
-      const currentData = queryClient.getQueryData<Conversation[]>([
-        "conversations",
-        user?.id,
-      ]);
-      const cachedConv = currentData?.find((c) => c.id === conv.id);
-      if (cachedConv?.last_message) continue; // Skip if we already cached the message preview!
-
-      try {
-        await new Promise((r) => setTimeout(r, 200));
-        const messagesRes = await apiClient.getMessages(conv.id, 1, 5);
-        type ServerMsg = import("@/types/conversation").Message;
-        let messagesArray: ServerMsg[] = [];
-        const msgData = messagesRes.data as unknown as { messages?: ServerMsg[], data?: ServerMsg[] } | ServerMsg[];
-        
-        if (msgData) {
-          if (Array.isArray(msgData)) messagesArray = msgData;
-          else if ("messages" in msgData && Array.isArray(msgData.messages))
-            messagesArray = msgData.messages;
-          else if ("data" in msgData && Array.isArray(msgData.data))
-            messagesArray = msgData.data;
-        }
-
-        if (messagesArray.length > 0) {
-          const sorted = [...messagesArray].sort(
-            (a, b) =>
-              new Date(b.created_at).getTime() -
-              new Date(a.created_at).getTime(),
-          );
-          const lastUserMsg = sorted.find((m) => m.role === "user");
-          let lastMsgText: string | undefined = undefined;
-
-          if (lastUserMsg?.content)
-            lastMsgText = lastUserMsg.content.substring(0, 100);
-          else {
-            const anyMsg = sorted.find(
-              (m) => m.content && m.content.trim(),
-            );
-            if (anyMsg?.content) {
-              const prefix = anyMsg.role === "assistant" ? "🤖 " : "";
-              lastMsgText = `${prefix}${anyMsg.content.substring(0, 100)}`;
-            }
-          }
-
-          if (lastMsgText) {
-            queryClient.setQueryData(
-              ["conversations", user?.id],
-              (old: Conversation[] | undefined) => {
-                if (!old) return old;
-                return old.map((c) =>
-                  c.id === conv.id ? { ...c, last_message: lastMsgText } : c,
-                );
-              },
-            );
-          }
-        }
-      } catch (err: any) {
-        if (err?.message?.includes("429") || err?.message?.includes("Too many"))
-          break;
-      }
-    }
-  };
 
   const handleRetryAuth = useCallback(async () => {
     setRetrying(true);
@@ -625,7 +560,7 @@ const Chat = () => {
         e.preventDefault();
         handleNewSession();
       }
-      if ((e.ctrlKey || e.metaKey) && e.key === "r" && authError) {
+      if ((e.ctrlKey || e.metaKey) && e.key === "r" && hasQueryError) {
         e.preventDefault();
         handleRetryAuth();
       }
@@ -633,21 +568,47 @@ const Chat = () => {
 
     window.addEventListener("keydown", handleKeyboard);
     return () => window.removeEventListener("keydown", handleKeyboard);
-  }, [handleNewSession, authError, handleRetryAuth]);
+  }, [handleNewSession, hasQueryError, handleRetryAuth]);
 
-  if (isLoading && !authError && conversations.length === 0) {
+  if (isLoading && !hasQueryError && conversations.length === 0) {
     return <ChatSkeleton isNewMode={isNewMode} />;
   }
 
-  if (authError) {
+  useEffect(() => {
+    if (hasQueryError && conversations.length > 0) {
+      const isRateLimitError = (queryError as any)?.message?.toLowerCase().includes("too many requests") || (queryError as any)?.message?.includes("429");
+      if (isRateLimitError) {
+        toast({
+          title: "Rate Limit Exceeded",
+          description: "You have made too many requests. Please wait a moment.",
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Connection Issue",
+          description: "Could not refresh conversations. Please try again later.",
+          variant: "destructive"
+        });
+      }
+    }
+  }, [hasQueryError, conversations.length, queryError, toast]);
+
+  if (hasQueryError && conversations.length === 0) {
+    const isAuthError = (queryError as any)?.message?.toLowerCase().includes("session expired") || (queryError as any)?.message?.includes("401");
+    const isRateLimitError = (queryError as any)?.message?.toLowerCase().includes("too many requests") || (queryError as any)?.message?.includes("429");
+
     return (
       <div className="h-screen flex flex-col items-center justify-center gap-4 bg-background p-6">
         <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center">
           <AlertCircle className="w-8 h-8 text-destructive" />
         </div>
-        <h2 className="text-2xl font-bold">{t("chat.sessionExpired")}</h2>
+        <h2 className="text-2xl font-bold">
+          {isRateLimitError ? "Rate Limit Exceeded" : (isAuthError ? t("chat.sessionExpired") : "Something went wrong")}
+        </h2>
         <p className="text-muted-foreground text-center max-w-md">
-          {t("chat.sessionExpiredDesc")}
+          {isRateLimitError 
+            ? "You have made too many requests. Please wait a moment and try again." 
+            : (isAuthError ? t("chat.sessionExpiredDesc") : ((queryError as any)?.message || "Failed to load conversations"))}
         </p>
         <div className="flex gap-3 mt-4">
           <Button
@@ -658,18 +619,20 @@ const Chat = () => {
             {retrying ? (
               <>
                 <RefreshCw className="w-4 h-4 animate-spin" />
-                {t("chat.refreshing")}
+                {isAuthError ? t("chat.refreshing") : "Retrying..."}
               </>
             ) : (
               <>
                 <RefreshCw className="w-4 h-4" />
-                {t("chat.refreshSession")}
+                {isAuthError ? t("chat.refreshSession") : "Try Again"}
               </>
             )}
           </Button>
-          <Button onClick={() => window.location.reload()} variant="outline">
-            {t("chat.reloadPage")}
-          </Button>
+          {isAuthError && (
+            <Button onClick={() => window.location.reload()} variant="outline">
+              {t("chat.reloadPage")}
+            </Button>
+          )}
         </div>
       </div>
     );
