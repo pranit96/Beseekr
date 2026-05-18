@@ -505,51 +505,53 @@ export default function ResumeWorkspace() {
     const normalize = (s: string) =>
       s
         .toLowerCase()
-        .replace(/[^\w\s]/g, "")
+        .replace(/[^\w\s]/g, " ")
         .replace(/\s+/g, " ")
         .trim();
 
     const normalizedOriginal = normalize(original);
     const normalizedImproved = normalize(improved);
+    const originalWords = normalizedOriginal.split(" ").filter(Boolean);
 
-    let hasMatched = false;
+    let bestMatch = { type: "", parentIdx: -1, bulletIdx: -1, score: 0 };
 
-    // Compute updated structures synchronously before applying state
-    const updatedExp = resumeData.experience.map((job) => {
-      const bulletIdx = job.highlights.findIndex((h) => {
-        const nh = normalize(h);
-        return (
-          nh === normalizedOriginal ||
-          normalizedOriginal.includes(nh) ||
-          nh.includes(normalizedOriginal)
-        );
-      });
-      if (bulletIdx !== -1) {
-        hasMatched = true;
-        const newHighlights = [...job.highlights];
-        newHighlights[bulletIdx] = improved;
-        return { ...job, highlights: newHighlights };
+    const getScore = (nh: string) => {
+      if (!nh || !normalizedOriginal) return 0;
+      if (
+        nh === normalizedOriginal ||
+        normalizedOriginal.includes(nh) ||
+        nh.includes(normalizedOriginal)
+      ) {
+        return 1;
       }
-      return job;
+      const nhWords = nh.split(" ").filter(Boolean);
+      if (nhWords.length === 0 || originalWords.length === 0) return 0;
+      
+      const matchCount = originalWords.filter((w) => nhWords.includes(w)).length;
+      return matchCount / Math.max(originalWords.length, nhWords.length);
+    };
+
+    // Find best match in experience
+    resumeData.experience.forEach((job, parentIdx) => {
+      job.highlights.forEach((h, bulletIdx) => {
+        const score = getScore(normalize(h));
+        if (score > bestMatch.score) {
+          bestMatch = { type: "experience", parentIdx, bulletIdx, score };
+        }
+      });
     });
 
-    const updatedProj = resumeData.projects.map((proj) => {
-      const bulletIdx = (proj.highlights || []).findIndex((h) => {
-        const nh = normalize(h);
-        return (
-          nh === normalizedOriginal ||
-          normalizedOriginal.includes(nh) ||
-          nh.includes(normalizedOriginal)
-        );
+    // Find best match in projects
+    resumeData.projects.forEach((proj, parentIdx) => {
+      (proj.highlights || []).forEach((h, bulletIdx) => {
+        const score = getScore(normalize(h));
+        if (score > bestMatch.score) {
+          bestMatch = { type: "projects", parentIdx, bulletIdx, score };
+        }
       });
-      if (bulletIdx !== -1) {
-        hasMatched = true;
-        const newHighlights = [...(proj.highlights || [])];
-        newHighlights[bulletIdx] = improved;
-        return { ...proj, highlights: newHighlights };
-      }
-      return proj;
     });
+
+    const hasMatched = bestMatch.score > 0.45; // Flexible threshold for LLM variations
 
     // Record immediate tracking event for bulletproof visual persistence
     setAppliedSuggestions((prev) => {
@@ -560,11 +562,27 @@ export default function ResumeWorkspace() {
     });
 
     if (hasMatched) {
-      setResumeData((prev) => ({
-        ...prev,
-        experience: updatedExp,
-        projects: updatedProj,
-      }));
+      setResumeData((prev) => {
+        const next = { ...prev };
+        if (bestMatch.type === "experience") {
+          const updated = [...next.experience];
+          const job = { ...updated[bestMatch.parentIdx] };
+          const hl = [...job.highlights];
+          hl[bestMatch.bulletIdx] = improved;
+          job.highlights = hl;
+          updated[bestMatch.parentIdx] = job;
+          next.experience = updated;
+        } else if (bestMatch.type === "projects") {
+          const updated = [...next.projects];
+          const proj = { ...updated[bestMatch.parentIdx] };
+          const hl = [...(proj.highlights || [])];
+          hl[bestMatch.bulletIdx] = improved;
+          proj.highlights = hl;
+          updated[bestMatch.parentIdx] = proj;
+          next.projects = updated;
+        }
+        return next;
+      });
 
       toast({
         title: "Suggestion Applied ✅",
