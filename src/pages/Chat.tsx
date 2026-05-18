@@ -235,12 +235,23 @@ const Chat = () => {
       });
 
       let rawConversations: Conversation[] = [];
-      if (response.success && response.data) {
-        if (Array.isArray(response.data)) rawConversations = response.data;
-        else if (Array.isArray(response.data.conversations))
-          rawConversations = response.data.conversations;
-        else if (Array.isArray(response.data.data))
-          rawConversations = response.data.data;
+      type ServerConv = import("@/types/conversation").Conversation;
+      const resData = response.data as unknown as { conversations?: ServerConv[], data?: ServerConv[] } | ServerConv[];
+      
+      if (response.success && resData) {
+        let serverConvs: ServerConv[] = [];
+        if (Array.isArray(resData)) serverConvs = resData;
+        else if ("conversations" in resData && Array.isArray(resData.conversations))
+          serverConvs = resData.conversations;
+        else if ("data" in resData && Array.isArray(resData.data))
+          serverConvs = resData.data;
+          
+        rawConversations = serverConvs.map(c => ({
+          id: c.id,
+          title: c.title,
+          status: c.status,
+          last_message_at: c.updated_at || c.created_at || new Date().toISOString()
+        }));
       } else {
         throw new Error(response.error || "Failed to fetch conversations");
       }
@@ -263,29 +274,32 @@ const Chat = () => {
       try {
         await new Promise((r) => setTimeout(r, 200));
         const messagesRes = await apiClient.getMessages(conv.id, 1, 5);
-        let messagesArray: any[] = [];
-        if (messagesRes.data) {
-          if (Array.isArray(messagesRes.data)) messagesArray = messagesRes.data;
-          else if (Array.isArray(messagesRes.data.messages))
-            messagesArray = messagesRes.data.messages;
-          else if (Array.isArray(messagesRes.data.data))
-            messagesArray = messagesRes.data.data;
+        type ServerMsg = import("@/types/conversation").Message;
+        let messagesArray: ServerMsg[] = [];
+        const msgData = messagesRes.data as unknown as { messages?: ServerMsg[], data?: ServerMsg[] } | ServerMsg[];
+        
+        if (msgData) {
+          if (Array.isArray(msgData)) messagesArray = msgData;
+          else if ("messages" in msgData && Array.isArray(msgData.messages))
+            messagesArray = msgData.messages;
+          else if ("data" in msgData && Array.isArray(msgData.data))
+            messagesArray = msgData.data;
         }
 
         if (messagesArray.length > 0) {
           const sorted = [...messagesArray].sort(
-            (a: any, b: any) =>
+            (a, b) =>
               new Date(b.created_at).getTime() -
               new Date(a.created_at).getTime(),
           );
-          const lastUserMsg = sorted.find((m: any) => m.role === "user");
-          let lastMsgText = undefined;
+          const lastUserMsg = sorted.find((m) => m.role === "user");
+          let lastMsgText: string | undefined = undefined;
 
           if (lastUserMsg?.content)
             lastMsgText = lastUserMsg.content.substring(0, 100);
           else {
             const anyMsg = sorted.find(
-              (m: any) => m.content && m.content.trim(),
+              (m) => m.content && m.content.trim(),
             );
             if (anyMsg?.content) {
               const prefix = anyMsg.role === "assistant" ? "🤖 " : "";
