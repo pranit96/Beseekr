@@ -43,15 +43,11 @@ export default function MarkdownRenderer({
   const normalizeContent = (text: string) => {
     if (!text) return "";
 
-    // Globally unwrap markdown code fences if present anywhere in the text
+    // Strip markdown code fences only if they wrap the entire response
     let cleaned = text.trim();
-    
-    // Unwrap ```markdown ... ``` blocks so they render natively
-    cleaned = cleaned.replace(/```(?:markdown|md)\n([\s\S]*?)\n```/gi, "$1");
-
     if (cleaned.startsWith("```")) {
-      // Remove opening fence if it was just ``` without a language
-      cleaned = cleaned.replace(/^```\w*\n?/, "");
+      // Remove opening fence (```markdown or ```md or just ```)
+      cleaned = cleaned.replace(/^```(?:markdown|md)?\n?/, "");
       // Remove closing fence
       cleaned = cleaned.replace(/\n?```\s*$/, "");
     }
