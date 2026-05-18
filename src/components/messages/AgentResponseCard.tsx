@@ -1,110 +1,388 @@
-import { AgentResponse } from '@/types/agent';
-import { CheckCircle2, AlertCircle } from 'lucide-react';
-import { MarkdownRenderer } from './MarkdownRenderer';
-import { TypewriterText } from './TypewriterText';
-import { useState, useEffect, useMemo } from 'react';
-import DOMPurify from 'dompurify';
+// src/components/messages/AgentResponseCard.tsx
+import React, { useEffect, useState, useRef } from "react";
+import { Button } from "@/components/ui/button";
+import { Loader2, Copy, Check, RefreshCw, X } from "lucide-react";
+import MarkdownRenderer from "./MarkdownRenderer";
+import { cn } from "@/lib/utils";
+import { createLogger } from "@/services/logging";
 
-interface AgentResponseCardProps {
-  response: AgentResponse;
-  index: number;
-  isSequential: boolean;
-  enableTypewriter?: boolean;
-  typewriterDelay?: number;
-  onTypingComplete?: (index: number) => void;
+const logger = createLogger("AgentResponseCard");
+
+export interface AgentResponse {
+  agentId: string;
+  agentName: string;
+  content: string;
+  timestamp: Date | string;
+  status: "pending" | "success" | "error";
+  metadata?: any;
 }
 
-export const AgentResponseCard = ({
+interface Props {
+  response: AgentResponse;
+  index?: number;
+  onForkAgent?: (agentId: string) => void;
+  onRegenerate?: (response: AgentResponse) => void;
+  onCancel?: (agentId: string) => void;
+  isCompactMode?: boolean;
+}
+
+const AgentResponseCard: React.FC<Props> = ({
   response,
   index,
-  isSequential,
-  enableTypewriter = false,
-  typewriterDelay = 0,
-  onTypingComplete,
-}: AgentResponseCardProps) => {
-  const [shouldStartTyping, setShouldStartTyping] = useState(!enableTypewriter || typewriterDelay === 0);
+  onForkAgent,
+  onRegenerate,
+  onCancel,
+  isCompactMode = false,
+}) => {
+  const [copied, setCopied] = useState(false);
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // ✅ Sanitize Markdown + safe inline HTML
-  const sanitizedContent = useMemo(() => {
-    if (typeof window !== 'undefined') {
-      return DOMPurify.sanitize(response.content, {
-        ALLOWED_TAGS: [
-          'b',
-          'i',
-          'em',
-          'strong',
-          'a',
-          'code',
-          'pre',
-          'br',
-          'p',
-          'ul',
-          'ol',
-          'li',
-          'blockquote',
-        ],
-        ALLOWED_ATTR: ['href', 'title'],
-      });
+  const modelUsed = response.metadata?.model_used;
+  const tokenCount =
+    response.metadata?.usage?.total_tokens || response.metadata?.token_count;
+  const confidence = response.metadata?.confidence;
+  const domain = response.metadata?.agent_domain || response.metadata?.domain;
+
+  // Detect when streaming starts/stops
+  useEffect(() => {
+    if (response.status === "pending" && response.content) {
+      setIsStreaming(true);
+    } else if (response.status !== "pending") {
+      setIsStreaming(false);
     }
-    return response.content;
-  }, [response.content]);
+  }, [response.status, response.content]);
 
-  const timestamp =
-    response.timestamp instanceof Date
-      ? response.timestamp
-      : new Date(response.timestamp);
+  // Elapsed time counter for pending state
+  useEffect(() => {
+    if (response.status === "pending") {
+      setElapsedSeconds(0);
+      timerRef.current = setInterval(() => {
+        setElapsedSeconds((prev) => prev + 1);
+      }, 1000);
+    } else {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    }
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [response.status]);
 
   useEffect(() => {
-    if (enableTypewriter && typewriterDelay > 0) {
-      const timer = setTimeout(() => setShouldStartTyping(true), typewriterDelay);
-      return () => clearTimeout(timer);
-    }
-  }, [enableTypewriter, typewriterDelay]);
+    if (!copied) return;
+    const t = setTimeout(() => setCopied(false), 1200);
+    return () => clearTimeout(t);
+  }, [copied]);
 
-  const handleTypewriterComplete = () => {
-    onTypingComplete?.(index);
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(response.content || "");
+      setCopied(true);
+      logger.debug("Response copied to clipboard", {
+        agentId: response.agentId,
+      });
+    } catch (err) {
+      logger.error("Failed to copy response", {
+        error: err,
+        agentId: response.agentId,
+      });
+    }
   };
 
+  const handleRegenerate = () => {
+    try {
+      window.dispatchEvent(
+        new CustomEvent("regenerate-from-response", {
+          detail: { prompt: response.content },
+        }),
+      );
+      logger.info("Regenerate triggered", { agentId: response.agentId });
+    } catch (err) {
+      logger.error("Failed to trigger regenerate", {
+        error: err,
+        agentId: response.agentId,
+      });
+    }
+    onRegenerate?.(response);
+  };
+
+  const handleFork = () => onForkAgent?.(response.agentId);
+
+  const handleCancel = () => onCancel?.(response.agentId);
+
+  // Get agent color based on ID
+  const getAgentColor = (agentId: string) => {
+    const colors = [
+      "bg-blue-500",
+      "bg-purple-500",
+      "bg-pink-500",
+      "bg-amber-500",
+      "bg-green-500",
+      "bg-cyan-500",
+      "bg-rose-500",
+      "bg-indigo-500",
+    ];
+    const hash = agentId
+      .split("")
+      .reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return colors[hash % colors.length];
+  };
+
+  const agentColor = getAgentColor(response.agentId);
+
   return (
-    <div className="glass rounded-xl p-4 shadow-soft hover:shadow-medium transition-smooth animate-fade-in">
+    <div
+      className={cn(
+        isCompactMode
+          ? "w-full rounded-2xl p-5 border shadow-xl transition-all relative overflow-hidden backdrop-blur-md"
+          : "w-full rounded-xl p-4 border shadow-sm transition-all",
+        response.status === "error"
+          ? isCompactMode
+            ? "border-destructive/30 bg-destructive/[0.02]"
+            : "border-destructive/40 bg-destructive/5"
+          : response.status === "pending"
+            ? isCompactMode
+              ? "border-primary/30 bg-muted/10"
+              : "border-primary/30 bg-background/80"
+            : isCompactMode
+              ? "border-border/30 bg-card/10 shadow-black/[0.03]"
+              : "border-border/60 bg-background/80",
+      )}
+      style={
+        response.status === "pending"
+          ? {
+              animation: "shimmer-border 2s ease-in-out infinite",
+            }
+          : undefined
+      }
+    >
+      {/* Shimmer keyframe injection */}
+      {response.status === "pending" && (
+        <style>{`
+          @keyframes shimmer-border {
+            0%, 100% { border-color: hsl(var(--primary) / 0.15); }
+            50% { border-color: hsl(var(--primary) / 0.4); }
+          }
+        `}</style>
+      )}
+
       {/* Header */}
-      <div className="flex items-center gap-2 mb-3">
-        <div
-          className="w-2 h-2 rounded-full"
-          style={{ backgroundColor: `hsl(var(--agent-${(index % 5) + 1}))` }}
-        />
-        <span className="font-medium text-sm">{response.agentName}</span>
-        {response.status === 'success' ? (
-          <CheckCircle2 className="w-4 h-4 text-green-500 ml-auto" />
-        ) : (
-          <AlertCircle className="w-4 h-4 text-destructive ml-auto" />
-        )}
-      </div>
+      <div className="flex items-start justify-between gap-3 mb-3">
+        <div className="flex items-center gap-3">
+          <div
+            className={cn(
+              isCompactMode
+                ? "h-9 w-9 rounded-xl flex items-center justify-center text-white font-bold text-xs shadow-lg"
+                : "h-9 w-9 rounded-full flex items-center justify-center text-white font-semibold text-sm shadow-sm",
+              agentColor,
+              isCompactMode &&
+                "bg-gradient-to-br saturate-150 brightness-90 opacity-90",
+              response.status === "pending" &&
+                (isCompactMode
+                  ? "animate-pulse ring-2 ring-primary/20 ring-offset-1 ring-offset-background"
+                  : "ring-2 ring-primary/30 ring-offset-2 ring-offset-background"),
+            )}
+          >
+            {isCompactMode
+              ? response.agentName?.substring(0, 2)?.toUpperCase() || "AI"
+              : response.agentName?.charAt(0)?.toUpperCase() || "A"}
+          </div>
+          <div>
+            <div className="font-semibold text-sm text-foreground">
+              {response.agentName}
+            </div>
+            <div className="flex items-center gap-2 mt-0.5">
+              {domain && (
+                <span className="text-xs text-muted-foreground">{domain}</span>
+              )}
+              {response.status === "pending" && elapsedSeconds > 0 && (
+                <span className="text-xs text-primary/70 font-medium tabular-nums">
+                  {elapsedSeconds}s
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
 
-      {/* Body */}
-      <div className="text-sm prose prose-sm dark:prose-invert max-w-none">
-        {enableTypewriter ? (
-          shouldStartTyping && (
-            <TypewriterText
-              text={sanitizedContent}
-              speed={1}
-              onComplete={handleTypewriterComplete}
+        {/* Action buttons */}
+        <div className="flex items-center gap-1">
+          {response.status === "pending" && isStreaming && (
+            <div className="flex items-center gap-2 mr-2">
+              <Loader2 className="w-4 h-4 animate-spin text-primary" />
+              <span className="text-xs text-muted-foreground">
+                Streaming...
+              </span>
+            </div>
+          )}
+
+          {response.content && response.status !== "pending" && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleCopy}
+              className="h-8 w-8 hover:bg-muted"
+              title="Copy response"
             >
-              {(typedText) => <MarkdownRenderer content={typedText} />}
-            </TypewriterText>
-          )
+              {copied ? (
+                <Check className="w-4 h-4 text-green-500" />
+              ) : (
+                <Copy className="w-4 h-4 text-muted-foreground" />
+              )}
+            </Button>
+          )}
+
+          {response.status === "success" && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleRegenerate}
+              className="h-8 w-8 hover:bg-muted"
+              title="Regenerate"
+            >
+              <RefreshCw className="w-4 h-4 text-muted-foreground" />
+            </Button>
+          )}
+
+          {response.status === "pending" && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleCancel}
+              className="h-8 w-8 hover:bg-destructive/10 text-destructive"
+              title="Cancel"
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="min-h-[40px]">
+        {response.status === "pending" ? (
+          <div className="space-y-2">
+            {response.content ? (
+              // Streaming content — render markdown incrementally for premium feel
+              <div className="relative">
+                <div className="text-sm">
+                  <MarkdownRenderer
+                    content={response.content}
+                    className="leading-relaxed"
+                    showToc={false}
+                    enableCopy={false}
+                    maxHeight="none"
+                  />
+                </div>
+                <span className="inline-block w-1.5 h-4 ml-0.5 bg-primary rounded-sm animate-pulse align-text-bottom" />
+              </div>
+            ) : (
+              // Waiting for first token — animated thinking indicator
+              <div className="flex items-center gap-3 py-3">
+                <div className="flex items-center gap-1">
+                  <span
+                    className="w-2 h-2 rounded-full bg-primary/60 animate-bounce"
+                    style={{ animationDelay: "0ms", animationDuration: "0.8s" }}
+                  />
+                  <span
+                    className="w-2 h-2 rounded-full bg-primary/60 animate-bounce"
+                    style={{
+                      animationDelay: "150ms",
+                      animationDuration: "0.8s",
+                    }}
+                  />
+                  <span
+                    className="w-2 h-2 rounded-full bg-primary/60 animate-bounce"
+                    style={{
+                      animationDelay: "300ms",
+                      animationDuration: "0.8s",
+                    }}
+                  />
+                </div>
+                <span className="text-sm text-muted-foreground">
+                  {elapsedSeconds < 3
+                    ? "Thinking..."
+                    : elapsedSeconds < 8
+                      ? "Generating response..."
+                      : elapsedSeconds < 15
+                        ? "Still working on it..."
+                        : "Almost there..."}
+                </span>
+              </div>
+            )}
+          </div>
+        ) : response.status === "error" ? (
+          <div className="py-2">
+            <div className="flex items-center gap-2 mb-2">
+              <X className="w-4 h-4 text-destructive" />
+              <span className="text-sm font-medium text-destructive">
+                Error generating response
+              </span>
+            </div>
+            <p className="text-sm text-destructive/80">
+              {response.content ||
+                "An error occurred while processing your request."}
+            </p>
+          </div>
         ) : (
-          <MarkdownRenderer content={sanitizedContent} />
+          // Success — full markdown render
+          <div
+            className={
+              isCompactMode
+                ? "rounded-lg text-[15px] leading-relaxed text-foreground/90 font-light tracking-wide"
+                : "rounded-lg text-sm"
+            }
+          >
+            <MarkdownRenderer
+              content={response.content || ""}
+              className={
+                isCompactMode
+                  ? "leading-relaxed prose-invert prose-p:leading-relaxed"
+                  : "leading-relaxed"
+              }
+              showToc={false}
+              enableCopy={true}
+              maxHeight="none"
+            />
+          </div>
         )}
       </div>
 
-      {/* Footer */}
-      <span className="text-xs text-muted-foreground mt-2 block">
-        {timestamp.toLocaleTimeString([], {
-          hour: '2-digit',
-          minute: '2-digit',
-        })}
-      </span>
+      {/* Metadata footer */}
+      {(modelUsed || tokenCount || confidence) &&
+        response.status === "success" && (
+          <div className="mt-4 pt-3 border-t border-border/50 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
+            {modelUsed && (
+              <div className="flex items-center gap-1.5">
+                <span className="opacity-60">Model:</span>
+                <span className="font-medium text-foreground/80">
+                  {String(modelUsed)}
+                </span>
+              </div>
+            )}
+            {typeof tokenCount !== "undefined" && (
+              <div className="flex items-center gap-1.5">
+                <span className="opacity-60">Tokens:</span>
+                <span className="font-medium text-foreground/80">
+                  {String(tokenCount)}
+                </span>
+              </div>
+            )}
+            {typeof confidence !== "undefined" && (
+              <div className="flex items-center gap-1.5">
+                <span className="opacity-60">Confidence:</span>
+                <span className="font-medium text-foreground/80">
+                  {Number(confidence).toFixed(2)}
+                </span>
+              </div>
+            )}
+          </div>
+        )}
     </div>
   );
 };
+
+export default AgentResponseCard;

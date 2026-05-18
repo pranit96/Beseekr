@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-labelledby="logoTitle logoDesc">
+  <title id="logoTitle">beseekr — Startup Problem Discovery</title>
+  <desc id="logoDesc">Sparkle icon representing discovery of startup problems and opportunities.</desc>
+
+  <defs>
+    <linearGradient id="grad" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#10b981"/>
+      <stop offset="1" stop-color="#06b6d4"/>
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background circle -->
+  <circle cx="32" cy="32" r="30" fill="url(#grad)"/>
+  
+  <!-- Sparkle/Star shape representing discovery -->
+  <g fill="#fff" filter="url(#glow)">
+    <!-- Main 4-point star -->
+    <path d="M32 8 L35 26 L52 32 L35 38 L32 56 L29 38 L12 32 L29 26 Z"/>
+    <!-- Small sparkle accents -->
+    <circle cx="18" cy="18" r="2.5"/>
+    <circle cx="46" cy="18" r="2"/>
+    <circle cx="46" cy="46" r="2.5"/>
+    <circle cx="18" cy="46" r="2"/>
+  </g>
+  
+  <!-- Center dot -->
+  <circle cx="32" cy="32" r="4" fill="url(#grad)"/>
+</svg>

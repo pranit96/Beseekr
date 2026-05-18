@@ -1,0 +1,4 @@
+# Reports folder
+# Performance and test reports will be generated here
+*.png
+*.html

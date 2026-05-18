@@ -1,0 +1,1 @@
+whenw domain is changed, change api url, cross origin in backend, supabase auth urls in order to work it

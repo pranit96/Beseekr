@@ -1,165 +1,449 @@
-import { useEffect, useRef, useState } from 'react';
-import { ChatMessage } from '@/types/agent';
-import { UserMessage } from './messages/UserMessage';
-import { AgentMessage } from './messages/AgentMessage';
+// src/components/MessageList.tsx
+import React, { useState } from "react";
+import { motion } from "framer-motion";
+import {
+  Copy,
+  RotateCw,
+  Check,
+  User,
+  Bot,
+  Loader2,
+  Sparkles,
+  X,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { ChatMessage } from "@/types/agent";
+import { useToast } from "@/hooks/use-toast";
+import AgentResponseCard from "./messages/AgentResponseCard";
+import MarkdownRenderer from "./messages/MarkdownRenderer";
 
 interface MessageListProps {
   messages: ChatMessage[];
   isLoading?: boolean;
+  onRetryMessage?: (messageId: string) => void;
+  isCompactMode?: boolean;
+  activeAgentName?: string;
 }
 
-export const MessageList = ({ messages, isLoading = false }: MessageListProps) => {
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const messagesContainerRef = useRef<HTMLDivElement>(null);
-  const [isAutoScroll, setIsAutoScroll] = useState(true);
-  const previousMessageCountRef = useRef(0);
-  const scrollTimeoutRef = useRef<NodeJS.Timeout>();
+const MessageList: React.FC<MessageListProps> = ({
+  messages,
+  isLoading = false,
+  onRetryMessage,
+  isCompactMode = false,
+  activeAgentName,
+}) => {
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const { toast } = useToast();
 
-  // Handle scroll behavior
-  useEffect(() => {
-    const container = messagesContainerRef.current;
-    if (!container) return;
-
-    const handleScroll = () => {
-      // Clear any pending scroll timeout
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current);
-      }
-
-      // Set timeout to determine if user has stopped scrolling
-      scrollTimeoutRef.current = setTimeout(() => {
-        const { scrollTop, scrollHeight, clientHeight } = container;
-        const isNearBottom = scrollHeight - scrollTop - clientHeight < 150;
-        setIsAutoScroll(isNearBottom);
-      }, 100);
-    };
-
-    container.addEventListener('scroll', handleScroll);
-    return () => {
-      container.removeEventListener('scroll', handleScroll);
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  // Smooth scroll to bottom with IntersectionObserver for better performance
-  useEffect(() => {
-    if (!isAutoScroll || !messagesEndRef.current) return;
-
-    const isNewMessage = messages.length > previousMessageCountRef.current;
-    const isFirstLoad = previousMessageCountRef.current === 0;
-    
-    previousMessageCountRef.current = messages.length;
-
-    // Use IntersectionObserver for smoother scrolling
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (!entry.isIntersecting && isAutoScroll) {
-            messagesEndRef.current?.scrollIntoView({
-              behavior: isFirstLoad ? 'instant' : 'smooth',
-              block: 'end',
-            });
-          }
-        });
-      },
-      {
-        root: messagesContainerRef.current,
-        threshold: 0.1,
-      }
-    );
-
-    if (messagesEndRef.current) {
-      observer.observe(messagesEndRef.current);
-    }
-
-    // Also scroll immediately for new messages
-    if (isNewMessage || isLoading) {
-      messagesEndRef.current?.scrollIntoView({
-        behavior: isFirstLoad ? 'instant' : 'smooth',
-        block: 'end',
+  const handleCopy = async (content: string, messageId: string) => {
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopiedId(messageId);
+      toast({
+        title: "Copied to clipboard",
+        description: "Message content copied successfully",
+      });
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch (err) {
+      toast({
+        title: "Failed to copy",
+        description: "Could not copy to clipboard",
+        variant: "destructive",
       });
     }
+  };
 
-    return () => observer.disconnect();
-  }, [messages, isAutoScroll, isLoading]);
+  const handleRetry = (messageId: string) => {
+    if (onRetryMessage) {
+      onRetryMessage(messageId);
+      toast({
+        title: "Retrying message",
+        description: "Resending your request to the agents",
+      });
+    }
+  };
 
-  // Ensure all timestamps are Date objects before rendering
-  const messagesWithProperTimestamps = messages.map(msg => ({
-    ...msg,
-    timestamp: msg.timestamp instanceof Date ? msg.timestamp : new Date(msg.timestamp),
-    ...(msg.agentResponses && {
-      agentResponses: msg.agentResponses.map(ar => ({
-        ...ar,
-        timestamp: ar.timestamp instanceof Date ? ar.timestamp : new Date(ar.timestamp),
-      })),
-    }),
-  }));
+  const formatTimestamp = (date: Date | string) =>
+    new Intl.DateTimeFormat("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    }).format(new Date(date));
 
   return (
-    <div 
-      ref={messagesContainerRef}
-      className="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth"
-      style={{
-        scrollBehavior: 'smooth',
-        overscrollBehavior: 'contain',
-      }}
-    >
-      {messagesWithProperTimestamps.length === 0 ? (
-        <div className="flex items-center justify-center h-full">
-          <div className="text-center space-y-3 max-w-md">
-            <div className="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
-              <svg
-                className="w-10 h-10 text-primary"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
-                />
-              </svg>
-            </div>
-            <h3 className="text-xl font-semibold">Start a Conversation</h3>
-            <p className="text-muted-foreground">
-              Select agents and choose an execution mode to begin
-            </p>
-          </div>
-        </div>
-      ) : (
-        <>
-          {messagesWithProperTimestamps.map((message) =>
-            message.type === 'user' ? (
-              <UserMessage key={message.id} message={message} />
-            ) : (
-              <AgentMessage key={message.id} message={message} />
-            )
-          )}
-          
-          {isLoading && (
-            <div className="flex justify-start mb-6 animate-fade-in">
-              <div className="max-w-[90%] sm:max-w-[85%] md:max-w-[80%]">
-                <div className="glass rounded-xl p-4 shadow-soft">
-                  <div className="flex items-center gap-3">
-                    <div className="flex space-x-2">
-                      <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                      <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                      <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-                    </div>
-                    <span className="text-sm text-muted-foreground">Processing your request...</span>
+    <div className="space-y-1 pb-6">
+      {messages.map((message, idx) => {
+        const isLastMessage = idx === messages.length - 1;
+        return (
+          <div key={message.id}>
+            {/* ─── User Message ─── */}
+            {message.type === "user" && (
+              <div className="flex justify-end mb-5 px-2 animate-fade-in">
+                <div className="flex flex-col items-end gap-1.5 max-w-[80%] sm:max-w-[70%] md:max-w-[65%]">
+                  <div
+                    className={
+                      isCompactMode
+                        ? "rounded-2xl px-5 py-3 bg-gradient-to-br from-foreground/10 via-foreground/[0.08] to-transparent border border-white/[0.06] backdrop-blur-sm shadow-lg"
+                        : "rounded-2xl rounded-br-lg px-5 py-3.5 bg-primary text-primary-foreground shadow-sm"
+                    }
+                  >
+                    <p
+                      className={`text-[15px] leading-relaxed whitespace-pre-wrap break-words ${
+                        isCompactMode ? "text-foreground font-medium" : ""
+                      }`}
+                    >
+                      {message.content}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 px-1">
+                    <span className="text-[11px] text-muted-foreground/70">
+                      {formatTimestamp(message.timestamp)}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 hover:bg-muted/50 transition-opacity"
+                      onClick={() => handleCopy(message.content, message.id)}
+                    >
+                      {copiedId === message.id ? (
+                        <Check className="w-3 h-3 text-green-500" />
+                      ) : (
+                        <Copy className="w-3 h-3 text-muted-foreground" />
+                      )}
+                    </Button>
                   </div>
                 </div>
               </div>
-            </div>
-          )}
-          
-          <div ref={messagesEndRef} className="h-4" />
-        </>
-      )}
+            )}
+
+            {/* ─── Unified Agent Trace & Synthesis (New Architecture) ─── */}
+            {message.type === "agent" &&
+              message.agentTraces &&
+              message.agentTraces.length > 0 && (
+                <div className="mb-6 px-2 animate-fade-in flex flex-col gap-3 max-w-[90%] sm:max-w-[85%] md:max-w-[80%]">
+                  {/* Agent Progress Trace */}
+                  {/* Agent Progress Trace - Conditional render based on compactMode */}
+                  {isCompactMode ? (
+                    /* Minimal Micro-Trace for New UI */
+                    (message.workflowStatus === "executing" ||
+                      message.workflowStatus === "synthesizing") && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="relative overflow-hidden inline-flex items-center gap-3 py-2 px-4 self-start rounded-full bg-white/[0.02] border border-white/[0.06] backdrop-blur-md shadow-lg"
+                      >
+                        {/* Smooth persistent running shimmer beam behind text */}
+                        <motion.div
+                          className="absolute inset-0 w-[100px] h-full bg-gradient-to-r from-transparent via-white/[0.04] to-transparent -skew-x-[30deg]"
+                          animate={{ x: ["-150%", "400%"] }}
+                          transition={{
+                            repeat: Infinity,
+                            duration: 2.5,
+                            ease: "easeInOut",
+                            repeatDelay: 1,
+                          }}
+                        />
+
+                        {/* High-End Aesthetic Technical Orbital Loader */}
+                        <div className="relative flex items-center justify-center w-3 h-3 flex-shrink-0 z-10">
+                          <motion.div
+                            className="absolute inset-0 border border-primary/20 rounded-full"
+                            animate={{ rotate: 360 }}
+                            transition={{
+                              duration: 4,
+                              repeat: Infinity,
+                              ease: "linear",
+                            }}
+                          />
+                          <motion.div
+                            className="absolute inset-0 border-t-[1.5px] border-primary/70 rounded-full"
+                            animate={{ rotate: 360 }}
+                            transition={{
+                              duration: 1.5,
+                              repeat: Infinity,
+                              ease: "easeInOut",
+                            }}
+                          />
+                          <motion.div
+                            className="w-1 h-1 bg-primary rounded-full shadow-[0_0_6px_var(--primary)]"
+                            animate={{
+                              opacity: [0.5, 1, 0.5],
+                              scale: [0.8, 1.1, 0.8],
+                            }}
+                            transition={{
+                              duration: 2,
+                              repeat: Infinity,
+                              ease: "easeInOut",
+                            }}
+                          />
+                        </div>
+
+                        <span className="relative z-10 text-[11px] font-medium text-muted-foreground flex items-center gap-1.5">
+                          {message.workflowStatus === "synthesizing" ? (
+                            <>Synthesizing intelligence...</>
+                          ) : (
+                            <>
+                              Processing with{" "}
+                              <span className="text-foreground font-bold">
+                                {(isLastMessage ? activeAgentName : null) ||
+                                  message.agentTraces?.find(
+                                    (t) => t.status === "running",
+                                  )?.agentName ||
+                                  "Agents"}
+                              </span>
+                            </>
+                          )}
+                        </span>
+                      </motion.div>
+                    )
+                  ) : (
+                    /* Classic Fully Expanded Execution Trace */
+                    <div className="flex flex-col gap-3 p-4 rounded-xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-md shadow-xl shadow-black/10 group">
+                      <div className="flex items-center gap-2 font-bold text-[11px] tracking-widest uppercase text-primary/80 pb-2 border-b border-white/[0.03]">
+                        <Sparkles className="w-3 h-3" />
+                        Execution Trace
+                      </div>
+
+                      <div className="flex flex-col gap-2.5 pl-1 mt-1">
+                        {message.agentTraces.map((trace, idx) => (
+                          <div
+                            key={idx}
+                            className="flex items-center gap-3 text-[13px]"
+                          >
+                            <div className="relative flex items-center justify-center w-4">
+                              {trace.status === "pending" ? (
+                                <div className="w-2 h-2 rounded-full bg-white/10" />
+                              ) : trace.status === "running" ? (
+                                <div className="relative flex h-3 w-3">
+                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                                  <span className="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
+                                </div>
+                              ) : trace.status === "success" ? (
+                                <div className="w-4 h-4 rounded-full bg-emerald-500/20 flex items-center justify-center border border-emerald-500/30">
+                                  <Check className="w-2.5 h-2.5 text-emerald-400" />
+                                </div>
+                              ) : (
+                                <div className="w-4 h-4 rounded-full bg-destructive/20 flex items-center justify-center border border-destructive/30">
+                                  <X className="w-2.5 h-2.5 text-destructive-foreground" />
+                                </div>
+                              )}
+                              {/* Vertical line connecting traces */}
+                              {idx < message.agentTraces!.length - 1 && (
+                                <div className="absolute top-4 bottom-[-10px] left-1/2 w-px bg-white/[0.04] -translate-x-1/2" />
+                              )}
+                            </div>
+                            <span
+                              className={
+                                trace.status === "running" ||
+                                trace.status === "success"
+                                  ? "text-foreground/90 font-semibold"
+                                  : trace.status === "error"
+                                    ? "text-destructive/80"
+                                    : "text-muted-foreground/60"
+                              }
+                            >
+                              {trace.agentName}
+                            </span>
+                            <span className="text-muted-foreground/50 text-xs font-light">
+                              {trace.status === "running"
+                                ? "working..."
+                                : trace.status === "success"
+                                  ? `Done (${trace.tokens || 0} t)`
+                                  : trace.error
+                                    ? "failed"
+                                    : "queued"}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Synthesizer Indicator */}
+                      {message.workflowStatus === "synthesizing" && (
+                        <div className="flex items-center gap-3 text-[13px] pt-2 mt-1 border-t border-white/[0.03]">
+                          <div className="w-4 flex justify-center">
+                            <Loader2 className="w-3 h-3 animate-spin text-primary" />
+                          </div>
+                          <span className="text-foreground font-semibold animate-pulse">
+                            Synthesizing intelligence...
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Synthesized Output */}
+                  {(message.content ||
+                    message.workflowStatus === "completed") &&
+                    (isCompactMode ? (
+                      <div className="flex items-start gap-3 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                        {/* Themed Brand Avatar Indicator from user photo */}
+                        <div className="w-8 h-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0 text-primary mt-1 shadow-lg shadow-primary/5">
+                          <Bot className="w-4 h-4" />
+                        </div>
+                        <div className="flex-1 rounded-2xl border border-border/30 bg-muted/10 backdrop-blur-sm px-5 py-4 text-[15px] leading-relaxed shadow-sm group/res">
+                          <MarkdownRenderer
+                            content={message.content || ""}
+                            className="leading-relaxed prose-invert prose-p:leading-relaxed prose-pre:bg-card/50"
+                          />
+
+                          {/* Retry button for last message */}
+                          {onRetryMessage &&
+                            message.workflowStatus === "completed" && (
+                              <div className="mt-4 pt-3 border-t border-border/40 flex justify-end">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 text-xs text-muted-foreground hover:text-foreground gap-1.5"
+                                  onClick={() => handleRetry(message.id)}
+                                  disabled={isLoading}
+                                >
+                                  <RotateCw className="w-3 h-3" />
+                                  Retry
+                                </Button>
+                              </div>
+                            )}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="rounded-xl border border-border/50 bg-background shadow-sm p-4 text-sm mt-2">
+                        <MarkdownRenderer
+                          content={message.content || ""}
+                          className="leading-relaxed"
+                        />
+                        {/* Retry button for last message */}
+                        {onRetryMessage &&
+                          message.workflowStatus === "completed" && (
+                            <div className="mt-4 pt-3 border-t border-border/40 flex justify-end">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 text-xs text-muted-foreground hover:text-foreground gap-1.5"
+                                onClick={() => handleRetry(message.id)}
+                                disabled={isLoading}
+                              >
+                                <RotateCw className="w-3 h-3" />
+                                Retry
+                              </Button>
+                            </div>
+                          )}
+                      </div>
+                    ))}
+                </div>
+              )}
+
+            {/* ─── Legacy Agent Responses ─── */}
+            {message.type === "agent" &&
+              message.agentResponses &&
+              message.agentResponses.length > 0 &&
+              (!message.agentTraces ||
+                message.agentTraces.length === 0 ||
+                message.executionMode === "parallel") && (
+                <div className="mb-6 px-2 animate-fade-in">
+                  {/* Parallel mode: side-by-side scaleable Tabs */}
+                  {message.executionMode === "parallel" ? (
+                    <Tabs
+                      defaultValue={`agent-${message.agentResponses[0]?.agentId}`}
+                      className="w-full"
+                    >
+                      <ScrollArea className="w-full mb-4">
+                        <TabsList className="inline-flex w-max min-w-full justify-start border-b border-border/20 p-1 bg-muted/10 backdrop-blur-sm rounded-lg h-12">
+                          {message.agentResponses.map((response, idx) => (
+                            <TabsTrigger
+                              key={`trigger-${message.id}-agent-${idx}`}
+                              value={`agent-${response.agentId}`}
+                              className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-sm rounded-md transition-all px-4 py-2 flex items-center gap-2"
+                            >
+                              <div className="w-2 h-2 rounded-full bg-primary/80" />
+                              <span className="text-sm font-medium">
+                                {response.agentName}
+                              </span>
+                            </TabsTrigger>
+                          ))}
+                        </TabsList>
+                        <ScrollBar
+                          orientation="horizontal"
+                          className="opacity-50 hover:opacity-100"
+                        />
+                      </ScrollArea>
+                      {message.agentResponses.map((response, idx) => (
+                        <TabsContent
+                          key={`content-${message.id}-agent-${idx}`}
+                          value={`agent-${response.agentId}`}
+                          className="mt-0 outline-none animate-in fade-in slide-in-from-bottom-2 duration-300"
+                        >
+                          <AgentResponseCard
+                            response={response}
+                            index={idx}
+                            isCompactMode={isCompactMode}
+                          />
+                        </TabsContent>
+                      ))}
+                    </Tabs>
+                  ) : (
+                    /* Sequential mode: stacked full-width */
+                    <div className="flex flex-col gap-4 max-w-[90%] sm:max-w-[85%] md:max-w-[80%]">
+                      {message.agentResponses.map((response, idx) => (
+                        <AgentResponseCard
+                          key={`${message.id}-agent-${idx}`}
+                          response={response}
+                          index={idx}
+                          isCompactMode={isCompactMode}
+                        />
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Per-agent execution summary */}
+                  {(!message.agentTraces || message.agentTraces.length === 0) &&
+                    message.perAgentSummary &&
+                    message.perAgentSummary.length > 0 && (
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {message.perAgentSummary.map((summary) => (
+                          <div
+                            key={summary.agent_id}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-muted/60 border border-border/40 text-[11px] text-muted-foreground"
+                          >
+                            <span className="font-medium text-foreground/80">
+                              {summary.agent_name}
+                            </span>
+                            <span>·</span>
+                            <span>{summary.tokens_used} tokens</span>
+                            <span>·</span>
+                            <span>
+                              {(summary.execution_time_ms / 1000).toFixed(1)}s
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                  {/* Retry button for last message */}
+                  {onRetryMessage &&
+                    message.agentResponses.every(
+                      (r) => r.status !== "pending",
+                    ) && (
+                      <div className="mt-2 ml-0">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 text-xs text-muted-foreground hover:text-foreground gap-1.5"
+                          onClick={() => handleRetry(message.id)}
+                          disabled={isLoading}
+                        >
+                          <RotateCw className="w-3 h-3" />
+                          Retry
+                        </Button>
+                      </div>
+                    )}
+                </div>
+              )}
+          </div>
+        );
+      })}
     </div>
   );
 };
+
+export default MessageList;
