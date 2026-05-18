@@ -152,7 +152,7 @@ export default function ResumeUpload() {
   };
 
   return (
-    <div className="w-full text-foreground selection:bg-white/10 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="w-full text-foreground selection:bg-zinc-500/10 py-12 px-4 sm:px-6 lg:px-8">
       {/* HERO HEADER OUTSIDE CARD */}
       <div className="flex flex-col gap-4 mb-10 animate-in fade-in slide-in-from-top-4 duration-500 text-left max-w-3xl mx-auto">
         <div className="flex items-center gap-3">
@@ -160,7 +160,7 @@ export default function ResumeUpload() {
             size="icon"
             variant="ghost"
             onClick={() => navigate("/dashboard/hired/resume")}
-            className="h-8 w-8 rounded-full bg-white/[0.03] border border-white/[0.08] text-muted-foreground hover:text-white hover:bg-white/[0.08] shrink-0 shadow-sm"
+            className="h-8 w-8 rounded-full bg-zinc-100 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.08] text-muted-foreground hover:text-zinc-800 dark:hover:text-white hover:bg-zinc-200 dark:hover:bg-white/[0.08] shrink-0 shadow-sm"
             title="Back to Portal"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
@@ -171,9 +171,9 @@ export default function ResumeUpload() {
           </span>
         </div>
 
-        <h1 className="text-3xl sm:text-5xl font-bold tracking-tight leading-[1.1] flex flex-col gap-1 text-white">
+        <h1 className="text-3xl sm:text-5xl font-bold tracking-tight leading-[1.1] flex flex-col gap-1 text-foreground">
           <span>Upload Your Resume.</span>
-          <span className="text-zinc-700">Score it against a job.</span>
+          <span className="text-zinc-400 dark:text-zinc-700">Score it against a job.</span>
         </h1>
       </div>
 
@@ -189,13 +189,13 @@ export default function ResumeUpload() {
               className="space-y-6"
             >
               {/* TARGET JOB DESCRIPTION BLOCK */}
-              <div className="border border-border/80 rounded-3xl p-6 bg-card/20 backdrop-blur-xl relative overflow-hidden space-y-4">
-                <div className="flex items-center justify-between pb-2 border-b border-border/50">
-                  <Label className="text-sm font-bold text-zinc-200 flex items-center gap-2">
-                    <Target className="w-4 h-4 text-white" />
+              <div className="border border-border rounded-3xl p-6 bg-card/20 backdrop-blur-xl relative overflow-hidden space-y-4">
+                <div className="flex items-center justify-between pb-2 border-b border-border">
+                  <Label className="text-sm font-bold text-zinc-800 dark:text-zinc-200 flex items-center gap-2">
+                    <Target className="w-4 h-4 text-zinc-600 dark:text-white" />
                     Target Job Description
                   </Label>
-                  <span className="text-[10px] px-2.5 py-1 rounded-full bg-zinc-800 border border-zinc-700 text-muted-foreground font-semibold uppercase tracking-wider select-none">
+                  <span className="text-[10px] px-2.5 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-muted-foreground font-semibold uppercase tracking-wider select-none">
                     Recommended
                   </span>
                 </div>
@@ -204,7 +204,7 @@ export default function ResumeUpload() {
                   placeholder="Paste the job description here (optional). We'll compare your resume against it and show a match score."
                   value={jobDescription}
                   onChange={(e) => setJobDescription(e.target.value)}
-                  className="min-h-[160px] bg-background/40 border-border hover:border-zinc-700 focus:ring-1 focus:ring-white/40 focus:border-white/40 text-sm text-white resize-none rounded-2xl p-4 leading-relaxed placeholder:text-zinc-600 transition-all duration-200"
+                  className="min-h-[160px] bg-background border-border hover:border-zinc-400 dark:hover:border-zinc-700 focus:ring-1 focus:ring-primary focus:border-primary text-sm text-foreground resize-none rounded-2xl p-4 leading-relaxed placeholder:text-zinc-400 dark:placeholder:text-zinc-600 transition-all duration-200"
                 />
                 <p className="text-[11px] text-zinc-500 tracking-wide">
                   The more of the job description you paste, the more accurate
@@ -213,12 +213,12 @@ export default function ResumeUpload() {
               </div>
 
               {/* FILE UPLOAD ZONE */}
-              <div className="relative border-2 border-dashed border-border hover:border-white/40 rounded-3xl p-12 bg-background/20 hover:bg-card/10 transition-all duration-300 group text-center flex flex-col items-center cursor-pointer overflow-hidden">
-                <div className="w-16 h-16 bg-card/80 border border-border rounded-2xl flex items-center justify-center text-muted-foreground group-hover:text-white group-hover:scale-105 transition-all shadow-xl mb-6 group-hover:border-zinc-700">
+              <div className="relative border-2 border-dashed border-border hover:border-zinc-400 dark:hover:border-white/40 rounded-3xl p-12 bg-zinc-50 dark:bg-background/20 hover:bg-zinc-100/50 dark:hover:bg-card/10 transition-all duration-300 group text-center flex flex-col items-center cursor-pointer overflow-hidden">
+                <div className="w-16 h-16 bg-card/80 border border-border rounded-2xl flex items-center justify-center text-muted-foreground group-hover:text-foreground group-hover:scale-105 transition-all shadow-xl mb-6 group-hover:border-zinc-400 dark:group-hover:border-zinc-700">
                   <UploadCloud className="w-8 h-8" />
                 </div>
 
-                <h3 className="text-xl font-bold text-zinc-200 mb-2">
+                <h3 className="text-xl font-bold text-zinc-800 dark:text-zinc-200 mb-2">
                   Choose Your File
                 </h3>
                 <p className="text-zinc-500 text-xs max-w-xs mx-auto leading-relaxed mb-8">
@@ -232,7 +232,7 @@ export default function ResumeUpload() {
                   className="absolute inset-0 opacity-0 cursor-pointer z-10"
                 />
 
-                <Button className="bg-white hover:bg-zinc-200 text-black px-8 rounded-xl font-bold h-11 relative z-0 transition-all duration-300 shadow-sm tracking-tight">
+                <Button className="bg-zinc-950 dark:bg-white hover:bg-zinc-900 dark:hover:bg-zinc-200 text-white dark:text-black px-8 rounded-xl font-bold h-11 relative z-0 transition-all duration-300 shadow-sm tracking-tight border-none">
                   Select Document
                 </Button>
               </div>
@@ -243,11 +243,11 @@ export default function ResumeUpload() {
               initial={{ opacity: 0, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="border border-border rounded-3xl p-12 bg-background/50 backdrop-blur-xl flex flex-col items-center text-center space-y-8 relative overflow-hidden min-h-[380px] justify-center shadow-2xl"
+              className="border border-border rounded-3xl p-12 bg-background backdrop-blur-xl flex flex-col items-center text-center space-y-8 relative overflow-hidden min-h-[380px] justify-center shadow-2xl"
             >
               <div className="relative">
                 <div className="w-24 h-24 rounded-3xl border border-border bg-card flex items-center justify-center relative z-10 shadow-xl">
-                  <Loader2 className="w-10 h-10 text-white animate-spin" />
+                  <Loader2 className="w-10 h-10 text-zinc-800 dark:text-white animate-spin" />
                 </div>
               </div>
 
@@ -256,7 +256,7 @@ export default function ResumeUpload() {
                   key={processStep}
                   initial={{ opacity: 0, y: 5 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="text-xl font-extrabold text-white uppercase tracking-widest"
+                  className="text-xl font-extrabold text-foreground uppercase tracking-widest"
                 >
                   {processStep === "reading" && "Reading File"}
                   {processStep === "parsing" && "Extracting Data"}
@@ -289,13 +289,13 @@ export default function ResumeUpload() {
                           isDone
                             ? "bg-zinc-400 scale-100"
                             : isActive
-                              ? "bg-white animate-pulse scale-125 ring-4 ring-white/10"
-                              : "bg-zinc-800 scale-90"
+                              ? "bg-zinc-850 dark:bg-white animate-pulse scale-125 ring-4 ring-zinc-800/10 dark:ring-white/10"
+                              : "bg-zinc-200 dark:bg-zinc-800 scale-90"
                         }`}
                       />
                       {i < 2 && (
                         <div
-                          className={`h-0.5 w-12 transition-all duration-500 ${currentIdx > targetIdx ? "bg-zinc-500" : "bg-zinc-800"}`}
+                          className={`h-0.5 w-12 transition-all duration-500 ${currentIdx > targetIdx ? "bg-zinc-400 dark:bg-zinc-500" : "bg-zinc-200 dark:bg-zinc-800"}`}
                         />
                       )}
                     </div>

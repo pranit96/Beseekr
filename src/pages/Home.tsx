@@ -146,7 +146,7 @@ export default function Home() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-[#09090b] text-foreground overflow-hidden selection:bg-primary/30">
+    <div className="h-screen flex flex-col bg-background text-foreground overflow-hidden selection:bg-primary/30">
       <div className="flex-shrink-0">
         <GlobalHeader />
       </div>

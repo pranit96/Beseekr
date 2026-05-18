@@ -59,7 +59,7 @@ export default function ResumeTemplateSelect() {
                 size="icon"
                 variant="ghost"
                 onClick={() => navigate("/dashboard/hired/resume")}
-                className="h-8 w-8 rounded-full bg-white/[0.03] border border-white/[0.08] text-muted-foreground hover:text-white hover:bg-white/[0.08] shrink-0 shadow-sm"
+                className="h-8 w-8 rounded-full bg-zinc-100 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.08] text-muted-foreground hover:text-foreground dark:hover:text-white hover:bg-zinc-200 dark:hover:bg-white/[0.08] shrink-0 shadow-sm transition-all"
                 title="Back to Portal"
               >
                 <ArrowLeft className="h-3.5 w-3.5" />
@@ -70,9 +70,9 @@ export default function ResumeTemplateSelect() {
               </span>
             </div>
 
-            <h1 className="text-3xl sm:text-5xl font-bold tracking-tight leading-[1.1] flex flex-col gap-1 text-white">
+            <h1 className="text-3xl sm:text-5xl font-bold tracking-tight leading-[1.1] flex flex-col gap-1 text-foreground">
               <span>Pick a Template.</span>
-              <span className="text-zinc-700">Fill it in, then download.</span>
+              <span className="text-muted-foreground/60">Fill it in, then download.</span>
             </h1>
           </div>
 
@@ -97,10 +97,10 @@ export default function ResumeTemplateSelect() {
               <Card
                 key={tmpl.id}
                 onClick={() => handleSelect(tmpl)}
-                className="group relative overflow-hidden border border-border/80 bg-background/40 backdrop-blur-xl rounded-3xl flex flex-col cursor-pointer hover:border-zinc-700 hover:bg-card/10 transition-all duration-300 shadow-2xl select-none flex-1"
+                className="group relative overflow-hidden border border-border/80 bg-background/40 backdrop-blur-xl rounded-3xl flex flex-col cursor-pointer hover:border-primary/50 dark:hover:border-zinc-700 hover:bg-card/10 transition-all duration-300 shadow-2xl select-none flex-1"
               >
                 {/* Minimal Gray Accent Top Line */}
-                <div className="absolute top-0 inset-x-0 h-1 bg-zinc-800 group-hover:bg-zinc-700 transition-colors duration-300" />
+                <div className="absolute top-0 inset-x-0 h-1 bg-zinc-300 dark:bg-zinc-800 group-hover:bg-primary dark:group-hover:bg-zinc-700 transition-colors duration-300" />
 
                 <div className="p-6 flex flex-col h-full space-y-6">
                   {/* Icon Block */}
@@ -112,7 +112,7 @@ export default function ResumeTemplateSelect() {
 
                   {/* Details */}
                   <div className="space-y-2 flex-grow">
-                    <h3 className="text-xl font-bold text-foreground group-hover:text-white flex items-center gap-2 tracking-tight">
+                    <h3 className="text-xl font-bold text-foreground group-hover:text-primary flex items-center gap-2 tracking-tight transition-colors">
                       {tmpl.name}
                     </h3>
                     <p className="text-xs text-muted-foreground font-medium leading-relaxed">
@@ -123,23 +123,23 @@ export default function ResumeTemplateSelect() {
                   {/* Visual Mockup Representation */}
                   <div className="bg-background/60 border border-border/60 rounded-2xl p-4 space-y-3 group-hover:border-border transition-all relative">
                     {/* Header Mock */}
-                    <div className="h-2.5 bg-zinc-800 rounded-full w-1/3" />
+                    <div className="h-2.5 bg-zinc-200 dark:bg-zinc-800 rounded-full w-1/3" />
                     <div className="h-px bg-card w-full" />
 
                     {/* Experience Section Mock */}
                     <div className="space-y-2">
-                      <div className="h-2 rounded-full w-1/4 opacity-60 bg-zinc-600" />
-                      <div className="h-1.5 bg-zinc-800 rounded-full w-full" />
-                      <div className="h-1.5 bg-zinc-800/60 rounded-full w-5/6" />
+                      <div className="h-2 rounded-full w-1/4 opacity-60 bg-zinc-300 dark:bg-zinc-600" />
+                      <div className="h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-full w-full" />
+                      <div className="h-1.5 bg-zinc-200/60 dark:bg-zinc-800/60 rounded-full w-5/6" />
                     </div>
 
                     {/* Skills Section Mock */}
                     <div className="space-y-2 mt-1">
-                      <div className="h-2 rounded-full w-1/4 opacity-60 bg-zinc-600" />
+                      <div className="h-2 rounded-full w-1/4 opacity-60 bg-zinc-300 dark:bg-zinc-600" />
                       <div className="flex gap-1.5">
-                        <div className="h-1.5 bg-zinc-800 rounded-full w-1/4" />
-                        <div className="h-1.5 bg-zinc-800 rounded-full w-1/3" />
-                        <div className="h-1.5 bg-zinc-800 rounded-full w-1/5" />
+                        <div className="h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-full w-1/4" />
+                        <div className="h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-full w-1/3" />
+                        <div className="h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-full w-1/5" />
                       </div>
                     </div>
                   </div>
@@ -161,7 +161,7 @@ export default function ResumeTemplateSelect() {
                   </div>
 
                   {/* Select CTA */}
-                  <Button className="w-full rounded-xl h-10 font-bold bg-card group-hover:bg-white group-hover:text-black text-muted-foreground hover:text-white border border-border transition-all duration-300 shadow-sm text-xs tracking-tight">
+                  <Button className="w-full rounded-xl h-10 font-bold bg-card text-muted-foreground hover:bg-primary hover:text-primary-foreground border border-border transition-all duration-300 shadow-sm text-xs tracking-tight">
                     Use This Template
                   </Button>
                 </div>

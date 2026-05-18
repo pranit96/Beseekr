@@ -33,7 +33,7 @@ const logger = createLogger("Chat");
 const ChatSkeleton = ({ isNewMode = false }: { isNewMode?: boolean }) => {
   if (isNewMode) {
     return (
-      <div className="h-screen flex flex-col overflow-hidden bg-[#09090b]">
+      <div className="h-screen flex flex-col overflow-hidden bg-background">
         {/* Header mockup skeleton */}
         <div className="flex-shrink-0 px-4 pt-3 pb-2">
           <div className="max-w-7xl mx-auto h-14 rounded-2xl border border-white/[0.03] bg-white/[0.02] backdrop-blur-xl flex items-center justify-between px-5 animate-pulse">
@@ -663,7 +663,7 @@ const Chat = () => {
 
   if (isNewMode) {
     return (
-      <div className="h-screen bg-[#09090b] flex flex-col overflow-hidden selection:bg-primary/30">
+      <div className="h-screen bg-background flex flex-col overflow-hidden selection:bg-primary/30">
         <GlobalHeader />
 
         <div
