@@ -335,7 +335,7 @@ const MessageList: React.FC<MessageListProps> = ({
             {message.type === "agent" &&
               message.agentResponses &&
               message.agentResponses.length > 0 &&
-              (!message.agentTraces || message.agentTraces.length === 0) && (
+              (!message.agentTraces || message.agentTraces.length === 0 || message.executionMode === "parallel") && (
                 <div className="mb-6 px-2 animate-fade-in">
                   {/* Parallel mode: side-by-side grid */}
                   {message.executionMode === "parallel" ? (

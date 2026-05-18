@@ -707,10 +707,11 @@ export const ChatInterface: React.FC<{
                     ? { ...at, status: "success" }
                     : at,
                 ),
+                agentResponses: doneData.results || m.agentResponses,
                 markdownOutput: doneData.final_markdown || m.markdownOutput,
                 finalOutput: doneData.final_markdown || m.finalOutput,
                 content:
-                  doneData.final_markdown || m.content || "Response completed.",
+                  doneData.final_markdown || m.content || (m.executionMode === "parallel" ? "" : "Response completed."),
                 perAgentSummary: doneData.per_agent_summary || undefined,
               } as ChatMessage;
             }),
