@@ -34,6 +34,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../../components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "../../components/ui/dialog";
 import HiredShell from "./HiredShell";
 // ─── Types ────────────────────────────────────────────────────────────────────
 type AppStatus = JobApplication["status"];
@@ -408,6 +415,7 @@ interface AppCardProps {
   onDelete: (id: string) => void;
   onHover: (id: string | null) => void;
   onPrepKit: (app: JobApplication) => void;
+  onViewJd: (app: JobApplication) => void;
 }
 
 const AppCard = React.memo(function AppCard({
@@ -417,6 +425,7 @@ const AppCard = React.memo(function AppCard({
   onDelete,
   onHover,
   onPrepKit,
+  onViewJd,
 }: AppCardProps) {
   const cfg = getCfg(app.status);
   return (
@@ -470,9 +479,12 @@ const AppCard = React.memo(function AppCard({
           {app.status}
         </span>
         {app.jd_text && (
-          <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-600 dark:text-indigo-400">
-            JD Ready
-          </span>
+          <button
+            onClick={() => onViewJd(app)}
+            className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 border border-indigo-200 dark:border-indigo-500/25 text-indigo-600 dark:text-indigo-400 transition-colors flex items-center gap-1 cursor-pointer"
+          >
+            <FileText className="w-2.5 h-2.5" /> View JD
+          </button>
         )}
         {app.job_url && (
           <a
@@ -511,6 +523,7 @@ interface KanbanCardProps {
   onDelete: (id: string) => void;
   onHover: (id: string | null) => void;
   onPrepKit: (app: JobApplication) => void;
+  onViewJd: (app: JobApplication) => void;
 }
 
 const KanbanCard = React.memo(function KanbanCard({
@@ -520,6 +533,7 @@ const KanbanCard = React.memo(function KanbanCard({
   onDelete,
   onHover,
   onPrepKit,
+  onViewJd,
 }: KanbanCardProps) {
   return (
     <div
@@ -550,16 +564,96 @@ const KanbanCard = React.memo(function KanbanCard({
         <span className="text-[10px] text-zinc-400 dark:text-zinc-700 font-bold">
           {new Date(app.created_at).toLocaleDateString()}
         </span>
-        <button
-          onClick={() => onPrepKit(app)}
-          className="text-[10px] font-bold text-zinc-500 hover:text-indigo-600 dark:hover:text-indigo-400 flex items-center gap-1 transition-colors"
-        >
-          <Sparkles className="w-3 h-3" /> Prep Kit
-        </button>
+        <div className="flex items-center gap-2.5">
+          {app.jd_text && (
+            <button
+              onClick={() => onViewJd(app)}
+              className="text-[10px] font-bold text-zinc-500 hover:text-indigo-600 dark:hover:text-indigo-400 flex items-center gap-1 transition-colors cursor-pointer"
+            >
+              <FileText className="w-3 h-3" /> JD
+            </button>
+          )}
+          <button
+            onClick={() => onPrepKit(app)}
+            className="text-[10px] font-bold text-zinc-500 hover:text-indigo-600 dark:hover:text-indigo-400 flex items-center gap-1 transition-colors"
+          >
+            <Sparkles className="w-3 h-3" /> Prep Kit
+          </button>
+        </div>
       </div>
     </div>
   );
 });
+
+// ─── View JD Modal ─────────────────────────────────────────────────────────────
+interface ViewJdModalProps {
+  app: JobApplication | null;
+  open: boolean;
+  onClose: () => void;
+}
+
+function ViewJdModal({ app, open, onClose }: ViewJdModalProps) {
+  if (!app) return null;
+  const cfg = getCfg(app.status);
+  
+  return (
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
+      <DialogContent className="max-w-2xl bg-white dark:bg-[#111113] border border-zinc-200 dark:border-white/[0.09] rounded-[28px] p-7 shadow-2xl z-[9999] text-left">
+        <DialogHeader className="space-y-3">
+          <div className="flex items-start justify-between gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className={`inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-lg border uppercase tracking-wider ${cfg.color}`}>
+                  <div className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
+                  {app.status}
+                </span>
+                <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-bold flex items-center gap-1">
+                  <Clock className="w-3 h-3" />
+                  Applied {new Date(app.created_at).toLocaleDateString()}
+                </span>
+              </div>
+              <DialogTitle className="text-xl font-bold text-zinc-900 dark:text-white tracking-tight leading-tight">
+                {app.job_title}
+              </DialogTitle>
+              <DialogDescription className="text-xs text-zinc-500 font-bold uppercase tracking-widest flex items-center gap-1.5 mt-0.5">
+                <Building2 className="w-3.5 h-3.5 shrink-0 text-zinc-450" />
+                {app.company_name}
+              </DialogDescription>
+            </div>
+          </div>
+        </DialogHeader>
+
+        <div className="mt-4 border-t border-zinc-100 dark:border-white/[0.06] pt-4 max-h-[55vh] overflow-y-auto no-scrollbar space-y-4">
+          <div className="bg-zinc-50 dark:bg-white/[0.01] border border-zinc-100 dark:border-white/[0.04] rounded-2xl p-5">
+            <h4 className="text-xs font-black uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-3 flex items-center gap-1.5">
+              <FileText className="w-3.5 h-3.5" /> Job Description
+            </h4>
+            <div className="text-sm text-zinc-700 dark:text-zinc-300 font-sans leading-relaxed whitespace-pre-wrap break-words">
+              {app.jd_text ? (
+                app.jd_text
+              ) : (
+                <span className="text-zinc-400 italic">No job description text provided.</span>
+              )}
+            </div>
+          </div>
+          
+          {app.job_url && (
+            <div className="flex justify-end pt-2">
+              <a
+                href={app.job_url}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 transition-colors"
+              >
+                View Original Posting <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            </div>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function JobTracker() {
@@ -574,6 +668,15 @@ export default function JobTracker() {
   const [isSaving, setIsSaving] = useState(false);
   const [updatedIds, setUpdatedIds] = useState<Set<string>>(new Set());
   const [hoveredAppId, setHoveredAppId] = useState<string | null>(null);
+
+  // View JD Modal States
+  const [selectedJdApp, setSelectedJdApp] = useState<JobApplication | null>(null);
+  const [showJdModal, setShowJdModal] = useState(false);
+
+  const handleViewJd = useCallback((app: JobApplication) => {
+    setSelectedJdApp(app);
+    setShowJdModal(true);
+  }, []);
 
   // Quick Autoparse URL States
   const [quickUrl, setQuickUrl] = useState("");
@@ -747,6 +850,14 @@ export default function JobTracker() {
         onClose={() => setShowAddModal(false)}
         onSave={handleAdd}
         isSaving={isSaving}
+      />
+      <ViewJdModal
+        app={selectedJdApp}
+        open={showJdModal}
+        onClose={() => {
+          setShowJdModal(false);
+          setSelectedJdApp(null);
+        }}
       />
       <HiredShell>
         <div className="max-w-6xl mx-auto space-y-6 py-7 px-4 sm:px-6 lg:px-8">
@@ -950,6 +1061,7 @@ export default function JobTracker() {
                           onDelete={handleDelete}
                           onHover={setHoveredAppId}
                           onPrepKit={handlePrepKit}
+                          onViewJd={handleViewJd}
                         />
                       ))}
                       {col.length === 0 && (
@@ -977,6 +1089,7 @@ export default function JobTracker() {
                     onDelete={handleDelete}
                     onHover={setHoveredAppId}
                     onPrepKit={handlePrepKit}
+                    onViewJd={handleViewJd}
                   />
                 ))}
               </AnimatePresence>
