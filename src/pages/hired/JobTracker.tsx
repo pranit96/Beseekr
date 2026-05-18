@@ -150,14 +150,17 @@ const StatusMenu = React.memo(function StatusMenu({
 });
 
 // ─── Add Modal ────────────────────────────────────────────────────────────────
-const EMPTY_FORM = {
+const getTodayDateString = () => new Date().toISOString().split("T")[0];
+
+const getEmptyForm = () => ({
   company_name: "",
   job_title: "",
   status: "Applied" as AppStatus,
   job_url: "",
   jd_text: "",
   notes: "",
-};
+  created_at: getTodayDateString(),
+});
 
 interface AddModalProps {
   open: boolean;
@@ -167,7 +170,7 @@ interface AddModalProps {
 }
 
 function AddModal({ open, onClose, onSave, isSaving }: AddModalProps) {
-  const [form, setForm] = useState(EMPTY_FORM);
+  const [form, setForm] = useState(getEmptyForm());
   const [isParsingUrl, setIsParsingUrl] = useState(false);
   const { toast } = useToast();
 
@@ -186,6 +189,8 @@ function AddModal({ open, onClose, onSave, isSaving }: AddModalProps) {
         company_name: parsed.company_name || p.company_name,
         job_title: parsed.job_title || p.job_title,
         jd_text: parsed.jd_text || p.jd_text,
+        status: "Applied", // Force status to Applied as default when autoparsing URL!
+        created_at: parsed.applied_date || p.created_at,
       }));
       toast({
         title: "Autofilled from AI 🪄",
@@ -206,7 +211,7 @@ function AddModal({ open, onClose, onSave, isSaving }: AddModalProps) {
     e.preventDefault();
     if (!form.company_name || !form.job_title) return;
     await onSave(form);
-    setForm(EMPTY_FORM);
+    setForm(getEmptyForm());
   };
 
   return (
@@ -265,21 +270,35 @@ function AddModal({ open, onClose, onSave, isSaving }: AddModalProps) {
                 ))}
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
-                  Status
-                </label>
-                <select
-                  value={form.status}
-                  onChange={(e) => set("status", e.target.value)}
-                  className="w-full h-10 bg-white/[0.03] border border-white/[0.08] focus:border-indigo-500/50 rounded-xl px-3 text-sm text-zinc-200 font-medium outline-none"
-                >
-                  {ALL_STATUSES.map((s) => (
-                    <option key={s} value={s} className="bg-card">
-                      {s}
-                    </option>
-                  ))}
-                </select>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5 text-left">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
+                    Status
+                  </label>
+                  <select
+                    value={form.status}
+                    onChange={(e) => set("status", e.target.value)}
+                    className="w-full h-10 bg-white/[0.03] border border-white/[0.08] focus:border-indigo-500/50 rounded-xl px-3 text-sm text-zinc-200 font-medium outline-none"
+                  >
+                    {ALL_STATUSES.map((s) => (
+                      <option key={s} value={s} className="bg-card">
+                        {s}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-1.5 text-left">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
+                    Applied Date
+                  </label>
+                  <Input
+                    type="date"
+                    value={form.created_at}
+                    onChange={(e) => set("created_at", e.target.value)}
+                    className="bg-white/[0.03] border-white/[0.08] focus:border-indigo-500/50 rounded-xl h-10 text-sm text-zinc-200"
+                  />
+                </div>
               </div>
 
               <div className="space-y-1.5">
@@ -556,6 +575,45 @@ export default function JobTracker() {
   const [updatedIds, setUpdatedIds] = useState<Set<string>>(new Set());
   const [hoveredAppId, setHoveredAppId] = useState<string | null>(null);
 
+  // Quick Autoparse URL States
+  const [quickUrl, setQuickUrl] = useState("");
+  const [isQuickParsing, setIsQuickParsing] = useState(false);
+
+  const handleQuickImport = async () => {
+    if (!quickUrl) return;
+    setIsQuickParsing(true);
+    try {
+      const parsed = await resumeApi.parseJobUrl(quickUrl);
+      const app = await resumeApi.createApplication({
+        company_name: parsed.company_name || "Unknown Company",
+        job_title: parsed.job_title || "Job Posting",
+        status: "Applied",
+        job_url: quickUrl,
+        jd_text: parsed.jd_text || "",
+        created_at: parsed.applied_date || getTodayDateString(),
+      });
+      setApplications((p) => [app, ...p]);
+      setQuickUrl("");
+      confetti({
+        particleCount: 80,
+        spread: 60,
+        origin: { y: 0.8 },
+      });
+      toast({
+        title: "Logged Successfully! 🎉",
+        description: `${parsed.job_title} at ${parsed.company_name} was parsed and logged.`,
+      });
+    } catch (e: any) {
+      toast({
+        variant: "destructive",
+        title: "Import failed",
+        description: e.message || "Could not auto-extract details from URL.",
+      });
+    } finally {
+      setIsQuickParsing(false);
+    }
+  };
+
   // ── Prefetch prep kit on hover ───────────────────────────────────────────
   useEffect(() => {
     if (!hoveredAppId) return;
@@ -711,6 +769,44 @@ export default function JobTracker() {
             >
               <Plus className="w-4 h-4" /> Add Application
             </Button>
+          </div>
+          {/* AI QUICK IMPORTER FROM URL */}
+          <div className="bg-[#111113]/40 border border-white/[0.06] p-5 rounded-[24px] space-y-3.5 text-left">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 bg-indigo-500/10 border border-indigo-500/20 rounded-xl">
+                <Sparkles className="w-4 h-4 text-indigo-400" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-white tracking-tight">AI Quick Import from URL</h3>
+                <p className="text-[11px] text-zinc-500 font-medium">Paste any job posting URL to auto-extract role details and log it as "Applied".</p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <Input
+                placeholder="Paste LinkedIn, Indeed, Greenhouse, or any Job URL..."
+                value={quickUrl}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuickUrl(e.target.value)}
+                disabled={isQuickParsing}
+                className="bg-white/[0.02] border-white/[0.08] focus:border-indigo-500/40 rounded-xl h-11 text-sm text-zinc-200 flex-1 placeholder:text-zinc-600"
+              />
+              <Button
+                onClick={handleQuickImport}
+                disabled={isQuickParsing || !quickUrl}
+                className="bg-indigo-600 hover:bg-indigo-500 disabled:bg-zinc-800 disabled:text-zinc-500 text-white font-bold rounded-xl h-11 px-6 shadow-lg shadow-indigo-500/20 transition-all flex items-center gap-2"
+              >
+                {isQuickParsing ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Parsing...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4" />
+                    Auto-Import
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
 
           {/* STATS */}
