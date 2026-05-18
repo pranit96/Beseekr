@@ -402,10 +402,11 @@ export const ChatInterface: React.FC<{
     }, 500);
   };
 
-  const handleSubmit = async () => {
-    const finalAgents = selectedAgents;
+  const handleSubmit = async (overrideMessage?: string, overrideAgents?: Agent[]) => {
+    const finalAgents = overrideAgents || selectedAgents;
+    const messageText = overrideMessage || input;
 
-    if (!input.trim() && attachedFiles.length === 0) return;
+    if (!messageText.trim() && attachedFiles.length === 0) return;
     if (finalAgents.length === 0) {
       toast({
         title: "No agents selected",
@@ -431,8 +432,7 @@ export const ChatInterface: React.FC<{
       return;
     }
 
-    const messageText = input;
-    setInput("");
+    if (!overrideMessage) setInput("");
     retryMessageRef.current = messageText;
     if (isActiveOrchestrationRef) isActiveOrchestrationRef.current = true;
     setPreparingMessage(true);
@@ -810,10 +810,18 @@ export const ChatInterface: React.FC<{
       if (idx > 0 && messages[idx - 1].type === "user") {
         const prev = messages[idx - 1];
         const failed = messages[idx];
-        const agentsToRetry =
-          (failed.agentResponses
-            ?.map((ar) => selectedAgents.find((a) => a.id === ar.agentId))
-            .filter(Boolean) as Agent[]) || selectedAgents;
+        
+        let agentsToRetry: Agent[] = [];
+        if (failed.agentTraces && failed.agentTraces.length > 0) {
+          agentsToRetry = failed.agentTraces.map((t) => agents.find((a) => a.id === t.agentId)).filter(Boolean) as Agent[];
+        } else if (failed.agentResponses && failed.agentResponses.length > 0) {
+          agentsToRetry = failed.agentResponses.map((ar) => agents.find((a) => a.id === ar.agentId)).filter(Boolean) as Agent[];
+        }
+        
+        if (agentsToRetry.length === 0) {
+          agentsToRetry = selectedAgents;
+        }
+
         if (!agentsToRetry.length) {
           toast({
             title: "Cannot retry",
@@ -822,12 +830,14 @@ export const ChatInterface: React.FC<{
           });
           return;
         }
-        setInput(prev.content);
+        
         setSelectedAgents(agentsToRetry);
-        setTimeout(() => textareaRef.current?.focus(), 100);
+        
+        // Execute the retry using handleSubmit directly
+        handleSubmit(prev.content, agentsToRetry);
       }
     },
-    [messages, selectedAgents],
+    [messages, selectedAgents, agents, toast],
   );
 
   const togglePrivateChat = () => {
