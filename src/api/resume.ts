@@ -300,9 +300,60 @@ export async function generateCoverLetter(payload: {
   company_name?: string;
   job_title?: string;
   tone?: string;
+  hiring_manager?: string;
 }): Promise<string> {
   const res = await apiClient.post("/api/resume/cover-letter", payload);
   return res.data;
+}
+
+export async function downloadCoverLetterPdf(
+  resume: ResumeSchema,
+  coverLetter: string,
+): Promise<string> {
+  const res = await apiClient.post("/api/resume/cover-letter/download", {
+    resume,
+    cover_letter: coverLetter,
+  });
+
+  const rawBase64 = (res.data as any)?.pdf_base64;
+  if (!rawBase64) {
+    throw new Error("Invalid PDF delivery packet from endpoint.");
+  }
+
+  const binaryString = window.atob(rawBase64);
+  const bytes = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+
+  const blob = new Blob([bytes], { type: "application/pdf" });
+  return window.URL.createObjectURL(blob);
+}
+
+export async function downloadCoverLetterWord(
+  resume: ResumeSchema,
+  coverLetter: string,
+): Promise<string> {
+  const res = await apiClient.post("/api/resume/cover-letter/download/word", {
+    resume,
+    cover_letter: coverLetter,
+  });
+
+  const rawBase64 = (res.data as any)?.word_base64;
+  if (!rawBase64) {
+    throw new Error("Invalid Word delivery packet from endpoint.");
+  }
+
+  const binaryString = window.atob(rawBase64);
+  const bytes = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+
+  const blob = new Blob([bytes], {
+    type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  });
+  return window.URL.createObjectURL(blob);
 }
 
 export async function generateInterviewPrep(payload: {
@@ -377,6 +428,8 @@ export const resumeApi = {
   updateApplication,
   deleteApplication,
   generateCoverLetter,
+  downloadCoverLetterPdf,
+  downloadCoverLetterWord,
   generateInterviewPrep,
   performCareerResearch,
   summarizeResearch,

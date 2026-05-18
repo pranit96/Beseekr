@@ -133,6 +133,9 @@ export default function ResumeWorkspace() {
   const [isAiPanelOpen, setIsAiPanelOpen] = useState(false);
   const [coverLetter, setCoverLetter] = useState<string | null>(null);
   const [isGeneratingCL, setIsGeneratingCL] = useState(false);
+  const [companyNameInput, setCompanyNameInput] = useState("");
+  const [hiringManagerInput, setHiringManagerInput] = useState("");
+  const [isExportingCL, setIsExportingCL] = useState<"pdf" | "word" | null>(null);
 
   // LaTeX Export States
   const [isLatexOpen, setIsLatexOpen] = useState(false);
@@ -237,8 +240,9 @@ export default function ResumeWorkspace() {
       const content = await resumeApi.generateCoverLetter({
         resume: resumeData,
         job_description: jobDescription,
-        company_name: "", // Will be filled from JD analysis if possible
+        company_name: companyNameInput || "",
         job_title: resumeData.personal_info.summary.split(" ")[0], // Fallback
+        hiring_manager: hiringManagerInput || "",
       });
       setCoverLetter(content);
       setActiveTab("coverletter");
@@ -254,6 +258,66 @@ export default function ResumeWorkspace() {
       });
     } finally {
       setIsGeneratingCL(false);
+    }
+  };
+
+  const handleExportCoverLetterPdf = async () => {
+    if (!coverLetter) return;
+    setIsExportingCL("pdf");
+    try {
+      const url = await resumeApi.downloadCoverLetterPdf(resumeData, coverLetter);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute(
+        "download",
+        `${resumeData.personal_info.name || "Candidate"}_Cover_Letter.pdf`,
+      );
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      toast({
+        title: "Cover Letter PDF Ready!",
+        description: "Your professional PDF cover letter is saved to your device.",
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "PDF Export Failed",
+        description: error.message || "Could not export PDF.",
+      });
+    } finally {
+      setIsExportingCL(null);
+    }
+  };
+
+  const handleExportCoverLetterWord = async () => {
+    if (!coverLetter) return;
+    setIsExportingCL("word");
+    try {
+      const url = await resumeApi.downloadCoverLetterWord(resumeData, coverLetter);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute(
+        "download",
+        `${resumeData.personal_info.name || "Candidate"}_Cover_Letter.docx`,
+      );
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      toast({
+        title: "Cover Letter Word File Ready!",
+        description: "Your editable cover letter is saved to your device.",
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Word Export Failed",
+        description: error.message || "Could not export Word file.",
+      });
+    } finally {
+      setIsExportingCL(null);
     }
   };
 
@@ -777,9 +841,9 @@ export default function ResumeWorkspace() {
       </div>
 
       {/* ── SCROLLABLE MAIN CONTENT ────────────────────────────────── */}
-      <main className="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
+      <main className="flex-1 flex flex-row overflow-hidden relative">
         {/* Left Column: Form Editor */}
-        <div className="flex-1 h-full overflow-y-auto custom-scrollbar px-4 sm:px-6 lg:px-8 py-6 sm:py-10 border-r border-zinc-200 dark:border-white/[0.05]">
+        <div className="w-1/2 h-full overflow-y-auto custom-scrollbar px-4 sm:px-6 lg:px-8 py-6 sm:py-10 border-r border-zinc-200 dark:border-white/[0.05]">
           <div className="max-w-3xl mx-auto">
             <motion.div
               initial={{ opacity: 0, y: 10 }}
@@ -1635,7 +1699,7 @@ export default function ResumeWorkspace() {
                   animate={{ opacity: 1, y: 0 }}
                   className="space-y-8"
                 >
-                  <div className="flex items-center justify-between border-b border-zinc-200 dark:border-white/[0.03] pb-6">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-zinc-200 dark:border-white/[0.03] pb-6">
                     <div className="space-y-1.5 text-left">
                       <h2 className="text-xl font-bold text-foreground flex items-center gap-3">
                         <div className="p-2 bg-amber-500/10 border border-amber-500/20 rounded-xl">
@@ -1662,6 +1726,32 @@ export default function ResumeWorkspace() {
                     </Button>
                   </div>
 
+                  {/* Parameter controls for letter context */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase tracking-widest text-zinc-400">
+                        Company Name
+                      </label>
+                      <Input
+                        value={companyNameInput}
+                        onChange={(e) => setCompanyNameInput(e.target.value)}
+                        placeholder="e.g. OpenAI (optional)"
+                        className="h-12 bg-zinc-50 dark:bg-white/[0.02] border-zinc-200 dark:border-white/[0.08] focus:border-indigo-500 rounded-xl text-sm"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase tracking-widest text-zinc-400">
+                        Hiring Manager Name
+                      </label>
+                      <Input
+                        value={hiringManagerInput}
+                        onChange={(e) => setHiringManagerInput(e.target.value)}
+                        placeholder="e.g. Jane Doe (optional)"
+                        className="h-12 bg-zinc-50 dark:bg-white/[0.02] border-zinc-200 dark:border-white/[0.08] focus:border-indigo-500 rounded-xl text-sm"
+                      />
+                    </div>
+                  </div>
+
                   {!coverLetter ? (
                     <div className="py-24 text-center space-y-6 bg-zinc-50 dark:bg-white/[0.01] border border-dashed border-zinc-200 dark:border-white/[0.08] rounded-[32px]">
                       <div className="w-20 h-20 bg-zinc-100 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.06] rounded-3xl mx-auto flex items-center justify-center text-zinc-700">
@@ -1680,6 +1770,40 @@ export default function ResumeWorkspace() {
                     </div>
                   ) : (
                     <div className="space-y-6">
+                      <div className="flex flex-wrap items-center justify-between gap-4 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.06] p-4 rounded-2xl">
+                        <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest pl-2">
+                          Export Cover Letter
+                        </span>
+                        <div className="flex items-center gap-3">
+                          <Button
+                            variant="outline"
+                            onClick={handleExportCoverLetterPdf}
+                            disabled={!!isExportingCL}
+                            className="bg-white dark:bg-white/[0.02] border-zinc-200 dark:border-white/[0.08] text-foreground hover:bg-zinc-100 dark:hover:bg-white/[0.04] text-xs font-bold h-9 px-4 rounded-xl flex items-center gap-2"
+                          >
+                            {isExportingCL === "pdf" ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <Download className="w-3.5 h-3.5" />
+                            )}
+                            Download PDF
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={handleExportCoverLetterWord}
+                            disabled={!!isExportingCL}
+                            className="bg-white dark:bg-white/[0.02] border-zinc-200 dark:border-white/[0.08] text-foreground hover:bg-zinc-100 dark:hover:bg-white/[0.04] text-xs font-bold h-9 px-4 rounded-xl flex items-center gap-2"
+                          >
+                            {isExportingCL === "word" ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <FileText className="w-3.5 h-3.5" />
+                            )}
+                            Download Word (.docx)
+                          </Button>
+                        </div>
+                      </div>
+
                       <Textarea
                         value={coverLetter}
                         onChange={(e) => setCoverLetter(e.target.value)}
@@ -2135,7 +2259,7 @@ export default function ResumeWorkspace() {
         </div>
 
         {/* Right Column: Live PDF Preview */}
-        <div className="w-full lg:w-[45%] xl:w-[50%] bg-zinc-50/90 dark:bg-[#07070a]/90 backdrop-blur-3xl border-t lg:border-t-0 lg:border-l border-zinc-200 dark:border-white/[0.06] flex flex-col h-full overflow-hidden shrink-0">
+        <div className="w-1/2 bg-zinc-50/90 dark:bg-[#07070a]/90 backdrop-blur-3xl border-l border-zinc-200 dark:border-white/[0.06] flex flex-col h-full overflow-hidden shrink-0">
           {/* Live Preview Top Bar */}
           <div className="flex items-center justify-between px-5 py-3 border-b border-zinc-200 dark:border-white/[0.06] bg-zinc-100/80 dark:bg-[#09090b]/80 shrink-0 select-none">
             <div className="flex items-center gap-2">
@@ -2193,7 +2317,7 @@ export default function ResumeWorkspace() {
               </div>
             ) : previewUrl ? (
               <div
-                className="relative w-full h-[640px] max-w-lg bg-background border border-zinc-200 dark:border-white/[0.08] rounded-xl overflow-hidden shadow-[0_16px_48px_rgba(0,0,0,0.8)] animate-in zoom-in-95 duration-300 flex flex-col shrink"
+                className="relative w-full h-[92%] max-w-[90%] bg-background border border-zinc-200 dark:border-white/[0.08] rounded-xl overflow-hidden shadow-[0_16px_48px_rgba(0,0,0,0.8)] animate-in zoom-in-95 duration-300 flex flex-col shrink"
                 style={{ aspectRatio: "1 / 1.4142" }}
               >
                 <iframe
