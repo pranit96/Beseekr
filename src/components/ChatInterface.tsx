@@ -360,6 +360,32 @@ export const ChatInterface: React.FC<{
     onChatStartedChange?.(hasStarted);
   }, [hasStarted, onChatStartedChange]);
 
+  const hasRestoredAgentsRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    const currentId = activeConversationId || "temp";
+    if (hasRestoredAgentsRef.current !== currentId && messages.length > 0) {
+      const lastAgentMsg = [...messages].reverse().find(m => m.type === "agent" && m.agentTraces && m.agentTraces.length > 0);
+      
+      if (lastAgentMsg && lastAgentMsg.agentTraces) {
+        const previousAgentIds = lastAgentMsg.agentTraces.map(t => t.agentId).filter(Boolean);
+        const agentsToSelect = agents.filter(a => previousAgentIds.includes(a.id));
+        
+        if (agentsToSelect.length > 0) {
+          // Sort them to match the original execution order
+          agentsToSelect.sort((a, b) => previousAgentIds.indexOf(a.id) - previousAgentIds.indexOf(b.id));
+          setSelectedAgents(agentsToSelect);
+          
+          if (lastAgentMsg.executionMode) {
+            setExecutionMode(lastAgentMsg.executionMode);
+          }
+        }
+      }
+      
+      hasRestoredAgentsRef.current = currentId;
+    }
+  }, [messages, agents, activeConversationId]);
+
   const startRateLimitCountdown = (seconds: number) => {
     const until = Date.now() + seconds * 1000;
     setRateLimitedUntil(until);
