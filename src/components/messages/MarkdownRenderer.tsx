@@ -54,10 +54,23 @@ export default function MarkdownRenderer({
 
     const lines = cleaned.replace(/\r/g, "").split("\n");
     const out: string[] = [];
+    let inCodeBlock = false;
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
       const trimmedLine = line.trim();
+      
+      if (trimmedLine.startsWith("```")) {
+        inCodeBlock = !inCodeBlock;
+        out.push(line);
+        continue;
+      }
+
+      if (inCodeBlock) {
+        out.push(line);
+        continue;
+      }
+      
       const nextLine = (lines[i + 1] || "").trim();
 
       if (!trimmedLine) {
@@ -316,12 +329,12 @@ export default function MarkdownRenderer({
       const code = String(children).replace(/\n$/, "");
       const codeId = Math.random().toString(36).substring(7);
 
-      if (!inline && language) {
+      if (!inline) {
         return (
           <div className="relative my-4 rounded-lg overflow-hidden border border-border/40">
             <div className="flex justify-between items-center px-3 py-2 bg-muted/40 border-b border-border/30">
               <span className="text-xs font-mono text-foreground/70 uppercase">
-                {language}
+                {language || "CODE"}
               </span>
               {enableCopy && (
                 <button
