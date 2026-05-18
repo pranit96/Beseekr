@@ -688,7 +688,7 @@ export const ChatInterface: React.FC<{
               te.callId === d.call_id
                 ? {
                     ...te,
-                    status: d.success ? "success" : "error",
+                    status: (d.success ? "success" : "error") as "success" | "error",
                     executionTimeMs: d.execution_time_ms,
                   }
                 : te,
@@ -707,7 +707,16 @@ export const ChatInterface: React.FC<{
                     ? { ...at, status: "success" }
                     : at,
                 ),
-                agentResponses: doneData.results?.map((r: any) => ({
+                agentResponses: doneData.results?.map((r: {
+                  agent_id: string;
+                  agent_name: string;
+                  response_sanitized?: string;
+                  response?: string;
+                  error?: string;
+                  usage?: Record<string, number>;
+                  execution_time_ms?: number;
+                  agent_domain?: string;
+                }) => ({
                   agentId: r.agent_id,
                   agentName: r.agent_name,
                   content: r.response_sanitized || r.response || "",

@@ -364,7 +364,7 @@ const MessageList: React.FC<MessageListProps> = ({
                           className="mt-0 outline-none animate-in fade-in slide-in-from-bottom-2 duration-300"
                         >
                           <AgentResponseCard
-                            response={response as any}
+                            response={response}
                             index={idx}
                             isCompactMode={isCompactMode}
                           />
@@ -377,7 +377,7 @@ const MessageList: React.FC<MessageListProps> = ({
                       {message.agentResponses.map((response, idx) => (
                         <AgentResponseCard
                           key={`${message.id}-agent-${idx}`}
-                          response={response as any}
+                          response={response}
                           index={idx}
                           isCompactMode={isCompactMode}
                         />
