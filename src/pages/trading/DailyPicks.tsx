@@ -175,28 +175,28 @@ export default function DailyPicks() {
           <Target className="h-8 w-8 text-amber-400" />
           Daily Picks
         </h1>
-        <p className="text-slate-400 mt-1">
+        <p className="text-muted-foreground mt-1">
           Tell me your budget — I'll tell you exactly what to buy, how many
           shares, and when to exit.
         </p>
       </div>
 
       {/* Input Form */}
-      <div className="bg-slate-900 rounded-xl border border-slate-800 p-6 space-y-6">
+      <div className="bg-background rounded-xl border border-border p-6 space-y-6">
         {/* Budget Input */}
         <div>
-          <label className="block text-sm font-medium text-slate-300 mb-2">
+          <label className="block text-sm font-medium text-muted-foreground mb-2">
             Your Budget
           </label>
           <div className="relative">
-            <IndianRupee className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+            <IndianRupee className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <input
               type="number"
               value={budget}
               onChange={(e) => setBudget(e.target.value)}
               placeholder="e.g. 50000"
               min="1000"
-              className="w-full pl-12 pr-4 py-3.5 bg-slate-800 border border-slate-700 rounded-lg text-white text-lg font-semibold placeholder-slate-500 
+              className="w-full pl-12 pr-4 py-3.5 bg-muted border border-border rounded-lg text-white text-lg font-semibold placeholder-slate-500 
                          focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-all outline-none"
             />
           </div>
@@ -207,7 +207,7 @@ export default function DailyPicks() {
 
         {/* Risk Profile */}
         <div>
-          <label className="block text-sm font-medium text-slate-300 mb-2">
+          <label className="block text-sm font-medium text-muted-foreground mb-2">
             Risk Profile
           </label>
           <div className="grid grid-cols-3 gap-3">
@@ -219,13 +219,15 @@ export default function DailyPicks() {
                   "p-3 rounded-lg border text-left transition-all",
                   riskProfile === rp.value
                     ? rp.bg + " ring-1 ring-offset-0"
-                    : "bg-slate-800/50 border-slate-700 hover:border-slate-600",
+                    : "bg-muted/50 border-border hover:border-slate-600",
                 )}
               >
                 <div
                   className={cn(
                     "text-sm font-semibold",
-                    riskProfile === rp.value ? rp.color : "text-slate-300",
+                    riskProfile === rp.value
+                      ? rp.color
+                      : "text-muted-foreground",
                   )}
                 >
                   {rp.label}
@@ -238,7 +240,7 @@ export default function DailyPicks() {
 
         {/* Timeframe */}
         <div>
-          <label className="block text-sm font-medium text-slate-300 mb-2">
+          <label className="block text-sm font-medium text-muted-foreground mb-2">
             Holding Period
           </label>
           <div className="grid grid-cols-4 gap-3">
@@ -250,7 +252,7 @@ export default function DailyPicks() {
                   "p-3 rounded-lg border text-center transition-all",
                   timeframe === tf.value
                     ? "bg-amber-500/10 border-amber-500/30 ring-1 ring-amber-500/20"
-                    : "bg-slate-800/50 border-slate-700 hover:border-slate-600",
+                    : "bg-muted/50 border-border hover:border-slate-600",
                 )}
               >
                 <div className="text-lg mb-0.5">{tf.icon}</div>
@@ -259,7 +261,7 @@ export default function DailyPicks() {
                     "text-sm font-semibold",
                     timeframe === tf.value
                       ? "text-amber-400"
-                      : "text-slate-300",
+                      : "text-muted-foreground",
                   )}
                 >
                   {tf.label}
@@ -277,7 +279,7 @@ export default function DailyPicks() {
           className={cn(
             "w-full py-4 rounded-lg font-bold text-lg transition-all flex items-center justify-center gap-2",
             loading
-              ? "bg-slate-700 text-slate-400 cursor-not-allowed"
+              ? "bg-slate-700 text-muted-foreground cursor-not-allowed"
               : "bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-400 hover:to-orange-400 shadow-lg shadow-amber-500/20 active:scale-[0.98]",
           )}
         >
@@ -303,7 +305,7 @@ export default function DailyPicks() {
             <div className="text-red-400 font-medium">
               Could not generate picks
             </div>
-            <div className="text-sm text-slate-400 mt-1">{error}</div>
+            <div className="text-sm text-muted-foreground mt-1">{error}</div>
           </div>
         </div>
       )}
@@ -357,8 +359,8 @@ export default function DailyPicks() {
                     : "bg-yellow-500/10 border-yellow-500/30",
             )}
           >
-            <Info className="h-5 w-5 text-slate-300 flex-shrink-0" />
-            <div className="text-sm text-slate-300">
+            <Info className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+            <div className="text-sm text-muted-foreground">
               <span className="font-semibold">
                 {result.summary.recommendation}
               </span>
@@ -390,8 +392,8 @@ export default function DailyPicks() {
 
           {/* Remaining Cash */}
           {result.portfolio.remaining_cash > 0 && (
-            <div className="bg-slate-900/60 rounded-xl border border-slate-800 p-4 text-center">
-              <span className="text-slate-400">Remaining cash: </span>
+            <div className="bg-background/60 rounded-xl border border-border p-4 text-center">
+              <span className="text-muted-foreground">Remaining cash: </span>
               <span className="text-white font-bold">
                 {formatCurrency(result.portfolio.remaining_cash)}
               </span>
@@ -428,7 +430,7 @@ function SummaryCard({
   color: string;
 }) {
   return (
-    <div className="bg-slate-900 rounded-xl border border-slate-800 p-4">
+    <div className="bg-background rounded-xl border border-border p-4">
       <div className="flex items-center gap-1.5 text-slate-500 text-xs mb-2">
         {icon}
         {label}
@@ -456,7 +458,7 @@ function PickCard({
   const stopPercent = ((entryPrice - rec.stop_loss) / entryPrice) * 100;
 
   return (
-    <div className="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden">
+    <div className="bg-background rounded-xl border border-border overflow-hidden">
       {/* Main Row */}
       <div className="p-5">
         <div className="flex items-start justify-between mb-4">
@@ -528,7 +530,7 @@ function PickCard({
         </div>
 
         {/* Profit/Risk Row */}
-        <div className="grid grid-cols-3 gap-4 p-3 bg-slate-800/50 rounded-lg">
+        <div className="grid grid-cols-3 gap-4 p-3 bg-muted/50 rounded-lg">
           <div>
             <div className="text-xs text-slate-500">
               Net Profit (after costs)
@@ -554,7 +556,7 @@ function PickCard({
           <div>
             <div className="text-xs text-slate-500">Hold Duration</div>
             <div className="text-sm font-bold text-white flex items-center gap-1">
-              <Clock className="h-3 w-3 text-slate-400" />
+              <Clock className="h-3 w-3 text-muted-foreground" />
               {rec.holding_period}
             </div>
           </div>
@@ -565,7 +567,7 @@ function PickCard({
           <div className="text-xs text-slate-500 w-16">
             R:R {rec.risk_reward.toFixed(1)}:1
           </div>
-          <div className="flex-1 h-2 bg-slate-800 rounded-full overflow-hidden flex">
+          <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden flex">
             <div
               className="h-full bg-red-500 rounded-l-full"
               style={{ width: `${(1 / (1 + rec.risk_reward)) * 100}%` }}
@@ -594,7 +596,7 @@ function PickCard({
       {/* Expandable Cost Details */}
       <button
         onClick={onToggle}
-        className="w-full px-5 py-2.5 border-t border-slate-800 flex items-center justify-between text-xs text-slate-500 hover:bg-slate-800/50 transition-colors"
+        className="w-full px-5 py-2.5 border-t border-border flex items-center justify-between text-xs text-slate-500 hover:bg-muted/50 transition-colors"
       >
         <span>Transaction Cost Details</span>
         {expanded ? (
@@ -605,7 +607,7 @@ function PickCard({
       </button>
 
       {expanded && rec.transaction_costs && (
-        <div className="px-5 pb-4 space-y-2 text-xs border-t border-slate-800/50 pt-3">
+        <div className="px-5 pb-4 space-y-2 text-xs border-t border-border/50 pt-3">
           <CostRow
             label="Brokerage"
             value={rec.transaction_costs.breakdown?.brokerage?.total}
@@ -620,7 +622,7 @@ function PickCard({
             label="Est. Slippage"
             value={rec.transaction_costs.breakdown?.slippage}
           />
-          <div className="border-t border-slate-800 pt-1.5 flex justify-between font-semibold text-slate-300">
+          <div className="border-t border-border pt-1.5 flex justify-between font-semibold text-muted-foreground">
             <span>Total Costs</span>
             <span>₹{rec.transaction_costs.total?.toFixed(2)}</span>
           </div>
@@ -672,7 +674,7 @@ function ActionItem({
 
 function CostRow({ label, value }: { label: string; value?: number }) {
   return (
-    <div className="flex justify-between text-slate-400">
+    <div className="flex justify-between text-muted-foreground">
       <span>{label}</span>
       <span>₹{(value || 0).toFixed(2)}</span>
     </div>

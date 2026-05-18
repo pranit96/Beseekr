@@ -481,7 +481,7 @@ export default function BlogList() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex flex-col items-center gap-5">
           <div className="relative w-12 h-12">
             <div className="absolute inset-0 border-2 border-white/10 rounded-full" />
@@ -497,7 +497,7 @@ export default function BlogList() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-black flex flex-col items-center justify-center p-8 text-center">
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-8 text-center">
         <p className="text-white/30 text-6xl mb-4">:(</p>
         <h2 className="text-white text-2xl font-bold mb-2">
           Something went wrong
@@ -508,7 +508,7 @@ export default function BlogList() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-background text-white">
       {/* ── NAVBAR ─────────────────────────────────────── */}
       <header className="fixed top-0 inset-x-0 z-50 mix-blend-normal">
         <div className="mx-auto max-w-7xl px-4 sm:px-8 py-5 flex items-center justify-between">
@@ -587,7 +587,7 @@ export default function BlogList() {
       {/* ── TOPIC FILTER ───────────────────────────────── */}
       {topics.length > 0 && (
         <div
-          className={`relative z-40 bg-black/80 backdrop-blur-2xl border-b border-white/5 ${!heroBlog && blogs.length > 0 ? "pt-[80px]" : ""}`}
+          className={`relative z-40 bg-background/80 backdrop-blur-2xl border-b border-white/5 ${!heroBlog && blogs.length > 0 ? "pt-[80px]" : ""}`}
         >
           <div className="mx-auto max-w-7xl px-4 sm:px-8 py-4 overflow-x-auto scrollbar-hide">
             <div className="flex items-center gap-2 w-max">

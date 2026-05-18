@@ -81,7 +81,7 @@ export function AdminLogs() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         {/* Summary pills */}
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5 text-xs font-bold text-zinc-400 bg-white/[0.03] border border-white/[0.07] rounded-xl px-3 py-1.5">
+          <div className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground bg-white/[0.03] border border-white/[0.07] rounded-xl px-3 py-1.5">
             <Terminal className="w-3.5 h-3.5 text-zinc-500" />
             {logs.length} entries
           </div>
@@ -102,10 +102,10 @@ export function AdminLogs() {
         {/* Filters */}
         <div className="flex items-center gap-2">
           <Select value={source} onValueChange={setSource}>
-            <SelectTrigger className="w-[120px] h-9 bg-white/[0.03] border-white/[0.08] text-xs rounded-xl text-zinc-300">
+            <SelectTrigger className="w-[120px] h-9 bg-white/[0.03] border-white/[0.08] text-xs rounded-xl text-muted-foreground">
               <SelectValue placeholder="Source" />
             </SelectTrigger>
-            <SelectContent className="bg-zinc-900 border-white/[0.1] text-zinc-300">
+            <SelectContent className="bg-card border-white/[0.1] text-muted-foreground">
               <SelectItem value="all">All Sources</SelectItem>
               <SelectItem value="backend">Backend</SelectItem>
               <SelectItem value="frontend">Frontend</SelectItem>
@@ -114,10 +114,10 @@ export function AdminLogs() {
           </Select>
 
           <Select value={level} onValueChange={setLevel}>
-            <SelectTrigger className="w-[110px] h-9 bg-white/[0.03] border-white/[0.08] text-xs rounded-xl text-zinc-300">
+            <SelectTrigger className="w-[110px] h-9 bg-white/[0.03] border-white/[0.08] text-xs rounded-xl text-muted-foreground">
               <SelectValue placeholder="Level" />
             </SelectTrigger>
-            <SelectContent className="bg-zinc-900 border-white/[0.1] text-zinc-300">
+            <SelectContent className="bg-card border-white/[0.1] text-muted-foreground">
               <SelectItem value="all">All Levels</SelectItem>
               <SelectItem value="info">Info</SelectItem>
               <SelectItem value="warn">Warn</SelectItem>
@@ -218,7 +218,7 @@ export function AdminLogs() {
 
                   {/* Message */}
                   <div className="min-w-0 flex items-start flex-col justify-center gap-0.5 pr-4">
-                    <span className="text-xs text-zinc-300 font-medium leading-snug line-clamp-1">
+                    <span className="text-xs text-muted-foreground font-medium leading-snug line-clamp-1">
                       {log.message}
                     </span>
                     {log.details && (

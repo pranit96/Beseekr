@@ -381,7 +381,7 @@ export default function BlogPost() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="relative w-12 h-12">
           <div className="absolute inset-0 border-2 border-white/10 rounded-full" />
           <div className="absolute inset-0 border-t-2 border-white rounded-full animate-spin" />
@@ -392,7 +392,7 @@ export default function BlogPost() {
 
   if (error || !blog) {
     return (
-      <div className="min-h-screen bg-black flex flex-col items-center justify-center p-8 text-center gap-6">
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-8 text-center gap-6">
         <p className="text-7xl">🔍</p>
         <h2 className="text-white text-2xl font-black">Article not found</h2>
         <p className="text-white/40">{error}</p>
@@ -407,7 +407,7 @@ export default function BlogPost() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-background text-white">
       <ReadingProgress />
 
       {/* ── TOPBAR ─────────────────────────────────────── */}

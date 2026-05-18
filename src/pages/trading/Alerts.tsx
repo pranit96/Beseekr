@@ -79,7 +79,7 @@ export default function Alerts() {
           <h1 className="text-3xl font-bold text-white">
             Alerts & Notifications
           </h1>
-          <p className="text-slate-400 mt-1">
+          <p className="text-muted-foreground mt-1">
             Stay updated with trading events
           </p>
         </div>
@@ -93,40 +93,40 @@ export default function Alerts() {
 
       {/* Alert Categories */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-slate-900 rounded-lg border border-slate-800 p-4">
+        <div className="bg-background rounded-lg border border-border p-4">
           <div className="flex items-center gap-3 mb-2">
             <TrendingUp className="h-5 w-5 text-green-500" />
-            <div className="text-sm text-slate-400">Signals</div>
+            <div className="text-sm text-muted-foreground">Signals</div>
           </div>
           <div className="text-2xl font-bold text-white">
             {alerts.filter((a) => a.type === "signal").length}
           </div>
         </div>
 
-        <div className="bg-slate-900 rounded-lg border border-slate-800 p-4">
+        <div className="bg-background rounded-lg border border-border p-4">
           <div className="flex items-center gap-3 mb-2">
             <AlertCircle className="h-5 w-5 text-yellow-500" />
-            <div className="text-sm text-slate-400">Exits</div>
+            <div className="text-sm text-muted-foreground">Exits</div>
           </div>
           <div className="text-2xl font-bold text-white">
             {alerts.filter((a) => a.type === "exit").length}
           </div>
         </div>
 
-        <div className="bg-slate-900 rounded-lg border border-slate-800 p-4">
+        <div className="bg-background rounded-lg border border-border p-4">
           <div className="flex items-center gap-3 mb-2">
             <CheckCircle className="h-5 w-5 text-blue-500" />
-            <div className="text-sm text-slate-400">System</div>
+            <div className="text-sm text-muted-foreground">System</div>
           </div>
           <div className="text-2xl font-bold text-white">
             {alerts.filter((a) => a.type === "system").length}
           </div>
         </div>
 
-        <div className="bg-slate-900 rounded-lg border border-slate-800 p-4">
+        <div className="bg-background rounded-lg border border-border p-4">
           <div className="flex items-center gap-3 mb-2">
-            <Bell className="h-5 w-5 text-slate-400" />
-            <div className="text-sm text-slate-400">Total</div>
+            <Bell className="h-5 w-5 text-muted-foreground" />
+            <div className="text-sm text-muted-foreground">Total</div>
           </div>
           <div className="text-2xl font-bold text-white">{alerts.length}</div>
         </div>
@@ -135,9 +135,9 @@ export default function Alerts() {
       {/* Alerts List */}
       <div className="space-y-3">
         {alerts.length === 0 ? (
-          <div className="bg-slate-900 rounded-lg border border-slate-800 p-12 text-center">
+          <div className="bg-background rounded-lg border border-border p-12 text-center">
             <Bell className="h-16 w-16 text-slate-600 mx-auto mb-4" />
-            <div className="text-slate-400 mb-2">No alerts</div>
+            <div className="text-muted-foreground mb-2">No alerts</div>
             <div className="text-sm text-slate-500">You're all caught up!</div>
           </div>
         ) : (
@@ -147,7 +147,7 @@ export default function Alerts() {
               <div
                 key={alert.id}
                 className={cn(
-                  "bg-slate-900 rounded-lg border p-4 transition-opacity",
+                  "bg-background rounded-lg border p-4 transition-opacity",
                   getSeverityColor(alert.severity),
                   alert.read && "opacity-60",
                 )}
@@ -160,7 +160,7 @@ export default function Alerts() {
                         <div className="font-bold text-white mb-1">
                           {alert.title}
                         </div>
-                        <div className="text-sm text-slate-300">
+                        <div className="text-sm text-muted-foreground">
                           {alert.message}
                         </div>
                       </div>
@@ -183,7 +183,7 @@ export default function Alerts() {
       <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
         <div className="flex items-start gap-3">
           <Info className="h-5 w-5 text-blue-400 flex-shrink-0 mt-0.5" />
-          <div className="text-sm text-slate-300">
+          <div className="text-sm text-muted-foreground">
             <div className="font-medium text-blue-400 mb-1">
               Real-time Alerts
             </div>

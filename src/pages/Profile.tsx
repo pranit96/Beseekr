@@ -597,10 +597,10 @@ export default function Profile() {
                   onClick={() => setTheme("dark")}
                   className={`flex flex-col items-start gap-2 p-4 rounded-xl border-2 transition-all ${theme === "dark" ? "border-primary bg-primary/5" : "border-transparent hover:border-border bg-muted/30"}`}
                 >
-                  <div className="w-full h-24 rounded-md bg-slate-950 border border-slate-800 shadow-sm mb-2 p-2 flex flex-col gap-2">
+                  <div className="w-full h-24 rounded-md bg-slate-950 border border-border shadow-sm mb-2 p-2 flex flex-col gap-2">
                     <div className="h-2 w-1/3 bg-slate-700 rounded"></div>
-                    <div className="h-2 w-full bg-slate-800 rounded"></div>
-                    <div className="h-2 w-2/3 bg-slate-800 rounded"></div>
+                    <div className="h-2 w-full bg-muted rounded"></div>
+                    <div className="h-2 w-2/3 bg-muted rounded"></div>
                   </div>
                   <span className="font-medium text-sm">Dark Mode</span>
                 </button>

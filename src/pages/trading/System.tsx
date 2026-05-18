@@ -52,7 +52,7 @@ export default function System() {
   if (!systemHealth) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="text-slate-400">Loading system health...</div>
+        <div className="text-muted-foreground">Loading system health...</div>
       </div>
     );
   }
@@ -63,13 +63,13 @@ export default function System() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-white">System Health</h1>
-        <p className="text-slate-400 mt-1">
+        <p className="text-muted-foreground mt-1">
           Monitor system status and performance
         </p>
       </div>
 
       {/* Overall Status */}
-      <div className="bg-slate-900 rounded-lg border border-slate-800 p-6">
+      <div className="bg-background rounded-lg border border-border p-6">
         <div className="flex items-center gap-4">
           <StatusIcon
             className={cn(
@@ -78,7 +78,9 @@ export default function System() {
             )}
           />
           <div>
-            <div className="text-sm text-slate-400">Overall System Status</div>
+            <div className="text-sm text-muted-foreground">
+              Overall System Status
+            </div>
             <div
               className={cn(
                 "text-3xl font-bold uppercase",
@@ -94,7 +96,7 @@ export default function System() {
       {/* Services */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Zerodha Service */}
-        <div className="bg-slate-900 rounded-lg border border-slate-800 p-6">
+        <div className="bg-background rounded-lg border border-border p-6">
           <div className="flex items-center gap-3 mb-4">
             <Zap
               className={cn(
@@ -116,12 +118,12 @@ export default function System() {
           </div>
 
           <div className="space-y-3">
-            <div className="text-sm text-slate-400">
+            <div className="text-sm text-muted-foreground">
               {systemHealth.services.zerodha.message}
             </div>
 
             {systemHealth.services.zerodha.circuit_breaker && (
-              <div className="bg-slate-800 rounded p-3">
+              <div className="bg-muted rounded p-3">
                 <div className="text-xs text-slate-500 mb-1">
                   Circuit Breaker
                 </div>
@@ -141,7 +143,7 @@ export default function System() {
             )}
 
             {systemHealth.services.zerodha.response_time_ms !== undefined && (
-              <div className="text-sm text-slate-400">
+              <div className="text-sm text-muted-foreground">
                 Response Time:{" "}
                 <span className="text-white font-medium">
                   {systemHealth.services.zerodha.response_time_ms}ms
@@ -152,7 +154,7 @@ export default function System() {
         </div>
 
         {/* Claude Service */}
-        <div className="bg-slate-900 rounded-lg border border-slate-800 p-6">
+        <div className="bg-background rounded-lg border border-border p-6">
           <div className="flex items-center gap-3 mb-4">
             <Cpu
               className={cn(
@@ -174,12 +176,12 @@ export default function System() {
           </div>
 
           <div className="space-y-3">
-            <div className="text-sm text-slate-400">
+            <div className="text-sm text-muted-foreground">
               {systemHealth.services.claude.message}
             </div>
 
             {systemHealth.services.claude.circuit_breaker && (
-              <div className="bg-slate-800 rounded p-3">
+              <div className="bg-muted rounded p-3">
                 <div className="text-xs text-slate-500 mb-1">
                   Circuit Breaker
                 </div>
@@ -199,7 +201,7 @@ export default function System() {
             )}
 
             {systemHealth.services.claude.accuracy && (
-              <div className="bg-slate-800 rounded p-3">
+              <div className="bg-muted rounded p-3">
                 <div className="text-xs text-slate-500 mb-1">
                   Validation Accuracy
                 </div>
@@ -221,7 +223,7 @@ export default function System() {
         </div>
 
         {/* Database Service */}
-        <div className="bg-slate-900 rounded-lg border border-slate-800 p-6">
+        <div className="bg-background rounded-lg border border-border p-6">
           <div className="flex items-center gap-3 mb-4">
             <Database
               className={cn(
@@ -243,12 +245,12 @@ export default function System() {
           </div>
 
           <div className="space-y-3">
-            <div className="text-sm text-slate-400">
+            <div className="text-sm text-muted-foreground">
               {systemHealth.services.database.message}
             </div>
 
             {systemHealth.services.database.response_time_ms !== undefined && (
-              <div className="text-sm text-slate-400">
+              <div className="text-sm text-muted-foreground">
                 Response Time:{" "}
                 <span className="text-white font-medium">
                   {systemHealth.services.database.response_time_ms}ms
@@ -259,7 +261,7 @@ export default function System() {
         </div>
 
         {/* Memory Service */}
-        <div className="bg-slate-900 rounded-lg border border-slate-800 p-6">
+        <div className="bg-background rounded-lg border border-border p-6">
           <div className="flex items-center gap-3 mb-4">
             <Activity
               className={cn(
@@ -281,11 +283,11 @@ export default function System() {
           </div>
 
           <div className="space-y-3">
-            <div className="text-sm text-slate-400">
+            <div className="text-sm text-muted-foreground">
               {systemHealth.services.memory.message}
             </div>
 
-            <div className="bg-slate-800 rounded p-3 space-y-2">
+            <div className="bg-muted rounded p-3 space-y-2">
               <div className="text-sm text-white">
                 Heap Used:{" "}
                 <span className="font-medium">
@@ -321,25 +323,29 @@ export default function System() {
 
       {/* Metrics */}
       {systemHealth.metrics && (
-        <div className="bg-slate-900 rounded-lg border border-slate-800 p-6">
+        <div className="bg-background rounded-lg border border-border p-6">
           <h2 className="text-xl font-bold text-white mb-4">
             Performance Metrics
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-slate-800 rounded-lg p-4">
-              <div className="text-sm text-slate-400 mb-1">API Calls</div>
+            <div className="bg-muted rounded-lg p-4">
+              <div className="text-sm text-muted-foreground mb-1">
+                API Calls
+              </div>
               <div className="text-2xl font-bold text-white">
                 {systemHealth.metrics.api_calls}
               </div>
             </div>
-            <div className="bg-slate-800 rounded-lg p-4">
-              <div className="text-sm text-slate-400 mb-1">API Errors</div>
+            <div className="bg-muted rounded-lg p-4">
+              <div className="text-sm text-muted-foreground mb-1">
+                API Errors
+              </div>
               <div className="text-2xl font-bold text-red-400">
                 {systemHealth.metrics.api_errors}
               </div>
             </div>
-            <div className="bg-slate-800 rounded-lg p-4">
-              <div className="text-sm text-slate-400 mb-1">
+            <div className="bg-muted rounded-lg p-4">
+              <div className="text-sm text-muted-foreground mb-1">
                 Avg Response Time
               </div>
               <div className="text-2xl font-bold text-white">

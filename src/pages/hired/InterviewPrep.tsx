@@ -516,7 +516,7 @@ export default function InterviewPrep() {
                 <Button
                   disabled={isLoading}
                   onClick={generateKit}
-                  className="bg-white/[0.04] hover:bg-white/[0.07] border border-white/[0.08] text-zinc-300 font-bold h-9 px-4 rounded-xl gap-2 text-xs shrink-0 cursor-pointer"
+                  className="bg-white/[0.04] hover:bg-white/[0.07] border border-white/[0.08] text-muted-foreground font-bold h-9 px-4 rounded-xl gap-2 text-xs shrink-0 cursor-pointer"
                 >
                   <RefreshCcw
                     className={`w-3.5 h-3.5 ${isLoading ? "animate-spin" : ""}`}
@@ -604,7 +604,7 @@ export default function InterviewPrep() {
                                 .map((topic, i) => (
                                   <span
                                     key={i}
-                                    className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-white/[0.03] border border-white/[0.06] text-zinc-400"
+                                    className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-white/[0.03] border border-white/[0.06] text-muted-foreground"
                                   >
                                     {topic}
                                   </span>
@@ -641,7 +641,7 @@ export default function InterviewPrep() {
                         <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400 flex items-center gap-1.5 select-none">
                           <Zap className="w-3.5 h-3.5" /> Company Culture Vibe
                         </span>
-                        <p className="text-xs text-zinc-300 leading-relaxed font-semibold bg-white/[0.02] border border-white/[0.04] p-3.5 rounded-xl">
+                        <p className="text-xs text-muted-foreground leading-relaxed font-semibold bg-white/[0.02] border border-white/[0.04] p-3.5 rounded-xl">
                           {prepKit.culture}
                         </p>
                       </div>
@@ -829,7 +829,7 @@ export default function InterviewPrep() {
                                     )}
                                   </div>
                                   <span
-                                    className={`text-xs font-bold leading-relaxed ${completed ? "text-zinc-500 line-through font-semibold" : "text-zinc-300"}`}
+                                    className={`text-xs font-bold leading-relaxed ${completed ? "text-zinc-500 line-through font-semibold" : "text-muted-foreground"}`}
                                   >
                                     {task}
                                   </span>
@@ -888,7 +888,7 @@ export default function InterviewPrep() {
                                           <p className="text-[10px] font-black uppercase tracking-wider text-indigo-400 leading-none mb-1.5">
                                             Ideal Concept & Focus Points
                                           </p>
-                                          <p className="text-xs text-zinc-300 font-semibold leading-relaxed">
+                                          <p className="text-xs text-muted-foreground font-semibold leading-relaxed">
                                             {q.ideal_answer_concept}
                                           </p>
                                         </div>
@@ -944,7 +944,7 @@ export default function InterviewPrep() {
                                 <p className="text-[10px] font-black uppercase tracking-wider text-purple-400 leading-none mb-1.5">
                                   Interviewer Intent & Answering Logic
                                 </p>
-                                <p className="text-xs text-zinc-300 font-semibold leading-relaxed">
+                                <p className="text-xs text-muted-foreground font-semibold leading-relaxed">
                                   {q.intent}
                                 </p>
                               </div>
@@ -1031,7 +1031,7 @@ export default function InterviewPrep() {
                                   </p>
 
                                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                    <div className="bg-black/20 rounded-xl p-3 space-y-1.5">
+                                    <div className="bg-background/20 rounded-xl p-3 space-y-1.5">
                                       <span className="text-[9px] font-black uppercase tracking-widest text-indigo-400">
                                         Interview Process Themes
                                       </span>
@@ -1041,7 +1041,7 @@ export default function InterviewPrep() {
                                           .map((theme, i) => (
                                             <li
                                               key={i}
-                                              className="flex items-start gap-1.5 text-[11px] text-zinc-300 font-medium"
+                                              className="flex items-start gap-1.5 text-[11px] text-muted-foreground font-medium"
                                             >
                                               <span className="text-indigo-500 mt-0.5 shrink-0">
                                                 ▸
@@ -1051,7 +1051,7 @@ export default function InterviewPrep() {
                                           ))}
                                       </ul>
                                     </div>
-                                    <div className="bg-black/20 rounded-xl p-3 space-y-1.5">
+                                    <div className="bg-background/20 rounded-xl p-3 space-y-1.5">
                                       <span className="text-[9px] font-black uppercase tracking-widest text-indigo-400">
                                         Culture & WLB signals
                                       </span>
@@ -1061,7 +1061,7 @@ export default function InterviewPrep() {
                                           .map((sig, i) => (
                                             <li
                                               key={i}
-                                              className="flex items-start gap-1.5 text-[11px] text-zinc-300 font-medium"
+                                              className="flex items-start gap-1.5 text-[11px] text-muted-foreground font-medium"
                                             >
                                               <span className="text-indigo-500 mt-0.5 shrink-0">
                                                 ▸
@@ -1076,7 +1076,7 @@ export default function InterviewPrep() {
                                   <div className="flex flex-wrap gap-4 pt-3 border-t border-indigo-500/15 text-[11px]">
                                     <div className="flex items-center gap-1.5">
                                       <AlertCircle className="w-3.5 h-3.5 text-indigo-400" />
-                                      <span className="font-semibold text-zinc-400">
+                                      <span className="font-semibold text-muted-foreground">
                                         Difficulty Index:{" "}
                                         <span className="text-white font-bold">
                                           {researchSummary.difficulty_rating}
@@ -1086,7 +1086,7 @@ export default function InterviewPrep() {
                                     {researchSummary.salary_range && (
                                       <div className="flex items-center gap-1.5">
                                         <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
-                                        <span className="font-semibold text-zinc-400">
+                                        <span className="font-semibold text-muted-foreground">
                                           Compensation Index:{" "}
                                           <span className="text-white font-bold">
                                             {researchSummary.salary_range}
@@ -1104,7 +1104,7 @@ export default function InterviewPrep() {
                               <div className="space-y-4">
                                 <div className="flex items-center gap-2">
                                   <MessageSquare className="w-4 h-4 text-orange-500" />
-                                  <h4 className="text-xs font-black uppercase tracking-widest text-zinc-400">
+                                  <h4 className="text-xs font-black uppercase tracking-widest text-muted-foreground">
                                     Community Intel & Warnings (Reddit)
                                   </h4>
                                 </div>
@@ -1227,7 +1227,7 @@ export default function InterviewPrep() {
                               <div className="space-y-3">
                                 <div className="flex items-center gap-2">
                                   <Globe className="w-4 h-4 text-sky-400" />
-                                  <h4 className="text-xs font-black uppercase tracking-widest text-zinc-400">
+                                  <h4 className="text-xs font-black uppercase tracking-widest text-muted-foreground">
                                     Web Intelligence Briefings
                                   </h4>
                                 </div>
@@ -1329,7 +1329,7 @@ export default function InterviewPrep() {
                                       {gap.gap_severity} Gap
                                     </span>
                                   </div>
-                                  <p className="text-xs text-zinc-400 leading-relaxed font-semibold">
+                                  <p className="text-xs text-muted-foreground leading-relaxed font-semibold">
                                     {gap.revision_topic}
                                   </p>
                                 </div>
@@ -1364,7 +1364,7 @@ export default function InterviewPrep() {
                               onClick={() =>
                                 handleCopyPitch(prepKit.elevator_pitch)
                               }
-                              className="bg-white/5 hover:bg-white/10 border border-white/[0.08] text-zinc-300 font-bold px-3 py-1.5 h-8 rounded-xl shrink-0 gap-1.5 text-xs shadow-sm cursor-pointer"
+                              className="bg-white/5 hover:bg-white/10 border border-white/[0.08] text-muted-foreground font-bold px-3 py-1.5 h-8 rounded-xl shrink-0 gap-1.5 text-xs shadow-sm cursor-pointer"
                             >
                               {copiedPitch ? (
                                 <Check className="w-3.5 h-3.5 text-emerald-400" />

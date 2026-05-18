@@ -29,7 +29,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   infrastructure: "text-sky-400 bg-sky-500/10 border-sky-500/20",
   email: "text-amber-400 bg-amber-500/10 border-amber-500/20",
   payments: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
-  general: "text-zinc-400 bg-zinc-500/10 border-zinc-500/20",
+  general: "text-muted-foreground bg-zinc-500/10 border-zinc-500/20",
 };
 
 const getCategoryStyle = (cat: string) =>
@@ -198,7 +198,7 @@ export const AdminSettings = () => {
               <div key={category}>
                 <div className="flex items-center gap-2 mb-3">
                   <SlidersHorizontal className="w-3.5 h-3.5 text-zinc-500" />
-                  <span className="text-xs font-black uppercase tracking-widest text-zinc-400 capitalize">
+                  <span className="text-xs font-black uppercase tracking-widest text-muted-foreground capitalize">
                     {category}
                   </span>
                   <Badge

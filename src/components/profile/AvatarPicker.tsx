@@ -264,7 +264,7 @@ export function AvatarPicker({
           {/* MODE 1: Image Cropper Overlay */}
           {imageToCrop ? (
             <div className="flex flex-col gap-4">
-              <div className="relative h-64 w-full bg-black/90 rounded-lg overflow-hidden border border-border">
+              <div className="relative h-64 w-full bg-background/90 rounded-lg overflow-hidden border border-border">
                 <Cropper
                   image={imageToCrop}
                   crop={crop}

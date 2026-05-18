@@ -215,7 +215,7 @@ export const WorkflowBuilder: React.FC<WorkflowBuilderProps> = ({
     <div className="fixed inset-0 z-[9999]" role="dialog" aria-modal="true">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/80"
+        className="absolute inset-0 bg-background/80"
         onClick={() => onOpenChange(false)}
       />
 

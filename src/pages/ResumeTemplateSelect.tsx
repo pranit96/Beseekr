@@ -32,7 +32,7 @@ export default function ResumeTemplateSelect() {
   };
 
   return (
-    <div className="w-full text-zinc-100 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="w-full text-foreground py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto space-y-12">
         {/* HERO HEADER OUTSIDE CARD */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10 animate-in fade-in slide-in-from-top-4 duration-500 text-left">
@@ -42,7 +42,7 @@ export default function ResumeTemplateSelect() {
                 size="icon"
                 variant="ghost"
                 onClick={() => navigate("/dashboard/hired/resume")}
-                className="h-8 w-8 rounded-full bg-white/[0.03] border border-white/[0.08] text-zinc-400 hover:text-white hover:bg-white/[0.08] shrink-0 shadow-sm"
+                className="h-8 w-8 rounded-full bg-white/[0.03] border border-white/[0.08] text-muted-foreground hover:text-white hover:bg-white/[0.08] shrink-0 shadow-sm"
                 title="Back to Portal"
               >
                 <ArrowLeft className="h-3.5 w-3.5" />
@@ -60,7 +60,7 @@ export default function ResumeTemplateSelect() {
           </div>
 
           <div className="shrink-0 pb-1">
-            <Badge className="bg-zinc-900 hover:bg-zinc-900 border border-zinc-800 text-zinc-400 rounded-full px-3.5 py-1 font-semibold text-[10px] select-none tracking-widest">
+            <Badge className="bg-card hover:bg-card border border-border text-muted-foreground rounded-full px-3.5 py-1 font-semibold text-[10px] select-none tracking-widest">
               ATS FRIENDLY
             </Badge>
           </div>
@@ -71,16 +71,16 @@ export default function ResumeTemplateSelect() {
           {RESUME_TEMPLATES.map((tmpl) => {
             const IconComponent = tmpl.icon;
             const badgeColors = {
-              emerald: "bg-zinc-900 border-zinc-800 text-zinc-300",
-              indigo: "bg-zinc-900 border-zinc-800 text-zinc-300",
-              slate: "bg-zinc-900 border-zinc-800 text-zinc-300",
+              emerald: "bg-card border-border text-muted-foreground",
+              indigo: "bg-card border-border text-muted-foreground",
+              slate: "bg-card border-border text-muted-foreground",
             };
 
             return (
               <Card
                 key={tmpl.id}
                 onClick={() => handleSelect(tmpl)}
-                className="group relative overflow-hidden border border-zinc-800/80 bg-zinc-950/40 backdrop-blur-xl rounded-3xl flex flex-col cursor-pointer hover:border-zinc-700 hover:bg-zinc-900/10 transition-all duration-300 shadow-2xl select-none flex-1"
+                className="group relative overflow-hidden border border-border/80 bg-background/40 backdrop-blur-xl rounded-3xl flex flex-col cursor-pointer hover:border-zinc-700 hover:bg-card/10 transition-all duration-300 shadow-2xl select-none flex-1"
               >
                 {/* Minimal Gray Accent Top Line */}
                 <div className="absolute top-0 inset-x-0 h-1 bg-zinc-800 group-hover:bg-zinc-700 transition-colors duration-300" />
@@ -95,19 +95,19 @@ export default function ResumeTemplateSelect() {
 
                   {/* Details */}
                   <div className="space-y-2 flex-grow">
-                    <h3 className="text-xl font-bold text-zinc-100 group-hover:text-white flex items-center gap-2 tracking-tight">
+                    <h3 className="text-xl font-bold text-foreground group-hover:text-white flex items-center gap-2 tracking-tight">
                       {tmpl.name}
                     </h3>
-                    <p className="text-xs text-zinc-400 font-medium leading-relaxed">
+                    <p className="text-xs text-muted-foreground font-medium leading-relaxed">
                       {tmpl.description}
                     </p>
                   </div>
 
                   {/* Visual Mockup Representation */}
-                  <div className="bg-zinc-950/60 border border-zinc-800/60 rounded-2xl p-4 space-y-3 group-hover:border-zinc-800 transition-all relative">
+                  <div className="bg-background/60 border border-border/60 rounded-2xl p-4 space-y-3 group-hover:border-border transition-all relative">
                     {/* Header Mock */}
                     <div className="h-2.5 bg-zinc-800 rounded-full w-1/3" />
-                    <div className="h-px bg-zinc-900 w-full" />
+                    <div className="h-px bg-card w-full" />
 
                     {/* Experience Section Mock */}
                     <div className="space-y-2">
@@ -131,20 +131,20 @@ export default function ResumeTemplateSelect() {
                   <div className="flex flex-wrap gap-2">
                     <Badge
                       variant="outline"
-                      className="text-[10px] font-bold bg-zinc-900/60 border-zinc-800 text-zinc-400 font-mono"
+                      className="text-[10px] font-bold bg-card/60 border-border text-muted-foreground font-mono"
                     >
                       {tmpl.styles.fontFamily}
                     </Badge>
                     <Badge
                       variant="outline"
-                      className="text-[10px] font-bold bg-zinc-900/60 border-zinc-800 text-zinc-400"
+                      className="text-[10px] font-bold bg-card/60 border-border text-muted-foreground"
                     >
                       ATS Friendly
                     </Badge>
                   </div>
 
                   {/* Select CTA */}
-                  <Button className="w-full rounded-xl h-10 font-bold bg-zinc-900 group-hover:bg-white group-hover:text-black text-zinc-300 hover:text-white border border-zinc-800 transition-all duration-300 shadow-sm text-xs tracking-tight">
+                  <Button className="w-full rounded-xl h-10 font-bold bg-card group-hover:bg-white group-hover:text-black text-muted-foreground hover:text-white border border-border transition-all duration-300 shadow-sm text-xs tracking-tight">
                     Use This Template
                   </Button>
                 </div>

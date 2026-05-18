@@ -14,7 +14,7 @@ export function SaasDashboardLayout() {
 
   if (isWorkspace) {
     return (
-      <div className="h-screen bg-[#09090b] text-zinc-100 flex flex-col overflow-hidden selection:bg-white/10">
+      <div className="h-screen bg-background text-foreground flex flex-col overflow-hidden selection:bg-primary/20">
         <main className="flex-1 flex flex-col min-h-0 relative z-10">
           <Outlet />
         </main>

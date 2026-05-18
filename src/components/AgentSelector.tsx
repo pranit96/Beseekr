@@ -168,7 +168,7 @@ export const AgentSelector = ({
               className={cn(
                 "pl-9 h-10 bg-muted/30 focus-visible:ring-primary/50",
                 isNewUI
-                  ? "rounded-xl border-white/[0.08] bg-black/20 backdrop-blur-md"
+                  ? "rounded-xl border-white/[0.08] bg-background/20 backdrop-blur-md"
                   : "h-9",
               )}
             />

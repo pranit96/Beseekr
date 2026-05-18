@@ -296,7 +296,7 @@ export function AdminMonitoring() {
                 sub="Pinecone Index"
                 accent={
                   healthData.checks?.pinecone === "not_configured"
-                    ? "bg-zinc-500/10 text-zinc-400 border-zinc-500/20"
+                    ? "bg-zinc-500/10 text-muted-foreground border-zinc-500/20"
                     : healthData.checks?.pinecone === "healthy"
                       ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
                       : "bg-red-500/10 text-red-400 border-red-500/20"
@@ -380,7 +380,7 @@ export function AdminMonitoring() {
               accent={
                 totalFailed > 0
                   ? "bg-red-500/10 text-red-400 border border-red-500/20"
-                  : "bg-zinc-500/10 text-zinc-400"
+                  : "bg-zinc-500/10 text-muted-foreground"
               }
               icon={AlertTriangle}
               tooltip="Total jobs that have exhausted all retry attempts and moved to the failed queue."
@@ -440,7 +440,7 @@ export function AdminMonitoring() {
                   </div>
                 </div>
                 <div className="bg-white/[0.02] rounded-xl p-3">
-                  <div className="text-xl font-bold text-zinc-300">
+                  <div className="text-xl font-bold text-muted-foreground">
                     {q.waiting}
                   </div>
                   <div className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest mt-1">
@@ -448,7 +448,7 @@ export function AdminMonitoring() {
                   </div>
                 </div>
                 <div className="bg-white/[0.02] rounded-xl p-3">
-                  <div className="text-xl font-bold text-zinc-300">
+                  <div className="text-xl font-bold text-muted-foreground">
                     {q.completed}
                   </div>
                   <div className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest mt-1">

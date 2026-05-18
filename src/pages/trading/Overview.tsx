@@ -79,7 +79,7 @@ export default function Overview() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="text-slate-400">Loading portfolio...</div>
+        <div className="text-muted-foreground">Loading portfolio...</div>
       </div>
     );
   }
@@ -90,7 +90,7 @@ export default function Overview() {
         <div className="text-center">
           <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
           <div className="text-red-400 mb-2">Error Loading Data</div>
-          <div className="text-slate-400 text-sm">{error}</div>
+          <div className="text-muted-foreground text-sm">{error}</div>
           <button
             onClick={loadData}
             className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
@@ -107,15 +107,15 @@ export default function Overview() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-white">Portfolio Overview</h1>
-          <p className="text-slate-400 mt-1">
+          <p className="text-muted-foreground mt-1">
             Real-time portfolio performance and metrics
           </p>
         </div>
         {marketStatus && (
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <Activity className="h-4 w-4 text-slate-400" />
-              <span className="text-sm text-slate-400">Market:</span>
+              <Activity className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Market:</span>
               <MarketStatusIndicator
                 isOpen={marketStatus.market.is_open}
                 canTrade={marketStatus.validation.canTrade}
@@ -248,10 +248,10 @@ export default function Overview() {
       )}
 
       {/* Open Positions */}
-      <div className="bg-slate-900 rounded-lg border border-slate-800 p-6">
+      <div className="bg-background rounded-lg border border-border p-6">
         <h2 className="text-xl font-bold text-white mb-4">Open Positions</h2>
         {positions.length === 0 ? (
-          <div className="text-center py-8 text-slate-400">
+          <div className="text-center py-8 text-muted-foreground">
             No open positions
           </div>
         ) : (
@@ -259,18 +259,18 @@ export default function Overview() {
             {positions.map((position) => (
               <div
                 key={position.id}
-                className="bg-slate-800 rounded-lg p-4 flex items-center justify-between"
+                className="bg-muted rounded-lg p-4 flex items-center justify-between"
               >
                 <div>
                   <div className="font-bold text-white">
                     {position.stocks.symbol}
                   </div>
-                  <div className="text-sm text-slate-400">
+                  <div className="text-sm text-muted-foreground">
                     {position.stocks.name}
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-sm text-slate-400">
+                  <div className="text-sm text-muted-foreground">
                     {position.shares} shares @ ₹
                     {position.entry_price.toFixed(2)}
                   </div>
@@ -298,7 +298,7 @@ export default function Overview() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Market Sentiment */}
         {marketSentiment && (
-          <div className="bg-slate-900 rounded-lg border border-slate-800 p-6">
+          <div className="bg-background rounded-lg border border-border p-6">
             <h3 className="text-lg font-bold text-white mb-4">
               Market Sentiment
             </h3>
@@ -310,7 +310,7 @@ export default function Overview() {
                     ? "text-green-500"
                     : marketSentiment.label === "negative"
                       ? "text-red-500"
-                      : "text-slate-400",
+                      : "text-muted-foreground",
                 )}
               >
                 {marketSentiment.label === "positive"
@@ -322,7 +322,7 @@ export default function Overview() {
               <div className="text-2xl font-bold text-white mb-1">
                 {marketSentiment.label.toUpperCase()}
               </div>
-              <div className="text-sm text-slate-400 mb-4">
+              <div className="text-sm text-muted-foreground mb-4">
                 Based on {marketSentiment.count} news articles
               </div>
               <div className="grid grid-cols-3 gap-2 text-xs">
@@ -333,7 +333,7 @@ export default function Overview() {
                   <div className="text-slate-500">Positive</div>
                 </div>
                 <div>
-                  <div className="text-slate-400 font-bold">
+                  <div className="text-muted-foreground font-bold">
                     {marketSentiment.neutral || 0}
                   </div>
                   <div className="text-slate-500">Neutral</div>
@@ -350,13 +350,13 @@ export default function Overview() {
         )}
 
         {/* Trending News */}
-        <div className="lg:col-span-2 bg-slate-900 rounded-lg border border-slate-800 p-6">
+        <div className="lg:col-span-2 bg-background rounded-lg border border-border p-6">
           <div className="flex items-center gap-2 mb-4">
             <Newspaper className="h-5 w-5 text-blue-400" />
             <h3 className="text-lg font-bold text-white">Latest Market News</h3>
           </div>
           {trendingNews.length === 0 ? (
-            <div className="text-center py-8 text-slate-400">
+            <div className="text-center py-8 text-muted-foreground">
               No news available
             </div>
           ) : (
@@ -392,9 +392,9 @@ function StatCard({
   positive?: boolean;
 }) {
   return (
-    <div className="bg-slate-900 rounded-lg border border-slate-800 p-6">
+    <div className="bg-background rounded-lg border border-border p-6">
       <div className="flex items-center justify-between mb-4">
-        <div className="text-sm text-slate-400">{title}</div>
+        <div className="text-sm text-muted-foreground">{title}</div>
         <Icon
           className={cn(
             "h-5 w-5",
@@ -414,7 +414,9 @@ function StatCard({
           {change.toFixed(2)}%
         </div>
       )}
-      {subtitle && <div className="text-sm text-slate-400">{subtitle}</div>}
+      {subtitle && (
+        <div className="text-sm text-muted-foreground">{subtitle}</div>
+      )}
     </div>
   );
 }
@@ -427,12 +429,12 @@ function MetricCard({
   stats: Array<{ label: string; value: string | number; color?: string }>;
 }) {
   return (
-    <div className="bg-slate-900 rounded-lg border border-slate-800 p-6">
+    <div className="bg-background rounded-lg border border-border p-6">
       <h3 className="text-lg font-bold text-white mb-4">{title}</h3>
       <div className="space-y-3">
         {stats.map((stat, i) => (
           <div key={i} className="flex justify-between items-center">
-            <span className="text-sm text-slate-400">{stat.label}</span>
+            <span className="text-sm text-muted-foreground">{stat.label}</span>
             <span
               className={cn("text-sm font-bold", stat.color || "text-white")}
             >

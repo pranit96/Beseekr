@@ -49,7 +49,7 @@ export default function Signals() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="text-slate-400">Loading signals...</div>
+        <div className="text-muted-foreground">Loading signals...</div>
       </div>
     );
   }
@@ -60,7 +60,7 @@ export default function Signals() {
         <div className="text-center">
           <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
           <div className="text-red-400 mb-2">Error Loading Signals</div>
-          <div className="text-slate-400 text-sm">{error}</div>
+          <div className="text-muted-foreground text-sm">{error}</div>
           <button
             onClick={loadSignals}
             className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
@@ -77,7 +77,7 @@ export default function Signals() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-white">Active Signals</h1>
-          <p className="text-slate-400 mt-1">
+          <p className="text-muted-foreground mt-1">
             Trading opportunities identified by strategies
           </p>
         </div>
@@ -93,26 +93,26 @@ export default function Signals() {
 
       {/* Filters */}
       <div className="flex items-center gap-4">
-        <label className="text-sm text-slate-400">Min Confidence:</label>
+        <label className="text-sm text-muted-foreground">Min Confidence:</label>
         <select
           value={minConfidence}
           onChange={(e) => setMinConfidence(Number(e.target.value))}
-          className="px-3 py-2 bg-slate-800 text-white rounded-lg border border-slate-700"
+          className="px-3 py-2 bg-muted text-white rounded-lg border border-border"
         >
           <option value={50}>50%</option>
           <option value={60}>60%</option>
           <option value={70}>70%</option>
           <option value={80}>80%</option>
         </select>
-        <div className="text-sm text-slate-400">
+        <div className="text-sm text-muted-foreground">
           Showing {signals.length} signal{signals.length !== 1 ? "s" : ""}
         </div>
       </div>
 
       {signals.length === 0 ? (
-        <div className="bg-slate-900 rounded-lg border border-slate-800 p-12 text-center">
+        <div className="bg-background rounded-lg border border-border p-12 text-center">
           <SignalIcon className="h-16 w-16 text-slate-600 mx-auto mb-4" />
-          <div className="text-slate-400 mb-2">No active signals</div>
+          <div className="text-muted-foreground mb-2">No active signals</div>
           <div className="text-sm text-slate-500">
             Try lowering the confidence threshold or trigger a new scan
           </div>
@@ -122,14 +122,14 @@ export default function Signals() {
           {signals.map((signal) => (
             <div
               key={signal.id}
-              className="bg-slate-900 rounded-lg border border-slate-800 p-6"
+              className="bg-background rounded-lg border border-border p-6"
             >
               <div className="flex items-start justify-between mb-4">
                 <div>
                   <div className="text-xl font-bold text-white">
                     {signal.stocks.symbol}
                   </div>
-                  <div className="text-sm text-slate-400">
+                  <div className="text-sm text-muted-foreground">
                     {signal.stocks.name}
                   </div>
                   <div className="text-xs text-slate-500 mt-1">
@@ -147,7 +147,9 @@ export default function Signals() {
                   >
                     {signal.signal_type}
                   </div>
-                  <div className="text-xs text-slate-400">{signal.status}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {signal.status}
+                  </div>
                 </div>
               </div>
 
@@ -187,20 +189,20 @@ export default function Signals() {
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-slate-800">
+              <div className="pt-4 border-t border-border">
                 <div className="text-xs text-slate-500 mb-2">Strategy</div>
                 <div className="text-sm text-white font-medium">
                   {signal.trading_strategies.name}
                 </div>
                 {signal.trading_strategies.description && (
-                  <div className="text-xs text-slate-400 mt-1">
+                  <div className="text-xs text-muted-foreground mt-1">
                     {signal.trading_strategies.description}
                   </div>
                 )}
               </div>
 
               {signal.criteria_met && signal.criteria_met.length > 0 && (
-                <div className="mt-4 pt-4 border-t border-slate-800">
+                <div className="mt-4 pt-4 border-t border-border">
                   <div className="text-xs text-slate-500 mb-2">
                     Criteria Met
                   </div>
@@ -208,7 +210,7 @@ export default function Signals() {
                     {signal.criteria_met.map((criteria, i) => (
                       <div
                         key={i}
-                        className="text-xs px-2 py-1 bg-slate-800 text-slate-300 rounded"
+                        className="text-xs px-2 py-1 bg-muted text-muted-foreground rounded"
                       >
                         {criteria}
                       </div>

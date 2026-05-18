@@ -26,10 +26,10 @@ export function NewsCard({ news, onClick }: NewsCardProps) {
   };
 
   const getSentimentColor = () => {
-    if (!news.sentiment_score) return "text-slate-400";
+    if (!news.sentiment_score) return "text-muted-foreground";
     if (news.sentiment_score > 0.2) return "text-green-500";
     if (news.sentiment_score < -0.2) return "text-red-500";
-    return "text-slate-400";
+    return "text-muted-foreground";
   };
 
   const SentimentIcon = getSentimentIcon();
@@ -38,7 +38,7 @@ export function NewsCard({ news, onClick }: NewsCardProps) {
   return (
     <div
       onClick={onClick}
-      className="bg-slate-800 rounded-lg p-4 hover:bg-slate-750 transition-colors cursor-pointer border border-slate-700"
+      className="bg-muted rounded-lg p-4 hover:bg-slate-750 transition-colors cursor-pointer border border-border"
     >
       <div className="flex items-start gap-3">
         <Newspaper className="h-5 w-5 text-blue-400 flex-shrink-0 mt-1" />
@@ -53,7 +53,7 @@ export function NewsCard({ news, onClick }: NewsCardProps) {
           </div>
 
           {news.content && (
-            <p className="text-sm text-slate-400 line-clamp-2 mb-2">
+            <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
               {news.content}
             </p>
           )}

@@ -276,7 +276,7 @@ export const LiveGraphVisualizer: React.FC<LiveGraphVisualizerProps> = ({
 
                   {/* Agent Output Terminal */}
                   {agent.output && (
-                    <motion.div className="mt-6 p-3 rounded-lg bg-black/80 border border-white/10 w-full max-w-[280px] text-white/80 overflow-hidden relative shadow-inner">
+                    <motion.div className="mt-6 p-3 rounded-lg bg-background/80 border border-white/10 w-full max-w-[280px] text-white/80 overflow-hidden relative shadow-inner">
                       <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
                       <div className="flex items-center gap-1.5 mb-2">
                         <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />

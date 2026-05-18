@@ -54,7 +54,7 @@ export default function AdminDashboard() {
   const activeNav = NAV.find((n) => n.id === activeTab) || NAV[0];
 
   return (
-    <div className="h-screen flex flex-col bg-[#09090b] text-zinc-100 overflow-hidden">
+    <div className="h-screen flex flex-col bg-[#09090b] text-foreground overflow-hidden">
       {/* ── TOP BAR ───────────────────────────────────────────────── */}
       <header className="shrink-0 border-b border-white/[0.06] bg-[#09090b]/90 backdrop-blur-xl z-20">
         <div className="max-w-screen-2xl mx-auto px-6 flex items-center h-14 gap-4">
@@ -63,7 +63,7 @@ export default function AdminDashboard() {
             <div className="w-7 h-7 bg-red-500/15 border border-red-500/25 rounded-lg flex items-center justify-center">
               <Shield className="w-3.5 h-3.5 text-red-400" />
             </div>
-            <span className="text-xs font-black tracking-[0.2em] text-zinc-400 uppercase">
+            <span className="text-xs font-black tracking-[0.2em] text-muted-foreground uppercase">
               Admin
             </span>
           </div>
@@ -80,7 +80,7 @@ export default function AdminDashboard() {
                   className={`flex items-center gap-1.5 px-3 h-8 rounded-lg text-xs font-bold whitespace-nowrap transition-all duration-200 ${
                     active
                       ? "bg-white/[0.08] text-white"
-                      : "text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.04]"
+                      : "text-zinc-500 hover:text-muted-foreground hover:bg-white/[0.04]"
                   }`}
                 >
                   <Icon className="w-3.5 h-3.5" />
@@ -119,7 +119,9 @@ export default function AdminDashboard() {
           <div className="flex items-center gap-2 text-zinc-600 text-xs font-medium">
             <Shield className="w-3 h-3" />
             <ChevronRight className="w-3 h-3" />
-            <span className="text-zinc-400 font-bold">{activeNav.label}</span>
+            <span className="text-muted-foreground font-bold">
+              {activeNav.label}
+            </span>
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-white mt-1.5">
             {activeNav.label}

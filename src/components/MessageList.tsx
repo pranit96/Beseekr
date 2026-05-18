@@ -285,7 +285,7 @@ const MessageList: React.FC<MessageListProps> = ({
                         <div className="flex-1 rounded-2xl border border-border/30 bg-muted/10 backdrop-blur-sm px-5 py-4 text-[15px] leading-relaxed shadow-sm group/res">
                           <MarkdownRenderer
                             content={message.content || ""}
-                            className="leading-relaxed prose-invert prose-p:leading-relaxed prose-pre:bg-zinc-900/50"
+                            className="leading-relaxed prose-invert prose-p:leading-relaxed prose-pre:bg-card/50"
                           />
 
                           {/* Retry button for last message */}
@@ -337,11 +337,16 @@ const MessageList: React.FC<MessageListProps> = ({
             {message.type === "agent" &&
               message.agentResponses &&
               message.agentResponses.length > 0 &&
-              (!message.agentTraces || message.agentTraces.length === 0 || message.executionMode === "parallel") && (
+              (!message.agentTraces ||
+                message.agentTraces.length === 0 ||
+                message.executionMode === "parallel") && (
                 <div className="mb-6 px-2 animate-fade-in">
                   {/* Parallel mode: side-by-side scaleable Tabs */}
                   {message.executionMode === "parallel" ? (
-                    <Tabs defaultValue={`agent-${message.agentResponses[0]?.agentId}`} className="w-full">
+                    <Tabs
+                      defaultValue={`agent-${message.agentResponses[0]?.agentId}`}
+                      className="w-full"
+                    >
                       <ScrollArea className="w-full mb-4">
                         <TabsList className="inline-flex w-max min-w-full justify-start border-b border-border/20 p-1 bg-muted/10 backdrop-blur-sm rounded-lg h-12">
                           {message.agentResponses.map((response, idx) => (
@@ -351,11 +356,16 @@ const MessageList: React.FC<MessageListProps> = ({
                               className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-sm rounded-md transition-all px-4 py-2 flex items-center gap-2"
                             >
                               <div className="w-2 h-2 rounded-full bg-primary/80" />
-                              <span className="text-sm font-medium">{response.agentName}</span>
+                              <span className="text-sm font-medium">
+                                {response.agentName}
+                              </span>
                             </TabsTrigger>
                           ))}
                         </TabsList>
-                        <ScrollBar orientation="horizontal" className="opacity-50 hover:opacity-100" />
+                        <ScrollBar
+                          orientation="horizontal"
+                          className="opacity-50 hover:opacity-100"
+                        />
                       </ScrollArea>
                       {message.agentResponses.map((response, idx) => (
                         <TabsContent

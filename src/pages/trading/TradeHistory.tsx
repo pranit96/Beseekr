@@ -57,7 +57,7 @@ export default function TradeHistory() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="text-slate-400">Loading trade history...</div>
+        <div className="text-muted-foreground">Loading trade history...</div>
       </div>
     );
   }
@@ -68,7 +68,7 @@ export default function TradeHistory() {
         <div className="text-center">
           <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
           <div className="text-red-400 mb-2">Error Loading Trade History</div>
-          <div className="text-slate-400 text-sm">{error}</div>
+          <div className="text-muted-foreground text-sm">{error}</div>
           <button
             onClick={loadTrades}
             className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
@@ -84,25 +84,27 @@ export default function TradeHistory() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-white">Trade History</h1>
-        <p className="text-slate-400 mt-1">Complete journal of closed trades</p>
+        <p className="text-muted-foreground mt-1">
+          Complete journal of closed trades
+        </p>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-slate-900 rounded-lg border border-slate-800 p-4">
-          <div className="text-sm text-slate-400 mb-1">Total Trades</div>
+        <div className="bg-background rounded-lg border border-border p-4">
+          <div className="text-sm text-muted-foreground mb-1">Total Trades</div>
           <div className="text-2xl font-bold text-white">{stats.total}</div>
         </div>
-        <div className="bg-slate-900 rounded-lg border border-slate-800 p-4">
-          <div className="text-sm text-slate-400 mb-1">Wins</div>
+        <div className="bg-background rounded-lg border border-border p-4">
+          <div className="text-sm text-muted-foreground mb-1">Wins</div>
           <div className="text-2xl font-bold text-green-500">{stats.wins}</div>
         </div>
-        <div className="bg-slate-900 rounded-lg border border-slate-800 p-4">
-          <div className="text-sm text-slate-400 mb-1">Losses</div>
+        <div className="bg-background rounded-lg border border-border p-4">
+          <div className="text-sm text-muted-foreground mb-1">Losses</div>
           <div className="text-2xl font-bold text-red-500">{stats.losses}</div>
         </div>
-        <div className="bg-slate-900 rounded-lg border border-slate-800 p-4">
-          <div className="text-sm text-slate-400 mb-1">Total P&L</div>
+        <div className="bg-background rounded-lg border border-border p-4">
+          <div className="text-sm text-muted-foreground mb-1">Total P&L</div>
           <div
             className={cn(
               "text-2xl font-bold",
@@ -116,14 +118,14 @@ export default function TradeHistory() {
 
       {/* Filters */}
       <div className="flex items-center gap-2">
-        <Filter className="h-5 w-5 text-slate-400" />
+        <Filter className="h-5 w-5 text-muted-foreground" />
         <button
           onClick={() => setFilter("all")}
           className={cn(
             "px-4 py-2 rounded-lg text-sm font-medium transition-colors",
             filter === "all"
               ? "bg-blue-600 text-white"
-              : "bg-slate-800 text-slate-400 hover:bg-slate-700",
+              : "bg-muted text-muted-foreground hover:bg-slate-700",
           )}
         >
           All ({trades.length})
@@ -134,7 +136,7 @@ export default function TradeHistory() {
             "px-4 py-2 rounded-lg text-sm font-medium transition-colors",
             filter === "WIN"
               ? "bg-green-600 text-white"
-              : "bg-slate-800 text-slate-400 hover:bg-slate-700",
+              : "bg-muted text-muted-foreground hover:bg-slate-700",
           )}
         >
           Wins ({stats.wins})
@@ -145,7 +147,7 @@ export default function TradeHistory() {
             "px-4 py-2 rounded-lg text-sm font-medium transition-colors",
             filter === "LOSS"
               ? "bg-red-600 text-white"
-              : "bg-slate-800 text-slate-400 hover:bg-slate-700",
+              : "bg-muted text-muted-foreground hover:bg-slate-700",
           )}
         >
           Losses ({stats.losses})
@@ -154,9 +156,9 @@ export default function TradeHistory() {
 
       {/* Trade List */}
       {filteredTrades.length === 0 ? (
-        <div className="bg-slate-900 rounded-lg border border-slate-800 p-12 text-center">
+        <div className="bg-background rounded-lg border border-border p-12 text-center">
           <History className="h-16 w-16 text-slate-600 mx-auto mb-4" />
-          <div className="text-slate-400 mb-2">No trades found</div>
+          <div className="text-muted-foreground mb-2">No trades found</div>
           <div className="text-sm text-slate-500">
             Your closed trades will appear here
           </div>
@@ -174,7 +176,7 @@ export default function TradeHistory() {
             return (
               <div
                 key={trade.id}
-                className="bg-slate-900 rounded-lg border border-slate-800 p-4"
+                className="bg-background rounded-lg border border-border p-4"
               >
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-3">
@@ -182,7 +184,7 @@ export default function TradeHistory() {
                       <div className="text-lg font-bold text-white">
                         {trade.stocks.symbol}
                       </div>
-                      <div className="text-sm text-slate-400">
+                      <div className="text-sm text-muted-foreground">
                         {trade.stocks.name}
                       </div>
                     </div>
@@ -255,9 +257,11 @@ export default function TradeHistory() {
                 </div>
 
                 {trade.notes && (
-                  <div className="mt-3 pt-3 border-t border-slate-800">
+                  <div className="mt-3 pt-3 border-t border-border">
                     <div className="text-xs text-slate-500 mb-1">Notes</div>
-                    <div className="text-sm text-slate-300">{trade.notes}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {trade.notes}
+                    </div>
                   </div>
                 )}
               </div>

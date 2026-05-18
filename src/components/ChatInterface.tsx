@@ -688,7 +688,9 @@ export const ChatInterface: React.FC<{
               te.callId === d.call_id
                 ? {
                     ...te,
-                    status: (d.success ? "success" : "error") as "success" | "error",
+                    status: (d.success ? "success" : "error") as
+                      | "success"
+                      | "error",
                     executionTimeMs: d.execution_time_ms,
                   }
                 : te,
@@ -707,31 +709,36 @@ export const ChatInterface: React.FC<{
                     ? { ...at, status: "success" }
                     : at,
                 ),
-                agentResponses: doneData.results?.map((r: {
-                  agent_id: string;
-                  agent_name: string;
-                  response_sanitized?: string;
-                  response?: string;
-                  error?: string;
-                  usage?: Record<string, number>;
-                  execution_time_ms?: number;
-                  agent_domain?: string;
-                }) => ({
-                  agentId: r.agent_id,
-                  agentName: r.agent_name,
-                  content: r.response_sanitized || r.response || "",
-                  timestamp: new Date(),
-                  status: r.error ? "error" : "success",
-                  metadata: {
-                    usage: r.usage,
-                    execution_time_ms: r.execution_time_ms,
-                    agent_domain: r.agent_domain
-                  }
-                })) || m.agentResponses,
+                agentResponses:
+                  doneData.results?.map(
+                    (r: {
+                      agent_id: string;
+                      agent_name: string;
+                      response_sanitized?: string;
+                      response?: string;
+                      error?: string;
+                      usage?: Record<string, number>;
+                      execution_time_ms?: number;
+                      agent_domain?: string;
+                    }) => ({
+                      agentId: r.agent_id,
+                      agentName: r.agent_name,
+                      content: r.response_sanitized || r.response || "",
+                      timestamp: new Date(),
+                      status: r.error ? "error" : "success",
+                      metadata: {
+                        usage: r.usage,
+                        execution_time_ms: r.execution_time_ms,
+                        agent_domain: r.agent_domain,
+                      },
+                    }),
+                  ) || m.agentResponses,
                 markdownOutput: doneData.final_markdown || m.markdownOutput,
                 finalOutput: doneData.final_markdown || m.finalOutput,
                 content:
-                  doneData.final_markdown || m.content || (m.executionMode === "parallel" ? "" : "Response completed."),
+                  doneData.final_markdown ||
+                  m.content ||
+                  (m.executionMode === "parallel" ? "" : "Response completed."),
                 perAgentSummary: doneData.per_agent_summary || undefined,
               } as ChatMessage;
             }),

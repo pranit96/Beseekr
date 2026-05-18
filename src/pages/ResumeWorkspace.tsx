@@ -593,7 +593,7 @@ export default function ResumeWorkspace() {
                   size="icon"
                   variant="ghost"
                   onClick={() => navigate("/dashboard/hired/resume")}
-                  className="h-7 w-7 rounded-lg bg-white/[0.03] border border-white/[0.08] text-zinc-400 hover:text-white hover:bg-white/[0.08] shrink-0 transition-all"
+                  className="h-7 w-7 rounded-lg bg-white/[0.03] border border-white/[0.08] text-muted-foreground hover:text-white hover:bg-white/[0.08] shrink-0 transition-all"
                   title="Back to Portal"
                 >
                   <ArrowLeft className="h-3 w-3" />
@@ -675,7 +675,7 @@ export default function ResumeWorkspace() {
                     Export
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="bg-zinc-950 border-white/[0.1] text-zinc-300 rounded-xl">
+                <DropdownMenuContent className="bg-background border-white/[0.1] text-muted-foreground rounded-xl">
                   <DropdownMenuItem
                     onClick={handleExportPdf}
                     className="font-bold text-xs py-2.5 cursor-pointer hover:bg-white/[0.05]"
@@ -736,11 +736,11 @@ export default function ResumeWorkspace() {
                     className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-[11px] font-extrabold tracking-wide uppercase transition-all duration-200 outline-none min-w-[110px] ${
                       isActive
                         ? "bg-white text-black shadow-[0_4px_20px_rgba(255,255,255,0.15)] scale-[1.01]"
-                        : "text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.02]"
+                        : "text-zinc-500 hover:text-muted-foreground hover:bg-white/[0.02]"
                     }`}
                   >
                     <Icon
-                      className={`h-3.5 w-3.5 ${isActive ? "text-black" : "text-zinc-600 group-hover:text-zinc-400"}`}
+                      className={`h-3.5 w-3.5 ${isActive ? "text-black" : "text-zinc-600 group-hover:text-muted-foreground"}`}
                     />
                     {tab.label}
                   </button>
@@ -956,7 +956,7 @@ export default function ResumeWorkspace() {
                           </div>
 
                           <div className="space-y-3 pt-2">
-                            <Label className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5 ml-1">
+                            <Label className="text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5 ml-1">
                               <Sparkles className="h-3 w-3 text-sky-400 animate-pulse" />{" "}
                               Role Achievements
                             </Label>
@@ -1148,7 +1148,7 @@ export default function ResumeWorkspace() {
                   <div className="space-y-6">
                     <div className="flex items-center justify-between border-b border-white/[0.03] pb-4">
                       <div className="space-y-1">
-                        <h2 className="text-base font-bold text-zinc-100 flex items-center gap-2.5">
+                        <h2 className="text-base font-bold text-foreground flex items-center gap-2.5">
                           <div className="p-1.5 bg-purple-500/10 border border-purple-500/20 rounded-lg">
                             <Cpu className="h-4 w-4 text-purple-400" />
                           </div>
@@ -1228,7 +1228,7 @@ export default function ResumeWorkspace() {
                   <div className="space-y-6 border-t border-white/[0.03] pt-10">
                     <div className="flex items-center justify-between border-b border-white/[0.03] pb-4">
                       <div className="space-y-1">
-                        <h2 className="text-base font-bold text-zinc-100 flex items-center gap-2.5">
+                        <h2 className="text-base font-bold text-foreground flex items-center gap-2.5">
                           <div className="p-1.5 bg-sky-500/10 border border-sky-500/20 rounded-lg">
                             <FileText className="h-4 w-4 text-sky-400" />
                           </div>
@@ -1312,7 +1312,7 @@ export default function ResumeWorkspace() {
                           </div>
 
                           <div className="space-y-2">
-                            <Label className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-400 ml-1">
+                            <Label className="text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground ml-1">
                               Project Highlights
                             </Label>
                             <div className="space-y-2">
@@ -1371,7 +1371,7 @@ export default function ResumeWorkspace() {
                   <div className="space-y-6 border-t border-white/[0.03] pt-10">
                     <div className="flex items-center justify-between border-b border-white/[0.03] pb-4">
                       <div className="space-y-1">
-                        <h2 className="text-base font-bold text-zinc-100 flex items-center gap-2.5">
+                        <h2 className="text-base font-bold text-foreground flex items-center gap-2.5">
                           <div className="p-1.5 bg-amber-500/10 border border-amber-500/20 rounded-lg">
                             <Trophy className="h-4 w-4 text-amber-400" />
                           </div>
@@ -1490,11 +1490,11 @@ export default function ResumeWorkspace() {
                                 style={{ backgroundColor: theme.primary }}
                               >
                                 {isSelected && (
-                                  <CheckCircle2 className="w-3 h-3 text-white bg-black/20 rounded-full" />
+                                  <CheckCircle2 className="w-3 h-3 text-white bg-background/20 rounded-full" />
                                 )}
                               </div>
                               <span
-                                className={`text-xs font-bold ${isSelected ? "text-white" : "text-zinc-400"}`}
+                                className={`text-xs font-bold ${isSelected ? "text-white" : "text-muted-foreground"}`}
                               >
                                 {theme.name}
                               </span>
@@ -1534,7 +1534,7 @@ export default function ResumeWorkspace() {
                               className={`p-4 rounded-2xl border flex flex-col items-center justify-center gap-2 text-center transition-all bg-white/[0.01] hover:bg-white/[0.03] ${
                                 isSelected
                                   ? "border-indigo-500/40 bg-indigo-500/5 text-white shadow-md ring-1 ring-indigo-500/20"
-                                  : "border-white/[0.05] text-zinc-400"
+                                  : "border-white/[0.05] text-muted-foreground"
                               }`}
                             >
                               <span
@@ -1593,7 +1593,7 @@ export default function ResumeWorkspace() {
                         <Sparkles className="w-10 h-10 opacity-40" />
                       </div>
                       <div className="space-y-2">
-                        <p className="text-zinc-400 font-bold text-lg tracking-tight">
+                        <p className="text-muted-foreground font-bold text-lg tracking-tight">
                           Your tailored letter is one click away
                         </p>
                         <p className="text-zinc-500 text-sm max-w-sm mx-auto font-medium leading-relaxed">
@@ -1618,7 +1618,7 @@ export default function ResumeWorkspace() {
                         </span>
                         <Button
                           variant="ghost"
-                          className="text-xs font-bold text-zinc-400 hover:text-white"
+                          className="text-xs font-bold text-muted-foreground hover:text-white"
                           onClick={() => setCoverLetter(null)}
                         >
                           Discard & Restart
@@ -1634,18 +1634,18 @@ export default function ResumeWorkspace() {
           {isAiPanelOpen && (
             <>
               <div
-                className="fixed inset-x-0 bottom-0 top-[72px] sm:top-[82px] z-[40] bg-black/30 backdrop-blur-sm animate-in fade-in duration-300"
+                className="fixed inset-x-0 bottom-0 top-[72px] sm:top-[82px] z-[40] bg-background/30 backdrop-blur-sm animate-in fade-in duration-300"
                 onClick={() => setIsAiPanelOpen(false)}
               />
 
-              <div className="fixed top-[72px] sm:top-[82px] right-0 bottom-0 w-full max-w-[450px] z-[45] bg-zinc-950/95 border-l border-white/[0.08] shadow-2xl flex flex-col animate-in slide-in-from-right duration-300 backdrop-blur-2xl">
+              <div className="fixed top-[72px] sm:top-[82px] right-0 bottom-0 w-full max-w-[450px] z-[45] bg-background/95 border-l border-white/[0.08] shadow-2xl flex flex-col animate-in slide-in-from-right duration-300 backdrop-blur-2xl">
                 <div className="flex items-center justify-between px-6 py-5 border-b border-white/[0.06] shrink-0 select-none">
                   <div className="flex items-center gap-2.5">
                     <div className="p-1.5 bg-indigo-500/10 border border-indigo-500/20 rounded-xl">
                       <Sparkles className="w-4 h-4 text-indigo-400" />
                     </div>
                     <div>
-                      <h3 className="text-sm font-bold text-zinc-100 tracking-tight">
+                      <h3 className="text-sm font-bold text-foreground tracking-tight">
                         AI Analysis & Tools
                       </h3>
                       <p className="text-[10px] text-zinc-500 font-semibold uppercase tracking-wider">
@@ -1657,7 +1657,7 @@ export default function ResumeWorkspace() {
                     size="icon"
                     variant="ghost"
                     onClick={() => setIsAiPanelOpen(false)}
-                    className="h-8 w-8 text-zinc-400 hover:text-white hover:bg-white/[0.05] rounded-xl transition-all"
+                    className="h-8 w-8 text-muted-foreground hover:text-white hover:bg-white/[0.05] rounded-xl transition-all"
                   >
                     <X className="h-4 w-4" />
                   </Button>
@@ -1666,10 +1666,10 @@ export default function ResumeWorkspace() {
                 <div className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar pb-16">
                   <Card className="p-5 border border-white/[0.06] bg-[#0c0c12] backdrop-blur-md rounded-2xl space-y-4 shadow-inner relative overflow-hidden">
                     <div className="flex items-center gap-2 mb-1 select-none text-left">
-                      <div className="p-1.5 bg-white/[0.02] border border-white/[0.08] rounded-lg text-zinc-400">
+                      <div className="p-1.5 bg-white/[0.02] border border-white/[0.08] rounded-lg text-muted-foreground">
                         <Trophy className="h-3.5 w-3.5 text-emerald-400" />
                       </div>
-                      <h3 className="text-[10px] font-black tracking-wider uppercase text-zinc-400 font-mono">
+                      <h3 className="text-[10px] font-black tracking-wider uppercase text-muted-foreground font-mono">
                         Target Job calibrate
                       </h3>
                     </div>
@@ -1703,7 +1703,7 @@ export default function ResumeWorkspace() {
                       onClick={handleOptimizeBullets}
                       disabled={isOptimizing}
                       variant="outline"
-                      className="w-full rounded-xl border-white/[0.08] bg-white/[0.02] hover:bg-white/[0.05] text-zinc-300 font-bold text-xs h-10 transition-all flex items-center justify-center gap-2"
+                      className="w-full rounded-xl border-white/[0.08] bg-white/[0.02] hover:bg-white/[0.05] text-muted-foreground font-bold text-xs h-10 transition-all flex items-center justify-center gap-2"
                     >
                       {isOptimizing ? (
                         <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
@@ -1717,9 +1717,9 @@ export default function ResumeWorkspace() {
                   <div className="space-y-4">
                     {!atsReport ? (
                       <div className="text-center py-16 border border-dashed border-white/[0.05] rounded-[24px] text-zinc-500 space-y-3 select-none bg-white/[0.01]">
-                        <AlertCircle className="h-8 w-8 mx-auto opacity-30 text-zinc-400" />
+                        <AlertCircle className="h-8 w-8 mx-auto opacity-30 text-muted-foreground" />
                         <div className="space-y-1">
-                          <p className="text-xs font-bold text-zinc-400">
+                          <p className="text-xs font-bold text-muted-foreground">
                             No Analysis Computed
                           </p>
                           <p className="text-[10px] text-zinc-600 max-w-[200px] mx-auto leading-relaxed">
@@ -1736,13 +1736,13 @@ export default function ResumeWorkspace() {
                         <TabsList className="w-full bg-white/[0.02] rounded-xl border border-white/[0.05] h-9 p-0.5 mb-4">
                           <TabsTrigger
                             value="overview"
-                            className="flex-1 text-[10px] font-bold rounded-[9px] select-none data-[state=active]:bg-white/[0.05] text-zinc-400 data-[state=active]:text-white transition-all"
+                            className="flex-1 text-[10px] font-bold rounded-[9px] select-none data-[state=active]:bg-white/[0.05] text-muted-foreground data-[state=active]:text-white transition-all"
                           >
                             ⚡ Overview
                           </TabsTrigger>
                           <TabsTrigger
                             value="upgrades"
-                            className="flex-1 text-[10px] font-bold rounded-[9px] select-none data-[state=active]:bg-white/[0.05] text-zinc-400 data-[state=active]:text-white transition-all"
+                            className="flex-1 text-[10px] font-bold rounded-[9px] select-none data-[state=active]:bg-white/[0.05] text-muted-foreground data-[state=active]:text-white transition-all"
                           >
                             🚀 Bullet Upgrades
                           </TabsTrigger>
@@ -1818,7 +1818,7 @@ export default function ResumeWorkspace() {
                                   className="border border-white/[0.03] bg-white/[0.01] rounded-xl p-3.5 transition-all hover:bg-white/[0.02]"
                                 >
                                   <div className="flex items-center justify-between mb-2">
-                                    <span className="capitalize font-bold text-[10px] text-zinc-400 tracking-tight leading-none font-mono">
+                                    <span className="capitalize font-bold text-[10px] text-muted-foreground tracking-tight leading-none font-mono">
                                       {key.replace("_", " ")}
                                     </span>
                                     <span className="text-[10px] font-black font-mono text-zinc-200 bg-white/[0.03] border border-white/[0.06] px-1 py-0.5 rounded">
@@ -1841,7 +1841,7 @@ export default function ResumeWorkspace() {
                               <Sparkles className="h-3 w-3 text-indigo-400" />{" "}
                               Overall Assessment Summary
                             </Label>
-                            <div className="text-[11px] leading-relaxed font-medium bg-white/[0.01] border border-white/[0.03] rounded-xl p-3.5 text-zinc-400 leading-relaxed">
+                            <div className="text-[11px] leading-relaxed font-medium bg-white/[0.01] border border-white/[0.03] rounded-xl p-3.5 text-muted-foreground leading-relaxed">
                               {atsReport.general_feedback}
                             </div>
                           </div>
@@ -1907,7 +1907,7 @@ export default function ResumeWorkspace() {
                                         className={`text-[9px] font-extrabold px-2.5 py-1 cursor-pointer transition-all rounded-lg tracking-tight border ${
                                           isAlreadyAdded
                                             ? "bg-emerald-500/10 text-emerald-400/80 border-emerald-500/20 line-through cursor-not-allowed opacity-50"
-                                            : "bg-white/[0.02] hover:bg-white/[0.08] text-zinc-400 hover:text-white border-white/[0.06] hover:scale-[1.02] active:scale-95"
+                                            : "bg-white/[0.02] hover:bg-white/[0.08] text-muted-foreground hover:text-white border-white/[0.06] hover:scale-[1.02] active:scale-95"
                                         }`}
                                       >
                                         + {keyword}
@@ -2027,13 +2027,13 @@ export default function ResumeWorkspace() {
           >
             <AlertDialogContent className="bg-[#0c0c0e] border border-white/[0.08] rounded-3xl max-w-md p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
               <AlertDialogHeader className="space-y-3">
-                <div className="w-12 h-12 rounded-2xl bg-white/[0.03] border border-white/[0.08] flex items-center justify-center text-zinc-400 mb-2">
+                <div className="w-12 h-12 rounded-2xl bg-white/[0.03] border border-white/[0.08] flex items-center justify-center text-muted-foreground mb-2">
                   <RotateCcw className="w-5 h-5" />
                 </div>
                 <AlertDialogTitle className="text-xl font-bold tracking-tight text-white">
                   Reset Your Workspace?
                 </AlertDialogTitle>
-                <div className="text-zinc-400 text-sm leading-relaxed font-medium space-y-2 select-none">
+                <div className="text-muted-foreground text-sm leading-relaxed font-medium space-y-2 select-none">
                   <p>
                     This will clear all your current edits. Save a version first
                     if you want to keep them.
@@ -2045,7 +2045,7 @@ export default function ResumeWorkspace() {
                 </div>
               </AlertDialogHeader>
               <AlertDialogFooter className="mt-6 gap-3 flex-col sm:flex-row">
-                <AlertDialogCancel className="bg-transparent border border-white/[0.08] text-zinc-400 hover:bg-white/[0.03] hover:text-white rounded-xl font-bold text-xs px-5 py-2 h-10 transition-all">
+                <AlertDialogCancel className="bg-transparent border border-white/[0.08] text-muted-foreground hover:bg-white/[0.03] hover:text-white rounded-xl font-bold text-xs px-5 py-2 h-10 transition-all">
                   Keep Working
                 </AlertDialogCancel>
                 <AlertDialogAction
@@ -2068,8 +2068,8 @@ export default function ResumeWorkspace() {
               {/* Top Bar */}
               <div className="flex items-center justify-between px-5 py-3 border-b border-white/[0.06] bg-[#09090b]/80 shrink-0">
                 <div className="flex items-center gap-3">
-                  <FileText className="h-4 w-4 text-zinc-400" />
-                  <span className="text-sm font-bold text-zinc-100 tracking-tight">
+                  <FileText className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm font-bold text-foreground tracking-tight">
                     {resumeData.personal_info.name
                       ? `${resumeData.personal_info.name} — Resume Preview`
                       : "Resume Preview"}
@@ -2087,7 +2087,7 @@ export default function ResumeWorkspace() {
                     size="sm"
                     onClick={handleRefreshPreview}
                     disabled={isPreviewLoading}
-                    className="h-8 text-xs font-bold rounded-xl border-white/[0.08] bg-white/[0.03] text-zinc-300 hover:text-white hover:bg-white/[0.08] transition-all"
+                    className="h-8 text-xs font-bold rounded-xl border-white/[0.08] bg-white/[0.03] text-muted-foreground hover:text-white hover:bg-white/[0.08] transition-all"
                   >
                     {isPreviewLoading ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
@@ -2101,7 +2101,7 @@ export default function ResumeWorkspace() {
                     variant="outline"
                     size="sm"
                     onClick={closePreview}
-                    className="h-8 text-xs font-bold rounded-xl border-white/[0.08] bg-white/[0.03] text-zinc-300 hover:text-white hover:bg-white/[0.08] transition-all"
+                    className="h-8 text-xs font-bold rounded-xl border-white/[0.08] bg-white/[0.03] text-muted-foreground hover:text-white hover:bg-white/[0.08] transition-all"
                   >
                     <X className="h-3.5 w-3.5 mr-1.5" />
                     Back to Edit
@@ -2134,7 +2134,7 @@ export default function ResumeWorkspace() {
                   </div>
                 ) : previewUrl ? (
                   <div
-                    className="relative w-auto h-full max-w-full max-h-full bg-black border border-white/[0.08] rounded-2xl overflow-hidden shadow-[0_32px_96px_rgba(0,0,0,0.95)] animate-in zoom-in-95 duration-300 flex flex-col my-auto shrink"
+                    className="relative w-auto h-full max-w-full max-h-full bg-background border border-white/[0.08] rounded-2xl overflow-hidden shadow-[0_32px_96px_rgba(0,0,0,0.95)] animate-in zoom-in-95 duration-300 flex flex-col my-auto shrink"
                     style={{ aspectRatio: "1 / 1.4142" }}
                   >
                     <iframe
@@ -2151,9 +2151,10 @@ export default function ResumeWorkspace() {
               <div className="px-5 py-2.5 border-t border-white/[0.04] bg-[#09090b]/60 text-center shrink-0">
                 <p className="text-zinc-600 text-[11px] font-medium">
                   Made a change? Click{" "}
-                  <span className="text-zinc-400">Refresh</span> to regenerate
-                  the preview, then{" "}
-                  <span className="text-zinc-400">Download PDF</span> to save.
+                  <span className="text-muted-foreground">Refresh</span> to
+                  regenerate the preview, then{" "}
+                  <span className="text-muted-foreground">Download PDF</span> to
+                  save.
                 </p>
               </div>
             </div>
@@ -2162,7 +2163,7 @@ export default function ResumeWorkspace() {
           {/* LaTeX Preview Modal */}
           {isLatexOpen && (
             <div
-              className="fixed inset-0 z-50 flex flex-col bg-black/95 animate-in fade-in duration-300"
+              className="fixed inset-0 z-50 flex flex-col bg-background/95 animate-in fade-in duration-300"
               role="dialog"
               aria-label="LaTeX Code Export"
             >
@@ -2187,7 +2188,7 @@ export default function ResumeWorkspace() {
                     variant="outline"
                     size="sm"
                     onClick={handleCopyLatex}
-                    className="h-8 text-xs font-bold rounded-xl border-white/[0.08] bg-white/[0.03] text-zinc-300 hover:text-white hover:bg-white/[0.08] transition-all"
+                    className="h-8 text-xs font-bold rounded-xl border-white/[0.08] bg-white/[0.03] text-muted-foreground hover:text-white hover:bg-white/[0.08] transition-all"
                   >
                     {isCopied ? (
                       <CheckCircle2 className="h-3.5 w-3.5 mr-1.5 text-emerald-400" />
@@ -2201,7 +2202,7 @@ export default function ResumeWorkspace() {
                     variant="outline"
                     size="sm"
                     onClick={handleDownloadLatex}
-                    className="h-8 text-xs font-bold rounded-xl border-white/[0.08] bg-white/[0.03] text-zinc-300 hover:text-white hover:bg-white/[0.08] transition-all"
+                    className="h-8 text-xs font-bold rounded-xl border-white/[0.08] bg-white/[0.03] text-muted-foreground hover:text-white hover:bg-white/[0.08] transition-all"
                   >
                     <Download className="h-3.5 w-3.5 mr-1.5" />
                     Download .tex
@@ -2211,7 +2212,7 @@ export default function ResumeWorkspace() {
                     variant="outline"
                     size="sm"
                     onClick={() => setIsLatexOpen(false)}
-                    className="h-8 text-xs font-bold rounded-xl border-white/[0.08] bg-white/[0.03] text-zinc-300 hover:text-white hover:bg-white/[0.08] transition-all"
+                    className="h-8 text-xs font-bold rounded-xl border-white/[0.08] bg-white/[0.03] text-muted-foreground hover:text-white hover:bg-white/[0.08] transition-all"
                   >
                     <X className="h-3.5 w-3.5 mr-1.5" />
                     Close
@@ -2230,7 +2231,7 @@ export default function ResumeWorkspace() {
                     <h3 className="text-white text-xs font-bold uppercase tracking-wider">
                       The Gold Standard for Engineers
                     </h3>
-                    <p className="text-[11px] text-zinc-400 leading-relaxed">
+                    <p className="text-[11px] text-muted-foreground leading-relaxed">
                       LaTeX compiled resumes produce highly semantic PDFs with a
                       clean horizontal text reading grid. Applicant Tracking
                       Systems (ATS) can parse 100% of the content accurately
@@ -2240,7 +2241,7 @@ export default function ResumeWorkspace() {
                     <h3 className="text-white text-xs font-bold uppercase tracking-wider">
                       How to Compile:
                     </h3>
-                    <ol className="list-decimal pl-4 text-[11px] text-zinc-400 space-y-2">
+                    <ol className="list-decimal pl-4 text-[11px] text-muted-foreground space-y-2">
                       <li>
                         Download the{" "}
                         <code className="text-indigo-400 bg-white/[0.03] px-1 py-0.5 rounded">
@@ -2274,19 +2275,19 @@ export default function ResumeWorkspace() {
                 </div>
 
                 {/* Right panel: Raw scrollable code view */}
-                <div className="flex-1 border border-white/[0.08] rounded-2xl bg-zinc-950 overflow-hidden flex flex-col shadow-inner">
-                  <div className="px-4 py-2 border-b border-white/[0.05] bg-zinc-900/50 flex items-center justify-between shrink-0">
+                <div className="flex-1 border border-white/[0.08] rounded-2xl bg-background overflow-hidden flex flex-col shadow-inner">
+                  <div className="px-4 py-2 border-b border-white/[0.05] bg-card/50 flex items-center justify-between shrink-0">
                     <span className="text-[10px] font-mono font-bold text-zinc-500">
                       source_code.tex
                     </span>
                     <Badge
                       variant="outline"
-                      className="text-[9px] font-mono text-zinc-400 border-white/[0.08]"
+                      className="text-[9px] font-mono text-muted-foreground border-white/[0.08]"
                     >
                       LaTeX
                     </Badge>
                   </div>
-                  <pre className="flex-1 p-5 overflow-auto font-mono text-xs text-zinc-300 leading-relaxed text-left selection:bg-indigo-500/20 custom-scrollbar">
+                  <pre className="flex-1 p-5 overflow-auto font-mono text-xs text-muted-foreground leading-relaxed text-left selection:bg-indigo-500/20 custom-scrollbar">
                     <code>{latexCode}</code>
                   </pre>
                 </div>

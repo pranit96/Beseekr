@@ -41,42 +41,42 @@ export default function Settings() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-white">Settings</h1>
-        <p className="text-slate-400 mt-1">
+        <p className="text-muted-foreground mt-1">
           Configure your trading preferences
         </p>
       </div>
 
       {/* Account Info */}
-      <div className="bg-slate-900 rounded-lg border border-slate-800 p-6">
+      <div className="bg-background rounded-lg border border-border p-6">
         <div className="flex items-center gap-3 mb-4">
           <User className="h-6 w-6 text-blue-500" />
           <h2 className="text-xl font-bold text-white">Account Information</h2>
         </div>
         <div className="space-y-3">
           <div>
-            <div className="text-sm text-slate-400">Email</div>
+            <div className="text-sm text-muted-foreground">Email</div>
             <div className="text-white font-medium">{user?.email}</div>
           </div>
           <div>
-            <div className="text-sm text-slate-400">Account Type</div>
+            <div className="text-sm text-muted-foreground">Account Type</div>
             <div className="text-white font-medium">Paper Trading</div>
           </div>
           <div>
-            <div className="text-sm text-slate-400">User ID</div>
+            <div className="text-sm text-muted-foreground">User ID</div>
             <div className="text-slate-500 text-sm font-mono">{user?.id}</div>
           </div>
         </div>
       </div>
 
       {/* Risk Management */}
-      <div className="bg-slate-900 rounded-lg border border-slate-800 p-6">
+      <div className="bg-background rounded-lg border border-border p-6">
         <div className="flex items-center gap-3 mb-4">
           <Shield className="h-6 w-6 text-red-500" />
           <h2 className="text-xl font-bold text-white">Risk Management</h2>
         </div>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm text-slate-400 mb-2">
+            <label className="block text-sm text-muted-foreground mb-2">
               Maximum Drawdown (%)
             </label>
             <input
@@ -88,7 +88,7 @@ export default function Settings() {
                   maxDrawdown: Number(e.target.value),
                 })
               }
-              className="w-full px-4 py-2 bg-slate-800 text-white rounded-lg border border-slate-700 focus:border-blue-500 focus:outline-none"
+              className="w-full px-4 py-2 bg-muted text-white rounded-lg border border-border focus:border-blue-500 focus:outline-none"
             />
             <div className="text-xs text-slate-500 mt-1">
               Trading will be restricted if portfolio drawdown exceeds this
@@ -97,7 +97,7 @@ export default function Settings() {
           </div>
 
           <div>
-            <label className="block text-sm text-slate-400 mb-2">
+            <label className="block text-sm text-muted-foreground mb-2">
               Maximum Position Size (% of portfolio)
             </label>
             <input
@@ -109,12 +109,12 @@ export default function Settings() {
                   maxPositionSize: Number(e.target.value),
                 })
               }
-              className="w-full px-4 py-2 bg-slate-800 text-white rounded-lg border border-slate-700 focus:border-blue-500 focus:outline-none"
+              className="w-full px-4 py-2 bg-muted text-white rounded-lg border border-border focus:border-blue-500 focus:outline-none"
             />
           </div>
 
           <div>
-            <label className="block text-sm text-slate-400 mb-2">
+            <label className="block text-sm text-muted-foreground mb-2">
               Default Risk Per Trade (%)
             </label>
             <input
@@ -126,14 +126,14 @@ export default function Settings() {
                   defaultRiskPercent: Number(e.target.value),
                 })
               }
-              className="w-full px-4 py-2 bg-slate-800 text-white rounded-lg border border-slate-700 focus:border-blue-500 focus:outline-none"
+              className="w-full px-4 py-2 bg-muted text-white rounded-lg border border-border focus:border-blue-500 focus:outline-none"
             />
           </div>
         </div>
       </div>
 
       {/* Notifications */}
-      <div className="bg-slate-900 rounded-lg border border-slate-800 p-6">
+      <div className="bg-background rounded-lg border border-border p-6">
         <div className="flex items-center gap-3 mb-4">
           <Bell className="h-6 w-6 text-yellow-500" />
           <h2 className="text-xl font-bold text-white">Notifications</h2>
@@ -147,7 +147,7 @@ export default function Settings() {
               onChange={(e) =>
                 setSettings({ ...settings, signalAlerts: e.target.checked })
               }
-              className="w-5 h-5 rounded bg-slate-800 border-slate-700"
+              className="w-5 h-5 rounded bg-muted border-border"
             />
           </label>
           <label className="flex items-center justify-between">
@@ -158,7 +158,7 @@ export default function Settings() {
               onChange={(e) =>
                 setSettings({ ...settings, exitAlerts: e.target.checked })
               }
-              className="w-5 h-5 rounded bg-slate-800 border-slate-700"
+              className="w-5 h-5 rounded bg-muted border-border"
             />
           </label>
           <label className="flex items-center justify-between">
@@ -169,7 +169,7 @@ export default function Settings() {
               onChange={(e) =>
                 setSettings({ ...settings, systemAlerts: e.target.checked })
               }
-              className="w-5 h-5 rounded bg-slate-800 border-slate-700"
+              className="w-5 h-5 rounded bg-muted border-border"
             />
           </label>
           <label className="flex items-center justify-between">
@@ -183,21 +183,21 @@ export default function Settings() {
                   emailNotifications: e.target.checked,
                 })
               }
-              className="w-5 h-5 rounded bg-slate-800 border-slate-700"
+              className="w-5 h-5 rounded bg-muted border-border"
             />
           </label>
         </div>
       </div>
 
       {/* Trading Preferences */}
-      <div className="bg-slate-900 rounded-lg border border-slate-800 p-6">
+      <div className="bg-background rounded-lg border border-border p-6">
         <div className="flex items-center gap-3 mb-4">
           <DollarSign className="h-6 w-6 text-green-500" />
           <h2 className="text-xl font-bold text-white">Trading Preferences</h2>
         </div>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm text-slate-400 mb-2">
+            <label className="block text-sm text-muted-foreground mb-2">
               Minimum Signal Confidence (%)
             </label>
             <input
@@ -209,7 +209,7 @@ export default function Settings() {
                   minConfidence: Number(e.target.value),
                 })
               }
-              className="w-full px-4 py-2 bg-slate-800 text-white rounded-lg border border-slate-700 focus:border-blue-500 focus:outline-none"
+              className="w-full px-4 py-2 bg-muted text-white rounded-lg border border-border focus:border-blue-500 focus:outline-none"
             />
             <div className="text-xs text-slate-500 mt-1">
               Only show signals with confidence above this threshold
@@ -229,7 +229,7 @@ export default function Settings() {
               onChange={(e) =>
                 setSettings({ ...settings, autoExecute: e.target.checked })
               }
-              className="w-5 h-5 rounded bg-slate-800 border-slate-700"
+              className="w-5 h-5 rounded bg-muted border-border"
             />
           </label>
         </div>

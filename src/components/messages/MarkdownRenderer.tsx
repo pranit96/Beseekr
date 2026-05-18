@@ -59,7 +59,7 @@ export default function MarkdownRenderer({
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
       const trimmedLine = line.trim();
-      
+
       if (trimmedLine.startsWith("```")) {
         inCodeBlock = !inCodeBlock;
         out.push(line);
@@ -70,7 +70,7 @@ export default function MarkdownRenderer({
         out.push(line);
         continue;
       }
-      
+
       const nextLine = (lines[i + 1] || "").trim();
 
       if (!trimmedLine) {
@@ -348,7 +348,7 @@ export default function MarkdownRenderer({
             </div>
             <div style={{ maxHeight: "60vh", overflow: "auto" }}>
               <pre
-                className="bg-zinc-950 text-zinc-50"
+                className="bg-background text-foreground"
                 style={{
                   padding: "1rem",
                   fontSize: "0.9rem",

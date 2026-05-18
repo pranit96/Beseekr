@@ -36,10 +36,12 @@ const navItems = [
 
 export function Sidebar() {
   return (
-    <aside className="w-64 bg-slate-900 border-r border-slate-800 flex flex-col">
-      <div className="p-6 border-b border-slate-800">
+    <aside className="w-64 bg-background border-r border-border flex flex-col">
+      <div className="p-6 border-b border-border">
         <h1 className="text-xl font-bold text-white">Trading System</h1>
-        <p className="text-sm text-slate-400 mt-1">Institutional Grade</p>
+        <p className="text-sm text-muted-foreground mt-1">
+          Institutional Grade
+        </p>
       </div>
 
       <nav className="flex-1 p-4 space-y-1">
@@ -52,7 +54,7 @@ export function Sidebar() {
                 "flex items-center gap-3 px-4 py-3 rounded-lg transition-colors",
                 isActive
                   ? "bg-blue-600 text-white"
-                  : "text-slate-300 hover:bg-slate-800 hover:text-white",
+                  : "text-muted-foreground hover:bg-muted hover:text-white",
               )
             }
           >
@@ -62,7 +64,7 @@ export function Sidebar() {
         ))}
       </nav>
 
-      <div className="p-4 border-t border-slate-800">
+      <div className="p-4 border-t border-border">
         <div className="text-xs text-slate-500">
           <div>Paper Trading Mode</div>
           <div className="mt-1">v1.0.0</div>

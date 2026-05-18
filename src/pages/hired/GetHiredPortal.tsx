@@ -75,7 +75,7 @@ export default function GetHiredPortal() {
           <h1 className="text-4xl sm:text-5xl font-bold tracking-tighter leading-tight">
             Your Career, <span className="text-zinc-500">Accelerated.</span>
           </h1>
-          <p className="text-zinc-400 text-base max-w-xl font-medium leading-relaxed">
+          <p className="text-muted-foreground text-base max-w-xl font-medium leading-relaxed">
             Everything you need to land your next role — from precision resumes
             to deep interview intelligence and application tracking.
           </p>
@@ -144,7 +144,7 @@ export default function GetHiredPortal() {
                         <ArrowRight className="w-4 h-4 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all text-zinc-500" />
                       )}
                     </h3>
-                    <p className="text-zinc-400 text-sm leading-relaxed font-medium">
+                    <p className="text-muted-foreground text-sm leading-relaxed font-medium">
                       {feature.description}
                     </p>
                   </div>

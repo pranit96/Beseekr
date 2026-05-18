@@ -873,7 +873,7 @@ function LessonViewer({
           ) : lesson ? (
             <div className="space-y-6">
               {lesson.video_url && (
-                <div className="aspect-video bg-black rounded-lg overflow-hidden flex items-center justify-center">
+                <div className="aspect-video bg-background rounded-lg overflow-hidden flex items-center justify-center">
                   {/* Handle various video sources if needed, for now assuming direct link or standard embed */}
                   {lesson.video_url.includes("youtube") ||
                   lesson.video_url.includes("vimeo") ? (

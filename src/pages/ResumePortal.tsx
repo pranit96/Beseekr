@@ -181,7 +181,7 @@ export default function ResumePortal() {
   };
 
   return (
-    <div className="w-full text-zinc-100 py-8 px-4 sm:px-6 lg:px-8">
+    <div className="w-full text-foreground py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto space-y-10 animate-in fade-in slide-in-from-top-4 duration-500">
         {/* HERO HEADER */}
         <div className="space-y-4 text-left">
@@ -311,7 +311,7 @@ export default function ResumePortal() {
 
             <div className="space-y-6">
               <div className="flex items-center justify-between">
-                <div className="w-12 h-12 rounded-2xl bg-white/[0.03] border border-white/[0.08] flex items-center justify-center text-zinc-400 group-hover:text-indigo-400 group-hover:border-indigo-500/30 transition-all duration-300">
+                <div className="w-12 h-12 rounded-2xl bg-white/[0.03] border border-white/[0.08] flex items-center justify-center text-muted-foreground group-hover:text-indigo-400 group-hover:border-indigo-500/30 transition-all duration-300">
                   <UploadCloud className="w-6 h-6" />
                 </div>
                 <Badge className="bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-2.5 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-widest font-mono">
@@ -323,7 +323,7 @@ export default function ResumePortal() {
                 <h3 className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
                   Upload & Score Workspace
                 </h3>
-                <p className="text-zinc-400 text-xs sm:text-sm leading-relaxed font-medium">
+                <p className="text-muted-foreground text-xs sm:text-sm leading-relaxed font-medium">
                   Upload your existing PDF or Word resume. Run automated
                   keywords audits, verify ATS compatibility, and refine against
                   target JDs.
@@ -357,7 +357,7 @@ export default function ResumePortal() {
                         <span className="text-[8px] font-black text-zinc-500 uppercase tracking-widest block">
                           Experiences
                         </span>
-                        <span className="text-xs font-bold text-zinc-300">
+                        <span className="text-xs font-bold text-muted-foreground">
                           {uploadDraft?.resume_data?.experience?.length || 0}{" "}
                           Entries
                         </span>
@@ -366,7 +366,7 @@ export default function ResumePortal() {
                         <span className="text-[8px] font-black text-zinc-500 uppercase tracking-widest block">
                           Skills Mapped
                         </span>
-                        <span className="text-xs font-bold text-zinc-300">
+                        <span className="text-xs font-bold text-muted-foreground">
                           {uploadDraft?.resume_data?.skills?.flatMap(
                             (s) => s.items || [],
                           ).length || 0}{" "}
@@ -430,7 +430,7 @@ export default function ResumePortal() {
 
             <div className="space-y-6">
               <div className="flex items-center justify-between">
-                <div className="w-12 h-12 rounded-2xl bg-white/[0.03] border border-white/[0.08] flex items-center justify-center text-zinc-400 group-hover:text-emerald-400 group-hover:border-emerald-500/30 transition-all duration-300">
+                <div className="w-12 h-12 rounded-2xl bg-white/[0.03] border border-white/[0.08] flex items-center justify-center text-muted-foreground group-hover:text-emerald-400 group-hover:border-emerald-500/30 transition-all duration-300">
                   <Sparkles className="w-6 h-6" />
                 </div>
                 <Badge className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2.5 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-widest font-mono">
@@ -442,7 +442,7 @@ export default function ResumePortal() {
                 <h3 className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
                   Template Builder Workspace
                 </h3>
-                <p className="text-zinc-400 text-xs sm:text-sm leading-relaxed font-medium">
+                <p className="text-muted-foreground text-xs sm:text-sm leading-relaxed font-medium">
                   Build a premium resume from scratch. Pick a design template,
                   add sections with real-time AI styling assistance, and export
                   a high-fidelity PDF.
@@ -476,7 +476,7 @@ export default function ResumePortal() {
                         <span className="text-[8px] font-black text-zinc-500 uppercase tracking-widest block">
                           Experiences
                         </span>
-                        <span className="text-xs font-bold text-zinc-300">
+                        <span className="text-xs font-bold text-muted-foreground">
                           {templateDraft?.resume_data?.experience?.length || 0}{" "}
                           Entries
                         </span>
@@ -485,7 +485,7 @@ export default function ResumePortal() {
                         <span className="text-[8px] font-black text-zinc-500 uppercase tracking-widest block">
                           Skills Mapped
                         </span>
-                        <span className="text-xs font-bold text-zinc-300">
+                        <span className="text-xs font-bold text-muted-foreground">
                           {templateDraft?.resume_data?.skills?.flatMap(
                             (s) => s.items || [],
                           ).length || 0}{" "}
@@ -547,27 +547,27 @@ export default function ResumePortal() {
                 <History className="w-4 h-4 text-purple-400" />
               </div>
               <div>
-                <h2 className="text-lg font-bold text-zinc-100 tracking-tight flex items-center gap-2.5">
+                <h2 className="text-lg font-bold text-foreground tracking-tight flex items-center gap-2.5">
                   Saved Versions Vault
                   <Badge className="bg-purple-500/5 hover:bg-purple-500/10 text-purple-400 border border-purple-500/10 font-mono text-[9px] rounded-full px-2 py-0">
                     45 days
                   </Badge>
                 </h2>
                 <p className="text-zinc-500 text-xs mt-0.5 flex items-center gap-1.5 select-none font-medium">
-                  <ShieldCheck className="w-3.5 h-3.5 opacity-80 text-zinc-400" />
+                  <ShieldCheck className="w-3.5 h-3.5 opacity-80 text-muted-foreground" />
                   All revision checkpoints are encrypted.
                 </p>
               </div>
             </div>
 
             {/* Segmented Controller for Vault Filter */}
-            <div className="flex bg-zinc-950 border border-white/[0.05] p-1 rounded-2xl shrink-0 self-start sm:self-center shadow-2xl">
+            <div className="flex bg-background border border-white/[0.05] p-1 rounded-2xl shrink-0 self-start sm:self-center shadow-2xl">
               <button
                 onClick={() => setWorkspaceMode("template")}
                 className={`px-4 sm:px-5 py-2 text-[11px] sm:text-xs font-bold rounded-xl transition-all duration-300 flex items-center gap-2 cursor-pointer ${
                   workspaceMode === "template"
                     ? "bg-white text-black shadow-lg scale-[1.02]"
-                    : "text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.02]"
+                    : "text-muted-foreground hover:text-zinc-200 hover:bg-white/[0.02]"
                 }`}
               >
                 <Sparkles className="w-3 h-3" />
@@ -578,7 +578,7 @@ export default function ResumePortal() {
                 className={`px-4 sm:px-5 py-2 text-[11px] sm:text-xs font-bold rounded-xl transition-all duration-300 flex items-center gap-2 cursor-pointer ${
                   workspaceMode === "upload"
                     ? "bg-white text-black shadow-lg scale-[1.02]"
-                    : "text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.02]"
+                    : "text-muted-foreground hover:text-zinc-200 hover:bg-white/[0.02]"
                 }`}
               >
                 <UploadCloud className="w-3 h-3" />
@@ -601,7 +601,7 @@ export default function ResumePortal() {
               <div className="w-10 h-10 bg-white/[0.03] border border-white/[0.08] rounded-xl mx-auto flex items-center justify-center mb-4 text-zinc-500">
                 <History className="w-5 h-5 opacity-70" />
               </div>
-              <p className="text-zinc-400 text-xs sm:text-sm font-bold tracking-tight">
+              <p className="text-muted-foreground text-xs sm:text-sm font-bold tracking-tight">
                 No archived checkpoints yet
               </p>
               <p className="text-zinc-500 text-[11px] mt-1.5 max-w-xs mx-auto font-medium">
@@ -667,7 +667,7 @@ export default function ResumePortal() {
                       <span className="text-[8px] text-zinc-500 block tracking-[0.1em] font-black uppercase font-mono">
                         CANDIDATE
                       </span>
-                      <span className="text-xs text-zinc-400 font-bold tracking-tight line-clamp-1">
+                      <span className="text-xs text-muted-foreground font-bold tracking-tight line-clamp-1">
                         {rev.resume.personal_info?.name || "Untitled"}
                       </span>
                     </div>
@@ -675,7 +675,7 @@ export default function ResumePortal() {
                     <Button
                       onClick={() => handleRestore(rev.id)}
                       size="sm"
-                      className="bg-white/[0.03] border border-white/[0.08] hover:bg-white hover:text-black hover:border-transparent text-zinc-300 font-bold h-7.5 px-3 rounded-lg text-[11px] gap-1 shadow-sm transition-all duration-200 cursor-pointer"
+                      className="bg-white/[0.03] border border-white/[0.08] hover:bg-white hover:text-black hover:border-transparent text-muted-foreground font-bold h-7.5 px-3 rounded-lg text-[11px] gap-1 shadow-sm transition-all duration-200 cursor-pointer"
                     >
                       <RotateCcw className="w-3 h-3" />
                       Restore
@@ -697,7 +697,7 @@ export default function ResumePortal() {
             <AlertDialogTitle className="text-xl font-bold tracking-tight text-white text-left">
               Delete This Workspace?
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-zinc-400 text-sm leading-relaxed font-medium text-left">
+            <AlertDialogDescription className="text-muted-foreground text-sm leading-relaxed font-medium text-left">
               This will permanently delete your{" "}
               <span className="text-white font-bold tracking-tight">
                 {purgeTargetMode === "upload"
@@ -708,7 +708,7 @@ export default function ResumePortal() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-6 gap-3 flex flex-col sm:flex-row sm:justify-end">
-            <AlertDialogCancel className="bg-transparent border border-white/[0.08] text-zinc-400 hover:bg-white/[0.03] hover:text-white rounded-xl font-bold text-xs px-5 py-2 h-10 transition-all cursor-pointer">
+            <AlertDialogCancel className="bg-transparent border border-white/[0.08] text-muted-foreground hover:bg-white/[0.03] hover:text-white rounded-xl font-bold text-xs px-5 py-2 h-10 transition-all cursor-pointer">
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction

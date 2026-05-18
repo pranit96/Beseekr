@@ -47,7 +47,9 @@ export default function LiveTrading() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="text-slate-400">Loading live trading data...</div>
+        <div className="text-muted-foreground">
+          Loading live trading data...
+        </div>
       </div>
     );
   }
@@ -58,7 +60,7 @@ export default function LiveTrading() {
         <div className="text-center">
           <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
           <div className="text-red-400 mb-2">Error Loading Data</div>
-          <div className="text-slate-400 text-sm">{error}</div>
+          <div className="text-muted-foreground text-sm">{error}</div>
           <button
             onClick={loadSignals}
             className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
@@ -75,7 +77,7 @@ export default function LiveTrading() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-white">Live Trading</h1>
-          <p className="text-slate-400 mt-1">
+          <p className="text-muted-foreground mt-1">
             Real-time signals with live price updates
           </p>
         </div>
@@ -98,8 +100,8 @@ export default function LiveTrading() {
       </div>
 
       {signals.length === 0 ? (
-        <div className="bg-slate-900 rounded-lg border border-slate-800 p-12 text-center">
-          <div className="text-slate-400 mb-4">No active signals</div>
+        <div className="bg-background rounded-lg border border-border p-12 text-center">
+          <div className="text-muted-foreground mb-4">No active signals</div>
           <button
             onClick={loadSignals}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
@@ -120,14 +122,14 @@ export default function LiveTrading() {
             return (
               <div
                 key={signal.id}
-                className="bg-slate-900 rounded-lg border border-slate-800 p-6"
+                className="bg-background rounded-lg border border-border p-6"
               >
                 <div className="flex items-start justify-between mb-4">
                   <div>
                     <div className="text-xl font-bold text-white">
                       {signal.stocks.symbol}
                     </div>
-                    <div className="text-sm text-slate-400">
+                    <div className="text-sm text-muted-foreground">
                       {signal.stocks.name}
                     </div>
                   </div>
@@ -199,7 +201,7 @@ export default function LiveTrading() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between pt-4 border-t border-slate-800">
+                <div className="flex items-center justify-between pt-4 border-t border-border">
                   <div className="text-sm">
                     <span className="text-slate-500">Confidence: </span>
                     <span className="text-white font-medium">

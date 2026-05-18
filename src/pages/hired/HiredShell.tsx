@@ -49,7 +49,7 @@ export default function HiredShell({ children }: HiredShellProps) {
     resumeRequiredPages.some((p) => location.pathname.startsWith(p));
 
   return (
-    <div className="w-full flex flex-col text-zinc-100">
+    <div className="w-full flex flex-col text-foreground">
       {/* ── STICKY SUB-TABS ROW ─────────────────────────────────────────────────── */}
       <div className="sticky top-0 z-30 bg-[#09090b]/80 backdrop-blur-xl border-b border-white/[0.05] py-3 -mx-2 sm:-mx-4 px-2 sm:px-4">
         <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
@@ -65,7 +65,7 @@ export default function HiredShell({ children }: HiredShellProps) {
                   className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-200 cursor-pointer ${
                     active
                       ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/10"
-                      : "text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.04]"
+                      : "text-zinc-500 hover:text-muted-foreground hover:bg-white/[0.04]"
                   }`}
                 >
                   <Icon className="w-3.5 h-3.5" />

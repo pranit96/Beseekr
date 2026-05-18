@@ -476,7 +476,7 @@ const Auth = () => {
             </h1>
 
             {/* Subheading */}
-            <p className="mt-3 text-sm sm:text-base text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+            <p className="mt-3 text-sm sm:text-base text-slate-500 dark:text-muted-foreground max-w-md mx-auto">
               {t(
                 "auth.subtagline",
                 "Skip the guesswork. Explore ideas backed by real validation, traction, and demand.",
@@ -501,11 +501,11 @@ const Auth = () => {
                 </p>
               </div>
 
-              <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4 space-y-2 text-left border border-slate-200 dark:border-slate-700">
-                <p className="text-sm text-slate-700 dark:text-slate-300 font-medium">
+              <div className="bg-slate-50 dark:bg-muted/50 rounded-lg p-4 space-y-2 text-left border border-slate-200 dark:border-border">
+                <p className="text-sm text-slate-700 dark:text-muted-foreground font-medium">
                   📧 {t("auth.nextSteps", "Next Steps:")}
                 </p>
-                <ol className="text-sm text-slate-600 dark:text-slate-400 space-y-1 list-decimal list-inside">
+                <ol className="text-sm text-slate-600 dark:text-muted-foreground space-y-1 list-decimal list-inside">
                   <li>
                     {t(
                       "auth.step1",
@@ -982,7 +982,7 @@ const Auth = () => {
 
                       {/* Password Requirements */}
                       {signupPassword && (
-                        <div className="space-y-1.5 text-xs mt-2 p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700">
+                        <div className="space-y-1.5 text-xs mt-2 p-3 rounded-lg bg-gray-50 dark:bg-muted/50 border border-gray-200 dark:border-gray-700">
                           <div className="flex items-center gap-2">
                             {passwordValidation.minLength ? (
                               <CheckCircle2 className="w-4 h-4 text-green-500" />

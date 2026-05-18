@@ -41,7 +41,7 @@ export default function Market() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="text-slate-400">Loading market data...</div>
+        <div className="text-muted-foreground">Loading market data...</div>
       </div>
     );
   }
@@ -52,7 +52,7 @@ export default function Market() {
         <div className="text-center">
           <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
           <div className="text-red-400 mb-2">Error Loading Market Data</div>
-          <div className="text-slate-400 text-sm">{error}</div>
+          <div className="text-muted-foreground text-sm">{error}</div>
           <button
             onClick={loadMarketData}
             className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
@@ -68,46 +68,52 @@ export default function Market() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-white">Market Overview</h1>
-        <p className="text-slate-400 mt-1">
+        <p className="text-muted-foreground mt-1">
           Current market conditions and regime analysis
         </p>
       </div>
 
       {/* Market Regime */}
       {marketData && (
-        <div className="bg-slate-900 rounded-lg border border-slate-800 p-6">
+        <div className="bg-background rounded-lg border border-border p-6">
           <div className="flex items-center gap-3 mb-6">
             <Globe className="h-6 w-6 text-blue-500" />
             <h2 className="text-xl font-bold text-white">Market Regime</h2>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-            <div className="bg-slate-800 rounded-lg p-4">
-              <div className="text-sm text-slate-400 mb-2">Current Regime</div>
+            <div className="bg-muted rounded-lg p-4">
+              <div className="text-sm text-muted-foreground mb-2">
+                Current Regime
+              </div>
               <div className="text-2xl font-bold text-white mb-1">
                 {marketData.regime?.regime || "Unknown"}
               </div>
-              <div className="text-sm text-slate-400">
+              <div className="text-sm text-muted-foreground">
                 {marketData.regime?.description || "No description available"}
               </div>
             </div>
 
-            <div className="bg-slate-800 rounded-lg p-4">
-              <div className="text-sm text-slate-400 mb-2">Confidence</div>
+            <div className="bg-muted rounded-lg p-4">
+              <div className="text-sm text-muted-foreground mb-2">
+                Confidence
+              </div>
               <div className="text-2xl font-bold text-blue-400 mb-1">
                 {marketData.regime?.confidence || 0}%
               </div>
-              <div className="text-sm text-slate-400">
+              <div className="text-sm text-muted-foreground">
                 Regime detection confidence
               </div>
             </div>
 
-            <div className="bg-slate-800 rounded-lg p-4">
-              <div className="text-sm text-slate-400 mb-2">Volatility</div>
+            <div className="bg-muted rounded-lg p-4">
+              <div className="text-sm text-muted-foreground mb-2">
+                Volatility
+              </div>
               <div className="text-2xl font-bold text-orange-400 mb-1">
                 {marketData.regime?.volatility || "Unknown"}
               </div>
-              <div className="text-sm text-slate-400">
+              <div className="text-sm text-muted-foreground">
                 Current market volatility
               </div>
             </div>
@@ -116,7 +122,7 @@ export default function Market() {
           {marketData.recommendedStrategies &&
             marketData.recommendedStrategies.length > 0 && (
               <div>
-                <div className="text-sm font-medium text-slate-300 mb-3">
+                <div className="text-sm font-medium text-muted-foreground mb-3">
                   Recommended Strategies
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -138,7 +144,7 @@ export default function Market() {
 
       {/* Drawdown Protection */}
       {drawdownData && (
-        <div className="bg-slate-900 rounded-lg border border-slate-800 p-6">
+        <div className="bg-background rounded-lg border border-border p-6">
           <div className="flex items-center gap-3 mb-6">
             <Activity className="h-6 w-6 text-red-500" />
             <h2 className="text-xl font-bold text-white">
@@ -147,8 +153,8 @@ export default function Market() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-slate-800 rounded-lg p-4">
-              <div className="text-sm text-slate-400 mb-2">Status</div>
+            <div className="bg-muted rounded-lg p-4">
+              <div className="text-sm text-muted-foreground mb-2">Status</div>
               <div
                 className={cn(
                   "text-2xl font-bold mb-1",
@@ -159,15 +165,15 @@ export default function Market() {
               >
                 {drawdownData.protection_active ? "ACTIVE" : "NORMAL"}
               </div>
-              <div className="text-sm text-slate-400">
+              <div className="text-sm text-muted-foreground">
                 {drawdownData.protection_active
                   ? "Trading restrictions in effect"
                   : "No restrictions"}
               </div>
             </div>
 
-            <div className="bg-slate-800 rounded-lg p-4">
-              <div className="text-sm text-slate-400 mb-2">
+            <div className="bg-muted rounded-lg p-4">
+              <div className="text-sm text-muted-foreground mb-2">
                 Current Drawdown
               </div>
               <div
@@ -180,7 +186,7 @@ export default function Market() {
               >
                 {(drawdownData.current_drawdown || 0).toFixed(2)}%
               </div>
-              <div className="text-sm text-slate-400">
+              <div className="text-sm text-muted-foreground">
                 Max allowed: {drawdownData.max_drawdown || 20}%
               </div>
             </div>
@@ -191,7 +197,7 @@ export default function Market() {
               <div className="text-sm text-red-400 font-medium mb-1">
                 ⚠️ Trading Restrictions Active
               </div>
-              <div className="text-sm text-slate-400">
+              <div className="text-sm text-muted-foreground">
                 New positions are restricted due to portfolio drawdown exceeding
                 threshold. Focus on risk management and existing positions.
               </div>
@@ -201,29 +207,31 @@ export default function Market() {
       )}
 
       {/* Market Indicators */}
-      <div className="bg-slate-900 rounded-lg border border-slate-800 p-6">
+      <div className="bg-background rounded-lg border border-border p-6">
         <div className="flex items-center gap-3 mb-6">
           <TrendingUp className="h-6 w-6 text-green-500" />
           <h2 className="text-xl font-bold text-white">Market Indicators</h2>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-slate-800 rounded-lg p-4">
-            <div className="text-sm text-slate-400 mb-2">Trend</div>
+          <div className="bg-muted rounded-lg p-4">
+            <div className="text-sm text-muted-foreground mb-2">Trend</div>
             <div className="text-lg font-bold text-white">
               {marketData?.regime?.trend || "Neutral"}
             </div>
           </div>
 
-          <div className="bg-slate-800 rounded-lg p-4">
-            <div className="text-sm text-slate-400 mb-2">Market Phase</div>
+          <div className="bg-muted rounded-lg p-4">
+            <div className="text-sm text-muted-foreground mb-2">
+              Market Phase
+            </div>
             <div className="text-lg font-bold text-white">
               {marketData?.regime?.regime || "Unknown"}
             </div>
           </div>
 
-          <div className="bg-slate-800 rounded-lg p-4">
-            <div className="text-sm text-slate-400 mb-2">Risk Level</div>
+          <div className="bg-muted rounded-lg p-4">
+            <div className="text-sm text-muted-foreground mb-2">Risk Level</div>
             <div
               className={cn(
                 "text-lg font-bold",

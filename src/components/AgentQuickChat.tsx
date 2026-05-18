@@ -201,7 +201,7 @@ export const AgentQuickChat: React.FC<AgentQuickChatProps> = ({
     <div className="fixed inset-0 z-50 flex justify-end">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+        className="absolute inset-0 bg-background/40 backdrop-blur-sm"
         onClick={onClose}
       />
 

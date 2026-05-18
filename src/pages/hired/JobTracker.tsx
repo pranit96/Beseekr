@@ -112,7 +112,7 @@ const StatusMenu = React.memo(function StatusMenu({
         align="end"
         sideOffset={4}
         avoidCollisions={false}
-        className="bg-[#111113] border border-white/[0.08] text-zinc-300 rounded-xl p-1 shadow-2xl min-w-[140px]"
+        className="bg-[#111113] border border-white/[0.08] text-muted-foreground rounded-xl p-1 shadow-2xl min-w-[140px]"
       >
         <p className="px-3 py-1 text-[10px] font-black uppercase tracking-widest text-zinc-600">
           Move to
@@ -122,7 +122,7 @@ const StatusMenu = React.memo(function StatusMenu({
             <DropdownMenuItem
               key={s}
               onSelect={() => onUpdateStatus(app.id, s)}
-              className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-zinc-300 hover:bg-white/[0.05] hover:text-white rounded-lg cursor-pointer transition-colors outline-none"
+              className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-muted-foreground hover:bg-white/[0.05] hover:text-white rounded-lg cursor-pointer transition-colors outline-none"
             >
               <div className={`w-1.5 h-1.5 rounded-full ${getCfg(s).dot}`} />
               {s}
@@ -219,7 +219,7 @@ function AddModal({ open, onClose, onSave, isSaving }: AddModalProps) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-background/75 backdrop-blur-sm flex items-center justify-center p-4"
           onClick={onClose}
         >
           <motion.div
@@ -278,7 +278,7 @@ function AddModal({ open, onClose, onSave, isSaving }: AddModalProps) {
                   className="w-full h-10 bg-white/[0.03] border border-white/[0.08] focus:border-indigo-500/50 rounded-xl px-3 text-sm text-zinc-200 font-medium outline-none"
                 >
                   {ALL_STATUSES.map((s) => (
-                    <option key={s} value={s} className="bg-zinc-900">
+                    <option key={s} value={s} className="bg-card">
                       {s}
                     </option>
                   ))}
@@ -791,7 +791,7 @@ export default function JobTracker() {
               <Stat
                 label="total"
                 value={counts.total}
-                accent="text-zinc-400 bg-white/[0.03] border-white/[0.07]"
+                accent="text-muted-foreground bg-white/[0.03] border-white/[0.07]"
               />
               <Stat
                 label="interviewing"
@@ -879,7 +879,7 @@ export default function JobTracker() {
                 {/* Daily Checklist */}
                 <div className="lg:col-span-2 space-y-4">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-xs font-black uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
+                    <h3 className="text-xs font-black uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
                       <CheckCircle2 className="w-3.5 h-3.5 text-indigo-400" />
                       AI Daily Actions Checklist
                     </h3>
@@ -899,7 +899,7 @@ export default function JobTracker() {
                           className={`group cursor-pointer flex items-start gap-3 p-3.5 rounded-xl border transition-all duration-300 ${
                             done
                               ? "bg-indigo-500/5 border-indigo-500/20 text-zinc-500"
-                              : "bg-white/[0.02] border-white/[0.06] hover:bg-white/[0.04] hover:border-white/[0.12] text-zinc-300"
+                              : "bg-white/[0.02] border-white/[0.06] hover:bg-white/[0.04] hover:border-white/[0.12] text-muted-foreground"
                           }`}
                         >
                           <div
@@ -927,7 +927,7 @@ export default function JobTracker() {
 
                   {/* Pep Talk */}
                   <div className="bg-white/[0.02] border border-white/[0.05] rounded-2xl p-4 mt-3">
-                    <p className="text-xs italic text-zinc-400 leading-relaxed">
+                    <p className="text-xs italic text-muted-foreground leading-relaxed">
                       "{coachInsights.pep_talk}"
                     </p>
                     <p className="text-[10px] font-black uppercase tracking-widest text-indigo-400 mt-2">
@@ -938,7 +938,7 @@ export default function JobTracker() {
 
                 {/* Strategy */}
                 <div className="space-y-4 lg:border-l lg:border-white/[0.05] lg:pl-6">
-                  <h3 className="text-xs font-black uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
+                  <h3 className="text-xs font-black uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
                     <Target className="w-3.5 h-3.5 text-purple-400" />
                     AI Search Strategy
                   </h3>
@@ -949,7 +949,7 @@ export default function JobTracker() {
                           <div className="w-5 h-5 rounded-full bg-purple-500/10 border border-purple-500/20 flex items-center justify-center shrink-0 text-[10px] font-bold text-purple-400 mt-0.5">
                             {i + 1}
                           </div>
-                          <p className="text-xs text-zinc-400 leading-relaxed font-bold">
+                          <p className="text-xs text-muted-foreground leading-relaxed font-bold">
                             {step}
                           </p>
                         </div>
@@ -1053,7 +1053,7 @@ export default function JobTracker() {
                 <Building2 className="w-6 h-6 text-zinc-700" />
               </div>
               <div>
-                <p className="text-zinc-400 font-bold">
+                <p className="text-muted-foreground font-bold">
                   No applications
                   {applications.length > 0 ? " matching filters" : " yet"}
                 </p>
@@ -1082,7 +1082,7 @@ export default function JobTracker() {
                   <div key={status} className="flex-none w-[280px] snap-start">
                     <div className="flex items-center gap-2 mb-3 px-1">
                       <div className={`w-2 h-2 rounded-full ${cfg.dot}`} />
-                      <span className="text-xs font-black uppercase tracking-wider text-zinc-400">
+                      <span className="text-xs font-black uppercase tracking-wider text-muted-foreground">
                         {status}
                       </span>
                       <span

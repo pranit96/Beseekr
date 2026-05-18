@@ -40,7 +40,7 @@ export function TopBar() {
   const zerodhaStatus = getZerodhaStatus();
 
   return (
-    <header className="h-16 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-6">
+    <header className="h-16 bg-background border-b border-border flex items-center justify-between px-6">
       <div className="flex items-center gap-6">
         {/* WebSocket Status */}
         <div className="flex items-center gap-2">
@@ -51,14 +51,14 @@ export function TopBar() {
         </div>
 
         {/* Zerodha Status */}
-        <div className="flex items-center gap-2 pl-6 border-l border-slate-700">
+        <div className="flex items-center gap-2 pl-6 border-l border-border">
           <div
             className={cn(
               "h-2 w-2 rounded-full",
               zerodhaStatus.color.replace("text-", "bg-"),
             )}
           />
-          <span className="text-sm text-slate-400">
+          <span className="text-sm text-muted-foreground">
             Zerodha:{" "}
             <span className={zerodhaStatus.color}>{zerodhaStatus.text}</span>
           </span>
@@ -66,7 +66,7 @@ export function TopBar() {
 
         {/* Real-time P&L */}
         {realtimePnL && (
-          <div className="flex items-center gap-4 pl-6 border-l border-slate-700">
+          <div className="flex items-center gap-4 pl-6 border-l border-border">
             <div>
               <div className="text-xs text-slate-500">Today's P&L</div>
               <div
@@ -98,7 +98,7 @@ export function TopBar() {
           <div className="text-xs text-slate-500">Paper Trading</div>
         </div>
         <div className="h-10 w-10 rounded-full bg-slate-700 flex items-center justify-center">
-          <User className="h-5 w-5 text-slate-300" />
+          <User className="h-5 w-5 text-muted-foreground" />
         </div>
       </div>
     </header>

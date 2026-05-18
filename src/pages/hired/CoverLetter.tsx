@@ -145,7 +145,7 @@ export default function CoverLetter() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 pb-8">
           {/* LEFT — Inputs */}
           <div className="bg-white/[0.02] border border-white/[0.07] rounded-3xl p-6 space-y-6 self-start">
-            <h2 className="text-sm font-black uppercase tracking-widest text-zinc-400">
+            <h2 className="text-sm font-black uppercase tracking-widest text-muted-foreground">
               Job Details
             </h2>
 
@@ -214,7 +214,7 @@ export default function CoverLetter() {
                     }`}
                   >
                     <p
-                      className={`text-xs font-bold ${form.tone === t.id ? "text-amber-300" : "text-zinc-300"}`}
+                      className={`text-xs font-bold ${form.tone === t.id ? "text-amber-300" : "text-muted-foreground"}`}
                     >
                       {t.label}
                     </p>
@@ -253,7 +253,7 @@ export default function CoverLetter() {
                 >
                   <Loader2 className="w-8 h-8 text-amber-500 animate-spin" />
                   <div className="space-y-1">
-                    <p className="text-zinc-300 font-bold">
+                    <p className="text-muted-foreground font-bold">
                       Drafting your letter...
                     </p>
                     <p className="text-xs text-zinc-500">
@@ -269,14 +269,14 @@ export default function CoverLetter() {
                   className="bg-white/[0.02] border border-white/[0.07] rounded-3xl flex flex-col h-full overflow-hidden"
                 >
                   <div className="p-8 flex-1 max-h-[600px] overflow-y-auto custom-scrollbar">
-                    <p className="text-sm text-zinc-300 leading-8 whitespace-pre-wrap font-[450]">
+                    <p className="text-sm text-muted-foreground leading-8 whitespace-pre-wrap font-[450]">
                       {letter}
                     </p>
                   </div>
                   <div className="flex items-center justify-between px-6 py-4 border-t border-white/[0.05] bg-white/[0.01]">
                     <div className="flex items-center gap-2">
                       <FileText className="w-3.5 h-3.5 text-amber-400" />
-                      <span className="text-xs font-bold text-zinc-400">
+                      <span className="text-xs font-bold text-muted-foreground">
                         Ready to use
                       </span>
                     </div>
@@ -285,7 +285,7 @@ export default function CoverLetter() {
                         onClick={handleCopy}
                         size="sm"
                         variant="ghost"
-                        className="h-8 px-3 text-xs font-bold text-zinc-400 hover:text-white rounded-xl gap-1.5"
+                        className="h-8 px-3 text-xs font-bold text-muted-foreground hover:text-white rounded-xl gap-1.5"
                       >
                         {copied ? (
                           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
