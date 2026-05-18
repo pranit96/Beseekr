@@ -348,11 +348,12 @@ export default function MarkdownRenderer({
             </div>
             <div style={{ maxHeight: "60vh", overflow: "auto" }}>
               <pre
+                className="bg-zinc-950 text-zinc-50"
                 style={{
                   padding: "1rem",
                   fontSize: "0.9rem",
-                  whiteSpace: "pre",
-                  backgroundColor: "#000000",
+                  whiteSpace: "pre-wrap",
+                  wordBreak: "break-word",
                   fontFamily:
                     'ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Segoe UI Mono", "Courier New", monospace',
                   lineHeight: 1.6,
