@@ -94,7 +94,19 @@ class ApiClient {
   }
 
   private getCacheKey(endpoint: string, options: RequestInit): string {
-    return `${options.method || "GET"}-${endpoint}-${JSON.stringify(options.body || "")}`;
+    // Strip cache-bypassing query parameters (like t=...) to allow proper in-flight request deduplication
+    let cleanEndpoint = endpoint;
+    try {
+      if (endpoint.includes("?t=") || endpoint.includes("&t=")) {
+        const url = new URL(endpoint, "http://localhost"); // Dummy base for relative URLs
+        url.searchParams.delete("t");
+        cleanEndpoint = url.pathname + url.search;
+      }
+    } catch (e) {
+      // Fallback: simple string replacement
+      cleanEndpoint = endpoint.replace(/[?&]t=\d+/, "");
+    }
+    return `${options.method || "GET"}-${cleanEndpoint}-${JSON.stringify(options.body || "")}`;
   }
 
   private isCacheValid(timestamp: number): boolean {
@@ -115,7 +127,13 @@ class ApiClient {
     }
 
     // Check cache for GET requests (only for first attempt)
-    if (retryCount === 0 && (options.method === "GET" || !options.method)) {
+    const hasCacheBypass = options.headers && (
+      (options.headers as any)["Cache-Control"] === "no-cache, no-store, must-revalidate" ||
+      (options.headers as any)["pragma"] === "no-cache" ||
+      (options.headers as any)["Pragma"] === "no-cache"
+    );
+
+    if (retryCount === 0 && !hasCacheBypass && (options.method === "GET" || !options.method)) {
       const cached = this.requestCache.get(cacheKey);
       if (cached && this.isCacheValid(cached.timestamp)) {
         logger.debug("Returning cached response", { endpoint });
@@ -216,7 +234,7 @@ class ApiClient {
         }
 
         // Cache successful GET responses
-        if ((options.method === "GET" || !options.method) && data.success) {
+        if ((options.method === "GET" || !options.method) && data.success && !hasCacheBypass) {
           this.requestCache.set(cacheKey, {
             data,
             timestamp: Date.now(),
@@ -334,7 +352,8 @@ class ApiClient {
 
   async getCurrentUser(): Promise<AuthResponse> {
     // Don't cache this - always fetch fresh
-    // Adding timestamp to bypass deduplication of pending requests
+    // Using a timestamp ensures absolute immunity to external browser or intermediate CDN caches,
+    // while our cacheKey generation automatically strips it to allow concurrent request deduplication.
     return this.request<any>(`/api/auth/me?t=${Date.now()}`, {
       headers: {
         "Cache-Control": "no-cache, no-store, must-revalidate",

@@ -17,6 +17,40 @@ import { useTranslation } from "react-i18next";
 
 const logger = createLogger("AuthContext");
 
+const ENCRYPTION_KEY = "pw_act_f0a3c9b7e4128d5c6b907f1a3e8d2c4b5a6c7e8f9b0a1c2d3e4f5a6b7c8d9e0f";
+
+// Encrypt active timestamp to prevent local sniffing while maintaining synchronous operations
+const encryptActivityTime = (timestamp: number): string => {
+  try {
+    const text = timestamp.toString();
+    let result = "";
+    for (let i = 0; i < text.length; i++) {
+      const charCode = text.charCodeAt(i) ^ ENCRYPTION_KEY.charCodeAt(i % ENCRYPTION_KEY.length);
+      result += String.fromCharCode(charCode);
+    }
+    return btoa(result);
+  } catch (e) {
+    return timestamp.toString();
+  }
+};
+
+// Decrypt active timestamp with transparent fallback to raw values
+const decryptActivityTime = (encrypted: string): number => {
+  try {
+    const decoded = atob(encrypted);
+    let result = "";
+    for (let i = 0; i < decoded.length; i++) {
+      const charCode = decoded.charCodeAt(i) ^ ENCRYPTION_KEY.charCodeAt(i % ENCRYPTION_KEY.length);
+      result += String.fromCharCode(charCode);
+    }
+    const num = parseInt(result, 10);
+    return isNaN(num) ? 0 : num;
+  } catch (e) {
+    const num = parseInt(encrypted, 10);
+    return isNaN(num) ? 0 : num;
+  }
+};
+
 interface User {
   id: string;
   email: string;
@@ -86,7 +120,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         lastActivityRef.current = now;
         authErrorShownRef.current = false; // Reset error flag on activity
         try {
-          localStorage.setItem("auth_activity", now.toString());
+          localStorage.setItem("auth_activity", encryptActivityTime(now));
         } catch (e) {}
       }, 500);
     };
@@ -257,7 +291,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     [handleAuthError],
   );
 
-  // ENHANCED: Proactive session maintenance
+  // ENHANCED: Inactivity session maintenance
   useEffect(() => {
     if (!user) {
       if (sessionCheckIntervalRef.current)
@@ -267,12 +301,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    // Check for inactivity and refresh if needed
+    // Inactivity check
     sessionCheckIntervalRef.current = setInterval(() => {
       try {
         const globalActivity = localStorage.getItem("auth_activity");
         if (globalActivity) {
-          const globalTime = parseInt(globalActivity, 10);
+          const globalTime = decryptActivityTime(globalActivity);
           if (globalTime > lastActivityRef.current) {
             lastActivityRef.current = globalTime;
           }
@@ -287,21 +321,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           authErrorShownRef.current = true;
           handleAuthError();
         }
-      } else if (inactiveTime > SESSION_CHECK_INTERVAL) {
-        logger.debug("Proactive session check after inactivity", {
-          inactiveTime,
-        });
-        refreshAuth(true);
       }
-    }, SESSION_CHECK_INTERVAL);
-
-    // Proactive token refresh
-    tokenRefreshIntervalRef.current = setInterval(() => {
-      if (isSessionValid()) {
-        logger.debug("Proactive token refresh");
-        refreshAuth(true);
-      }
-    }, TOKEN_REFRESH_INTERVAL);
+    }, 60000); // Check local activity every minute (no server polling)
 
     return () => {
       if (sessionCheckIntervalRef.current)
@@ -309,7 +330,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (tokenRefreshIntervalRef.current)
         clearInterval(tokenRefreshIntervalRef.current);
     };
-  }, [user, refreshAuth, isSessionValid]);
+  }, [user, handleAuthError]);
 
   // Socket token refresh callback
   const handleTokensRefreshed = useCallback(
@@ -505,16 +526,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch (error: any) {
       logger.error("Failed to fetch user", { error: error.message });
 
-      // CRITICAL: Don't clear user on network errors if we have cached data
-      // This prevents redirects to login during temporary network blips or cold starts
-      const isNetworkError =
-        error.message?.includes("Network error") ||
-        error.message?.includes("Failed to fetch") ||
-        error.message?.includes("timeout");
+      // ONLY clear session if it is explicitly a 401 Unauthorized error or "expired"
+      const isSessionExpired =
+        error.message?.includes("401") ||
+        error.message?.includes("Unauthorized") ||
+        error.message?.toLowerCase().includes("session expired") ||
+        error.message?.toLowerCase().includes("invalid token");
 
-      if (!isNetworkError) {
+      if (isSessionExpired) {
+        logger.warn("Session expired on initial fetch, clearing local auth state");
         setUser(null);
         setCachedUser(null);
+      } else {
+        logger.info("Retaining cached user session due to temporary error (e.g. rate limit, server down)", {
+          errorMessage: error.message
+        });
       }
     } finally {
       setLoading(false);
