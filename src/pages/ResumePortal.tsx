@@ -204,7 +204,6 @@ export default function ResumePortal() {
             </div>
           </div>
         </div>
-
         {/* ROADMAP / COMPASS CONTAINER */}
         <div className="bg-zinc-50/50 dark:bg-[#0b0b12]/50 border border-zinc-200 dark:border-white/[0.05] rounded-3xl p-6 relative overflow-hidden shadow-2xl text-left">
           <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/[0.01] rounded-full blur-3xl pointer-events-none" />
@@ -296,7 +295,8 @@ export default function ResumePortal() {
               );
             })}
           </div>
-        </div>        {/* WORKSPACE SELECTION PILLARS */}
+        </div>{" "}
+        {/* WORKSPACE SELECTION PILLARS */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* UPLOAD & SCORE WORKSPACE CARD */}
           <motion.div
@@ -536,7 +536,6 @@ export default function ResumePortal() {
             </div>
           </motion.div>
         </div>
-
         {/* ROADMAP SELECTION ACCENTS VAULT */}
         {/* REVISION VAULT ARCHIVES */}
         <div className="space-y-6 pt-4 border-t border-zinc-200 dark:border-white/[0.04] text-left">

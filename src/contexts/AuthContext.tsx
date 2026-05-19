@@ -17,7 +17,8 @@ import { useTranslation } from "react-i18next";
 
 const logger = createLogger("AuthContext");
 
-const ENCRYPTION_KEY = "pw_act_f0a3c9b7e4128d5c6b907f1a3e8d2c4b5a6c7e8f9b0a1c2d3e4f5a6b7c8d9e0f";
+const ENCRYPTION_KEY =
+  "pw_act_f0a3c9b7e4128d5c6b907f1a3e8d2c4b5a6c7e8f9b0a1c2d3e4f5a6b7c8d9e0f";
 
 // Encrypt active timestamp to prevent local sniffing while maintaining synchronous operations
 const encryptActivityTime = (timestamp: number): string => {
@@ -25,7 +26,9 @@ const encryptActivityTime = (timestamp: number): string => {
     const text = timestamp.toString();
     let result = "";
     for (let i = 0; i < text.length; i++) {
-      const charCode = text.charCodeAt(i) ^ ENCRYPTION_KEY.charCodeAt(i % ENCRYPTION_KEY.length);
+      const charCode =
+        text.charCodeAt(i) ^
+        ENCRYPTION_KEY.charCodeAt(i % ENCRYPTION_KEY.length);
       result += String.fromCharCode(charCode);
     }
     return btoa(result);
@@ -40,7 +43,9 @@ const decryptActivityTime = (encrypted: string): number => {
     const decoded = atob(encrypted);
     let result = "";
     for (let i = 0; i < decoded.length; i++) {
-      const charCode = decoded.charCodeAt(i) ^ ENCRYPTION_KEY.charCodeAt(i % ENCRYPTION_KEY.length);
+      const charCode =
+        decoded.charCodeAt(i) ^
+        ENCRYPTION_KEY.charCodeAt(i % ENCRYPTION_KEY.length);
       result += String.fromCharCode(charCode);
     }
     const num = parseInt(result, 10);
@@ -534,13 +539,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         error.message?.toLowerCase().includes("invalid token");
 
       if (isSessionExpired) {
-        logger.warn("Session expired on initial fetch, clearing local auth state");
+        logger.warn(
+          "Session expired on initial fetch, clearing local auth state",
+        );
         setUser(null);
         setCachedUser(null);
       } else {
-        logger.info("Retaining cached user session due to temporary error (e.g. rate limit, server down)", {
-          errorMessage: error.message
-        });
+        logger.info(
+          "Retaining cached user session due to temporary error (e.g. rate limit, server down)",
+          {
+            errorMessage: error.message,
+          },
+        );
       }
     } finally {
       setLoading(false);

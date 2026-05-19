@@ -2,7 +2,11 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { useResume, EMPTY_RESUME } from "@/contexts/ResumeContext";
+import {
+  useResume,
+  EMPTY_RESUME,
+  PRESET_TEMPLATE,
+} from "@/contexts/ResumeContext";
 import {
   FileText,
   Sparkles,
@@ -136,6 +140,12 @@ export default function ResumeWorkspace() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isPreviewLoading, setIsPreviewLoading] = useState(false);
   const [previewOutdated, setPreviewOutdated] = useState(false);
+  const [rightPanelTab, setRightPanelTab] = useState<"preview" | "ai">(
+    "preview",
+  );
+
+  const isResumeBlank =
+    !resumeData?.personal_info?.name && resumeData?.experience?.length === 0;
 
   useEffect(() => {
     let active = true;
@@ -706,7 +716,18 @@ export default function ResumeWorkspace() {
             <div className="w-px h-4 bg-zinc-200 dark:bg-white/[0.08] hidden sm:block mx-1" />
 
             <button
-              onClick={() => setIsAiPanelOpen(true)}
+              onClick={() => {
+                if (window.innerWidth >= 1024) {
+                  setRightPanelTab("ai");
+                  toast({
+                    title: "AI Analysis Mode Active",
+                    description:
+                      "Review and calibrate your ATS scores in the side panel.",
+                  });
+                } else {
+                  setIsAiPanelOpen(true);
+                }
+              }}
               className="h-8 px-3.5 rounded-lg text-[10px] font-black bg-indigo-50 dark:bg-indigo-500/10 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/20 transition-all flex items-center gap-1.5 uppercase tracking-wide"
             >
               <Sparkles className="h-3 w-3 animate-pulse" /> AI Tools
@@ -1536,92 +1557,516 @@ export default function ResumeWorkspace() {
 
         {/* ── PAGE 2 — RIGHT: LIVE PREVIEW ─────────────────────────── */}
         <div className="hidden lg:flex w-[420px] xl:w-[480px] 2xl:w-[520px] shrink-0 flex-col border-l border-zinc-200 dark:border-white/[0.05] bg-zinc-100 dark:bg-[#06060a]">
-          {/* Preview Toolbar */}
-          <div className="flex items-center justify-between px-4 h-12 border-b border-zinc-200 dark:border-white/[0.06] bg-white/80 dark:bg-[#09090d]/80 backdrop-blur-md shrink-0">
-            <div className="flex items-center gap-2">
-              <FileText className="h-3.5 w-3.5 text-zinc-400" />
-              <span className="text-[11px] font-bold text-zinc-600 dark:text-zinc-400">
-                Live Preview
-              </span>
-              {previewOutdated && (
-                <span className="text-[8px] font-black text-amber-500 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 px-2 py-0.5 rounded-full animate-pulse uppercase tracking-wider">
-                  Outdated
-                </span>
-              )}
-            </div>
-            <div className="flex items-center gap-1.5">
-              <button
-                onClick={handleRefreshPreview}
-                disabled={isPreviewLoading}
-                className="flex items-center gap-1.5 h-7 px-3 rounded-lg text-[10px] font-bold text-zinc-500 hover:text-zinc-800 dark:hover:text-white bg-zinc-100 dark:bg-white/[0.04] hover:bg-zinc-200 dark:hover:bg-white/[0.08] border border-zinc-200 dark:border-white/[0.08] transition-all"
-              >
-                {isPreviewLoading ? (
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                ) : (
-                  <RotateCcw className="h-3 w-3" />
-                )}
-                Refresh
-              </button>
-              <button
-                onClick={handleDownloadFromPreview}
-                disabled={isDownloading || isPreviewLoading || !previewUrl}
-                className="flex items-center gap-1.5 h-7 px-3 rounded-lg text-[10px] font-black text-white bg-zinc-900 dark:bg-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100 transition-all shadow-sm disabled:opacity-40"
-              >
-                {isDownloading ? (
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                ) : (
-                  <Download className="h-3 w-3" />
-                )}
-                PDF
-              </button>
-            </div>
-          </div>
-
-          {/* Preview Canvas */}
-          <div className="flex-1 overflow-y-auto flex items-start justify-center p-5 bg-zinc-200/60 dark:bg-[#050507]">
-            {isPreviewLoading ? (
-              <div className="flex flex-col items-center justify-center gap-3 py-24 w-full">
-                <div className="relative h-12 w-12">
-                  <div className="absolute inset-0 rounded-full border-2 border-indigo-500/20 animate-ping" />
-                  <div className="h-12 w-12 rounded-full border-2 border-indigo-500/40 flex items-center justify-center">
-                    <Loader2 className="h-5 w-5 text-indigo-400 animate-spin" />
+          {isResumeBlank ? (
+            /* Onboarding Quickstart View when Resume is Blank */
+            <div className="flex-grow flex flex-col justify-between p-6 overflow-y-auto space-y-6 text-left bg-zinc-50 dark:bg-[#09090d]">
+              <div className="space-y-6">
+                {/* Title */}
+                <div className="space-y-2">
+                  <div className="h-10 w-10 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 flex items-center justify-center shadow-sm">
+                    <Sparkles className="h-5 w-5 text-indigo-500 dark:text-indigo-400 animate-pulse" />
                   </div>
-                </div>
-                <p className="text-[9px] font-black text-zinc-400 uppercase tracking-[0.2em]">
-                  Assembling PDF…
-                </p>
-              </div>
-            ) : previewUrl ? (
-              <div
-                className="w-full max-w-[380px] shadow-2xl rounded-xl overflow-hidden border border-zinc-300/50 dark:border-white/[0.06]"
-                style={{ aspectRatio: "1 / 1.4142" }}
-              >
-                <iframe
-                  key={previewUrl}
-                  src={`${previewUrl}#toolbar=0&navpanes=0`}
-                  className="w-full h-full border-0 bg-white"
-                  title="Resume PDF Preview"
-                />
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center gap-3 py-24 text-center w-full">
-                <FileText className="h-9 w-9 text-zinc-400 opacity-30" />
-                <div>
-                  <p className="text-xs font-bold text-zinc-500">No Preview</p>
-                  <p className="text-[10px] text-zinc-500 mt-1">
-                    Click Refresh to generate
+                  <h3 className="text-base font-black tracking-tight text-zinc-900 dark:text-white leading-snug">
+                    Ready to craft a standout resume?
+                  </h3>
+                  <p className="text-[11px] text-zinc-400 leading-relaxed font-medium">
+                    Get hired faster with real-time ATS optimization. Load our
+                    preset tech vanguard template in one click to see how the
+                    editor works, or start entering your personal details on the
+                    left.
                   </p>
                 </div>
-              </div>
-            )}
-          </div>
 
-          {/* Bottom hint */}
-          <div className="h-9 flex items-center justify-center border-t border-zinc-200 dark:border-white/[0.05] bg-white/60 dark:bg-[#09090d]/60 shrink-0">
-            <p className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest">
-              Edit → <span className="text-zinc-500">Refresh</span> → Download
-            </p>
-          </div>
+                {/* 1-Click Preset Template Card */}
+                <div className="p-4 rounded-2xl bg-white dark:bg-white/[0.01] border border-zinc-200/80 dark:border-white/[0.06] shadow-sm space-y-3 hover:border-indigo-400/20 transition-all">
+                  <div className="flex items-center gap-2">
+                    <div className="h-7 w-7 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 flex items-center justify-center">
+                      <Trophy className="h-3.5 w-3.5 text-emerald-500" />
+                    </div>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
+                      1-Click Vanguard Preset
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-zinc-400 leading-relaxed">
+                    Instantly fill the workspace with a robust, pre-optimized
+                    software engineer draft to experiment with our AI bullet
+                    refactors and layouts.
+                  </p>
+                  <button
+                    onClick={() => {
+                      setResumeData(PRESET_TEMPLATE);
+                      toast({
+                        title: "Vanguard Template Loaded!",
+                        description:
+                          "The workspace has been filled with sample data. Live preview is now ready!",
+                      });
+                    }}
+                    className="w-full h-9 rounded-xl text-xs font-black uppercase tracking-wider bg-indigo-600 hover:bg-indigo-500 text-white transition-all shadow-md shadow-indigo-500/20 flex items-center justify-center gap-1.5"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" /> Load Preset Template
+                  </button>
+                </div>
+
+                {/* Direct ATS Calibrator */}
+                <div className="p-4 rounded-2xl bg-white dark:bg-white/[0.01] border border-zinc-200/85 dark:border-white/[0.05] space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div className="h-7 w-7 rounded-lg bg-zinc-100 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] flex items-center justify-center">
+                      <Briefcase className="h-3.5 w-3.5 text-zinc-400" />
+                    </div>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
+                      Target Job Calibration
+                    </span>
+                  </div>
+                  <Textarea
+                    value={jobDescription}
+                    onChange={(e) => setJobDescription(e.target.value)}
+                    placeholder="Paste the target job description to pre-calibrate the ATS Scorer..."
+                    className={`${textareaCls} min-h-[100px] w-full text-xs`}
+                  />
+                </div>
+              </div>
+
+              {/* Footer hint */}
+              <div className="p-3.5 rounded-xl bg-zinc-100 dark:bg-white/[0.02] text-center border border-zinc-200/40 dark:border-white/[0.04]">
+                <p className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest flex items-center justify-center gap-1.5">
+                  <FileText className="h-3.5 w-3.5 text-zinc-400" /> Live PDF
+                  Preview will activate once name is added.
+                </p>
+              </div>
+            </div>
+          ) : (
+            /* Regular View: Toggle Tabs between Live PDF Preview and AI & ATS */
+            <>
+              {/* Toolbar */}
+              <div className="flex items-center justify-between px-4 h-12 border-b border-zinc-200 dark:border-white/[0.06] bg-white/80 dark:bg-[#09090d]/80 backdrop-blur-md shrink-0">
+                <div className="flex items-center gap-2 bg-zinc-100 dark:bg-white/[0.04] rounded-lg p-0.5 border border-zinc-200/60 dark:border-white/[0.05]">
+                  <button
+                    onClick={() => setRightPanelTab("preview")}
+                    className={`h-7 px-3 rounded-md text-[10px] font-bold transition-all flex items-center gap-1 ${
+                      rightPanelTab === "preview"
+                        ? "bg-white dark:bg-white/[0.08] text-zinc-900 dark:text-white shadow-sm"
+                        : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                    }`}
+                  >
+                    <FileText className="h-3 w-3" /> Live PDF
+                  </button>
+                  <button
+                    onClick={() => setRightPanelTab("ai")}
+                    className={`h-7 px-3 rounded-md text-[10px] font-bold transition-all flex items-center gap-1 ${
+                      rightPanelTab === "ai"
+                        ? "bg-white dark:bg-white/[0.08] text-zinc-900 dark:text-white shadow-sm"
+                        : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                    }`}
+                  >
+                    <Sparkles className="h-3 w-3" /> AI & ATS
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-1.5">
+                  {rightPanelTab === "preview" ? (
+                    <>
+                      {previewOutdated && (
+                        <span className="text-[8px] font-black text-amber-500 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 px-2 py-0.5 rounded-full animate-pulse uppercase tracking-wider">
+                          Outdated
+                        </span>
+                      )}
+                      <button
+                        onClick={handleRefreshPreview}
+                        disabled={isPreviewLoading}
+                        className="flex items-center gap-1.5 h-7 px-2.5 rounded-lg text-[10px] font-bold text-zinc-500 hover:text-zinc-800 dark:hover:text-white bg-zinc-100 dark:bg-white/[0.04] hover:bg-zinc-200 dark:hover:bg-white/[0.08] border border-zinc-200 dark:border-white/[0.08] transition-all"
+                      >
+                        {isPreviewLoading ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <RotateCcw className="h-3 w-3" />
+                        )}
+                        Refresh
+                      </button>
+                      <button
+                        onClick={handleDownloadFromPreview}
+                        disabled={
+                          isDownloading || isPreviewLoading || !previewUrl
+                        }
+                        className="flex items-center gap-1.5 h-7 px-2.5 rounded-lg text-[10px] font-black text-white bg-zinc-900 dark:bg-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100 transition-all shadow-sm disabled:opacity-40"
+                      >
+                        {isDownloading ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <Download className="h-3 w-3" />
+                        )}
+                        PDF
+                      </button>
+                    </>
+                  ) : (
+                    <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest select-none">
+                      ATS Calibrator
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Main Content Area */}
+              {rightPanelTab === "preview" ? (
+                /* PDF Preview View */
+                <div className="flex-1 overflow-y-auto flex items-start justify-center p-5 bg-zinc-200/60 dark:bg-[#050507]">
+                  {isPreviewLoading ? (
+                    <div className="flex flex-col items-center justify-center gap-3 py-24 w-full">
+                      <div className="relative h-12 w-12">
+                        <div className="absolute inset-0 rounded-full border-2 border-indigo-500/20 animate-ping" />
+                        <div className="h-12 w-12 rounded-full border-2 border-indigo-500/40 flex items-center justify-center">
+                          <Loader2 className="h-5 w-5 text-indigo-400 animate-spin" />
+                        </div>
+                      </div>
+                      <p className="text-[9px] font-black text-zinc-400 uppercase tracking-[0.2em]">
+                        Assembling PDF…
+                      </p>
+                    </div>
+                  ) : previewUrl ? (
+                    <div
+                      className="w-full max-w-[380px] shadow-2xl rounded-xl overflow-hidden border border-zinc-300/50 dark:border-white/[0.06]"
+                      style={{ aspectRatio: "1 / 1.4142" }}
+                    >
+                      <iframe
+                        key={previewUrl}
+                        src={`${previewUrl}#toolbar=0&navpanes=0`}
+                        className="w-full h-full border-0 bg-white"
+                        title="Resume PDF Preview"
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center gap-3 py-24 text-center w-full">
+                      <FileText className="h-9 w-9 text-zinc-400 opacity-30" />
+                      <div>
+                        <p className="text-xs font-bold text-zinc-500">
+                          No Preview
+                        </p>
+                        <p className="text-[10px] text-zinc-500 mt-1">
+                          Click Refresh to generate
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                /* Embedded AI Analysis Workspace */
+                <div className="flex-1 overflow-y-auto p-5 space-y-5 pb-10 text-left bg-zinc-50 dark:bg-[#09090d]">
+                  {/* Job Description Input */}
+                  <div className="space-y-3 p-4 rounded-2xl bg-white dark:bg-white/[0.01] border border-zinc-200 dark:border-white/[0.06]">
+                    <div className="flex items-center gap-2">
+                      <Trophy className="h-3.5 w-3.5 text-emerald-400 animate-pulse" />
+                      <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
+                        Target Job Calibrate
+                      </span>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className={labelCls}>Paste Job Description</Label>
+                      <Textarea
+                        value={jobDescription}
+                        onChange={(e) => setJobDescription(e.target.value)}
+                        placeholder="Paste the target job description to calibrate your ATS score…"
+                        className={`${textareaCls} min-h-[90px] w-full text-xs`}
+                      />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <button
+                        onClick={handleRunATSAnalysis}
+                        disabled={isScoring}
+                        className="w-full h-9 rounded-xl text-[11px] font-black uppercase tracking-wider bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100 transition-all flex items-center justify-center gap-2 disabled:opacity-50 shadow-sm"
+                      >
+                        {isScoring ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Trophy className="h-3.5 w-3.5" />
+                        )}
+                        {isScoring ? "Computing…" : "Run ATS Analysis"}
+                      </button>
+                      <button
+                        onClick={handleOptimizeBullets}
+                        disabled={isOptimizing}
+                        className="w-full h-8 rounded-xl text-[10px] font-bold uppercase tracking-wide bg-zinc-100 dark:bg-white/[0.04] hover:bg-zinc-200 dark:hover:bg-white/[0.08] text-zinc-600 dark:text-zinc-300 border border-zinc-200 dark:border-white/[0.08] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                      >
+                        {isOptimizing ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <Sparkles className="h-3 w-3 text-indigo-400" />
+                        )}
+                        Refine with AI Optimizer
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Results */}
+                  {!atsReport ? (
+                    <div className="flex flex-col items-center justify-center py-14 border border-dashed border-zinc-200 dark:border-white/[0.06] rounded-2xl gap-3 text-zinc-400">
+                      <AlertCircle className="h-7 w-7 opacity-25" />
+                      <div className="text-center">
+                        <p className="text-xs font-bold text-zinc-500">
+                          No Analysis Yet
+                        </p>
+                        <p className="text-[10px] text-zinc-400 max-w-[180px] mx-auto mt-1 leading-relaxed">
+                          Paste a job description and run ATS Analysis to see
+                          results.
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <Tabs defaultValue="overview" className="w-full">
+                      <TabsList className="w-full bg-zinc-100 dark:bg-white/[0.04] rounded-xl border border-zinc-200 dark:border-white/[0.06] h-9 p-0.5 mb-4">
+                        <TabsTrigger
+                          value="overview"
+                          className="flex-1 text-[10px] font-bold rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-white/[0.08] data-[state=active]:text-zinc-900 dark:data-[state=active]:text-white text-zinc-500 transition-all animate-none"
+                        >
+                          ⚡ Overview
+                        </TabsTrigger>
+                        <TabsTrigger
+                          value="upgrades"
+                          className="flex-1 text-[10px] font-bold rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-white/[0.08] data-[state=active]:text-zinc-900 dark:data-[state=active]:text-white text-zinc-500 transition-all animate-none"
+                        >
+                          🚀 Upgrades
+                        </TabsTrigger>
+                      </TabsList>
+
+                      <TabsContent
+                        value="overview"
+                        className="space-y-4 mt-0 text-left"
+                      >
+                        {/* Score Ring */}
+                        <div className="flex flex-col items-center py-5 bg-white dark:bg-white/[0.01] border border-zinc-200 dark:border-white/[0.05] rounded-2xl">
+                          {(() => {
+                            const score = atsReport.score || 0;
+                            return (
+                              <div className="relative h-20 w-20">
+                                <svg
+                                  className="h-full w-full -rotate-90"
+                                  viewBox="0 0 36 36"
+                                >
+                                  <defs>
+                                    <linearGradient
+                                      id="atsGradRightPanel"
+                                      x1="0%"
+                                      y1="0%"
+                                      x2="100%"
+                                      y2="100%"
+                                    >
+                                      <stop offset="0%" stopColor="#a855f7" />
+                                      <stop offset="100%" stopColor="#6366f1" />
+                                    </linearGradient>
+                                  </defs>
+                                  <path
+                                    className="stroke-zinc-200 dark:stroke-white/[0.05]"
+                                    strokeWidth="3"
+                                    fill="none"
+                                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                  />
+                                  <motion.path
+                                    stroke="url(#atsGradRightPanel)"
+                                    strokeWidth="3"
+                                    strokeDasharray={`${score}, 100`}
+                                    strokeLinecap="round"
+                                    fill="none"
+                                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                    initial={{ pathLength: 0 }}
+                                    animate={{ pathLength: 1 }}
+                                    transition={{
+                                      duration: 1.2,
+                                      ease: "easeOut",
+                                    }}
+                                  />
+                                </svg>
+                                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                  <span className="text-xl font-black text-zinc-900 dark:text-white">
+                                    {score}
+                                  </span>
+                                  <span className="text-[6px] font-black text-zinc-400 uppercase tracking-widest">
+                                    ATS Score
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          })()}
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2">
+                          {Object.entries(atsReport.aspects).map(
+                            ([key, aspect]: [string, any]) => (
+                              <div
+                                key={key}
+                                className="border border-zinc-200 dark:border-white/[0.05] bg-white dark:bg-white/[0.02] rounded-xl p-3 text-left"
+                              >
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="capitalize text-[8px] font-black text-zinc-400 uppercase tracking-wider">
+                                    {key.replace("_", " ")}
+                                  </span>
+                                  <span className="text-[8px] font-black font-mono text-zinc-700 dark:text-zinc-300 bg-zinc-100 dark:bg-white/[0.04] px-1 py-0.5 rounded">
+                                    {aspect.rating}/10
+                                  </span>
+                                </div>
+                                <p
+                                  className="text-[9px] text-zinc-500 leading-relaxed line-clamp-2"
+                                  title={aspect.why}
+                                >
+                                  {aspect.why}
+                                </p>
+                              </div>
+                            ),
+                          )}
+                        </div>
+
+                        <div className="space-y-1">
+                          <Label
+                            className={labelCls + " flex items-center gap-1"}
+                          >
+                            <Sparkles className="h-2.5 w-2.5 text-indigo-400" />{" "}
+                            Overall Assessment
+                          </Label>
+                          <div className="text-[10px] leading-relaxed text-zinc-500 bg-white dark:bg-white/[0.01] border border-zinc-200 dark:border-white/[0.04] rounded-xl p-3">
+                            {atsReport.general_feedback}
+                          </div>
+                        </div>
+                      </TabsContent>
+
+                      <TabsContent
+                        value="upgrades"
+                        className="space-y-4 mt-0 text-left"
+                      >
+                        {/* Missing Keywords */}
+                        <div className="p-3.5 rounded-2xl bg-white dark:bg-white/[0.01] border border-zinc-200 dark:border-white/[0.05] space-y-2.5">
+                          <p className="text-[9px] font-black uppercase tracking-widest text-zinc-500">
+                            🔍 Missing Keywords
+                          </p>
+                          <p className="text-[8px] text-zinc-400">
+                            Click to auto-append to your skills list.
+                          </p>
+                          {atsReport.missing_keywords.length === 0 ? (
+                            <div className="flex items-center justify-center gap-2 py-2.5 bg-emerald-50 dark:bg-emerald-500/5 border border-emerald-200 dark:border-emerald-500/10 rounded-xl text-emerald-500 text-[9px] font-bold">
+                              <CheckCircle2 className="h-3 w-3" /> Full Coverage
+                              Achieved
+                            </div>
+                          ) : (
+                            <div className="flex flex-wrap gap-1">
+                              {atsReport.missing_keywords.map(
+                                (keyword: string, i: number) => {
+                                  const added =
+                                    injectedKeywords.includes(keyword);
+                                  return (
+                                    <button
+                                      key={i}
+                                      onClick={() => {
+                                        if (added) return;
+                                        setResumeData((p) => {
+                                          const s = [...p.skills];
+                                          if (s[0])
+                                            s[0] = {
+                                              ...s[0],
+                                              items: [
+                                                ...new Set([
+                                                  ...s[0].items,
+                                                  keyword,
+                                                ]),
+                                              ],
+                                            };
+                                          return { ...p, skills: s };
+                                        });
+                                        setInjectedKeywords((p) => [
+                                          ...p,
+                                          keyword,
+                                        ]);
+                                        toast({ title: `Added: ${keyword}` });
+                                      }}
+                                      className={`text-[8px] font-bold px-2 py-0.5 rounded-lg border transition-all ${added ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-500 border-emerald-200 dark:border-emerald-500/20 line-through opacity-50 cursor-not-allowed" : "bg-zinc-50 dark:bg-white/[0.03] text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-white/[0.08] hover:bg-zinc-100 dark:hover:bg-white/[0.08] hover:text-zinc-800 dark:hover:text-white"}`}
+                                    >
+                                      + {keyword}
+                                    </button>
+                                  );
+                                },
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Bullet Upgrades */}
+                        <div className="space-y-2">
+                          <p className="text-[9px] font-black uppercase tracking-widest text-zinc-500">
+                            🛠 Smart Bullet Refactors
+                          </p>
+                          {atsReport.bullet_point_suggestions.length === 0 ? (
+                            <div className="text-center py-6 text-zinc-400 text-[10px] border border-dashed border-zinc-200 dark:border-white/[0.05] rounded-xl">
+                              No suggestions. Try the AI Optimizer.
+                            </div>
+                          ) : (
+                            atsReport.bullet_point_suggestions.map(
+                              (sug: any, sIdx: number) => {
+                                const nImp = sug.improved.trim().toLowerCase();
+                                const isApplied =
+                                  appliedSuggestions.includes(nImp) ||
+                                  resumeData.experience.some((e) =>
+                                    e.highlights.some(
+                                      (h) => h.trim().toLowerCase() === nImp,
+                                    ),
+                                  ) ||
+                                  resumeData.projects.some((p) =>
+                                    p.highlights.some(
+                                      (h) => h.trim().toLowerCase() === nImp,
+                                    ),
+                                  );
+                                return (
+                                  <div
+                                    key={sIdx}
+                                    className={`rounded-xl border overflow-hidden transition-all ${isApplied ? "border-emerald-200 dark:border-emerald-500/20 bg-emerald-50/50 dark:bg-emerald-500/5" : "border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] hover:border-zinc-300"}`}
+                                  >
+                                    <div className="px-3 py-1.5 border-b border-zinc-100 dark:border-white/[0.04] text-[8px] text-zinc-400 italic">
+                                      &ldquo;{sug.original}&rdquo;
+                                    </div>
+                                    <div className="p-3 space-y-2">
+                                      <p className="text-[10px] font-semibold text-zinc-800 dark:text-zinc-200 leading-relaxed text-left">
+                                        &ldquo;{sug.improved}&rdquo;
+                                      </p>
+                                      {sug.reason && (
+                                        <p className="text-[8px] text-zinc-400 italic flex items-start gap-1">
+                                          <Sparkles className="h-2.5 w-2.5 mt-0.5 text-indigo-400 shrink-0" />
+                                          {sug.reason}
+                                        </p>
+                                      )}
+                                      {isApplied ? (
+                                        <span className="inline-flex items-center gap-1 text-[8px] font-bold text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 px-2 py-0.5 rounded-lg">
+                                          <CheckCircle2 className="h-2.5 w-2.5" />{" "}
+                                          Applied
+                                        </span>
+                                      ) : (
+                                        <button
+                                          onClick={() =>
+                                            applyRefactor(
+                                              sug.original,
+                                              sug.improved,
+                                            )
+                                          }
+                                          className="h-6 px-3 rounded-lg text-[8px] font-black bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 transition-all shadow-sm border-none"
+                                        >
+                                          Apply Suggestion
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              },
+                            )
+                          )}
+                        </div>
+                      </TabsContent>
+                    </Tabs>
+                  )}
+                </div>
+              )}
+
+              {/* Bottom hint */}
+              <div className="h-9 flex items-center justify-center border-t border-zinc-200 dark:border-white/[0.05] bg-white/60 dark:bg-[#09090d]/60 shrink-0">
+                <p className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest">
+                  Edit → <span className="text-zinc-500">Refresh</span> →
+                  Download
+                </p>
+              </div>
+            </>
+          )}
         </div>
       </div>
 

@@ -127,13 +127,18 @@ class ApiClient {
     }
 
     // Check cache for GET requests (only for first attempt)
-    const hasCacheBypass = options.headers && (
-      (options.headers as any)["Cache-Control"] === "no-cache, no-store, must-revalidate" ||
-      (options.headers as any)["pragma"] === "no-cache" ||
-      (options.headers as any)["Pragma"] === "no-cache"
-    );
+    const hasCacheBypass =
+      options.headers &&
+      ((options.headers as any)["Cache-Control"] ===
+        "no-cache, no-store, must-revalidate" ||
+        (options.headers as any)["pragma"] === "no-cache" ||
+        (options.headers as any)["Pragma"] === "no-cache");
 
-    if (retryCount === 0 && !hasCacheBypass && (options.method === "GET" || !options.method)) {
+    if (
+      retryCount === 0 &&
+      !hasCacheBypass &&
+      (options.method === "GET" || !options.method)
+    ) {
       const cached = this.requestCache.get(cacheKey);
       if (cached && this.isCacheValid(cached.timestamp)) {
         logger.debug("Returning cached response", { endpoint });
@@ -234,7 +239,11 @@ class ApiClient {
         }
 
         // Cache successful GET responses
-        if ((options.method === "GET" || !options.method) && data.success && !hasCacheBypass) {
+        if (
+          (options.method === "GET" || !options.method) &&
+          data.success &&
+          !hasCacheBypass
+        ) {
           this.requestCache.set(cacheKey, {
             data,
             timestamp: Date.now(),

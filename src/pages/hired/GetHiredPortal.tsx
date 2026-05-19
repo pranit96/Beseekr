@@ -87,8 +87,13 @@ export default function GetHiredPortal() {
             <AlertTriangle className="w-4 h-4 text-amber-500 dark:text-amber-400 shrink-0" />
             <p className="text-sm text-amber-800 dark:text-amber-300/80 font-medium flex-1">
               No resume loaded.{" "}
-              <span className="font-bold text-amber-900 dark:text-amber-300">AI Prep Kit</span> and{" "}
-              <span className="font-bold text-amber-900 dark:text-amber-300">Cover Letter</span>{" "}
+              <span className="font-bold text-amber-900 dark:text-amber-300">
+                AI Prep Kit
+              </span>{" "}
+              and{" "}
+              <span className="font-bold text-amber-900 dark:text-amber-300">
+                Cover Letter
+              </span>{" "}
               require one to function.
             </p>
             <button

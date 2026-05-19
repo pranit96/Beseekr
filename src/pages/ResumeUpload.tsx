@@ -173,7 +173,9 @@ export default function ResumeUpload() {
 
         <h1 className="text-3xl sm:text-5xl font-bold tracking-tight leading-[1.1] flex flex-col gap-1 text-foreground">
           <span>Upload Your Resume.</span>
-          <span className="text-zinc-400 dark:text-zinc-700">Score it against a job.</span>
+          <span className="text-zinc-400 dark:text-zinc-700">
+            Score it against a job.
+          </span>
         </h1>
       </div>
 

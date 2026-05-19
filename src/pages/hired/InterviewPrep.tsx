@@ -315,7 +315,10 @@ export default function InterviewPrep() {
                 </span>
               </div>
               <h1 className="text-4xl font-extrabold tracking-tight text-zinc-900 dark:text-white sm:text-5xl">
-                Interview <span className="text-indigo-600 dark:text-indigo-400">Intelligence.</span>
+                Interview{" "}
+                <span className="text-indigo-600 dark:text-indigo-400">
+                  Intelligence.
+                </span>
               </h1>
               <p className="text-zinc-500 text-sm font-semibold leading-relaxed max-w-lg mx-auto">
                 Predict interview rounds, generate specialized QA prep

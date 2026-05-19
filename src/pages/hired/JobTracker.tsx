@@ -51,27 +51,32 @@ const STATUS_CFG: Record<
   { color: string; dot: string; icon: React.ElementType }
 > = {
   Offer: {
-    color: "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/25",
+    color:
+      "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/25",
     dot: "bg-emerald-500",
     icon: CheckCircle2,
   },
   Interviewing: {
-    color: "text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-500/10 border-purple-200 dark:border-purple-500/25",
+    color:
+      "text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-500/10 border-purple-200 dark:border-purple-500/25",
     dot: "bg-purple-500",
     icon: Target,
   },
   Applied: {
-    color: "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 border-indigo-200 dark:border-indigo-500/25",
+    color:
+      "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 border-indigo-200 dark:border-indigo-500/25",
     dot: "bg-indigo-500",
     icon: TrendingUp,
   },
   Rejected: {
-    color: "text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/25",
+    color:
+      "text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/25",
     dot: "bg-red-500",
     icon: XCircle,
   },
   Bookmarked: {
-    color: "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/25",
+    color:
+      "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/25",
     dot: "bg-amber-500",
     icon: Bookmark,
   },
@@ -288,7 +293,11 @@ function AddModal({ open, onClose, onSave, isSaving }: AddModalProps) {
                     className="w-full h-10 bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.08] focus:border-indigo-500/50 rounded-xl px-3 text-sm text-zinc-800 dark:text-zinc-200 font-medium outline-none"
                   >
                     {ALL_STATUSES.map((s) => (
-                      <option key={s} value={s} className="bg-white dark:bg-[#111113] text-zinc-800 dark:text-zinc-200">
+                      <option
+                        key={s}
+                        value={s}
+                        className="bg-white dark:bg-[#111113] text-zinc-800 dark:text-zinc-200"
+                      >
                         {s}
                       </option>
                     ))}
@@ -595,7 +604,7 @@ interface ViewJdModalProps {
 function ViewJdModal({ app, open, onClose }: ViewJdModalProps) {
   if (!app) return null;
   const cfg = getCfg(app.status);
-  
+
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent className="max-w-2xl bg-white dark:bg-[#111113] border border-zinc-200 dark:border-white/[0.09] rounded-[28px] p-7 shadow-2xl z-[9999] text-left">
@@ -603,7 +612,9 @@ function ViewJdModal({ app, open, onClose }: ViewJdModalProps) {
           <div className="flex items-start justify-between gap-4">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <span className={`inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-lg border uppercase tracking-wider ${cfg.color}`}>
+                <span
+                  className={`inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-lg border uppercase tracking-wider ${cfg.color}`}
+                >
                   <div className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
                   {app.status}
                 </span>
@@ -632,11 +643,13 @@ function ViewJdModal({ app, open, onClose }: ViewJdModalProps) {
               {app.jd_text ? (
                 app.jd_text
               ) : (
-                <span className="text-zinc-400 italic">No job description text provided.</span>
+                <span className="text-zinc-400 italic">
+                  No job description text provided.
+                </span>
               )}
             </div>
           </div>
-          
+
           {app.job_url && (
             <div className="flex justify-end pt-2">
               <a
@@ -670,7 +683,9 @@ export default function JobTracker() {
   const [hoveredAppId, setHoveredAppId] = useState<string | null>(null);
 
   // View JD Modal States
-  const [selectedJdApp, setSelectedJdApp] = useState<JobApplication | null>(null);
+  const [selectedJdApp, setSelectedJdApp] = useState<JobApplication | null>(
+    null,
+  );
   const [showJdModal, setShowJdModal] = useState(false);
 
   const handleViewJd = useCallback((app: JobApplication) => {
@@ -886,15 +901,22 @@ export default function JobTracker() {
                 <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-zinc-900 dark:text-white tracking-tight">AI Quick Import from URL</h3>
-                <p className="text-[11px] text-zinc-500 font-medium">Paste any job posting URL to auto-extract role details and log it as "Applied".</p>
+                <h3 className="text-sm font-bold text-zinc-900 dark:text-white tracking-tight">
+                  AI Quick Import from URL
+                </h3>
+                <p className="text-[11px] text-zinc-500 font-medium">
+                  Paste any job posting URL to auto-extract role details and log
+                  it as "Applied".
+                </p>
               </div>
             </div>
             <div className="flex gap-3">
               <Input
                 placeholder="Paste LinkedIn, Indeed, Greenhouse, or any Job URL..."
                 value={quickUrl}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuickUrl(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setQuickUrl(e.target.value)
+                }
                 disabled={isQuickParsing}
                 className="bg-white dark:bg-white/[0.02] border-zinc-200 dark:border-white/[0.08] focus:border-indigo-500/40 rounded-xl h-11 text-sm text-zinc-800 dark:text-zinc-200 flex-1 placeholder:text-zinc-400 dark:placeholder:text-zinc-650"
               />
@@ -1039,7 +1061,10 @@ export default function JobTracker() {
                 const col = filtered.filter((a) => a.status === status);
                 const cfg = getCfg(status);
                 return (
-                  <div key={status} className="flex-none w-[280px] snap-start text-left">
+                  <div
+                    key={status}
+                    className="flex-none w-[280px] snap-start text-left"
+                  >
                     <div className="flex items-center gap-2 mb-3 px-1">
                       <div className={`w-2 h-2 rounded-full ${cfg.dot}`} />
                       <span className="text-xs font-black uppercase tracking-wider text-zinc-500 dark:text-muted-foreground">

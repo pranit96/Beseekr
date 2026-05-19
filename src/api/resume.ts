@@ -392,7 +392,12 @@ export async function summarizeResearch(results: {
 
 export async function parseJobUrl(
   url: string,
-): Promise<{ company_name: string; job_title: string; jd_text: string; applied_date?: string }> {
+): Promise<{
+  company_name: string;
+  job_title: string;
+  jd_text: string;
+  applied_date?: string;
+}> {
   const res = await apiClient.post("/api/resume/applications/parse-url", {
     url,
   });

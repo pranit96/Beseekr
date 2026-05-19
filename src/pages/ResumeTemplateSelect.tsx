@@ -42,7 +42,8 @@ export default function ResumeTemplateSelect() {
 
     toast({
       title: `${template.name} Template Loaded`,
-      description: "Your workspace style is ready. Start filling in your details.",
+      description:
+        "Your workspace style is ready. Start filling in your details.",
     });
 
     navigate("/dashboard/hired/resume/workspace");
@@ -72,7 +73,9 @@ export default function ResumeTemplateSelect() {
 
             <h1 className="text-3xl sm:text-5xl font-bold tracking-tight leading-[1.1] flex flex-col gap-1 text-foreground">
               <span>Pick a Template.</span>
-              <span className="text-muted-foreground/60">Fill it in, then download.</span>
+              <span className="text-muted-foreground/60">
+                Fill it in, then download.
+              </span>
             </h1>
           </div>
 
