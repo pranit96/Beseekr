@@ -1,19 +1,23 @@
 # beseekr Robots.txt
 # https://beseekr.com/robots.txt
+# Last Updated: 2026-05-19
 
-# Allow all crawlers
+# Allow all crawlers for public pages
 User-agent: *
 Allow: /
-
-# Important pages for indexing
-Allow: /dashboard/problems
-Allow: /dashboard/pricing
-Allow: /dashboard/validate
+Allow: /blog
+Allow: /blogs
+Allow: /about
 Allow: /contact
 Allow: /privacy
 Allow: /auth
+Allow: /wellness
+Allow: /wellness/onboarding
+Allow: /dashboard/pricing
+Allow: /dashboard/problems
+Allow: /dashboard/validate
 
-# Disallow internal/admin paths
+# Disallow internal API endpoints & auth callbacks
 Disallow: /api/
 Disallow: /api/*
 Disallow: /_api/
@@ -23,10 +27,22 @@ Disallow: /reset-password
 Disallow: /*.json$
 Disallow: /*?*
 
-# Block any reference to backend API domain
-# (If crawlers somehow discovered it via links)
+# Disallow private authenticated dashboards to optimize crawl budget
+Disallow: /dashboard/hired/resume/workspace
+Disallow: /dashboard/hired/resume/upload
+Disallow: /dashboard/hired/tracker
+Disallow: /dashboard/hired/prep
+Disallow: /dashboard/hired/research
+Disallow: /dashboard/hired/cover-letter
+Disallow: /wellness/plan
+Disallow: /wellness/nutrition
+Disallow: /wellness/training
+Disallow: /wellness/habits
+Disallow: /wellness/mind
+Disallow: /wellness/weekly
+Disallow: /wellness/weight
 
-# Specific search engine crawlers
+# Specific search engine crawlers with custom rate-limiting/crawl-delays
 User-agent: Googlebot
 Allow: /
 Crawl-delay: 1

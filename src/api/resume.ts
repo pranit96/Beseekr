@@ -390,9 +390,7 @@ export async function summarizeResearch(results: {
   return res.data as ResearchSummary;
 }
 
-export async function parseJobUrl(
-  url: string,
-): Promise<{
+export async function parseJobUrl(url: string): Promise<{
   company_name: string;
   job_title: string;
   jd_text: string;
