@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { type Blog, type Topic } from "@/api/blogs";
 import { Logo } from "@/components/Logo";
+import { useAuth } from "@/contexts/AuthContext";
 
 /* ─── helpers ─────────────────────────────────────────────── */
 function fmt(d?: string) {
@@ -424,6 +425,7 @@ function NewsletterSection() {
 
 /* ─── main page ───────────────────────────────────────────── */
 export default function BlogList() {
+  const { user } = useAuth();
   const [selectedTopic, setSelectedTopic] = useState("All");
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -547,12 +549,21 @@ export default function BlogList() {
                 <Search className="w-4 h-4" />
               )}
             </button>
-            <a
-              href="/"
-              className="hidden sm:inline-flex text-sm font-semibold text-white/50 hover:text-white transition-colors"
-            >
-              ← App
-            </a>
+            {user ? (
+              <Link
+                to="/"
+                className="hidden sm:inline-flex text-sm font-semibold text-white/50 hover:text-white transition-colors"
+              >
+                ← App
+              </Link>
+            ) : (
+              <Link
+                to="/auth"
+                className="hidden sm:inline-flex text-sm font-semibold text-white/50 hover:text-white transition-colors"
+              >
+                Login / Sign Up
+              </Link>
+            )}
           </div>
         </div>
       </header>
