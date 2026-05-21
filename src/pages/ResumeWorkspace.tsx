@@ -1880,18 +1880,50 @@ export default function ResumeWorkspace() {
                         )}
                         {isScoring ? "Computing…" : "Run ATS Analysis"}
                       </button>
-                      <button
-                        onClick={handleOptimizeBullets}
-                        disabled={isOptimizing}
-                        className="w-full h-8 rounded-xl text-[10px] font-bold uppercase tracking-wide bg-zinc-100 dark:bg-white/[0.04] hover:bg-zinc-200 dark:hover:bg-white/[0.08] text-zinc-600 dark:text-zinc-300 border border-zinc-200 dark:border-white/[0.08] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-                      >
-                        {isOptimizing ? (
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                        ) : (
-                          <Sparkles className="h-3 w-3 text-indigo-400" />
-                        )}
-                        Refine with AI Optimizer
-                      </button>
+                        <button
+                          onClick={handleOptimizeBullets}
+                          disabled={isOptimizing}
+                          className="w-full h-8 rounded-xl text-[10px] font-bold uppercase tracking-wide bg-zinc-100 dark:bg-white/[0.04] hover:bg-zinc-200 dark:hover:bg-white/[0.08] text-zinc-600 dark:text-zinc-300 border border-zinc-200 dark:border-white/[0.08] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                        >
+                          {isOptimizing ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <Sparkles className="h-3 w-3 text-indigo-400" />
+                          )}
+                          Refine with AI Optimizer
+                        </button>
+
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button
+                              disabled={isDownloading || isPreviewLoading}
+                              className="w-full h-8 rounded-xl text-[10px] font-bold uppercase tracking-wide bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100 transition-all flex items-center justify-center gap-2 disabled:opacity-50 shadow-sm border-none mt-1"
+                            >
+                              {isDownloading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
+                              Export Resume
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/[0.1] rounded-xl shadow-xl text-sm">
+                            <DropdownMenuItem
+                              onClick={handleExportPdf}
+                              className="font-semibold text-xs py-2.5 gap-2 cursor-pointer"
+                            >
+                              <FileText className="w-3.5 h-3.5 opacity-50" /> PDF
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={handleExportWord}
+                              className="font-semibold text-xs py-2.5 gap-2 cursor-pointer"
+                            >
+                              <Briefcase className="w-3.5 h-3.5 opacity-50" /> Word (.docx)
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={handleExportLatex}
+                              className="font-semibold text-xs py-2.5 gap-2 cursor-pointer text-indigo-600 dark:text-indigo-300"
+                            >
+                              <Sparkles className="w-3.5 h-3.5 opacity-60" /> LaTeX (.tex)
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                     </div>
                   </div>
 
