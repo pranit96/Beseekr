@@ -163,11 +163,13 @@ export default function ResumeWorkspace() {
         if (active) setIsPreviewLoading(false);
       }
     };
-    if (resumeData?.personal_info?.name) initPreview();
+    if (resumeData?.personal_info?.name && !previewUrl) {
+      initPreview();
+    }
     return () => {
       active = false;
     };
-  }, []);
+  }, [resumeData?.personal_info?.name, previewUrl]);
 
   const [isFirstRender, setIsFirstRender] = useState(true);
   useEffect(() => {
