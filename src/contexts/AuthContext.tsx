@@ -184,7 +184,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       currentPath.startsWith("/auth/") || // OAuth callbacks like /auth/callback
       currentPath === "/privacy" ||
       currentPath === "/contact" ||
-      currentPath.startsWith("/dashboard") ||
+      currentPath === "/dashboard" ||
+      currentPath === "/dashboard/" ||
+      currentPath === "/dashboard/problems" ||
+      currentPath.startsWith("/dashboard/problems/") ||
+      currentPath === "/dashboard/pricing" ||
       currentPath.startsWith("/pricing") ||
       currentPath.startsWith("/payment") ||
       currentPath.startsWith("/reset-password") ||

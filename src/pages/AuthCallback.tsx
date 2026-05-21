@@ -24,11 +24,11 @@ export default function AuthCallback() {
   const [mfaCode, setMfaCode] = useState("");
   const [isVerifyingMfa, setIsVerifyingMfa] = useState(false);
 
-  // Get the intended redirect URL (saved by ProtectedRoute) or fall back to dashboard
+  // Get the intended redirect URL (saved by ProtectedRoute) or fall back to home page
   const getRedirectUrl = () => {
     const saved = sessionStorage.getItem("auth-redirect");
     sessionStorage.removeItem("auth-redirect");
-    return saved || "/dashboard/problems";
+    return saved || "/";
   };
 
   useEffect(() => {
