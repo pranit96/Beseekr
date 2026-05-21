@@ -59,7 +59,7 @@ export default function ResumeTemplateSelect() {
               <Button
                 size="icon"
                 variant="ghost"
-                onClick={() => navigate("/dashboard/hired/resume")}
+                onClick={() => navigate("/dashboard/hired")}
                 className="h-8 w-8 rounded-full bg-zinc-100 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.08] text-muted-foreground hover:text-foreground dark:hover:text-white hover:bg-zinc-200 dark:hover:bg-white/[0.08] shrink-0 shadow-sm transition-all"
                 title="Back to Portal"
               >

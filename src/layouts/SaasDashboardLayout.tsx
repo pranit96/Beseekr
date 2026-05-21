@@ -11,8 +11,10 @@ export function SaasDashboardLayout() {
   const { user } = useAuth();
 
   const isWorkspace = location.pathname.includes("/resume/workspace");
+  const isUpload = location.pathname.includes("/resume/upload");
 
-  if (isWorkspace) {
+  // Full-screen pages that manage their own layout (no header/footer)
+  if (isWorkspace || isUpload) {
     return (
       <div className="h-screen bg-background text-foreground flex flex-col overflow-hidden selection:bg-primary/20">
         <main className="flex-1 flex flex-col min-h-0 relative z-10">
@@ -30,10 +32,10 @@ export function SaasDashboardLayout() {
         <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-accent/5 rounded-full blur-3xl" />
       </div>
 
-      {/* Floating Header */}
+      {/* Floating Header — already sticky via position:sticky in GlobalHeader */}
       <GlobalHeader />
 
-      {/* Main Content */}
+      {/* Main Content — flex-1 pushes footer to bottom when content is short */}
       <main className="relative z-10 px-2 sm:px-4 py-4 sm:py-8 flex-1">
         <motion.div
           key={location.pathname}
@@ -50,7 +52,7 @@ export function SaasDashboardLayout() {
         </motion.div>
       </main>
 
-      {/* Footer */}
+      {/* Footer — mt-auto ensures it sticks to bottom */}
       <GlobalFooter />
     </div>
   );

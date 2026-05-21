@@ -32,7 +32,7 @@ export default function HiredShell({ children }: HiredShellProps) {
               This feature requires a resume. Upload or build one to continue.
             </p>
             <button
-              onClick={() => navigate("/dashboard/hired/resume")}
+              onClick={() => navigate("/dashboard/hired")}
               className="text-[10px] font-black uppercase tracking-widest text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300 transition-colors whitespace-nowrap cursor-pointer"
             >
               Go to Resume →
