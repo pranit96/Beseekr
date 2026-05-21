@@ -132,6 +132,52 @@ export async function uploadAndParseResume(file: File): Promise<ResumeSchema> {
   return data.data as ResumeSchema;
 }
 
+/**
+ * Upload with progress reporting via XMLHttpRequest.
+ * onProgress receives a value 0–100 representing upload percentage.
+ * Once upload completes, the parsing phase begins (no progress for that — it's server-side).
+ */
+export function uploadAndParseResumeWithProgress(
+  file: File,
+  onProgress: (percent: number) => void,
+): Promise<ResumeSchema> {
+  return new Promise((resolve, reject) => {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", `${API_BASE_URL}/api/resume/upload`);
+    xhr.withCredentials = true;
+
+    xhr.upload.addEventListener("progress", (e) => {
+      if (e.lengthComputable) {
+        const pct = Math.round((e.loaded / e.total) * 100);
+        onProgress(pct);
+      }
+    });
+
+    xhr.addEventListener("load", () => {
+      try {
+        const data = JSON.parse(xhr.responseText);
+        if (xhr.status >= 200 && xhr.status < 300 && data.success) {
+          resolve(data.data as ResumeSchema);
+        } else {
+          reject(new Error(data.error || "Failed to upload resume"));
+        }
+      } catch {
+        reject(new Error("Invalid response from server"));
+      }
+    });
+
+    xhr.addEventListener("error", () => reject(new Error("Network error during upload")));
+    xhr.addEventListener("abort", () => reject(new Error("Upload cancelled")));
+    xhr.addEventListener("timeout", () => reject(new Error("Upload timed out")));
+    xhr.timeout = 120000; // 2 minute timeout matching backend
+
+    xhr.send(formData);
+  });
+}
+
 export async function scoreResume(
   resume: ResumeSchema,
   jobDescription?: string,
@@ -416,6 +462,7 @@ export async function getCoachInsights(): Promise<CoachInsights> {
 
 export const resumeApi = {
   uploadAndParseResume,
+  uploadAndParseResumeWithProgress,
   scoreResume,
   optimizeResume,
   downloadResumePdf,
