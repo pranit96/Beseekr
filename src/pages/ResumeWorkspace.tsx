@@ -795,8 +795,17 @@ export default function ResumeWorkspace() {
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     {[
-                      { label: "ATS Score", desc: "Check compatibility", icon: Trophy, action: () => { setRightPanelTab("ai"); setShowOnboarding(false); } },
-                      { label: "AI Optimize", desc: "Enhance bullet points", icon: Sparkles, action: () => { handleOptimizeBullets(); setShowOnboarding(false); } },
+                      { label: "ATS Score", desc: "Check compatibility", icon: Trophy, action: () => { 
+                          setRightPanelTab("ai"); 
+                          if (window.innerWidth < 1024) setIsAiPanelOpen(true);
+                          setShowOnboarding(false); 
+                      } },
+                      { label: "AI Optimize", desc: "Enhance bullet points", icon: Sparkles, action: () => { 
+                          setRightPanelTab("ai");
+                          if (window.innerWidth < 1024) setIsAiPanelOpen(true);
+                          handleOptimizeBullets(); 
+                          setShowOnboarding(false); 
+                      } },
                       { label: "Edit Details", desc: "Fine-tune sections", icon: User, action: () => { setActiveTab("personal"); setShowOnboarding(false); } },
                       { label: "Export PDF", desc: "Download resume", icon: Download, action: () => { handleExportPdf(); setShowOnboarding(false); } },
                     ].map((item) => {
@@ -2287,6 +2296,38 @@ export default function ResumeWorkspace() {
                       )}
                       Refine with AI Optimizer
                     </button>
+
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button
+                          disabled={isDownloading || isPreviewLoading}
+                          className="w-full h-9 rounded-xl text-[11px] font-bold uppercase tracking-wide bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100 transition-all flex items-center justify-center gap-2 disabled:opacity-50 shadow-md border-none mt-1"
+                        >
+                          {isDownloading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+                          Export Resume
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/[0.1] rounded-xl shadow-xl text-sm">
+                        <DropdownMenuItem
+                          onClick={handleExportPdf}
+                          className="font-semibold text-xs py-2.5 gap-2 cursor-pointer"
+                        >
+                          <FileText className="w-3.5 h-3.5 opacity-50" /> PDF
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={handleExportWord}
+                          className="font-semibold text-xs py-2.5 gap-2 cursor-pointer"
+                        >
+                          <Briefcase className="w-3.5 h-3.5 opacity-50" /> Word (.docx)
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={handleExportLatex}
+                          className="font-semibold text-xs py-2.5 gap-2 cursor-pointer text-indigo-600 dark:text-indigo-300"
+                        >
+                          <Sparkles className="w-3.5 h-3.5 opacity-60" /> LaTeX (.tex)
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </div>
 
