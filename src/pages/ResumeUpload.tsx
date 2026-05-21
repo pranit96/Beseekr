@@ -1,22 +1,20 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useResume } from "@/contexts/ResumeContext";
-import { resumeApi } from "@/api/resume";
+import { resumeApi, type ResumeSchema } from "@/api/resume";
 import {
   ArrowLeft,
   Upload,
   FileText,
-  File,
   Check,
   Loader2,
   AlertCircle,
-  X,
-  Sparkles,
+  Clock,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-type UploadPhase = "idle" | "uploading" | "parsing" | "success" | "error";
+type UploadPhase = "idle" | "processing" | "success" | "error";
 
 const FILE_TYPE_META: Record<string, { label: string; color: string }> = {
   "application/pdf": { label: "PDF", color: "text-red-500 bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/20" },
@@ -30,18 +28,32 @@ const ALLOWED_TYPES = new Set(Object.keys(FILE_TYPE_META));
 const ALLOWED_EXT = /\.(pdf|docx|doc|txt|md)$/i;
 const MAX_SIZE = 5 * 1024 * 1024;
 
+// 2 minutes to reach 99%
+const TOTAL_DURATION_MS = 120_000;
+const TICK_MS = 200; // Update every 200ms for smooth animation
+
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-const PARSE_STAGES = [
-  { label: "File uploaded successfully", icon: Check },
-  { label: "Reading document content...", icon: FileText },
-  { label: "Extracting structured data with AI...", icon: Sparkles },
-  { label: "Resume parsed!", icon: Check },
-];
+// Easing function: starts fast, slows down near end (feels natural)
+function easeOutProgress(elapsed: number, total: number): number {
+  const t = Math.min(elapsed / total, 1);
+  // Quadratic ease-out scaled to 99
+  return Math.floor(99 * (1 - (1 - t) * (1 - t)));
+}
+
+// Stage labels for the right side of the progress
+function getStageLabel(pct: number): string {
+  if (pct < 5) return "Uploading file...";
+  if (pct < 20) return "Reading document...";
+  if (pct < 45) return "Extracting text content...";
+  if (pct < 70) return "Analyzing structure with AI...";
+  if (pct < 90) return "Mapping fields & sections...";
+  return "Finalizing extraction...";
+}
 
 export default function ResumeUpload() {
   const navigate = useNavigate();
@@ -55,13 +67,62 @@ export default function ResumeUpload() {
   } = useResume();
 
   const [phase, setPhase] = useState<UploadPhase>("idle");
-  const [uploadPercent, setUploadPercent] = useState(0);
-  const [parseStage, setParseStage] = useState(0);
+  const [displayPercent, setDisplayPercent] = useState(0);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
   const [isDragOver, setIsDragOver] = useState(false);
   const [parsedName, setParsedName] = useState("");
+  const [showSlowWarning, setShowSlowWarning] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Refs to coordinate between progress timer and API response
+  const apiResultRef = useRef<ResumeSchema | null>(null);
+  const apiDoneRef = useRef(false);
+  const apiErrorRef = useRef<string | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const startTimeRef = useRef(0);
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, []);
+
+  // Finalize: animate to 100%, then success + redirect
+  const finalize = useCallback(
+    async (parsed: ResumeSchema) => {
+      if (!isMountedRef.current) return;
+
+      // Smoothly go to 100% over ~2 seconds
+      setDisplayPercent(100);
+      await new Promise((r) => setTimeout(r, 2500));
+      if (!isMountedRef.current) return;
+
+      // Set all context
+      setParsedName(parsed.personal_info?.name || "Your resume");
+      setResumeData(parsed);
+      setShowOnboarding(true);
+      setUploadSource("fresh_upload");
+      await saveActiveDraft(parsed, undefined);
+
+      setPhase("success");
+      toast({
+        title: "Resume parsed!",
+        description: `Loaded resume for ${parsed.personal_info?.name || "your resume"}`,
+      });
+
+      // Auto-navigate after brief display
+      setTimeout(() => {
+        if (isMountedRef.current) {
+          navigate("/dashboard/hired/resume/workspace");
+        }
+      }, 1500);
+    },
+    [setResumeData, setShowOnboarding, setUploadSource, saveActiveDraft, toast, navigate],
+  );
 
   const handleFile = useCallback(
     async (file: File) => {
@@ -77,55 +138,105 @@ export default function ResumeUpload() {
         return;
       }
 
+      // Reset all state
       setSelectedFile(file);
-      setPhase("uploading");
-      setUploadPercent(0);
-      setParseStage(0);
+      setPhase("processing");
+      setDisplayPercent(0);
       setErrorMessage("");
+      setShowSlowWarning(false);
+      apiResultRef.current = null;
+      apiDoneRef.current = false;
+      apiErrorRef.current = null;
 
+      // Lock context
+      setWorkspaceMode("upload", true);
+
+      // ── 1. Start the progress timer (0→99% over 2 minutes) ──
+      startTimeRef.current = Date.now();
+
+      timerRef.current = setInterval(() => {
+        if (!isMountedRef.current) {
+          if (timerRef.current) clearInterval(timerRef.current);
+          return;
+        }
+
+        const elapsed = Date.now() - startTimeRef.current;
+        const newPct = easeOutProgress(elapsed, TOTAL_DURATION_MS);
+
+        // If API already responded, accelerate to 99 quickly
+        if (apiDoneRef.current && !apiErrorRef.current) {
+          if (timerRef.current) clearInterval(timerRef.current);
+          // Jump to 99, then finalize after 2-3s
+          setDisplayPercent(99);
+          setTimeout(() => {
+            if (isMountedRef.current && apiResultRef.current) {
+              finalize(apiResultRef.current);
+            }
+          }, 2500);
+          return;
+        }
+
+        // If API errored, stop
+        if (apiErrorRef.current) {
+          if (timerRef.current) clearInterval(timerRef.current);
+          setErrorMessage(apiErrorRef.current);
+          setPhase("error");
+          return;
+        }
+
+        // Normal tick
+        if (newPct >= 99) {
+          setDisplayPercent(99);
+          if (timerRef.current) clearInterval(timerRef.current);
+          // Reached 99% but no response yet → show slow warning
+          setShowSlowWarning(true);
+          // Start polling for response
+          const pollRef = setInterval(() => {
+            if (!isMountedRef.current) {
+              clearInterval(pollRef);
+              return;
+            }
+            if (apiErrorRef.current) {
+              clearInterval(pollRef);
+              setErrorMessage(apiErrorRef.current);
+              setPhase("error");
+              return;
+            }
+            if (apiDoneRef.current && apiResultRef.current) {
+              clearInterval(pollRef);
+              // Response arrived! Wait 2-3s, then finish to 100 and redirect
+              setTimeout(() => {
+                if (isMountedRef.current && apiResultRef.current) {
+                  finalize(apiResultRef.current);
+                }
+              }, 2500);
+            }
+          }, 300);
+        } else {
+          setDisplayPercent(newPct);
+        }
+      }, TICK_MS);
+
+      // ── 2. Start the actual API call in parallel ──
       try {
-        // Lock context to upload workspace (skipFetch=true to avoid loading stale data)
-        setWorkspaceMode("upload", true);
-
         const parsed = await resumeApi.uploadAndParseResumeWithProgress(
           file,
-          (pct) => setUploadPercent(pct),
+          () => {}, // We don't use XHR progress anymore — visual timer handles it
         );
 
-        // Upload complete → show parsing animation stages
-        setPhase("parsing");
-        setParseStage(1); // File uploaded
-        await new Promise((r) => setTimeout(r, 600));
-        setParseStage(2); // Reading content
-        await new Promise((r) => setTimeout(r, 1000));
-        setParseStage(3); // Extracting
-        await new Promise((r) => setTimeout(r, 800));
-        setParseStage(4); // Done
-
-        if (parsed?.personal_info?.name) {
-          setParsedName(parsed.personal_info.name);
-          setResumeData(parsed);
-          setShowOnboarding(true);
-          setUploadSource("fresh_upload");
-          await saveActiveDraft(parsed, undefined);
-
-          setPhase("success");
-          toast({
-            title: "Resume parsed!",
-            description: `Loaded resume for ${parsed.personal_info.name}`,
-          });
-
-          // Auto-navigate after brief success display
-          setTimeout(() => navigate("/dashboard/hired/resume/workspace"), 1500);
-        } else {
+        if (!parsed?.personal_info?.name) {
           throw new Error("Could not extract resume details from this file. Please try a different format.");
         }
+
+        // Store result — the timer tick will pick it up
+        apiResultRef.current = parsed;
+        apiDoneRef.current = true;
       } catch (err: any) {
-        setErrorMessage(err.message || "Upload processing failed. Please try again.");
-        setPhase("error");
+        apiErrorRef.current = err.message || "Upload processing failed. Please try again.";
+        apiDoneRef.current = true;
       }
     },
-    [setResumeData, setWorkspaceMode, saveActiveDraft, setShowOnboarding, setUploadSource, toast, navigate],
+    [setWorkspaceMode, finalize],
   );
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -155,11 +266,15 @@ export default function ResumeUpload() {
   };
 
   const handleRetry = () => {
+    if (timerRef.current) clearInterval(timerRef.current);
     setPhase("idle");
     setSelectedFile(null);
-    setUploadPercent(0);
-    setParseStage(0);
+    setDisplayPercent(0);
     setErrorMessage("");
+    setShowSlowWarning(false);
+    apiResultRef.current = null;
+    apiDoneRef.current = false;
+    apiErrorRef.current = null;
   };
 
   const fileMeta = selectedFile ? FILE_TYPE_META[selectedFile.type] : null;
@@ -250,10 +365,10 @@ export default function ResumeUpload() {
               </motion.div>
             )}
 
-            {/* ── UPLOADING: Progress Bar ── */}
-            {phase === "uploading" && selectedFile && (
+            {/* ── PROCESSING: Unified progress view ── */}
+            {phase === "processing" && selectedFile && (
               <motion.div
-                key="uploading"
+                key="processing"
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -16 }}
@@ -261,11 +376,17 @@ export default function ResumeUpload() {
                 className="space-y-6"
               >
                 <div className="text-center space-y-2">
-                  <h2 className="text-xl font-black tracking-tight">Uploading...</h2>
-                  <p className="text-sm text-zinc-500">Sending your file for processing</p>
+                  <h2 className="text-xl font-black tracking-tight">
+                    {displayPercent >= 100 ? "Wrapping up..." : "Processing Your Resume"}
+                  </h2>
+                  <p className="text-sm text-zinc-500">
+                    {displayPercent >= 100
+                      ? "Almost there, preparing your workspace"
+                      : getStageLabel(displayPercent)}
+                  </p>
                 </div>
 
-                {/* File info */}
+                {/* File info card */}
                 <div className="flex items-center gap-3 p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
                   <div className={`h-10 w-10 rounded-lg border flex items-center justify-center shrink-0 ${fileMeta?.color || "bg-zinc-100 border-zinc-200 text-zinc-500"}`}>
                     <FileText className="h-4 w-4" />
@@ -276,78 +397,59 @@ export default function ResumeUpload() {
                       {fileMeta?.label || "Document"} · {formatFileSize(selectedFile.size)}
                     </p>
                   </div>
-                  <span className="text-sm font-black text-zinc-900 dark:text-white tabular-nums">
-                    {uploadPercent}%
+                  <span className="text-lg font-black text-zinc-900 dark:text-white tabular-nums">
+                    {displayPercent}%
                   </span>
                 </div>
 
                 {/* Progress bar */}
-                <div className="h-2 bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
-                  <motion.div
-                    className="h-full rounded-full bg-gradient-to-r from-violet-500 to-indigo-500"
-                    initial={{ width: "0%" }}
-                    animate={{ width: `${uploadPercent}%` }}
-                    transition={{ duration: 0.3, ease: "easeOut" }}
-                  />
+                <div className="space-y-3">
+                  <div className="h-2.5 bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
+                    <motion.div
+                      className="h-full rounded-full bg-gradient-to-r from-violet-500 via-indigo-500 to-violet-500"
+                      style={{ backgroundSize: "200% 100%" }}
+                      animate={{
+                        width: `${displayPercent}%`,
+                        backgroundPosition: displayPercent < 100 ? ["0% 0%", "100% 0%"] : "0% 0%",
+                      }}
+                      transition={{
+                        width: { duration: displayPercent >= 99 ? 2 : 0.4, ease: "easeOut" },
+                        backgroundPosition: { duration: 2, repeat: Infinity, ease: "linear" },
+                      }}
+                    />
+                  </div>
+
+                  {/* Stage milestones */}
+                  <div className="flex items-center justify-between text-[9px] font-bold uppercase tracking-wider text-zinc-400 px-0.5">
+                    <span className={displayPercent >= 5 ? "text-violet-500" : ""}>Upload</span>
+                    <span className={displayPercent >= 20 ? "text-violet-500" : ""}>Read</span>
+                    <span className={displayPercent >= 45 ? "text-violet-500" : ""}>Extract</span>
+                    <span className={displayPercent >= 70 ? "text-violet-500" : ""}>Analyze</span>
+                    <span className={displayPercent >= 100 ? "text-emerald-500" : ""}>Done</span>
+                  </div>
                 </div>
-              </motion.div>
-            )}
 
-            {/* ── PARSING: Stage Indicators ── */}
-            {phase === "parsing" && selectedFile && (
-              <motion.div
-                key="parsing"
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -16 }}
-                transition={{ duration: 0.3 }}
-                className="space-y-6"
-              >
-                <div className="text-center space-y-2">
-                  <h2 className="text-xl font-black tracking-tight">Processing Your Resume</h2>
-                  <p className="text-sm text-zinc-500">AI is extracting your details</p>
-                </div>
-
-                <div className="space-y-3 p-5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
-                  {PARSE_STAGES.map((stage, i) => {
-                    const stageNum = i + 1;
-                    const isDone = parseStage >= stageNum;
-                    const isCurrent = parseStage === stageNum && stageNum < 4;
-                    const isVisible = parseStage >= stageNum;
-                    const Icon = stage.icon;
-
-                    if (!isVisible) return null;
-
-                    return (
-                      <motion.div
-                        key={i}
-                        initial={{ opacity: 0, x: -8 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.1, duration: 0.3 }}
-                        className="flex items-center gap-3"
-                      >
-                        <div className={`h-6 w-6 rounded-full flex items-center justify-center shrink-0 transition-all ${
-                          isDone && !isCurrent
-                            ? "bg-emerald-100 dark:bg-emerald-500/15"
-                            : "bg-zinc-100 dark:bg-white/[0.04]"
-                        }`}>
-                          {isCurrent ? (
-                            <Loader2 className="h-3.5 w-3.5 text-indigo-500 animate-spin" />
-                          ) : (
-                            <Icon className={`h-3.5 w-3.5 ${
-                              isDone ? "text-emerald-500" : "text-zinc-400"
-                            }`} />
-                          )}
-                        </div>
-                        <span className={`text-sm font-medium ${
-                          isDone && !isCurrent ? "text-emerald-700 dark:text-emerald-300" : isCurrent ? "text-zinc-900 dark:text-white" : "text-zinc-400"
-                        }`}>
-                          {stage.label}
-                        </span>
-                      </motion.div>
-                    );
-                  })}
-                </div>
+                {/* Slow warning */}
+                <AnimatePresence>
+                  {showSlowWarning && displayPercent < 100 && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -8 }}
+                      className="flex items-center gap-3 p-4 rounded-xl bg-amber-50 dark:bg-amber-500/[0.06] border border-amber-200 dark:border-amber-500/15"
+                    >
+                      <Clock className="h-4 w-4 text-amber-500 shrink-0 animate-pulse" />
+                      <div>
+                        <p className="text-xs font-bold text-amber-700 dark:text-amber-300">
+                          Taking longer than usual
+                        </p>
+                        <p className="text-[11px] text-amber-600/80 dark:text-amber-400/60">
+                          Complex documents need more processing time. Please wait...
+                        </p>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </motion.div>
             )}
 
