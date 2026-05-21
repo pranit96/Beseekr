@@ -31,3 +31,8 @@ playwright-mcp-server
 playwright-mcp-server-trace.json
 
 test-results
+
+Docker-compose.yml
+run-docker.sh
+Dockerfile
+nginx.conf

@@ -141,6 +141,8 @@ export default function ResumeUpload() {
           "Check file permissions and guarantee standard PDF/DOCX format.",
         variant: "destructive",
       });
+    } finally {
+      e.target.value = ""; // Reset the input value so the same file can be re-selected
     }
   };
 

@@ -1,0 +1,10 @@
+node_modules
+dist
+dev-dist
+.git
+.github
+playwright-report
+test-results
+README.md
+Dockerfile
+nginx.conf

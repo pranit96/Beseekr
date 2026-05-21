@@ -100,6 +100,7 @@ export default function GetHiredPortal() {
       });
     } finally {
       setIsParsing(false);
+      e.target.value = ""; // Reset the input value so the same file can be re-selected
     }
   };
 
