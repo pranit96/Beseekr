@@ -239,6 +239,8 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
   const [isOptimizing, setIsOptimizing] = useState(false);
 
   const skipNextFetchRef = useRef(false);
+  const lastSyncedDataRef = useRef<ResumeSchema>(EMPTY_RESUME);
+  const lastSyncedJDRef = useRef<string>("");
 
   const setWorkspaceMode = useCallback(
     (mode: "template" | "upload", skipFetch: boolean = false) => {
@@ -263,18 +265,23 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
             Object.keys(draft.resume_data.personal_info || {}).length > 0
           ) {
             setResumeData(draft.resume_data);
+            lastSyncedDataRef.current = draft.resume_data;
             setSaveStatus("saved");
           } else {
             // Handle cases where slot is completely new
             setResumeData(EMPTY_RESUME);
+            lastSyncedDataRef.current = EMPTY_RESUME;
             setSaveStatus("idle");
           }
           setJobDescription(draft.job_description || "");
+          lastSyncedJDRef.current = draft.job_description || "";
           setRevisionHistory(draft.history || []);
         } else {
           // New account / no draft
           setResumeData(EMPTY_RESUME);
+          lastSyncedDataRef.current = EMPTY_RESUME;
           setJobDescription("");
+          lastSyncedJDRef.current = "";
           setRevisionHistory([]);
           setSaveStatus("idle");
         }
@@ -323,6 +330,9 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
       );
       if (success) {
         setSaveStatus("saved");
+        // Keep synced references updated
+        lastSyncedDataRef.current = dataToSave;
+        lastSyncedJDRef.current = jdToSave;
       } else {
         setSaveStatus("error");
       }
@@ -373,7 +383,9 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
         workspaceMode,
       );
       setResumeData(restored.resume_data);
+      lastSyncedDataRef.current = restored.resume_data;
       setJobDescription(restored.job_description);
+      lastSyncedJDRef.current = restored.job_description;
       setSaveStatus("saved");
       toast({
         title: "Revision Restored",
@@ -421,7 +433,9 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
       if (success) {
         // Synced Cloud Wipe completed - apply Local Cold Wipe
         setResumeData(EMPTY_RESUME);
+        lastSyncedDataRef.current = EMPTY_RESUME;
         setJobDescription("");
+        lastSyncedJDRef.current = "";
         setAtsReport(null);
         setRevisionHistory([]);
         setSaveStatus("idle");
@@ -447,7 +461,9 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
 
   const resetWorkspace = () => {
     setResumeData(EMPTY_RESUME);
+    lastSyncedDataRef.current = EMPTY_RESUME;
     setJobDescription("");
+    lastSyncedJDRef.current = "";
     setAtsReport(null);
     setSaveStatus("idle");
   };
@@ -460,12 +476,20 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
     if (!resumeData.personal_info?.name && resumeData.experience.length === 0)
       return;
 
+    // Skip if the current state matches the last synced state
+    const isDataEqual =
+      JSON.stringify(resumeData) === JSON.stringify(lastSyncedDataRef.current);
+    const isJDEqual = jobDescription === lastSyncedJDRef.current;
+    if (isDataEqual && isJDEqual) {
+      return;
+    }
+
     const timer = setTimeout(() => {
       saveActiveDraft();
     }, 2000); // 2-second debounce for cloud sync
 
     return () => clearTimeout(timer);
-  }, [resumeData, jobDescription, isLoading]);
+  }, [resumeData, jobDescription, isLoading, workspaceMode]);
 
   return (
     <ResumeContext.Provider
