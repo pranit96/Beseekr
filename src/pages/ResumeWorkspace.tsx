@@ -130,6 +130,9 @@ export default function ResumeWorkspace() {
     saveSnapshot,
     resetWorkspace,
     workspaceMode,
+    showOnboarding,
+    setShowOnboarding,
+    uploadSource,
   } = useResume();
 
   const [injectedKeywords, setInjectedKeywords] = useState<string[]>([]);
@@ -768,6 +771,65 @@ export default function ResumeWorkspace() {
           </div>
         </div>
       </header>
+
+      {/* ══════════════ ONBOARDING BANNER ═══════════════════════════ */}
+      <AnimatePresence>
+        {showOnboarding && !isResumeBlank && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+            className="overflow-hidden shrink-0"
+          >
+            <div className="px-5 py-4 bg-gradient-to-r from-indigo-50 via-violet-50 to-purple-50 dark:from-indigo-500/[0.06] dark:via-violet-500/[0.04] dark:to-purple-500/[0.06] border-b border-indigo-100 dark:border-indigo-500/10">
+              <div className="flex items-start justify-between gap-4">
+                <div className="space-y-3 flex-1">
+                  <div className="flex items-center gap-2">
+                    <div className="h-6 w-6 rounded-lg bg-indigo-100 dark:bg-indigo-500/15 flex items-center justify-center">
+                      <Sparkles className="h-3.5 w-3.5 text-indigo-500" />
+                    </div>
+                    <h3 className="text-xs font-black uppercase tracking-wider text-indigo-700 dark:text-indigo-300">
+                      {uploadSource === "fresh_upload" ? "Resume uploaded & parsed!" : uploadSource === "template" ? "Template loaded!" : "Welcome to your workspace!"}
+                    </h3>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {[
+                      { label: "ATS Score", desc: "Check compatibility", icon: Trophy, action: () => { setRightPanelTab("ai"); setShowOnboarding(false); } },
+                      { label: "AI Optimize", desc: "Enhance bullet points", icon: Sparkles, action: () => { handleOptimizeBullets(); setShowOnboarding(false); } },
+                      { label: "Edit Details", desc: "Fine-tune sections", icon: User, action: () => { setActiveTab("personal"); setShowOnboarding(false); } },
+                      { label: "Export PDF", desc: "Download resume", icon: Download, action: () => { handleExportPdf(); setShowOnboarding(false); } },
+                    ].map((item) => {
+                      const Icon = item.icon;
+                      return (
+                        <button
+                          key={item.label}
+                          onClick={item.action}
+                          className="flex items-center gap-2.5 p-2.5 rounded-xl bg-white/70 dark:bg-white/[0.04] border border-indigo-100 dark:border-indigo-500/10 hover:border-indigo-300 dark:hover:border-indigo-500/25 transition-all text-left group"
+                        >
+                          <div className="h-7 w-7 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                            <Icon className="h-3.5 w-3.5 text-indigo-500 dark:text-indigo-400" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-[10px] font-bold text-zinc-800 dark:text-zinc-200 truncate">{item.label}</p>
+                            <p className="text-[9px] text-zinc-500 truncate">{item.desc}</p>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowOnboarding(false)}
+                  className="h-6 w-6 rounded-lg bg-zinc-200/60 dark:bg-white/[0.06] flex items-center justify-center text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-all shrink-0 mt-0.5"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ══════════════ BODY: TWO-PAGE SPLIT ════════════════════════ */}
       <div className="flex-1 flex overflow-hidden">
@@ -1710,41 +1772,77 @@ export default function ResumeWorkspace() {
               {/* Main Content Area */}
               {rightPanelTab === "preview" ? (
                 /* PDF Preview View */
-                <div className="flex-1 overflow-y-auto flex items-start justify-center p-5 bg-zinc-200/60 dark:bg-[#050507]">
-                  {isPreviewLoading ? (
-                    <div className="flex flex-col items-center justify-center gap-3 py-24 w-full">
-                      <div className="relative h-12 w-12">
-                        <div className="absolute inset-0 rounded-full border-2 border-indigo-500/20 animate-ping" />
-                        <div className="h-12 w-12 rounded-full border-2 border-indigo-500/40 flex items-center justify-center">
-                          <Loader2 className="h-5 w-5 text-indigo-400 animate-spin" />
+                <div className="flex-1 overflow-y-auto flex flex-col bg-zinc-200/60 dark:bg-[#050507]">
+                  <div className="flex-1 flex items-start justify-center p-5">
+                    {isPreviewLoading ? (
+                      <div className="flex flex-col items-center justify-center gap-3 py-24 w-full">
+                        <div className="relative h-12 w-12">
+                          <div className="absolute inset-0 rounded-full border-2 border-indigo-500/20 animate-ping" />
+                          <div className="h-12 w-12 rounded-full border-2 border-indigo-500/40 flex items-center justify-center">
+                            <Loader2 className="h-5 w-5 text-indigo-400 animate-spin" />
+                          </div>
+                        </div>
+                        <p className="text-[9px] font-black text-zinc-400 uppercase tracking-[0.2em]">
+                          Assembling PDF…
+                        </p>
+                      </div>
+                    ) : previewUrl ? (
+                      <div
+                        className="w-full max-w-[380px] shadow-2xl rounded-xl overflow-hidden border border-zinc-300/50 dark:border-white/[0.06]"
+                        style={{ aspectRatio: "1 / 1.4142" }}
+                      >
+                        <iframe
+                          key={previewUrl}
+                          src={`${previewUrl}#toolbar=0&navpanes=0`}
+                          className="w-full h-full border-0 bg-white"
+                          title="Resume PDF Preview"
+                        />
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center gap-3 py-24 text-center w-full">
+                        <FileText className="h-9 w-9 text-zinc-400 opacity-30" />
+                        <div>
+                          <p className="text-xs font-bold text-zinc-500">
+                            No Preview
+                          </p>
+                          <p className="text-[10px] text-zinc-500 mt-1">
+                            Click Refresh to generate
+                          </p>
                         </div>
                       </div>
-                      <p className="text-[9px] font-black text-zinc-400 uppercase tracking-[0.2em]">
-                        Assembling PDF…
-                      </p>
-                    </div>
-                  ) : previewUrl ? (
-                    <div
-                      className="w-full max-w-[380px] shadow-2xl rounded-xl overflow-hidden border border-zinc-300/50 dark:border-white/[0.06]"
-                      style={{ aspectRatio: "1 / 1.4142" }}
-                    >
-                      <iframe
-                        key={previewUrl}
-                        src={`${previewUrl}#toolbar=0&navpanes=0`}
-                        className="w-full h-full border-0 bg-white"
-                        title="Resume PDF Preview"
-                      />
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center gap-3 py-24 text-center w-full">
-                      <FileText className="h-9 w-9 text-zinc-400 opacity-30" />
-                      <div>
-                        <p className="text-xs font-bold text-zinc-500">
-                          No Preview
-                        </p>
-                        <p className="text-[10px] text-zinc-500 mt-1">
-                          Click Refresh to generate
-                        </p>
+                    )}
+                  </div>
+
+                  {/* ── FLOATING EXPORT BAR ── */}
+                  {previewUrl && !isPreviewLoading && (
+                    <div className="shrink-0 px-4 py-3 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md border-t border-zinc-200 dark:border-white/[0.06] flex items-center justify-between gap-3">
+                      <span className="text-[9px] font-black uppercase tracking-widest text-zinc-400 hidden sm:block">
+                        Export Resume
+                      </span>
+                      <div className="flex items-center gap-2 ml-auto">
+                        <button
+                          onClick={handleExportPdf}
+                          disabled={isDownloading}
+                          className="h-8 px-4 rounded-lg text-[10px] font-black bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100 transition-all flex items-center gap-1.5 uppercase tracking-wide shadow-sm disabled:opacity-50"
+                        >
+                          {isDownloading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
+                          PDF
+                        </button>
+                        <button
+                          onClick={handleExportWord}
+                          disabled={isDownloading}
+                          className="h-8 px-4 rounded-lg text-[10px] font-bold text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-white/[0.06] hover:bg-zinc-200 dark:hover:bg-white/[0.1] border border-zinc-200 dark:border-white/[0.08] transition-all flex items-center gap-1.5 uppercase tracking-wide disabled:opacity-50"
+                        >
+                          <Briefcase className="h-3 w-3" />
+                          Word
+                        </button>
+                        <button
+                          onClick={handleExportLatex}
+                          className="h-8 px-3 rounded-lg text-[10px] font-bold text-indigo-600 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-500/10 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 border border-indigo-200 dark:border-indigo-500/20 transition-all flex items-center gap-1.5 uppercase tracking-wide"
+                        >
+                          <Sparkles className="h-3 w-3" />
+                          LaTeX
+                        </button>
                       </div>
                     </div>
                   )}
