@@ -1,11 +1,12 @@
 import { useMemo, useState } from "react";
 import { NavLink, useLocation, Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/Logo";
 import { useTheme } from "@/hooks/use-theme";
 import { useAuth } from "@/contexts/AuthContext";
 import { paymentsApi } from "@/api/payments";
+import { apiClient } from "@/lib/api";
 import {
   Compass,
   Moon,
@@ -210,6 +211,126 @@ export function GlobalHeader() {
   const { theme, setTheme } = useTheme();
   const { user, logout } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const queryClient = useQueryClient();
+
+  // Smart Preload and Prefetch system for instant loading performance
+  const handlePrefetch = (href: string) => {
+    try {
+      // 1. Dynamic Route Chunk Preloading
+      if (href === "/chat") {
+        import("@/pages/Chat");
+      } else if (href === "/blogs") {
+        import("@/pages/blogs/BlogList");
+      } else if (href === "/dashboard/problems") {
+        import("@/pages/saas/ProblemsList");
+      }
+
+      // 2. React Query Data Prefetching
+      if (href === "/chat" && user?.id) {
+        // Prefetch active conversations list
+        queryClient.prefetchQuery({
+          queryKey: ["conversations", user.id],
+          queryFn: async () => {
+            const { apiClient } = await import("@/lib/api");
+            const response = await apiClient.getConversations({
+              status: "active",
+              page: 1,
+              limit: 30,
+            });
+            let rawConversations: any[] = [];
+            if (response.success && response.data) {
+              const resData = response.data as any;
+              const serverConvs = Array.isArray(resData)
+                ? resData
+                : resData.conversations || resData.data || [];
+              rawConversations = serverConvs.map((c: any) => ({
+                id: c.id,
+                title: c.title,
+                status: c.status,
+                last_message_at: c.updated_at || c.created_at || new Date().toISOString(),
+              }));
+            }
+            return rawConversations;
+          },
+          staleTime: 1000 * 60 * 5,
+        });
+
+        // Prefetch agents
+        queryClient.prefetchQuery({
+          queryKey: ["agents"],
+          queryFn: async () => {
+            const { apiClient } = await import("@/lib/api");
+            const res = await apiClient.getAgents();
+            return res.data || [];
+          },
+          staleTime: 5 * 60 * 1000,
+        });
+      } else if (href === "/blogs") {
+        // Prefetch blog topics
+        queryClient.prefetchQuery({
+          queryKey: ["blogTopics"],
+          queryFn: async () => {
+            const { getTopics } = await import("@/api/blogs");
+            const res = await getTopics();
+            return res || [];
+          },
+          staleTime: 5 * 60 * 1000,
+        });
+
+        // Prefetch first page of blogs
+        queryClient.prefetchInfiniteQuery({
+          queryKey: ["blogs", undefined, ""],
+          queryFn: async ({ pageParam = 1 }) => {
+            const { getBlogs } = await import("@/api/blogs");
+            const res = await getBlogs({
+              page: pageParam,
+              limit: 12,
+            });
+            return {
+              data: res.data || [],
+              nextPage:
+                res.meta && res.meta.page < res.meta.totalPages
+                  ? pageParam + 1
+                  : undefined,
+            };
+          },
+          initialPageParam: 1,
+          staleTime: 5 * 60 * 1000,
+        });
+      } else if (href === "/dashboard/problems") {
+        // Prefetch first page of problems list (default: hot sort)
+        queryClient.prefetchQuery({
+          queryKey: ["problems", 1, "hot"],
+          queryFn: async () => {
+            const { problemsApi } = await import("@/api/problems");
+            return problemsApi.getProblems("hot", 1, 12);
+          },
+          staleTime: 5 * 60 * 1000,
+        });
+
+        if (user) {
+          // Prefetch user watchlist
+          queryClient.prefetchQuery({
+            queryKey: ["watchlist"],
+            queryFn: async () => {
+              const { problemsApi } = await import("@/api/problems");
+              return problemsApi.getWatchlist();
+            },
+            staleTime: 5 * 60 * 1000,
+          });
+
+          // Prefetch subscription plans
+          queryClient.prefetchQuery({
+            queryKey: ["subscription-plans"],
+            queryFn: () => paymentsApi.getPlans(),
+            staleTime: 5 * 60 * 1000,
+          });
+        }
+      }
+    } catch (e) {
+      console.warn("Silent route preloading failed", e);
+    }
+  };
 
   // Save current path so auth flow redirects back after login
   const saveAuthRedirect = () => {
@@ -255,7 +376,7 @@ export function GlobalHeader() {
                   item.exact,
                 );
                 return (
-                  <NavLink key={item.href} to={item.href}>
+                  <NavLink key={item.href} to={item.href} onMouseEnter={() => handlePrefetch(item.href)} onFocus={() => handlePrefetch(item.href)}>
                     <motion.div
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
@@ -304,6 +425,8 @@ export function GlobalHeader() {
                   <NavLink
                     key={item.href}
                     to={item.href}
+                    onMouseEnter={() => handlePrefetch(item.href)}
+                    onFocus={() => handlePrefetch(item.href)}
                     className="relative"
                     title={t(`nav.${(item as any).key}`, item.name)}
                   >
@@ -517,6 +640,8 @@ export function GlobalHeader() {
                   <Link
                     key={item.href}
                     to={item.href}
+                    onMouseEnter={() => handlePrefetch(item.href)}
+                    onFocus={() => handlePrefetch(item.href)}
                     onClick={() => setMobileOpen(false)}
                     className={cn(
                       "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200",

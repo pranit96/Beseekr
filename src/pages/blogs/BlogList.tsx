@@ -481,20 +481,87 @@ export default function BlogList() {
     return blogs;
   }, [blogs]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex flex-col items-center gap-5">
-          <div className="relative w-12 h-12">
-            <div className="absolute inset-0 border-2 border-white/10 rounded-full" />
-            <div className="absolute inset-0 border-t-2 border-white rounded-full animate-spin" />
+function BlogListSkeleton() {
+  return (
+    <div className="min-h-screen bg-[#0a0a0a] text-white">
+      {/* Navbar Mock Skeleton */}
+      <header className="fixed top-0 inset-x-0 z-50 bg-[#0a0a0a]/30 backdrop-blur-md">
+        <div className="mx-auto max-w-7xl px-4 sm:px-8 py-5 flex items-center justify-between animate-pulse">
+          <div className="h-6 w-24 bg-white/10 rounded-md" />
+          <div className="flex items-center gap-4">
+            <div className="w-9 h-9 rounded-full bg-white/10" />
+            <div className="h-5 w-20 bg-white/10 rounded-md" />
           </div>
-          <p className="text-white/40 text-sm tracking-widest uppercase font-medium">
-            Loading
-          </p>
+        </div>
+      </header>
+
+      {/* Hero Section Mock Skeleton */}
+      <div className="relative h-[80vh] min-h-[500px] w-full bg-gradient-to-br from-[#0c0c0c] to-[#121212] flex flex-col justify-end p-8 sm:p-12 md:p-20 overflow-hidden">
+        {/* Glow Effects */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,rgba(124,58,237,0.08),transparent_40%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(244,63,94,0.05),transparent_40%)]" />
+        
+        <div className="relative z-10 max-w-7xl mx-auto w-full space-y-6 animate-pulse">
+          <div className="flex items-center gap-3">
+            <div className="h-px w-8 bg-white/20" />
+            <div className="h-4 w-24 bg-white/20 rounded" />
+          </div>
+          <div className="space-y-3">
+            <div className="h-10 sm:h-14 md:h-16 w-3/4 bg-white/10 rounded-lg" />
+            <div className="h-10 sm:h-14 md:h-16 w-1/2 bg-white/10 rounded-lg" />
+          </div>
+          <div className="h-6 w-2/3 bg-white/5 rounded max-w-xl" />
+          <div className="flex flex-wrap items-center gap-5 pt-4">
+            <div className="h-12 w-40 bg-white/10 rounded-full" />
+            <div className="h-5 w-32 bg-white/5 rounded" />
+          </div>
         </div>
       </div>
-    );
+
+      {/* Topic Filter Mock Skeleton */}
+      <div className="bg-[#0b0b0b] border-b border-white/5 py-4 animate-pulse">
+        <div className="mx-auto max-w-7xl px-4 sm:px-8 flex gap-3 overflow-x-auto scrollbar-hide">
+          <div className="h-9 w-16 bg-white/20 rounded-full flex-shrink-0" />
+          <div className="h-9 w-24 bg-white/10 rounded-full flex-shrink-0" />
+          <div className="h-9 w-20 bg-white/10 rounded-full flex-shrink-0" />
+          <div className="h-9 w-28 bg-white/10 rounded-full flex-shrink-0" />
+          <div className="h-9 w-24 bg-white/10 rounded-full flex-shrink-0" />
+        </div>
+      </div>
+
+      {/* Articles Grid Mock Skeleton */}
+      <main className="mx-auto max-w-7xl px-4 sm:px-8 py-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 sm:gap-12 animate-pulse">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="group flex flex-col space-y-4">
+              {/* Image box */}
+              <div className="aspect-[16/10] w-full bg-white/5 rounded-2xl border border-white/5" />
+              {/* Meta information */}
+              <div className="flex items-center gap-3">
+                <div className="h-4 w-16 bg-white/15 rounded-full" />
+                <div className="h-3 w-20 bg-white/5 rounded" />
+              </div>
+              {/* Title & Excerpt */}
+              <div className="space-y-2">
+                <div className="h-6 w-11/12 bg-white/10 rounded" />
+                <div className="h-4 w-full bg-white/5 rounded" />
+                <div className="h-4 w-2/3 bg-white/5 rounded" />
+              </div>
+              {/* Author row */}
+              <div className="flex items-center gap-2 pt-2">
+                <div className="h-7 w-7 rounded-full bg-white/10" />
+                <div className="h-3 w-20 bg-white/5 rounded" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </main>
+    </div>
+  );
+}
+
+  if (loading) {
+    return <BlogListSkeleton />;
   }
 
   if (error) {
