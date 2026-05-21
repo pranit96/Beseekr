@@ -1902,7 +1902,7 @@ export default function ResumeWorkspace() {
                           Refine with AI Optimizer
                         </button>
 
-                        <DropdownMenu>
+                        <DropdownMenu modal={false}>
                           <DropdownMenuTrigger asChild>
                             <button
                               disabled={isDownloading || isPreviewLoading}
@@ -1912,7 +1912,7 @@ export default function ResumeWorkspace() {
                               Export Resume
                             </button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/[0.1] rounded-xl shadow-xl text-sm">
+                          <DropdownMenuContent align="end" sideOffset={4} className="w-48 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/[0.1] rounded-xl shadow-xl text-sm">
                             <DropdownMenuItem
                               onClick={handleExportPdf}
                               className="font-semibold text-xs py-2.5 gap-2 cursor-pointer"
@@ -2297,7 +2297,7 @@ export default function ResumeWorkspace() {
                       Refine with AI Optimizer
                     </button>
 
-                    <DropdownMenu>
+                    <DropdownMenu modal={false}>
                       <DropdownMenuTrigger asChild>
                         <button
                           disabled={isDownloading || isPreviewLoading}
@@ -2307,7 +2307,7 @@ export default function ResumeWorkspace() {
                           Export Resume
                         </button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/[0.1] rounded-xl shadow-xl text-sm">
+                      <DropdownMenuContent align="end" sideOffset={4} className="w-48 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/[0.1] rounded-xl shadow-xl text-sm">
                         <DropdownMenuItem
                           onClick={handleExportPdf}
                           className="font-semibold text-xs py-2.5 gap-2 cursor-pointer"
