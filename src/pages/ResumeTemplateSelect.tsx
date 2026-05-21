@@ -16,7 +16,7 @@ export default function ResumeTemplateSelect() {
 
   const handleSelect = async (template: (typeof RESUME_TEMPLATES)[0]) => {
     // Enforce alignment to Template Workspace context
-    setWorkspaceMode("template");
+    setWorkspaceMode("template", true);
 
     setResumeData((prev) => {
       // Determine if they have already entered personal details or experience

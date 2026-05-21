@@ -82,8 +82,8 @@ export default function GetHiredPortal() {
       const parsed = await resumeApi.uploadAndParseResume(file);
       if (parsed?.personal_info?.name) {
         setResumeData(parsed);
-        setWorkspaceMode("upload");
-        await saveActiveDraft(parsed, undefined);
+        setWorkspaceMode("upload", true);
+        await saveActiveDraft(parsed, undefined, "upload");
         setOnboardingMode("continue");
         toast({
           title: "Resume uploaded",
@@ -107,8 +107,8 @@ export default function GetHiredPortal() {
   const handleSelectTemplate = async (template: any) => {
     try {
       setResumeData(template.data);
-      setWorkspaceMode("template");
-      await saveActiveDraft(template.data, undefined);
+      setWorkspaceMode("template", true);
+      await saveActiveDraft(template.data, undefined, "template");
       setOnboardingMode("continue");
       toast({
         title: "Sample profile loaded",
@@ -419,22 +419,33 @@ export default function GetHiredPortal() {
             )}
 
             {onboardingMode === "continue" && hasResume && (
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-2">
                 <div className="flex items-center gap-3">
-                  <FileCheck className="w-5 h-5 text-zinc-600 dark:text-zinc-400 shrink-0" />
+                  <div className="w-10 h-10 rounded-full bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                    <FileCheck className="w-5 h-5 animate-pulse" />
+                  </div>
                   <div className="space-y-0.5">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Resume Loaded Successfully ✅</span>
+                    </div>
                     <h4 className="font-bold text-sm">{resumeData.personal_info.name}</h4>
-                    <p className="text-xs text-zinc-500 font-medium">
+                    <p className="text-[11px] text-zinc-500 font-medium leading-relaxed font-mono">
                       {resumeData.personal_info.email} {resumeData.personal_info.phone && `· ${resumeData.personal_info.phone}`}
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={() => navigate("resume/workspace")}
+                    className="text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 dark:bg-emerald-500 dark:text-zinc-950 dark:hover:bg-emerald-400 rounded-lg px-4 py-2 cursor-pointer transition-all border-none flex items-center gap-1.5 shadow-lg shadow-emerald-500/10"
+                  >
+                    Open Resume Workspace 🚀
+                  </button>
                   <button
                     onClick={() => navigate("resume")}
-                    className="text-xs font-bold text-zinc-900 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 rounded-lg px-4 py-2 cursor-pointer transition-all bg-transparent"
+                    className="text-xs font-bold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-800 rounded-lg px-4 py-2 cursor-pointer transition-all bg-transparent"
                   >
-                    Edit Resume Details
+                    Manage Workspace Drafts 📁
                   </button>
                   <button
                     onClick={handleWipeResume}

@@ -87,7 +87,7 @@ export default function ResumeUpload() {
     // ──────────────────────────────────────────────────────────────────
 
     // Instantly lock session context into the isolated Upload slot
-    setWorkspaceMode("upload");
+    setWorkspaceMode("upload", true);
 
     setFileName(file.name);
     setIsProcessing(true);

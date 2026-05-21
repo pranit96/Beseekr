@@ -5,6 +5,7 @@ import React, {
   useEffect,
   ReactNode,
   useCallback,
+  useRef,
 } from "react";
 import {
   ResumeSchema,
@@ -197,12 +198,13 @@ export interface ResumeContextType {
   setAtsReport: React.Dispatch<React.SetStateAction<ATSAnalysis | null>>;
   setIsScoring: React.Dispatch<React.SetStateAction<boolean>>;
   setIsOptimizing: React.Dispatch<React.SetStateAction<boolean>>;
-  setWorkspaceMode: (mode: "template" | "upload") => void;
+  setWorkspaceMode: (mode: "template" | "upload", skipFetch?: boolean) => void;
 
   fetchDraft: (forcedMode?: "template" | "upload") => Promise<void>;
   saveActiveDraft: (
     forcedData?: ResumeSchema,
     forcedJD?: string,
+    forcedMode?: "template" | "upload",
   ) => Promise<void>;
   saveSnapshot: (name?: string) => Promise<void>;
   restoreSnapshot: (revisionId: string) => Promise<void>;
@@ -236,10 +238,18 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
   const [isScoring, setIsScoring] = useState(false);
   const [isOptimizing, setIsOptimizing] = useState(false);
 
-  const setWorkspaceMode = useCallback((mode: "template" | "upload") => {
-    setWorkspaceModeState(mode);
-    localStorage.setItem("resume-active-mode", mode);
-  }, []);
+  const skipNextFetchRef = useRef(false);
+
+  const setWorkspaceMode = useCallback(
+    (mode: "template" | "upload", skipFetch: boolean = false) => {
+      if (skipFetch) {
+        skipNextFetchRef.current = true;
+      }
+      setWorkspaceModeState(mode);
+      localStorage.setItem("resume-active-mode", mode);
+    },
+    [],
+  );
 
   const fetchDraft = useCallback(
     async (forcedMode?: "template" | "upload") => {
@@ -278,17 +288,24 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
   );
   // Multi-Workspace Persistence Linkage
   useEffect(() => {
+    if (skipNextFetchRef.current) {
+      skipNextFetchRef.current = false;
+      setIsLoading(false);
+      return;
+    }
     fetchDraft();
   }, [workspaceMode, fetchDraft]);
 
   const saveActiveDraft = async (
     forcedData?: ResumeSchema,
     forcedJD?: string,
+    forcedMode?: "template" | "upload",
   ) => {
     try {
       setSaveStatus("saving");
       const dataToSave = forcedData || resumeData;
       const jdToSave = forcedJD !== undefined ? forcedJD : jobDescription;
+      const modeToSave = forcedMode || workspaceMode;
 
       // Prevent wiping new slots
       if (
@@ -302,7 +319,7 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
       const success = await resumeApi.saveResumeDraft(
         dataToSave,
         jdToSave,
-        workspaceMode,
+        modeToSave,
       );
       if (success) {
         setSaveStatus("saved");
