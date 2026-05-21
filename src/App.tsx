@@ -484,11 +484,7 @@ const App = () => {
                       />
                       <Route
                         path="resume"
-                        element={
-                          <Suspense fallback={<PageLoader />}>
-                            <ResumePortal />
-                          </Suspense>
-                        }
+                        element={<Navigate to="/dashboard/hired" replace />}
                       />
                       <Route
                         path="resume/workspace"

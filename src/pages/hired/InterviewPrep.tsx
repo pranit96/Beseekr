@@ -282,7 +282,7 @@ export default function InterviewPrep() {
           </div>
           <div className="flex gap-3">
             <Button
-              onClick={() => navigate("/dashboard/hired/resume")}
+              onClick={() => navigate("/dashboard/hired")}
               className="bg-purple-600 hover:bg-purple-500 text-white font-bold h-11 px-6 rounded-2xl animate-pulse"
             >
               Add Resume

@@ -177,6 +177,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     // Dashboard routes are PUBLIC - don't redirect to auth
     // Only redirect for truly protected routes like /chat, /profile, etc.
+    // The entire /dashboard tree is architecturally public — auth is handled
+    // per-feature internally (e.g. ResumeContext, HiredShell banners).
     const currentPath = window.location.pathname;
     const isPublicPath =
       currentPath === "/" ||
@@ -184,11 +186,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       currentPath.startsWith("/auth/") || // OAuth callbacks like /auth/callback
       currentPath === "/privacy" ||
       currentPath === "/contact" ||
-      currentPath === "/dashboard" ||
-      currentPath === "/dashboard/" ||
-      currentPath === "/dashboard/problems" ||
-      currentPath.startsWith("/dashboard/problems/") ||
-      currentPath === "/dashboard/pricing" ||
+      currentPath.startsWith("/dashboard") || // Entire dashboard is public
       currentPath.startsWith("/pricing") ||
       currentPath.startsWith("/payment") ||
       currentPath.startsWith("/reset-password") ||

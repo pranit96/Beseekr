@@ -108,7 +108,7 @@ export default function CoverLetter() {
           </div>
           <div className="flex gap-3">
             <Button
-              onClick={() => navigate("/dashboard/hired/resume")}
+              onClick={() => navigate("/dashboard/hired")}
               className="bg-amber-500 hover:bg-amber-400 text-black font-bold h-11 px-6 rounded-2xl"
             >
               Upload Resume

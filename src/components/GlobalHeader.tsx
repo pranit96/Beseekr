@@ -120,7 +120,7 @@ const NAV_ITEMS = {
   hiredResume: {
     key: "hiredResume",
     name: "Resume",
-    href: "/dashboard/hired/resume",
+    href: "/dashboard/hired/resume/upload",
     icon: FileText,
     color: "from-sky-400 to-indigo-500",
     exact: false,

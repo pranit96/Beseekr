@@ -657,7 +657,7 @@ export default function ResumeWorkspace() {
           {/* LEFT: Breadcrumb + Name */}
           <div className="flex items-center gap-3 min-w-0">
             <button
-              onClick={() => navigate("/dashboard/hired/resume")}
+              onClick={() => navigate("/dashboard/hired")}
               className="h-8 w-8 rounded-lg bg-zinc-100 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] flex items-center justify-center text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-200 dark:hover:bg-white/[0.08] transition-all shrink-0"
             >
               <ArrowLeft className="h-3.5 w-3.5" />
