@@ -107,7 +107,7 @@ export default function ResumePortal() {
     mode: "template" | "upload",
     action: "edit" | "create",
   ) => {
-    setWorkspaceMode(mode);
+    setWorkspaceMode(mode, action === "create");
     if (action === "create" && mode === "template") {
       resetWorkspace();
       navigate("/dashboard/hired/resume/templates");
