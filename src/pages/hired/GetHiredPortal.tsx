@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { useResume, EMPTY_RESUME } from "../../contexts/ResumeContext";
+import { useResume, EMPTY_RESUME, RESUME_TEMPLATES } from "../../contexts/ResumeContext";
 import { resumeApi, type ATSAnalysis, type InterviewPrepKit, type ResearchSummary, type JobApplication } from "../../api/resume";
 import { useToast } from "../../hooks/use-toast";
 import {
@@ -91,6 +91,24 @@ export default function GetHiredPortal() {
       });
     } finally {
       setIsParsing(false);
+    }
+  };
+
+  // Sandbox Preset Loader
+  const handleLoadPreset = async (presetData: any) => {
+    try {
+      setResumeData(presetData);
+      await saveActiveDraft(presetData);
+      toast({
+        title: "Sandbox Preset Loaded",
+        description: `Successfully loaded sandbox profile for ${presetData.personal_info.name}.`,
+      });
+    } catch (err) {
+      toast({
+        variant: "destructive",
+        title: "Preset Load Failed",
+        description: "Unable to load sandbox preset profile. Please try again.",
+      });
     }
   };
 
@@ -352,6 +370,24 @@ export default function GetHiredPortal() {
                   className="hidden"
                 />
               </label>
+
+              {/* Presets Onboarding Sandbox */}
+              <div className="w-full border-t border-zinc-200 dark:border-white/[0.05] mt-4 pt-4 max-w-lg">
+                <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-3">
+                  Or load a pre-configured Sandbox profile to test immediately:
+                </p>
+                <div className="flex flex-wrap justify-center gap-2">
+                  {RESUME_TEMPLATES.filter(t => t.id !== "blank_master").map((template) => (
+                    <button
+                      key={template.id}
+                      onClick={() => handleLoadPreset(template.data)}
+                      className="text-[11px] font-bold px-4 py-2 border border-zinc-200 dark:border-white/[0.08] hover:border-indigo-500/30 hover:bg-indigo-500/5 bg-transparent rounded-xl text-zinc-700 dark:text-zinc-300 transition-all cursor-pointer font-semibold"
+                    >
+                      {template.name.replace("Modern ", "").replace("Classic ", "")} ({template.data.personal_info.name})
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
         </div>
