@@ -70,7 +70,7 @@ export const ShareAgentModal = ({
   const shareUrl = `${window.location.origin}/agents/share/${agent.id}`;
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(
     shareUrl,
-  )}&color=${safeColorHex}`;
+  )}&color=${safeColorHex}&margin=4`;
 
   const handleCopyLink = async () => {
     setError(null);
@@ -321,7 +321,7 @@ export const ShareAgentModal = ({
                 <img
                   src={qrCodeUrl}
                   alt={`QR Code to import ${agent.name}`}
-                  className="w-32 h-32 rounded-lg border border-border/10 select-none pointer-events-none"
+                  className="w-32 h-32 select-none pointer-events-none bg-white"
                   onError={(e) => {
                     // High-reliability secondary fallback to Google Charts API
                     const fallbackUrl = `https://chart.googleapis.com/chart?cht=qr&chs=250x250&chl=${encodeURIComponent(shareUrl)}`;
