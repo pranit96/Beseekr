@@ -667,11 +667,11 @@ const Chat = () => {
         <GlobalHeader />
 
         <div
-          className={`flex-1 flex flex-col mx-auto w-full overflow-hidden relative custom-scrollbar transition-all duration-700 ease-in-out ${isChatActive ? "max-w-full px-0 pt-0 pb-0" : "max-w-6xl px-4 sm:px-6 lg:px-8 pt-8 pb-10 overflow-y-auto"}`}
+          className={`flex-1 flex flex-col mx-auto w-full overflow-hidden relative custom-scrollbar transition-all duration-500 ease-out ${isChatActive ? "max-w-full px-0 pt-0 pb-0" : "max-w-6xl px-4 sm:px-6 lg:px-8 pt-8 pb-10 overflow-y-auto"}`}
         >
           {/* Hero Header Outside Box - Autohides when active */}
           <div
-            className={`text-left shrink-0 transition-all duration-700 ease-in-out ${isChatActive ? "h-0 opacity-0 overflow-hidden mb-0" : "mb-8 md:mb-10 opacity-100"}`}
+            className={`text-left shrink-0 transition-all duration-500 ease-out ${isChatActive ? "max-h-0 opacity-0 overflow-hidden mb-0 -translate-y-4 scale-95 pointer-events-none" : "max-h-[300px] opacity-100 mb-8 md:mb-10 translate-y-0 scale-100"}`}
           >
             <div className="flex items-center gap-2 mb-3 sm:mb-4">
               <span className="text-[10px] sm:text-[11px] font-bold tracking-[0.2em] text-muted-foreground/60 uppercase flex items-center">
@@ -690,7 +690,7 @@ const Chat = () => {
 
           {/* Main Container Framed Box - Containing the ChatInterface */}
           <div
-            className={`flex-1 flex flex-col transition-all duration-700 ease-in-out ${isChatActive ? "border-0 rounded-none bg-background h-full" : "border border-border/30 rounded-2xl bg-card/5 backdrop-blur-xl shadow-2xl min-h-[500px]"} overflow-hidden relative group`}
+            className={`flex-1 flex flex-col transition-all duration-500 ease-out ${isChatActive ? "border-0 rounded-none bg-background h-full shadow-none" : "border border-border/30 rounded-2xl bg-card/5 shadow-2xl min-h-[500px]"} backdrop-blur-xl overflow-hidden relative group`}
           >
             {/* Inner Box Sidebar Drawer Trigger */}
             {/* Chat Interface filling inner box */}
