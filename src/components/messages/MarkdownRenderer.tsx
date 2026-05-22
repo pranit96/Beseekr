@@ -323,13 +323,15 @@ export default function MarkdownRenderer({
     ),
 
     // Code renderer
-    code: ({ children, className, inline, ...props }: any) => {
+    code: ({ node, children, className, ...props }: any) => {
       const match = /language-(\w+)/.exec(className || "");
       const language = match ? match[1] : "";
       const code = String(children).replace(/\n$/, "");
       const codeId = Math.random().toString(36).substring(7);
 
-      if (!inline) {
+      const isBlock = node?.tagName === "code" && node?.parent?.tagName === "pre";
+
+      if (isBlock) {
         return (
           <div className="relative my-4 rounded-lg overflow-hidden border border-border/40">
             <div className="flex justify-between items-center px-3 py-2 bg-muted/40 border-b border-border/30">
