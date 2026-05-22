@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -39,6 +39,15 @@ export const ShareAgentModal = ({
   const [email, setEmail] = useState("");
   const [sharing, setSharing] = useState(false);
   const [currentTab, setCurrentTab] = useState("link");
+  const [emailSent, setEmailSent] = useState(false);
+  const [sentTo, setSentTo] = useState("");
+
+  // Reset email state when the dialog is closed or when switching tabs
+  useEffect(() => {
+    setEmailSent(false);
+    setEmail("");
+    setSentTo("");
+  }, [currentTab, open]);
 
   if (!agent) return null;
 
@@ -86,6 +95,8 @@ export const ShareAgentModal = ({
     try {
       const res = await apiClient.shareAgentByEmail(agent.id, email);
       if (res.success) {
+        setSentTo(email);
+        setEmailSent(true);
         toast({
           title: "Agent Shared!",
           description: `Successfully shared "${agent.name}" with ${email}.`,
@@ -217,48 +228,89 @@ export const ShareAgentModal = ({
             {/* TAB CONTENT: Email Share */}
             <TabsContent
               value="email"
-              className="mt-0 outline-none animate-in fade-in slide-in-from-bottom-2 duration-300"
+              className="mt-0 outline-none animate-in fade-in slide-in-from-bottom-2 duration-300 min-h-[148px] flex flex-col justify-between"
             >
-              <form onSubmit={handleShareEmail} className="space-y-4">
-                <div className="space-y-2">
-                  <label
-                    htmlFor="share-email-input"
-                    className="text-xs font-semibold text-muted-foreground/75"
+              {emailSent ? (
+                <div className="flex flex-col items-center justify-center py-6 text-center animate-in zoom-in-95 duration-300">
+                  <div
+                    className="w-12 h-12 rounded-full flex items-center justify-center border shadow-sm mb-3 relative"
+                    style={{
+                      background: `rgba(16, 185, 129, 0.1)`,
+                      borderColor: `rgba(16, 185, 129, 0.25)`,
+                      color: `rgb(16, 185, 129)`,
+                    }}
                   >
-                    Recipient Email Address
-                  </label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="share-email-input"
-                      type="email"
-                      required
-                      placeholder="e.g. teammate@domain.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="flex-1 bg-muted/20 border-border/40 focus-visible:ring-offset-0 focus-visible:ring-1 focus-visible:ring-primary/40 text-xs h-10"
-                    />
-                    <Button
-                      type="submit"
-                      disabled={sharing || !email}
-                      className="h-10 px-4 bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm transition-all flex items-center gap-1.5 shrink-0"
-                    >
-                      {sharing ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <>
-                          <Send className="w-3.5 h-3.5" />
-                          <span className="text-xs">Share</span>
-                        </>
-                      )}
-                    </Button>
+                    <Check className="w-5 h-5 animate-scale-up" />
+                    <span className="absolute inset-0 rounded-full border border-emerald-500/30 animate-ping opacity-75 duration-1000" style={{ animationIterationCount: 1 }} />
                   </div>
+                  <h3 className="text-sm font-semibold text-foreground/90">
+                    Invite Sent!
+                  </h3>
+                  <p className="text-xs text-muted-foreground/60 mt-1.5 max-w-[280px] leading-relaxed">
+                    An email has been sent to{" "}
+                    <span className="font-medium text-foreground/80 font-mono text-[11px] bg-muted/40 px-1.5 py-0.5 rounded border border-border/10 break-all">
+                      {sentTo}
+                    </span>{" "}
+                    with instructions to join.
+                  </p>
+                  <Button
+                    onClick={() => {
+                      setEmailSent(false);
+                      setEmail("");
+                      setSentTo("");
+                    }}
+                    variant="ghost"
+                    size="sm"
+                    className="mt-4 text-xs text-primary hover:text-primary/80 hover:bg-primary/5 rounded-lg flex items-center gap-1.5 transition-all"
+                  >
+                    <Mail className="w-3.5 h-3.5" />
+                    Send to another email
+                  </Button>
                 </div>
-              </form>
-              <p className="text-[11px] text-muted-foreground/45 leading-relaxed mt-4 bg-muted/10 p-3 rounded-lg border border-border/5">
-                Sends a direct invite link via our sharing database. The
-                recipient will see this shared agent in their "Shared with me"
-                panel inside their personal dashboard workspace.
-              </p>
+              ) : (
+                <>
+                  <form onSubmit={handleShareEmail} className="space-y-4">
+                    <div className="space-y-2">
+                      <label
+                        htmlFor="share-email-input"
+                        className="text-xs font-semibold text-muted-foreground/75"
+                      >
+                        Recipient Email Address
+                      </label>
+                      <div className="flex gap-2">
+                        <Input
+                          id="share-email-input"
+                          type="email"
+                          required
+                          placeholder="e.g. teammate@domain.com"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          className="flex-1 bg-muted/20 border-border/40 focus-visible:ring-offset-0 focus-visible:ring-1 focus-visible:ring-primary/40 text-xs h-10"
+                        />
+                        <Button
+                          type="submit"
+                          disabled={sharing || !email}
+                          className="h-10 px-4 bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm transition-all flex items-center gap-1.5 shrink-0"
+                        >
+                          {sharing ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <>
+                              <Send className="w-3.5 h-3.5" />
+                              <span className="text-xs">Share</span>
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  </form>
+                  <p className="text-[11px] text-muted-foreground/45 leading-relaxed mt-4 bg-muted/10 p-3 rounded-lg border border-border/5">
+                    Sends a direct invite link via our sharing database. The
+                    recipient will see this shared agent in their "Shared with me"
+                    panel inside their personal dashboard workspace.
+                  </p>
+                </>
+              )}
             </TabsContent>
 
             {/* TAB CONTENT: QR Code */}
