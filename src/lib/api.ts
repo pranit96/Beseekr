@@ -462,13 +462,6 @@ class ApiClient {
     });
   }
 
-  async duplicateAgent(id: string): Promise<ApiResponse<Agent>> {
-    this.invalidateCache("/api/agents");
-    return this.request<Agent>(`/api/agents/${id}/duplicate`, {
-      method: "POST",
-    });
-  }
-
   async getSharedAgentPublicDetails(
     id: string,
   ): Promise<ApiResponse<Partial<Agent>>> {

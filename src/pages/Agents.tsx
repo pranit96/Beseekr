@@ -4,7 +4,6 @@ import {
   Pencil,
   Trash2,
   Search,
-  Copy,
   Sparkles,
   Loader2,
   Workflow,
@@ -73,7 +72,6 @@ const Agents = () => {
   const [templates, setTemplates] = useState<AgentTemplate[]>([]);
   const [loadingTemplates, setLoadingTemplates] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
-  const [duplicating, setDuplicating] = useState<string | null>(null);
   const [workflowBuilderOpen, setWorkflowBuilderOpen] = useState(false);
   const [quickChatAgent, setQuickChatAgent] = useState<Agent | null>(null);
   const [sharingAgent, setSharingAgent] = useState<Agent | null>(null);
@@ -154,25 +152,6 @@ const Agents = () => {
     }
   };
 
-  const handleDuplicate = async (agentId: string) => {
-    setDuplicating(agentId);
-    try {
-      const res = await apiClient.duplicateAgent(agentId);
-      if (res.success) {
-        toast({ title: "Agent duplicated" });
-        refetch();
-      } else throw new Error(res.error || "Failed");
-    } catch (err: any) {
-      toast({
-        title: "Duplicate failed",
-        description: err.message,
-        variant: "destructive",
-      });
-    } finally {
-      setDuplicating(null);
-    }
-  };
-
   const handleCreateFromTemplate = (t: AgentTemplate) => {
     setEditingAgent({
       id: "",
@@ -238,15 +217,15 @@ const Agents = () => {
               {initial}
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="text-[14px] font-semibold text-foreground/90 truncate leading-snug group-hover:text-foreground transition-colors">
+              <h3 className="text-[15px] font-bold text-zinc-900 dark:text-zinc-50 truncate leading-snug group-hover:text-primary transition-colors">
                 {agent.name}
               </h3>
               <div className="flex items-center gap-1.5 mt-1">
-                <span className="text-[10px] font-medium text-muted-foreground/50 bg-muted/40 px-2 py-0.5 rounded-full border border-border/30">
+                <span className="text-[11px] font-semibold text-zinc-700 dark:text-zinc-200 bg-muted/40 px-2.5 py-0.5 rounded-full border border-border/30">
                   {agent.domain || "General"}
                 </span>
                 {agent.is_default && (
-                  <span className="text-[9px] font-medium text-muted-foreground/35 uppercase tracking-wider">
+                  <span className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
                     default
                   </span>
                 )}
@@ -260,7 +239,7 @@ const Agents = () => {
                 title="Quick chat"
                 aria-label={`Quick chat with ${agent.name}`}
               >
-                <MessageSquare className="w-3.5 h-3.5" />
+                <MessageSquare className="w-4 h-4" />
               </button>
               <button
                 onClick={() => {
@@ -271,20 +250,7 @@ const Agents = () => {
                 title="Edit"
                 aria-label={`Edit ${agent.name}`}
               >
-                <Pencil className="w-3.5 h-3.5" />
-              </button>
-              <button
-                onClick={() => handleDuplicate(agent.id)}
-                disabled={duplicating === agent.id}
-                className="agent-action-btn"
-                title="Duplicate"
-                aria-label={`Duplicate ${agent.name}`}
-              >
-                {duplicating === agent.id ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                ) : (
-                  <Copy className="w-3.5 h-3.5" />
-                )}
+                <Pencil className="w-4 h-4" />
               </button>
               <button
                 onClick={() => setSharingAgent(agent)}
@@ -292,7 +258,7 @@ const Agents = () => {
                 title="Share agent"
                 aria-label={`Share ${agent.name}`}
               >
-                <Share2 className="w-3.5 h-3.5" />
+                <Share2 className="w-4 h-4" />
               </button>
               <button
                 onClick={() => setDeleteAgentId(agent.id)}
@@ -300,13 +266,13 @@ const Agents = () => {
                 title="Delete"
                 aria-label={`Delete ${agent.name}`}
               >
-                <Trash2 className="w-3.5 h-3.5" />
+                <Trash2 className="w-4 h-4" />
               </button>
             </div>
           </div>
 
           {/* Description */}
-          <p className="text-[12px] text-muted-foreground/60 leading-relaxed line-clamp-2 mb-3">
+          <p className="text-[13px] text-zinc-700 dark:text-zinc-200 leading-relaxed line-clamp-2 mb-3">
             {agent.description || "No description."}
           </p>
 
@@ -317,7 +283,7 @@ const Agents = () => {
                 const Icon = TOOL_ICON_MAP[toolName] || Wrench;
                 return (
                   <span key={toolName} className="tool-pill">
-                    <Icon className="w-2.5 h-2.5" />
+                    <Icon className="w-3 h-3" />
                     {toolName.replace(/_/g, " ").split(" ")[0]}
                   </span>
                 );
@@ -331,10 +297,10 @@ const Agents = () => {
           {/* System prompt preview */}
           {agent.system_prompt && (
             <div className="system-prompt-preview">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/35 mb-1">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-1">
                 System Prompt
               </p>
-              <p className="text-[11px] text-muted-foreground/50 line-clamp-2 leading-relaxed">
+              <p className="text-[12px] text-zinc-600 dark:text-zinc-300 line-clamp-2 leading-relaxed">
                 {agent.system_prompt}
               </p>
             </div>
