@@ -1,5 +1,4 @@
 import React, { useEffect, useRef } from "react";
-import { BookOpen, ArrowRight } from "lucide-react";
 
 const SUGGESTED_PROMPTS = [
   {
@@ -146,38 +145,6 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
         <kbd className="kbd">⇧↵</kbd> new line &nbsp;·&nbsp;{" "}
         <kbd className="kbd">⌘B</kbd> toggle sidebar
       </p>
-
-      {/* Blog Promotion Banner */}
-      <div className="mt-12 w-full p-6 rounded-3xl bg-zinc-500/5 dark:bg-white/[0.01] border border-zinc-200/50 dark:border-white/[0.04] backdrop-blur-md relative overflow-hidden group hover:border-primary/20 dark:hover:border-primary/30 transition-all duration-500">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-accent/10 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative z-10">
-          <div className="space-y-2 text-left">
-            <div className="flex items-center gap-2">
-              <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-[0.1em] bg-primary/10 text-primary border border-primary/20">
-                Insights
-              </span>
-              <span className="text-[10px] text-muted-foreground/50 font-medium">
-                • 5 Min Read
-              </span>
-            </div>
-            <h3 className="text-base sm:text-lg font-bold text-foreground group-hover:text-primary transition-colors duration-300">
-              Discover Validated Startup Problems & Market Demands
-            </h3>
-            <p className="text-xs text-muted-foreground/60 max-w-xl">
-              Learn how we leverage multi-agent models to crawl social graphs,
-              scoring high-affinity pain points so you can build what people
-              actually pay for.
-            </p>
-          </div>
-          <button
-            onClick={() => window.open("/blogs", "_blank")}
-            className="w-full md:w-auto flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-white dark:bg-white/[0.04] hover:bg-primary text-black dark:text-white hover:text-white font-bold text-xs border border-zinc-200 dark:border-white/[0.08] shadow-sm hover:shadow-primary/20 hover:gap-3 transition-all duration-300 whitespace-nowrap"
-          >
-            Explore Beseekr Blog
-            <ArrowRight className="h-3.5 w-3.5" />
-          </button>
-        </div>
-      </div>
     </div>
   );
 };

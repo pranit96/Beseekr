@@ -13,6 +13,7 @@ import {
 import { ThemeProvider } from "./hooks/use-theme";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { ResumeProvider } from "./contexts/ResumeContext";
+import { DeviceProvider } from "./contexts/DeviceContext";
 import { KeyboardShortcutsDialog } from "./components/KeyboardShortcutsDialog";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { RoleGuard } from "./components/RoleGuard";
@@ -276,6 +277,7 @@ const App = () => {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
+        <DeviceProvider>
         <ThemeProvider defaultTheme="dark">
           <TooltipProvider>
             <Toaster />
@@ -668,6 +670,7 @@ const App = () => {
             <SpeedInsightsTracker />
           </TooltipProvider>
         </ThemeProvider>
+        </DeviceProvider>
       </QueryClientProvider>
     </ErrorBoundary>
   );
