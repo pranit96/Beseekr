@@ -34,6 +34,7 @@ export const ShareAgentModal = ({
   onOpenChange,
   agent,
 }: ShareAgentModalProps) => {
+  const { toast } = useToast();
   const [copied, setCopied] = useState(false);
   const [email, setEmail] = useState("");
   const [sharing, setSharing] = useState(false);
@@ -76,6 +77,11 @@ export const ShareAgentModal = ({
     try {
       await navigator.clipboard.writeText(shareUrl);
       setCopied(true);
+      toast({
+        title: "Link Copied!",
+        description: "Invite link has been copied to your clipboard.",
+      });
+      setTimeout(() => setCopied(false), 2000);
     } catch (err: any) {
       setError(err.message || "Failed to copy link");
     }
@@ -92,7 +98,15 @@ export const ShareAgentModal = ({
       if (res.success) {
         setSentTo(email);
         setEmailSent(true);
+        toast({
+          title: "Invite Sent!",
+          description: `An email has been sent to ${email} with instructions.`,
+        });
         setEmail("");
+        setTimeout(() => {
+          setEmailSent(false);
+          setSentTo("");
+        }, 3000);
       } else {
         throw new Error(res.error || "Failed to share agent");
       }
@@ -168,196 +182,135 @@ export const ShareAgentModal = ({
             {/* TAB CONTENT: Invite Link */}
             <TabsContent
               value="link"
-              className="mt-0 outline-none animate-in fade-in slide-in-from-bottom-2 duration-300 min-h-[210px] flex flex-col justify-center gap-4"
+              className="mt-0 outline-none animate-in fade-in slide-in-from-bottom-2 duration-300 flex flex-col gap-4"
             >
-              {copied ? (
-                <div className="flex-1 flex flex-col items-center justify-center py-2 text-center animate-in zoom-in-95 duration-300 w-full">
-                  <div
-                    className="w-12 h-12 rounded-full flex items-center justify-center border shadow-sm mb-3 relative"
-                    style={{
-                      background: `rgba(16, 185, 129, 0.1)`,
-                      borderColor: `rgba(16, 185, 129, 0.25)`,
-                      color: `rgb(16, 185, 129)`,
-                    }}
-                  >
-                    <Check className="w-5 h-5 animate-scale-up" />
-                    <span
-                      className="absolute inset-0 rounded-full border border-emerald-500/30 animate-ping opacity-75 duration-1000"
-                      style={{ animationIterationCount: 1 }}
-                    />
-                  </div>
-                  <h3 className="text-sm font-semibold text-foreground/90">
-                    Link Copied!
-                  </h3>
-                  <p className="text-xs text-muted-foreground/60 mt-1.5 max-w-[280px] leading-relaxed">
-                    The share link has been copied to your clipboard. You can now send it to your teammates.
-                  </p>
-                  <Button
-                    onClick={() => {
-                      setCopied(false);
-                    }}
-                    variant="ghost"
-                    size="sm"
-                    className="mt-4 text-xs text-primary hover:text-primary/80 hover:bg-primary/5 rounded-lg flex items-center gap-1.5 transition-all"
-                  >
-                    <Link2 className="w-3.5 h-3.5" />
-                    Show link again
-                  </Button>
-                </div>
-              ) : (
-                <>
-                  <div className="space-y-2">
-                    <label
-                      htmlFor="share-link-input"
-                      className="text-xs font-semibold text-muted-foreground/75"
+              <div className="space-y-2">
+                <label
+                  htmlFor="share-link-input"
+                  className="text-xs font-semibold text-muted-foreground/75"
+                >
+                  Share via URL
+                </label>
+                {error && (
+                  <div className="p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-xs text-destructive flex items-center justify-between gap-2 animate-in fade-in duration-300">
+                    <span className="flex-1">{error}</span>
+                    <button
+                      onClick={() => setError(null)}
+                      className="text-[10px] underline hover:text-destructive/80 font-medium shrink-0"
                     >
-                      Share via URL
-                    </label>
-                    {error && (
-                      <div className="p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-xs text-destructive flex items-center justify-between gap-2 animate-in fade-in duration-300">
-                        <span className="flex-1">{error}</span>
-                        <button
-                          onClick={() => setError(null)}
-                          className="text-[10px] underline hover:text-destructive/80 font-medium shrink-0"
-                        >
-                          Dismiss
-                        </button>
-                      </div>
-                    )}
-                    <div className="flex items-center gap-2">
-                      <Input
-                        id="share-link-input"
-                        readOnly
-                        value={shareUrl}
-                        className="flex-1 bg-muted/20 border-border/40 focus-visible:ring-offset-0 focus-visible:ring-1 focus-visible:ring-primary/40 text-xs font-mono h-10 select-all"
-                      />
-                      <Button
-                        onClick={handleCopyLink}
-                        variant="outline"
-                        className="h-10 px-4 bg-background/50 hover:bg-muted/30 hover:text-foreground border-border/40 shadow-sm transition-all flex items-center gap-1.5 shrink-0"
-                      >
+                      Dismiss
+                    </button>
+                  </div>
+                )}
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="share-link-input"
+                    readOnly
+                    value={shareUrl}
+                    className="flex-1 bg-muted/20 border-border/40 focus-visible:ring-offset-0 focus-visible:ring-1 focus-visible:ring-primary/40 text-xs font-mono h-10 select-all"
+                  />
+                  <Button
+                    onClick={handleCopyLink}
+                    variant={copied ? "default" : "outline"}
+                    className={`h-10 px-4 transition-all flex items-center gap-1.5 shrink-0 ${
+                      copied
+                        ? "bg-emerald-600 hover:bg-emerald-600 text-white border-transparent"
+                        : "bg-background/50 hover:bg-muted/30 hover:text-foreground border-border/40 shadow-sm"
+                    }`}
+                  >
+                    {copied ? (
+                      <>
+                        <Check className="w-4 h-4 animate-scale-up" />
+                        <span className="text-xs">Copied</span>
+                      </>
+                    ) : (
+                      <>
                         <Copy className="w-4 h-4" />
                         <span className="text-xs">Copy</span>
-                      </Button>
-                    </div>
-                  </div>
-                  <p className="text-[11px] text-muted-foreground/45 leading-relaxed bg-muted/10 p-3 rounded-lg border border-border/5">
-                    Anyone with this link can view the agent's safe profile and
-                    import a copy into their personal collection. The system prompt
-                    remains fully encrypted until they click import.
-                  </p>
-                </>
-              )}
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+              <p className="text-[11px] text-muted-foreground/45 leading-relaxed bg-muted/10 p-3 rounded-lg border border-border/5">
+                Anyone with this link can view the agent's safe profile and
+                import a copy into their personal collection. The system prompt
+                remains fully encrypted until they click import.
+              </p>
             </TabsContent>
 
             {/* TAB CONTENT: Email Share */}
             <TabsContent
               value="email"
-              className="mt-0 outline-none animate-in fade-in slide-in-from-bottom-2 duration-300 min-h-[210px] flex flex-col justify-center gap-4"
+              className="mt-0 outline-none animate-in fade-in slide-in-from-bottom-2 duration-300 flex flex-col gap-4"
             >
-              {emailSent ? (
-                <div className="flex-1 flex flex-col items-center justify-center py-2 text-center animate-in zoom-in-95 duration-300 w-full">
-                  <div
-                    className="w-12 h-12 rounded-full flex items-center justify-center border shadow-sm mb-3 relative"
-                    style={{
-                      background: `rgba(16, 185, 129, 0.1)`,
-                      borderColor: `rgba(16, 185, 129, 0.25)`,
-                      color: `rgb(16, 185, 129)`,
-                    }}
+              <form onSubmit={handleShareEmail} className="space-y-4">
+                <div className="space-y-2">
+                  <label
+                    htmlFor="share-email-input"
+                    className="text-xs font-semibold text-muted-foreground/75"
                   >
-                    <Check className="w-5 h-5 animate-scale-up" />
-                    <span
-                      className="absolute inset-0 rounded-full border border-emerald-500/30 animate-ping opacity-75 duration-1000"
-                      style={{ animationIterationCount: 1 }}
-                    />
-                  </div>
-                  <h3 className="text-sm font-semibold text-foreground/90">
-                    Invite Sent!
-                  </h3>
-                  <p className="text-xs text-muted-foreground/60 mt-1.5 max-w-[280px] leading-relaxed">
-                    An email has been sent to{" "}
-                    <span className="font-medium text-foreground/80 font-mono text-[11px] bg-muted/40 px-1.5 py-0.5 rounded border border-border/10 break-all">
-                      {sentTo}
-                    </span>{" "}
-                    with instructions to join.
-                  </p>
-                  <Button
-                    onClick={() => {
-                      setEmailSent(false);
-                      setEmail("");
-                      setSentTo("");
-                      setError(null);
-                    }}
-                    variant="ghost"
-                    size="sm"
-                    className="mt-4 text-xs text-primary hover:text-primary/80 hover:bg-primary/5 rounded-lg flex items-center gap-1.5 transition-all"
-                  >
-                    <Mail className="w-3.5 h-3.5" />
-                    Send to another email
-                  </Button>
-                </div>
-              ) : (
-                <>
-                  <form onSubmit={handleShareEmail} className="space-y-4">
-                    <div className="space-y-2">
-                      <label
-                        htmlFor="share-email-input"
-                        className="text-xs font-semibold text-muted-foreground/75"
+                    Recipient Email Address
+                  </label>
+                  {error && (
+                    <div className="p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-xs text-destructive flex items-center justify-between gap-2 animate-in fade-in duration-300">
+                      <span className="flex-1">{error}</span>
+                      <button
+                        type="button"
+                        onClick={() => setError(null)}
+                        className="text-[10px] underline hover:text-destructive/80 font-medium shrink-0"
                       >
-                        Recipient Email Address
-                      </label>
-                      {error && (
-                        <div className="p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-xs text-destructive flex items-center justify-between gap-2 animate-in fade-in duration-300">
-                          <span className="flex-1">{error}</span>
-                          <button
-                            type="button"
-                            onClick={() => setError(null)}
-                            className="text-[10px] underline hover:text-destructive/80 font-medium shrink-0"
-                          >
-                            Dismiss
-                          </button>
-                        </div>
-                      )}
-                      <div className="flex gap-2">
-                        <Input
-                          id="share-email-input"
-                          type="email"
-                          required
-                          placeholder="e.g. teammate@domain.com"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          className="flex-1 bg-muted/20 border-border/40 focus-visible:ring-offset-0 focus-visible:ring-1 focus-visible:ring-primary/40 text-xs h-10"
-                        />
-                        <Button
-                          type="submit"
-                          disabled={sharing || !email}
-                          className="h-10 px-4 bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm transition-all flex items-center gap-1.5 shrink-0"
-                        >
-                          {sharing ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <>
-                              <Send className="w-3.5 h-3.5" />
-                              <span className="text-xs">Share</span>
-                            </>
-                          )}
-                        </Button>
-                      </div>
+                        Dismiss
+                      </button>
                     </div>
-                  </form>
-                  <p className="text-[11px] text-muted-foreground/45 leading-relaxed bg-muted/10 p-3 rounded-lg border border-border/5">
-                    Sends a direct invite link via our sharing database. The
-                    recipient will see this shared agent in their "Shared with
-                    me" panel inside their personal dashboard workspace.
-                  </p>
-                </>
-              )}
+                  )}
+                  <div className="flex gap-2">
+                    <Input
+                      id="share-email-input"
+                      type="email"
+                      required
+                      placeholder="e.g. teammate@domain.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="flex-1 bg-muted/20 border-border/40 focus-visible:ring-offset-0 focus-visible:ring-1 focus-visible:ring-primary/40 text-xs h-10"
+                    />
+                    <Button
+                      type="submit"
+                      disabled={sharing || !email || emailSent}
+                      className={`h-10 px-4 transition-all flex items-center gap-1.5 shrink-0 ${
+                        emailSent
+                          ? "bg-emerald-600 hover:bg-emerald-600 text-white border-transparent cursor-default"
+                          : "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm"
+                      }`}
+                    >
+                      {sharing ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : emailSent ? (
+                        <>
+                          <Check className="w-3.5 h-3.5 animate-scale-up" />
+                          <span className="text-xs">Sent</span>
+                        </>
+                      ) : (
+                        <>
+                          <Send className="w-3.5 h-3.5" />
+                          <span className="text-xs">Share</span>
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </form>
+              <p className="text-[11px] text-muted-foreground/45 leading-relaxed bg-muted/10 p-3 rounded-lg border border-border/5">
+                Sends a direct invite link via our sharing database. The
+                recipient will see this shared agent in their "Shared with
+                me" panel inside their personal dashboard workspace.
+              </p>
             </TabsContent>
 
             {/* TAB CONTENT: QR Code */}
             <TabsContent
               value="qrcode"
-              className="mt-0 outline-none flex flex-col items-center justify-center gap-4 py-1 animate-in fade-in slide-in-from-bottom-2 duration-300 min-h-[210px]"
+              className="mt-0 outline-none flex flex-col items-center gap-4 py-1 animate-in fade-in slide-in-from-bottom-2 duration-300"
             >
               <div className="relative group p-2.5 bg-white dark:bg-zinc-100 border border-border/40 rounded-xl shadow-sm transition-all hover:shadow-md">
                 {/* Visual Accent Box Shadows */}
