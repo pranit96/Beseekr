@@ -279,6 +279,7 @@ export const ChatInterface: React.FC<{
   const rateLimitTimerRef = useRef<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatScrollRef = useRef<HTMLDivElement>(null);
+  const scrolledConversationRef = useRef<string | null>(null);
 
   const { toast } = useToast();
   const { socketConnected } = useAuth();
@@ -336,6 +337,24 @@ export const ChatInterface: React.FC<{
       });
     }
   }, [messages, isExecuting, preparingMessage]);
+
+  // Track scrolled conversations to force instant scroll to bottom on initial load
+  useEffect(() => {
+    if (!activeConversationId) {
+      scrolledConversationRef.current = null;
+      return;
+    }
+
+    if (messages.length > 0 && scrolledConversationRef.current !== activeConversationId) {
+      scrolledConversationRef.current = activeConversationId;
+      requestAnimationFrame(() => {
+        messagesEndRef.current?.scrollIntoView({
+          behavior: "auto", // Instant scroll for initial load, smooth is too jarring
+          block: "end",
+        });
+      });
+    }
+  }, [activeConversationId, messages]);
 
   useEffect(
     () => () => {
