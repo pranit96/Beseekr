@@ -15,6 +15,7 @@ import {
   Lock,
   Globe,
   AlertCircle,
+  Check,
 } from "lucide-react";
 import confetti from "canvas-confetti";
 
@@ -241,24 +242,35 @@ export default function AgentShare() {
 
               {/* Action Trigger */}
               {user ? (
-                <Button
-                  onClick={handleImport}
-                  disabled={importing}
-                  size="lg"
-                  className="w-full bg-primary text-primary-foreground hover:bg-primary/95 shadow-md flex items-center justify-center gap-2 py-6 rounded-xl text-sm font-semibold transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-70"
-                >
-                  {importing ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Adding to collection...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Download className="w-4 h-4" />
-                      <span>Add to Collection</span>
-                    </>
-                  )}
-                </Button>
+                user.id === agent.user_id ? (
+                  <Button
+                    disabled
+                    size="lg"
+                    className="w-full bg-muted text-muted-foreground border border-border/40 flex items-center justify-center gap-2 py-6 rounded-xl text-sm font-semibold cursor-not-allowed"
+                  >
+                    <Check className="w-4 h-4 text-emerald-500" />
+                    <span>Agent already exists in your collection</span>
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={handleImport}
+                    disabled={importing}
+                    size="lg"
+                    className="w-full bg-primary text-primary-foreground hover:bg-primary/95 shadow-md flex items-center justify-center gap-2 py-6 rounded-xl text-sm font-semibold transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-70"
+                  >
+                    {importing ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Adding to collection...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Download className="w-4 h-4" />
+                        <span>Add to Collection</span>
+                      </>
+                    )}
+                  </Button>
+                )
               ) : (
                 <Button
                   onClick={handleLoginRedirect}

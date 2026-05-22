@@ -34,19 +34,21 @@ export const ShareAgentModal = ({
   onOpenChange,
   agent,
 }: ShareAgentModalProps) => {
-  const { toast } = useToast();
   const [copied, setCopied] = useState(false);
   const [email, setEmail] = useState("");
   const [sharing, setSharing] = useState(false);
   const [currentTab, setCurrentTab] = useState("link");
   const [emailSent, setEmailSent] = useState(false);
   const [sentTo, setSentTo] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
-  // Reset email state when the dialog is closed or when switching tabs
+  // Reset states when the dialog is closed or when switching tabs
   useEffect(() => {
     setEmailSent(false);
     setEmail("");
     setSentTo("");
+    setError(null);
+    setCopied(false);
   }, [currentTab, open]);
 
   if (!agent) return null;
@@ -70,20 +72,12 @@ export const ShareAgentModal = ({
   )}&color=${safeColorHex}`;
 
   const handleCopyLink = async () => {
+    setError(null);
     try {
       await navigator.clipboard.writeText(shareUrl);
       setCopied(true);
-      toast({
-        title: "Link Copied!",
-        description: "Share invite link has been copied to your clipboard.",
-      });
-      setTimeout(() => setCopied(false), 2000);
     } catch (err: any) {
-      toast({
-        title: "Failed to copy link",
-        description: err.message,
-        variant: "destructive",
-      });
+      setError(err.message || "Failed to copy link");
     }
   };
 
@@ -92,25 +86,18 @@ export const ShareAgentModal = ({
     if (!email) return;
 
     setSharing(true);
+    setError(null);
     try {
       const res = await apiClient.shareAgentByEmail(agent.id, email);
       if (res.success) {
         setSentTo(email);
         setEmailSent(true);
-        toast({
-          title: "Agent Shared!",
-          description: `Successfully shared "${agent.name}" with ${email}.`,
-        });
         setEmail("");
       } else {
         throw new Error(res.error || "Failed to share agent");
       }
     } catch (err: any) {
-      toast({
-        title: "Sharing failed",
-        description: err.message,
-        variant: "destructive",
-      });
+      setError(err.message || "Failed to share agent");
     } finally {
       setSharing(false);
     }
@@ -181,48 +168,86 @@ export const ShareAgentModal = ({
             {/* TAB CONTENT: Invite Link */}
             <TabsContent
               value="link"
-              className="mt-0 outline-none space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300"
+              className="mt-0 outline-none space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300 min-h-[148px] flex flex-col justify-between"
             >
-              <div className="space-y-2">
-                <label
-                  htmlFor="share-link-input"
-                  className="text-xs font-semibold text-muted-foreground/75"
-                >
-                  Share via URL
-                </label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    id="share-link-input"
-                    readOnly
-                    value={shareUrl}
-                    className="flex-1 bg-muted/20 border-border/40 focus-visible:ring-offset-0 focus-visible:ring-1 focus-visible:ring-primary/40 text-xs font-mono h-10 select-all"
-                  />
-                  <Button
-                    onClick={handleCopyLink}
-                    variant="outline"
-                    className="h-10 px-4 bg-background/50 hover:bg-muted/30 hover:text-foreground border-border/40 shadow-sm transition-all flex items-center gap-1.5 shrink-0"
+              {copied ? (
+                <div className="flex flex-col items-center justify-center py-6 text-center animate-in zoom-in-95 duration-300">
+                  <div
+                    className="w-12 h-12 rounded-full flex items-center justify-center border shadow-sm mb-3 relative"
+                    style={{
+                      background: `rgba(16, 185, 129, 0.1)`,
+                      borderColor: `rgba(16, 185, 129, 0.25)`,
+                      color: `rgb(16, 185, 129)`,
+                    }}
                   >
-                    {copied ? (
-                      <>
-                        <Check className="w-4 h-4 text-emerald-500 animate-scale-up" />
-                        <span className="text-xs text-emerald-500 font-medium">
-                          Copied
-                        </span>
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-4 h-4" />
-                        <span className="text-xs">Copy</span>
-                      </>
-                    )}
+                    <Check className="w-5 h-5 animate-scale-up" />
+                    <span
+                      className="absolute inset-0 rounded-full border border-emerald-500/30 animate-ping opacity-75 duration-1000"
+                      style={{ animationIterationCount: 1 }}
+                    />
+                  </div>
+                  <h3 className="text-sm font-semibold text-foreground/90">
+                    Link Copied!
+                  </h3>
+                  <p className="text-xs text-muted-foreground/60 mt-1.5 max-w-[280px] leading-relaxed">
+                    The share link has been copied to your clipboard. You can now send it to your teammates.
+                  </p>
+                  <Button
+                    onClick={() => {
+                      setCopied(false);
+                    }}
+                    variant="ghost"
+                    size="sm"
+                    className="mt-4 text-xs text-primary hover:text-primary/80 hover:bg-primary/5 rounded-lg flex items-center gap-1.5 transition-all"
+                  >
+                    <Link2 className="w-3.5 h-3.5" />
+                    Show link again
                   </Button>
                 </div>
-              </div>
-              <p className="text-[11px] text-muted-foreground/45 leading-relaxed bg-muted/10 p-3 rounded-lg border border-border/5">
-                Anyone with this link can view the agent's safe profile and
-                import a copy into their personal collection. The system prompt
-                remains fully encrypted until they click import.
-              </p>
+              ) : (
+                <>
+                  <div className="space-y-2">
+                    <label
+                      htmlFor="share-link-input"
+                      className="text-xs font-semibold text-muted-foreground/75"
+                    >
+                      Share via URL
+                    </label>
+                    {error && (
+                      <div className="p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-xs text-destructive flex items-center justify-between gap-2 animate-in fade-in duration-300">
+                        <span className="flex-1">{error}</span>
+                        <button
+                          onClick={() => setError(null)}
+                          className="text-[10px] underline hover:text-destructive/80 font-medium shrink-0"
+                        >
+                          Dismiss
+                        </button>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="share-link-input"
+                        readOnly
+                        value={shareUrl}
+                        className="flex-1 bg-muted/20 border-border/40 focus-visible:ring-offset-0 focus-visible:ring-1 focus-visible:ring-primary/40 text-xs font-mono h-10 select-all"
+                      />
+                      <Button
+                        onClick={handleCopyLink}
+                        variant="outline"
+                        className="h-10 px-4 bg-background/50 hover:bg-muted/30 hover:text-foreground border-border/40 shadow-sm transition-all flex items-center gap-1.5 shrink-0"
+                      >
+                        <Copy className="w-4 h-4" />
+                        <span className="text-xs">Copy</span>
+                      </Button>
+                    </div>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground/45 leading-relaxed bg-muted/10 p-3 rounded-lg border border-border/5">
+                    Anyone with this link can view the agent's safe profile and
+                    import a copy into their personal collection. The system prompt
+                    remains fully encrypted until they click import.
+                  </p>
+                </>
+              )}
             </TabsContent>
 
             {/* TAB CONTENT: Email Share */}
@@ -241,7 +266,10 @@ export const ShareAgentModal = ({
                     }}
                   >
                     <Check className="w-5 h-5 animate-scale-up" />
-                    <span className="absolute inset-0 rounded-full border border-emerald-500/30 animate-ping opacity-75 duration-1000" style={{ animationIterationCount: 1 }} />
+                    <span
+                      className="absolute inset-0 rounded-full border border-emerald-500/30 animate-ping opacity-75 duration-1000"
+                      style={{ animationIterationCount: 1 }}
+                    />
                   </div>
                   <h3 className="text-sm font-semibold text-foreground/90">
                     Invite Sent!
@@ -258,6 +286,7 @@ export const ShareAgentModal = ({
                       setEmailSent(false);
                       setEmail("");
                       setSentTo("");
+                      setError(null);
                     }}
                     variant="ghost"
                     size="sm"
@@ -277,6 +306,18 @@ export const ShareAgentModal = ({
                       >
                         Recipient Email Address
                       </label>
+                      {error && (
+                        <div className="p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-xs text-destructive flex items-center justify-between gap-2 animate-in fade-in duration-300">
+                          <span className="flex-1">{error}</span>
+                          <button
+                            type="button"
+                            onClick={() => setError(null)}
+                            className="text-[10px] underline hover:text-destructive/80 font-medium shrink-0"
+                          >
+                            Dismiss
+                          </button>
+                        </div>
+                      )}
                       <div className="flex gap-2">
                         <Input
                           id="share-email-input"
@@ -306,8 +347,8 @@ export const ShareAgentModal = ({
                   </form>
                   <p className="text-[11px] text-muted-foreground/45 leading-relaxed mt-4 bg-muted/10 p-3 rounded-lg border border-border/5">
                     Sends a direct invite link via our sharing database. The
-                    recipient will see this shared agent in their "Shared with me"
-                    panel inside their personal dashboard workspace.
+                    recipient will see this shared agent in their "Shared with
+                    me" panel inside their personal dashboard workspace.
                   </p>
                 </>
               )}

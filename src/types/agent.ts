@@ -13,6 +13,7 @@ export interface Agent {
   is_public?: boolean;
   metadata?: any;
   tools?: string[];
+  user_id?: string;
   created_at?: string;
   updated_at?: string;
 }
