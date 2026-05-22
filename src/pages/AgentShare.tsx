@@ -151,14 +151,6 @@ export default function AgentShare() {
       </div>
 
       <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 md:p-8 relative z-10">
-        {/* Back navigation */}
-        <Link
-          to={user ? "/agents" : "/"}
-          className="absolute top-20 left-4 sm:left-8 flex items-center gap-1.5 text-xs text-muted-foreground/60 hover:text-foreground transition-colors group py-2"
-        >
-          <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" />
-          Back to Workspace
-        </Link>
 
         {error || !agent ? (
           /* Error State Card */
@@ -281,6 +273,17 @@ export default function AgentShare() {
                   <span>Log In to Import Agent</span>
                 </Button>
               )}
+            </div>
+
+            {/* Back to Workspace footer */}
+            <div className="border-t border-border/20 px-8 sm:px-10 py-4 flex items-center justify-center">
+              <Link
+                to={user ? "/agents" : "/"}
+                className="flex items-center gap-1.5 text-xs text-muted-foreground/50 hover:text-foreground transition-colors group"
+              >
+                <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" />
+                Back to Workspace
+              </Link>
             </div>
           </div>
         )}
