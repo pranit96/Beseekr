@@ -225,7 +225,7 @@ export async function downloadResumeWord(
 ): Promise<string> {
   const res = await apiClient.post("/api/resume/download/word", { resume });
 
-  const rawBase64 = (res.data as any)?.word_base64;
+  const rawBase64 = (res as any)?.word_base64 || (res.data as any)?.word_base64;
   if (!rawBase64) {
     throw new Error("Invalid Word delivery packet from endpoint.");
   }

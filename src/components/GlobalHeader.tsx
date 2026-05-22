@@ -583,7 +583,6 @@ export function GlobalHeader() {
                 <motion.div
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  className="hidden sm:block"
                 >
                   <Link to="/auth" onClick={saveAuthRedirect}>
                     <Button
@@ -673,22 +672,7 @@ export function GlobalHeader() {
                 );
               })}
 
-              {/* Login button for mobile guests */}
-              {!user && (
-                <>
-                  <div className="border-t border-border/50 my-2" />
-                  <Link
-                    to="/auth"
-                    onClick={() => {
-                      saveAuthRedirect();
-                      setMobileOpen(false);
-                    }}
-                    className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold bg-gradient-to-r from-primary to-accent text-white shadow-md"
-                  >
-                    {t("nav.loginSignUp", "Login / Sign Up")}
-                  </Link>
-                </>
-              )}
+
 
               {/* Logout for mobile users */}
               {user && (

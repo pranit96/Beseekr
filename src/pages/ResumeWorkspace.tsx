@@ -798,16 +798,14 @@ export default function ResumeWorkspace() {
                       { label: "ATS Score", desc: "Check compatibility", icon: Trophy, action: () => { 
                           setRightPanelTab("ai"); 
                           if (window.innerWidth < 1024) setIsAiPanelOpen(true);
-                          setShowOnboarding(false); 
                       } },
                       { label: "AI Optimize", desc: "Enhance bullet points", icon: Sparkles, action: () => { 
                           setRightPanelTab("ai");
                           if (window.innerWidth < 1024) setIsAiPanelOpen(true);
                           handleOptimizeBullets(); 
-                          setShowOnboarding(false); 
                       } },
-                      { label: "Edit Details", desc: "Fine-tune sections", icon: User, action: () => { setActiveTab("personal"); setShowOnboarding(false); } },
-                      { label: "Export PDF", desc: "Download resume", icon: Download, action: () => { handleExportPdf(); setShowOnboarding(false); } },
+                      { label: "Edit Details", desc: "Fine-tune sections", icon: User, action: () => { setActiveTab("personal"); } },
+                      { label: "Export PDF", desc: "Download resume", icon: Download, action: () => { handleExportPdf(); } },
                     ].map((item) => {
                       const Icon = item.icon;
                       return (
@@ -2624,34 +2622,34 @@ export default function ResumeWorkspace() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={handleCopyLatex}
-                  className="flex items-center gap-1.5 h-8 px-3.5 rounded-lg text-[10px] font-bold text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white bg-zinc-100 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] hover:bg-zinc-200 transition-all"
+                  className="flex items-center gap-1.5 h-8 px-2 md:px-3.5 rounded-lg text-[10px] font-bold text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white bg-zinc-100 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] hover:bg-zinc-200 transition-all"
                 >
                   {isCopied ? (
                     <CheckCircle2 className="h-3 w-3 text-emerald-500" />
                   ) : (
                     <Copy className="h-3 w-3" />
                   )}
-                  {isCopied ? "Copied" : "Copy"}
+                  <span className="hidden md:inline">{isCopied ? "Copied" : "Copy"}</span>
                 </button>
                 <button
                   onClick={handleDownloadLatex}
-                  className="flex items-center gap-1.5 h-8 px-3.5 rounded-lg text-[10px] font-bold text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white bg-zinc-100 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] hover:bg-zinc-200 transition-all"
+                  className="flex items-center gap-1.5 h-8 px-2 md:px-3.5 rounded-lg text-[10px] font-bold text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white bg-zinc-100 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] hover:bg-zinc-200 transition-all"
                 >
-                  <Download className="h-3 w-3" /> Download .tex
+                  <Download className="h-3 w-3" /> <span className="hidden md:inline">Download .tex</span>
                 </button>
                 <button
                   onClick={() => setIsLatexOpen(false)}
-                  className="flex items-center gap-1.5 h-8 px-3.5 rounded-lg text-[10px] font-bold text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white bg-zinc-100 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] hover:bg-zinc-200 transition-all"
+                  className="flex items-center gap-1.5 h-8 px-2 md:px-3.5 rounded-lg text-[10px] font-bold text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white bg-zinc-100 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] hover:bg-zinc-200 transition-all"
                 >
-                  <X className="h-3 w-3" /> Close
+                  <X className="h-3 w-3" /> <span className="hidden md:inline">Close</span>
                 </button>
               </div>
             </div>
 
             {/* Modal Body */}
-            <div className="flex-1 flex gap-5 p-5 overflow-hidden">
+            <div className="flex-1 flex flex-col md:flex-row gap-5 p-4 md:p-5 overflow-y-auto md:overflow-hidden">
               {/* Info Sidebar */}
-              <div className="w-72 shrink-0 flex flex-col justify-between p-5 border border-zinc-200 dark:border-white/[0.06] rounded-2xl bg-zinc-50 dark:bg-white/[0.01] text-left space-y-4">
+              <div className="w-full md:w-72 shrink-0 flex flex-col justify-between p-5 border border-zinc-200 dark:border-white/[0.06] rounded-2xl bg-zinc-50 dark:bg-white/[0.01] text-left space-y-4 md:overflow-y-auto">
                 <div className="space-y-4">
                   <span className="inline-block text-[9px] font-black uppercase tracking-widest text-indigo-500 bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 px-2.5 py-1 rounded-lg">
                     Why LaTeX?
@@ -2700,7 +2698,7 @@ export default function ResumeWorkspace() {
               </div>
 
               {/* Code View */}
-              <div className="flex-1 border border-zinc-200 dark:border-white/[0.08] rounded-2xl overflow-hidden flex flex-col bg-white dark:bg-[#0c0c10]">
+              <div className="flex-1 min-h-[300px] border border-zinc-200 dark:border-white/[0.08] rounded-2xl overflow-hidden flex flex-col bg-white dark:bg-[#0c0c10]">
                 <div className="flex items-center justify-between px-4 h-10 border-b border-zinc-200 dark:border-white/[0.06] bg-zinc-50/60 dark:bg-white/[0.02] shrink-0">
                   <span className="text-[10px] font-mono font-bold text-zinc-400">
                     source_code.tex
