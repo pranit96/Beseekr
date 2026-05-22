@@ -345,7 +345,15 @@ export const ChatInterface: React.FC<{
       return;
     }
 
-    if (messages.length > 0 && scrolledConversationRef.current !== activeConversationId) {
+    // Only scroll to the bottom when:
+    // 1. The currently loaded conversation ID matches the requested active conversation ID
+    // 2. We are not in the middle of loading new messages (i.e. loading is complete)
+    // 3. We haven't scrolled to the bottom of this specific conversation yet
+    if (
+      conversationId === activeConversationId &&
+      !convLoading &&
+      scrolledConversationRef.current !== activeConversationId
+    ) {
       scrolledConversationRef.current = activeConversationId;
       requestAnimationFrame(() => {
         messagesEndRef.current?.scrollIntoView({
@@ -354,7 +362,7 @@ export const ChatInterface: React.FC<{
         });
       });
     }
-  }, [activeConversationId, messages]);
+  }, [activeConversationId, conversationId, convLoading]);
 
   useEffect(
     () => () => {
