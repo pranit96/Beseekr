@@ -77,6 +77,7 @@ const lazyRetry = <T extends React.ComponentType<any>>(
 // Lazy loaded pages with retry logic for chunk loading failures
 const Chat = lazyRetry(() => import("./pages/Chat"), "Chat");
 const Agents = lazyRetry(() => import("./pages/Agents"), "Agents");
+const AgentShare = lazyRetry(() => import("./pages/AgentShare"), "AgentShare");
 const Analytics = lazyRetry(() => import("./pages/Analytics"), "Analytics");
 const Profile = lazyRetry(() => import("./pages/Profile"), "Profile");
 const ResetPassword = lazyRetry(
@@ -345,6 +346,16 @@ const App = () => {
 
                   {/* About page */}
                   <Route path="/about" element={<About />} />
+
+                  {/* Shared agent preview landing page */}
+                  <Route
+                    path="/agents/share/:id"
+                    element={
+                      <Suspense fallback={<PageLoader />}>
+                        <AgentShare />
+                      </Suspense>
+                    }
+                  />
 
                   {/* Wellness (health) */}
                   {/* <Route path="/wellness" element={

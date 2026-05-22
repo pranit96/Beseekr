@@ -20,6 +20,7 @@ import {
   AlignLeft,
   Languages,
   BarChart3,
+  Share2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -46,6 +47,7 @@ import {
 } from "@/hooks/use-api-queries";
 import { WorkflowBuilder } from "@/components/WorkflowBuilder";
 import { AgentQuickChat } from "@/components/AgentQuickChat";
+import { ShareAgentModal } from "@/components/ShareAgentModal";
 import React from "react";
 
 const TOOL_ICON_MAP: Record<string, React.ElementType> = {
@@ -74,6 +76,7 @@ const Agents = () => {
   const [duplicating, setDuplicating] = useState<string | null>(null);
   const [workflowBuilderOpen, setWorkflowBuilderOpen] = useState(false);
   const [quickChatAgent, setQuickChatAgent] = useState<Agent | null>(null);
+  const [sharingAgent, setSharingAgent] = useState<Agent | null>(null);
   const { toast } = useToast();
 
   const {
@@ -88,7 +91,7 @@ const Agents = () => {
 
   const agents = useMemo(() => {
     if (!agentsResponse) return [];
-    const d = agentsResponse.data;
+    const d = agentsResponse.data as any;
     if (Array.isArray(d)) return d;
     if (d && Array.isArray(d.agents)) return d.agents;
     if (d && Array.isArray(d.data)) return d.data;
@@ -113,10 +116,12 @@ const Agents = () => {
     setShowTemplates(true);
     try {
       const res = await apiClient.getAgentTemplates();
-      if (res.success && res.data)
+      if (res.success && res.data) {
+        const resData = res.data as any;
         setTemplates(
-          Array.isArray(res.data) ? res.data : res.data.templates || [],
+          Array.isArray(resData) ? resData : resData.templates || [],
         );
+      }
     } catch (err: any) {
       toast({
         title: "Failed to load templates",
@@ -253,6 +258,7 @@ const Agents = () => {
                 onClick={() => setQuickChatAgent(agent)}
                 className="agent-action-btn"
                 title="Quick chat"
+                aria-label={`Quick chat with ${agent.name}`}
               >
                 <MessageSquare className="w-3.5 h-3.5" />
               </button>
@@ -263,6 +269,7 @@ const Agents = () => {
                 }}
                 className="agent-action-btn"
                 title="Edit"
+                aria-label={`Edit ${agent.name}`}
               >
                 <Pencil className="w-3.5 h-3.5" />
               </button>
@@ -271,6 +278,7 @@ const Agents = () => {
                 disabled={duplicating === agent.id}
                 className="agent-action-btn"
                 title="Duplicate"
+                aria-label={`Duplicate ${agent.name}`}
               >
                 {duplicating === agent.id ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -279,9 +287,18 @@ const Agents = () => {
                 )}
               </button>
               <button
+                onClick={() => setSharingAgent(agent)}
+                className="agent-action-btn"
+                title="Share agent"
+                aria-label={`Share ${agent.name}`}
+              >
+                <Share2 className="w-3.5 h-3.5" />
+              </button>
+              <button
                 onClick={() => setDeleteAgentId(agent.id)}
                 className="agent-action-btn agent-action-btn-danger"
                 title="Delete"
+                aria-label={`Delete ${agent.name}`}
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
@@ -551,6 +568,12 @@ const Agents = () => {
           onClose={() => setQuickChatAgent(null)}
         />
       )}
+
+      <ShareAgentModal
+        open={!!sharingAgent}
+        onOpenChange={(open) => !open && setSharingAgent(null)}
+        agent={sharingAgent}
+      />
     </>
   );
 };

@@ -469,6 +469,30 @@ class ApiClient {
     });
   }
 
+  async getSharedAgentPublicDetails(
+    id: string,
+  ): Promise<ApiResponse<Partial<Agent>>> {
+    return this.request<Partial<Agent>>(`/api/agents/share/${id}`);
+  }
+
+  async importSharedAgent(id: string): Promise<ApiResponse<Agent>> {
+    this.invalidateCache("/api/agents");
+    return this.request<Agent>(`/api/agents/share/${id}/import`, {
+      method: "POST",
+    });
+  }
+
+  async shareAgentByEmail(
+    id: string,
+    email: string,
+    permission = "view",
+  ): Promise<ApiResponse<any>> {
+    return this.request<any>(`/api/agents/${id}/share`, {
+      method: "POST",
+      body: JSON.stringify({ shared_with_email: email, permission }),
+    });
+  }
+
   async bulkAgentAction(payload: {
     action: "activate" | "deactivate" | "delete";
     agent_ids: string[];
