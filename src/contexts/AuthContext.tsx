@@ -331,13 +331,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     }, 60000); // Check local activity every minute (no server polling)
 
+    // Proactive token refresh timer (refreshes before the 15-minute token expiry)
+    tokenRefreshIntervalRef.current = setInterval(() => {
+      logger.info("Proactively refreshing token via scheduled interval");
+      refreshAuth(true); // Silent refresh
+    }, TOKEN_REFRESH_INTERVAL);
+
     return () => {
       if (sessionCheckIntervalRef.current)
         clearInterval(sessionCheckIntervalRef.current);
       if (tokenRefreshIntervalRef.current)
         clearInterval(tokenRefreshIntervalRef.current);
     };
-  }, [user, handleAuthError]);
+  }, [user, handleAuthError, refreshAuth]);
 
   // Socket token refresh callback
   const handleTokensRefreshed = useCallback(
