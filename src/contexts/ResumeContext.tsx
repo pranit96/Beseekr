@@ -202,12 +202,22 @@ export interface ResumeContextType {
   setIsOptimizing: React.Dispatch<React.SetStateAction<boolean>>;
   setWorkspaceMode: (mode: "template" | "upload", skipFetch?: boolean) => void;
   setShowOnboarding: React.Dispatch<React.SetStateAction<boolean>>;
-  setUploadSource: React.Dispatch<React.SetStateAction<"fresh_upload" | "template" | "restored" | null>>;
+  setUploadSource: React.Dispatch<
+    React.SetStateAction<"fresh_upload" | "template" | "restored" | null>
+  >;
 
   fetchDraft: (forcedMode?: "template" | "upload") => Promise<void>;
   fetchBothDrafts: () => Promise<{
-    upload: { resume_data: ResumeSchema; job_description: string; history: ResumeRevision[] } | null;
-    template: { resume_data: ResumeSchema; job_description: string; history: ResumeRevision[] } | null;
+    upload: {
+      resume_data: ResumeSchema;
+      job_description: string;
+      history: ResumeRevision[];
+    } | null;
+    template: {
+      resume_data: ResumeSchema;
+      job_description: string;
+      history: ResumeRevision[];
+    } | null;
   }>;
   saveActiveDraft: (
     forcedData?: ResumeSchema,
@@ -246,7 +256,9 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
   const [isScoring, setIsScoring] = useState(false);
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [uploadSource, setUploadSource] = useState<"fresh_upload" | "template" | "restored" | null>(null);
+  const [uploadSource, setUploadSource] = useState<
+    "fresh_upload" | "template" | "restored" | null
+  >(null);
 
   const skipNextFetchRef = useRef(false);
   const lastSyncedDataRef = useRef<ResumeSchema>(EMPTY_RESUME);
@@ -321,7 +333,8 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
       ]);
       return {
         upload: uploadDraft.status === "fulfilled" ? uploadDraft.value : null,
-        template: templateDraft.status === "fulfilled" ? templateDraft.value : null,
+        template:
+          templateDraft.status === "fulfilled" ? templateDraft.value : null,
       };
     } catch (error) {
       console.error("[ResumeContext] Failed to fetch both drafts:", error);

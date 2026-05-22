@@ -247,7 +247,8 @@ export function GlobalHeader() {
                 id: c.id,
                 title: c.title,
                 status: c.status,
-                last_message_at: c.updated_at || c.created_at || new Date().toISOString(),
+                last_message_at:
+                  c.updated_at || c.created_at || new Date().toISOString(),
               }));
             }
             return rawConversations;
@@ -376,7 +377,12 @@ export function GlobalHeader() {
                   item.exact,
                 );
                 return (
-                  <NavLink key={item.href} to={item.href} onMouseEnter={() => handlePrefetch(item.href)} onFocus={() => handlePrefetch(item.href)}>
+                  <NavLink
+                    key={item.href}
+                    to={item.href}
+                    onMouseEnter={() => handlePrefetch(item.href)}
+                    onFocus={() => handlePrefetch(item.href)}
+                  >
                     <motion.div
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
@@ -671,8 +677,6 @@ export function GlobalHeader() {
                   </Link>
                 );
               })}
-
-
 
               {/* Logout for mobile users */}
               {user && (

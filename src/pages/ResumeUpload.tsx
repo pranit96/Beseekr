@@ -17,11 +17,31 @@ import { useToast } from "@/hooks/use-toast";
 type UploadPhase = "idle" | "processing" | "success" | "error";
 
 const FILE_TYPE_META: Record<string, { label: string; color: string }> = {
-  "application/pdf": { label: "PDF", color: "text-red-500 bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/20" },
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": { label: "DOCX", color: "text-blue-500 bg-blue-50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-500/20" },
-  "application/msword": { label: "DOC", color: "text-blue-500 bg-blue-50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-500/20" },
-  "text/plain": { label: "TXT", color: "text-zinc-500 bg-zinc-50 dark:bg-zinc-500/10 border-zinc-200 dark:border-zinc-500/20" },
-  "text/markdown": { label: "MD", color: "text-zinc-500 bg-zinc-50 dark:bg-zinc-500/10 border-zinc-200 dark:border-zinc-500/20" },
+  "application/pdf": {
+    label: "PDF",
+    color:
+      "text-red-500 bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/20",
+  },
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": {
+    label: "DOCX",
+    color:
+      "text-blue-500 bg-blue-50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-500/20",
+  },
+  "application/msword": {
+    label: "DOC",
+    color:
+      "text-blue-500 bg-blue-50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-500/20",
+  },
+  "text/plain": {
+    label: "TXT",
+    color:
+      "text-zinc-500 bg-zinc-50 dark:bg-zinc-500/10 border-zinc-200 dark:border-zinc-500/20",
+  },
+  "text/markdown": {
+    label: "MD",
+    color:
+      "text-zinc-500 bg-zinc-50 dark:bg-zinc-500/10 border-zinc-200 dark:border-zinc-500/20",
+  },
 };
 
 const ALLOWED_TYPES = new Set(Object.keys(FILE_TYPE_META));
@@ -121,14 +141,23 @@ export default function ResumeUpload() {
         }
       }, 1500);
     },
-    [setResumeData, setShowOnboarding, setUploadSource, saveActiveDraft, toast, navigate],
+    [
+      setResumeData,
+      setShowOnboarding,
+      setUploadSource,
+      saveActiveDraft,
+      toast,
+      navigate,
+    ],
   );
 
   const handleFile = useCallback(
     async (file: File) => {
       // Validate
       if (!ALLOWED_TYPES.has(file.type) && !ALLOWED_EXT.test(file.name)) {
-        setErrorMessage("Unsupported file type. Please upload a PDF, DOCX, or TXT file.");
+        setErrorMessage(
+          "Unsupported file type. Please upload a PDF, DOCX, or TXT file.",
+        );
         setPhase("error");
         return;
       }
@@ -225,14 +254,17 @@ export default function ResumeUpload() {
         );
 
         if (!parsed?.personal_info?.name) {
-          throw new Error("Could not extract resume details from this file. Please try a different format.");
+          throw new Error(
+            "Could not extract resume details from this file. Please try a different format.",
+          );
         }
 
         // Store result — the timer tick will pick it up
         apiResultRef.current = parsed;
         apiDoneRef.current = true;
       } catch (err: any) {
-        apiErrorRef.current = err.message || "Upload processing failed. Please try again.";
+        apiErrorRef.current =
+          err.message || "Upload processing failed. Please try again.";
         apiDoneRef.current = true;
       }
     },
@@ -309,9 +341,12 @@ export default function ResumeUpload() {
                 className="space-y-6"
               >
                 <div className="text-center space-y-2">
-                  <h1 className="text-2xl font-black tracking-tight">Upload Your Resume</h1>
+                  <h1 className="text-2xl font-black tracking-tight">
+                    Upload Your Resume
+                  </h1>
                   <p className="text-sm text-zinc-500">
-                    Drop your file below or browse to select. We'll parse it in seconds.
+                    Drop your file below or browse to select. We'll parse it in
+                    seconds.
                   </p>
                 </div>
 
@@ -322,9 +357,10 @@ export default function ResumeUpload() {
                   onDrop={handleDrop}
                   onClick={() => fileInputRef.current?.click()}
                   className={`relative flex flex-col items-center justify-center gap-5 p-12 rounded-2xl border-2 border-dashed cursor-pointer transition-all duration-200 min-h-[280px]
-                    ${isDragOver
-                      ? "border-violet-400 bg-violet-50/50 dark:bg-violet-500/[0.06] dark:border-violet-500/40 scale-[1.01]"
-                      : "border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 hover:border-zinc-400 dark:hover:border-zinc-600 hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
+                    ${
+                      isDragOver
+                        ? "border-violet-400 bg-violet-50/50 dark:bg-violet-500/[0.06] dark:border-violet-500/40 scale-[1.01]"
+                        : "border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 hover:border-zinc-400 dark:hover:border-zinc-600 hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
                     }`}
                 >
                   <input
@@ -335,19 +371,27 @@ export default function ResumeUpload() {
                     className="hidden"
                   />
 
-                  <div className={`h-16 w-16 rounded-2xl border flex items-center justify-center transition-all ${
-                    isDragOver
-                      ? "bg-violet-100 dark:bg-violet-500/15 border-violet-300 dark:border-violet-500/30 scale-110"
-                      : "bg-zinc-100 dark:bg-white/[0.04] border-zinc-200 dark:border-white/[0.08]"
-                  }`}>
-                    <Upload className={`h-7 w-7 transition-colors ${isDragOver ? "text-violet-600 dark:text-violet-400" : "text-zinc-400"}`} />
+                  <div
+                    className={`h-16 w-16 rounded-2xl border flex items-center justify-center transition-all ${
+                      isDragOver
+                        ? "bg-violet-100 dark:bg-violet-500/15 border-violet-300 dark:border-violet-500/30 scale-110"
+                        : "bg-zinc-100 dark:bg-white/[0.04] border-zinc-200 dark:border-white/[0.08]"
+                    }`}
+                  >
+                    <Upload
+                      className={`h-7 w-7 transition-colors ${isDragOver ? "text-violet-600 dark:text-violet-400" : "text-zinc-400"}`}
+                    />
                   </div>
 
                   <div className="text-center space-y-1.5">
                     <p className="text-sm font-bold text-zinc-700 dark:text-zinc-200">
-                      {isDragOver ? "Drop to upload" : "Drag & drop your resume here"}
+                      {isDragOver
+                        ? "Drop to upload"
+                        : "Drag & drop your resume here"}
                     </p>
-                    <p className="text-xs text-zinc-500">or click to browse files</p>
+                    <p className="text-xs text-zinc-500">
+                      or click to browse files
+                    </p>
                   </div>
 
                   <div className="flex items-center gap-2">
@@ -359,7 +403,9 @@ export default function ResumeUpload() {
                         {ext}
                       </span>
                     ))}
-                    <span className="text-[10px] text-zinc-400 font-medium ml-1">Max 5 MB</span>
+                    <span className="text-[10px] text-zinc-400 font-medium ml-1">
+                      Max 5 MB
+                    </span>
                   </div>
                 </div>
               </motion.div>
@@ -377,7 +423,9 @@ export default function ResumeUpload() {
               >
                 <div className="text-center space-y-2">
                   <h2 className="text-xl font-black tracking-tight">
-                    {displayPercent >= 100 ? "Wrapping up..." : "Processing Your Resume"}
+                    {displayPercent >= 100
+                      ? "Wrapping up..."
+                      : "Processing Your Resume"}
                   </h2>
                   <p className="text-sm text-zinc-500">
                     {displayPercent >= 100
@@ -388,13 +436,18 @@ export default function ResumeUpload() {
 
                 {/* File info card */}
                 <div className="flex items-center gap-3 p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
-                  <div className={`h-10 w-10 rounded-lg border flex items-center justify-center shrink-0 ${fileMeta?.color || "bg-zinc-100 border-zinc-200 text-zinc-500"}`}>
+                  <div
+                    className={`h-10 w-10 rounded-lg border flex items-center justify-center shrink-0 ${fileMeta?.color || "bg-zinc-100 border-zinc-200 text-zinc-500"}`}
+                  >
                     <FileText className="h-4 w-4" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-bold truncate">{selectedFile.name}</p>
+                    <p className="text-sm font-bold truncate">
+                      {selectedFile.name}
+                    </p>
                     <p className="text-[11px] text-zinc-500">
-                      {fileMeta?.label || "Document"} · {formatFileSize(selectedFile.size)}
+                      {fileMeta?.label || "Document"} ·{" "}
+                      {formatFileSize(selectedFile.size)}
                     </p>
                   </div>
                   <span className="text-lg font-black text-zinc-900 dark:text-white tabular-nums">
@@ -410,22 +463,52 @@ export default function ResumeUpload() {
                       style={{ backgroundSize: "200% 100%" }}
                       animate={{
                         width: `${displayPercent}%`,
-                        backgroundPosition: displayPercent < 100 ? ["0% 0%", "100% 0%"] : "0% 0%",
+                        backgroundPosition:
+                          displayPercent < 100 ? ["0% 0%", "100% 0%"] : "0% 0%",
                       }}
                       transition={{
-                        width: { duration: displayPercent >= 99 ? 2 : 0.4, ease: "easeOut" },
-                        backgroundPosition: { duration: 2, repeat: Infinity, ease: "linear" },
+                        width: {
+                          duration: displayPercent >= 99 ? 2 : 0.4,
+                          ease: "easeOut",
+                        },
+                        backgroundPosition: {
+                          duration: 2,
+                          repeat: Infinity,
+                          ease: "linear",
+                        },
                       }}
                     />
                   </div>
 
                   {/* Stage milestones */}
                   <div className="flex items-center justify-between text-[9px] font-bold uppercase tracking-wider text-zinc-400 px-0.5">
-                    <span className={displayPercent >= 5 ? "text-violet-500" : ""}>Upload</span>
-                    <span className={displayPercent >= 20 ? "text-violet-500" : ""}>Read</span>
-                    <span className={displayPercent >= 45 ? "text-violet-500" : ""}>Extract</span>
-                    <span className={displayPercent >= 70 ? "text-violet-500" : ""}>Analyze</span>
-                    <span className={displayPercent >= 100 ? "text-emerald-500" : ""}>Done</span>
+                    <span
+                      className={displayPercent >= 5 ? "text-violet-500" : ""}
+                    >
+                      Upload
+                    </span>
+                    <span
+                      className={displayPercent >= 20 ? "text-violet-500" : ""}
+                    >
+                      Read
+                    </span>
+                    <span
+                      className={displayPercent >= 45 ? "text-violet-500" : ""}
+                    >
+                      Extract
+                    </span>
+                    <span
+                      className={displayPercent >= 70 ? "text-violet-500" : ""}
+                    >
+                      Analyze
+                    </span>
+                    <span
+                      className={
+                        displayPercent >= 100 ? "text-emerald-500" : ""
+                      }
+                    >
+                      Done
+                    </span>
                   </div>
                 </div>
 
@@ -444,7 +527,8 @@ export default function ResumeUpload() {
                           Taking longer than usual
                         </p>
                         <p className="text-[11px] text-amber-600/80 dark:text-amber-400/60">
-                          Complex documents need more processing time. Please wait...
+                          Complex documents need more processing time. Please
+                          wait...
                         </p>
                       </div>
                     </motion.div>
@@ -466,9 +550,14 @@ export default function ResumeUpload() {
                   <Check className="h-7 w-7 text-emerald-600 dark:text-emerald-400" />
                 </div>
                 <div className="text-center space-y-1.5">
-                  <h2 className="text-xl font-black tracking-tight">All set!</h2>
+                  <h2 className="text-xl font-black tracking-tight">
+                    All set!
+                  </h2>
                   <p className="text-sm text-zinc-500">
-                    Opening workspace for <span className="font-bold text-zinc-700 dark:text-zinc-200">{parsedName}</span>
+                    Opening workspace for{" "}
+                    <span className="font-bold text-zinc-700 dark:text-zinc-200">
+                      {parsedName}
+                    </span>
                   </p>
                 </div>
                 <Loader2 className="h-4 w-4 text-zinc-400 animate-spin" />
@@ -488,7 +577,9 @@ export default function ResumeUpload() {
                   <AlertCircle className="h-7 w-7 text-red-600 dark:text-red-400" />
                 </div>
                 <div className="text-center space-y-1.5 max-w-sm">
-                  <h2 className="text-xl font-black tracking-tight">Upload Failed</h2>
+                  <h2 className="text-xl font-black tracking-tight">
+                    Upload Failed
+                  </h2>
                   <p className="text-sm text-zinc-500">{errorMessage}</p>
                 </div>
                 <button

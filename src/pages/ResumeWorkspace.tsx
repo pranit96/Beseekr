@@ -790,22 +790,50 @@ export default function ResumeWorkspace() {
                       <Sparkles className="h-3.5 w-3.5 text-indigo-500" />
                     </div>
                     <h3 className="text-xs font-black uppercase tracking-wider text-indigo-700 dark:text-indigo-300">
-                      {uploadSource === "fresh_upload" ? "Resume uploaded & parsed!" : uploadSource === "template" ? "Template loaded!" : "Welcome to your workspace!"}
+                      {uploadSource === "fresh_upload"
+                        ? "Resume uploaded & parsed!"
+                        : uploadSource === "template"
+                          ? "Template loaded!"
+                          : "Welcome to your workspace!"}
                     </h3>
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     {[
-                      { label: "ATS Score", desc: "Check compatibility", icon: Trophy, action: () => { 
-                          setRightPanelTab("ai"); 
-                          if (window.innerWidth < 1024) setIsAiPanelOpen(true);
-                      } },
-                      { label: "AI Optimize", desc: "Enhance bullet points", icon: Sparkles, action: () => { 
+                      {
+                        label: "ATS Score",
+                        desc: "Check compatibility",
+                        icon: Trophy,
+                        action: () => {
                           setRightPanelTab("ai");
                           if (window.innerWidth < 1024) setIsAiPanelOpen(true);
-                          handleOptimizeBullets(); 
-                      } },
-                      { label: "Edit Details", desc: "Fine-tune sections", icon: User, action: () => { setActiveTab("personal"); } },
-                      { label: "Export PDF", desc: "Download resume", icon: Download, action: () => { handleExportPdf(); } },
+                        },
+                      },
+                      {
+                        label: "AI Optimize",
+                        desc: "Enhance bullet points",
+                        icon: Sparkles,
+                        action: () => {
+                          setRightPanelTab("ai");
+                          if (window.innerWidth < 1024) setIsAiPanelOpen(true);
+                          handleOptimizeBullets();
+                        },
+                      },
+                      {
+                        label: "Edit Details",
+                        desc: "Fine-tune sections",
+                        icon: User,
+                        action: () => {
+                          setActiveTab("personal");
+                        },
+                      },
+                      {
+                        label: "Export PDF",
+                        desc: "Download resume",
+                        icon: Download,
+                        action: () => {
+                          handleExportPdf();
+                        },
+                      },
                     ].map((item) => {
                       const Icon = item.icon;
                       return (
@@ -818,8 +846,12 @@ export default function ResumeWorkspace() {
                             <Icon className="h-3.5 w-3.5 text-indigo-500 dark:text-indigo-400" />
                           </div>
                           <div className="min-w-0">
-                            <p className="text-[10px] font-bold text-zinc-800 dark:text-zinc-200 truncate">{item.label}</p>
-                            <p className="text-[9px] text-zinc-500 truncate">{item.desc}</p>
+                            <p className="text-[10px] font-bold text-zinc-800 dark:text-zinc-200 truncate">
+                              {item.label}
+                            </p>
+                            <p className="text-[9px] text-zinc-500 truncate">
+                              {item.desc}
+                            </p>
                           </div>
                         </button>
                       );
@@ -1832,7 +1864,11 @@ export default function ResumeWorkspace() {
                           disabled={isDownloading}
                           className="h-8 px-4 rounded-lg text-[10px] font-black bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100 transition-all flex items-center gap-1.5 uppercase tracking-wide shadow-sm disabled:opacity-50"
                         >
-                          {isDownloading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
+                          {isDownloading ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <Download className="h-3 w-3" />
+                          )}
                           PDF
                         </button>
                         <button
@@ -1887,50 +1923,60 @@ export default function ResumeWorkspace() {
                         )}
                         {isScoring ? "Computing…" : "Run ATS Analysis"}
                       </button>
-                        <button
-                          onClick={handleOptimizeBullets}
-                          disabled={isOptimizing}
-                          className="w-full h-8 rounded-xl text-[10px] font-bold uppercase tracking-wide bg-zinc-100 dark:bg-white/[0.04] hover:bg-zinc-200 dark:hover:bg-white/[0.08] text-zinc-600 dark:text-zinc-300 border border-zinc-200 dark:border-white/[0.08] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-                        >
-                          {isOptimizing ? (
-                            <Loader2 className="h-3 w-3 animate-spin" />
-                          ) : (
-                            <Sparkles className="h-3 w-3 text-indigo-400" />
-                          )}
-                          Refine with AI Optimizer
-                        </button>
+                      <button
+                        onClick={handleOptimizeBullets}
+                        disabled={isOptimizing}
+                        className="w-full h-8 rounded-xl text-[10px] font-bold uppercase tracking-wide bg-zinc-100 dark:bg-white/[0.04] hover:bg-zinc-200 dark:hover:bg-white/[0.08] text-zinc-600 dark:text-zinc-300 border border-zinc-200 dark:border-white/[0.08] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                      >
+                        {isOptimizing ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <Sparkles className="h-3 w-3 text-indigo-400" />
+                        )}
+                        Refine with AI Optimizer
+                      </button>
 
-                        <DropdownMenu modal={false}>
-                          <DropdownMenuTrigger asChild>
-                            <button
-                              disabled={isDownloading || isPreviewLoading}
-                              className="w-full h-8 rounded-xl text-[10px] font-bold uppercase tracking-wide bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100 transition-all flex items-center justify-center gap-2 disabled:opacity-50 shadow-sm border-none mt-1"
-                            >
-                              {isDownloading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
-                              Export Resume
-                            </button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" sideOffset={4} className="w-48 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/[0.1] rounded-xl shadow-xl text-sm">
-                            <DropdownMenuItem
-                              onClick={handleExportPdf}
-                              className="font-semibold text-xs py-2.5 gap-2 cursor-pointer"
-                            >
-                              <FileText className="w-3.5 h-3.5 opacity-50" /> PDF
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={handleExportWord}
-                              className="font-semibold text-xs py-2.5 gap-2 cursor-pointer"
-                            >
-                              <Briefcase className="w-3.5 h-3.5 opacity-50" /> Word (.docx)
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={handleExportLatex}
-                              className="font-semibold text-xs py-2.5 gap-2 cursor-pointer text-indigo-600 dark:text-indigo-300"
-                            >
-                              <Sparkles className="w-3.5 h-3.5 opacity-60" /> LaTeX (.tex)
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                      <DropdownMenu modal={false}>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            disabled={isDownloading || isPreviewLoading}
+                            className="w-full h-8 rounded-xl text-[10px] font-bold uppercase tracking-wide bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100 transition-all flex items-center justify-center gap-2 disabled:opacity-50 shadow-sm border-none mt-1"
+                          >
+                            {isDownloading ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <Download className="h-3 w-3" />
+                            )}
+                            Export Resume
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                          align="end"
+                          sideOffset={4}
+                          className="w-48 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/[0.1] rounded-xl shadow-xl text-sm"
+                        >
+                          <DropdownMenuItem
+                            onClick={handleExportPdf}
+                            className="font-semibold text-xs py-2.5 gap-2 cursor-pointer"
+                          >
+                            <FileText className="w-3.5 h-3.5 opacity-50" /> PDF
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={handleExportWord}
+                            className="font-semibold text-xs py-2.5 gap-2 cursor-pointer"
+                          >
+                            <Briefcase className="w-3.5 h-3.5 opacity-50" />{" "}
+                            Word (.docx)
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={handleExportLatex}
+                            className="font-semibold text-xs py-2.5 gap-2 cursor-pointer text-indigo-600 dark:text-indigo-300"
+                          >
+                            <Sparkles className="w-3.5 h-3.5 opacity-60" />{" "}
+                            LaTeX (.tex)
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </div>
 
@@ -2301,11 +2347,19 @@ export default function ResumeWorkspace() {
                           disabled={isDownloading || isPreviewLoading}
                           className="w-full h-9 rounded-xl text-[11px] font-bold uppercase tracking-wide bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100 transition-all flex items-center justify-center gap-2 disabled:opacity-50 shadow-md border-none mt-1"
                         >
-                          {isDownloading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+                          {isDownloading ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Download className="h-3.5 w-3.5" />
+                          )}
                           Export Resume
                         </button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" sideOffset={4} className="w-48 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/[0.1] rounded-xl shadow-xl text-sm">
+                      <DropdownMenuContent
+                        align="end"
+                        sideOffset={4}
+                        className="w-48 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/[0.1] rounded-xl shadow-xl text-sm"
+                      >
                         <DropdownMenuItem
                           onClick={handleExportPdf}
                           className="font-semibold text-xs py-2.5 gap-2 cursor-pointer"
@@ -2316,13 +2370,15 @@ export default function ResumeWorkspace() {
                           onClick={handleExportWord}
                           className="font-semibold text-xs py-2.5 gap-2 cursor-pointer"
                         >
-                          <Briefcase className="w-3.5 h-3.5 opacity-50" /> Word (.docx)
+                          <Briefcase className="w-3.5 h-3.5 opacity-50" /> Word
+                          (.docx)
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={handleExportLatex}
                           className="font-semibold text-xs py-2.5 gap-2 cursor-pointer text-indigo-600 dark:text-indigo-300"
                         >
-                          <Sparkles className="w-3.5 h-3.5 opacity-60" /> LaTeX (.tex)
+                          <Sparkles className="w-3.5 h-3.5 opacity-60" /> LaTeX
+                          (.tex)
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -2629,19 +2685,23 @@ export default function ResumeWorkspace() {
                   ) : (
                     <Copy className="h-3 w-3" />
                   )}
-                  <span className="hidden md:inline">{isCopied ? "Copied" : "Copy"}</span>
+                  <span className="hidden md:inline">
+                    {isCopied ? "Copied" : "Copy"}
+                  </span>
                 </button>
                 <button
                   onClick={handleDownloadLatex}
                   className="flex items-center gap-1.5 h-8 px-2 md:px-3.5 rounded-lg text-[10px] font-bold text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white bg-zinc-100 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] hover:bg-zinc-200 transition-all"
                 >
-                  <Download className="h-3 w-3" /> <span className="hidden md:inline">Download .tex</span>
+                  <Download className="h-3 w-3" />{" "}
+                  <span className="hidden md:inline">Download .tex</span>
                 </button>
                 <button
                   onClick={() => setIsLatexOpen(false)}
                   className="flex items-center gap-1.5 h-8 px-2 md:px-3.5 rounded-lg text-[10px] font-bold text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white bg-zinc-100 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] hover:bg-zinc-200 transition-all"
                 >
-                  <X className="h-3 w-3" /> <span className="hidden md:inline">Close</span>
+                  <X className="h-3 w-3" />{" "}
+                  <span className="hidden md:inline">Close</span>
                 </button>
               </div>
             </div>

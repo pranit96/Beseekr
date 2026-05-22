@@ -70,10 +70,15 @@ export default function GetHiredPortal() {
       }
     }
     loadDrafts();
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, []);
 
-  const handleContinueWorkspace = (mode: "upload" | "template", draft: DraftInfo) => {
+  const handleContinueWorkspace = (
+    mode: "upload" | "template",
+    draft: DraftInfo,
+  ) => {
     setWorkspaceMode(mode, true);
     setResumeData(draft.resume_data);
     setUploadSource(null);
@@ -86,19 +91,27 @@ export default function GetHiredPortal() {
   };
 
   const allHistory = [
-    ...(uploadDraft?.history || []).map((h) => ({ ...h, mode: "upload" as const })),
-    ...(templateDraft?.history || []).map((h) => ({ ...h, mode: "template" as const })),
-  ].sort((a, b) => new Date(b.saved_at).getTime() - new Date(a.saved_at).getTime());
+    ...(uploadDraft?.history || []).map((h) => ({
+      ...h,
+      mode: "upload" as const,
+    })),
+    ...(templateDraft?.history || []).map((h) => ({
+      ...h,
+      mode: "template" as const,
+    })),
+  ].sort(
+    (a, b) => new Date(b.saved_at).getTime() - new Date(a.saved_at).getTime(),
+  );
 
   return (
     <HiredShell>
       <div className="max-w-3xl mx-auto py-10 px-4 space-y-10 text-left font-sans select-none antialiased text-zinc-900 dark:text-zinc-100">
-
         {/* ── HEADER ── */}
         <div className="space-y-2 text-center">
           <h1 className="text-3xl font-black tracking-tight">Get Hired</h1>
           <p className="text-sm text-zinc-500 font-medium max-w-md mx-auto leading-relaxed">
-            Build, optimize, and export your resume in minutes. Choose how you'd like to start.
+            Build, optimize, and export your resume in minutes. Choose how you'd
+            like to start.
           </p>
         </div>
 
@@ -106,7 +119,10 @@ export default function GetHiredPortal() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* Upload Resume Card */}
           <motion.button
-            whileHover={{ y: -4, boxShadow: "0 20px 40px -12px rgba(0,0,0,0.15)" }}
+            whileHover={{
+              y: -4,
+              boxShadow: "0 20px 40px -12px rgba(0,0,0,0.15)",
+            }}
             whileTap={{ scale: 0.98 }}
             transition={{ type: "spring", stiffness: 400, damping: 25 }}
             onClick={() => navigate("resume/upload")}
@@ -119,9 +135,12 @@ export default function GetHiredPortal() {
                 <Upload className="h-5 w-5 text-violet-600 dark:text-violet-400" />
               </div>
               <div className="space-y-1.5">
-                <h3 className="text-base font-black tracking-tight">Upload Resume</h3>
+                <h3 className="text-base font-black tracking-tight">
+                  Upload Resume
+                </h3>
                 <p className="text-xs text-zinc-500 leading-relaxed font-medium">
-                  Upload your existing PDF or Word resume. We'll parse it with AI and load it into the editor.
+                  Upload your existing PDF or Word resume. We'll parse it with
+                  AI and load it into the editor.
                 </p>
               </div>
               <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-violet-600 dark:text-violet-400">
@@ -133,7 +152,10 @@ export default function GetHiredPortal() {
 
           {/* Start with Template Card */}
           <motion.button
-            whileHover={{ y: -4, boxShadow: "0 20px 40px -12px rgba(0,0,0,0.15)" }}
+            whileHover={{
+              y: -4,
+              boxShadow: "0 20px 40px -12px rgba(0,0,0,0.15)",
+            }}
             whileTap={{ scale: 0.98 }}
             transition={{ type: "spring", stiffness: 400, damping: 25 }}
             onClick={() => navigate("resume/templates")}
@@ -145,9 +167,12 @@ export default function GetHiredPortal() {
                 <Sparkles className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
               </div>
               <div className="space-y-1.5">
-                <h3 className="text-base font-black tracking-tight">Start with Template</h3>
+                <h3 className="text-base font-black tracking-tight">
+                  Start with Template
+                </h3>
                 <p className="text-xs text-zinc-500 leading-relaxed font-medium">
-                  Choose from professional templates, customize the content, and make it your own.
+                  Choose from professional templates, customize the content, and
+                  make it your own.
                 </p>
               </div>
               <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
@@ -163,7 +188,7 @@ export default function GetHiredPortal() {
           <div className="flex items-center justify-center py-12">
             <Loader2 className="h-5 w-5 animate-spin text-zinc-400" />
           </div>
-        ) : (hasDraft(uploadDraft) || hasDraft(templateDraft)) ? (
+        ) : hasDraft(uploadDraft) || hasDraft(templateDraft) ? (
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               <History className="h-3.5 w-3.5 text-zinc-400" />
@@ -195,12 +220,15 @@ export default function GetHiredPortal() {
                         </Badge>
                       </div>
                       <p className="text-[11px] text-zinc-500 truncate">
-                        {uploadDraft!.resume_data.personal_info.email || "Resume workspace"}
+                        {uploadDraft!.resume_data.personal_info.email ||
+                          "Resume workspace"}
                       </p>
                     </div>
                   </div>
                   <button
-                    onClick={() => handleContinueWorkspace("upload", uploadDraft!)}
+                    onClick={() =>
+                      handleContinueWorkspace("upload", uploadDraft!)
+                    }
                     className="shrink-0 h-8 px-4 rounded-lg text-[10px] font-bold bg-zinc-100 dark:bg-white/[0.06] hover:bg-zinc-200 dark:hover:bg-white/[0.1] text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-white/[0.08] transition-all flex items-center gap-1.5 uppercase tracking-wide"
                   >
                     Continue Editing
@@ -231,12 +259,15 @@ export default function GetHiredPortal() {
                         </Badge>
                       </div>
                       <p className="text-[11px] text-zinc-500 truncate">
-                        {templateDraft!.resume_data.personal_info.email || "Template workspace"}
+                        {templateDraft!.resume_data.personal_info.email ||
+                          "Template workspace"}
                       </p>
                     </div>
                   </div>
                   <button
-                    onClick={() => handleContinueWorkspace("template", templateDraft!)}
+                    onClick={() =>
+                      handleContinueWorkspace("template", templateDraft!)
+                    }
                     className="shrink-0 h-8 px-4 rounded-lg text-[10px] font-bold bg-zinc-100 dark:bg-white/[0.06] hover:bg-zinc-200 dark:hover:bg-white/[0.1] text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-white/[0.08] transition-all flex items-center gap-1.5 uppercase tracking-wide"
                   >
                     Continue Editing
@@ -277,7 +308,6 @@ export default function GetHiredPortal() {
             )}
           </div>
         ) : null}
-
       </div>
     </HiredShell>
   );

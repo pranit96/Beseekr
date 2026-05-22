@@ -6,6 +6,7 @@ import remarkBreaks from "remark-breaks";
 import rehypeRaw from "rehype-raw";
 import rehypeSanitize from "rehype-sanitize";
 import { createLogger } from "@/services/logging";
+import { X, ArrowUp, Check, Copy, ExternalLink } from "lucide-react";
 
 // Import remark-toc ONLY if you plan to use TOC
 import remarkToc from "remark-toc";
@@ -36,18 +37,23 @@ export default function MarkdownRenderer({
   maxHeight = "none",
 }: MarkdownRendererProps) {
   const [toc, setToc] = useState<TocItem[]>([]);
+  const [activeId, setActiveId] = useState<string>("");
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const [zoomedImage, setZoomedImage] = useState<{
+    src: string;
+    alt: string;
+  } | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
   // Preprocess: strip code fences, fix tables, and convert plain text headings into markdown headings
   const normalizeContent = (text: string) => {
     if (!text) return "";
 
-    // Strip markdown code fences only if they wrap the entire response
+    // Strip markdown code fences only if they wrap the entire response (strictly markdown or md)
     let cleaned = text.trim();
-    if (cleaned.startsWith("```")) {
-      // Remove opening fence (```markdown or ```md or just ```)
-      cleaned = cleaned.replace(/^```(?:markdown|md)?\n?/, "");
+    if (cleaned.startsWith("```markdown") || cleaned.startsWith("```md")) {
+      // Remove opening fence (```markdown or ```md)
+      cleaned = cleaned.replace(/^```(?:markdown|md)\n?/, "");
       // Remove closing fence
       cleaned = cleaned.replace(/\n?```\s*$/, "");
     }
@@ -109,8 +115,12 @@ export default function MarkdownRenderer({
         }
       }
 
-      // Auto-convert lines ending in colon to h3, UNLESS they already have markdown formatting
-      if (/:$/.test(trimmedLine) && !/^([#\-\*]|\d+\.)/.test(trimmedLine)) {
+      // Auto-convert lines ending in colon to h3, UNLESS they are too long or have markdown formatting
+      if (
+        /:$/.test(trimmedLine) &&
+        trimmedLine.length <= 60 &&
+        !/^([#\-\*]|\d+\.)/.test(trimmedLine)
+      ) {
         out.push(`### ${trimmedLine.replace(/:$/, "")}`);
         out.push("");
         continue;
@@ -119,7 +129,7 @@ export default function MarkdownRenderer({
       const looksLikeTitle =
         trimmedLine.length > 2 &&
         trimmedLine.length <= 60 &&
-        /^[A-Z][A-Za-z0-9 ',-]+$/.test(trimmedLine) &&
+        /^[A-Z][A-Za-z0-9 ',\-()\/&]+$/.test(trimmedLine) &&
         !/[.?!]$/.test(trimmedLine) &&
         !/^([#\-\*]|\d+\.)/.test(trimmedLine) &&
         nextLine &&
@@ -144,24 +154,47 @@ export default function MarkdownRenderer({
       const headings = contentRef.current.querySelectorAll(
         "h1, h2, h3, h4, h5, h6",
       );
-      const tocItems: TocItem[] = Array.from(headings).map(
-        (heading, index) => ({
-          id: `heading-${index}`,
+      const tocItems: TocItem[] = Array.from(headings).map((heading, index) => {
+        if (heading && !heading.id) {
+          heading.id = `heading-${index}`;
+        }
+        return {
+          id: heading.id || `heading-${index}`,
           text: heading.textContent || "",
           level: parseInt(heading.tagName.charAt(1)),
           element: heading as HTMLElement,
-        }),
-      );
-
-      tocItems.forEach((item, i) => {
-        if (item.element && !item.element.id) {
-          item.element.id = `heading-${i}`;
-        }
+        };
       });
 
       setToc(tocItems);
     }
   }, [content, showToc]);
+
+  // Intersection Observer for highlighting active TOC section as you scroll
+  useEffect(() => {
+    if (!showToc || toc.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visibleHeaders = entries.filter((entry) => entry.isIntersecting);
+        if (visibleHeaders.length > 0) {
+          // Select the first intersecting heading (closest to the top)
+          setActiveId(visibleHeaders[0].target.id);
+        }
+      },
+      { rootMargin: "-80px 0px -50% 0px" },
+    );
+
+    toc.forEach((item) => {
+      if (item.element) {
+        observer.observe(item.element);
+      }
+    });
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [toc, showToc]);
 
   const copyToClipboard = async (text: string, id: string) => {
     try {
@@ -174,7 +207,10 @@ export default function MarkdownRenderer({
   };
 
   const scrollToHeading = (element: HTMLElement) => {
-    element.scrollIntoView({ behavior: "smooth", block: "start" });
+    const yOffset = -80; // height of sticky header + spacing offset
+    const y =
+      element.getBoundingClientRect().top + window.pageYOffset + yOffset;
+    window.scrollTo({ top: y, behavior: "smooth" });
   };
 
   // ReactMarkdown component overrides
@@ -266,20 +302,27 @@ export default function MarkdownRenderer({
         {children}
       </em>
     ),
-    a: ({ children, href, ...props }: any) => (
-      <a
-        href={href}
-        className="text-primary hover:text-primary/80 underline"
-        target="_blank"
-        rel="noopener noreferrer"
-        {...props}
-      >
-        {children}
-      </a>
-    ),
+    a: ({ children, href, ...props }: any) => {
+      const isExternal =
+        href?.startsWith("http://") || href?.startsWith("https://");
+      return (
+        <a
+          href={href}
+          className="inline-flex items-center gap-0.5 text-primary hover:text-primary/80 underline underline-offset-2 transition-colors font-medium"
+          target={isExternal ? "_blank" : undefined}
+          rel={isExternal ? "noopener noreferrer" : undefined}
+          {...props}
+        >
+          {children}
+          {isExternal && (
+            <ExternalLink className="w-3 h-3 flex-shrink-0 opacity-70 ml-0.5 inline-block" />
+          )}
+        </a>
+      );
+    },
     blockquote: ({ children, ...props }: any) => (
       <blockquote
-        className="border-l-4 border-primary/70 pl-4 py-2 my-4 bg-muted/30 italic text-foreground/80 rounded-r text-[15px]"
+        className="border-l-[4px] border-l-primary/60 pl-4 py-2.5 my-5 bg-primary/[0.02] dark:bg-primary/[0.01] rounded-r-lg shadow-sm backdrop-blur-[2px] italic text-foreground/85 text-[15px] leading-relaxed border-y border-r border-border/10"
         {...props}
       >
         {children}
@@ -329,22 +372,31 @@ export default function MarkdownRenderer({
       const code = String(children).replace(/\n$/, "");
       const codeId = Math.random().toString(36).substring(7);
 
-      const isBlock = node?.tagName === "code" && node?.parent?.tagName === "pre";
+      const isBlock =
+        node?.tagName === "code" && node?.parent?.tagName === "pre";
 
       if (isBlock) {
         return (
-          <div className="relative my-4 rounded-lg overflow-hidden border border-border/40">
-            <div className="flex justify-between items-center px-3 py-2 bg-muted/40 border-b border-border/30">
-              <span className="text-xs font-mono text-foreground/70 uppercase">
+          <div className="relative my-4 rounded-lg overflow-hidden border border-border/40 bg-background">
+            <div className="flex justify-between items-center px-4 py-2 bg-muted/40 border-b border-border/30">
+              <span className="text-xs font-semibold font-mono text-foreground/70 uppercase tracking-wider">
                 {language || "CODE"}
               </span>
               {enableCopy && (
                 <button
                   onClick={() => copyToClipboard(code, codeId)}
-                  className="text-xs text-foreground/60 hover:text-foreground/80"
+                  className="text-xs focus:outline-none focus-visible:ring-1 focus-visible:ring-primary rounded px-1.5 py-0.5 transition-all"
                   aria-label={`Copy ${language} code`}
                 >
-                  {copiedCode === codeId ? "✓ Copied" : "Copy"}
+                  {copiedCode === codeId ? (
+                    <span className="flex items-center gap-1 text-emerald-500 font-medium animate-fade-in">
+                      <Check className="w-3.5 h-3.5" /> Copied
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-1 text-foreground/60 hover:text-foreground/80 transition-colors">
+                      <Copy className="w-3.5 h-3.5" /> Copy
+                    </span>
+                  )}
                 </button>
               )}
             </div>
@@ -353,7 +405,7 @@ export default function MarkdownRenderer({
                 className="bg-background text-foreground"
                 style={{
                   padding: "1rem",
-                  fontSize: "0.9rem",
+                  fontSize: "0.875rem",
                   whiteSpace: "pre-wrap",
                   wordBreak: "break-word",
                   fontFamily:
@@ -374,7 +426,7 @@ export default function MarkdownRenderer({
       // Inline code
       return (
         <code
-          className="font-mono bg-muted/60 rounded px-1.5 py-0.5 text-sm text-foreground/90 border border-border/30"
+          className="font-mono bg-muted/60 rounded px-1.5 py-0.5 text-[0.875rem] text-foreground/90 border border-border/30"
           style={{
             WebkitFontSmoothing: "antialiased",
             MozOsxFontSmoothing: "grayscale",
@@ -387,14 +439,29 @@ export default function MarkdownRenderer({
     },
 
     img: ({ src, alt, ...props }: any) => (
-      <div className="my-6 flex justify-center">
-        <img
-          src={src}
-          alt={alt}
-          className="max-w-full h-auto rounded-lg shadow-md border border-border/30"
-          loading="lazy"
-          {...props}
-        />
+      <div className="my-6 flex flex-col items-center">
+        <div
+          className="relative overflow-hidden rounded-lg shadow-md border border-border/30 hover:border-primary/30 transition-all group cursor-zoom-in"
+          onClick={() => setZoomedImage({ src, alt: alt || "" })}
+        >
+          <img
+            src={src}
+            alt={alt}
+            className="max-w-full h-auto object-cover transition-transform duration-300 group-hover:scale-[1.01]"
+            loading="lazy"
+            {...props}
+          />
+          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors flex items-center justify-center">
+            <span className="opacity-0 group-hover:opacity-100 bg-background/90 text-foreground text-xs font-medium px-2.5 py-1.5 rounded-full shadow-medium border border-border/30 transition-all scale-95 group-hover:scale-100 flex items-center gap-1">
+              Click to zoom
+            </span>
+          </div>
+        </div>
+        {alt && (
+          <span className="text-xs text-foreground/60 mt-2 font-sans italic">
+            {alt}
+          </span>
+        )}
       </div>
     ),
   };
@@ -433,21 +500,40 @@ export default function MarkdownRenderer({
       {toc.length > 0 && (
         <div className="hidden lg:block flex-shrink-0 w-56">
           <div className="sticky top-6">
-            <h3 className="text-sm font-semibold text-foreground/80 mb-3 uppercase">
-              Contents
+            <h3 className="text-xs font-semibold text-foreground/80 mb-3 uppercase tracking-wider">
+              On this page
             </h3>
-            <nav className="space-y-2">
-              {toc.map((item, i) => (
-                <button
-                  key={i}
-                  onClick={() => scrollToHeading(item.element)}
-                  className="block text-left text-sm truncate text-foreground/80 hover:text-primary"
-                  aria-label={`Go to ${item.text}`}
-                >
-                  {item.text}
-                </button>
-              ))}
+            <nav className="space-y-1.5 border-l border-border/40 pl-4 py-1">
+              {toc.map((item, i) => {
+                const isActive = activeId === item.id;
+                return (
+                  <button
+                    key={i}
+                    onClick={() => scrollToHeading(item.element)}
+                    className={`block text-left text-sm truncate w-full transition-all duration-200 relative py-1 ${
+                      isActive
+                        ? "text-primary font-medium translate-x-1"
+                        : "text-foreground/60 hover:text-foreground/90 hover:translate-x-0.5"
+                    }`}
+                    style={{
+                      paddingLeft: `${(item.level - 1) * 8}px`,
+                    }}
+                    aria-label={`Go to ${item.text}`}
+                  >
+                    {isActive && (
+                      <span className="absolute left-[-17px] top-[6px] bottom-[6px] w-[3px] bg-primary rounded-full animate-fade-in" />
+                    )}
+                    {item.text}
+                  </button>
+                );
+              })}
             </nav>
+            <button
+              onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+              className="mt-4 pt-3 border-t border-border/30 text-left text-xs font-semibold text-foreground/50 hover:text-primary transition-colors flex items-center gap-1.5 w-full uppercase tracking-wider"
+            >
+              <ArrowUp className="w-3.5 h-3.5" /> Back to Top
+            </button>
           </div>
         </div>
       )}
@@ -469,6 +555,37 @@ export default function MarkdownRenderer({
           {processed}
         </ReactMarkdown>
       </div>
+
+      {/* Glassmorphic Lightbox/Zoom for Images */}
+      {zoomedImage && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-md p-4 cursor-zoom-out animate-fade-in"
+          onClick={() => setZoomedImage(null)}
+        >
+          <div
+            className="relative max-w-7xl max-h-[90vh] overflow-hidden rounded-xl shadow-strong border border-border/50 bg-card/50 backdrop-blur-lg p-2 transition-transform duration-300 scale-100 hover:scale-[1.01]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={zoomedImage.src}
+              alt={zoomedImage.alt}
+              className="max-w-full max-h-[80vh] object-contain rounded-lg shadow-inner"
+            />
+            {zoomedImage.alt && (
+              <p className="text-center text-xs text-foreground/75 mt-2.5 font-medium tracking-wide">
+                {zoomedImage.alt}
+              </p>
+            )}
+            <button
+              className="absolute top-4 right-4 bg-background/80 hover:bg-background text-foreground/80 hover:text-foreground rounded-full p-2 border border-border/40 shadow-medium transition-all focus:outline-none"
+              onClick={() => setZoomedImage(null)}
+              aria-label="Close image preview"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
