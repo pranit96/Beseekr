@@ -168,10 +168,10 @@ export const ShareAgentModal = ({
             {/* TAB CONTENT: Invite Link */}
             <TabsContent
               value="link"
-              className="mt-0 outline-none space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300 min-h-[148px] flex flex-col justify-between"
+              className="mt-0 outline-none animate-in fade-in slide-in-from-bottom-2 duration-300 min-h-[210px] flex flex-col justify-center gap-4"
             >
               {copied ? (
-                <div className="flex flex-col items-center justify-center py-6 text-center animate-in zoom-in-95 duration-300">
+                <div className="flex-1 flex flex-col items-center justify-center py-2 text-center animate-in zoom-in-95 duration-300 w-full">
                   <div
                     className="w-12 h-12 rounded-full flex items-center justify-center border shadow-sm mb-3 relative"
                     style={{
@@ -253,10 +253,10 @@ export const ShareAgentModal = ({
             {/* TAB CONTENT: Email Share */}
             <TabsContent
               value="email"
-              className="mt-0 outline-none animate-in fade-in slide-in-from-bottom-2 duration-300 min-h-[148px] flex flex-col justify-between"
+              className="mt-0 outline-none animate-in fade-in slide-in-from-bottom-2 duration-300 min-h-[210px] flex flex-col justify-center gap-4"
             >
               {emailSent ? (
-                <div className="flex flex-col items-center justify-center py-6 text-center animate-in zoom-in-95 duration-300">
+                <div className="flex-1 flex flex-col items-center justify-center py-2 text-center animate-in zoom-in-95 duration-300 w-full">
                   <div
                     className="w-12 h-12 rounded-full flex items-center justify-center border shadow-sm mb-3 relative"
                     style={{
@@ -345,7 +345,7 @@ export const ShareAgentModal = ({
                       </div>
                     </div>
                   </form>
-                  <p className="text-[11px] text-muted-foreground/45 leading-relaxed mt-4 bg-muted/10 p-3 rounded-lg border border-border/5">
+                  <p className="text-[11px] text-muted-foreground/45 leading-relaxed bg-muted/10 p-3 rounded-lg border border-border/5">
                     Sends a direct invite link via our sharing database. The
                     recipient will see this shared agent in their "Shared with
                     me" panel inside their personal dashboard workspace.
@@ -357,18 +357,18 @@ export const ShareAgentModal = ({
             {/* TAB CONTENT: QR Code */}
             <TabsContent
               value="qrcode"
-              className="mt-0 outline-none flex flex-col items-center justify-center py-2 animate-in fade-in slide-in-from-bottom-2 duration-300"
+              className="mt-0 outline-none flex flex-col items-center justify-center gap-4 py-1 animate-in fade-in slide-in-from-bottom-2 duration-300 min-h-[210px]"
             >
-              <div className="relative group p-4 bg-white dark:bg-zinc-100 border border-border/40 rounded-2xl shadow-md transition-all hover:shadow-lg">
+              <div className="relative group p-2.5 bg-white dark:bg-zinc-100 border border-border/40 rounded-xl shadow-sm transition-all hover:shadow-md">
                 {/* Visual Accent Box Shadows */}
                 <div
-                  className="absolute inset-0 opacity-15 blur-lg rounded-2xl -z-10 group-hover:opacity-25 transition-opacity"
+                  className="absolute inset-0 opacity-15 blur-lg rounded-xl -z-10 group-hover:opacity-25 transition-opacity"
                   style={{ backgroundColor: domainColor }}
                 />
                 <img
                   src={qrCodeUrl}
                   alt={`QR Code to import ${agent.name}`}
-                  className="w-44 h-44 rounded-xl border border-border/10 select-none pointer-events-none"
+                  className="w-32 h-32 rounded-lg border border-border/10 select-none pointer-events-none"
                   onError={(e) => {
                     // High-reliability secondary fallback to Google Charts API
                     const fallbackUrl = `https://chart.googleapis.com/chart?cht=qr&chs=250x250&chl=${encodeURIComponent(shareUrl)}`;
@@ -379,17 +379,19 @@ export const ShareAgentModal = ({
                   }}
                 />
               </div>
-              <p className="text-xs font-semibold text-foreground/80 mt-4 flex items-center gap-1.5">
-                <Sparkles
-                  className="w-3.5 h-3.5"
-                  style={{ color: domainColor }}
-                />
-                Scan to Import Agent
-              </p>
-              <p className="text-[11px] text-muted-foreground/50 text-center max-w-[280px] leading-relaxed mt-1">
-                Scan this QR code with any smartphone camera to quickly preview
-                and add this agent to your mobile workspace.
-              </p>
+              <div className="text-center space-y-1">
+                <p className="text-xs font-semibold text-foreground/80 flex items-center justify-center gap-1.5">
+                  <Sparkles
+                    className="w-3.5 h-3.5"
+                    style={{ color: domainColor }}
+                  />
+                  Scan to Import Agent
+                </p>
+                <p className="text-[11px] text-muted-foreground/50 max-w-[280px] leading-relaxed mx-auto">
+                  Scan this QR code with any smartphone camera to quickly preview
+                  and add this agent to your mobile workspace.
+                </p>
+              </div>
             </TabsContent>
           </Tabs>
         </div>
