@@ -417,7 +417,7 @@ export default function BlogPost() {
         <div className="mx-auto max-w-7xl px-6 sm:px-10 lg:px-16 py-4 flex items-center justify-between">
           <Link
             to="/blogs"
-            className="group flex items-center gap-2 text-foreground/70 hover:text-foreground transition-colors text-sm font-semibold"
+            className="group flex items-center justify-center gap-2 px-4 py-1.5 rounded-full bg-background/50 backdrop-blur-lg text-foreground/70 hover:text-foreground hover:bg-muted transition-all text-sm font-semibold"
           >
             <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
             All articles

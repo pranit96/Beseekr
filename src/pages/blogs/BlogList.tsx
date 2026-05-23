@@ -643,14 +643,14 @@ export default function BlogList() {
             {user ? (
               <Link
                 to="/"
-                className="hidden sm:inline-flex text-sm font-semibold text-foreground/50 hover:text-foreground transition-colors"
+                className="hidden sm:inline-flex items-center justify-center px-4 py-1.5 rounded-full bg-background/50 backdrop-blur-lg text-sm font-semibold text-foreground/70 hover:text-foreground hover:bg-muted transition-all"
               >
                 ← App
               </Link>
             ) : (
               <Link
                 to="/auth"
-                className="hidden sm:inline-flex text-sm font-semibold text-foreground/50 hover:text-foreground transition-colors"
+                className="hidden sm:inline-flex items-center justify-center px-4 py-1.5 rounded-full bg-background/50 backdrop-blur-lg text-sm font-semibold text-foreground/70 hover:text-foreground hover:bg-muted transition-all"
               >
                 Login / Sign Up
               </Link>
