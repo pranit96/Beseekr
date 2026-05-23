@@ -284,7 +284,7 @@ const Agents = () => {
             <MessageSquare className="w-3.5 h-3.5" />
             <span>Chat</span>
           </button>
-          
+
           <div className="flex items-center gap-1">
             <button
               onClick={() => {
@@ -324,13 +324,18 @@ const Agents = () => {
       <div className="h-screen bg-background text-foreground flex flex-col overflow-hidden selection:bg-primary/30">
         <GlobalHeader />
         <div className="flex-1 flex items-center justify-center relative">
-          <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden -z-10">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 overflow-hidden -z-10"
+          >
             <div className="ambient-blob ambient-blob-1 opacity-20" />
             <div className="ambient-blob ambient-blob-2 opacity-15" />
           </div>
           <div className="flex flex-col items-center gap-4 animate-pulse">
             <div className="w-10 h-10 rounded-full border-2 border-primary/20 border-t-primary animate-spin shadow-lg" />
-            <p className="text-sm font-medium text-muted-foreground/60 tracking-tight">Loading agents in workspace…</p>
+            <p className="text-sm font-medium text-muted-foreground/60 tracking-tight">
+              Loading agents in workspace…
+            </p>
           </div>
         </div>
       </div>
@@ -358,7 +363,8 @@ const Agents = () => {
             {/* Eyebrow */}
             <div className="flex items-center gap-2 mb-3 sm:mb-4 select-none">
               <span className="text-[10px] sm:text-[11px] font-bold tracking-[0.2em] text-muted-foreground/60 uppercase flex items-center">
-                Workspace <span className="mx-2 opacity-50 text-[8px]">•</span> Orchestrate Intelligence
+                Workspace <span className="mx-2 opacity-50 text-[8px]">•</span>{" "}
+                Orchestrate Intelligence
               </span>
             </div>
 
@@ -371,7 +377,8 @@ const Agents = () => {
             </h1>
 
             <p className="text-sm sm:text-base font-medium text-muted-foreground/70 max-w-2xl tracking-tight leading-relaxed">
-              Create, customize, and orchestrate intelligent agents to perform specialized tasks or chain them in autonomous workflows.
+              Create, customize, and orchestrate intelligent agents to perform
+              specialized tasks or chain them in autonomous workflows.
             </p>
           </section>
 
@@ -443,7 +450,9 @@ const Agents = () => {
                 </div>
               ) : templates.length === 0 ? (
                 <div className="text-center py-8 bg-card/5 border border-border/30 rounded-2xl backdrop-blur-md">
-                  <p className="text-xs text-muted-foreground/40">No templates available at this time.</p>
+                  <p className="text-xs text-muted-foreground/40">
+                    No templates available at this time.
+                  </p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -455,7 +464,7 @@ const Agents = () => {
                     >
                       {/* Glow Effect */}
                       <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full blur-[35px] -mr-8 -mt-8 pointer-events-none group-hover:bg-primary/10 transition-colors duration-500" />
-                      
+
                       <div>
                         {t.icon && (
                           <span className="text-2xl mb-3 block">{t.icon}</span>
@@ -467,7 +476,7 @@ const Agents = () => {
                           {t.description}
                         </p>
                       </div>
-                      
+
                       <div className="text-[11px] font-bold text-primary flex items-center gap-1 mt-4 group-hover:translate-x-1 transition-transform">
                         <span>Use template</span>
                         <span>→</span>
@@ -508,7 +517,8 @@ const Agents = () => {
                 No Agents Configured
               </h3>
               <p className="text-sm text-muted-foreground max-w-sm mx-auto leading-relaxed mb-8">
-                Create your first specialized AI agent to start orchestrating intelligent conversations.
+                Create your first specialized AI agent to start orchestrating
+                intelligent conversations.
               </p>
               <button
                 onClick={() => setIsDialogOpen(true)}
@@ -534,13 +544,18 @@ const Agents = () => {
       >
         <AlertDialogContent className="border border-border/30 rounded-3xl bg-background/95 backdrop-blur-xl shadow-2xl">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-lg font-bold text-foreground">Delete Agent</AlertDialogTitle>
+            <AlertDialogTitle className="text-lg font-bold text-foreground">
+              Delete Agent
+            </AlertDialogTitle>
             <AlertDialogDescription className="text-sm text-muted-foreground">
-              Are you sure? This action cannot be undone and will permanently delete this specialized assistant.
+              Are you sure? This action cannot be undone and will permanently
+              delete this specialized assistant.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-xl border border-border/40 hover:bg-muted text-muted-foreground hover:text-foreground">Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="rounded-xl border border-border/40 hover:bg-muted text-muted-foreground hover:text-foreground">
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteAgent}
               className="rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-all shadow-md shadow-destructive/10"

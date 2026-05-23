@@ -11,10 +11,11 @@ import {
   BookOpen,
   List,
   ChevronDown,
-  Mail, CheckCircle,
+  Mail,
+  CheckCircle,
   Loader2,
   Sun,
-  Moon
+  Moon,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -412,7 +413,7 @@ export default function BlogPost() {
       <ReadingProgress />
 
       {/* ── TOPBAR ─────────────────────────────────────── */}
-      <header className="fixed top-0 inset-x-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/40">
+      <header className="fixed top-0 inset-x-0 z-50 bg-transparent mix-blend-normal">
         <div className="mx-auto max-w-7xl px-6 sm:px-10 lg:px-16 py-4 flex items-center justify-between">
           <Link
             to="/blogs"
@@ -547,7 +548,9 @@ export default function BlogPost() {
             style={{ fontFamily: "'DM Sans', sans-serif" }}
           >
             {blog.author && (
-              <span className="font-semibold text-foreground/70">{blog.author}</span>
+              <span className="font-semibold text-foreground/70">
+                {blog.author}
+              </span>
             )}
             {blog.publish_date && (
               <span className="flex items-center gap-1.5">

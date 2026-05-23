@@ -41,9 +41,7 @@ export function DeviceProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <DeviceContext.Provider value={value}>
-      {children}
-    </DeviceContext.Provider>
+    <DeviceContext.Provider value={value}>{children}</DeviceContext.Provider>
   );
 }
 

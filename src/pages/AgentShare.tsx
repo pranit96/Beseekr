@@ -151,7 +151,6 @@ export default function AgentShare() {
       </div>
 
       <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 md:p-8 relative z-10">
-
         {error || !agent ? (
           /* Error State Card */
           <div className="max-w-md w-full bg-background/60 backdrop-blur-xl border border-border/40 p-8 rounded-2xl shadow-xl flex flex-col items-center text-center">

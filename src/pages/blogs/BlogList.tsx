@@ -489,7 +489,7 @@ export default function BlogList() {
     return (
       <div className="min-h-screen bg-background text-foreground">
         {/* Navbar Mock Skeleton */}
-        <header className="fixed top-0 inset-x-0 z-50 bg-[#0a0a0a]/30 backdrop-blur-md">
+        <header className="fixed top-0 inset-x-0 z-50 bg-transparent mix-blend-normal">
           <div className="mx-auto max-w-7xl px-4 sm:px-8 py-5 flex items-center justify-between animate-pulse">
             <div className="h-6 w-24 bg-white/10 rounded-md" />
             <div className="flex items-center gap-4">
@@ -583,7 +583,7 @@ export default function BlogList() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* ── NAVBAR ─────────────────────────────────────── */}
-      <header className="fixed top-0 inset-x-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/40">
+      <header className="fixed top-0 inset-x-0 z-50 bg-transparent mix-blend-normal">
         <div className="mx-auto max-w-7xl px-4 sm:px-8 py-4 flex items-center justify-between">
           <Logo className="text-foreground text-xl" to="/blogs" />
 

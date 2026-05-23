@@ -41,25 +41,31 @@ class ApiClient {
   private pendingRequests: Map<string, Promise<ApiResponse<any>>> = new Map();
   private readonly CACHE_TTL = 30000; // 30 seconds cache
   private isRefreshingSession = false;
-  private refreshPromise: Promise<'success' | 'transient' | 'auth_fail'> | null = null;
+  private refreshPromise: Promise<
+    "success" | "transient" | "auth_fail"
+  > | null = null;
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
   }
 
   // NEW: Attempt to refresh session before calling unauthorized handler
-  private async handleSessionExpired(): Promise<'success' | 'transient' | 'auth_fail'> {
+  private async handleSessionExpired(): Promise<
+    "success" | "transient" | "auth_fail"
+  > {
     if (this.isRefreshingSession && this.refreshPromise) {
       logger.info("Session refresh already in progress, waiting...");
       try {
         return await this.refreshPromise;
       } catch {
-        return 'auth_fail';
+        return "auth_fail";
       }
     }
 
     this.isRefreshingSession = true;
-    this.refreshPromise = (async (): Promise<'success' | 'transient' | 'auth_fail'> => {
+    this.refreshPromise = (async (): Promise<
+      "success" | "transient" | "auth_fail"
+    > => {
       try {
         logger.info("Attempting to refresh expired session");
         const response = await fetch(`${this.baseUrl}/api/auth/refresh`, {
@@ -71,19 +77,28 @@ class ApiClient {
         if (response.ok) {
           logger.info("Session refresh successful");
           this.clearCache(); // Clear cache after refresh
-          return 'success';
+          return "success";
         }
 
-        if (response.status === 401 || response.status === 403 || response.status === 400) {
-          logger.warn("Session refresh failed with auth error", { status: response.status });
-          return 'auth_fail';
+        if (
+          response.status === 401 ||
+          response.status === 403 ||
+          response.status === 400
+        ) {
+          logger.warn("Session refresh failed with auth error", {
+            status: response.status,
+          });
+          return "auth_fail";
         } else {
-          logger.warn("Session refresh failed with temporary server/rate-limit error", { status: response.status });
-          return 'transient';
+          logger.warn(
+            "Session refresh failed with temporary server/rate-limit error",
+            { status: response.status },
+          );
+          return "transient";
         }
       } catch (error) {
         logger.error("Session refresh failed with network error", { error });
-        return 'transient';
+        return "transient";
       } finally {
         this.isRefreshingSession = false;
         this.refreshPromise = null;
@@ -207,7 +222,7 @@ class ApiClient {
               });
               const refreshStatus = await this.handleSessionExpired();
 
-              if (refreshStatus === 'success') {
+              if (refreshStatus === "success") {
                 logger.info("Session refreshed, retrying request", {
                   endpoint,
                 });
@@ -215,11 +230,16 @@ class ApiClient {
                 this.pendingRequests.delete(cacheKey);
                 // Retry the request
                 return this.request<T>(endpoint, options, retryCount + 1);
-              } else if (refreshStatus === 'transient') {
-                logger.warn("Session refresh encountered transient error. Not logging out.", {
-                  endpoint,
-                });
-                throw new Error("Temporary connection issue. Please try again.");
+              } else if (refreshStatus === "transient") {
+                logger.warn(
+                  "Session refresh encountered transient error. Not logging out.",
+                  {
+                    endpoint,
+                  },
+                );
+                throw new Error(
+                  "Temporary connection issue. Please try again.",
+                );
               }
             }
 

@@ -302,8 +302,8 @@ export const ShareAgentModal = ({
               </form>
               <p className="text-[11px] text-muted-foreground/45 leading-relaxed bg-muted/10 p-3 rounded-lg border border-border/5">
                 Sends a direct invite link via our sharing database. The
-                recipient will see this shared agent in their "Shared with
-                me" panel inside their personal dashboard workspace.
+                recipient will see this shared agent in their "Shared with me"
+                panel inside their personal dashboard workspace.
               </p>
             </TabsContent>
 
@@ -341,8 +341,8 @@ export const ShareAgentModal = ({
                   Scan to Import Agent
                 </p>
                 <p className="text-[11px] text-muted-foreground/50 max-w-[280px] leading-relaxed mx-auto">
-                  Scan this QR code with any smartphone camera to quickly preview
-                  and add this agent to your mobile workspace.
+                  Scan this QR code with any smartphone camera to quickly
+                  preview and add this agent to your mobile workspace.
                 </p>
               </div>
             </TabsContent>

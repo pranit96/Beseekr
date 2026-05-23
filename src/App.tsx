@@ -278,89 +278,89 @@ const App = () => {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <DeviceProvider>
-        <ThemeProvider defaultTheme="dark">
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <KeyboardShortcutsDialog />
-            <BrowserRouter>
-              <AuthProvider>
-                <Routes>
-                  {/* ROOT */}
-                  <Route path="/" element={<Home />} />
+          <ThemeProvider defaultTheme="dark">
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <KeyboardShortcutsDialog />
+              <BrowserRouter>
+                <AuthProvider>
+                  <Routes>
+                    {/* ROOT */}
+                    <Route path="/" element={<Home />} />
 
-                  {/* =============================================
+                    {/* =============================================
                       BLOG - Fully public, no auth required
                       ============================================= */}
-                  <Route
-                    path="/blog"
-                    element={<Navigate to="/blogs" replace />}
-                  />
-                  <Route
-                    path="/blogs"
-                    element={
-                      <Suspense fallback={<PageLoader />}>
-                        <BlogList />
-                      </Suspense>
-                    }
-                  />
-                  <Route
-                    path="/blogs/:slug"
-                    element={
-                      <Suspense fallback={<PageLoader />}>
-                        <BlogPost />
-                      </Suspense>
-                    }
-                  />
+                    <Route
+                      path="/blog"
+                      element={<Navigate to="/blogs" replace />}
+                    />
+                    <Route
+                      path="/blogs"
+                      element={
+                        <Suspense fallback={<PageLoader />}>
+                          <BlogList />
+                        </Suspense>
+                      }
+                    />
+                    <Route
+                      path="/blogs/:slug"
+                      element={
+                        <Suspense fallback={<PageLoader />}>
+                          <BlogPost />
+                        </Suspense>
+                      }
+                    />
 
-                  {/* =============================================
+                    {/* =============================================
                     PUBLIC ROUTES - No auth required
                     ============================================= */}
 
-                  {/* Auth page - anyone can access */}
-                  <Route path="/auth" element={<Auth />} />
+                    {/* Auth page - anyone can access */}
+                    <Route path="/auth" element={<Auth />} />
 
-                  {/* OAuth callback - handles Google redirect */}
-                  <Route
-                    path="/auth/callback"
-                    element={
-                      <Suspense fallback={<PageLoader />}>
-                        <AuthCallback />
-                      </Suspense>
-                    }
-                  />
+                    {/* OAuth callback - handles Google redirect */}
+                    <Route
+                      path="/auth/callback"
+                      element={
+                        <Suspense fallback={<PageLoader />}>
+                          <AuthCallback />
+                        </Suspense>
+                      }
+                    />
 
-                  {/* Password reset */}
-                  <Route
-                    path="/reset-password"
-                    element={
-                      <Suspense fallback={<PageLoader />}>
-                        <ResetPassword />
-                      </Suspense>
-                    }
-                  />
+                    {/* Password reset */}
+                    <Route
+                      path="/reset-password"
+                      element={
+                        <Suspense fallback={<PageLoader />}>
+                          <ResetPassword />
+                        </Suspense>
+                      }
+                    />
 
-                  {/* Privacy policy */}
-                  <Route path="/privacy" element={<Privacy />} />
+                    {/* Privacy policy */}
+                    <Route path="/privacy" element={<Privacy />} />
 
-                  {/* Contact page */}
-                  <Route path="/contact" element={<Contact />} />
+                    {/* Contact page */}
+                    <Route path="/contact" element={<Contact />} />
 
-                  {/* About page */}
-                  <Route path="/about" element={<About />} />
+                    {/* About page */}
+                    <Route path="/about" element={<About />} />
 
-                  {/* Shared agent preview landing page */}
-                  <Route
-                    path="/agents/share/:id"
-                    element={
-                      <Suspense fallback={<PageLoader />}>
-                        <AgentShare />
-                      </Suspense>
-                    }
-                  />
+                    {/* Shared agent preview landing page */}
+                    <Route
+                      path="/agents/share/:id"
+                      element={
+                        <Suspense fallback={<PageLoader />}>
+                          <AgentShare />
+                        </Suspense>
+                      }
+                    />
 
-                  {/* Wellness (health) */}
-                  {/* <Route path="/wellness" element={
+                    {/* Wellness (health) */}
+                    {/* <Route path="/wellness" element={
                     <Suspense fallback={<PageLoader />}>
                       <WellnessDashboard />
                     </Suspense>
@@ -406,169 +406,177 @@ const App = () => {
                     </Suspense>
                   } /> */}
 
-                  {/* Payment success - Razorpay redirect */}
-                  <Route path="/payment/success" element={<PaymentSuccess />} />
+                    {/* Payment success - Razorpay redirect */}
+                    <Route
+                      path="/payment/success"
+                      element={<PaymentSuccess />}
+                    />
 
-                  {/* Payment failed - Razorpay redirect */}
-                  <Route path="/payment/failed" element={<PaymentFailed />} />
+                    {/* Payment failed - Razorpay redirect */}
+                    <Route path="/payment/failed" element={<PaymentFailed />} />
 
-                  {/* =============================================
+                    {/* =============================================
                       DASHBOARD - FULLY PUBLIC
                       Auth is handled INSIDE each page component
                       when accessing premium features
                       ============================================= */}
-                  <Route path="/dashboard" element={<SaasDashboardLayout />}>
-                    <Route index element={<Navigate to="problems" replace />} />
-                    <Route
-                      path="problems"
-                      element={
-                        <Suspense fallback={<PageLoader />}>
-                          <ProblemsList />
-                        </Suspense>
-                      }
-                    />
-                    <Route
-                      path="problems/:id"
-                      element={
-                        <Suspense fallback={<PageLoader />}>
-                          <ProblemDetails />
-                        </Suspense>
-                      }
-                    />
-                    <Route
-                      path="validate"
-                      element={
-                        <Suspense fallback={<PageLoader />}>
-                          <Validate />
-                        </Suspense>
-                      }
-                    />
-                    <Route
-                      path="validate/:id"
-                      element={
-                        <Suspense fallback={<PageLoader />}>
-                          <Validate />
-                        </Suspense>
-                      }
-                    />
-                    <Route
-                      path="watchlist"
-                      element={
-                        <Suspense fallback={<PageLoader />}>
-                          <SaasWatchlist />
-                        </Suspense>
-                      }
-                    />
-                    <Route
-                      path="pricing"
-                      element={
-                        <Suspense fallback={<PageLoader />}>
-                          <Pricing />
-                        </Suspense>
-                      }
-                    />
-                    <Route
-                      path="profile"
-                      element={
-                        <Suspense fallback={<PageLoader />}>
-                          <Profile />
-                        </Suspense>
-                      }
-                    />
-                    <Route
-                      path="resume"
-                      element={<Navigate to="../hired" replace />}
-                    />
-                    <Route
-                      path="hired"
-                      element={
-                        <ResumeProvider>
-                          <Outlet />
-                        </ResumeProvider>
-                      }
-                    >
+                    <Route path="/dashboard" element={<SaasDashboardLayout />}>
                       <Route
                         index
+                        element={<Navigate to="problems" replace />}
+                      />
+                      <Route
+                        path="problems"
                         element={
                           <Suspense fallback={<PageLoader />}>
-                            <GetHiredPortal />
+                            <ProblemsList />
+                          </Suspense>
+                        }
+                      />
+                      <Route
+                        path="problems/:id"
+                        element={
+                          <Suspense fallback={<PageLoader />}>
+                            <ProblemDetails />
+                          </Suspense>
+                        }
+                      />
+                      <Route
+                        path="validate"
+                        element={
+                          <Suspense fallback={<PageLoader />}>
+                            <Validate />
+                          </Suspense>
+                        }
+                      />
+                      <Route
+                        path="validate/:id"
+                        element={
+                          <Suspense fallback={<PageLoader />}>
+                            <Validate />
+                          </Suspense>
+                        }
+                      />
+                      <Route
+                        path="watchlist"
+                        element={
+                          <Suspense fallback={<PageLoader />}>
+                            <SaasWatchlist />
+                          </Suspense>
+                        }
+                      />
+                      <Route
+                        path="pricing"
+                        element={
+                          <Suspense fallback={<PageLoader />}>
+                            <Pricing />
+                          </Suspense>
+                        }
+                      />
+                      <Route
+                        path="profile"
+                        element={
+                          <Suspense fallback={<PageLoader />}>
+                            <Profile />
                           </Suspense>
                         }
                       />
                       <Route
                         path="resume"
-                        element={<Navigate to="/dashboard/hired" replace />}
+                        element={<Navigate to="../hired" replace />}
                       />
                       <Route
-                        path="resume/workspace"
+                        path="hired"
                         element={
-                          <Suspense fallback={<PageLoader />}>
-                            <ResumeWorkspace />
-                          </Suspense>
+                          <ResumeProvider>
+                            <Outlet />
+                          </ResumeProvider>
                         }
+                      >
+                        <Route
+                          index
+                          element={
+                            <Suspense fallback={<PageLoader />}>
+                              <GetHiredPortal />
+                            </Suspense>
+                          }
+                        />
+                        <Route
+                          path="resume"
+                          element={<Navigate to="/dashboard/hired" replace />}
+                        />
+                        <Route
+                          path="resume/workspace"
+                          element={
+                            <Suspense fallback={<PageLoader />}>
+                              <ResumeWorkspace />
+                            </Suspense>
+                          }
+                        />
+                        <Route
+                          path="resume/upload"
+                          element={
+                            <Suspense fallback={<PageLoader />}>
+                              <ResumeUpload />
+                            </Suspense>
+                          }
+                        />
+                        <Route
+                          path="resume/templates"
+                          element={
+                            <Suspense fallback={<PageLoader />}>
+                              <ResumeTemplateSelect />
+                            </Suspense>
+                          }
+                        />
+                        <Route
+                          path="tracker"
+                          element={
+                            <Suspense fallback={<PageLoader />}>
+                              <JobTracker />
+                            </Suspense>
+                          }
+                        />
+                        <Route
+                          path="prep"
+                          element={
+                            <Suspense fallback={<PageLoader />}>
+                              <InterviewPrep />
+                            </Suspense>
+                          }
+                        />
+                        <Route
+                          path="research"
+                          element={
+                            <Navigate to="../prep?tab=research" replace />
+                          }
+                        />
+                        <Route
+                          path="cover-letter"
+                          element={
+                            <Suspense fallback={<PageLoader />}>
+                              <CoverLetter />
+                            </Suspense>
+                          }
+                        />
+                      </Route>
+
+                      {/* OLD STOCK ROUTES - Redirect to new trading system */}
+                      <Route
+                        path="stocks"
+                        element={<Navigate to="/trading/overview" replace />}
                       />
                       <Route
-                        path="resume/upload"
-                        element={
-                          <Suspense fallback={<PageLoader />}>
-                            <ResumeUpload />
-                          </Suspense>
-                        }
-                      />
-                      <Route
-                        path="resume/templates"
-                        element={
-                          <Suspense fallback={<PageLoader />}>
-                            <ResumeTemplateSelect />
-                          </Suspense>
-                        }
-                      />
-                      <Route
-                        path="tracker"
-                        element={
-                          <Suspense fallback={<PageLoader />}>
-                            <JobTracker />
-                          </Suspense>
-                        }
-                      />
-                      <Route
-                        path="prep"
-                        element={
-                          <Suspense fallback={<PageLoader />}>
-                            <InterviewPrep />
-                          </Suspense>
-                        }
-                      />
-                      <Route
-                        path="research"
-                        element={<Navigate to="../prep?tab=research" replace />}
-                      />
-                      <Route
-                        path="cover-letter"
-                        element={
-                          <Suspense fallback={<PageLoader />}>
-                            <CoverLetter />
-                          </Suspense>
-                        }
+                        path="stocks/*"
+                        element={<Navigate to="/trading/overview" replace />}
                       />
                     </Route>
 
-                    {/* OLD STOCK ROUTES - Redirect to new trading system */}
-                    <Route
-                      path="stocks"
-                      element={<Navigate to="/trading/overview" replace />}
-                    />
-                    <Route
-                      path="stocks/*"
-                      element={<Navigate to="/trading/overview" replace />}
-                    />
-                  </Route>
-
-                  {/* =============================================
+                    {/* =============================================
                       TRADING SYSTEM - NEW PROFESSIONAL INTERFACE
                       Complete from-scratch implementation
                       ============================================= */}
-                  {/* <Route path="/trading" element={<TradingLayout />}>
+                    {/* <Route path="/trading" element={<TradingLayout />}>
                     <Route index element={<Navigate to="picks" replace />} />
                     <Route path="picks" element={<Suspense fallback={<PageLoader />}><TradingDailyPicks /></Suspense>} />
                     <Route path="overview" element={<Suspense fallback={<PageLoader />}><TradingOverview /></Suspense>} />
@@ -586,90 +594,90 @@ const App = () => {
                     <Route path="data-validation" element={<Suspense fallback={<PageLoader />}><TradingDataValidation /></Suspense>} />
                   </Route> */}
 
-                  {/* =============================================
+                    {/* =============================================
                       CAT PREP DASHBOARD - HIDDEN (module disabled)
                       Redirect any /cat/* URLs to main dashboard
                       ============================================= */}
-                  <Route
-                    path="/cat/*"
-                    element={<Navigate to="/dashboard/problems" replace />}
-                  />
+                    <Route
+                      path="/cat/*"
+                      element={<Navigate to="/dashboard/problems" replace />}
+                    />
 
-                  {/* =============================================
+                    {/* =============================================
                       PROTECTED ROUTES - Legacy routes requiring auth
                       ============================================= */}
-                  <Route
-                    path="/chat"
-                    element={
-                      <ProtectedRoute>
-                        <Suspense fallback={<PageLoader />}>
-                          <Chat />
-                        </Suspense>
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/agents"
-                    element={
-                      <ProtectedRoute>
-                        <Suspense fallback={<PageLoader />}>
-                          <Agents />
-                        </Suspense>
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/workflow"
-                    element={
-                      <ProtectedRoute>
-                        <Suspense fallback={<PageLoader />}>
-                          <AutonomousWorkflow />
-                        </Suspense>
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/analytics"
-                    element={
-                      <ProtectedRoute>
-                        <Suspense fallback={<PageLoader />}>
-                          <Analytics />
-                        </Suspense>
-                      </ProtectedRoute>
-                    }
-                  />
-                  {/* <Route
+                    <Route
+                      path="/chat"
+                      element={
+                        <ProtectedRoute>
+                          <Suspense fallback={<PageLoader />}>
+                            <Chat />
+                          </Suspense>
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/agents"
+                      element={
+                        <ProtectedRoute>
+                          <Suspense fallback={<PageLoader />}>
+                            <Agents />
+                          </Suspense>
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/workflow"
+                      element={
+                        <ProtectedRoute>
+                          <Suspense fallback={<PageLoader />}>
+                            <AutonomousWorkflow />
+                          </Suspense>
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/analytics"
+                      element={
+                        <ProtectedRoute>
+                          <Suspense fallback={<PageLoader />}>
+                            <Analytics />
+                          </Suspense>
+                        </ProtectedRoute>
+                      }
+                    />
+                    {/* <Route
                     path="/metaLayer"
                     element={<ProtectedRoute><Suspense fallback={<PageLoader />}><DeepAnalytics /></Suspense></ProtectedRoute>}
                   /> */}
-                  <Route
-                    path="/profile"
-                    element={<Navigate to="/dashboard/profile" replace />}
-                  />
+                    <Route
+                      path="/profile"
+                      element={<Navigate to="/dashboard/profile" replace />}
+                    />
 
-                  {/* =============================================
+                    {/* =============================================
                       ADMIN CONSOLE - SECURE ACCESS
                       ============================================= */}
-                  <Route
-                    path="/admin"
-                    element={
-                      <RoleGuard>
-                        <Suspense fallback={<PageLoader />}>
-                          <AdminDashboard />
-                        </Suspense>
-                      </RoleGuard>
-                    }
-                  />
+                    <Route
+                      path="/admin"
+                      element={
+                        <RoleGuard>
+                          <Suspense fallback={<PageLoader />}>
+                            <AdminDashboard />
+                          </Suspense>
+                        </RoleGuard>
+                      }
+                    />
 
-                  {/* 404 */}
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </AuthProvider>
-            </BrowserRouter>
-            <VercelAnalytics />
-            <SpeedInsightsTracker />
-          </TooltipProvider>
-        </ThemeProvider>
+                    {/* 404 */}
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </AuthProvider>
+              </BrowserRouter>
+              <VercelAnalytics />
+              <SpeedInsightsTracker />
+            </TooltipProvider>
+          </ThemeProvider>
         </DeviceProvider>
       </QueryClientProvider>
     </ErrorBoundary>

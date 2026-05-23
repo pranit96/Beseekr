@@ -6,8 +6,8 @@ import { useState, useEffect } from "react";
 // ≥ 1024px → desktop
 export type DeviceType = "mobile" | "tablet" | "desktop";
 
-const MOBILE_MAX = 767;   // px (inclusive upper bound)
-const TABLET_MAX = 1023;  // px (inclusive upper bound)
+const MOBILE_MAX = 767; // px (inclusive upper bound)
+const TABLET_MAX = 1023; // px (inclusive upper bound)
 
 function getDeviceType(): DeviceType {
   const width = window.innerWidth;
@@ -28,13 +28,13 @@ function getDeviceType(): DeviceType {
 export function useDeviceType(): DeviceType {
   const [deviceType, setDeviceType] = useState<DeviceType>(() =>
     // Safe SSR guard: default to "desktop" if window is not available
-    typeof window !== "undefined" ? getDeviceType() : "desktop"
+    typeof window !== "undefined" ? getDeviceType() : "desktop",
   );
 
   useEffect(() => {
     const mqlMobile = window.matchMedia(`(max-width: ${MOBILE_MAX}px)`);
     const mqlTablet = window.matchMedia(
-      `(min-width: ${MOBILE_MAX + 1}px) and (max-width: ${TABLET_MAX}px)`
+      `(min-width: ${MOBILE_MAX + 1}px) and (max-width: ${TABLET_MAX}px)`,
     );
 
     const handleChange = () => {
