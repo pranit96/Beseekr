@@ -11,17 +11,14 @@ import {
   BookOpen,
   List,
   ChevronDown,
-  Mail,
-  User,
-  CheckCircle,
+  Mail, CheckCircle,
   Loader2,
   Sun,
-  Moon,
+  Moon
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
-import { type Blog } from "@/api/blogs";
 import { useTheme } from "@/hooks/use-theme";
 
 function fmt(d?: string) {
