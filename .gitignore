@@ -36,3 +36,4 @@ Docker-compose.yml
 run-docker.sh
 Dockerfile
 nginx.conf
+when domain is changed.md

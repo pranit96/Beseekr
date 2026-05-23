@@ -15,11 +15,14 @@ import {
   User,
   CheckCircle,
   Loader2,
+  Sun,
+  Moon,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
 import { type Blog } from "@/api/blogs";
+import { useTheme } from "@/hooks/use-theme";
 
 function fmt(d?: string) {
   if (!d) return "";
@@ -43,7 +46,7 @@ function ReadingProgress() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
   return (
-    <div className="fixed top-0 left-0 right-0 z-[60] h-0.5 bg-white/10">
+    <div className="fixed top-0 left-0 right-0 z-[60] h-0.5 bg-foreground/10">
       <motion.div
         className="h-full bg-primary origin-left"
         style={{ scaleX: progress / 100 }}
@@ -124,10 +127,10 @@ function TableOfContents({ items }: { items: TocItem[] }) {
         className="hidden xl:block sticky top-24 self-start w-56 flex-shrink-0 order-2"
         style={{ fontFamily: "'DM Sans', sans-serif" }}
       >
-        <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/30 mb-4 flex items-center gap-2">
+        <p className="text-xs font-bold uppercase tracking-[0.2em] text-foreground/40 mb-4 flex items-center gap-2">
           <List className="w-3.5 h-3.5" /> Contents
         </p>
-        <ul className="space-y-1 border-l border-white/8">
+        <ul className="space-y-1 border-l border-border">
           {items.map((item) => (
             <li key={item.id}>
               <button
@@ -137,7 +140,7 @@ function TableOfContents({ items }: { items: TocItem[] }) {
                 } ${
                   activeId === item.id
                     ? "text-primary border-primary font-medium"
-                    : "text-white/35 border-transparent hover:text-white/60 hover:border-white/20"
+                    : "text-muted-foreground border-transparent hover:text-foreground hover:border-foreground/20"
                 }`}
               >
                 {item.text}
@@ -154,7 +157,7 @@ function TableOfContents({ items }: { items: TocItem[] }) {
       >
         <button
           onClick={() => setMobileOpen((o) => !o)}
-          className="flex items-center gap-2 w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm font-semibold text-white/60 hover:text-white/80 hover:bg-white/8 transition-all"
+          className="flex items-center gap-2 w-full bg-foreground/5 border border-border rounded-xl px-4 py-3 text-sm font-semibold text-foreground/60 hover:text-foreground hover:bg-foreground/10 transition-all"
         >
           <List className="w-4 h-4" />
           Table of Contents
@@ -169,13 +172,13 @@ function TableOfContents({ items }: { items: TocItem[] }) {
               animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
               transition={{ duration: 0.25 }}
-              className="overflow-hidden mt-1 bg-white/5 border border-white/10 rounded-xl"
+              className="overflow-hidden mt-1 bg-foreground/5 border border-border rounded-xl"
             >
               {items.map((item) => (
                 <li key={item.id}>
                   <button
                     onClick={() => scrollTo(item.id)}
-                    className={`block w-full text-left text-sm py-2.5 px-4 text-white/50 hover:text-white hover:bg-white/5 transition-colors ${
+                    className={`block w-full text-left text-sm py-2.5 px-4 text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition-colors ${
                       item.level === 3 ? "pl-8" : ""
                     } ${activeId === item.id ? "text-primary font-medium" : ""}`}
                   >
@@ -202,7 +205,7 @@ function AuthorBio({
   const initial = author.charAt(0).toUpperCase();
   return (
     <div
-      className="flex items-start gap-5 bg-white/[0.03] border border-white/8 rounded-2xl p-6 sm:p-8"
+      className="flex items-start gap-5 bg-foreground/[0.03] border border-border rounded-2xl p-6 sm:p-8"
       style={{
         maxWidth: 780,
         margin: "4rem auto",
@@ -218,8 +221,8 @@ function AuthorBio({
         </span>
       </div>
       <div>
-        <p className="text-white font-semibold text-lg mb-1">{author}</p>
-        <p className="text-white/40 text-sm leading-relaxed">
+        <p className="text-foreground font-semibold text-lg mb-1">{author}</p>
+        <p className="text-muted-foreground text-sm leading-relaxed">
           Writer at beseekr · Exploring ideas at the intersection of technology,
           business, and culture.
           {publishDate && <> · Published {fmt(publishDate)}</>}
@@ -253,7 +256,7 @@ function NewsletterCTA() {
 
   return (
     <div
-      className="relative overflow-hidden rounded-2xl border border-white/8"
+      className="relative overflow-hidden rounded-2xl border border-border"
       style={{
         maxWidth: 780,
         margin: "3rem auto",
@@ -267,12 +270,12 @@ function NewsletterCTA() {
           <Mail className="w-5 h-5 text-primary" />
         </div>
         <h3
-          className="text-2xl font-bold text-white mb-2"
+          className="text-2xl font-bold text-foreground mb-2"
           style={{ fontFamily: "'Playfair Display', serif" }}
         >
           Stay in the loop
         </h3>
-        <p className="text-white/40 text-sm mb-6 max-w-md mx-auto">
+        <p className="text-muted-foreground text-sm mb-6 max-w-md mx-auto">
           Get the latest articles, insights, and updates delivered straight to
           your inbox. No spam — unsubscribe anytime via the link in any email.
         </p>
@@ -289,13 +292,13 @@ function NewsletterCTA() {
               <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-primary/20 mb-2">
                 <CheckCircle className="w-5 h-5 text-primary" />
               </div>
-              <p className="text-white/90 text-sm font-semibold">{done}</p>
+              <p className="text-foreground text-sm font-semibold">{done}</p>
               <button
                 onClick={() => {
                   setDone(null);
                   subscribe.reset();
                 }}
-                className="mt-2 text-xs text-white/40 hover:text-white/70 underline underline-offset-2 transition-colors"
+                className="mt-2 text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
               >
                 Subscribe another email
               </button>
@@ -317,7 +320,7 @@ function NewsletterCTA() {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="your@email.com"
                   required
-                  className="flex-1 w-full bg-white/5 border border-white/15 rounded-full px-5 py-3 text-sm text-white placeholder:text-white/30 outline-none focus:border-primary/50 transition-colors"
+                  className="flex-1 w-full bg-background border border-border rounded-full px-5 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-primary/50 transition-colors"
                 />
                 <button
                   type="submit"
@@ -357,6 +360,7 @@ export default function BlogPost() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const [copied, setCopied] = useState(false);
+  const { theme, setTheme } = useTheme();
 
   const { data: blog, isLoading: loading, error: queryError } = useBlog(slug);
 
@@ -407,15 +411,15 @@ export default function BlogPost() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-white">
+    <div className="min-h-screen bg-background text-foreground">
       <ReadingProgress />
 
       {/* ── TOPBAR ─────────────────────────────────────── */}
-      <header className="fixed top-0 inset-x-0 z-50">
+      <header className="fixed top-0 inset-x-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/40">
         <div className="mx-auto max-w-7xl px-6 sm:px-10 lg:px-16 py-4 flex items-center justify-between">
           <Link
             to="/blogs"
-            className="group flex items-center gap-2 text-white/70 hover:text-white transition-colors text-sm font-semibold"
+            className="group flex items-center gap-2 text-foreground/70 hover:text-foreground transition-colors text-sm font-semibold"
           >
             <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
             All articles
@@ -423,8 +427,28 @@ export default function BlogPost() {
 
           <div className="flex items-center gap-2">
             <button
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              className="w-9 h-9 flex items-center justify-center rounded-full bg-background/50 backdrop-blur-lg text-foreground/70 hover:text-foreground hover:bg-muted transition-all"
+            >
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={theme}
+                  initial={{ rotate: -90, opacity: 0 }}
+                  animate={{ rotate: 0, opacity: 1 }}
+                  exit={{ rotate: 90, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  {theme === "dark" ? (
+                    <Sun className="h-4 w-4" />
+                  ) : (
+                    <Moon className="h-4 w-4" />
+                  )}
+                </motion.div>
+              </AnimatePresence>
+            </button>
+            <button
               onClick={share}
-              className="flex items-center gap-2 text-sm font-semibold text-white/70 hover:text-white px-3 py-1.5 rounded-full hover:bg-white/10 transition-all"
+              className="flex items-center gap-2 text-sm font-semibold text-foreground/70 hover:text-foreground px-3 py-1.5 rounded-full hover:bg-muted transition-all"
             >
               <Share2 className="w-4 h-4" />
               {copied ? "Copied!" : "Share"}
@@ -487,7 +511,7 @@ export default function BlogPost() {
             {tags.map((tag) => (
               <span
                 key={tag}
-                className="text-xs text-white/30 bg-white/5 border border-white/10 px-3 py-1 rounded-full"
+                className="text-xs text-muted-foreground bg-foreground/5 border border-border px-3 py-1 rounded-full"
                 style={{ fontFamily: "'DM Sans', sans-serif" }}
               >
                 #{tag}
@@ -497,7 +521,7 @@ export default function BlogPost() {
 
           {/* Title — spans full container width */}
           <h1
-            className="text-3xl sm:text-4xl md:text-5xl lg:text-[4rem] font-bold leading-[1.1] tracking-tight mb-8 break-words"
+            className="text-3xl sm:text-4xl md:text-5xl lg:text-[4rem] font-bold leading-[1.1] tracking-tight mb-8 break-words text-foreground"
             style={{
               fontFamily:
                 "'Playfair Display', Georgia, 'Times New Roman', serif",
@@ -509,7 +533,7 @@ export default function BlogPost() {
           {/* Excerpt */}
           {blog.excerpt && (
             <p
-              className="text-xl md:text-2xl text-white/50 leading-[1.6] mb-10 border-l-[3px] border-primary/50 pl-7 max-w-4xl"
+              className="text-xl md:text-2xl text-muted-foreground leading-[1.6] mb-10 border-l-[3px] border-primary/50 pl-7 max-w-4xl"
               style={{
                 fontFamily:
                   "'Source Serif 4', Georgia, 'Times New Roman', serif",
@@ -522,11 +546,11 @@ export default function BlogPost() {
 
           {/* Meta */}
           <div
-            className="flex flex-wrap items-center gap-6 text-sm text-white/35 border-t border-b border-white/8 py-5"
+            className="flex flex-wrap items-center gap-6 text-sm text-muted-foreground border-t border-b border-border py-5"
             style={{ fontFamily: "'DM Sans', sans-serif" }}
           >
             {blog.author && (
-              <span className="font-semibold text-white/70">{blog.author}</span>
+              <span className="font-semibold text-foreground/70">{blog.author}</span>
             )}
             {blog.publish_date && (
               <span className="flex items-center gap-1.5">
@@ -559,42 +583,42 @@ export default function BlogPost() {
                 prose prose-invert prose-base sm:prose-lg lg:prose-xl max-w-none
 
                 /* Headings */
-                prose-headings:tracking-tight
+                prose-headings:text-foreground prose-headings:tracking-tight
                 prose-h1:text-4xl prose-h2:text-3xl prose-h2:mt-16 prose-h2:mb-6
                 prose-h3:text-2xl prose-h3:mt-12 prose-h3:mb-4
 
                 /* Body text */
-                prose-p:text-white/80 prose-p:mb-7
+                prose-p:text-foreground/80 prose-p:mb-7
 
                 /* Links */
                 prose-a:text-primary prose-a:no-underline hover:prose-a:underline
 
                 /* Emphasis */
-                prose-strong:text-white prose-strong:font-semibold
-                prose-em:text-white/65
+                prose-strong:text-foreground prose-strong:font-semibold
+                prose-em:text-foreground/65
 
                 /* Lists */
-                prose-li:text-white/80 prose-li:mb-2
+                prose-li:text-foreground/80 prose-li:mb-2
                 prose-ul:my-7 prose-ol:my-7
 
                 /* Code */
-                prose-code:bg-white/5 prose-code:text-primary prose-code:px-2 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:before:content-none prose-code:after:content-none
-                prose-pre:bg-white/5 prose-pre:border prose-pre:border-white/10 prose-pre:rounded-2xl prose-pre:p-6
+                prose-code:bg-muted prose-code:text-primary prose-code:px-2 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:before:content-none prose-code:after:content-none
+                prose-pre:bg-muted prose-pre:border prose-pre:border-border prose-pre:rounded-2xl prose-pre:p-6
 
                 /* Blockquote */
-                prose-blockquote:border-l-primary prose-blockquote:bg-white/3 prose-blockquote:rounded-r-2xl prose-blockquote:py-3 prose-blockquote:px-6 prose-blockquote:not-italic
-                prose-blockquote:text-white/60
+                prose-blockquote:border-l-primary prose-blockquote:bg-foreground/5 prose-blockquote:rounded-r-2xl prose-blockquote:py-3 prose-blockquote:px-6 prose-blockquote:not-italic
+                prose-blockquote:text-foreground/60
 
                 /* Images */
                 prose-img:rounded-2xl prose-img:shadow-2xl prose-img:my-12
 
                 /* HR */
-                prose-hr:border-white/10 prose-hr:my-14
+                prose-hr:border-border prose-hr:my-14
 
                 /* Tables */
                 prose-table:text-sm
-                prose-th:text-white/80 prose-th:font-bold prose-th:border-white/10
-                prose-td:text-white/60 prose-td:border-white/5
+                prose-th:text-foreground/80 prose-th:font-bold prose-th:border-border
+                prose-td:text-foreground/60 prose-td:border-border
               "
             style={{
               maxWidth: 780,
@@ -712,14 +736,14 @@ export default function BlogPost() {
 
         {/* Footer CTA */}
         <div
-          className="pt-12 border-t border-white/5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6"
+          className="pt-12 border-t border-border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6"
           style={{ maxWidth: 780, margin: "3rem auto 0" }}
         >
           <div>
-            <p className="text-white/20 text-sm mb-1">More articles</p>
+            <p className="text-muted-foreground text-sm mb-1">More articles</p>
             <Link
               to="/blogs"
-              className="group flex items-center gap-2 text-white font-bold hover:text-primary transition-colors"
+              className="group flex items-center gap-2 text-foreground font-bold hover:text-primary transition-colors"
             >
               <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
               Back to all articles
@@ -727,7 +751,7 @@ export default function BlogPost() {
           </div>
           <button
             onClick={share}
-            className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white/60 hover:text-white text-sm font-semibold px-5 py-2.5 rounded-full transition-all"
+            className="flex items-center gap-2 bg-foreground/5 hover:bg-foreground/10 border border-border text-foreground/60 hover:text-foreground text-sm font-semibold px-5 py-2.5 rounded-full transition-all"
           >
             <Share2 className="w-4 h-4" />
             {copied ? "Link copied!" : "Share article"}

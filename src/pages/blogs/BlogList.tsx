@@ -21,10 +21,13 @@ import {
   Mail,
   CheckCircle,
   Loader2,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { type Blog, type Topic } from "@/api/blogs";
 import { Logo } from "@/components/Logo";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/hooks/use-theme";
 
 /* ─── helpers ─────────────────────────────────────────────── */
 function fmt(d?: string) {
@@ -426,6 +429,7 @@ function NewsletterSection() {
 /* ─── main page ───────────────────────────────────────────── */
 export default function BlogList() {
   const { user } = useAuth();
+  const { theme, setTheme } = useTheme();
   const [selectedTopic, setSelectedTopic] = useState("All");
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -483,7 +487,7 @@ export default function BlogList() {
 
   function BlogListSkeleton() {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] text-white">
+      <div className="min-h-screen bg-background text-foreground">
         {/* Navbar Mock Skeleton */}
         <header className="fixed top-0 inset-x-0 z-50 bg-[#0a0a0a]/30 backdrop-blur-md">
           <div className="mx-auto max-w-7xl px-4 sm:px-8 py-5 flex items-center justify-between animate-pulse">
@@ -535,22 +539,22 @@ export default function BlogList() {
             {[...Array(6)].map((_, i) => (
               <div key={i} className="group flex flex-col space-y-4">
                 {/* Image box */}
-                <div className="aspect-[16/10] w-full bg-white/5 rounded-2xl border border-white/5" />
+                <div className="aspect-[16/10] w-full bg-foreground/5 rounded-2xl border border-border" />
                 {/* Meta information */}
                 <div className="flex items-center gap-3">
-                  <div className="h-4 w-16 bg-white/15 rounded-full" />
-                  <div className="h-3 w-20 bg-white/5 rounded" />
+                  <div className="h-4 w-16 bg-foreground/10 rounded-full" />
+                  <div className="h-3 w-20 bg-foreground/5 rounded" />
                 </div>
                 {/* Title & Excerpt */}
                 <div className="space-y-2">
-                  <div className="h-6 w-11/12 bg-white/10 rounded" />
-                  <div className="h-4 w-full bg-white/5 rounded" />
-                  <div className="h-4 w-2/3 bg-white/5 rounded" />
+                  <div className="h-6 w-11/12 bg-foreground/10 rounded" />
+                  <div className="h-4 w-full bg-foreground/5 rounded" />
+                  <div className="h-4 w-2/3 bg-foreground/5 rounded" />
                 </div>
                 {/* Author row */}
                 <div className="flex items-center gap-2 pt-2">
-                  <div className="h-7 w-7 rounded-full bg-white/10" />
-                  <div className="h-3 w-20 bg-white/5 rounded" />
+                  <div className="h-7 w-7 rounded-full bg-foreground/10" />
+                  <div className="h-3 w-20 bg-foreground/5 rounded" />
                 </div>
               </div>
             ))}
@@ -577,11 +581,11 @@ export default function BlogList() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-white">
+    <div className="min-h-screen bg-background text-foreground">
       {/* ── NAVBAR ─────────────────────────────────────── */}
-      <header className="fixed top-0 inset-x-0 z-50 mix-blend-normal">
-        <div className="mx-auto max-w-7xl px-4 sm:px-8 py-5 flex items-center justify-between">
-          <Logo className="text-white text-xl" to="/blogs" />
+      <header className="fixed top-0 inset-x-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/40">
+        <div className="mx-auto max-w-7xl px-4 sm:px-8 py-4 flex items-center justify-between">
+          <Logo className="text-foreground text-xl" to="/blogs" />
 
           <div className="flex items-center gap-4">
             <AnimatePresence>
@@ -598,7 +602,7 @@ export default function BlogList() {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search articles…"
-                    className="w-full bg-white/10 backdrop-blur-lg text-white text-sm px-4 py-2 rounded-full border border-white/20 placeholder:text-white/40 outline-none focus:border-white/50 transition-colors"
+                    className="w-full bg-background/50 backdrop-blur-lg text-foreground text-sm px-4 py-2 rounded-full border border-border placeholder:text-muted-foreground outline-none focus:border-primary transition-colors"
                   />
                 </motion.div>
               )}
@@ -608,7 +612,7 @@ export default function BlogList() {
                 setSearchOpen((s) => !s);
                 if (searchOpen) setSearchQuery("");
               }}
-              className="w-9 h-9 flex items-center justify-center rounded-full bg-white/10 backdrop-blur-lg text-white/70 hover:text-white hover:bg-white/20 transition-all"
+              className="w-9 h-9 flex items-center justify-center rounded-full bg-background/50 backdrop-blur-lg text-foreground/70 hover:text-foreground hover:bg-muted transition-all"
             >
               {searchOpen ? (
                 <X className="w-4 h-4" />
@@ -616,17 +620,37 @@ export default function BlogList() {
                 <Search className="w-4 h-4" />
               )}
             </button>
+            <button
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              className="w-9 h-9 flex items-center justify-center rounded-full bg-background/50 backdrop-blur-lg text-foreground/70 hover:text-foreground hover:bg-muted transition-all"
+            >
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={theme}
+                  initial={{ rotate: -90, opacity: 0 }}
+                  animate={{ rotate: 0, opacity: 1 }}
+                  exit={{ rotate: 90, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  {theme === "dark" ? (
+                    <Sun className="h-4 w-4" />
+                  ) : (
+                    <Moon className="h-4 w-4" />
+                  )}
+                </motion.div>
+              </AnimatePresence>
+            </button>
             {user ? (
               <Link
                 to="/"
-                className="hidden sm:inline-flex text-sm font-semibold text-white/50 hover:text-white transition-colors"
+                className="hidden sm:inline-flex text-sm font-semibold text-foreground/50 hover:text-foreground transition-colors"
               >
                 ← App
               </Link>
             ) : (
               <Link
                 to="/auth"
-                className="hidden sm:inline-flex text-sm font-semibold text-white/50 hover:text-white transition-colors"
+                className="hidden sm:inline-flex text-sm font-semibold text-foreground/50 hover:text-foreground transition-colors"
               >
                 Login / Sign Up
               </Link>
@@ -665,7 +689,7 @@ export default function BlogList() {
       {/* ── TOPIC FILTER ───────────────────────────────── */}
       {topics.length > 0 && (
         <div
-          className={`relative z-40 bg-background/80 backdrop-blur-2xl border-b border-white/5 ${!heroBlog && blogs.length > 0 ? "pt-[80px]" : ""}`}
+          className={`relative z-40 bg-background/80 backdrop-blur-2xl border-b border-border/40 ${!heroBlog && blogs.length > 0 ? "pt-[80px]" : ""}`}
         >
           <div className="mx-auto max-w-7xl px-4 sm:px-8 py-4 overflow-x-auto scrollbar-hide">
             <div className="flex items-center gap-2 w-max">
@@ -677,8 +701,8 @@ export default function BlogList() {
                     relative px-5 py-2 rounded-full text-sm font-bold transition-all duration-300 flex-shrink-0
                     ${
                       selectedTopic === topic
-                        ? "bg-white text-black"
-                        : "text-white/40 hover:text-white hover:bg-white/10"
+                        ? "bg-foreground text-background"
+                        : "text-muted-foreground hover:text-foreground hover:bg-foreground/10"
                     }
                   `}
                 >
@@ -700,10 +724,10 @@ export default function BlogList() {
         {blogs.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-40 text-center">
             <div className="text-8xl mb-6">📝</div>
-            <h2 className="text-3xl font-black text-white mb-3">
+            <h2 className="text-3xl font-black text-foreground mb-3">
               No articles yet
             </h2>
-            <p className="text-white/40 text-lg">
+            <p className="text-muted-foreground text-lg">
               Check back soon for fresh content.
             </p>
           </div>
@@ -713,21 +737,21 @@ export default function BlogList() {
             animate={{ opacity: 1 }}
             className="flex flex-col items-center justify-center py-32 text-center"
           >
-            <p className="text-white/30 text-5xl mb-4">🔍</p>
-            <h3 className="text-xl font-bold text-white mb-2">
+            <p className="text-muted-foreground text-5xl mb-4">🔍</p>
+            <h3 className="text-xl font-bold text-foreground mb-2">
               No matches found
             </h3>
-            <p className="text-white/40">
+            <p className="text-muted-foreground">
               Try a different topic or search term
             </p>
           </motion.div>
         ) : (
           <>
             <div className="flex items-baseline justify-between mb-10">
-              <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-white/30">
+              <h2 className="text-sm font-bold uppercase tracking-[0.2em] text-muted-foreground">
                 {selectedTopic === "All" ? "Latest" : selectedTopic}
               </h2>
-              <span className="text-white/20 text-sm">
+              <span className="text-muted-foreground text-sm">
                 {gridBlogs.length}{" "}
                 {gridBlogs.length === 1 ? "article" : "articles"}
               </span>
@@ -751,11 +775,11 @@ export default function BlogList() {
                 <button
                   onClick={() => fetchNextPage()}
                   disabled={loadingMore}
-                  className="px-8 py-3 rounded-full bg-white/5 border border-white/10 text-white font-semibold hover:bg-white/10 hover:border-white/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  className="px-8 py-3 rounded-full bg-foreground/5 border border-border text-foreground font-semibold hover:bg-foreground/10 hover:border-border/80 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                   {loadingMore ? (
                     <>
-                      <span className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                      <span className="w-4 h-4 border-2 border-border border-t-foreground rounded-full animate-spin" />
                       Loading...
                     </>
                   ) : (
