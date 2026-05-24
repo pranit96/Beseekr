@@ -8,7 +8,11 @@ export interface ResumePersonalInfo {
   location: string;
   website: string;
   summary: string;
-  custom_fields?: Array<{ label: string; value: string }>;
+  custom_fields?: Array<{
+    label: string;
+    value: string;
+    type?: "text" | "link" | "email";
+  }>;
 }
 
 export interface ResumeExperience {

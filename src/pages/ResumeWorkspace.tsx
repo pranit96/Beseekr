@@ -111,6 +111,23 @@ const NAV_TABS = [
   },
 ];
 
+/* ─── SECTION CARD WRAPPER ──────────────────────────────────────── */
+const SectionCard = ({ children }: { children: React.ReactNode }) => (
+  <div className="border border-zinc-100 dark:border-white/[0.04] bg-white/60 dark:bg-white/[0.01] rounded-2xl p-6 shadow-sm space-y-5 transition-all">
+    {children}
+  </div>
+);
+
+/* ─── EMPTY STATE ───────────────────────────────────────────────── */
+const EmptyState = ({ label }: { label: string }) => (
+  <div className="flex flex-col items-center justify-center py-14 border-2 border-dashed border-zinc-200 dark:border-white/[0.05] rounded-2xl gap-3 text-zinc-400 bg-zinc-50/40 dark:bg-white/[0.005]">
+    <div className="h-10 w-10 rounded-full bg-zinc-100 dark:bg-white/[0.03] flex items-center justify-center">
+      <Plus className="h-4 w-4 opacity-40" />
+    </div>
+    <p className="text-xs font-semibold">{label}</p>
+  </div>
+);
+
 export default function ResumeWorkspace() {
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -778,23 +795,21 @@ export default function ResumeWorkspace() {
 
   const addCustomField = () => {
     setResumeData((p) => {
-      const info = p.personal_info;
-      const custom_fields = [...(info.custom_fields || [])];
-      custom_fields.push({ label: "", value: "" });
+      const custom_fields = [...((p.personal_info as any).custom_fields || [])];
+      custom_fields.push({ label: "", value: "", type: "text" });
       return {
         ...p,
         personal_info: {
-          ...info,
+          ...p.personal_info,
           custom_fields,
         },
       };
     });
   };
 
-  const updateCustomField = (index: number, key: "label" | "value", val: string) => {
+  const updateCustomField = (index: number, key: "label" | "value" | "type", val: string) => {
     setResumeData((p) => {
-      const info = p.personal_info;
-      const custom_fields = [...(info.custom_fields || [])];
+      const custom_fields = [...((p.personal_info as any).custom_fields || [])];
       if (custom_fields[index]) {
         custom_fields[index] = {
           ...custom_fields[index],
@@ -804,7 +819,7 @@ export default function ResumeWorkspace() {
       return {
         ...p,
         personal_info: {
-          ...info,
+          ...p.personal_info,
           custom_fields,
         },
       };
@@ -813,12 +828,11 @@ export default function ResumeWorkspace() {
 
   const removeCustomField = (index: number) => {
     setResumeData((p) => {
-      const info = p.personal_info;
-      const custom_fields = [...(info.custom_fields || [])].filter((_, i) => i !== index);
+      const custom_fields = [...((p.personal_info as any).custom_fields || [])].filter((_, i) => i !== index);
       return {
         ...p,
         personal_info: {
-          ...info,
+          ...p.personal_info,
           custom_fields,
         },
       };
@@ -1025,22 +1039,7 @@ export default function ResumeWorkspace() {
   const labelCls =
     "text-[9px] font-black uppercase tracking-[0.18em] text-zinc-400 ml-0.5";
 
-  /* ─── SECTION CARD WRAPPER ──────────────────────────────────────── */
-  const SectionCard = ({ children }: { children: React.ReactNode }) => (
-    <div className="border border-zinc-100 dark:border-white/[0.04] bg-white/60 dark:bg-white/[0.01] rounded-2xl p-6 shadow-sm space-y-5 transition-all">
-      {children}
-    </div>
-  );
 
-  /* ─── EMPTY STATE ───────────────────────────────────────────────── */
-  const EmptyState = ({ label }: { label: string }) => (
-    <div className="flex flex-col items-center justify-center py-14 border-2 border-dashed border-zinc-200 dark:border-white/[0.05] rounded-2xl gap-3 text-zinc-400 bg-zinc-50/40 dark:bg-white/[0.005]">
-      <div className="h-10 w-10 rounded-full bg-zinc-100 dark:bg-white/[0.03] flex items-center justify-center">
-        <Plus className="h-4 w-4 opacity-40" />
-      </div>
-      <p className="text-xs font-semibold">{label}</p>
-    </div>
-  );
 
   return (
     <div className="h-screen flex flex-col bg-zinc-50 dark:bg-[#08080c] text-foreground overflow-hidden">
@@ -1478,6 +1477,20 @@ export default function ResumeWorkspace() {
                                     placeholder="e.g. GitHub, Clearance"
                                     className={inputCls}
                                   />
+                                </div>
+                                <div className="w-24 space-y-1.5 text-left">
+                                  <Label className={labelCls}>Type</Label>
+                                  <select
+                                    value={field.type || "text"}
+                                    onChange={(e) =>
+                                      updateCustomField(idx, "type", e.target.value as any)
+                                    }
+                                    className="w-full h-9 rounded-xl bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.06] text-zinc-800 dark:text-zinc-200 px-2 py-1 text-xs focus:ring-0 focus:border-indigo-400 focus:outline-none"
+                                  >
+                                    <option value="text">Text</option>
+                                    <option value="link">Link</option>
+                                    <option value="email">Email</option>
+                                  </select>
                                 </div>
                                 <div className="flex-[2] space-y-1.5 text-left">
                                   <Label className={labelCls}>Field Value</Label>

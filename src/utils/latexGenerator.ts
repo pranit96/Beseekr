@@ -179,6 +179,40 @@ export function generateLatexResume(data: ResumeData): string {
     contactParts.push(`\\small ${escapeLatex(info.location)}`);
   }
 
+  // Custom Fields formatting
+  const customFields = (info as any).custom_fields || [];
+  customFields.forEach((cf: any) => {
+    if (cf && cf.value) {
+      const labelPrefix = cf.label ? `${cf.label}: ` : "";
+      const valStr = String(cf.value);
+      const isEmail = cf.type === "email" || (cf.type !== "text" && valStr.includes("@"));
+      const isLink =
+        cf.type === "link" ||
+        (cf.type !== "text" &&
+          (/^https?:\/\//i.test(valStr) ||
+            /^[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,5}(:[0-9]{1,5})?(\/.*)?$/i.test(valStr)));
+
+      if (cf.type === "text") {
+        contactParts.push(`\\small ${escapeLatex(labelPrefix)}${escapeLatex(valStr)}`);
+      } else if (isEmail) {
+        contactParts.push(
+          `\\href{mailto:${valStr}}{\\underline{${escapeLatex(labelPrefix)}${escapeLatex(valStr)}}}`,
+        );
+      } else if (isLink) {
+        let url = valStr;
+        if (!/^https?:\/\//i.test(url)) {
+          url = `https://${url}`;
+        }
+        let cleanWeb = valStr.replace(/^https?:\/\//i, "");
+        contactParts.push(
+          `\\href{${url}}{\\underline{${escapeLatex(labelPrefix)}${escapeLatex(cleanWeb)}}}`,
+        );
+      } else {
+        contactParts.push(`\\small ${escapeLatex(labelPrefix)}${escapeLatex(valStr)}`);
+      }
+    }
+  });
+
   latex += `    ${contactParts.join(" $|$ \\\\\n    ")}\n\\end{center}\n\n`;
 
   // Professional Summary
