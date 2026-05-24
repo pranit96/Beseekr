@@ -1127,7 +1127,7 @@ export default function ResumeWorkspace() {
               }}
               className="h-8 px-3.5 rounded-lg text-[10px] font-black bg-indigo-50 dark:bg-indigo-500/10 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/20 transition-all flex items-center gap-1.5 uppercase tracking-wide"
             >
-              <Sparkles className="h-3 w-3 animate-pulse" /> AI Tools
+              <Sparkles className="h-3 w-3 animate-pulse" /> Optimize Resume
             </button>
 
             <DropdownMenu>
@@ -1136,7 +1136,7 @@ export default function ResumeWorkspace() {
                   disabled={isDownloading || isPreviewLoading}
                   className="h-8 px-4 rounded-lg text-[10px] font-black bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100 transition-all flex items-center gap-1.5 uppercase tracking-widest shadow-sm border-none disabled:opacity-50"
                 >
-                  <Download className="h-3 w-3" /> Export
+                  <Download className="h-3 w-3" /> Download
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/[0.1] rounded-xl shadow-xl text-sm">
