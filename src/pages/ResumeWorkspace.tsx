@@ -432,6 +432,399 @@ export default function ResumeWorkspace() {
       personal_info: { ...p.personal_info, [field]: value },
     }));
 
+  const renderATSReportTabs = (isDrawer: boolean = false) => {
+    if (!atsReport) return null;
+    const cardBg = isDrawer
+      ? "bg-zinc-50 dark:bg-white/[0.02]"
+      : "bg-white dark:bg-white/[0.01]";
+    const ringSize = isDrawer ? "h-24 w-24" : "h-20 w-20";
+    const gradId = isDrawer ? "atsGrad" : "atsGradRightPanel";
+
+    return (
+      <Tabs defaultValue="overview" className="w-full text-left">
+        <TabsList className="w-full bg-zinc-100 dark:bg-white/[0.04] rounded-xl border border-zinc-200 dark:border-white/[0.06] h-9 p-0.5 mb-4">
+          <TabsTrigger
+            value="overview"
+            className="flex-1 text-[10px] font-bold rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-white/[0.08] data-[state=active]:text-zinc-900 dark:data-[state=active]:text-white text-zinc-500 transition-all animate-none"
+          >
+            ⚡ Overview
+          </TabsTrigger>
+          <TabsTrigger
+            value="audits"
+            className="flex-1 text-[10px] font-bold rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-white/[0.08] data-[state=active]:text-zinc-900 dark:data-[state=active]:text-white text-zinc-500 transition-all animate-none"
+          >
+            🔍 ATS Audits
+          </TabsTrigger>
+          <TabsTrigger
+            value="upgrades"
+            className="flex-1 text-[10px] font-bold rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-white/[0.08] data-[state=active]:text-zinc-900 dark:data-[state=active]:text-white text-zinc-500 transition-all animate-none"
+          >
+            🚀 Upgrades
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="space-y-4 mt-0 text-left">
+          {/* Score Ring */}
+          <div className={`flex flex-col items-center py-5 border border-zinc-200 dark:border-white/[0.05] rounded-2xl ${cardBg}`}>
+            <div className={`relative ${ringSize}`}>
+              <svg className="h-full w-full -rotate-90" viewBox="0 0 36 36">
+                <defs>
+                  <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#a855f7" />
+                    <stop offset="100%" stopColor="#6366f1" />
+                  </linearGradient>
+                </defs>
+                <path
+                  className="stroke-zinc-200 dark:stroke-white/[0.05]"
+                  strokeWidth="3"
+                  fill="none"
+                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                />
+                <motion.path
+                  stroke={`url(#${gradId})`}
+                  strokeWidth="3"
+                  strokeDasharray={`${atsReport.score || 0}, 100`}
+                  strokeLinecap="round"
+                  fill="none"
+                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                  initial={{ pathLength: 0 }}
+                  animate={{ pathLength: 1 }}
+                  transition={{ duration: 1.2, ease: "easeOut" }}
+                />
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-xl font-black text-zinc-900 dark:text-white">
+                  {atsReport.score || 0}
+                </span>
+                <span className="text-[6px] font-black text-zinc-400 uppercase tracking-widest">
+                  ATS Score
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            {Object.entries(atsReport.aspects).map(([key, aspect]: [string, any]) => (
+              <div
+                key={key}
+                className={`border border-zinc-200 dark:border-white/[0.05] rounded-xl p-3 text-left ${
+                  isDrawer ? "bg-white dark:bg-white/[0.01]" : "bg-white dark:bg-white/[0.02]"
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="capitalize text-[8px] font-black text-zinc-400 uppercase tracking-wider">
+                    {key.replace("_", " ")}
+                  </span>
+                  <span className="text-[8px] font-black font-mono text-zinc-700 dark:text-zinc-300 bg-zinc-100 dark:bg-white/[0.04] px-1 py-0.5 rounded">
+                    {aspect.rating}/10
+                  </span>
+                </div>
+                <p className="text-[9px] text-zinc-500 leading-relaxed line-clamp-2" title={aspect.why}>
+                  {aspect.why}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          <div className="space-y-1">
+            <Label className={labelCls + " flex items-center gap-1"}>
+              <Sparkles className="h-2.5 w-2.5 text-indigo-400" /> Overall Assessment
+            </Label>
+            <div className={`text-[10px] leading-relaxed text-zinc-500 border border-zinc-200 dark:border-white/[0.04] rounded-xl p-3 ${
+              isDrawer ? "bg-white dark:bg-white/[0.01]" : "bg-white dark:bg-white/[0.01]"
+            }`}>
+              {atsReport.general_feedback}
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="audits" className="space-y-4 mt-0 text-left">
+          {/* Spellcheck & Grammar Card */}
+          <div className={`p-4 rounded-2xl border border-zinc-200 dark:border-white/[0.05] space-y-3 ${
+            isDrawer ? "bg-white dark:bg-white/[0.01]" : "bg-white dark:bg-white/[0.01]"
+          }`}>
+            <div className="flex items-center gap-2 justify-between">
+              <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 flex items-center gap-1.5 font-bold">
+                ✨ Spelling & Grammar Check
+              </span>
+              {(!atsReport.ats_checks?.spelling_grammar || atsReport.ats_checks.spelling_grammar.passed) ? (
+                <span className="text-[8px] font-black text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                  Clean
+                </span>
+              ) : (
+                <span className="text-[8px] font-black text-rose-500 bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                  Issues Found
+                </span>
+              )}
+            </div>
+
+            {(!atsReport.ats_checks?.spelling_grammar ||
+              atsReport.ats_checks.spelling_grammar.passed ||
+              !atsReport.ats_checks.spelling_grammar.errors ||
+              atsReport.ats_checks.spelling_grammar.errors.length === 0) ? (
+              <div className="flex items-center justify-center gap-2 py-3 bg-emerald-50/50 dark:bg-emerald-500/5 border border-emerald-200 dark:border-emerald-500/10 rounded-xl text-emerald-500 text-[9px] font-bold">
+                <CheckCircle2 className="h-3.5 w-3.5" /> No spelling or grammar errors detected!
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <p className="text-[9px] text-zinc-400 font-medium">
+                  Flagged by the recruiter engine (Score Impact: {atsReport.ats_checks.spelling_grammar.score_impact} pts):
+                </p>
+                <div className="space-y-1.5">
+                  {atsReport.ats_checks.spelling_grammar.errors.map((err: string, i: number) => (
+                    <div key={i} className="flex items-center gap-2 p-2 bg-rose-50/30 dark:bg-rose-500/[0.02] border border-rose-100 dark:border-rose-500/10 rounded-lg text-[10px] text-rose-600 dark:text-rose-400 font-medium">
+                      <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
+                      {err}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Metric Density Compliance Card */}
+          <div className={`p-4 rounded-2xl border border-zinc-200 dark:border-white/[0.05] space-y-3 ${
+            isDrawer ? "bg-white dark:bg-white/[0.01]" : "bg-white dark:bg-white/[0.01]"
+          }`}>
+            <div className="flex items-center gap-2 justify-between">
+              <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 font-bold">
+                📊 Quantifiable Metrics Check
+              </span>
+              {atsReport.ats_checks?.quantifiable_metrics?.passed ? (
+                <span className="text-[8px] font-black text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                  Compliant
+                </span>
+              ) : (
+                <span className="text-[8px] font-black text-amber-500 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                  Action Needed
+                </span>
+              )}
+            </div>
+            <p className="text-[10px] text-zinc-500 leading-relaxed font-semibold">
+              {atsReport.ats_checks?.quantifiable_metrics?.details || "Checks for percentage improvements, scaling numbers, or budgets in experience bullets."}
+            </p>
+            {atsReport.ats_checks?.quantifiable_metrics?.score_impact !== 0 && (
+              <span className="inline-block text-[8px] font-black text-amber-500 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 px-2 py-0.5 rounded-lg">
+                Impact: {atsReport.ats_checks?.quantifiable_metrics?.score_impact} pts
+              </span>
+            )}
+          </div>
+
+          {/* Action Verbs Check */}
+          <div className={`p-4 rounded-2xl border border-zinc-200 dark:border-white/[0.05] space-y-3 ${
+            isDrawer ? "bg-white dark:bg-white/[0.01]" : "bg-white dark:bg-white/[0.01]"
+          }`}>
+            <div className="flex items-center gap-2 justify-between">
+              <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 font-bold">
+                🚀 Strong Action Verbs Check
+              </span>
+              {atsReport.ats_checks?.action_verbs?.passed ? (
+                <span className="text-[8px] font-black text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                  Good Phrasing
+                </span>
+              ) : (
+                <span className="text-[8px] font-black text-rose-500 bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                  Needs Rewrite
+                </span>
+              )}
+            </div>
+            <p className="text-[10px] text-zinc-500 leading-relaxed font-semibold">
+              {atsReport.ats_checks?.action_verbs?.details || "Verifies if work bullets start with impactful actions rather than passive summaries."}
+            </p>
+            {atsReport.ats_checks?.action_verbs?.score_impact !== 0 && (
+              <span className="inline-block text-[8px] font-black text-rose-500 bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 px-2 py-0.5 rounded-lg">
+                Impact: {atsReport.ats_checks?.action_verbs?.score_impact} pts
+              </span>
+            )}
+          </div>
+
+          {/* Section Completeness Check */}
+          <div className={`p-4 rounded-2xl border border-zinc-200 dark:border-white/[0.05] space-y-3 ${
+            isDrawer ? "bg-white dark:bg-white/[0.01]" : "bg-white dark:bg-white/[0.01]"
+          }`}>
+            <div className="flex items-center gap-2 justify-between">
+              <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 font-bold">
+                🏢 Section Completeness Check
+              </span>
+              {atsReport.ats_checks?.completeness?.passed ? (
+                <span className="text-[8px] font-black text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                  Complete
+                </span>
+              ) : (
+                <span className="text-[8px] font-black text-rose-500 bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                  Incomplete
+                </span>
+              )}
+            </div>
+            <p className="text-[10px] text-zinc-500 leading-relaxed font-semibold">
+              {atsReport.ats_checks?.completeness?.details || "Validates presence of work experience, technical skills, and academic sections."}
+            </p>
+            {atsReport.ats_checks?.completeness?.score_impact !== 0 && (
+              <span className="inline-block text-[8px] font-black text-rose-500 bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 px-2 py-0.5 rounded-lg">
+                Impact: {atsReport.ats_checks?.completeness?.score_impact} pts
+              </span>
+            )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="upgrades" className="space-y-4 mt-0 text-left">
+          {/* Missing Keywords */}
+          <div className={`p-3.5 rounded-2xl border border-zinc-200 dark:border-white/[0.05] space-y-2.5 ${cardBg}`}>
+            <p className="text-[9px] font-black uppercase tracking-widest text-zinc-500">
+              🔍 Missing Keywords
+            </p>
+            <p className="text-[8px] text-zinc-400">
+              Click to auto-append to your skills list.
+            </p>
+            {atsReport.missing_keywords.length === 0 ? (
+              <div className="flex items-center justify-center gap-2 py-2.5 bg-emerald-50 dark:bg-emerald-500/5 border border-emerald-200 dark:border-emerald-500/10 rounded-xl text-emerald-500 text-[9px] font-bold">
+                <CheckCircle2 className="h-3 w-3" /> Full Coverage Achieved
+              </div>
+            ) : (
+              <div className="flex flex-wrap gap-1">
+                {atsReport.missing_keywords.map((keyword: string, i: number) => {
+                  const added = injectedKeywords.includes(keyword);
+                  return (
+                    <button
+                      key={i}
+                      onClick={() => {
+                        if (added) return;
+                        setResumeData((p) => {
+                          const s = [...p.skills];
+                          if (s[0])
+                            s[0] = {
+                              ...s[0],
+                              items: [...new Set([...s[0].items, keyword])],
+                            };
+                          return { ...p, skills: s };
+                        });
+                        setInjectedKeywords((p) => [...p, keyword]);
+                        toast({ title: `Added: ${keyword}` });
+                      }}
+                      className={`text-[8px] font-bold px-2 py-0.5 rounded-lg border transition-all ${
+                        added
+                          ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-500 border-emerald-200 dark:border-emerald-500/20 line-through opacity-50 cursor-not-allowed"
+                          : "bg-zinc-50 dark:bg-white/[0.03] text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-white/[0.08] hover:bg-zinc-100 dark:hover:bg-white/[0.08] hover:text-zinc-800 dark:hover:text-white"
+                      }`}
+                    >
+                      + {keyword}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Bullet Upgrades */}
+          <div className="space-y-2">
+            <p className="text-[9px] font-black uppercase tracking-widest text-zinc-500">
+              🛠 Smart Bullet Refactors
+            </p>
+            {atsReport.bullet_point_suggestions.length === 0 ? (
+              <div className="text-center py-6 text-zinc-400 text-[10px] border border-dashed border-zinc-200 dark:border-white/[0.05] rounded-xl">
+                No suggestions. Try the AI Optimizer.
+              </div>
+            ) : (
+              atsReport.bullet_point_suggestions.map((sug: any, sIdx: number) => {
+                const nImp = sug.improved.trim().toLowerCase();
+                const isApplied =
+                  appliedSuggestions.includes(nImp) ||
+                  resumeData.experience.some((e) => e.highlights.some((h) => h.trim().toLowerCase() === nImp)) ||
+                  resumeData.projects.some((p) => p.highlights.some((h) => h.trim().toLowerCase() === nImp));
+                return (
+                  <div
+                    key={sIdx}
+                    className={`rounded-xl border overflow-hidden transition-all ${
+                      isApplied
+                        ? "border-emerald-200 dark:border-emerald-500/20 bg-emerald-50/50 dark:bg-emerald-500/5"
+                        : "border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] hover:border-zinc-300"
+                    }`}
+                  >
+                    <div className="px-3 py-1.5 border-b border-zinc-100 dark:border-white/[0.04] text-[8px] text-zinc-400 italic">
+                      &ldquo;{sug.original}&rdquo;
+                    </div>
+                    <div className="p-3 space-y-2">
+                      <p className="text-[10px] font-semibold text-zinc-800 dark:text-zinc-200 leading-relaxed text-left">
+                        &ldquo;{sug.improved}&rdquo;
+                      </p>
+                      {sug.reason && (
+                        <p className="text-[8px] text-zinc-400 italic flex items-start gap-1">
+                          <Sparkles className="h-2.5 w-2.5 mt-0.5 text-indigo-400 shrink-0" />
+                          {sug.reason}
+                        </p>
+                      )}
+                      {isApplied ? (
+                        <span className="inline-flex items-center gap-1 text-[8px] font-bold text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 px-2 py-0.5 rounded-lg">
+                          <CheckCircle2 className="h-2.5 w-2.5" /> Applied
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => applyRefactor(sug.original, sug.improved)}
+                          className="h-6 px-3 rounded-lg text-[8px] font-black bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 transition-all shadow-sm border-none"
+                        >
+                          Apply Suggestion
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </TabsContent>
+      </Tabs>
+    );
+  };
+
+  const addCustomField = () => {
+    setResumeData((p) => {
+      const info = p.personal_info;
+      const custom_fields = [...(info.custom_fields || [])];
+      custom_fields.push({ label: "", value: "" });
+      return {
+        ...p,
+        personal_info: {
+          ...info,
+          custom_fields,
+        },
+      };
+    });
+  };
+
+  const updateCustomField = (index: number, key: "label" | "value", val: string) => {
+    setResumeData((p) => {
+      const info = p.personal_info;
+      const custom_fields = [...(info.custom_fields || [])];
+      if (custom_fields[index]) {
+        custom_fields[index] = {
+          ...custom_fields[index],
+          [key]: val,
+        };
+      }
+      return {
+        ...p,
+        personal_info: {
+          ...info,
+          custom_fields,
+        },
+      };
+    });
+  };
+
+  const removeCustomField = (index: number) => {
+    setResumeData((p) => {
+      const info = p.personal_info;
+      const custom_fields = [...(info.custom_fields || [])].filter((_, i) => i !== index);
+      return {
+        ...p,
+        personal_info: {
+          ...info,
+          custom_fields,
+        },
+      };
+    });
+  };
+
   const updateStyleConfig = (field: string, value: string) =>
     setResumeData((p) => ({
       ...p,
@@ -1044,6 +1437,70 @@ export default function ResumeWorkspace() {
                             </div>
                           ))}
                         </div>
+                      </SectionCard>
+
+                      {/* Custom Personal Fields Card */}
+                      <SectionCard>
+                        <div className="flex items-center justify-between mb-3 text-left">
+                          <div>
+                            <h4 className="text-xs font-black uppercase tracking-widest text-zinc-500">
+                              Custom Fields
+                            </h4>
+                            <p className="text-[9px] text-zinc-400 mt-0.5 font-semibold">
+                              Add items like LinkedIn, GitHub, Clearance, Nationality, etc.
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={addCustomField}
+                            className="flex items-center gap-1.5 h-7 px-2.5 rounded-lg text-[10px] font-black uppercase bg-zinc-100 hover:bg-zinc-200 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] border border-zinc-200 dark:border-white/[0.08] text-zinc-700 dark:text-white transition-all shadow-sm"
+                          >
+                            <Plus className="h-3.5 w-3.5" /> Add Field
+                          </button>
+                        </div>
+
+                        {(!resumeData.personal_info.custom_fields ||
+                          resumeData.personal_info.custom_fields.length === 0) ? (
+                          <div className="text-center py-6 text-zinc-400 text-[10px] border border-dashed border-zinc-200 dark:border-white/[0.06] rounded-xl font-medium">
+                            No custom contact fields added.
+                          </div>
+                        ) : (
+                          <div className="space-y-3.5">
+                            {resumeData.personal_info.custom_fields.map((field, idx) => (
+                              <div key={idx} className="flex items-end gap-2 animate-fade-in">
+                                <div className="flex-1 space-y-1.5 text-left">
+                                  <Label className={labelCls}>Field Label</Label>
+                                  <Input
+                                    value={field.label}
+                                    onChange={(e) =>
+                                      updateCustomField(idx, "label", e.target.value)
+                                    }
+                                    placeholder="e.g. GitHub, Clearance"
+                                    className={inputCls}
+                                  />
+                                </div>
+                                <div className="flex-[2] space-y-1.5 text-left">
+                                  <Label className={labelCls}>Field Value</Label>
+                                  <Input
+                                    value={field.value}
+                                    onChange={(e) =>
+                                      updateCustomField(idx, "value", e.target.value)
+                                    }
+                                    placeholder="e.g. github.com/alias, Secret"
+                                    className={inputCls}
+                                  />
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => removeCustomField(idx)}
+                                  className="h-9 w-9 rounded-xl flex items-center justify-center text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 border border-zinc-200 dark:border-white/[0.08] transition-all mb-[1px]"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </SectionCard>
                       <SectionCard>
                         <div className="space-y-1.5 text-left">
@@ -1995,250 +2452,7 @@ export default function ResumeWorkspace() {
                       </div>
                     </div>
                   ) : (
-                    <Tabs defaultValue="overview" className="w-full">
-                      <TabsList className="w-full bg-zinc-100 dark:bg-white/[0.04] rounded-xl border border-zinc-200 dark:border-white/[0.06] h-9 p-0.5 mb-4">
-                        <TabsTrigger
-                          value="overview"
-                          className="flex-1 text-[10px] font-bold rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-white/[0.08] data-[state=active]:text-zinc-900 dark:data-[state=active]:text-white text-zinc-500 transition-all animate-none"
-                        >
-                          ⚡ Overview
-                        </TabsTrigger>
-                        <TabsTrigger
-                          value="upgrades"
-                          className="flex-1 text-[10px] font-bold rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-white/[0.08] data-[state=active]:text-zinc-900 dark:data-[state=active]:text-white text-zinc-500 transition-all animate-none"
-                        >
-                          🚀 Upgrades
-                        </TabsTrigger>
-                      </TabsList>
-
-                      <TabsContent
-                        value="overview"
-                        className="space-y-4 mt-0 text-left"
-                      >
-                        {/* Score Ring */}
-                        <div className="flex flex-col items-center py-5 bg-white dark:bg-white/[0.01] border border-zinc-200 dark:border-white/[0.05] rounded-2xl">
-                          {(() => {
-                            const score = atsReport.score || 0;
-                            return (
-                              <div className="relative h-20 w-20">
-                                <svg
-                                  className="h-full w-full -rotate-90"
-                                  viewBox="0 0 36 36"
-                                >
-                                  <defs>
-                                    <linearGradient
-                                      id="atsGradRightPanel"
-                                      x1="0%"
-                                      y1="0%"
-                                      x2="100%"
-                                      y2="100%"
-                                    >
-                                      <stop offset="0%" stopColor="#a855f7" />
-                                      <stop offset="100%" stopColor="#6366f1" />
-                                    </linearGradient>
-                                  </defs>
-                                  <path
-                                    className="stroke-zinc-200 dark:stroke-white/[0.05]"
-                                    strokeWidth="3"
-                                    fill="none"
-                                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                                  />
-                                  <motion.path
-                                    stroke="url(#atsGradRightPanel)"
-                                    strokeWidth="3"
-                                    strokeDasharray={`${score}, 100`}
-                                    strokeLinecap="round"
-                                    fill="none"
-                                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                                    initial={{ pathLength: 0 }}
-                                    animate={{ pathLength: 1 }}
-                                    transition={{
-                                      duration: 1.2,
-                                      ease: "easeOut",
-                                    }}
-                                  />
-                                </svg>
-                                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                  <span className="text-xl font-black text-zinc-900 dark:text-white">
-                                    {score}
-                                  </span>
-                                  <span className="text-[6px] font-black text-zinc-400 uppercase tracking-widest">
-                                    ATS Score
-                                  </span>
-                                </div>
-                              </div>
-                            );
-                          })()}
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-2">
-                          {Object.entries(atsReport.aspects).map(
-                            ([key, aspect]: [string, any]) => (
-                              <div
-                                key={key}
-                                className="border border-zinc-200 dark:border-white/[0.05] bg-white dark:bg-white/[0.02] rounded-xl p-3 text-left"
-                              >
-                                <div className="flex items-center justify-between mb-1">
-                                  <span className="capitalize text-[8px] font-black text-zinc-400 uppercase tracking-wider">
-                                    {key.replace("_", " ")}
-                                  </span>
-                                  <span className="text-[8px] font-black font-mono text-zinc-700 dark:text-zinc-300 bg-zinc-100 dark:bg-white/[0.04] px-1 py-0.5 rounded">
-                                    {aspect.rating}/10
-                                  </span>
-                                </div>
-                                <p
-                                  className="text-[9px] text-zinc-500 leading-relaxed line-clamp-2"
-                                  title={aspect.why}
-                                >
-                                  {aspect.why}
-                                </p>
-                              </div>
-                            ),
-                          )}
-                        </div>
-
-                        <div className="space-y-1">
-                          <Label
-                            className={labelCls + " flex items-center gap-1"}
-                          >
-                            <Sparkles className="h-2.5 w-2.5 text-indigo-400" />{" "}
-                            Overall Assessment
-                          </Label>
-                          <div className="text-[10px] leading-relaxed text-zinc-500 bg-white dark:bg-white/[0.01] border border-zinc-200 dark:border-white/[0.04] rounded-xl p-3">
-                            {atsReport.general_feedback}
-                          </div>
-                        </div>
-                      </TabsContent>
-
-                      <TabsContent
-                        value="upgrades"
-                        className="space-y-4 mt-0 text-left"
-                      >
-                        {/* Missing Keywords */}
-                        <div className="p-3.5 rounded-2xl bg-white dark:bg-white/[0.01] border border-zinc-200 dark:border-white/[0.05] space-y-2.5">
-                          <p className="text-[9px] font-black uppercase tracking-widest text-zinc-500">
-                            🔍 Missing Keywords
-                          </p>
-                          <p className="text-[8px] text-zinc-400">
-                            Click to auto-append to your skills list.
-                          </p>
-                          {atsReport.missing_keywords.length === 0 ? (
-                            <div className="flex items-center justify-center gap-2 py-2.5 bg-emerald-50 dark:bg-emerald-500/5 border border-emerald-200 dark:border-emerald-500/10 rounded-xl text-emerald-500 text-[9px] font-bold">
-                              <CheckCircle2 className="h-3 w-3" /> Full Coverage
-                              Achieved
-                            </div>
-                          ) : (
-                            <div className="flex flex-wrap gap-1">
-                              {atsReport.missing_keywords.map(
-                                (keyword: string, i: number) => {
-                                  const added =
-                                    injectedKeywords.includes(keyword);
-                                  return (
-                                    <button
-                                      key={i}
-                                      onClick={() => {
-                                        if (added) return;
-                                        setResumeData((p) => {
-                                          const s = [...p.skills];
-                                          if (s[0])
-                                            s[0] = {
-                                              ...s[0],
-                                              items: [
-                                                ...new Set([
-                                                  ...s[0].items,
-                                                  keyword,
-                                                ]),
-                                              ],
-                                            };
-                                          return { ...p, skills: s };
-                                        });
-                                        setInjectedKeywords((p) => [
-                                          ...p,
-                                          keyword,
-                                        ]);
-                                        toast({ title: `Added: ${keyword}` });
-                                      }}
-                                      className={`text-[8px] font-bold px-2 py-0.5 rounded-lg border transition-all ${added ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-500 border-emerald-200 dark:border-emerald-500/20 line-through opacity-50 cursor-not-allowed" : "bg-zinc-50 dark:bg-white/[0.03] text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-white/[0.08] hover:bg-zinc-100 dark:hover:bg-white/[0.08] hover:text-zinc-800 dark:hover:text-white"}`}
-                                    >
-                                      + {keyword}
-                                    </button>
-                                  );
-                                },
-                              )}
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Bullet Upgrades */}
-                        <div className="space-y-2">
-                          <p className="text-[9px] font-black uppercase tracking-widest text-zinc-500">
-                            🛠 Smart Bullet Refactors
-                          </p>
-                          {atsReport.bullet_point_suggestions.length === 0 ? (
-                            <div className="text-center py-6 text-zinc-400 text-[10px] border border-dashed border-zinc-200 dark:border-white/[0.05] rounded-xl">
-                              No suggestions. Try the AI Optimizer.
-                            </div>
-                          ) : (
-                            atsReport.bullet_point_suggestions.map(
-                              (sug: any, sIdx: number) => {
-                                const nImp = sug.improved.trim().toLowerCase();
-                                const isApplied =
-                                  appliedSuggestions.includes(nImp) ||
-                                  resumeData.experience.some((e) =>
-                                    e.highlights.some(
-                                      (h) => h.trim().toLowerCase() === nImp,
-                                    ),
-                                  ) ||
-                                  resumeData.projects.some((p) =>
-                                    p.highlights.some(
-                                      (h) => h.trim().toLowerCase() === nImp,
-                                    ),
-                                  );
-                                return (
-                                  <div
-                                    key={sIdx}
-                                    className={`rounded-xl border overflow-hidden transition-all ${isApplied ? "border-emerald-200 dark:border-emerald-500/20 bg-emerald-50/50 dark:bg-emerald-500/5" : "border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] hover:border-zinc-300"}`}
-                                  >
-                                    <div className="px-3 py-1.5 border-b border-zinc-100 dark:border-white/[0.04] text-[8px] text-zinc-400 italic">
-                                      &ldquo;{sug.original}&rdquo;
-                                    </div>
-                                    <div className="p-3 space-y-2">
-                                      <p className="text-[10px] font-semibold text-zinc-800 dark:text-zinc-200 leading-relaxed text-left">
-                                        &ldquo;{sug.improved}&rdquo;
-                                      </p>
-                                      {sug.reason && (
-                                        <p className="text-[8px] text-zinc-400 italic flex items-start gap-1">
-                                          <Sparkles className="h-2.5 w-2.5 mt-0.5 text-indigo-400 shrink-0" />
-                                          {sug.reason}
-                                        </p>
-                                      )}
-                                      {isApplied ? (
-                                        <span className="inline-flex items-center gap-1 text-[8px] font-bold text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 px-2 py-0.5 rounded-lg">
-                                          <CheckCircle2 className="h-2.5 w-2.5" />{" "}
-                                          Applied
-                                        </span>
-                                      ) : (
-                                        <button
-                                          onClick={() =>
-                                            applyRefactor(
-                                              sug.original,
-                                              sug.improved,
-                                            )
-                                          }
-                                          className="h-6 px-3 rounded-lg text-[8px] font-black bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 transition-all shadow-sm border-none"
-                                        >
-                                          Apply Suggestion
-                                        </button>
-                                      )}
-                                    </div>
-                                  </div>
-                                );
-                              },
-                            )
-                          )}
-                        </div>
-                      </TabsContent>
-                    </Tabs>
+                    renderATSReportTabs(false)
                   )}
                 </div>
               )}
@@ -2400,250 +2614,7 @@ export default function ResumeWorkspace() {
                     </div>
                   </div>
                 ) : (
-                  <Tabs defaultValue="overview" className="w-full">
-                    <TabsList className="w-full bg-zinc-100 dark:bg-white/[0.04] rounded-xl border border-zinc-200 dark:border-white/[0.06] h-9 p-0.5 mb-4">
-                      <TabsTrigger
-                        value="overview"
-                        className="flex-1 text-[10px] font-bold rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-white/[0.08] data-[state=active]:text-zinc-900 dark:data-[state=active]:text-white text-zinc-500 transition-all"
-                      >
-                        ⚡ Overview
-                      </TabsTrigger>
-                      <TabsTrigger
-                        value="upgrades"
-                        className="flex-1 text-[10px] font-bold rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-white/[0.08] data-[state=active]:text-zinc-900 dark:data-[state=active]:text-white text-zinc-500 transition-all"
-                      >
-                        🚀 Upgrades
-                      </TabsTrigger>
-                    </TabsList>
-
-                    <TabsContent
-                      value="overview"
-                      className="space-y-4 mt-0 text-left"
-                    >
-                      {/* Score Ring */}
-                      <div className="flex flex-col items-center py-5 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.05] rounded-2xl">
-                        {(() => {
-                          const score = atsReport.score || 0;
-                          return (
-                            <div className="relative h-24 w-24">
-                              <svg
-                                className="h-full w-full -rotate-90"
-                                viewBox="0 0 36 36"
-                              >
-                                <defs>
-                                  <linearGradient
-                                    id="atsGrad"
-                                    x1="0%"
-                                    y1="0%"
-                                    x2="100%"
-                                    y2="100%"
-                                  >
-                                    <stop offset="0%" stopColor="#a855f7" />
-                                    <stop offset="100%" stopColor="#6366f1" />
-                                  </linearGradient>
-                                </defs>
-                                <path
-                                  className="stroke-zinc-200 dark:stroke-white/[0.05]"
-                                  strokeWidth="3"
-                                  fill="none"
-                                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                                />
-                                <motion.path
-                                  stroke="url(#atsGrad)"
-                                  strokeWidth="3"
-                                  strokeDasharray={`${score}, 100`}
-                                  strokeLinecap="round"
-                                  fill="none"
-                                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                                  initial={{ pathLength: 0 }}
-                                  animate={{ pathLength: 1 }}
-                                  transition={{
-                                    duration: 1.2,
-                                    ease: "easeOut",
-                                  }}
-                                />
-                              </svg>
-                              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                <span className="text-2xl font-black text-zinc-900 dark:text-white">
-                                  {score}
-                                </span>
-                                <span className="text-[7px] font-black text-zinc-400 uppercase tracking-widest">
-                                  ATS Score
-                                </span>
-                              </div>
-                            </div>
-                          );
-                        })()}
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-2.5">
-                        {Object.entries(atsReport.aspects).map(
-                          ([key, aspect]: [string, any]) => (
-                            <div
-                              key={key}
-                              className="border border-zinc-200 dark:border-white/[0.05] bg-white dark:bg-white/[0.02] rounded-xl p-3 text-left"
-                            >
-                              <div className="flex items-center justify-between mb-1.5">
-                                <span className="capitalize text-[9px] font-black text-zinc-400 uppercase tracking-wider">
-                                  {key.replace("_", " ")}
-                                </span>
-                                <span className="text-[9px] font-black font-mono text-zinc-700 dark:text-zinc-300 bg-zinc-100 dark:bg-white/[0.04] px-1.5 py-0.5 rounded">
-                                  {aspect.rating}/10
-                                </span>
-                              </div>
-                              <p
-                                className="text-[9px] text-zinc-500 leading-relaxed line-clamp-2"
-                                title={aspect.why}
-                              >
-                                {aspect.why}
-                              </p>
-                            </div>
-                          ),
-                        )}
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <Label
-                          className={labelCls + " flex items-center gap-1"}
-                        >
-                          <Sparkles className="h-2.5 w-2.5 text-indigo-400" />{" "}
-                          Overall Assessment
-                        </Label>
-                        <div className="text-[11px] leading-relaxed text-zinc-500 bg-zinc-50 dark:bg-white/[0.01] border border-zinc-200 dark:border-white/[0.04] rounded-xl p-3.5">
-                          {atsReport.general_feedback}
-                        </div>
-                      </div>
-                    </TabsContent>
-
-                    <TabsContent
-                      value="upgrades"
-                      className="space-y-5 mt-0 text-left"
-                    >
-                      {/* Missing Keywords */}
-                      <div className="p-4 rounded-2xl bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.05] space-y-3">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
-                          🔍 Missing Keywords
-                        </p>
-                        <p className="text-[9px] text-zinc-400">
-                          Click to auto-append to your skills list.
-                        </p>
-                        {atsReport.missing_keywords.length === 0 ? (
-                          <div className="flex items-center justify-center gap-2 py-3 bg-emerald-50 dark:bg-emerald-500/5 border border-emerald-200 dark:border-emerald-500/10 rounded-xl text-emerald-500 text-[10px] font-bold">
-                            <CheckCircle2 className="h-3.5 w-3.5" /> Full
-                            Coverage Achieved
-                          </div>
-                        ) : (
-                          <div className="flex flex-wrap gap-1.5">
-                            {atsReport.missing_keywords.map(
-                              (keyword: string, i: number) => {
-                                const added =
-                                  injectedKeywords.includes(keyword);
-                                return (
-                                  <button
-                                    key={i}
-                                    onClick={() => {
-                                      if (added) return;
-                                      setResumeData((p) => {
-                                        const s = [...p.skills];
-                                        if (s[0])
-                                          s[0] = {
-                                            ...s[0],
-                                            items: [
-                                              ...new Set([
-                                                ...s[0].items,
-                                                keyword,
-                                              ]),
-                                            ],
-                                          };
-                                        return { ...p, skills: s };
-                                      });
-                                      setInjectedKeywords((p) => [
-                                        ...p,
-                                        keyword,
-                                      ]);
-                                      toast({ title: `Added: ${keyword}` });
-                                    }}
-                                    className={`text-[9px] font-bold px-2.5 py-1 rounded-lg border transition-all ${added ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-500 border-emerald-200 dark:border-emerald-500/20 line-through opacity-50 cursor-not-allowed" : "bg-white dark:bg-white/[0.03] text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-white/[0.08] hover:bg-zinc-100 dark:hover:bg-white/[0.08] hover:text-zinc-800 dark:hover:text-white"}`}
-                                  >
-                                    + {keyword}
-                                  </button>
-                                );
-                              },
-                            )}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Bullet Upgrades */}
-                      <div className="space-y-2">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
-                          🛠 Smart Bullet Refactors
-                        </p>
-                        {atsReport.bullet_point_suggestions.length === 0 ? (
-                          <div className="text-center py-8 text-zinc-400 text-xs border border-dashed border-zinc-200 dark:border-white/[0.05] rounded-xl">
-                            No suggestions. Try the AI Optimizer.
-                          </div>
-                        ) : (
-                          atsReport.bullet_point_suggestions.map(
-                            (sug: any, sIdx: number) => {
-                              const nImp = sug.improved.trim().toLowerCase();
-                              const isApplied =
-                                appliedSuggestions.includes(nImp) ||
-                                resumeData.experience.some((e) =>
-                                  e.highlights.some(
-                                    (h) => h.trim().toLowerCase() === nImp,
-                                  ),
-                                ) ||
-                                resumeData.projects.some((p) =>
-                                  p.highlights.some(
-                                    (h) => h.trim().toLowerCase() === nImp,
-                                  ),
-                                );
-                              return (
-                                <div
-                                  key={sIdx}
-                                  className={`rounded-xl border overflow-hidden transition-all ${isApplied ? "border-emerald-200 dark:border-emerald-500/20 bg-emerald-50/50 dark:bg-emerald-500/5" : "border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] hover:border-zinc-300 dark:hover:border-white/[0.1]"}`}
-                                >
-                                  <div className="px-3.5 py-2 border-b border-zinc-100 dark:border-white/[0.04] text-[9px] text-zinc-400 italic">
-                                    &ldquo;{sug.original}&rdquo;
-                                  </div>
-                                  <div className="p-3.5 space-y-2.5">
-                                    <p className="text-[11px] font-semibold text-zinc-800 dark:text-zinc-200 leading-relaxed">
-                                      &ldquo;{sug.improved}&rdquo;
-                                    </p>
-                                    {sug.reason && (
-                                      <p className="text-[9px] text-zinc-400 italic flex items-start gap-1.5">
-                                        <Sparkles className="h-2.5 w-2.5 mt-0.5 text-indigo-400 shrink-0" />
-                                        {sug.reason}
-                                      </p>
-                                    )}
-                                    {isApplied ? (
-                                      <span className="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 px-2 py-1 rounded-lg">
-                                        <CheckCircle2 className="h-3 w-3" />{" "}
-                                        Applied
-                                      </span>
-                                    ) : (
-                                      <button
-                                        onClick={() =>
-                                          applyRefactor(
-                                            sug.original,
-                                            sug.improved,
-                                          )
-                                        }
-                                        className="h-7 px-3.5 rounded-lg text-[9px] font-black bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 transition-all shadow-sm"
-                                      >
-                                        Apply Suggestion
-                                      </button>
-                                    )}
-                                  </div>
-                                </div>
-                              );
-                            },
-                          )
-                        )}
-                      </div>
-                    </TabsContent>
-                  </Tabs>
+                  renderATSReportTabs(true)
                 )}
               </div>
             </motion.div>

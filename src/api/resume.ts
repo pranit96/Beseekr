@@ -8,6 +8,7 @@ export interface ResumePersonalInfo {
   location: string;
   website: string;
   summary: string;
+  custom_fields?: Array<{ label: string; value: string }>;
 }
 
 export interface ResumeExperience {
@@ -71,6 +72,28 @@ export interface ATSAnalysis {
     improved: string;
     reason: string;
   }>;
+  ats_checks?: {
+    spelling_grammar: {
+      passed: boolean;
+      errors: string[];
+      score_impact: number;
+    };
+    quantifiable_metrics: {
+      passed: boolean;
+      details: string;
+      score_impact: number;
+    };
+    action_verbs: {
+      passed: boolean;
+      details: string;
+      score_impact: number;
+    };
+    completeness: {
+      passed: boolean;
+      details: string;
+      score_impact: number;
+    };
+  };
   general_feedback: string;
 }
 
