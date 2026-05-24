@@ -183,32 +183,46 @@ export function generateLatexResume(data: ResumeData): string {
   const customFields = (info as any).custom_fields || [];
   customFields.forEach((cf: any) => {
     if (cf && cf.value) {
-      const labelPrefix = cf.label ? `${cf.label}: ` : "";
       const valStr = String(cf.value);
-      const isEmail = cf.type === "email" || (cf.type !== "text" && valStr.includes("@"));
-      const isLink =
-        cf.type === "link" ||
-        (cf.type !== "text" &&
-          (/^https?:\/\//i.test(valStr) ||
-            /^[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,5}(:[0-9]{1,5})?(\/.*)?$/i.test(valStr)));
-
+      
       if (cf.type === "text") {
+        const labelPrefix = cf.label ? `${cf.label}: ` : "";
         contactParts.push(`\\small ${escapeLatex(labelPrefix)}${escapeLatex(valStr)}`);
-      } else if (isEmail) {
+      } else if (cf.type === "email") {
         contactParts.push(
-          `\\href{mailto:${valStr}}{\\underline{${escapeLatex(labelPrefix)}${escapeLatex(valStr)}}}`,
+          `\\href{mailto:${valStr}}{\\underline{${escapeLatex(valStr)}}}`,
         );
-      } else if (isLink) {
+      } else if (cf.type === "link") {
         let url = valStr;
         if (!/^https?:\/\//i.test(url)) {
           url = `https://${url}`;
         }
-        let cleanWeb = valStr.replace(/^https?:\/\//i, "");
+        const text = cf.label ? String(cf.label) : valStr.replace(/^https?:\/\//i, "");
         contactParts.push(
-          `\\href{${url}}{\\underline{${escapeLatex(labelPrefix)}${escapeLatex(cleanWeb)}}}`,
+          `\\href{${url}}{\\underline{${escapeLatex(text)}}}`,
         );
       } else {
-        contactParts.push(`\\small ${escapeLatex(labelPrefix)}${escapeLatex(valStr)}`);
+        // Fallback auto-detection if type not specified
+        const labelPrefix = cf.label ? `${cf.label}: ` : "";
+        const isEmail = valStr.includes("@");
+        const isLink = /^https?:\/\//i.test(valStr) || /^[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,5}(:[0-9]{1,5})?(\/.*)?$/i.test(valStr);
+        
+        if (isEmail) {
+          contactParts.push(
+            `\\href{mailto:${valStr}}{\\underline{${escapeLatex(valStr)}}}`,
+          );
+        } else if (isLink) {
+          let url = valStr;
+          if (!/^https?:\/\//i.test(url)) {
+            url = `https://${url}`;
+          }
+          const text = cf.label ? String(cf.label) : valStr.replace(/^https?:\/\//i, "");
+          contactParts.push(
+            `\\href{${url}}{\\underline{${escapeLatex(text)}}}`,
+          );
+        } else {
+          contactParts.push(`\\small ${escapeLatex(labelPrefix)}${escapeLatex(valStr)}`);
+        }
       }
     }
   });
