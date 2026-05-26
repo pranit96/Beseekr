@@ -539,6 +539,23 @@ export async function tailorAlignResume(
   return (res.data as any)?.data;
 }
 
+export interface TailorRunRecord extends TailorAlignResult {
+  id: string;
+  saved_at: string;
+  company_name: string;
+  job_title: string;
+}
+
+export async function getTailorRuns(): Promise<TailorRunRecord[]> {
+  const res = await apiClient.get("/api/resume/tailor-runs");
+  return (res.data as any) || [];
+}
+
+export async function deleteTailorRun(id: string): Promise<any> {
+  const res = await apiClient.delete(`/api/resume/tailor-runs/${id}`);
+  return res.data;
+}
+
 export const resumeApi = {
   uploadAndParseResume,
   uploadAndParseResumeWithProgress,
@@ -566,6 +583,9 @@ export const resumeApi = {
   parseJobUrl,
   getCoachInsights,
   tailorAlignResume,
+  getTailorRuns,
+  deleteTailorRun,
 };
 
 export default resumeApi;
+

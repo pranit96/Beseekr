@@ -158,6 +158,10 @@ const ResumeWorkspace = lazyRetry(
   () => import("./pages/ResumeWorkspace"),
   "ResumeWorkspace",
 );
+const ResumeTailor = lazyRetry(
+  () => import("@/pages/ResumeTailor"),
+  "ResumeTailor",
+);
 const JobTracker = lazyRetry(
   () => import("./pages/hired/JobTracker"),
   "JobTracker",
@@ -510,6 +514,14 @@ const App = () => {
                           element={
                             <Suspense fallback={<PageLoader />}>
                               <ResumeWorkspace />
+                            </Suspense>
+                          }
+                        />
+                        <Route
+                          path="resume/tailor"
+                          element={
+                            <Suspense fallback={<PageLoader />}>
+                              <ResumeTailor />
                             </Suspense>
                           }
                         />

@@ -191,7 +191,7 @@ export default function GetHiredPortal() {
             }}
             whileTap={{ scale: 0.98 }}
             transition={{ type: "spring", stiffness: 400, damping: 25 }}
-            onClick={() => navigate("resume/workspace", { state: { activeTab: "tailor" } })}
+            onClick={() => navigate("resume/tailor")}
             className="relative group p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-left cursor-pointer transition-colors hover:border-indigo-300 dark:hover:border-indigo-500/30 overflow-hidden"
           >
             <div className="absolute inset-0 bg-gradient-to-br from-indigo-50 to-transparent dark:from-indigo-500/[0.04] dark:to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />

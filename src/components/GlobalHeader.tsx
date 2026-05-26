@@ -125,6 +125,14 @@ const NAV_ITEMS = {
     color: "from-sky-400 to-indigo-500",
     exact: false,
   },
+  hiredTailor: {
+    key: "hiredTailor",
+    name: "ATS Tailor",
+    href: "/dashboard/hired/resume/tailor",
+    icon: Trophy,
+    color: "from-indigo-500 to-violet-500",
+    exact: false,
+  },
   hiredTracker: {
     key: "hiredTracker",
     name: "Tracker",
@@ -179,6 +187,7 @@ function getNavigationContext(pathname: string, isPremium: boolean) {
       NAV_ITEMS.home,
       NAV_ITEMS.hiredOverview,
       NAV_ITEMS.hiredResume,
+      NAV_ITEMS.hiredTailor,
       NAV_ITEMS.hiredTracker,
       NAV_ITEMS.hiredPrep,
       NAV_ITEMS.hiredCoverLetter,
