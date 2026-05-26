@@ -24,6 +24,13 @@ import {
   AlertTriangle,
   Link2,
   ExternalLink,
+  ChevronRight,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Target,
+  Zap,
+  LayoutGrid,
+  Eye,
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
@@ -34,13 +41,15 @@ const ALLOWED_MIME_TYPES = new Set([
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 ]);
 const ALLOWED_EXT = /\.(pdf|docx)$/i;
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
+
+type MobileTab = "new" | "history" | "results" | "preview";
 
 export default function ResumeTailor() {
   const navigate = useNavigate();
@@ -50,39 +59,79 @@ export default function ResumeTailor() {
   const isResumeBlank =
     !resumeData?.personal_info?.name && resumeData?.experience?.length === 0;
 
-  const inputCls =
-    "bg-zinc-50 dark:bg-white/[0.02] focus:bg-white dark:focus:bg-white/[0.04] border-zinc-200 dark:border-white/[0.06] focus:border-indigo-400/50 dark:focus:border-indigo-400/40 focus:ring-0 text-zinc-800 dark:text-zinc-200 rounded-xl h-11 px-4 transition-all text-sm shadow-sm";
-  const textareaCls =
-    "bg-zinc-50 dark:bg-white/[0.02] focus:bg-white dark:focus:bg-white/[0.04] border-zinc-200 dark:border-white/[0.06] focus:border-indigo-400/50 dark:focus:border-indigo-400/40 focus:ring-0 text-zinc-800 dark:text-zinc-200 rounded-xl px-4 py-3 leading-relaxed transition-all text-sm resize-none";
-
-  // Tailoring Runs History
+  // History & active run
   const [runs, setRuns] = useState<TailorRunRecord[]>([]);
   const [isLoadingRuns, setIsLoadingRuns] = useState(true);
   const [activeRun, setActiveRun] = useState<TailorRunRecord | null>(null);
 
-  // Form inputs state
+  // Form state
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [jdText, setJdText] = useState("");
   const [jobUrl, setJobUrl] = useState("");
   const [isParsingUrl, setIsParsingUrl] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [displayPercent, setDisplayPercent] = useState(0);
+  const [processingStep, setProcessingStep] = useState(0);
 
-  // Drag & Drop State
+  // UI state
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [mobileTab, setMobileTab] = useState<MobileTab>("new");
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
 
-  // ---------------------------------------------------------------------------
-  // Load History Runs
-  // ---------------------------------------------------------------------------
+  const processingSteps = [
+    "Parsing your resume structure…",
+    "Analyzing job requirements…",
+    "Aligning keywords & outcomes…",
+    "Applying Google XYZ format…",
+    "Compiling LaTeX PDF…",
+    "Scoring ATS compatibility…",
+  ];
+
+  useEffect(() => {
+    const on = () => {
+      setIsOnline(true);
+      toast({ title: "Back online", description: "Connection restored." });
+    };
+    const off = () => {
+      setIsOnline(false);
+      toast({
+        title: "Offline",
+        description: "Results saved to cloud when reconnected.",
+        variant: "destructive",
+      });
+    };
+    window.addEventListener("online", on);
+    window.addEventListener("offline", off);
+    return () => {
+      window.removeEventListener("online", on);
+      window.removeEventListener("offline", off);
+    };
+  }, [toast]);
+
+  useEffect(() => {
+    const jd = sessionStorage.getItem("tailor_jdText");
+    const url = sessionStorage.getItem("tailor_jobUrl");
+    if (jd) setJdText(jd);
+    if (url) setJobUrl(url);
+  }, []);
+
+  const handleJdTextChange = (text: string) => {
+    setJdText(text);
+    sessionStorage.setItem("tailor_jdText", text);
+  };
+  const handleJobUrlChange = (url: string) => {
+    setJobUrl(url);
+    sessionStorage.setItem("tailor_jobUrl", url);
+  };
+
   const loadRuns = useCallback(async (selectFirst = false) => {
     setIsLoadingRuns(true);
     try {
       const data = await resumeApi.getTailorRuns();
       setRuns(data);
-      if (selectFirst && data.length > 0) {
-        setActiveRun(data[0]);
-      }
+      if (selectFirst && data.length > 0) setActiveRun(data[0]);
     } catch (e) {
       console.error("Failed to load runs:", e);
     } finally {
@@ -94,37 +143,29 @@ export default function ResumeTailor() {
     loadRuns(true);
   }, [loadRuns]);
 
-  // ---------------------------------------------------------------------------
-  // Parse Job URL Helper
-  // ---------------------------------------------------------------------------
   const handleParseJobUrl = async () => {
     if (!jobUrl || !jobUrl.trim().startsWith("http")) {
       toast({
         title: "Invalid URL",
-        description: "Please enter a valid HTTP or HTTPS job link.",
+        description: "Please enter a valid HTTP/HTTPS job link.",
         variant: "destructive",
       });
       return;
     }
-
     setIsParsingUrl(true);
     try {
       const result = await resumeApi.parseJobUrl(jobUrl);
       if (result.jd_text) {
         setJdText(result.jd_text);
         toast({
-          title: "Job Link Parsed!",
-          description: `Successfully extracted JD for ${result.job_title || "Target Role"} at ${result.company_name || "Target Company"}.`,
+          title: "Job parsed!",
+          description: `Extracted JD for ${result.job_title || "role"} at ${result.company_name || "company"}.`,
         });
-      } else {
-        throw new Error("No job description found on this page.");
-      }
+      } else throw new Error("No job description found.");
     } catch (e: any) {
       toast({
-        title: "Parsing Failed",
-        description:
-          e.message ||
-          "Failed to extract job description details from the link.",
+        title: "Parse failed",
+        description: e.message || "Could not extract job description.",
         variant: "destructive",
       });
     } finally {
@@ -132,662 +173,943 @@ export default function ResumeTailor() {
     }
   };
 
-  // ---------------------------------------------------------------------------
-  // Delete a past run
-  // ---------------------------------------------------------------------------
   const handleDeleteRun = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     try {
       await resumeApi.deleteTailorRun(id);
-      toast({
-        title: "Run deleted",
-        description:
-          "The tailoring run was successfully deleted from your history.",
-      });
+      toast({ title: "Run deleted" });
       setRuns((prev) => prev.filter((r) => r.id !== id));
-      if (activeRun?.id === id) {
-        setActiveRun(null);
-      }
+      if (activeRun?.id === id) setActiveRun(null);
     } catch (err: any) {
       toast({
-        title: "Delete Failed",
-        description:
-          err.message || "Could not delete this run from your history.",
+        title: "Delete failed",
+        description: err.message,
         variant: "destructive",
       });
     }
   };
 
-  // ---------------------------------------------------------------------------
-  // Run Aligned Tailoring
-  // ---------------------------------------------------------------------------
   const handleRunTailoring = async () => {
     if (!selectedFile && isResumeBlank) {
       toast({
-        title: "No Resume Active",
+        title: "No resume",
         description:
-          "Please upload your current resume file first, or fill out your resume details.",
+          "Upload a resume file or fill your workspace resume first.",
         variant: "destructive",
       });
       return;
     }
     if (!jdText || jdText.trim().length < 20) {
       toast({
-        title: "Job description empty",
-        description:
-          "Please paste a job description (minimum 20 characters) or parse a job link.",
+        title: "Job description too short",
+        description: "Paste at least 20 characters of job description.",
         variant: "destructive",
       });
       return;
     }
-
     setIsProcessing(true);
     setDisplayPercent(0);
+    setProcessingStep(0);
 
-    // Smoothly animate progress indicator
-    const interval = setInterval(() => {
+    const pct = setInterval(() => {
       setDisplayPercent((prev) => {
-        if (prev >= 98) return 98;
-        return prev + Math.floor(Math.random() * 8) + 1;
+        const next = prev + Math.floor(Math.random() * 6) + 2;
+        return next >= 95 ? 95 : next;
       });
-    }, 400);
+    }, 350);
+
+    const stepInterval = setInterval(() => {
+      setProcessingStep((prev) =>
+        prev < processingSteps.length - 1 ? prev + 1 : prev,
+      );
+    }, 2000);
 
     try {
       const result = await resumeApi.tailorAlignResume(selectedFile, jdText);
-      clearInterval(interval);
+      clearInterval(pct);
+      clearInterval(stepInterval);
       setDisplayPercent(100);
-
       toast({
-        title: "Tailoring Succeeded!",
-        description:
-          "Your optimized LaTeX resume and scorecard have been built successfully.",
+        title: "Done! Resume tailored ✓",
+        description: "Your ATS-optimized resume is ready.",
       });
-
-      // Reload runs list and set the newly generated run as active
       setTimeout(async () => {
         setIsProcessing(false);
         setSelectedFile(null);
         setJdText("");
         setJobUrl("");
+        sessionStorage.removeItem("tailor_jdText");
+        sessionStorage.removeItem("tailor_jobUrl");
         await loadRuns(false);
         setActiveRun(result as unknown as TailorRunRecord);
-      }, 1000);
+        setMobileTab("results");
+      }, 800);
     } catch (err: any) {
-      clearInterval(interval);
+      clearInterval(pct);
+      clearInterval(stepInterval);
       setIsProcessing(false);
       toast({
-        title: "Tailoring Failed",
-        description:
-          err.message ||
-          "Failed to parse, align, or compile your resume. Please try again.",
+        title: "Tailoring failed",
+        description: err.message || "Please try again.",
         variant: "destructive",
       });
     }
   };
 
-  // ---------------------------------------------------------------------------
-  // Load tailored schema directly into Live builder workspace
-  // ---------------------------------------------------------------------------
   const handleApplyToWorkspace = () => {
-    if (!activeRun || !activeRun.resume) return;
+    if (!activeRun?.resume) return;
     setResumeData(activeRun.resume);
     setWorkspaceMode("upload", true);
     setShowOnboarding(false);
     toast({
-      title: "Aligned Draft Loaded!",
-      description:
-        "You have been switched to your editor workspace containing this tailored draft.",
+      title: "Draft loaded!",
+      description: "Switched to editor with tailored resume.",
     });
     navigate("/dashboard/hired/resume/workspace");
   };
 
-  // ---------------------------------------------------------------------------
-  // Download LaTeX compiled PDF
-  // ---------------------------------------------------------------------------
   const handleDownloadPdf = () => {
-    if (!activeRun || !activeRun.pdf_base64) return;
+    if (!activeRun?.pdf_base64) return;
     try {
-      const binaryString = window.atob(activeRun.pdf_base64);
-      const len = binaryString.length;
-      const bytes = new Uint8Array(len);
-      for (let i = 0; i < len; i++) {
-        bytes[i] = binaryString.charCodeAt(i);
-      }
+      const bytes = Uint8Array.from(atob(activeRun.pdf_base64), (c) =>
+        c.charCodeAt(0),
+      );
       const blob = new Blob([bytes], { type: "application/pdf" });
       const link = document.createElement("a");
-      link.href = window.URL.createObjectURL(blob);
-      link.download = `${activeRun.company_name.replace(/\s+/g, "_")}_Tailored_Resume.pdf`;
-      document.body.appendChild(link);
+      link.href = URL.createObjectURL(blob);
+      link.download = `${activeRun.company_name.replace(/\s+/g, "_")}_Resume.pdf`;
       link.click();
-      document.body.removeChild(link);
-
-      toast({
-        title: "Downloading...",
-        description:
-          "Your compiled, ATS-aligned resume PDF is now downloading.",
-      });
+      toast({ title: "Downloading PDF…" });
     } catch (e: any) {
       toast({
-        title: "Download Failed",
-        description: e.message || "Failed to download tailored PDF.",
+        title: "Download failed",
+        description: e.message,
         variant: "destructive",
       });
     }
   };
 
-  return (
-    <div className="w-full h-full min-h-[calc(100vh-100px)] flex bg-zinc-50 dark:bg-[#070709] border border-zinc-200 dark:border-white/[0.04] rounded-2xl overflow-hidden font-sans">
-      {/* ─── LEFT PANEL: RUNS HISTORY ─── */}
-      <div className="w-72 border-r border-zinc-200 dark:border-white/[0.05] bg-white/40 dark:bg-zinc-950/20 flex flex-col shrink-0">
-        <div className="p-4 border-b border-zinc-200 dark:border-white/[0.05] flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-2">
-            <Trophy className="h-4 w-4 text-indigo-500" />
-            <h2 className="text-xs font-black uppercase tracking-wider text-zinc-700 dark:text-zinc-300">
-              Align History
-            </h2>
+  const scoreColor = (score: number) =>
+    score >= 85
+      ? "text-emerald-500 bg-emerald-500/10 border-emerald-500/20"
+      : score >= 70
+        ? "text-indigo-400 bg-indigo-500/10 border-indigo-500/20"
+        : "text-amber-500 bg-amber-500/10 border-amber-500/20";
+
+  const scoreRingColor = (score: number) =>
+    score >= 85 ? "#10b981" : score >= 70 ? "#818cf8" : "#f59e0b";
+
+  // ─── SIDEBAR ──────────────────────────────────────────────────────────────
+  const Sidebar = () => (
+    <aside
+      className={`flex flex-col bg-white dark:bg-zinc-950 border-r border-zinc-200 dark:border-white/[0.05] transition-all duration-300 shrink-0 ${sidebarOpen ? "w-64" : "w-0 overflow-hidden border-none"}`}
+    >
+      <div className="p-3 border-b border-zinc-200 dark:border-white/[0.05] flex items-center justify-between shrink-0">
+        <div className="flex items-center gap-2">
+          <Trophy className="h-4 w-4 text-indigo-400" />
+          <span className="text-[11px] font-black uppercase tracking-widest text-zinc-600 dark:text-zinc-400">
+            History
+          </span>
+          {runs.length > 0 && (
+            <span className="text-[9px] font-black bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-1.5 py-0.5 rounded-md">
+              {runs.length}
+            </span>
+          )}
+        </div>
+        <button
+          onClick={() => {
+            setActiveRun(null);
+            setMobileTab("new");
+          }}
+          className="h-7 w-7 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-500 flex items-center justify-center border-none cursor-pointer transition-colors"
+          title="New tailoring run"
+        >
+          <Plus className="h-4 w-4" />
+        </button>
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-2 space-y-1">
+        {isLoadingRuns ? (
+          <div className="flex flex-col items-center justify-center py-12 gap-2 text-zinc-400">
+            <Loader2 className="h-5 w-5 animate-spin" />
+            <span className="text-[10px] font-bold uppercase tracking-wider">
+              Loading…
+            </span>
           </div>
-          <button
-            onClick={() => setActiveRun(null)}
-            className="h-7 w-7 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center border-none transition-all cursor-pointer"
-            title="Create New Tailoring"
-          >
-            <Plus className="h-4 w-4" />
-          </button>
+        ) : runs.length === 0 ? (
+          <div className="m-2 p-4 border-2 border-dashed border-zinc-200 dark:border-white/[0.05] rounded-xl text-center">
+            <Trophy className="h-7 w-7 text-zinc-300 dark:text-zinc-700 mx-auto mb-2" />
+            <p className="text-[11px] font-bold text-zinc-500">No runs yet</p>
+            <p className="text-[10px] text-zinc-400 mt-0.5">
+              Tailored resumes appear here
+            </p>
+          </div>
+        ) : (
+          runs.map((run) => {
+            const isActive = activeRun?.id === run.id;
+            return (
+              <button
+                key={run.id}
+                onClick={() => {
+                  setActiveRun(run);
+                  setMobileTab("results");
+                }}
+                className={`w-full text-left p-2.5 rounded-xl border transition-all cursor-pointer group relative ${
+                  isActive
+                    ? "bg-indigo-50 dark:bg-indigo-500/[0.08] border-indigo-300 dark:border-indigo-500/40"
+                    : "bg-transparent border-transparent hover:bg-zinc-50 dark:hover:bg-white/[0.02] hover:border-zinc-200 dark:hover:border-white/[0.05]"
+                }`}
+              >
+                <div className="flex items-start justify-between gap-2 mb-1">
+                  <span className="text-xs font-bold text-zinc-800 dark:text-zinc-200 truncate leading-tight">
+                    {run.company_name}
+                  </span>
+                  <span
+                    className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded border shrink-0 ${scoreColor(run.ats_score)}`}
+                  >
+                    {run.ats_score}%
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[10px] text-zinc-400 truncate">
+                    {run.job_title}
+                  </span>
+                  <span className="text-[9px] text-zinc-400 shrink-0">
+                    {new Date(run.saved_at).toLocaleDateString(undefined, {
+                      month: "short",
+                      day: "numeric",
+                    })}
+                  </span>
+                </div>
+                <button
+                  onClick={(e) => handleDeleteRun(e, run.id)}
+                  className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 h-5 w-5 rounded bg-red-500/10 hover:bg-red-500/20 text-red-500 flex items-center justify-center border-none cursor-pointer transition-opacity"
+                >
+                  <Trash2 className="h-3 w-3" />
+                </button>
+              </button>
+            );
+          })
+        )}
+      </div>
+    </aside>
+  );
+
+  // ─── PROCESSING OVERLAY ───────────────────────────────────────────────────
+  const ProcessingOverlay = () => (
+    <motion.div
+      key="processing"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="absolute inset-0 bg-white/97 dark:bg-zinc-950/97 z-50 flex flex-col items-center justify-center p-8"
+    >
+      <div className="w-full max-w-sm space-y-8 text-center">
+        <div className="relative mx-auto h-20 w-20">
+          <div className="absolute inset-0 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
+            <Sparkles className="h-9 w-9 text-indigo-500" />
+          </div>
+          <div className="absolute -inset-2 rounded-3xl border-2 border-indigo-300/30 border-t-indigo-500 animate-spin" />
         </div>
 
-        {/* History Runs List */}
-        <div className="flex-1 overflow-y-auto p-3 space-y-2 select-none">
-          {isLoadingRuns ? (
-            <div className="flex flex-col items-center justify-center py-16 gap-2 text-zinc-400">
-              <Loader2 className="h-5 w-5 animate-spin text-zinc-400" />
-              <span className="text-[10px] font-bold uppercase tracking-wider">
-                Loading runs...
-              </span>
+        <div className="space-y-2">
+          <h2 className="text-xl font-black tracking-tight text-zinc-900 dark:text-white">
+            Tailoring your resume
+          </h2>
+          <AnimatePresence mode="wait">
+            <motion.p
+              key={processingStep}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              className="text-sm text-zinc-500"
+            >
+              {processingSteps[processingStep]}
+            </motion.p>
+          </AnimatePresence>
+        </div>
+
+        <div className="space-y-2">
+          <Progress
+            value={displayPercent}
+            className="h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-full"
+          />
+          <p className="text-[11px] font-bold text-zinc-400 tabular-nums">
+            {displayPercent}% complete
+          </p>
+        </div>
+
+        <div className="text-[10px] text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-xl px-4 py-2.5 leading-relaxed">
+          Results are saved to the cloud — safe to navigate away.
+        </div>
+      </div>
+    </motion.div>
+  );
+
+  // ─── NEW TAILORING FORM ───────────────────────────────────────────────────
+  const TailoringForm = () => (
+    <div className="flex-1 overflow-y-auto">
+      <div className="max-w-2xl mx-auto px-4 sm:px-8 py-8 space-y-6">
+        {/* Header */}
+        <div className="space-y-1">
+          <div className="flex items-center gap-2.5 mb-3">
+            <div className="h-9 w-9 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
+              <Target className="h-5 w-5 text-indigo-500" />
             </div>
-          ) : runs.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-center text-zinc-400/60 p-4 border-2 border-dashed border-zinc-200 dark:border-white/[0.04] rounded-xl bg-zinc-50/20 dark:bg-white/[0.005]">
-              <Trophy className="h-8 w-8 opacity-30 mb-2" />
-              <p className="text-xs font-bold">No runs saved yet</p>
-              <p className="text-[10px] leading-relaxed">
-                Run ATS tailoring to save and score optimized resumes.
+            <div>
+              <h1 className="text-lg font-black tracking-tight text-zinc-900 dark:text-white">
+                ATS Match & Tailor
+              </h1>
+              <p className="text-[11px] text-zinc-500">
+                Align your resume to any job description
               </p>
             </div>
-          ) : (
-            runs.map((run) => {
-              const isActive = activeRun?.id === run.id;
-              return (
-                <div
-                  key={run.id}
-                  onClick={() => setActiveRun(run)}
-                  className={`flex flex-col gap-1.5 p-3 rounded-xl border transition-all cursor-pointer relative group ${
-                    isActive
-                      ? "bg-zinc-100 dark:bg-white/[0.06] border-indigo-500/50 shadow-sm text-zinc-950 dark:text-white"
-                      : "bg-white dark:bg-zinc-900/50 border-zinc-200 dark:border-white/[0.04] hover:bg-zinc-50 dark:hover:bg-white/[0.02] text-zinc-600 dark:text-zinc-400"
-                  }`}
-                >
-                  <div className="flex justify-between items-start gap-2 min-w-0">
-                    <p className="text-xs font-black truncate leading-tight flex-1">
-                      {run.company_name}
-                    </p>
-                    <span
-                      className={`text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded shrink-0 ${
-                        run.ats_score >= 80
-                          ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
-                          : "bg-indigo-500/10 text-indigo-400 border border-indigo-500/20"
-                      }`}
-                    >
-                      {run.ats_score}%
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center text-[10px] font-medium text-zinc-400">
-                    <span className="truncate flex-1 max-w-[130px]">
-                      {run.job_title}
-                    </span>
-                    <span className="text-[9px] opacity-75 whitespace-nowrap shrink-0">
-                      {new Date(run.saved_at).toLocaleDateString(undefined, {
-                        month: "short",
-                        day: "numeric",
-                      })}
-                    </span>
-                  </div>
+          </div>
+          {!isResumeBlank && (
+            <div className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 rounded-lg px-3 py-1.5 w-fit">
+              <Check className="h-3.5 w-3.5" />
+              Active workspace resume loaded
+            </div>
+          )}
+        </div>
 
-                  {/* Delete button */}
-                  <button
-                    onClick={(e) => handleDeleteRun(e, run.id)}
-                    className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6 rounded bg-red-500/10 hover:bg-red-500/20 text-red-500 flex items-center justify-center border-none shrink-0"
+        {/* Step 1 */}
+        <div className="border border-zinc-200 dark:border-white/[0.06] rounded-2xl overflow-hidden">
+          <div className="px-4 py-3 border-b border-zinc-100 dark:border-white/[0.04] bg-zinc-50/50 dark:bg-white/[0.01] flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-[9px] font-black uppercase tracking-widest bg-indigo-500 text-white px-2 py-0.5 rounded-md">
+                01
+              </span>
+              <span className="text-xs font-black uppercase tracking-wider text-zinc-700 dark:text-zinc-300">
+                Resume File
+              </span>
+            </div>
+            {selectedFile && (
+              <span className="text-[10px] font-bold text-emerald-500 flex items-center gap-1">
+                <Check className="h-3 w-3" /> Ready
+              </span>
+            )}
+          </div>
+          <div className="p-4">
+            <div
+              onDragOver={(e) => {
+                e.preventDefault();
+                setIsDragOver(true);
+              }}
+              onDragLeave={() => setIsDragOver(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setIsDragOver(false);
+                const file = e.dataTransfer.files[0];
+                if (
+                  file &&
+                  (ALLOWED_MIME_TYPES.has(file.type) ||
+                    ALLOWED_EXT.test(file.name))
+                ) {
+                  setSelectedFile(file);
+                } else {
+                  toast({
+                    title: "Unsupported file",
+                    description: "Please upload PDF or DOCX.",
+                    variant: "destructive",
+                  });
+                }
+              }}
+              onClick={() => fileInputRef.current?.click()}
+              className={`relative flex items-center gap-4 p-4 border-2 border-dashed cursor-pointer rounded-xl transition-all ${
+                isDragOver
+                  ? "border-indigo-400 bg-indigo-50/50 dark:bg-indigo-500/[0.04]"
+                  : selectedFile
+                    ? "border-emerald-300 dark:border-emerald-500/40 bg-emerald-50/30 dark:bg-emerald-500/[0.03]"
+                    : "border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 bg-zinc-50/50 dark:bg-white/[0.01]"
+              }`}
+            >
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf,.docx"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) setSelectedFile(f);
+                  if (fileInputRef.current) fileInputRef.current.value = "";
+                }}
+              />
+              <div
+                className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${selectedFile ? "bg-emerald-500/10" : "bg-zinc-100 dark:bg-white/[0.04]"}`}
+              >
+                {selectedFile ? (
+                  <FileText className="h-5 w-5 text-emerald-500" />
+                ) : (
+                  <Upload className="h-5 w-5 text-zinc-400" />
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                {selectedFile ? (
+                  <>
+                    <p className="text-sm font-bold text-zinc-800 dark:text-zinc-200 truncate">
+                      {selectedFile.name}
+                    </p>
+                    <p className="text-[11px] text-zinc-400">
+                      {formatFileSize(selectedFile.size)}
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm font-semibold text-zinc-600 dark:text-zinc-400">
+                      {isDragOver
+                        ? "Drop file here"
+                        : "Drag & drop or click to upload"}
+                    </p>
+                    <p className="text-[11px] text-zinc-400">
+                      {!isResumeBlank
+                        ? "Optional — skip to use active workspace resume"
+                        : "PDF or DOCX · Max 5 MB"}
+                    </p>
+                  </>
+                )}
+              </div>
+              {selectedFile && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedFile(null);
+                    if (fileInputRef.current) fileInputRef.current.value = "";
+                  }}
+                  className="h-7 w-7 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-500 flex items-center justify-center border-none cursor-pointer shrink-0"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Step 2 */}
+        <div className="border border-zinc-200 dark:border-white/[0.06] rounded-2xl overflow-hidden">
+          <div className="px-4 py-3 border-b border-zinc-100 dark:border-white/[0.04] bg-zinc-50/50 dark:bg-white/[0.01] flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-[9px] font-black uppercase tracking-widest bg-indigo-500 text-white px-2 py-0.5 rounded-md">
+                02
+              </span>
+              <span className="text-xs font-black uppercase tracking-wider text-zinc-700 dark:text-zinc-300">
+                Job Description
+              </span>
+            </div>
+            {jdText.trim().length >= 20 && (
+              <span className="text-[10px] font-bold text-emerald-500 flex items-center gap-1">
+                <Check className="h-3 w-3" /> {jdText.trim().length} chars
+              </span>
+            )}
+          </div>
+          <div className="p-4 space-y-3">
+            {/* URL Parser */}
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400 pointer-events-none" />
+                <Input
+                  value={jobUrl}
+                  onChange={(e) => handleJobUrlChange(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleParseJobUrl()}
+                  placeholder="Paste job link to auto-import…"
+                  className="pl-8 h-9 text-sm border-zinc-200 dark:border-white/[0.06] rounded-xl"
+                />
+              </div>
+              <button
+                onClick={handleParseJobUrl}
+                disabled={isParsingUrl || !jobUrl}
+                className="h-9 px-3.5 rounded-xl text-xs font-black bg-zinc-100 dark:bg-white/[0.06] hover:bg-zinc-200 dark:hover:bg-white/[0.1] text-zinc-700 dark:text-zinc-200 flex items-center gap-1.5 border border-zinc-200 dark:border-white/[0.08] disabled:opacity-40 cursor-pointer transition-colors whitespace-nowrap"
+              >
+                {isParsingUrl ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <ExternalLink className="h-3.5 w-3.5" />
+                )}
+                {isParsingUrl ? "Parsing…" : "Parse"}
+              </button>
+            </div>
+
+            <div className="flex items-center gap-3 text-[11px] text-zinc-400 select-none">
+              <div className="flex-1 h-px bg-zinc-200 dark:bg-white/[0.05]" />
+              <span>or paste manually</span>
+              <div className="flex-1 h-px bg-zinc-200 dark:bg-white/[0.05]" />
+            </div>
+
+            <Textarea
+              value={jdText}
+              onChange={(e) => handleJdTextChange(e.target.value)}
+              placeholder="Paste the full job description here…"
+              className="min-h-[180px] text-sm leading-relaxed border-zinc-200 dark:border-white/[0.06] rounded-xl resize-none"
+            />
+          </div>
+        </div>
+
+        {/* Run Button */}
+        <button
+          onClick={handleRunTailoring}
+          disabled={
+            (!selectedFile && isResumeBlank) ||
+            !jdText ||
+            jdText.trim().length < 20
+          }
+          className="w-full h-12 rounded-xl text-sm font-black bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600 text-white flex items-center justify-center gap-2.5 transition-all shadow-lg shadow-indigo-500/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none uppercase tracking-wider"
+        >
+          <Zap className="h-4 w-4" />
+          Run ATS Match & Tailor
+        </button>
+      </div>
+    </div>
+  );
+
+  // ─── RESULTS PANEL ────────────────────────────────────────────────────────
+  const ResultsPanel = () => {
+    if (!activeRun) return null;
+    return (
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-3xl mx-auto px-4 sm:px-8 py-6 space-y-6">
+          {/* Header bar */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-zinc-100 dark:border-white/[0.05]">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-widest text-indigo-400 mb-1">
+                Tailored Result
+              </p>
+              <h1 className="text-xl font-black tracking-tight text-zinc-900 dark:text-white">
+                {activeRun.company_name}
+              </h1>
+              <p className="text-sm text-zinc-500 font-medium">
+                {activeRun.job_title}
+              </p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={handleApplyToWorkspace}
+                className="flex items-center gap-2 h-9 px-4 rounded-xl text-xs font-black bg-indigo-50 dark:bg-indigo-500/10 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/20 transition-colors uppercase tracking-wide cursor-pointer"
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                Apply Draft
+              </button>
+              <button
+                onClick={handleDownloadPdf}
+                className="flex items-center gap-2 h-9 px-4 rounded-xl text-xs font-black bg-zinc-900 dark:bg-white text-white dark:text-zinc-950 hover:opacity-90 border-none transition-opacity uppercase tracking-wide cursor-pointer"
+              >
+                <Download className="h-3.5 w-3.5" />
+                Download PDF
+              </button>
+            </div>
+          </div>
+
+          {/* Score + Summary */}
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+            {/* Score ring */}
+            <div className="sm:col-span-1 border border-zinc-200 dark:border-white/[0.05] bg-white dark:bg-zinc-900/30 rounded-2xl p-5 flex flex-col items-center justify-center gap-3">
+              <svg
+                width="80"
+                height="80"
+                viewBox="0 0 80 80"
+                className="-rotate-90"
+              >
+                <circle
+                  cx="40"
+                  cy="40"
+                  r="34"
+                  fill="none"
+                  stroke="currentColor"
+                  className="text-zinc-100 dark:text-white/[0.05]"
+                  strokeWidth="6"
+                />
+                <circle
+                  cx="40"
+                  cy="40"
+                  r="34"
+                  fill="none"
+                  stroke={scoreRingColor(activeRun.ats_score)}
+                  strokeWidth="6"
+                  strokeLinecap="round"
+                  strokeDasharray={`${2 * Math.PI * 34}`}
+                  strokeDashoffset={`${2 * Math.PI * 34 * (1 - activeRun.ats_score / 100)}`}
+                  style={{ transition: "stroke-dashoffset 1s ease" }}
+                />
+              </svg>
+              <div className="text-center -mt-1">
+                <p className="text-2xl font-black tracking-tight text-zinc-900 dark:text-white">
+                  {activeRun.ats_score}%
+                </p>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">
+                  ATS Score
+                </p>
+              </div>
+            </div>
+
+            {/* Feedback */}
+            <div className="sm:col-span-3 border border-zinc-200 dark:border-white/[0.05] bg-white dark:bg-zinc-900/30 rounded-2xl p-5">
+              <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-3">
+                Executive Summary
+              </p>
+              <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">
+                {activeRun.general_feedback}
+              </p>
+            </div>
+          </div>
+
+          {/* Bullet improvements */}
+          {activeRun.bullet_point_suggestions?.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Briefcase className="h-4 w-4 text-indigo-400" />
+                <h3 className="text-xs font-black uppercase tracking-wider text-zinc-700 dark:text-zinc-300">
+                  Bullet Improvements
+                </h3>
+                <span className="text-[10px] bg-zinc-100 dark:bg-white/[0.06] text-zinc-500 dark:text-zinc-400 px-2 py-0.5 rounded-md font-bold">
+                  {activeRun.bullet_point_suggestions.length}
+                </span>
+              </div>
+
+              <div className="space-y-3">
+                {activeRun.bullet_point_suggestions.map((sug, idx) => (
+                  <div
+                    key={idx}
+                    className="border border-zinc-200 dark:border-white/[0.05] bg-white dark:bg-zinc-900/30 rounded-2xl overflow-hidden"
                   >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              );
-            })
+                    <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-zinc-100 dark:divide-white/[0.04]">
+                      <div className="p-4 space-y-2">
+                        <span className="inline-block text-[9px] font-black uppercase tracking-wider text-red-500 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 px-2 py-0.5 rounded">
+                          Before
+                        </span>
+                        <p className="text-xs text-zinc-500 italic leading-relaxed">
+                          "{sug.original}"
+                        </p>
+                      </div>
+                      <div className="p-4 space-y-2">
+                        <span className="inline-block text-[9px] font-black uppercase tracking-wider text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 px-2 py-0.5 rounded">
+                          After
+                        </span>
+                        <p className="text-xs text-zinc-800 dark:text-zinc-100 font-semibold leading-relaxed">
+                          "{sug.improved}"
+                        </p>
+                      </div>
+                    </div>
+                    {sug.reason && (
+                      <div className="px-4 py-2.5 bg-zinc-50/80 dark:bg-white/[0.01] border-t border-zinc-100 dark:border-white/[0.04] flex gap-2 items-start">
+                        <Sparkles className="h-3 w-3 text-indigo-400 mt-0.5 shrink-0" />
+                        <p className="text-[11px] text-zinc-500 leading-relaxed">
+                          {sug.reason}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Keywords */}
+          {activeRun.missing_keywords?.length > 0 && (
+            <div className="space-y-3">
+              <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
+                Keywords Integrated
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {activeRun.missing_keywords.map((kw, idx) => (
+                  <span
+                    key={idx}
+                    className="px-3 py-1 rounded-lg text-[11px] font-bold bg-zinc-100 dark:bg-white/[0.05] text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-white/[0.08] flex items-center gap-1.5"
+                  >
+                    <Check className="h-3 w-3 text-emerald-500" />
+                    {kw}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  // ─── PDF PREVIEW PANEL ────────────────────────────────────────────────────
+  const PdfPanel = () => (
+    <div
+      className="flex flex-col bg-zinc-100 dark:bg-zinc-950/40 h-full overflow-hidden border-l border-zinc-200 dark:border-white/[0.05]"
+      style={{ width: "420px", minWidth: "420px" }}
+    >
+      <div className="px-4 py-3 border-b border-zinc-200 dark:border-white/[0.05] bg-white dark:bg-zinc-950/60 flex items-center justify-between shrink-0">
+        <div className="flex items-center gap-2">
+          <FileText className="h-4 w-4 text-zinc-400" />
+          <span className="text-[11px] font-black uppercase tracking-widest text-zinc-500">
+            PDF Preview
+          </span>
+        </div>
+        <button
+          onClick={handleDownloadPdf}
+          disabled={!activeRun?.pdf_base64}
+          className="h-7 px-3 rounded-lg bg-zinc-100 dark:bg-white/[0.04] hover:bg-zinc-200 dark:hover:bg-white/[0.08] text-zinc-600 dark:text-zinc-400 text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 border border-zinc-200 dark:border-white/[0.06] disabled:opacity-40 cursor-pointer"
+        >
+          <Download className="h-3.5 w-3.5" />
+          Download
+        </button>
+      </div>
+      <div className="flex-1 relative">
+        {activeRun?.pdf_base64 ? (
+          <iframe
+            src={`data:application/pdf;base64,${activeRun.pdf_base64}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
+            className="absolute inset-0 w-full h-full border-none"
+            title="Tailored Resume PDF"
+          />
+        ) : (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-zinc-400">
+            <FileText className="h-10 w-10 opacity-20" />
+            <p className="text-sm font-medium">No PDF available</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  // ─── RENDER ───────────────────────────────────────────────────────────────
+  return (
+    <div className="w-full h-full min-h-[calc(100vh-100px)] flex flex-col bg-zinc-50 dark:bg-[#070709] border border-zinc-200 dark:border-white/[0.04] rounded-2xl overflow-hidden font-sans relative">
+      {/* Offline banner */}
+      <AnimatePresence>
+        {!isOnline && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            className="absolute top-0 left-0 right-0 z-50 bg-amber-500/10 border-b border-amber-500/20 text-amber-600 dark:text-amber-400 text-[11px] font-bold py-2 px-4 flex items-center justify-center gap-2"
+          >
+            <AlertTriangle className="h-3.5 w-3.5" />
+            Offline — results will sync when connection is restored
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── DESKTOP LAYOUT ─────────────────────────────────────────────── */}
+      <div className="hidden lg:flex flex-1 overflow-hidden">
+        {/* Sidebar */}
+        <Sidebar />
+
+        {/* Sidebar toggle */}
+        <button
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          className="absolute left-0 top-1/2 -translate-y-1/2 z-20 h-12 w-5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/[0.06] border-l-0 rounded-r-lg flex items-center justify-center text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 cursor-pointer transition-colors"
+          style={{
+            left: sidebarOpen ? "256px" : "0px",
+            transition: "left 0.3s",
+          }}
+          title={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+        >
+          {sidebarOpen ? (
+            <PanelLeftClose className="h-3 w-3" />
+          ) : (
+            <PanelLeftOpen className="h-3 w-3" />
+          )}
+        </button>
+
+        {/* Main area */}
+        <div className="flex-1 flex overflow-hidden relative bg-white dark:bg-zinc-900/10">
+          <AnimatePresence mode="wait">
+            {isProcessing && <ProcessingOverlay />}
+          </AnimatePresence>
+
+          {activeRun ? (
+            <motion.div
+              key="results"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex-1 flex overflow-hidden"
+            >
+              <ResultsPanel />
+              <PdfPanel />
+            </motion.div>
+          ) : (
+            <motion.div
+              key="form"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex-1 flex overflow-hidden"
+            >
+              <TailoringForm />
+            </motion.div>
           )}
         </div>
       </div>
 
-      {/* ─── RIGHT PANEL: MAIN APP INTERFACE ─── */}
-      <div className="flex-1 flex flex-col bg-white dark:bg-zinc-900/10 overflow-hidden relative">
-        <AnimatePresence mode="wait">
-          {/* ── PHASE 1: LOADING SCREEN ── */}
-          {isProcessing && (
-            <motion.div
-              key="processing"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-white/95 dark:bg-zinc-950/95 z-40 flex flex-col items-center justify-center p-8 select-none"
-            >
-              <div className="w-full max-w-md space-y-6 text-center">
-                <div className="h-16 w-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mx-auto animate-pulse">
-                  <Sparkles className="h-8 w-8 text-indigo-500 animate-spin" />
-                </div>
-                <div className="space-y-1">
-                  <h2 className="text-xl font-black tracking-tight text-zinc-800 dark:text-zinc-100">
-                    Running Job Tailoring...
-                  </h2>
-                  <p className="text-xs text-zinc-400">
-                    Processing resume structure, evaluating keywords, applying
-                    Google XYZ outcomes, and compiling LaTeX PDF.
-                  </p>
-                </div>
+      {/* ── MOBILE LAYOUT ──────────────────────────────────────────────── */}
+      <div className="flex lg:hidden flex-col flex-1 overflow-hidden">
+        {/* Mobile content area */}
+        <div className="flex-1 overflow-hidden relative bg-white dark:bg-zinc-900/10">
+          <AnimatePresence mode="wait">
+            {isProcessing && <ProcessingOverlay />}
+          </AnimatePresence>
 
-                <div className="space-y-2">
-                  <Progress
-                    value={displayPercent}
-                    className="h-2 bg-zinc-200 dark:bg-zinc-800 rounded-full"
-                  />
-                  <div className="flex justify-between items-center text-[10px] font-bold text-zinc-400 uppercase tracking-wide px-1">
-                    <span>Analyzing target role</span>
-                    <span>{displayPercent}%</span>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          )}
-
-          {/* ── PHASE 2: RESULT VIEW (IF RUN ACTIVE) ── */}
-          {activeRun ? (
-            <motion.div
-              key="results"
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -16 }}
-              className="flex-1 flex overflow-hidden"
-            >
-              {/* Left Scroll: Feedback, Bullets, and Keywords */}
-              <div className="flex-1 overflow-y-auto p-6 space-y-6 text-left">
-                {/* Header title */}
-                <div className="flex items-start justify-between border-b border-zinc-100 dark:border-white/[0.06] pb-4">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-black uppercase tracking-widest text-indigo-500 bg-indigo-50 dark:bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
-                        ATS MATCH & TAILOR
-                      </span>
-                    </div>
-                    <h1 className="text-2xl font-black tracking-tight">
-                      {activeRun.company_name}
-                    </h1>
-                    <p className="text-sm font-semibold text-zinc-500">
-                      {activeRun.job_title}
-                    </p>
-                  </div>
-                  <div className="flex gap-2">
+          <AnimatePresence mode="wait">
+            {mobileTab === "new" && (
+              <motion.div
+                key="m-form"
+                initial={{ opacity: 0, x: 16 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -16 }}
+                className="absolute inset-0 overflow-y-auto"
+              >
+                <TailoringForm />
+              </motion.div>
+            )}
+            {mobileTab === "history" && (
+              <motion.div
+                key="m-history"
+                initial={{ opacity: 0, x: 16 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -16 }}
+                className="absolute inset-0 overflow-y-auto bg-white dark:bg-zinc-950"
+              >
+                <div className="p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-sm font-black uppercase tracking-wider text-zinc-700 dark:text-zinc-300">
+                      History
+                    </h2>
                     <button
-                      onClick={handleApplyToWorkspace}
-                      className="flex items-center gap-2 h-9 px-4 rounded-xl text-xs font-black bg-indigo-50 dark:bg-indigo-500/10 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/20 transition-all uppercase tracking-wide"
+                      onClick={() => {
+                        setActiveRun(null);
+                        setMobileTab("new");
+                      }}
+                      className="h-8 w-8 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center border-none cursor-pointer"
                     >
-                      <Sparkles className="h-3.5 w-3.5" />
-                      Apply to Workspace
-                    </button>
-                    <button
-                      onClick={handleDownloadPdf}
-                      className="flex items-center gap-2 h-9 px-4 rounded-xl text-xs font-black bg-zinc-900 dark:bg-white text-white dark:text-zinc-950 hover:opacity-90 border-none transition-all uppercase tracking-wide"
-                    >
-                      <Download className="h-3.5 w-3.5" />
-                      Download PDF
+                      <Plus className="h-4 w-4" />
                     </button>
                   </div>
-                </div>
-
-                {/* ATS Score Circular & executive summary */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {/* Gauge */}
-                  <div className="border border-zinc-200 dark:border-white/[0.04] bg-white/40 dark:bg-zinc-950/10 rounded-2xl p-6 flex flex-col items-center justify-center text-center select-none shrink-0 relative overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-transparent pointer-events-none" />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-4">
-                      Match Score
-                    </span>
-                    <div className="h-28 w-28 rounded-full border-4 border-zinc-100 dark:border-white/[0.03] flex items-center justify-center relative bg-zinc-50/50 dark:bg-white/[0.005]">
-                      <div className="absolute inset-0 rounded-full border-4 border-indigo-500 border-r-transparent animate-spin opacity-20" />
-                      <div className="flex flex-col items-center justify-center">
-                        <span className="text-3xl font-black tracking-tight text-indigo-500">
-                          {activeRun.ats_score}%
-                        </span>
-                        <span className="text-[8px] font-bold uppercase tracking-wider text-zinc-400">
-                          ATS Grade
-                        </span>
-                      </div>
+                  {isLoadingRuns ? (
+                    <div className="flex items-center justify-center py-12">
+                      <Loader2 className="h-5 w-5 animate-spin text-zinc-400" />
                     </div>
-                  </div>
-
-                  {/* Summary Feedback */}
-                  <div className="md:col-span-2 border border-zinc-200 dark:border-white/[0.04] bg-white/40 dark:bg-zinc-950/10 rounded-2xl p-6 relative overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-transparent pointer-events-none" />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400 block mb-3">
-                      Executive Feedback
-                    </span>
-                    <p className="text-xs text-zinc-600 dark:text-zinc-300 leading-relaxed font-medium">
-                      {activeRun.general_feedback}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Improvements bullet diff */}
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <Briefcase className="h-4 w-4 text-indigo-400" />
-                    <h3 className="text-xs font-black uppercase tracking-wider text-zinc-700 dark:text-zinc-300">
-                      Improvements Done (Google XYZ Outcomes)
-                    </h3>
-                  </div>
-
-                  <div className="space-y-3 select-none">
-                    {activeRun.bullet_point_suggestions?.length === 0 ? (
-                      <div className="p-4 border border-dashed border-zinc-200 dark:border-white/[0.04] rounded-xl text-center text-zinc-400 text-xs">
-                        No revisions or bullet adjustments required.
-                        Faver-friendly ATS matching verified.
-                      </div>
-                    ) : (
-                      activeRun.bullet_point_suggestions?.map((sug, idx) => (
+                  ) : runs.length === 0 ? (
+                    <div className="py-16 text-center">
+                      <Trophy className="h-8 w-8 text-zinc-300 dark:text-zinc-700 mx-auto mb-3" />
+                      <p className="text-sm font-bold text-zinc-500">
+                        No runs yet
+                      </p>
+                      <p className="text-xs text-zinc-400 mt-1">
+                        Start a new tailoring run
+                      </p>
+                    </div>
+                  ) : (
+                    runs.map((run) => (
+                      <button
+                        key={run.id}
+                        onClick={() => {
+                          setActiveRun(run);
+                          setMobileTab("results");
+                        }}
+                        className="w-full text-left p-3.5 border border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-zinc-900/50 rounded-2xl flex items-center gap-3 cursor-pointer hover:border-indigo-300 dark:hover:border-indigo-500/30 transition-colors"
+                      >
                         <div
-                          key={idx}
-                          className="p-4 rounded-xl border border-zinc-200 dark:border-white/[0.04] bg-white dark:bg-zinc-900/30 space-y-3 flex flex-col text-left"
+                          className={`shrink-0 text-xs font-black px-2 py-1 rounded-lg border ${scoreColor(run.ats_score)}`}
                         >
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {/* Original */}
-                            <div className="space-y-1">
-                              <span className="text-[9px] font-black uppercase tracking-wider text-red-500 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 px-2 py-0.5 rounded">
-                                Original Resume bullet
-                              </span>
-                              <p className="text-xs text-zinc-500 italic font-medium leading-relaxed">
-                                &ldquo;{sug.original}&rdquo;
-                              </p>
-                            </div>
-
-                            {/* Improved */}
-                            <div className="space-y-1">
-                              <span className="text-[9px] font-black uppercase tracking-wider text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 px-2 py-0.5 rounded">
-                                Optimized Aligned bullet
-                              </span>
-                              <p className="text-xs text-zinc-800 dark:text-zinc-200 font-bold leading-relaxed">
-                                &ldquo;{sug.improved}&rdquo;
-                              </p>
-                            </div>
-                          </div>
-
-                          {sug.reason && (
-                            <div className="text-[10px] text-zinc-400 italic flex items-start gap-1 bg-zinc-50 dark:bg-zinc-950/20 p-2 rounded-lg border border-zinc-100 dark:border-white/[0.01]">
-                              <Sparkles className="h-3 w-3 text-indigo-400 mt-0.5 shrink-0" />
-                              <span className="flex-1 leading-normal font-medium">
-                                {sug.reason}
-                              </span>
-                            </div>
-                          )}
+                          {run.ats_score}%
                         </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-
-                {/* Missing Keywords */}
-                {activeRun.missing_keywords &&
-                  activeRun.missing_keywords.length > 0 && (
-                    <div className="space-y-3">
-                      <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400 block">
-                        Target Keywords identified & Integrated
-                      </span>
-                      <div className="flex flex-wrap gap-1.5">
-                        {activeRun.missing_keywords.map((kw, idx) => (
-                          <span
-                            key={idx}
-                            className="px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wide bg-zinc-100 dark:bg-white/[0.04] text-zinc-600 dark:text-zinc-300 border border-zinc-200 dark:border-white/[0.08]"
-                          >
-                            {kw}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-bold text-zinc-800 dark:text-zinc-200 truncate">
+                            {run.company_name}
+                          </p>
+                          <p className="text-xs text-zinc-400 truncate">
+                            {run.job_title}
+                          </p>
+                        </div>
+                        <ChevronRight className="h-4 w-4 text-zinc-300 shrink-0" />
+                      </button>
+                    ))
                   )}
-              </div>
-
-              {/* Right PDF Frame */}
-              <div className="w-[450px] border-l border-zinc-200 dark:border-white/[0.05] bg-zinc-100/50 dark:bg-zinc-950/20 flex flex-col shrink-0 overflow-hidden relative">
-                <div className="p-4 border-b border-zinc-200 dark:border-white/[0.05] flex items-center justify-between shrink-0 bg-white dark:bg-zinc-950/40">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
-                    Live Compiled LaTeX PDF
+                </div>
+              </motion.div>
+            )}
+            {mobileTab === "results" && activeRun && (
+              <motion.div
+                key="m-results"
+                initial={{ opacity: 0, x: 16 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -16 }}
+                className="absolute inset-0 overflow-y-auto"
+              >
+                <ResultsPanel />
+              </motion.div>
+            )}
+            {mobileTab === "preview" && activeRun && (
+              <motion.div
+                key="m-preview"
+                initial={{ opacity: 0, x: 16 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -16 }}
+                className="absolute inset-0 flex flex-col"
+              >
+                <div className="px-4 py-3 border-b border-zinc-200 dark:border-white/[0.05] bg-white dark:bg-zinc-950 flex items-center justify-between shrink-0">
+                  <span className="text-[11px] font-black uppercase tracking-widest text-zinc-500">
+                    PDF Preview
                   </span>
                   <button
                     onClick={handleDownloadPdf}
-                    className="h-7 w-7 rounded-lg bg-zinc-100 dark:bg-white/[0.04] hover:bg-zinc-200 dark:hover:bg-white/[0.08] flex items-center justify-center border-none shrink-0"
-                    title="Download LaTeX PDF"
+                    className="flex items-center gap-1.5 text-[11px] font-black text-indigo-500 bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 rounded-lg px-3 py-1.5 cursor-pointer"
                   >
-                    <Download className="h-4 w-4" />
+                    <Download className="h-3.5 w-3.5" />
+                    Download
                   </button>
                 </div>
-
-                {/* PDF Viewer */}
-                <div className="flex-1 relative bg-zinc-900/5 dark:bg-zinc-950/40">
+                <div className="flex-1 relative bg-zinc-100 dark:bg-zinc-950/40">
                   {activeRun.pdf_base64 ? (
                     <iframe
                       src={`data:application/pdf;base64,${activeRun.pdf_base64}#toolbar=0&navpanes=0`}
-                      className="w-full h-full border-none"
+                      className="absolute inset-0 w-full h-full border-none"
                     />
                   ) : (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center text-zinc-400 text-xs">
-                      <FileText className="h-10 w-10 opacity-30 mb-2 animate-pulse" />
-                      PDF compilation unavailable.
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-zinc-400">
+                      <FileText className="h-10 w-10 opacity-20" />
+                      <p className="text-sm">No PDF available</p>
                     </div>
                   )}
                 </div>
-              </div>
-            </motion.div>
-          ) : (
-            /* ── PHASE 3: FORM / UPLOAD VIEW ── */
-            <motion.div
-              key="form"
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -16 }}
-              className="flex-1 overflow-y-auto p-8 flex items-center justify-center text-left"
-            >
-              <div className="w-full max-w-xl space-y-6">
-                <div className="text-center space-y-2">
-                  <div className="h-12 w-12 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mx-auto scale-110">
-                    <Trophy className="h-6 w-6 text-indigo-500" />
-                  </div>
-                  <h1 className="text-2xl font-black tracking-tight text-zinc-900 dark:text-white">
-                    ATS Match & Tailor
-                  </h1>
-                  <p className="text-sm text-zinc-500 max-w-md mx-auto">
-                    Secure, sandbox-grade career optimization. Upload your
-                    current resume and paste a target Job Description to align
-                    and score.
-                  </p>
-                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
 
-                {/* Step 1: Upload Resume File */}
-                <div className="p-5 border border-zinc-200 dark:border-white/[0.04] bg-white dark:bg-zinc-900/50 rounded-2xl space-y-3">
-                  <div className="flex items-center justify-between gap-2 flex-wrap">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[9px] font-black uppercase tracking-widest text-indigo-500 bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 px-2 py-0.5 rounded">
-                        Step 1
-                      </span>
-                      <span className="text-xs font-black uppercase tracking-wider text-zinc-700 dark:text-zinc-300">
-                        Upload Current Resume
-                      </span>
-                    </div>
-                    {!isResumeBlank && (
-                      <span className="text-[8px] font-black uppercase tracking-widest text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 px-2 py-0.5 rounded">
-                        Active Resume Available
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-zinc-500">
-                    {!isResumeBlank
-                      ? "Upload a new resume file, or leave empty to align directly against your active workspace resume."
-                      : "Upload your existing resume in PDF or DOCX format to begin tailoring."}
-                  </p>
-
-                  {/* Drag and Drop Zone */}
-                  <div
-                    onDragOver={(e) => {
-                      e.preventDefault();
-                      setIsDragOver(true);
-                    }}
-                    onDragLeave={() => setIsDragOver(false)}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      setIsDragOver(false);
-                      const file = e.dataTransfer.files[0];
-                      if (file) {
-                        if (
-                          ALLOWED_MIME_TYPES.has(file.type) ||
-                          ALLOWED_EXT.test(file.name)
-                        ) {
-                          setSelectedFile(file);
-                        } else {
-                          toast({
-                            title: "Unsupported file",
-                            description:
-                              "Please upload a valid PDF or DOCX file.",
-                            variant: "destructive",
-                          });
-                        }
-                      }
-                    }}
-                    onClick={() => fileInputRef.current?.click()}
-                    className={`relative flex flex-col items-center justify-center p-6 border-2 border-dashed cursor-pointer rounded-xl transition-all min-h-[120px] ${
-                      isDragOver
-                        ? "border-indigo-400 bg-indigo-50/50 dark:bg-indigo-500/[0.04]"
-                        : "border-zinc-300 dark:border-zinc-700 bg-zinc-50/50 dark:bg-white/[0.005] hover:border-zinc-400"
-                    }`}
-                  >
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept=".pdf,.docx"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) setSelectedFile(file);
-                        if (fileInputRef.current)
-                          fileInputRef.current.value = "";
-                      }}
-                      className="hidden"
-                    />
-
-                    {selectedFile ? (
-                      <div className="text-center space-y-1 select-none">
-                        <FileText className="h-6 w-6 text-indigo-500 mx-auto" />
-                        <p className="text-xs font-bold text-zinc-800 dark:text-zinc-200">
-                          {selectedFile.name}
-                        </p>
-                        <p className="text-[10px] text-zinc-400">
-                          {formatFileSize(selectedFile.size)} · Ready
-                        </p>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedFile(null);
-                            if (fileInputRef.current)
-                              fileInputRef.current.value = "";
-                          }}
-                          className="text-[9px] font-black uppercase text-red-500 hover:text-red-600 transition-all border-none bg-transparent pt-1"
-                        >
-                          Clear
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="text-center space-y-1 select-none">
-                        <Upload className="h-6 w-6 text-zinc-400 mx-auto opacity-70" />
-                        <p className="text-xs font-bold text-zinc-500">
-                          {isDragOver
-                            ? "Drop file to upload"
-                            : "Drag & drop PDF or DOCX"}
-                        </p>
-                        <p className="text-[10px] text-zinc-400">
-                          {!isResumeBlank
-                            ? "Optional - Upload a new file or skip to use active resume"
-                            : "or click to browse files (Max 5MB)"}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Step 2: Paste Job Link / URL (Parsed) */}
-                <div className="p-5 border border-zinc-200 dark:border-white/[0.04] bg-white dark:bg-zinc-900/50 rounded-2xl space-y-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[9px] font-black uppercase tracking-widest text-indigo-500 bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 px-2 py-0.5 rounded">
-                      Step 2
-                    </span>
-                    <span className="text-xs font-black uppercase tracking-wider text-zinc-700 dark:text-zinc-300">
-                      Import from Link or Paste JD
-                    </span>
-                  </div>
-
-                  {/* Link Parser */}
-                  <div className="flex gap-2">
-                    <div className="relative flex-1">
-                      <Link2 className="absolute left-3 top-2.5 h-4 w-4 text-zinc-400" />
-                      <Input
-                        value={jobUrl}
-                        onChange={(e) => setJobUrl(e.target.value)}
-                        placeholder="Paste target job link (e.g. LinkedIn, Indeed, etc.)"
-                        className="pl-9 h-9 text-xs"
-                      />
-                    </div>
-                    <button
-                      onClick={handleParseJobUrl}
-                      disabled={isParsingUrl || !jobUrl}
-                      className="h-9 px-4 rounded-xl text-xs font-black bg-zinc-100 dark:bg-white/[0.06] hover:bg-zinc-200 dark:hover:bg-white/[0.1] text-zinc-700 dark:text-zinc-200 flex items-center gap-1.5 uppercase border border-zinc-200 dark:border-white/[0.08] disabled:opacity-40 select-none cursor-pointer"
-                    >
-                      {isParsingUrl ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <ExternalLink className="h-3.5 w-3.5" />
-                      )}
-                      Parse URL
-                    </button>
-                  </div>
-
-                  {/* Textarea */}
-                  <Textarea
-                    value={jdText}
-                    onChange={(e) => setJdText(e.target.value)}
-                    placeholder="Alternatively, paste the full job description text here..."
-                    className="min-h-[140px] text-xs leading-relaxed"
-                  />
-                </div>
-
-                {/* Run ATS align button */}
-                <div className="flex justify-end pt-2">
-                  <button
-                    onClick={handleRunTailoring}
-                    disabled={
-                      (!selectedFile && isResumeBlank) ||
-                      !jdText ||
-                      jdText.trim().length < 20
-                    }
-                    className="flex items-center gap-2.5 h-11 px-6 rounded-xl text-xs font-black bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600 text-white transition-all shadow-lg shadow-indigo-500/20 disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-wider select-none"
-                  >
-                    <Sparkles className="h-4 w-4 animate-pulse" />
-                    Run ATS Match & Tailor
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {/* Mobile bottom nav */}
+        <nav className="shrink-0 bg-white dark:bg-zinc-950 border-t border-zinc-200 dark:border-white/[0.06] px-2 py-2 safe-area-inset-bottom">
+          <div className="flex gap-1">
+            {[
+              { id: "new" as MobileTab, icon: Plus, label: "New" },
+              {
+                id: "history" as MobileTab,
+                icon: Clock,
+                label: `Runs${runs.length > 0 ? ` (${runs.length})` : ""}`,
+              },
+              ...(activeRun
+                ? [
+                    {
+                      id: "results" as MobileTab,
+                      icon: LayoutGrid,
+                      label: "Results",
+                    },
+                    { id: "preview" as MobileTab, icon: Eye, label: "PDF" },
+                  ]
+                : []),
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setMobileTab(tab.id)}
+                className={`flex-1 flex flex-col items-center gap-1 py-2 rounded-xl transition-all cursor-pointer border-none ${
+                  mobileTab === tab.id
+                    ? "bg-indigo-50 dark:bg-indigo-500/[0.08] text-indigo-600 dark:text-indigo-400"
+                    : "text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 bg-transparent"
+                }`}
+              >
+                <tab.icon className="h-4.5 w-4.5 h-[18px] w-[18px]" />
+                <span className="text-[9px] font-black uppercase tracking-wide">
+                  {tab.label}
+                </span>
+              </button>
+            ))}
+          </div>
+        </nav>
       </div>
     </div>
   );
