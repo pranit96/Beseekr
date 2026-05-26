@@ -227,7 +227,7 @@ export function generateLatexResume(data: ResumeData): string {
     }
   });
 
-  latex += `    ${contactParts.join(" $|$ \\\\\n    ")}\n\\end{center}\n\n`;
+  latex += `    ${contactParts.join(" $|$ ")}\n\\end{center}\n\n`;
 
   // Professional Summary
   if (info.summary) {
