@@ -2687,7 +2687,7 @@ export default function ResumeWorkspace() {
                     LaTeX Export
                   </p>
                   <p className="text-[9px] text-zinc-400 font-bold uppercase tracking-widest">
-                    Jake's Template · ATS Ready
+                    Charter Premium · ATS Ready
                   </p>
                 </div>
               </div>
