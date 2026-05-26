@@ -77,106 +77,83 @@ export function generateLatexResume(data: ResumeData): string {
   const projects = data.projects || [];
   const certifications = data.certifications || [];
 
-  let latex = `\\documentclass[10pt, letterpaper]{article}
-\\usepackage[utf8]{inputenc}
+  let latex = `\\documentclass[letterpaper,10.5pt]{article}
+
+\\usepackage{latexsym}
 \\usepackage[empty]{fullpage}
 \\usepackage{titlesec}
-\\usepackage{marvosym}
-\\usepackage[usenames,dvipsnames]{color}
-\\usepackage{verbatim}
 \\usepackage{enumitem}
 \\usepackage[hidelinks]{hyperref}
-\\usepackage{fancyhdr}
 \\usepackage[english]{babel}
-\\usepackage{tabularx}
-\\input{glyphtounicode}
+\\usepackage[T1]{fontenc}
+\\usepackage{charter}
+\\usepackage{xcolor}
+\\usepackage{microtype}
 
-\\pagestyle{fancy}
-\\fancyhdrstyle{} % clear headers/footers
-\\fancyhf{} 
-\\renewcommand{\\headrulewidth}{0pt}
-\\renewcommand{\\footrulewidth}{0pt}
+\\definecolor{cvblue}{HTML}{0E5484}
+\\definecolor{black}{HTML}{130810}
+\\colorlet{name}{black}
+\\colorlet{heading}{cvblue}
 
-% Adjust margins
-\\addtolength{\\oddsidemargin}{-0.5in}
-\\addtolength{\\evensidemargin}{-0.5in}
-\\addtolength{\\textwidth}{1.0in}
-\\addtolength{\\topmargin}{-0.5in}
-\\addtolength{\\textheight}{1.0in}
-
-\\urlstyle{same}
+% Tight margins to fill full page
+\\addtolength{\\oddsidemargin}{-0.6in}
+\\addtolength{\\textwidth}{1.2in}
+\\addtolength{\\topmargin}{-0.88in}
+\\addtolength{\\textheight}{1.76in}
 
 \\raggedbottom
 \\raggedright
 \\setlength{\\tabcolsep}{0in}
+\\setlength{\\parskip}{0pt}
 
-% Sections formatting
+% Section formatting
 \\titleformat{\\section}{
-  \\vspace{-4pt}\\scshape\\raggedright\\large
-}{}{0em}{}[\\color{black}\\titlerule \\vspace{-5pt}]
+  \\vspace{-2pt}\\scshape\\raggedright\\large\\bfseries\\color{heading}
+}{}{0em}{}[\\color{heading}\\titrule\\vspace{-2pt}]
+\\titlespacing\\section{0pt}{7pt}{5pt}
 
-% Ensure that generate pdf is machine readable/ATS parsable
-\\pdfgentounicode=1
-
-%-------------------------
 % Custom commands
 \\newcommand{\\resumeItem}[1]{
-  \\item\\small{
-    {#1 \\vspace{-2pt}}
-  }
+  \\item\\small{#1\\vspace{1pt}}
 }
-
 \\newcommand{\\resumeSubheading}[4]{
-  \\vspace{-2pt}\\item
-    \\begin{tabular*}{0.97\\textwidth}[t]{l@{\\extracolsep{\\fill}}r}
-      \\textbf{#1} & #2 \\\\
-      \\textit{\\small#3} & \\textit{\\small #4} \\\\
-    \\end{tabular*}\\vspace{-7pt}
+  \\vspace{4pt}
+  \\textbf{#1} \\hfill \\textit{\\small #4} \\\\
+  \\textit{\\small #2, #3}
+  \\vspace{-1pt}
 }
-
-\\newcommand{\\resumeProjectHeading}[2]{
-    \\item
-    \\begin{tabular*}{0.97\\textwidth}{l@{\\extracolsep{\\fill}}r}
-      \\small#1 & #2 \\\\
-    \\end{tabular*}\\vspace{-7pt}
+\\newcommand{\\resumeProjectHeading}[3]{
+  \\vspace{3pt}
+  \\textbf{#1} \\; {\\small #2} \\\\[-3pt]
+  {\\footnotesize\\textbf{\\textcolor{cvblue!80!black}{Tech:}} \\; \\textcolor{black!65}{#3}}
+  \\vspace{-2pt}
 }
-
-\\renewcommand\\labelitemii{$\\vcenter{\\hbox{\\tiny$\\bullet$}}$}
-
-\\newcommand{\\resumeSubHeadingListStart}{\\begin{itemize}[leftmargin=0.15in, label={}]}
-\\newcommand{\\resumeSubHeadingListEnd}{\\end{itemize}}
-\\newcommand{\\resumeItemListStart}{\\begin{itemize}}
-\\newcommand{\\resumeItemListEnd}{\\end{itemize}\\vspace{-5pt}}
-
-%-------------------------------------------
-%%%%%%  RESUME STARTS HERE  %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 
 \\begin{document}
 
-%----------HEADING----------
+%---------- HEADING ----------
 \\begin{center}
-    \\textbf{\\Huge \\scshape ${escapeLatex(info.name || "Resume")}}\\\\ \\vspace{6pt}
+  {\\huge \\color{name}\\textbf{${escapeLatex(info.name || "Resume")}} } \\\\[3pt]
 `;
 
   // Contact info formatting
   const contactParts: string[] = [];
   if (info.phone) {
-    contactParts.push(`\\small ${escapeLatex(info.phone)}`);
+    contactParts.push(`${escapeLatex(info.phone)}`);
   }
   if (info.email) {
     contactParts.push(
-      `\\href{mailto:${info.email}}{\\underline{${escapeLatex(info.email)}}}`,
+      `\\href{mailto:${info.email}}{\\color{cvblue}${escapeLatex(info.email)}}`,
     );
   }
   if (info.website) {
     let cleanWeb = info.website.replace(/^https?:\/\//i, "");
     contactParts.push(
-      `\\href{${info.website}}{\\underline{${escapeLatex(cleanWeb)}}}`,
+      `\\href{${info.website}}{\\color{cvblue}${escapeLatex(cleanWeb)}}`,
     );
   }
   if (info.location) {
-    contactParts.push(`\\small ${escapeLatex(info.location)}`);
+    contactParts.push(`${escapeLatex(info.location)}`);
   }
 
   // Custom Fields formatting
@@ -187,10 +164,10 @@ export function generateLatexResume(data: ResumeData): string {
       
       if (cf.type === "text") {
         const labelPrefix = cf.label ? `${cf.label}: ` : "";
-        contactParts.push(`\\small ${escapeLatex(labelPrefix)}${escapeLatex(valStr)}`);
+        contactParts.push(`${escapeLatex(labelPrefix)}${escapeLatex(valStr)}`);
       } else if (cf.type === "email") {
         contactParts.push(
-          `\\href{mailto:${valStr}}{\\underline{${escapeLatex(valStr)}}}`,
+          `\\href{mailto:${valStr}}{\\color{cvblue}${escapeLatex(valStr)}}`,
         );
       } else if (cf.type === "link") {
         let url = valStr;
@@ -199,7 +176,7 @@ export function generateLatexResume(data: ResumeData): string {
         }
         const text = cf.label ? String(cf.label) : valStr.replace(/^https?:\/\//i, "");
         contactParts.push(
-          `\\href{${url}}{\\underline{${escapeLatex(text)}}}`,
+          `\\href{${url}}{\\color{cvblue}${escapeLatex(text)}}`,
         );
       } else {
         // Fallback auto-detection if type not specified
@@ -209,7 +186,7 @@ export function generateLatexResume(data: ResumeData): string {
         
         if (isEmail) {
           contactParts.push(
-            `\\href{mailto:${valStr}}{\\underline{${escapeLatex(valStr)}}}`,
+            `\\href{mailto:${valStr}}{\\color{cvblue}${escapeLatex(valStr)}}`,
           );
         } else if (isLink) {
           let url = valStr;
@@ -218,125 +195,128 @@ export function generateLatexResume(data: ResumeData): string {
           }
           const text = cf.label ? String(cf.label) : valStr.replace(/^https?:\/\//i, "");
           contactParts.push(
-            `\\href{${url}}{\\underline{${escapeLatex(text)}}}`,
+            `\\href{${url}}{\\color{cvblue}${escapeLatex(text)}}`,
           );
         } else {
-          contactParts.push(`\\small ${escapeLatex(labelPrefix)}${escapeLatex(valStr)}`);
+          contactParts.push(`${escapeLatex(labelPrefix)}${escapeLatex(valStr)}`);
         }
       }
     }
   });
 
-  latex += `    ${contactParts.join(" $|$ ")}\n\\end{center}\n\n`;
+  latex += `  {\\small\n    ${contactParts.join(" \\; $|$ \\; \n    ")}\n  }\n\\end{center}\n\n\\vspace{-6pt}\n\n`;
 
   // Professional Summary
   if (info.summary) {
-    latex += `%-----------SUMMARY-----------
+    latex += `%---------- SUMMARY ----------
 \\section{Professional Summary}
-\\small{${escapeLatex(info.summary)}}
-\\vspace{5pt}
+\\begin{itemize}[noitemsep, topsep=2pt, leftmargin=0.15in]
+  \\resumeItem{${escapeLatex(info.summary)}}
+\\end{itemize}
+\\vspace{-2pt}
 
 `;
   }
 
+  // Skills Section
+  if (skills.length > 0) {
+    latex += `%---------- SKILLS ----------
+\\section{Technical Skills}
+\\begin{itemize}[noitemsep, topsep=2pt, leftmargin=0.15in]
+`;
+    skills.forEach((group) => {
+      const cat = escapeLatex(group.category || "Skills");
+      const items = (group.items || []).map(escapeLatex).join(", ");
+      latex += `  \\resumeItem{\\textbf{${cat}:} ${items}}\n`;
+    });
+
+    latex += `\\end{itemize}\n\\vspace{-2pt}\n\n`;
+  }
+
   // Experience Section
   if (experience.length > 0) {
-    latex += `%-----------EXPERIENCE-----------
+    latex += `%---------- EXPERIENCE ----------
 \\section{Experience}
-\\resumeSubHeadingListStart
-`;
 
+`;
     experience.forEach((job) => {
       const pos = escapeLatex(job.position || "Position");
       const comp = escapeLatex(job.company || "Company");
       const per = escapeLatex(job.period || "Period");
       const loc = escapeLatex(job.location || "");
 
-      latex += `  \\resumeSubheading{${pos}}{${per}}{${comp}}{${loc}}\n`;
+      latex += `\\resumeSubheading{${pos}}{${comp}}{${loc}}{${per}}\n`;
 
       const highlights = job.highlights || [];
       if (highlights.length > 0) {
-        latex += `  \\resumeItemListStart\n`;
+        latex += `\\begin{itemize}[noitemsep, topsep=3pt, leftmargin=0.2in]\n`;
         highlights.forEach((hl) => {
           if (hl && hl.trim()) {
-            latex += `    \\resumeItem{${escapeLatex(hl)}}\n`;
+            latex += `  \\resumeItem{${escapeLatex(hl)}}\n`;
           }
         });
-        latex += `  \\resumeItemListEnd\n\n`;
+        latex += `\\end{itemize}\n\n`;
       }
     });
 
-    latex += `\\resumeSubHeadingListEnd\n\n`;
+    latex += `\\vspace{-2pt}\n\n`;
   }
 
   // Projects Section
   if (projects.length > 0) {
-    latex += `%-----------PROJECTS-----------
+    latex += `%---------- PROJECTS ----------
 \\section{Projects}
-\\resumeSubHeadingListStart
-`;
 
+`;
     projects.forEach((proj) => {
       const name = escapeLatex(proj.name || "Project");
-      const link = proj.link
-        ? ` $|$ \\href{${proj.link}}{\\underline{Link}}`
-        : "";
-      const desc = proj.description
-        ? ` $|$ \\textit{${escapeLatex(proj.description)}}`
-        : "";
+      let linkParam = "";
+      if (proj.link) {
+        const linkText = proj.link.includes("github.com") ? "[GitHub]" : "[Link]";
+        linkParam = `\\href{${proj.link}}{\\color{cvblue}${linkText}}`;
+      }
+      const techStack = escapeLatex(proj.description || "");
 
-      latex += `  \\resumeProjectHeading{\\textbf{${name}}${link}${desc}}{}\n`;
+      latex += `\\resumeProjectHeading{${name}}{${linkParam}}{${techStack}}\n`;
 
       const highlights = proj.highlights || [];
       if (highlights.length > 0) {
-        latex += `  \\resumeItemListStart\n`;
+        latex += `\\begin{itemize}[noitemsep, topsep=2pt, leftmargin=0.2in]\n`;
         highlights.forEach((hl) => {
           if (hl && hl.trim()) {
-            latex += `    \\resumeItem{${escapeLatex(hl)}}\n`;
+            latex += `  \\resumeItem{${escapeLatex(hl)}}\n`;
           }
         });
-        latex += `  \\resumeItemListEnd\n\n`;
+        latex += `\\end{itemize}\n\n`;
       }
     });
 
-    latex += `\\resumeSubHeadingListEnd\n\n`;
+    latex += `\\vspace{-2pt}\n\n`;
   }
 
   // Education Section
   if (education.length > 0) {
-    latex += `%-----------EDUCATION-----------
+    latex += `%---------- EDUCATION ----------
 \\section{Education}
-\\resumeSubHeadingListStart
+\\vspace{2pt}
 `;
-
-    education.forEach((edu) => {
+    education.forEach((edu, idx) => {
       const inst = escapeLatex(edu.institution || "University");
       const degree = escapeLatex(edu.degree || "Degree");
       const per = escapeLatex(edu.period || "Period");
       const loc = escapeLatex(edu.location || "");
 
-      latex += `  \\resumeSubheading{${inst}}{${per}}{${degree}}{${loc}}\n`;
+      const instLoc = loc ? `${inst}, ${loc}` : inst;
+
+      latex += `\\textbf{${degree}} \\hfill \\textit{${per}} \\\\\n`;
+      latex += `\\textit{${instLoc}}\n`;
+
+      if (idx < education.length - 1) {
+        latex += `\\vspace{4pt}\n\n`;
+      }
     });
 
-    latex += `\\resumeSubHeadingListEnd\n\n`;
-  }
-
-  // Skills Section
-  if (skills.length > 0) {
-    latex += `%-----------TECHNICAL SKILLS-----------
-\\section{Technical Skills}
-\\begin{itemize}[leftmargin=0.15in, label={}]
-  \\small{\\item{
-`;
-
-    const skillLines = skills.map((group) => {
-      const cat = escapeLatex(group.category || "Skills");
-      const items = (group.items || []).map(escapeLatex).join(", ");
-      return `    \\textbf{${cat}}{: ${items}} \\\\`;
-    });
-
-    latex += skillLines.join("\n");
-    latex += `\n  }}\n\\end{itemize}\n\n`;
+    latex += `\n\\vspace{-2pt}\n\n`;
   }
 
   // Certifications Section
@@ -345,12 +325,12 @@ export function generateLatexResume(data: ResumeData): string {
       .map((c) => String(c).trim())
       .filter(Boolean);
     if (validCerts.length > 0) {
-      latex += `%-----------CERTIFICATIONS-----------
-\\section{Certifications}
-\\begin{itemize}[leftmargin=0.15in]
+      latex += `%---------- CERTIFICATIONS ----------
+\\section{Key Achievements \\& Awards}
+\\begin{itemize}[noitemsep, topsep=2pt, leftmargin=0.15in]
 `;
       validCerts.forEach((cert) => {
-        latex += `  \\item \\small{${escapeLatex(cert)}}\n`;
+        latex += `  \\resumeItem{${escapeLatex(cert)}}\n`;
       });
       latex += `\\end{itemize}\n\n`;
     }
