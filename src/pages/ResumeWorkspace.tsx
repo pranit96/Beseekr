@@ -207,6 +207,7 @@ export default function ResumeWorkspace() {
   const [isLatexOpen, setIsLatexOpen] = useState(false);
   const [latexCode, setLatexCode] = useState("");
   const [isCopied, setIsCopied] = useState(false);
+  const [isLatexCompiling, setIsLatexCompiling] = useState(false);
 
   /* ─── HANDLERS ──────────────────────────────────────────────────── */
   const handleExportLatex = () => {
@@ -270,6 +271,37 @@ export default function ResumeWorkspace() {
         title: "Copy Failed",
         description: "Could not copy code.",
       });
+    }
+  };
+
+  const handleDownloadLatexPdf = async () => {
+    setIsLatexCompiling(true);
+    try {
+      const url = await resumeApi.downloadLatexPdf(resumeData);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute(
+        "download",
+        `${resumeData.personal_info?.name || "Resume"}_LaTeX_Resume.pdf`,
+      );
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      toast({
+        title: "LaTeX PDF Downloaded! 🎉",
+        description: "Your ATS-optimized LaTeX resume PDF is ready.",
+      });
+    } catch (e: any) {
+      toast({
+        variant: "destructive",
+        title: "LaTeX PDF Compilation Failed",
+        description:
+          e.message ||
+          "Could not compile LaTeX. Try downloading the .tex file instead.",
+      });
+    } finally {
+      setIsLatexCompiling(false);
     }
   };
 
@@ -2661,6 +2693,20 @@ export default function ResumeWorkspace() {
               </div>
               <div className="flex items-center gap-2">
                 <button
+                  onClick={handleDownloadLatexPdf}
+                  disabled={isLatexCompiling}
+                  className="flex items-center gap-1.5 h-8 px-2 md:px-4 rounded-lg text-[10px] font-bold text-white bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600 shadow-sm shadow-indigo-500/20 transition-all disabled:opacity-60 disabled:cursor-not-allowed border-none"
+                >
+                  {isLatexCompiling ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <Download className="h-3 w-3" />
+                  )}
+                  <span className="hidden md:inline">
+                    {isLatexCompiling ? "Compiling…" : "Download PDF"}
+                  </span>
+                </button>
+                <button
                   onClick={handleCopyLatex}
                   className="flex items-center gap-1.5 h-8 px-2 md:px-3.5 rounded-lg text-[10px] font-bold text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white bg-zinc-100 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] hover:bg-zinc-200 transition-all"
                 >
@@ -2708,33 +2754,50 @@ export default function ResumeWorkspace() {
                   </p>
                   <div className="h-px bg-zinc-200 dark:bg-white/[0.06]" />
                   <p className="text-xs font-bold text-zinc-800 dark:text-zinc-200">
-                    How to Compile:
+                    How to Get Your PDF:
                   </p>
-                  <ol className="list-decimal pl-4 text-[11px] text-zinc-500 space-y-2 leading-relaxed">
-                    <li>
-                      Download the{" "}
-                      <code className="text-indigo-500 bg-indigo-50 dark:bg-indigo-500/10 px-1 rounded">
-                        .tex
-                      </code>{" "}
-                      file
-                    </li>
-                    <li>
-                      Go to{" "}
-                      <a
-                        href="https://www.overleaf.com"
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-indigo-500 hover:underline"
-                      >
-                        Overleaf.com
-                      </a>{" "}
-                      (free)
-                    </li>
-                    <li>Create a new blank project & upload</li>
-                    <li>
-                      Click <strong>Recompile</strong> → download PDF
-                    </li>
-                  </ol>
+                  <div className="space-y-3">
+                    <div className="p-3 bg-indigo-50/50 dark:bg-indigo-500/5 border border-indigo-200 dark:border-indigo-500/15 rounded-xl">
+                      <p className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 mb-1">
+                        ⚡ Quick (Recommended)
+                      </p>
+                      <p className="text-[10px] text-zinc-500 leading-relaxed">
+                        Click{" "}
+                        <strong className="text-indigo-500">Download PDF</strong>{" "}
+                        above — we compile your LaTeX to PDF instantly in the cloud.
+                      </p>
+                    </div>
+                    <div className="p-3 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.06] rounded-xl">
+                      <p className="text-[10px] font-bold text-zinc-600 dark:text-zinc-400 mb-1">
+                        🔧 Manual (Overleaf)
+                      </p>
+                      <ol className="list-decimal pl-4 text-[10px] text-zinc-500 space-y-1 leading-relaxed">
+                        <li>
+                          Download the{" "}
+                          <code className="text-indigo-500 bg-indigo-50 dark:bg-indigo-500/10 px-1 rounded">
+                            .tex
+                          </code>{" "}
+                          file
+                        </li>
+                        <li>
+                          Go to{" "}
+                          <a
+                            href="https://www.overleaf.com"
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-indigo-500 hover:underline"
+                          >
+                            Overleaf.com
+                          </a>{" "}
+                          (free)
+                        </li>
+                        <li>Create a new blank project &amp; upload</li>
+                        <li>
+                          Click <strong>Recompile</strong> → download PDF
+                        </li>
+                      </ol>
+                    </div>
+                  </div>
                 </div>
                 <p className="text-[9px] text-zinc-400 text-center border-t border-zinc-200 dark:border-white/[0.06] pt-4">
                   Premium Export Engine

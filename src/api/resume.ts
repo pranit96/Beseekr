@@ -273,6 +273,26 @@ export async function downloadResumeWord(
   return window.URL.createObjectURL(blob);
 }
 
+export async function downloadLatexPdf(
+  resume: ResumeSchema,
+): Promise<string> {
+  const res = await apiClient.post("/api/resume/download/latex-pdf", { resume });
+
+  const rawBase64 = (res.data as any)?.pdf_base64;
+  if (!rawBase64) {
+    throw new Error("Invalid LaTeX PDF delivery packet from endpoint.");
+  }
+
+  const binaryString = window.atob(rawBase64);
+  const bytes = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+
+  const blob = new Blob([bytes], { type: "application/pdf" });
+  return window.URL.createObjectURL(blob);
+}
+
 export interface ResumeRevision {
   id: string;
   name: string;
@@ -511,6 +531,7 @@ export const resumeApi = {
   generateCoverLetter,
   downloadCoverLetterPdf,
   downloadCoverLetterWord,
+  downloadLatexPdf,
   generateInterviewPrep,
   performCareerResearch,
   summarizeResearch,
