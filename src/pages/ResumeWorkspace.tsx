@@ -109,6 +109,14 @@ const NAV_TABS = [
     ring: "ring-rose-500/30",
     dot: "bg-rose-400",
   },
+  {
+    id: "tailor",
+    label: "ATS Match & Tailor",
+    icon: Trophy,
+    color: "text-indigo-400",
+    ring: "ring-indigo-500/30",
+    dot: "bg-indigo-400",
+  },
 ];
 
 /* ─── SECTION CARD WRAPPER ──────────────────────────────────────── */
@@ -209,7 +217,109 @@ export default function ResumeWorkspace() {
   const [isCopied, setIsCopied] = useState(false);
   const [isLatexCompiling, setIsLatexCompiling] = useState(false);
 
+  // Tailor & Align AI State
+  const [tailorJd, setTailorJd] = useState("");
+  const [tailorFile, setTailorFile] = useState<File | null>(null);
+  const [isTailoring, setIsTailoring] = useState(false);
+  const [tailorResult, setTailorResult] = useState<any | null>(null);
+
   /* ─── HANDLERS ──────────────────────────────────────────────────── */
+  const handleTailorResume = async () => {
+    if (!tailorFile) {
+      toast({
+        variant: "destructive",
+        title: "No Resume File",
+        description: "Please upload a PDF or DOCX resume first.",
+      });
+      return;
+    }
+    if (!tailorJd || tailorJd.trim().length < 20) {
+      toast({
+        variant: "destructive",
+        title: "Invalid Job Description",
+        description: "Please enter a job description of at least 20 characters.",
+      });
+      return;
+    }
+
+    setIsTailoring(true);
+    try {
+      const result = await resumeApi.tailorAlignResume(tailorFile, tailorJd);
+      setTailorResult(result);
+      toast({
+        title: "Resume Tailored & Aligned! 🎉",
+        description: "Your optimized LaTeX PDF and ATS score are ready below.",
+      });
+    } catch (e: any) {
+      toast({
+        variant: "destructive",
+        title: "Tailoring Failed",
+        description: e.message || "Failed to parse and optimize resume.",
+      });
+    } finally {
+      setIsTailoring(false);
+    }
+  };
+
+  const handleApplyTailoredResume = () => {
+    if (!tailorResult || !tailorResult.resume) return;
+    setResumeData(tailorResult.resume);
+    
+    // Revoke old preview and load new one
+    if (tailorResult.pdf_base64) {
+      const binaryString = window.atob(tailorResult.pdf_base64);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      const blob = new Blob([bytes], { type: "application/pdf" });
+      const url = window.URL.createObjectURL(blob);
+      if (previewUrl) window.URL.revokeObjectURL(previewUrl);
+      setPreviewUrl(url);
+      setPreviewOutdated(false);
+    }
+    
+    toast({
+      title: "Workspace Updated! 🚀",
+      description: "The optimized resume fields and PDF preview have been loaded into your active workspace.",
+    });
+  };
+
+  const handleDownloadTailoredPdf = () => {
+    if (!tailorResult || !tailorResult.pdf_base64) return;
+    try {
+      const binaryString = window.atob(tailorResult.pdf_base64);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      const blob = new Blob([bytes], { type: "application/pdf" });
+      const url = window.URL.createObjectURL(blob);
+      
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute(
+        "download",
+        `${tailorResult.resume?.personal_info?.name || "Tailored"}_Tailored_Resume.pdf`
+      );
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Download Initiated! 📄",
+        description: "Your tailored LaTeX PDF is downloading.",
+      });
+    } catch (e: any) {
+      toast({
+        variant: "destructive",
+        title: "Download Failed",
+        description: e.message || "Failed to download tailored PDF.",
+      });
+    }
+  };
+
   const handleExportLatex = () => {
     try {
       const code = generateLatexResume(resumeData);
@@ -1412,6 +1522,8 @@ export default function ResumeWorkspace() {
                     {activeTab === "design" && "Typography and color theme"}
                     {activeTab === "coverletter" &&
                       "AI-generated tailored cover letter"}
+                    {activeTab === "tailor" &&
+                      "Optimize & tailor your resume to any Job Description with AI"}
                   </p>
                 </div>
               </motion.div>
@@ -2151,6 +2263,202 @@ export default function ResumeWorkspace() {
                             </button>
                           </div>
                         </SectionCard>
+                      )}
+                    </>
+                  )}
+
+                  {/* ── ATS MATCH & TAILOR AI ─────────────────────── */}
+                  {activeTab === "tailor" && (
+                    <>
+                      <SectionCard>
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-2">
+                            <span className="inline-block text-[9px] font-black uppercase tracking-widest text-indigo-500 bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 px-2.5 py-1 rounded-lg">
+                              Step 1: Upload Current Resume
+                            </span>
+                          </div>
+                          <p className="text-xs text-zinc-500">
+                            Upload your existing resume in PDF or DOCX format. We will extract and parse its contents using our secure, sandbox-native parsing engine.
+                          </p>
+                          <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-zinc-200 dark:border-white/[0.08] hover:border-indigo-400/50 rounded-2xl bg-zinc-50/50 dark:bg-white/[0.01] transition-all relative">
+                            {tailorFile ? (
+                              <div className="text-center space-y-2">
+                                <FileText className="h-8 w-8 text-indigo-500 mx-auto animate-bounce" />
+                                <p className="text-xs font-bold text-zinc-800 dark:text-zinc-200">
+                                  {tailorFile.name}
+                                </p>
+                                <p className="text-[10px] text-zinc-400">
+                                  {(tailorFile.size / 1024 / 1024).toFixed(2)} MB · Ready
+                                </p>
+                                <button
+                                  onClick={() => setTailorFile(null)}
+                                  className="text-[10px] font-black text-red-500 hover:text-red-600 transition-all uppercase tracking-wide pt-1"
+                                >
+                                  Remove File
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="text-center space-y-2">
+                                <Plus className="h-8 w-8 text-zinc-400 mx-auto opacity-60" />
+                                <p className="text-xs font-bold text-zinc-500">
+                                  Select Resume PDF or DOCX
+                                </p>
+                                <p className="text-[10px] text-zinc-400">
+                                  Max size 5MB
+                                </p>
+                                <input
+                                  type="file"
+                                  accept=".pdf,.docx"
+                                  onChange={(e) => {
+                                    if (e.target.files?.[0]) {
+                                      setTailorFile(e.target.files[0]);
+                                    }
+                                  }}
+                                  className="absolute inset-0 opacity-0 cursor-pointer"
+                                />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </SectionCard>
+
+                      <SectionCard>
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-2">
+                            <span className="inline-block text-[9px] font-black uppercase tracking-widest text-indigo-500 bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 px-2.5 py-1 rounded-lg">
+                              Step 2: Enter Target Job Description
+                            </span>
+                          </div>
+                          <p className="text-xs text-zinc-500">
+                            Paste the full target job posting or description. Our resilient AI models will identify core keywords, required skills, and key qualifications.
+                          </p>
+                          <Textarea
+                            value={tailorJd}
+                            onChange={(e) => setTailorJd(e.target.value)}
+                            placeholder="Paste the target job description here..."
+                            className={`${textareaCls} min-h-[160px] text-xs leading-relaxed`}
+                          />
+                        </div>
+                      </SectionCard>
+
+                      <div className="flex justify-end pt-2">
+                        <button
+                          disabled={isTailoring || !tailorFile || !tailorJd}
+                          onClick={handleTailorResume}
+                          className="flex items-center gap-2.5 h-11 px-6 rounded-xl text-xs font-black bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600 text-white transition-all shadow-lg shadow-indigo-500/20 disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-wider"
+                        >
+                          {isTailoring ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Sparkles className="h-4 w-4" />
+                          )}
+                          {isTailoring ? "Tailoring & Compiling..." : "Run ATS Match & Tailor"}
+                        </button>
+                      </div>
+
+                      {tailorResult && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="space-y-5 pt-4"
+                        >
+                          {/* ATS Score & Action Card */}
+                          <div className="p-6 rounded-2xl bg-gradient-to-br from-zinc-900 to-indigo-950 text-white border border-zinc-800 shadow-xl space-y-5">
+                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
+                              <div className="flex items-center gap-4">
+                                <div className="h-16 w-16 rounded-full border-4 border-indigo-400/20 border-t-indigo-400 flex items-center justify-center shrink-0">
+                                  <span className="text-xl font-black text-indigo-300">
+                                    {tailorResult.ats_score}%
+                                  </span>
+                                </div>
+                                <div className="space-y-1">
+                                  <p className="text-xs font-black uppercase tracking-wider text-indigo-400">
+                                    ATS Match Rating
+                                  </p>
+                                  <p className="text-sm font-bold leading-tight">
+                                    Your tailored resume has been aligned successfully!
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={handleDownloadTailoredPdf}
+                                  className="h-9 px-4 rounded-lg text-[10px] font-black uppercase bg-indigo-500 hover:bg-indigo-600 text-white transition-all"
+                                >
+                                  Download PDF
+                                </button>
+                                <button
+                                  onClick={handleApplyTailoredResume}
+                                  className="h-9 px-4 rounded-lg text-[10px] font-black uppercase bg-white hover:bg-zinc-100 text-zinc-900 transition-all"
+                                >
+                                  Apply to Workspace
+                                </button>
+                              </div>
+                            </div>
+
+                            <div className="border-t border-white/[0.08] pt-4">
+                              <p className="text-[10px] font-black uppercase tracking-wider text-zinc-400 mb-1">
+                                Executive AI Summary
+                              </p>
+                              <p className="text-xs text-zinc-300 leading-relaxed font-medium">
+                                {tailorResult.general_feedback}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Keywords Aligned */}
+                          {tailorResult.missing_keywords && tailorResult.missing_keywords.length > 0 && (
+                            <SectionCard>
+                              <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
+                                Keywords Integrated
+                              </p>
+                              <div className="flex flex-wrap gap-1.5 pt-2">
+                                {tailorResult.missing_keywords.map((kw: string) => (
+                                  <span
+                                    key={kw}
+                                    className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-500/20"
+                                  >
+                                    + {kw}
+                                  </span>
+                                ))}
+                              </div>
+                            </SectionCard>
+                          )}
+
+                          {/* Bullet Point Suggestions */}
+                          {tailorResult.bullet_point_suggestions && tailorResult.bullet_point_suggestions.length > 0 && (
+                            <SectionCard>
+                              <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
+                                Highlight Enhancements (Google XYZ Formula)
+                              </p>
+                              <div className="space-y-4 pt-3 divide-y divide-zinc-100 dark:divide-white/[0.04]">
+                                {tailorResult.bullet_point_suggestions.map((sug: any, idx: number) => (
+                                  <div key={idx} className={`space-y-2 ${idx > 0 ? "pt-4" : ""}`}>
+                                    <div className="flex items-start gap-2">
+                                      <span className="text-[9px] font-black uppercase tracking-wider text-red-500 bg-red-50 dark:bg-red-500/10 px-1.5 py-0.5 rounded shrink-0">
+                                        Original
+                                      </span>
+                                      <p className="text-[11px] text-zinc-500 italic">
+                                        "{sug.original}"
+                                      </p>
+                                    </div>
+                                    <div className="flex items-start gap-2">
+                                      <span className="text-[9px] font-black uppercase tracking-wider text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 px-1.5 py-0.5 rounded shrink-0">
+                                        Tailored
+                                      </span>
+                                      <p className="text-[11px] font-bold text-zinc-800 dark:text-zinc-200 leading-relaxed">
+                                        "{sug.improved}"
+                                      </p>
+                                    </div>
+                                    <p className="text-[10px] text-zinc-400 font-medium pl-14">
+                                      {sug.reason}
+                                    </p>
+                                  </div>
+                                ))}
+                              </div>
+                            </SectionCard>
+                          )}
+                        </motion.div>
                       )}
                     </>
                   )}

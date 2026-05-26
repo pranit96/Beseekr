@@ -511,6 +511,34 @@ export async function getCoachInsights(): Promise<CoachInsights> {
   return res.data;
 }
 
+export interface TailorAlignResult {
+  resume: ResumeSchema;
+  pdf_base64: string;
+  ats_score: number;
+  score_breakdown: any;
+  missing_keywords: string[];
+  ats_checks: any;
+  bullet_point_suggestions: Array<{ original: string; improved: string; reason: string }>;
+  general_feedback: string;
+}
+
+export async function tailorAlignResume(
+  file: File,
+  jd: string
+): Promise<TailorAlignResult> {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("jd", jd);
+
+  const res = await apiClient.post("/api/resume/tailor-align", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+
+  return (res.data as any)?.data;
+}
+
 export const resumeApi = {
   uploadAndParseResume,
   uploadAndParseResumeWithProgress,
@@ -537,6 +565,7 @@ export const resumeApi = {
   summarizeResearch,
   parseJobUrl,
   getCoachInsights,
+  tailorAlignResume,
 };
 
 export default resumeApi;
