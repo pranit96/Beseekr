@@ -45,7 +45,10 @@ function formatFileSize(bytes: number): string {
 export default function ResumeTailor() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { setResumeData, setWorkspaceMode, setShowOnboarding } = useResume();
+  const { resumeData, setResumeData, setWorkspaceMode, setShowOnboarding } =
+    useResume();
+  const isResumeBlank =
+    !resumeData?.personal_info?.name && resumeData?.experience?.length === 0;
 
   const inputCls =
     "bg-zinc-50 dark:bg-white/[0.02] focus:bg-white dark:focus:bg-white/[0.04] border-zinc-200 dark:border-white/[0.06] focus:border-indigo-400/50 dark:focus:border-indigo-400/40 focus:ring-0 text-zinc-800 dark:text-zinc-200 rounded-xl h-11 px-4 transition-all text-sm shadow-sm";
@@ -159,10 +162,11 @@ export default function ResumeTailor() {
   // Run Aligned Tailoring
   // ---------------------------------------------------------------------------
   const handleRunTailoring = async () => {
-    if (!selectedFile) {
+    if (!selectedFile && isResumeBlank) {
       toast({
-        title: "Resume missing",
-        description: "Please upload your current resume file first.",
+        title: "No Resume Active",
+        description:
+          "Please upload your current resume file first, or fill out your resume details.",
         variant: "destructive",
       });
       return;
@@ -613,14 +617,26 @@ export default function ResumeTailor() {
 
                 {/* Step 1: Upload Resume File */}
                 <div className="p-5 border border-zinc-200 dark:border-white/[0.04] bg-white dark:bg-zinc-900/50 rounded-2xl space-y-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[9px] font-black uppercase tracking-widest text-indigo-500 bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 px-2 py-0.5 rounded">
-                      Step 1
-                    </span>
-                    <span className="text-xs font-black uppercase tracking-wider text-zinc-700 dark:text-zinc-300">
-                      Upload Current Resume
-                    </span>
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[9px] font-black uppercase tracking-widest text-indigo-500 bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 px-2 py-0.5 rounded">
+                        Step 1
+                      </span>
+                      <span className="text-xs font-black uppercase tracking-wider text-zinc-700 dark:text-zinc-300">
+                        Upload Current Resume
+                      </span>
+                    </div>
+                    {!isResumeBlank && (
+                      <span className="text-[8px] font-black uppercase tracking-widest text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 px-2 py-0.5 rounded">
+                        Active Resume Available
+                      </span>
+                    )}
                   </div>
+                  <p className="text-xs text-zinc-500">
+                    {!isResumeBlank
+                      ? "Upload a new resume file, or leave empty to align directly against your active workspace resume."
+                      : "Upload your existing resume in PDF or DOCX format to begin tailoring."}
+                  </p>
 
                   {/* Drag and Drop Zone */}
                   <div
@@ -699,7 +715,9 @@ export default function ResumeTailor() {
                             : "Drag & drop PDF or DOCX"}
                         </p>
                         <p className="text-[10px] text-zinc-400">
-                          or click to browse files (Max 5MB)
+                          {!isResumeBlank
+                            ? "Optional - Upload a new file or skip to use active resume"
+                            : "or click to browse files (Max 5MB)"}
                         </p>
                       </div>
                     )}
@@ -756,7 +774,9 @@ export default function ResumeTailor() {
                   <button
                     onClick={handleRunTailoring}
                     disabled={
-                      !selectedFile || !jdText || jdText.trim().length < 20
+                      (!selectedFile && isResumeBlank) ||
+                      !jdText ||
+                      jdText.trim().length < 20
                     }
                     className="flex items-center gap-2.5 h-11 px-6 rounded-xl text-xs font-black bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600 text-white transition-all shadow-lg shadow-indigo-500/20 disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-wider select-none"
                   >

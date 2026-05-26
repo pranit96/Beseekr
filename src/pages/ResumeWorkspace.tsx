@@ -238,11 +238,12 @@ export default function ResumeWorkspace() {
 
   /* ─── HANDLERS ──────────────────────────────────────────────────── */
   const handleTailorResume = async () => {
-    if (!tailorFile) {
+    if (!tailorFile && isResumeBlank) {
       toast({
         variant: "destructive",
-        title: "No Resume File",
-        description: "Please upload a PDF or DOCX resume first.",
+        title: "No Resume Active",
+        description:
+          "Please upload a PDF or DOCX resume first, or fill out your resume details.",
       });
       return;
     }
@@ -2373,15 +2374,20 @@ export default function ResumeWorkspace() {
                     <>
                       <SectionCard>
                         <div className="space-y-4">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center justify-between gap-2 flex-wrap">
                             <span className="inline-block text-[9px] font-black uppercase tracking-widest text-indigo-500 bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 px-2.5 py-1 rounded-lg">
                               Step 1: Upload Current Resume
                             </span>
+                            {!isResumeBlank && (
+                              <Badge className="bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 border border-emerald-500/20 text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded">
+                                Active Resume Available
+                              </Badge>
+                            )}
                           </div>
                           <p className="text-xs text-zinc-500">
-                            Upload your existing resume in PDF or DOCX format.
-                            We will extract and parse its contents using our
-                            secure, sandbox-native parsing engine.
+                            {!isResumeBlank
+                              ? "Upload a new resume file, or leave empty to align directly against your active workspace resume."
+                              : "Upload your existing resume in PDF or DOCX format to extract and parse its contents."}
                           </p>
                           <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-zinc-200 dark:border-white/[0.08] hover:border-indigo-400/50 rounded-2xl bg-zinc-50/50 dark:bg-white/[0.01] transition-all relative">
                             {tailorFile ? (
@@ -2407,7 +2413,9 @@ export default function ResumeWorkspace() {
                                   Select Resume PDF or DOCX
                                 </p>
                                 <p className="text-[10px] text-zinc-400">
-                                  Max size 5MB
+                                  {!isResumeBlank
+                                    ? "Optional - Upload a new file or skip to use active resume"
+                                    : "Max size 5MB"}
                                 </p>
                                 <input
                                   type="file"
@@ -2448,7 +2456,11 @@ export default function ResumeWorkspace() {
 
                       <div className="flex justify-end pt-2">
                         <button
-                          disabled={isTailoring || !tailorFile || !tailorJd}
+                          disabled={
+                            isTailoring ||
+                            (!tailorFile && isResumeBlank) ||
+                            !tailorJd
+                          }
                           onClick={handleTailorResume}
                           className="flex items-center gap-2.5 h-11 px-6 rounded-xl text-xs font-black bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600 text-white transition-all shadow-lg shadow-indigo-500/20 disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-wider"
                         >

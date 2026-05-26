@@ -527,11 +527,13 @@ export interface TailorAlignResult {
 }
 
 export async function tailorAlignResume(
-  file: File,
+  file: File | null,
   jd: string,
 ): Promise<TailorAlignResult> {
   const formData = new FormData();
-  formData.append("file", file);
+  if (file) {
+    formData.append("file", file);
+  }
   formData.append("jd", jd);
 
   const res = await apiClient.post("/api/resume/tailor-align", formData);
