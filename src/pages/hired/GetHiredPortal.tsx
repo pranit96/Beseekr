@@ -13,6 +13,7 @@ import {
   Sparkles,
   History,
   Trash2,
+  Trophy,
 } from "lucide-react";
 import { Badge } from "../../components/ui/badge";
 import { motion } from "framer-motion";
@@ -115,8 +116,8 @@ export default function GetHiredPortal() {
           </p>
         </div>
 
-        {/* ── TWO ACTION CARDS ── */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* ── THREE ACTION CARDS ── */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {/* Upload Resume Card */}
           <motion.button
             whileHover={{
@@ -177,6 +178,37 @@ export default function GetHiredPortal() {
               </div>
               <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
                 <span>Browse templates</span>
+                <ArrowRight className="h-3 w-3 group-hover:translate-x-1 transition-transform" />
+              </div>
+            </div>
+          </motion.button>
+
+          {/* ATS Match & Tailor Card */}
+          <motion.button
+            whileHover={{
+              y: -4,
+              boxShadow: "0 20px 40px -12px rgba(0,0,0,0.15)",
+            }}
+            whileTap={{ scale: 0.98 }}
+            transition={{ type: "spring", stiffness: 400, damping: 25 }}
+            onClick={() => navigate("resume/workspace", { state: { activeTab: "tailor" } })}
+            className="relative group p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-left cursor-pointer transition-colors hover:border-indigo-300 dark:hover:border-indigo-500/30 overflow-hidden"
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-indigo-50 to-transparent dark:from-indigo-500/[0.04] dark:to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="relative space-y-4">
+              <div className="h-12 w-12 rounded-xl bg-indigo-100 dark:bg-indigo-500/15 border border-indigo-200 dark:border-indigo-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Trophy className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+              </div>
+              <div className="space-y-1.5">
+                <h3 className="text-base font-black tracking-tight">
+                  ATS Match & Tailor
+                </h3>
+                <p className="text-xs text-zinc-500 leading-relaxed font-medium">
+                  Align your resume with a specific job description. Rewrite, score, and compile a tailored LaTeX PDF.
+                </p>
+              </div>
+              <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
+                <span>Start Alignment</span>
                 <ArrowRight className="h-3 w-3 group-hover:translate-x-1 transition-transform" />
               </div>
             </div>
