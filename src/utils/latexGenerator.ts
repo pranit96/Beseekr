@@ -109,7 +109,7 @@ export function generateLatexResume(data: ResumeData): string {
 % Section formatting
 \\titleformat{\\section}{
   \\vspace{-2pt}\\scshape\\raggedright\\large\\bfseries\\color{heading}
-}{}{0em}{}[\\color{heading}\\titrule\\vspace{-2pt}]
+}{}{0em}{}[\\color{heading}\\titlerule\\vspace{-2pt}]
 \\titlespacing\\section{0pt}{7pt}{5pt}
 
 % Custom commands
