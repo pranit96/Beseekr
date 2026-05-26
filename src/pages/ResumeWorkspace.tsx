@@ -1,7 +1,7 @@
 // src/pages/ResumeWorkspace.tsx
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   useResume,
   EMPTY_RESUME,
