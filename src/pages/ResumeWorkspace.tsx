@@ -139,6 +139,7 @@ const EmptyState = ({ label }: { label: string }) => (
 export default function ResumeWorkspace() {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const {
     resumeData,
@@ -209,6 +210,12 @@ export default function ResumeWorkspace() {
   }, [resumeData]);
 
   const [activeTab, setActiveTab] = useState("personal");
+
+  useEffect(() => {
+    if (location.state?.activeTab) {
+      setActiveTab(location.state.activeTab);
+    }
+  }, [location.state?.activeTab]);
   const [isAiPanelOpen, setIsAiPanelOpen] = useState(false);
   const [coverLetter, setCoverLetter] = useState<string | null>(null);
   const [isGeneratingCL, setIsGeneratingCL] = useState(false);
