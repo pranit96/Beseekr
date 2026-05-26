@@ -530,11 +530,7 @@ export async function tailorAlignResume(
   formData.append("file", file);
   formData.append("jd", jd);
 
-  const res = await apiClient.post("/api/resume/tailor-align", formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-  });
+  const res = await apiClient.post("/api/resume/tailor-align", formData);
 
   return (res.data as any)?.data;
 }
