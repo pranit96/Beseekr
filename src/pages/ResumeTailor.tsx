@@ -1,7 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useResume } from "@/contexts/ResumeContext";
-import { resumeApi, type ResumeSchema, type TailorRunRecord } from "@/api/resume";
+import {
+  resumeApi,
+  type ResumeSchema,
+  type TailorRunRecord,
+} from "@/api/resume";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -29,7 +33,14 @@ const ALLOWED_MIME_TYPES = new Set([
   "application/pdf",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 ]);
+const ALLOWED_EXT = /\.(pdf|docx)$/i;
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 export default function ResumeTailor() {
   const navigate = useNavigate();
@@ -108,7 +119,9 @@ export default function ResumeTailor() {
     } catch (e: any) {
       toast({
         title: "Parsing Failed",
-        description: e.message || "Failed to extract job description details from the link.",
+        description:
+          e.message ||
+          "Failed to extract job description details from the link.",
         variant: "destructive",
       });
     } finally {
@@ -125,7 +138,8 @@ export default function ResumeTailor() {
       await resumeApi.deleteTailorRun(id);
       toast({
         title: "Run deleted",
-        description: "The tailoring run was successfully deleted from your history.",
+        description:
+          "The tailoring run was successfully deleted from your history.",
       });
       setRuns((prev) => prev.filter((r) => r.id !== id));
       if (activeRun?.id === id) {
@@ -134,7 +148,8 @@ export default function ResumeTailor() {
     } catch (err: any) {
       toast({
         title: "Delete Failed",
-        description: err.message || "Could not delete this run from your history.",
+        description:
+          err.message || "Could not delete this run from your history.",
         variant: "destructive",
       });
     }
@@ -155,7 +170,8 @@ export default function ResumeTailor() {
     if (!jdText || jdText.trim().length < 20) {
       toast({
         title: "Job description empty",
-        description: "Please paste a job description (minimum 20 characters) or parse a job link.",
+        description:
+          "Please paste a job description (minimum 20 characters) or parse a job link.",
         variant: "destructive",
       });
       return;
@@ -179,7 +195,8 @@ export default function ResumeTailor() {
 
       toast({
         title: "Tailoring Succeeded!",
-        description: "Your optimized LaTeX resume and scorecard have been built successfully.",
+        description:
+          "Your optimized LaTeX resume and scorecard have been built successfully.",
       });
 
       // Reload runs list and set the newly generated run as active
@@ -191,13 +208,14 @@ export default function ResumeTailor() {
         await loadRuns(false);
         setActiveRun(result as unknown as TailorRunRecord);
       }, 1000);
-
     } catch (err: any) {
       clearInterval(interval);
       setIsProcessing(false);
       toast({
         title: "Tailoring Failed",
-        description: err.message || "Failed to parse, align, or compile your resume. Please try again.",
+        description:
+          err.message ||
+          "Failed to parse, align, or compile your resume. Please try again.",
         variant: "destructive",
       });
     }
@@ -213,7 +231,8 @@ export default function ResumeTailor() {
     setShowOnboarding(false);
     toast({
       title: "Aligned Draft Loaded!",
-      description: "You have been switched to your editor workspace containing this tailored draft.",
+      description:
+        "You have been switched to your editor workspace containing this tailored draft.",
     });
     navigate("/dashboard/hired/resume/workspace");
   };
@@ -240,7 +259,8 @@ export default function ResumeTailor() {
 
       toast({
         title: "Downloading...",
-        description: "Your compiled, ATS-aligned resume PDF is now downloading.",
+        description:
+          "Your compiled, ATS-aligned resume PDF is now downloading.",
       });
     } catch (e: any) {
       toast({
@@ -362,12 +382,16 @@ export default function ResumeTailor() {
                     Running Job Tailoring...
                   </h2>
                   <p className="text-xs text-zinc-400">
-                    Processing resume structure, evaluating keywords, applying Google XYZ outcomes, and compiling LaTeX PDF.
+                    Processing resume structure, evaluating keywords, applying
+                    Google XYZ outcomes, and compiling LaTeX PDF.
                   </p>
                 </div>
 
                 <div className="space-y-2">
-                  <Progress value={displayPercent} className="h-2 bg-zinc-200 dark:bg-zinc-800 rounded-full" />
+                  <Progress
+                    value={displayPercent}
+                    className="h-2 bg-zinc-200 dark:bg-zinc-800 rounded-full"
+                  />
                   <div className="flex justify-between items-center text-[10px] font-bold text-zinc-400 uppercase tracking-wide px-1">
                     <span>Analyzing target role</span>
                     <span>{displayPercent}%</span>
@@ -466,7 +490,8 @@ export default function ResumeTailor() {
                   <div className="space-y-3 select-none">
                     {activeRun.bullet_point_suggestions?.length === 0 ? (
                       <div className="p-4 border border-dashed border-zinc-200 dark:border-white/[0.04] rounded-xl text-center text-zinc-400 text-xs">
-                        No revisions or bullet adjustments required. Faver-friendly ATS matching verified.
+                        No revisions or bullet adjustments required.
+                        Faver-friendly ATS matching verified.
                       </div>
                     ) : (
                       activeRun.bullet_point_suggestions?.map((sug, idx) => (
@@ -499,7 +524,9 @@ export default function ResumeTailor() {
                           {sug.reason && (
                             <div className="text-[10px] text-zinc-400 italic flex items-start gap-1 bg-zinc-50 dark:bg-zinc-950/20 p-2 rounded-lg border border-zinc-100 dark:border-white/[0.01]">
                               <Sparkles className="h-3 w-3 text-indigo-400 mt-0.5 shrink-0" />
-                              <span className="flex-1 leading-normal font-medium">{sug.reason}</span>
+                              <span className="flex-1 leading-normal font-medium">
+                                {sug.reason}
+                              </span>
                             </div>
                           )}
                         </div>
@@ -509,23 +536,24 @@ export default function ResumeTailor() {
                 </div>
 
                 {/* Missing Keywords */}
-                {activeRun.missing_keywords && activeRun.missing_keywords.length > 0 && (
-                  <div className="space-y-3">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400 block">
-                      Target Keywords identified & Integrated
-                    </span>
-                    <div className="flex flex-wrap gap-1.5">
-                      {activeRun.missing_keywords.map((kw, idx) => (
-                        <span
-                          key={idx}
-                          className="px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wide bg-zinc-100 dark:bg-white/[0.04] text-zinc-600 dark:text-zinc-300 border border-zinc-200 dark:border-white/[0.08]"
-                        >
-                          {kw}
-                        </span>
-                      ))}
+                {activeRun.missing_keywords &&
+                  activeRun.missing_keywords.length > 0 && (
+                    <div className="space-y-3">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400 block">
+                        Target Keywords identified & Integrated
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {activeRun.missing_keywords.map((kw, idx) => (
+                          <span
+                            key={idx}
+                            className="px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wide bg-zinc-100 dark:bg-white/[0.04] text-zinc-600 dark:text-zinc-300 border border-zinc-200 dark:border-white/[0.08]"
+                          >
+                            {kw}
+                          </span>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
               </div>
 
               {/* Right PDF Frame */}
@@ -577,7 +605,9 @@ export default function ResumeTailor() {
                     ATS Match & Tailor
                   </h1>
                   <p className="text-sm text-zinc-500 max-w-md mx-auto">
-                    Secure, sandbox-grade career optimization. Upload your current resume and paste a target Job Description to align and score.
+                    Secure, sandbox-grade career optimization. Upload your
+                    current resume and paste a target Job Description to align
+                    and score.
                   </p>
                 </div>
 
@@ -604,12 +634,16 @@ export default function ResumeTailor() {
                       setIsDragOver(false);
                       const file = e.dataTransfer.files[0];
                       if (file) {
-                        if (ALLOWED_MIME_TYPES.has(file.type)) {
+                        if (
+                          ALLOWED_MIME_TYPES.has(file.type) ||
+                          ALLOWED_EXT.test(file.name)
+                        ) {
                           setSelectedFile(file);
                         } else {
                           toast({
                             title: "Unsupported file",
-                            description: "Please upload a valid PDF or DOCX file.",
+                            description:
+                              "Please upload a valid PDF or DOCX file.",
                             variant: "destructive",
                           });
                         }
@@ -629,6 +663,8 @@ export default function ResumeTailor() {
                       onChange={(e) => {
                         const file = e.target.files?.[0];
                         if (file) setSelectedFile(file);
+                        if (fileInputRef.current)
+                          fileInputRef.current.value = "";
                       }}
                       className="hidden"
                     />
@@ -640,12 +676,14 @@ export default function ResumeTailor() {
                           {selectedFile.name}
                         </p>
                         <p className="text-[10px] text-zinc-400">
-                          {(selectedFile.size / 1024 / 1024).toFixed(2)} MB · Ready
+                          {formatFileSize(selectedFile.size)} · Ready
                         </p>
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             setSelectedFile(null);
+                            if (fileInputRef.current)
+                              fileInputRef.current.value = "";
                           }}
                           className="text-[9px] font-black uppercase text-red-500 hover:text-red-600 transition-all border-none bg-transparent pt-1"
                         >
@@ -656,9 +694,13 @@ export default function ResumeTailor() {
                       <div className="text-center space-y-1 select-none">
                         <Upload className="h-6 w-6 text-zinc-400 mx-auto opacity-70" />
                         <p className="text-xs font-bold text-zinc-500">
-                          {isDragOver ? "Drop file to upload" : "Drag & drop PDF or DOCX"}
+                          {isDragOver
+                            ? "Drop file to upload"
+                            : "Drag & drop PDF or DOCX"}
                         </p>
-                        <p className="text-[10px] text-zinc-400">or click to browse files (Max 5MB)</p>
+                        <p className="text-[10px] text-zinc-400">
+                          or click to browse files (Max 5MB)
+                        </p>
                       </div>
                     )}
                   </div>
@@ -713,7 +755,9 @@ export default function ResumeTailor() {
                 <div className="flex justify-end pt-2">
                   <button
                     onClick={handleRunTailoring}
-                    disabled={!selectedFile || !jdText || jdText.trim().length < 20}
+                    disabled={
+                      !selectedFile || !jdText || jdText.trim().length < 20
+                    }
                     className="flex items-center gap-2.5 h-11 px-6 rounded-xl text-xs font-black bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600 text-white transition-all shadow-lg shadow-indigo-500/20 disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-wider select-none"
                   >
                     <Sparkles className="h-4 w-4 animate-pulse" />

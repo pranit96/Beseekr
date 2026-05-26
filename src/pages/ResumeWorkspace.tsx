@@ -136,6 +136,12 @@ const EmptyState = ({ label }: { label: string }) => (
   </div>
 );
 
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 export default function ResumeWorkspace() {
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -244,7 +250,8 @@ export default function ResumeWorkspace() {
       toast({
         variant: "destructive",
         title: "Invalid Job Description",
-        description: "Please enter a job description of at least 20 characters.",
+        description:
+          "Please enter a job description of at least 20 characters.",
       });
       return;
     }
@@ -271,7 +278,7 @@ export default function ResumeWorkspace() {
   const handleApplyTailoredResume = () => {
     if (!tailorResult || !tailorResult.resume) return;
     setResumeData(tailorResult.resume);
-    
+
     // Revoke old preview and load new one
     if (tailorResult.pdf_base64) {
       const binaryString = window.atob(tailorResult.pdf_base64);
@@ -285,10 +292,11 @@ export default function ResumeWorkspace() {
       setPreviewUrl(url);
       setPreviewOutdated(false);
     }
-    
+
     toast({
       title: "Workspace Updated! 🚀",
-      description: "The optimized resume fields and PDF preview have been loaded into your active workspace.",
+      description:
+        "The optimized resume fields and PDF preview have been loaded into your active workspace.",
     });
   };
 
@@ -302,18 +310,18 @@ export default function ResumeWorkspace() {
       }
       const blob = new Blob([bytes], { type: "application/pdf" });
       const url = window.URL.createObjectURL(blob);
-      
+
       const link = document.createElement("a");
       link.href = url;
       link.setAttribute(
         "download",
-        `${tailorResult.resume?.personal_info?.name || "Tailored"}_Tailored_Resume.pdf`
+        `${tailorResult.resume?.personal_info?.name || "Tailored"}_Tailored_Resume.pdf`,
       );
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
-      
+
       toast({
         title: "Download Initiated! 📄",
         description: "Your tailored LaTeX PDF is downloading.",
@@ -631,11 +639,19 @@ export default function ResumeWorkspace() {
 
         <TabsContent value="overview" className="space-y-4 mt-0 text-left">
           {/* Score Ring */}
-          <div className={`flex flex-col items-center py-5 border border-zinc-200 dark:border-white/[0.05] rounded-2xl ${cardBg}`}>
+          <div
+            className={`flex flex-col items-center py-5 border border-zinc-200 dark:border-white/[0.05] rounded-2xl ${cardBg}`}
+          >
             <div className={`relative ${ringSize}`}>
               <svg className="h-full w-full -rotate-90" viewBox="0 0 36 36">
                 <defs>
-                  <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="100%">
+                  <linearGradient
+                    id={gradId}
+                    x1="0%"
+                    y1="0%"
+                    x2="100%"
+                    y2="100%"
+                  >
                     <stop offset="0%" stopColor="#a855f7" />
                     <stop offset="100%" stopColor="#6366f1" />
                   </linearGradient>
@@ -670,35 +686,47 @@ export default function ResumeWorkspace() {
           </div>
 
           <div className="grid grid-cols-2 gap-2">
-            {Object.entries(atsReport.aspects).map(([key, aspect]: [string, any]) => (
-              <div
-                key={key}
-                className={`border border-zinc-200 dark:border-white/[0.05] rounded-xl p-3 text-left ${
-                  isDrawer ? "bg-white dark:bg-white/[0.01]" : "bg-white dark:bg-white/[0.02]"
-                }`}
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <span className="capitalize text-[8px] font-black text-zinc-400 uppercase tracking-wider">
-                    {key.replace("_", " ")}
-                  </span>
-                  <span className="text-[8px] font-black font-mono text-zinc-700 dark:text-zinc-300 bg-zinc-100 dark:bg-white/[0.04] px-1 py-0.5 rounded">
-                    {aspect.rating}/10
-                  </span>
+            {Object.entries(atsReport.aspects).map(
+              ([key, aspect]: [string, any]) => (
+                <div
+                  key={key}
+                  className={`border border-zinc-200 dark:border-white/[0.05] rounded-xl p-3 text-left ${
+                    isDrawer
+                      ? "bg-white dark:bg-white/[0.01]"
+                      : "bg-white dark:bg-white/[0.02]"
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="capitalize text-[8px] font-black text-zinc-400 uppercase tracking-wider">
+                      {key.replace("_", " ")}
+                    </span>
+                    <span className="text-[8px] font-black font-mono text-zinc-700 dark:text-zinc-300 bg-zinc-100 dark:bg-white/[0.04] px-1 py-0.5 rounded">
+                      {aspect.rating}/10
+                    </span>
+                  </div>
+                  <p
+                    className="text-[9px] text-zinc-500 leading-relaxed line-clamp-2"
+                    title={aspect.why}
+                  >
+                    {aspect.why}
+                  </p>
                 </div>
-                <p className="text-[9px] text-zinc-500 leading-relaxed line-clamp-2" title={aspect.why}>
-                  {aspect.why}
-                </p>
-              </div>
-            ))}
+              ),
+            )}
           </div>
 
           <div className="space-y-1">
             <Label className={labelCls + " flex items-center gap-1"}>
-              <Sparkles className="h-2.5 w-2.5 text-indigo-400" /> Overall Assessment
+              <Sparkles className="h-2.5 w-2.5 text-indigo-400" /> Overall
+              Assessment
             </Label>
-            <div className={`text-[10px] leading-relaxed text-zinc-500 border border-zinc-200 dark:border-white/[0.04] rounded-xl p-3 ${
-              isDrawer ? "bg-white dark:bg-white/[0.01]" : "bg-white dark:bg-white/[0.01]"
-            }`}>
+            <div
+              className={`text-[10px] leading-relaxed text-zinc-500 border border-zinc-200 dark:border-white/[0.04] rounded-xl p-3 ${
+                isDrawer
+                  ? "bg-white dark:bg-white/[0.01]"
+                  : "bg-white dark:bg-white/[0.01]"
+              }`}
+            >
               {atsReport.general_feedback}
             </div>
           </div>
@@ -706,14 +734,19 @@ export default function ResumeWorkspace() {
 
         <TabsContent value="audits" className="space-y-4 mt-0 text-left">
           {/* Spellcheck & Grammar Card */}
-          <div className={`p-4 rounded-2xl border border-zinc-200 dark:border-white/[0.05] space-y-3 ${
-            isDrawer ? "bg-white dark:bg-white/[0.01]" : "bg-white dark:bg-white/[0.01]"
-          }`}>
+          <div
+            className={`p-4 rounded-2xl border border-zinc-200 dark:border-white/[0.05] space-y-3 ${
+              isDrawer
+                ? "bg-white dark:bg-white/[0.01]"
+                : "bg-white dark:bg-white/[0.01]"
+            }`}
+          >
             <div className="flex items-center gap-2 justify-between">
               <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 flex items-center gap-1.5 font-bold">
                 ✨ Spelling & Grammar Check
               </span>
-              {(!atsReport.ats_checks?.spelling_grammar || atsReport.ats_checks.spelling_grammar.passed) ? (
+              {!atsReport.ats_checks?.spelling_grammar ||
+              atsReport.ats_checks.spelling_grammar.passed ? (
                 <span className="text-[8px] font-black text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 px-2 py-0.5 rounded-full uppercase tracking-wider">
                   Clean
                 </span>
@@ -724,34 +757,45 @@ export default function ResumeWorkspace() {
               )}
             </div>
 
-            {(!atsReport.ats_checks?.spelling_grammar ||
-              atsReport.ats_checks.spelling_grammar.passed ||
-              !atsReport.ats_checks.spelling_grammar.errors ||
-              atsReport.ats_checks.spelling_grammar.errors.length === 0) ? (
+            {!atsReport.ats_checks?.spelling_grammar ||
+            atsReport.ats_checks.spelling_grammar.passed ||
+            !atsReport.ats_checks.spelling_grammar.errors ||
+            atsReport.ats_checks.spelling_grammar.errors.length === 0 ? (
               <div className="flex items-center justify-center gap-2 py-3 bg-emerald-50/50 dark:bg-emerald-500/5 border border-emerald-200 dark:border-emerald-500/10 rounded-xl text-emerald-500 text-[9px] font-bold">
-                <CheckCircle2 className="h-3.5 w-3.5" /> No spelling or grammar errors detected!
+                <CheckCircle2 className="h-3.5 w-3.5" /> No spelling or grammar
+                errors detected!
               </div>
             ) : (
               <div className="space-y-2">
                 <p className="text-[9px] text-zinc-400 font-medium">
-                  Flagged by the recruiter engine (Score Impact: {atsReport.ats_checks.spelling_grammar.score_impact} pts):
+                  Flagged by the recruiter engine (Score Impact:{" "}
+                  {atsReport.ats_checks.spelling_grammar.score_impact} pts):
                 </p>
                 <div className="space-y-1.5">
-                  {atsReport.ats_checks.spelling_grammar.errors.map((err: string, i: number) => (
-                    <div key={i} className="flex items-center gap-2 p-2 bg-rose-50/30 dark:bg-rose-500/[0.02] border border-rose-100 dark:border-rose-500/10 rounded-lg text-[10px] text-rose-600 dark:text-rose-400 font-medium">
-                      <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
-                      {err}
-                    </div>
-                  ))}
+                  {atsReport.ats_checks.spelling_grammar.errors.map(
+                    (err: string, i: number) => (
+                      <div
+                        key={i}
+                        className="flex items-center gap-2 p-2 bg-rose-50/30 dark:bg-rose-500/[0.02] border border-rose-100 dark:border-rose-500/10 rounded-lg text-[10px] text-rose-600 dark:text-rose-400 font-medium"
+                      >
+                        <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
+                        {err}
+                      </div>
+                    ),
+                  )}
                 </div>
               </div>
             )}
           </div>
 
           {/* Metric Density Compliance Card */}
-          <div className={`p-4 rounded-2xl border border-zinc-200 dark:border-white/[0.05] space-y-3 ${
-            isDrawer ? "bg-white dark:bg-white/[0.01]" : "bg-white dark:bg-white/[0.01]"
-          }`}>
+          <div
+            className={`p-4 rounded-2xl border border-zinc-200 dark:border-white/[0.05] space-y-3 ${
+              isDrawer
+                ? "bg-white dark:bg-white/[0.01]"
+                : "bg-white dark:bg-white/[0.01]"
+            }`}
+          >
             <div className="flex items-center gap-2 justify-between">
               <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 font-bold">
                 📊 Quantifiable Metrics Check
@@ -767,19 +811,25 @@ export default function ResumeWorkspace() {
               )}
             </div>
             <p className="text-[10px] text-zinc-500 leading-relaxed font-semibold">
-              {atsReport.ats_checks?.quantifiable_metrics?.details || "Checks for percentage improvements, scaling numbers, or budgets in experience bullets."}
+              {atsReport.ats_checks?.quantifiable_metrics?.details ||
+                "Checks for percentage improvements, scaling numbers, or budgets in experience bullets."}
             </p>
             {atsReport.ats_checks?.quantifiable_metrics?.score_impact !== 0 && (
               <span className="inline-block text-[8px] font-black text-amber-500 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 px-2 py-0.5 rounded-lg">
-                Impact: {atsReport.ats_checks?.quantifiable_metrics?.score_impact} pts
+                Impact:{" "}
+                {atsReport.ats_checks?.quantifiable_metrics?.score_impact} pts
               </span>
             )}
           </div>
 
           {/* Action Verbs Check */}
-          <div className={`p-4 rounded-2xl border border-zinc-200 dark:border-white/[0.05] space-y-3 ${
-            isDrawer ? "bg-white dark:bg-white/[0.01]" : "bg-white dark:bg-white/[0.01]"
-          }`}>
+          <div
+            className={`p-4 rounded-2xl border border-zinc-200 dark:border-white/[0.05] space-y-3 ${
+              isDrawer
+                ? "bg-white dark:bg-white/[0.01]"
+                : "bg-white dark:bg-white/[0.01]"
+            }`}
+          >
             <div className="flex items-center gap-2 justify-between">
               <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 font-bold">
                 🚀 Strong Action Verbs Check
@@ -795,7 +845,8 @@ export default function ResumeWorkspace() {
               )}
             </div>
             <p className="text-[10px] text-zinc-500 leading-relaxed font-semibold">
-              {atsReport.ats_checks?.action_verbs?.details || "Verifies if work bullets start with impactful actions rather than passive summaries."}
+              {atsReport.ats_checks?.action_verbs?.details ||
+                "Verifies if work bullets start with impactful actions rather than passive summaries."}
             </p>
             {atsReport.ats_checks?.action_verbs?.score_impact !== 0 && (
               <span className="inline-block text-[8px] font-black text-rose-500 bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 px-2 py-0.5 rounded-lg">
@@ -805,9 +856,13 @@ export default function ResumeWorkspace() {
           </div>
 
           {/* Section Completeness Check */}
-          <div className={`p-4 rounded-2xl border border-zinc-200 dark:border-white/[0.05] space-y-3 ${
-            isDrawer ? "bg-white dark:bg-white/[0.01]" : "bg-white dark:bg-white/[0.01]"
-          }`}>
+          <div
+            className={`p-4 rounded-2xl border border-zinc-200 dark:border-white/[0.05] space-y-3 ${
+              isDrawer
+                ? "bg-white dark:bg-white/[0.01]"
+                : "bg-white dark:bg-white/[0.01]"
+            }`}
+          >
             <div className="flex items-center gap-2 justify-between">
               <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 font-bold">
                 🏢 Section Completeness Check
@@ -823,7 +878,8 @@ export default function ResumeWorkspace() {
               )}
             </div>
             <p className="text-[10px] text-zinc-500 leading-relaxed font-semibold">
-              {atsReport.ats_checks?.completeness?.details || "Validates presence of work experience, technical skills, and academic sections."}
+              {atsReport.ats_checks?.completeness?.details ||
+                "Validates presence of work experience, technical skills, and academic sections."}
             </p>
             {atsReport.ats_checks?.completeness?.score_impact !== 0 && (
               <span className="inline-block text-[8px] font-black text-rose-500 bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 px-2 py-0.5 rounded-lg">
@@ -835,7 +891,9 @@ export default function ResumeWorkspace() {
 
         <TabsContent value="upgrades" className="space-y-4 mt-0 text-left">
           {/* Missing Keywords */}
-          <div className={`p-3.5 rounded-2xl border border-zinc-200 dark:border-white/[0.05] space-y-2.5 ${cardBg}`}>
+          <div
+            className={`p-3.5 rounded-2xl border border-zinc-200 dark:border-white/[0.05] space-y-2.5 ${cardBg}`}
+          >
             <p className="text-[9px] font-black uppercase tracking-widest text-zinc-500">
               🔍 Missing Keywords
             </p>
@@ -848,35 +906,37 @@ export default function ResumeWorkspace() {
               </div>
             ) : (
               <div className="flex flex-wrap gap-1">
-                {atsReport.missing_keywords.map((keyword: string, i: number) => {
-                  const added = injectedKeywords.includes(keyword);
-                  return (
-                    <button
-                      key={i}
-                      onClick={() => {
-                        if (added) return;
-                        setResumeData((p) => {
-                          const s = [...p.skills];
-                          if (s[0])
-                            s[0] = {
-                              ...s[0],
-                              items: [...new Set([...s[0].items, keyword])],
-                            };
-                          return { ...p, skills: s };
-                        });
-                        setInjectedKeywords((p) => [...p, keyword]);
-                        toast({ title: `Added: ${keyword}` });
-                      }}
-                      className={`text-[8px] font-bold px-2 py-0.5 rounded-lg border transition-all ${
-                        added
-                          ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-500 border-emerald-200 dark:border-emerald-500/20 line-through opacity-50 cursor-not-allowed"
-                          : "bg-zinc-50 dark:bg-white/[0.03] text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-white/[0.08] hover:bg-zinc-100 dark:hover:bg-white/[0.08] hover:text-zinc-800 dark:hover:text-white"
-                      }`}
-                    >
-                      + {keyword}
-                    </button>
-                  );
-                })}
+                {atsReport.missing_keywords.map(
+                  (keyword: string, i: number) => {
+                    const added = injectedKeywords.includes(keyword);
+                    return (
+                      <button
+                        key={i}
+                        onClick={() => {
+                          if (added) return;
+                          setResumeData((p) => {
+                            const s = [...p.skills];
+                            if (s[0])
+                              s[0] = {
+                                ...s[0],
+                                items: [...new Set([...s[0].items, keyword])],
+                              };
+                            return { ...p, skills: s };
+                          });
+                          setInjectedKeywords((p) => [...p, keyword]);
+                          toast({ title: `Added: ${keyword}` });
+                        }}
+                        className={`text-[8px] font-bold px-2 py-0.5 rounded-lg border transition-all ${
+                          added
+                            ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-500 border-emerald-200 dark:border-emerald-500/20 line-through opacity-50 cursor-not-allowed"
+                            : "bg-zinc-50 dark:bg-white/[0.03] text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-white/[0.08] hover:bg-zinc-100 dark:hover:bg-white/[0.08] hover:text-zinc-800 dark:hover:text-white"
+                        }`}
+                      >
+                        + {keyword}
+                      </button>
+                    );
+                  },
+                )}
               </div>
             )}
           </div>
@@ -891,50 +951,58 @@ export default function ResumeWorkspace() {
                 No suggestions. Try the AI Optimizer.
               </div>
             ) : (
-              atsReport.bullet_point_suggestions.map((sug: any, sIdx: number) => {
-                const nImp = sug.improved.trim().toLowerCase();
-                const isApplied =
-                  appliedSuggestions.includes(nImp) ||
-                  resumeData.experience.some((e) => e.highlights.some((h) => h.trim().toLowerCase() === nImp)) ||
-                  resumeData.projects.some((p) => p.highlights.some((h) => h.trim().toLowerCase() === nImp));
-                return (
-                  <div
-                    key={sIdx}
-                    className={`rounded-xl border overflow-hidden transition-all ${
-                      isApplied
-                        ? "border-emerald-200 dark:border-emerald-500/20 bg-emerald-50/50 dark:bg-emerald-500/5"
-                        : "border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] hover:border-zinc-300"
-                    }`}
-                  >
-                    <div className="px-3 py-1.5 border-b border-zinc-100 dark:border-white/[0.04] text-[8px] text-zinc-400 italic">
-                      &ldquo;{sug.original}&rdquo;
-                    </div>
-                    <div className="p-3 space-y-2">
-                      <p className="text-[10px] font-semibold text-zinc-800 dark:text-zinc-200 leading-relaxed text-left">
-                        &ldquo;{sug.improved}&rdquo;
-                      </p>
-                      {sug.reason && (
-                        <p className="text-[8px] text-zinc-400 italic flex items-start gap-1">
-                          <Sparkles className="h-2.5 w-2.5 mt-0.5 text-indigo-400 shrink-0" />
-                          {sug.reason}
+              atsReport.bullet_point_suggestions.map(
+                (sug: any, sIdx: number) => {
+                  const nImp = sug.improved.trim().toLowerCase();
+                  const isApplied =
+                    appliedSuggestions.includes(nImp) ||
+                    resumeData.experience.some((e) =>
+                      e.highlights.some((h) => h.trim().toLowerCase() === nImp),
+                    ) ||
+                    resumeData.projects.some((p) =>
+                      p.highlights.some((h) => h.trim().toLowerCase() === nImp),
+                    );
+                  return (
+                    <div
+                      key={sIdx}
+                      className={`rounded-xl border overflow-hidden transition-all ${
+                        isApplied
+                          ? "border-emerald-200 dark:border-emerald-500/20 bg-emerald-50/50 dark:bg-emerald-500/5"
+                          : "border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] hover:border-zinc-300"
+                      }`}
+                    >
+                      <div className="px-3 py-1.5 border-b border-zinc-100 dark:border-white/[0.04] text-[8px] text-zinc-400 italic">
+                        &ldquo;{sug.original}&rdquo;
+                      </div>
+                      <div className="p-3 space-y-2">
+                        <p className="text-[10px] font-semibold text-zinc-800 dark:text-zinc-200 leading-relaxed text-left">
+                          &ldquo;{sug.improved}&rdquo;
                         </p>
-                      )}
-                      {isApplied ? (
-                        <span className="inline-flex items-center gap-1 text-[8px] font-bold text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 px-2 py-0.5 rounded-lg">
-                          <CheckCircle2 className="h-2.5 w-2.5" /> Applied
-                        </span>
-                      ) : (
-                        <button
-                          onClick={() => applyRefactor(sug.original, sug.improved)}
-                          className="h-6 px-3 rounded-lg text-[8px] font-black bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 transition-all shadow-sm border-none"
-                        >
-                          Apply Suggestion
-                        </button>
-                      )}
+                        {sug.reason && (
+                          <p className="text-[8px] text-zinc-400 italic flex items-start gap-1">
+                            <Sparkles className="h-2.5 w-2.5 mt-0.5 text-indigo-400 shrink-0" />
+                            {sug.reason}
+                          </p>
+                        )}
+                        {isApplied ? (
+                          <span className="inline-flex items-center gap-1 text-[8px] font-bold text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 px-2 py-0.5 rounded-lg">
+                            <CheckCircle2 className="h-2.5 w-2.5" /> Applied
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() =>
+                              applyRefactor(sug.original, sug.improved)
+                            }
+                            className="h-6 px-3 rounded-lg text-[8px] font-black bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 transition-all shadow-sm border-none"
+                          >
+                            Apply Suggestion
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                );
-              })
+                  );
+                },
+              )
             )}
           </div>
         </TabsContent>
@@ -956,7 +1024,11 @@ export default function ResumeWorkspace() {
     });
   };
 
-  const updateCustomField = (index: number, key: "label" | "value" | "type", val: string) => {
+  const updateCustomField = (
+    index: number,
+    key: "label" | "value" | "type",
+    val: string,
+  ) => {
     setResumeData((p) => {
       const custom_fields = [...((p.personal_info as any).custom_fields || [])];
       if (custom_fields[index]) {
@@ -977,7 +1049,9 @@ export default function ResumeWorkspace() {
 
   const removeCustomField = (index: number) => {
     setResumeData((p) => {
-      const custom_fields = [...((p.personal_info as any).custom_fields || [])].filter((_, i) => i !== index);
+      const custom_fields = [
+        ...((p.personal_info as any).custom_fields || []),
+      ].filter((_, i) => i !== index);
       return {
         ...p,
         personal_info: {
@@ -1187,8 +1261,6 @@ export default function ResumeWorkspace() {
     "bg-zinc-50 dark:bg-white/[0.02] focus:bg-white dark:focus:bg-white/[0.04] border-zinc-200 dark:border-white/[0.06] focus:border-indigo-400/50 dark:focus:border-indigo-400/40 focus:ring-0 text-zinc-800 dark:text-zinc-200 rounded-xl px-4 py-3 leading-relaxed transition-all text-sm resize-none";
   const labelCls =
     "text-[9px] font-black uppercase tracking-[0.18em] text-zinc-400 ml-0.5";
-
-
 
   return (
     <div className="h-screen flex flex-col bg-zinc-50 dark:bg-[#08080c] text-foreground overflow-hidden">
@@ -1597,7 +1669,8 @@ export default function ResumeWorkspace() {
                               Custom Fields
                             </h4>
                             <p className="text-[9px] text-zinc-400 mt-0.5 font-semibold">
-                              Add items like LinkedIn, GitHub, Clearance, Nationality, etc.
+                              Add items like LinkedIn, GitHub, Clearance,
+                              Nationality, etc.
                             </p>
                           </div>
                           <button
@@ -1609,60 +1682,81 @@ export default function ResumeWorkspace() {
                           </button>
                         </div>
 
-                        {(!resumeData.personal_info.custom_fields ||
-                          resumeData.personal_info.custom_fields.length === 0) ? (
+                        {!resumeData.personal_info.custom_fields ||
+                        resumeData.personal_info.custom_fields.length === 0 ? (
                           <div className="text-center py-6 text-zinc-400 text-[10px] border border-dashed border-zinc-200 dark:border-white/[0.06] rounded-xl font-medium">
                             No custom contact fields added.
                           </div>
                         ) : (
                           <div className="space-y-3.5">
-                            {resumeData.personal_info.custom_fields.map((field, idx) => (
-                              <div key={idx} className="flex items-end gap-2 animate-fade-in">
-                                <div className="flex-1 space-y-1.5 text-left">
-                                  <Label className={labelCls}>Field Label</Label>
-                                  <Input
-                                    value={field.label}
-                                    onChange={(e) =>
-                                      updateCustomField(idx, "label", e.target.value)
-                                    }
-                                    placeholder="e.g. GitHub, Clearance"
-                                    className={inputCls}
-                                  />
-                                </div>
-                                <div className="w-24 space-y-1.5 text-left">
-                                  <Label className={labelCls}>Type</Label>
-                                  <select
-                                    value={field.type || "text"}
-                                    onChange={(e) =>
-                                      updateCustomField(idx, "type", e.target.value as any)
-                                    }
-                                    className="w-full h-9 rounded-xl bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.06] text-zinc-800 dark:text-zinc-200 px-2 py-1 text-xs focus:ring-0 focus:border-indigo-400 focus:outline-none"
-                                  >
-                                    <option value="text">Text</option>
-                                    <option value="link">Link</option>
-                                    <option value="email">Email</option>
-                                  </select>
-                                </div>
-                                <div className="flex-[2] space-y-1.5 text-left">
-                                  <Label className={labelCls}>Field Value</Label>
-                                  <Input
-                                    value={field.value}
-                                    onChange={(e) =>
-                                      updateCustomField(idx, "value", e.target.value)
-                                    }
-                                    placeholder="e.g. github.com/alias, Secret"
-                                    className={inputCls}
-                                  />
-                                </div>
-                                <button
-                                  type="button"
-                                  onClick={() => removeCustomField(idx)}
-                                  className="h-9 w-9 rounded-xl flex items-center justify-center text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 border border-zinc-200 dark:border-white/[0.08] transition-all mb-[1px]"
+                            {resumeData.personal_info.custom_fields.map(
+                              (field, idx) => (
+                                <div
+                                  key={idx}
+                                  className="flex items-end gap-2 animate-fade-in"
                                 >
-                                  <Trash2 className="h-4 w-4" />
-                                </button>
-                              </div>
-                            ))}
+                                  <div className="flex-1 space-y-1.5 text-left">
+                                    <Label className={labelCls}>
+                                      Field Label
+                                    </Label>
+                                    <Input
+                                      value={field.label}
+                                      onChange={(e) =>
+                                        updateCustomField(
+                                          idx,
+                                          "label",
+                                          e.target.value,
+                                        )
+                                      }
+                                      placeholder="e.g. GitHub, Clearance"
+                                      className={inputCls}
+                                    />
+                                  </div>
+                                  <div className="w-24 space-y-1.5 text-left">
+                                    <Label className={labelCls}>Type</Label>
+                                    <select
+                                      value={field.type || "text"}
+                                      onChange={(e) =>
+                                        updateCustomField(
+                                          idx,
+                                          "type",
+                                          e.target.value as any,
+                                        )
+                                      }
+                                      className="w-full h-9 rounded-xl bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.06] text-zinc-800 dark:text-zinc-200 px-2 py-1 text-xs focus:ring-0 focus:border-indigo-400 focus:outline-none"
+                                    >
+                                      <option value="text">Text</option>
+                                      <option value="link">Link</option>
+                                      <option value="email">Email</option>
+                                    </select>
+                                  </div>
+                                  <div className="flex-[2] space-y-1.5 text-left">
+                                    <Label className={labelCls}>
+                                      Field Value
+                                    </Label>
+                                    <Input
+                                      value={field.value}
+                                      onChange={(e) =>
+                                        updateCustomField(
+                                          idx,
+                                          "value",
+                                          e.target.value,
+                                        )
+                                      }
+                                      placeholder="e.g. github.com/alias, Secret"
+                                      className={inputCls}
+                                    />
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => removeCustomField(idx)}
+                                    className="h-9 w-9 rounded-xl flex items-center justify-center text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 border border-zinc-200 dark:border-white/[0.08] transition-all mb-[1px]"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </button>
+                                </div>
+                              ),
+                            )}
                           </div>
                         )}
                       </SectionCard>
@@ -2285,7 +2379,9 @@ export default function ResumeWorkspace() {
                             </span>
                           </div>
                           <p className="text-xs text-zinc-500">
-                            Upload your existing resume in PDF or DOCX format. We will extract and parse its contents using our secure, sandbox-native parsing engine.
+                            Upload your existing resume in PDF or DOCX format.
+                            We will extract and parse its contents using our
+                            secure, sandbox-native parsing engine.
                           </p>
                           <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-zinc-200 dark:border-white/[0.08] hover:border-indigo-400/50 rounded-2xl bg-zinc-50/50 dark:bg-white/[0.01] transition-all relative">
                             {tailorFile ? (
@@ -2295,7 +2391,7 @@ export default function ResumeWorkspace() {
                                   {tailorFile.name}
                                 </p>
                                 <p className="text-[10px] text-zinc-400">
-                                  {(tailorFile.size / 1024 / 1024).toFixed(2)} MB · Ready
+                                  {formatFileSize(tailorFile.size)} · Ready
                                 </p>
                                 <button
                                   onClick={() => setTailorFile(null)}
@@ -2337,7 +2433,9 @@ export default function ResumeWorkspace() {
                             </span>
                           </div>
                           <p className="text-xs text-zinc-500">
-                            Paste the full target job posting or description. Our resilient AI models will identify core keywords, required skills, and key qualifications.
+                            Paste the full target job posting or description.
+                            Our resilient AI models will identify core keywords,
+                            required skills, and key qualifications.
                           </p>
                           <Textarea
                             value={tailorJd}
@@ -2359,7 +2457,9 @@ export default function ResumeWorkspace() {
                           ) : (
                             <Sparkles className="h-4 w-4" />
                           )}
-                          {isTailoring ? "Tailoring & Compiling..." : "Run ATS Match & Tailor"}
+                          {isTailoring
+                            ? "Tailoring & Compiling..."
+                            : "Run ATS Match & Tailor"}
                         </button>
                       </div>
 
@@ -2383,7 +2483,8 @@ export default function ResumeWorkspace() {
                                     ATS Match Rating
                                   </p>
                                   <p className="text-sm font-bold leading-tight">
-                                    Your tailored resume has been aligned successfully!
+                                    Your tailored resume has been aligned
+                                    successfully!
                                   </p>
                                 </div>
                               </div>
@@ -2414,57 +2515,67 @@ export default function ResumeWorkspace() {
                           </div>
 
                           {/* Keywords Aligned */}
-                          {tailorResult.missing_keywords && tailorResult.missing_keywords.length > 0 && (
-                            <SectionCard>
-                              <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
-                                Keywords Integrated
-                              </p>
-                              <div className="flex flex-wrap gap-1.5 pt-2">
-                                {tailorResult.missing_keywords.map((kw: string) => (
-                                  <span
-                                    key={kw}
-                                    className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-500/20"
-                                  >
-                                    + {kw}
-                                  </span>
-                                ))}
-                              </div>
-                            </SectionCard>
-                          )}
+                          {tailorResult.missing_keywords &&
+                            tailorResult.missing_keywords.length > 0 && (
+                              <SectionCard>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
+                                  Keywords Integrated
+                                </p>
+                                <div className="flex flex-wrap gap-1.5 pt-2">
+                                  {tailorResult.missing_keywords.map(
+                                    (kw: string) => (
+                                      <span
+                                        key={kw}
+                                        className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-500/20"
+                                      >
+                                        + {kw}
+                                      </span>
+                                    ),
+                                  )}
+                                </div>
+                              </SectionCard>
+                            )}
 
                           {/* Bullet Point Suggestions */}
-                          {tailorResult.bullet_point_suggestions && tailorResult.bullet_point_suggestions.length > 0 && (
-                            <SectionCard>
-                              <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
-                                Highlight Enhancements (Google XYZ Formula)
-                              </p>
-                              <div className="space-y-4 pt-3 divide-y divide-zinc-100 dark:divide-white/[0.04]">
-                                {tailorResult.bullet_point_suggestions.map((sug: any, idx: number) => (
-                                  <div key={idx} className={`space-y-2 ${idx > 0 ? "pt-4" : ""}`}>
-                                    <div className="flex items-start gap-2">
-                                      <span className="text-[9px] font-black uppercase tracking-wider text-red-500 bg-red-50 dark:bg-red-500/10 px-1.5 py-0.5 rounded shrink-0">
-                                        Original
-                                      </span>
-                                      <p className="text-[11px] text-zinc-500 italic">
-                                        "{sug.original}"
-                                      </p>
-                                    </div>
-                                    <div className="flex items-start gap-2">
-                                      <span className="text-[9px] font-black uppercase tracking-wider text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 px-1.5 py-0.5 rounded shrink-0">
-                                        Tailored
-                                      </span>
-                                      <p className="text-[11px] font-bold text-zinc-800 dark:text-zinc-200 leading-relaxed">
-                                        "{sug.improved}"
-                                      </p>
-                                    </div>
-                                    <p className="text-[10px] text-zinc-400 font-medium pl-14">
-                                      {sug.reason}
-                                    </p>
-                                  </div>
-                                ))}
-                              </div>
-                            </SectionCard>
-                          )}
+                          {tailorResult.bullet_point_suggestions &&
+                            tailorResult.bullet_point_suggestions.length >
+                              0 && (
+                              <SectionCard>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
+                                  Highlight Enhancements (Google XYZ Formula)
+                                </p>
+                                <div className="space-y-4 pt-3 divide-y divide-zinc-100 dark:divide-white/[0.04]">
+                                  {tailorResult.bullet_point_suggestions.map(
+                                    (sug: any, idx: number) => (
+                                      <div
+                                        key={idx}
+                                        className={`space-y-2 ${idx > 0 ? "pt-4" : ""}`}
+                                      >
+                                        <div className="flex items-start gap-2">
+                                          <span className="text-[9px] font-black uppercase tracking-wider text-red-500 bg-red-50 dark:bg-red-500/10 px-1.5 py-0.5 rounded shrink-0">
+                                            Original
+                                          </span>
+                                          <p className="text-[11px] text-zinc-500 italic">
+                                            "{sug.original}"
+                                          </p>
+                                        </div>
+                                        <div className="flex items-start gap-2">
+                                          <span className="text-[9px] font-black uppercase tracking-wider text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 px-1.5 py-0.5 rounded shrink-0">
+                                            Tailored
+                                          </span>
+                                          <p className="text-[11px] font-bold text-zinc-800 dark:text-zinc-200 leading-relaxed">
+                                            "{sug.improved}"
+                                          </p>
+                                        </div>
+                                        <p className="text-[10px] text-zinc-400 font-medium pl-14">
+                                          {sug.reason}
+                                        </p>
+                                      </div>
+                                    ),
+                                  )}
+                                </div>
+                              </SectionCard>
+                            )}
                         </motion.div>
                       )}
                     </>
@@ -3078,8 +3189,11 @@ export default function ResumeWorkspace() {
                       </p>
                       <p className="text-[10px] text-zinc-500 leading-relaxed">
                         Click{" "}
-                        <strong className="text-indigo-500">Download PDF</strong>{" "}
-                        above — we compile your LaTeX to PDF instantly in the cloud.
+                        <strong className="text-indigo-500">
+                          Download PDF
+                        </strong>{" "}
+                        above — we compile your LaTeX to PDF instantly in the
+                        cloud.
                       </p>
                     </div>
                     <div className="p-3 bg-zinc-50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.06] rounded-xl">

@@ -137,7 +137,10 @@ export default function Profile() {
   const updateStatusMutation = useUpdateConversationStatus();
   const deleteConversationMutation = useDeleteConversation();
 
-  const archivedConversations = archivedResponse?.data || [];
+  const archivedData = archivedResponse?.data as any;
+  const archivedConversations = Array.isArray(archivedData)
+    ? archivedData
+    : archivedData?.conversations || [];
 
   const { data: notificationPrefsData, isLoading: loadingNotifications } =
     useNotificationPreferences();

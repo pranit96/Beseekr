@@ -204,7 +204,8 @@ export default function GetHiredPortal() {
                   ATS Match & Tailor
                 </h3>
                 <p className="text-xs text-zinc-500 leading-relaxed font-medium">
-                  Align your resume with a specific job description. Rewrite, score, and compile a tailored LaTeX PDF.
+                  Align your resume with a specific job description. Rewrite,
+                  score, and compile a tailored LaTeX PDF.
                 </p>
               </div>
               <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">

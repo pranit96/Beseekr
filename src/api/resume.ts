@@ -273,10 +273,10 @@ export async function downloadResumeWord(
   return window.URL.createObjectURL(blob);
 }
 
-export async function downloadLatexPdf(
-  resume: ResumeSchema,
-): Promise<string> {
-  const res = await apiClient.post("/api/resume/download/latex-pdf", { resume });
+export async function downloadLatexPdf(resume: ResumeSchema): Promise<string> {
+  const res = await apiClient.post("/api/resume/download/latex-pdf", {
+    resume,
+  });
 
   const rawBase64 = (res.data as any)?.pdf_base64;
   if (!rawBase64) {
@@ -518,13 +518,17 @@ export interface TailorAlignResult {
   score_breakdown: any;
   missing_keywords: string[];
   ats_checks: any;
-  bullet_point_suggestions: Array<{ original: string; improved: string; reason: string }>;
+  bullet_point_suggestions: Array<{
+    original: string;
+    improved: string;
+    reason: string;
+  }>;
   general_feedback: string;
 }
 
 export async function tailorAlignResume(
   file: File,
-  jd: string
+  jd: string,
 ): Promise<TailorAlignResult> {
   const formData = new FormData();
   formData.append("file", file);
@@ -532,7 +536,7 @@ export async function tailorAlignResume(
 
   const res = await apiClient.post("/api/resume/tailor-align", formData);
 
-  return (res.data as any)?.data;
+  return res.data;
 }
 
 export interface TailorRunRecord extends TailorAlignResult {
@@ -584,4 +588,3 @@ export const resumeApi = {
 };
 
 export default resumeApi;
-

@@ -1323,7 +1323,12 @@ class ApiClient {
     return this.request<T>(endpoint, {
       method: "POST",
       headers: options?.headers,
-      body: body ? JSON.stringify(body) : undefined,
+      body:
+        body instanceof FormData
+          ? body
+          : body
+            ? JSON.stringify(body)
+            : undefined,
     });
   }
 
@@ -1335,7 +1340,12 @@ class ApiClient {
     return this.request<T>(endpoint, {
       method: "PUT",
       headers: options?.headers,
-      body: body ? JSON.stringify(body) : undefined,
+      body:
+        body instanceof FormData
+          ? body
+          : body
+            ? JSON.stringify(body)
+            : undefined,
     });
   }
 
@@ -1371,7 +1381,12 @@ class ApiClient {
     return this.request<T>(endpoint, {
       method: "PATCH",
       headers: options?.headers,
-      body: body ? JSON.stringify(body) : undefined,
+      body:
+        body instanceof FormData
+          ? body
+          : body
+            ? JSON.stringify(body)
+            : undefined,
     });
   }
 }

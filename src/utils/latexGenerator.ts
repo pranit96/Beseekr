@@ -161,7 +161,7 @@ export function generateLatexResume(data: ResumeData): string {
   customFields.forEach((cf: any) => {
     if (cf && cf.value) {
       const valStr = String(cf.value);
-      
+
       if (cf.type === "text") {
         const labelPrefix = cf.label ? `${cf.label}: ` : "";
         contactParts.push(`${escapeLatex(labelPrefix)}${escapeLatex(valStr)}`);
@@ -174,7 +174,9 @@ export function generateLatexResume(data: ResumeData): string {
         if (!/^https?:\/\//i.test(url)) {
           url = `https://${url}`;
         }
-        const text = cf.label ? String(cf.label) : valStr.replace(/^https?:\/\//i, "");
+        const text = cf.label
+          ? String(cf.label)
+          : valStr.replace(/^https?:\/\//i, "");
         contactParts.push(
           `\\href{${url}}{\\color{cvblue}${escapeLatex(text)}}`,
         );
@@ -182,8 +184,12 @@ export function generateLatexResume(data: ResumeData): string {
         // Fallback auto-detection if type not specified
         const labelPrefix = cf.label ? `${cf.label}: ` : "";
         const isEmail = valStr.includes("@");
-        const isLink = /^https?:\/\//i.test(valStr) || /^[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,5}(:[0-9]{1,5})?(\/.*)?$/i.test(valStr);
-        
+        const isLink =
+          /^https?:\/\//i.test(valStr) ||
+          /^[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,5}(:[0-9]{1,5})?(\/.*)?$/i.test(
+            valStr,
+          );
+
         if (isEmail) {
           contactParts.push(
             `\\href{mailto:${valStr}}{\\color{cvblue}${escapeLatex(valStr)}}`,
@@ -193,12 +199,16 @@ export function generateLatexResume(data: ResumeData): string {
           if (!/^https?:\/\//i.test(url)) {
             url = `https://${url}`;
           }
-          const text = cf.label ? String(cf.label) : valStr.replace(/^https?:\/\//i, "");
+          const text = cf.label
+            ? String(cf.label)
+            : valStr.replace(/^https?:\/\//i, "");
           contactParts.push(
             `\\href{${url}}{\\color{cvblue}${escapeLatex(text)}}`,
           );
         } else {
-          contactParts.push(`${escapeLatex(labelPrefix)}${escapeLatex(valStr)}`);
+          contactParts.push(
+            `${escapeLatex(labelPrefix)}${escapeLatex(valStr)}`,
+          );
         }
       }
     }
@@ -272,7 +282,9 @@ export function generateLatexResume(data: ResumeData): string {
       const name = escapeLatex(proj.name || "Project");
       let linkParam = "";
       if (proj.link) {
-        const linkText = proj.link.includes("github.com") ? "[GitHub]" : "[Link]";
+        const linkText = proj.link.includes("github.com")
+          ? "[GitHub]"
+          : "[Link]";
         linkParam = `\\href{${proj.link}}{\\color{cvblue}${linkText}}`;
       }
       const techStack = escapeLatex(proj.description || "");
