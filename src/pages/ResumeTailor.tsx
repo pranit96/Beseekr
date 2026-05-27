@@ -2,7 +2,9 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useResume } from "@/contexts/ResumeContext";
 import { resumeApi, type TailorRunRecord } from "@/api/resume";
+import ResumeTailorMobile from "./ResumeTailorMobile";
 import { useToast } from "@/hooks/use-toast";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Upload, FileText, Sparkles, Trophy, Trash2, Download,
@@ -48,6 +50,8 @@ export default function ResumeTailor() {
   const { toast } = useToast();
   const { resumeData, setResumeData, setWorkspaceMode, setShowOnboarding, uploadedResumes } = useResume();
   const isResumeBlank = !resumeData?.personal_info?.name && !resumeData?.experience?.length;
+
+  const isMobile = useIsMobile();
 
   // data
   const [runs, setRuns]               = useState<TailorRunRecord[]>([]);
@@ -199,7 +203,7 @@ export default function ResumeTailor() {
     const byteStr = atob(activeRun.pdf_base64);
     const bytes = new Uint8Array(byteStr.length);
     for (let i = 0; i < byteStr.length; i++) bytes[i] = byteStr.charCodeAt(i);
-    const blob = new Blob([bytes], { type: "application/pdf" });
+    const blob = new Blob([bytes], { type: "application/octet-stream" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -217,6 +221,101 @@ export default function ResumeTailor() {
     navigate("/");
     toast({ title: "Draft applied to workspace ✓" });
   };
+
+  if (isMobile) {
+    return (
+      <div className="w-full min-h-[calc(100vh-100px)] flex flex-col font-sans relative bg-background text-foreground animate-fadeIn">
+        <AnimatePresence>
+          {processing && (
+            <motion.div
+              key="mobile-overlay"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[100] flex items-center justify-center bg-background/95 backdrop-blur-md"
+            >
+              <div className="w-full max-w-xs mx-auto px-6 text-center space-y-7">
+                {/* Spinner ring */}
+                <div className="relative mx-auto w-24 h-24">
+                  <svg width="96" height="96" viewBox="0 0 96 96" className="absolute inset-0 -rotate-90">
+                    <circle cx="48" cy="48" r="40" fill="none" className="stroke-muted/30" strokeWidth="5" />
+                    <circle cx="48" cy="48" r="40" fill="none" stroke="#818cf8" strokeWidth="5"
+                      strokeLinecap="round"
+                      strokeDasharray={String(2 * Math.PI * 40)}
+                      strokeDashoffset={String(2 * Math.PI * 40 * (1 - pct / 100))}
+                      style={{ transition: "stroke-dashoffset 0.4s ease", filter: "drop-shadow(0 0 8px rgba(129,140,248,0.4))" }}
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-2xl font-black text-foreground tabular-nums">{pct}%</span>
+                  </div>
+                </div>
+
+                {/* Step text */}
+                <div className="space-y-1.5">
+                  <h3 className="text-base font-black text-foreground tracking-tight">Tailoring your resume…</h3>
+                  <AnimatePresence mode="wait">
+                    <motion.p
+                      key={stepIdx}
+                      initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }}
+                      transition={{ duration: 0.25 }}
+                      className="text-sm font-medium text-muted-foreground"
+                    >
+                      {STEPS[stepIdx]}
+                    </motion.p>
+                  </AnimatePresence>
+                </div>
+
+                {/* Step dots */}
+                <div className="flex items-center justify-center gap-1.5">
+                  {STEPS.map((_, i) => (
+                    <div key={i} className={`rounded-full transition-all duration-300 ${i <= stepIdx ? "bg-primary" : "bg-muted"}`}
+                      style={{
+                        width: i === stepIdx ? 22 : 6,
+                        height: 6,
+                      }}
+                    />
+                  ))}
+                </div>
+
+                {/* Cloud note */}
+                <p className="text-xs font-semibold rounded-xl px-4 py-2.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                  ☁ Compiling in the cloud — safe to navigate away
+                </p>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <ResumeTailorMobile
+          runs={runs}
+          loadingRuns={loadingRuns}
+          activeRun={activeRun}
+          setActiveRun={setActiveRun}
+          file={file}
+          setFile={setFile}
+          jd={jd}
+          setJd={setJd}
+          url={url}
+          setUrl={setUrl}
+          mode={mode}
+          setMode={setMode}
+          selectedResumeId={selectedResumeId}
+          setSelectedResumeId={setSelectedResumeId}
+          processing={processing}
+          pct={pct}
+          stepIdx={stepIdx}
+          runTailoring={runTailoring}
+          deleteRun={deleteRun}
+          downloadPdf={downloadPdf}
+          applyWorkspace={applyWorkspace}
+          uploadedResumes={uploadedResumes}
+          isResumeBlank={isResumeBlank}
+          parseUrl={parseUrl}
+          parsingUrl={parsingUrl}
+          fmtSize={fmtSize}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="w-full min-h-[calc(100vh-100px)] flex flex-col font-sans relative bg-background text-foreground">
@@ -299,7 +398,7 @@ export default function ResumeTailor() {
             <Target className="h-4 w-4 text-indigo-500 dark:text-indigo-400" />
           </div>
           <div>
-            <h1 className="text-sm font-black text-foreground tracking-tight leading-tight">ATS Match & Tailor</h1>
+            <h1 className="text-sm font-black text-foreground tracking-tight leading-tight">Optimize Resume</h1>
             <p className="text-[10px] hidden sm:block text-muted-foreground">Optimize and rewrite your resume for any job</p>
           </div>
         </div>
@@ -555,7 +654,7 @@ export default function ResumeTailor() {
                     className="w-full h-12 rounded-2xl text-sm font-black text-white flex items-center justify-center gap-2.5 transition-all uppercase tracking-wider disabled:opacity-40 disabled:cursor-not-allowed border-none cursor-pointer bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 shadow-glow hover:shadow-strong"
                   >
                     <Zap className="h-4 w-4" />
-                    Run ATS Match & Tailor
+                    Optimize Resume
                   </button>
                 </div>
 

@@ -201,11 +201,11 @@ export default function GetHiredPortal() {
               </div>
               <div className="space-y-1.5">
                 <h3 className="text-base font-black tracking-tight">
-                  ATS Match & Tailor
+                  Optimize Resume
                 </h3>
                 <p className="text-xs text-zinc-500 leading-relaxed font-medium">
-                  Align your resume with a specific job description. Rewrite,
-                  score, and compile a tailored LaTeX PDF.
+                  Align and optimize your resume for any specific job description.
+                  Rewrite, score, and compile a tailored LaTeX PDF.
                 </p>
               </div>
               <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">

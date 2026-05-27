@@ -110,15 +110,7 @@ const NAV_TABS = [
     color: "text-rose-400",
     ring: "ring-rose-500/30",
     dot: "bg-rose-400",
-  },
-  {
-    id: "tailor",
-    label: "ATS Match & Tailor",
-    icon: Trophy,
-    color: "text-indigo-400",
-    ring: "ring-indigo-500/30",
-    dot: "bg-indigo-400",
-  },
+  }
 ];
 
 /* ─── SECTION CARD WRAPPER ──────────────────────────────────────── */
@@ -2538,7 +2530,7 @@ export default function ResumeWorkspace() {
                           )}
                           {isTailoring
                             ? "Tailoring & Compiling..."
-                            : "Run ATS Match & Tailor"}
+                            : "Optimize Resume"}
                         </button>
                       </div>
 
