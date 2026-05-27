@@ -124,7 +124,7 @@ export function generateLatexResume(data: ResumeData): string {
 }
 \\newcommand{\\resumeProjectHeading}[3]{
   \\vspace{3pt}
-  \\textbf{#1} \\; {\\small #2} \\\\[-3pt]
+  \\textbf{#1} \\; {\\small #2} \\\\[1.5pt]
   {\\footnotesize\\textbf{\\textcolor{cvblue!80!black}{Tech:}} \\; \\textcolor{black!65}{#3}}
   \\vspace{-2pt}
 }
