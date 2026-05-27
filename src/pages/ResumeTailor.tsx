@@ -10,7 +10,7 @@ import {
   Upload, FileText, Sparkles, Trophy, Trash2, Download,
   Check, Plus, Loader2, Briefcase, AlertTriangle, Link2,
   ExternalLink, ChevronRight, Target, Zap, Eye,
-  ArrowLeft, X, RefreshCw, Clock, ChevronDown,
+  ArrowLeft, X, RefreshCw, Clock, ChevronDown, PanelLeftClose,
 } from "lucide-react";
 
 // ─── constants ─────────────────────────────────────────────────────────────
@@ -74,20 +74,9 @@ export default function ResumeTailor() {
   const [stepIdx, setStepIdx]         = useState(0);
 
   // ui
-  const [online, setOnline]           = useState(navigator.onLine);
-  const [historyOpen, setHistoryOpen] = useState(false);
-  const historyRef = useRef<HTMLDivElement>(null);
-
-  // ── close history dropdown on outside click ─────────────────────────────
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (historyRef.current && !historyRef.current.contains(e.target as Node)) {
-        setHistoryOpen(false);
-      }
-    };
-    if (historyOpen) document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [historyOpen]);
+  const [online, setOnline] = useState(navigator.onLine);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const previewRef = useRef<HTMLDivElement>(null);
 
   // ── session restore ──────────────────────────────────────────────────────
   useEffect(() => {
@@ -218,7 +207,7 @@ export default function ResumeTailor() {
     setResumeData(activeRun.resume);
     setWorkspaceMode("upload", true);
     setShowOnboarding(false);
-    navigate("/");
+    navigate("/dashboard/hired/resume/workspace");
     toast({ title: "Draft applied to workspace ✓" });
   };
 
@@ -415,24 +404,148 @@ export default function ResumeTailor() {
         </div>
       </header>
 
-      {/* ── MAIN LAYOUT (Scrollable Split Container) ───────────────────── */}
-      <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-        <div className="max-w-7xl mx-auto">
-          <AnimatePresence mode="wait">
-            {!activeRun ? (
-              /* ═══════════════════════════════════════════════════════════
-                 1. EDITOR VIEW (Split layout: Left = Form, Right = History)
-                 ═══════════════════════════════════════════════════════════ */
-              <motion.div
-                key="editor"
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -12 }}
-                transition={{ duration: 0.2 }}
-                className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start"
+      {/* ── MAIN LAYOUT (Collapsible Split Container) ───────────────────── */}
+      <div className="flex-1 flex overflow-hidden relative">
+        {/* Mobile Sidebar Overlay */}
+        {sidebarOpen && (
+          <div
+            className="md:hidden fixed inset-0 bg-background/80 backdrop-blur-sm z-30"
+            onClick={() => setSidebarOpen(false)}
+            aria-hidden="true"
+          />
+        )}
+
+        {/* Sidebar */}
+        <aside
+          className={`transition-all duration-300 ease-in-out border-r border-border bg-muted/30 flex-shrink-0 absolute md:relative z-40 md:z-20 h-full ${
+            sidebarOpen
+              ? "w-[85vw] max-w-[320px] md:w-80 2xl:w-96 opacity-100 translate-x-0"
+              : "w-0 md:w-0 opacity-0 -translate-x-full md:translate-x-0"
+          } overflow-hidden`}
+        >
+          <div className="h-full flex flex-col overflow-hidden">
+            <div className="p-4 flex items-center justify-between border-b border-border/60 bg-muted/20 shrink-0">
+              <div className="flex items-center gap-2">
+                <Trophy className="h-4 w-4 text-indigo-400 animate-pulse" />
+                <span className="text-[11px] font-black uppercase tracking-widest text-foreground/80">
+                  Past Runs
+                </span>
+                <span className="text-[10px] font-black px-1.5 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/20">
+                  {runs.length}
+                </span>
+              </div>
+              <button
+                onClick={() => {
+                  setActiveRun(null);
+                  if (isMobile) setSidebarOpen(false);
+                }}
+                className="text-[10px] font-black flex items-center gap-1 cursor-pointer border-none bg-primary/10 text-primary hover:bg-primary/20 transition-colors px-2.5 py-1 rounded-lg"
               >
-                {/* Left Side: Form Inputs */}
-                <div className="lg:col-span-7 space-y-6">
+                <Plus className="h-3 w-3" /> New
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4 space-y-2">
+              {loadingRuns ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground/30" />
+                </div>
+              ) : runs.length === 0 ? (
+                <div className="py-12 text-center">
+                  <Trophy className="h-8 w-8 mx-auto mb-3 text-muted-foreground/30" />
+                  <p className="text-xs font-bold text-muted-foreground/60">No runs yet</p>
+                  <p className="text-[10px] text-muted-foreground/40 max-w-xs mx-auto mt-1 leading-relaxed">
+                    Optimized runs will appear here, letting you view or restore them anytime.
+                  </p>
+                </div>
+              ) : (
+                runs.map(run => {
+                  const isActive = activeRun?.id === run.id;
+                  return (
+                    <button key={run.id}
+                      onClick={() => {
+                        setActiveRun(run);
+                        if (isMobile) setSidebarOpen(false);
+                      }}
+                      className={`w-full text-left p-3.5 rounded-xl border transition-all cursor-pointer group relative ${
+                        isActive
+                          ? "bg-primary/10 border-primary/30 font-bold"
+                          : "bg-card/30 border-border hover:bg-muted/30"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <span className="text-xs font-bold text-foreground truncate">{run.company_name}</span>
+                        <span className={`text-[9px] font-black px-1.5 py-0.5 rounded border shrink-0 ${scoreClass(run.ats_score)}`}>
+                          {run.ats_score}%
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between gap-1">
+                        <span className="text-[10px] truncate text-muted-foreground">{run.job_title}</span>
+                        <span className="text-[9px] shrink-0 text-muted-foreground/60">
+                          {new Date(run.saved_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                        </span>
+                      </div>
+                      <button
+                        onClick={e => deleteRun(e, run.id)}
+                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 h-5 w-5 rounded flex items-center justify-center border-none cursor-pointer transition-opacity bg-destructive/15 text-destructive hover:bg-destructive/25"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </button>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        </aside>
+
+        {/* Sidebar Toggle Handle */}
+        <div
+          className={`absolute top-1/2 -translate-y-1/2 z-50 pointer-events-none transition-all duration-300 ${
+            sidebarOpen
+              ? "left-[calc(min(85vw,320px))] md:left-80 2xl:left-96 ml-0 -translate-x-1/2"
+              : "left-0"
+          }`}
+        >
+          <button
+            onClick={() => setSidebarOpen((prev) => !prev)}
+            className={`pointer-events-auto flex items-center justify-center transition-all duration-300 shadow-xl border bg-background/80 backdrop-blur-md cursor-pointer group
+              ${
+                sidebarOpen
+                  ? "h-10 w-10 rounded-full border-border hover:bg-muted"
+                  : "h-24 w-6 rounded-r-xl rounded-l-none border-border border-l-0 hover:w-8 hover:bg-muted/50 bg-gradient-to-b from-background via-muted/30 to-background hover:from-primary/10 hover:to-primary/5 hover:border-primary/30"
+              }`}
+            aria-label={sidebarOpen ? "Hide runs directory" : "Show runs directory"}
+            title={sidebarOpen ? "Hide runs directory" : "Show runs directory"}
+          >
+            {sidebarOpen ? (
+              <PanelLeftClose className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+            ) : (
+              <div className="flex flex-col items-center justify-center gap-1.5 opacity-60 group-hover:opacity-100 transition-opacity">
+                <div className="w-1 h-1 rounded-full bg-foreground/60 group-hover:bg-primary transition-colors" />
+                <div className="w-1 h-1 rounded-full bg-foreground/60 group-hover:bg-primary transition-colors" />
+                <div className="w-1 h-1 rounded-full bg-foreground/60 group-hover:bg-primary transition-colors" />
+              </div>
+            )}
+          </button>
+        </div>
+
+        {/* Main scrollable body */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+          <div className="max-w-7xl mx-auto">
+            <AnimatePresence mode="wait">
+              {!activeRun ? (
+                /* ═══════════════════════════════════════════════════════════
+                   1. EDITOR VIEW (Centered layout)
+                   ═══════════════════════════════════════════════════════════ */
+                <motion.div
+                  key="editor"
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -12 }}
+                  transition={{ duration: 0.2 }}
+                  className="max-w-3xl mx-auto space-y-6"
+                >
                   {/* Active resume badge */}
                   {!isResumeBlank && (
                     <div className="flex items-center gap-2 text-xs font-bold w-fit px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
@@ -594,56 +707,56 @@ export default function ResumeTailor() {
                       </div>
                     </div>
 
-                    <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="p-3.5 space-y-2 bg-card/10">
                       {/* Option 1: Enhance */}
-                      <div
+                      <button
                         onClick={() => setMode("enhance")}
-                        className={`p-4 rounded-xl cursor-pointer border-2 transition-all flex flex-col gap-2 relative overflow-hidden ${
+                        className={`w-full text-left p-3 rounded-xl border transition-all flex items-center justify-between gap-3 ${
                           mode === "enhance"
-                            ? "border-primary bg-primary/5 dark:bg-primary/10"
-                            : "border-border hover:border-muted-foreground/35 bg-muted/10 hover:bg-muted/20"
+                            ? "border-indigo-500/30 bg-indigo-500/10 text-foreground"
+                            : "border-border bg-muted/20 text-muted-foreground hover:bg-muted/45 hover:text-foreground"
                         }`}
                       >
-                        <div className="flex items-center gap-2">
-                          <div className={`p-1.5 rounded-lg ${mode === "enhance" ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"}`}>
+                        <div className="flex items-center gap-3">
+                          <div className={`p-1.5 rounded-lg shrink-0 ${mode === "enhance" ? "bg-indigo-500/20 text-indigo-400" : "bg-muted text-muted-foreground"}`}>
                             <Sparkles className="h-4 w-4" />
                           </div>
-                          <span className="text-sm font-black text-foreground">Enhance Resume</span>
-                        </div>
-                        <p className="text-xs text-muted-foreground leading-relaxed">
-                          Refines existing achievements using the XYZ formula (Accomplished [X], measured by [Y], by doing [Z]) and target keywords. Preserves your exact career history, dates, and company details intact.
-                        </p>
-                        {mode === "enhance" && (
-                          <div className="absolute top-2 right-2 h-4 w-4 rounded-full bg-primary flex items-center justify-center">
-                            <Check className="h-2.5 w-2.5 text-white stroke-[3]" />
+                          <div>
+                            <p className="text-xs font-black text-foreground">Enhance Resume</p>
+                            <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-1">Refine with XYZ formula and keywords, keeping history intact.</p>
                           </div>
-                        )}
-                      </div>
+                        </div>
+                        <div className={`h-4.5 w-4.5 rounded-full shrink-0 flex items-center justify-center border ${
+                          mode === "enhance" ? "bg-indigo-500 border-indigo-500" : "border-border bg-background"
+                        }`}>
+                          {mode === "enhance" && <Check className="h-3 w-3 text-white stroke-[3]" />}
+                        </div>
+                      </button>
 
                       {/* Option 2: Rewrite */}
-                      <div
+                      <button
                         onClick={() => setMode("rewrite")}
-                        className={`p-4 rounded-xl cursor-pointer border-2 transition-all flex flex-col gap-2 relative overflow-hidden ${
+                        className={`w-full text-left p-3 rounded-xl border transition-all flex items-center justify-between gap-3 ${
                           mode === "rewrite"
-                            ? "border-primary bg-primary/5 dark:bg-primary/10"
-                            : "border-border hover:border-muted-foreground/35 bg-muted/10 hover:bg-muted/20"
+                            ? "border-indigo-500/30 bg-indigo-500/10 text-indigo-500"
+                            : "border-border bg-muted/20 text-muted-foreground hover:bg-muted/45 hover:text-foreground"
                         }`}
                       >
-                        <div className="flex items-center gap-2">
-                          <div className={`p-1.5 rounded-lg ${mode === "rewrite" ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"}`}>
+                        <div className="flex items-center gap-3">
+                          <div className={`p-1.5 rounded-lg shrink-0 ${mode === "rewrite" ? "bg-indigo-500/20 text-indigo-400" : "bg-muted text-muted-foreground"}`}>
                             <RefreshCw className="h-4 w-4" />
                           </div>
-                          <span className="text-sm font-black text-foreground">Rewrite Completely</span>
-                        </div>
-                        <p className="text-xs text-muted-foreground leading-relaxed">
-                          Performs a full re-engineering of your experience and skills to match the Job Description. Generates custom, realistic highlights and accomplishment statements mapped directly to key responsibilities.
-                        </p>
-                        {mode === "rewrite" && (
-                          <div className="absolute top-2 right-2 h-4 w-4 rounded-full bg-primary flex items-center justify-center">
-                            <Check className="h-2.5 w-2.5 text-white stroke-[3]" />
+                          <div>
+                            <p className="text-xs font-black text-foreground">Rewrite Completely</p>
+                            <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-1">Re-engineer experience to match job description with custom statements.</p>
                           </div>
-                        )}
-                      </div>
+                        </div>
+                        <div className={`h-4.5 w-4.5 rounded-full shrink-0 flex items-center justify-center border ${
+                          mode === "rewrite" ? "bg-indigo-500 border-indigo-500" : "border-border bg-background"
+                        }`}>
+                          {mode === "rewrite" && <Check className="h-3 w-3 text-white stroke-[3]" />}
+                        </div>
+                      </button>
                     </div>
                   </div>
 
@@ -656,67 +769,10 @@ export default function ResumeTailor() {
                     <Zap className="h-4 w-4" />
                     Optimize Resume
                   </button>
-                </div>
-
-                {/* Right Side: Past Runs Directory */}
-                <div className="lg:col-span-5 space-y-4">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Trophy className="h-4 w-4 text-indigo-400" />
-                    <span className="text-[11px] font-black uppercase tracking-widest text-muted-foreground/80">
-                      Past Tailored Runs
-                    </span>
-                    <span className="text-[10px] font-black px-1.5 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/20">
-                      {runs.length}
-                    </span>
-                  </div>
-
-                  {loadingRuns ? (
-                    <div className="flex items-center justify-center py-12 border border-border rounded-2xl bg-card/25">
-                      <Loader2 className="h-5 w-5 animate-spin text-muted-foreground/30" />
-                    </div>
-                  ) : runs.length === 0 ? (
-                    <div className="py-12 text-center border border-dashed border-border rounded-2xl bg-card/10">
-                      <Trophy className="h-8 w-8 mx-auto mb-3 text-muted-foreground/30" />
-                      <p className="text-xs font-bold text-muted-foreground/60">No runs yet</p>
-                      <p className="text-[10px] text-muted-foreground/40 max-w-xs mx-auto mt-1 leading-relaxed">
-                        Your tailored runs will appear here, letting you switch back to them anytime.
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="space-y-2 max-h-[600px] overflow-y-auto pr-1">
-                      {runs.map(run => (
-                        <button key={run.id}
-                          onClick={() => setActiveRun(run)}
-                          className="w-full text-left p-3.5 rounded-2xl flex items-center gap-3 cursor-pointer border border-border bg-card/25 hover:border-primary/30 hover:bg-muted/30 transition-all group relative"
-                        >
-                          <span className={`text-xs font-black px-2.5 py-1 rounded-lg border shrink-0 ${scoreClass(run.ats_score)}`}>
-                            {run.ats_score}%
-                          </span>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-bold text-foreground truncate">{run.company_name}</p>
-                            <p className="text-xs truncate text-muted-foreground">{run.job_title}</p>
-                          </div>
-                          <div className="flex items-center gap-2 shrink-0">
-                            <span className="text-[10px] text-muted-foreground/60">
-                              {new Date(run.saved_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
-                            </span>
-                            <ChevronRight className="h-4 w-4 text-muted-foreground/60" />
-                          </div>
-                          <button
-                            onClick={e => deleteRun(e, run.id)}
-                            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 h-5 w-5 rounded flex items-center justify-center border-none cursor-pointer transition-opacity bg-destructive/15 text-destructive hover:bg-destructive/25"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </button>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
               </motion.div>
             ) : (
               /* ═══════════════════════════════════════════════════════════
-                 2. RESULTS VIEW (Split layout: Left = Runs Dir, Right = Report)
+                 2. RESULTS VIEW (Centered layout)
                  ═══════════════════════════════════════════════════════════ */
               <motion.div
                 key="results"
@@ -724,60 +780,8 @@ export default function ResumeTailor() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}
                 transition={{ duration: 0.2 }}
-                className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start"
+                className="max-w-4xl mx-auto space-y-6"
               >
-                {/* Left Side: Runs Sidebar Directory (Desktop only) */}
-                <div className="hidden lg:block lg:col-span-4 space-y-4">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-[11px] font-black uppercase tracking-widest text-muted-foreground/80">
-                      Runs Directory
-                    </span>
-                    <button
-                      onClick={() => setActiveRun(null)}
-                      className="text-[10px] font-black flex items-center gap-1 cursor-pointer border-none bg-primary/10 text-primary hover:bg-primary/20 transition-colors px-2.5 py-1 rounded-lg"
-                    >
-                      <Plus className="h-3 w-3" /> New Run
-                    </button>
-                  </div>
-
-                  <div className="space-y-2 max-h-[750px] overflow-y-auto pr-1">
-                    {runs.map(run => {
-                      const isActive = activeRun?.id === run.id;
-                      return (
-                        <button key={run.id}
-                          onClick={() => setActiveRun(run)}
-                          className={`w-full text-left p-3.5 rounded-xl border transition-all cursor-pointer group relative ${
-                            isActive
-                              ? "bg-primary/10 border-primary/30"
-                              : "bg-card/30 border-border hover:bg-muted/30"
-                          }`}
-                        >
-                          <div className="flex items-center justify-between gap-2 mb-1">
-                            <span className="text-xs font-bold text-foreground truncate">{run.company_name}</span>
-                            <span className={`text-[9px] font-black px-1.5 py-0.5 rounded border shrink-0 ${scoreClass(run.ats_score)}`}>
-                              {run.ats_score}%
-                            </span>
-                          </div>
-                          <div className="flex items-center justify-between gap-1">
-                            <span className="text-[10px] truncate text-muted-foreground">{run.job_title}</span>
-                            <span className="text-[9px] shrink-0 text-muted-foreground/60">
-                              {new Date(run.saved_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
-                            </span>
-                          </div>
-                          <button
-                            onClick={e => deleteRun(e, run.id)}
-                            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 h-5 w-5 rounded flex items-center justify-center border-none cursor-pointer transition-opacity bg-destructive/15 text-destructive hover:bg-destructive/25"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </button>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Right Side: Report Results & PDF Preview */}
-                <div className="lg:col-span-8 space-y-6">
                   {/* Results Header */}
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border">
                     <div className="space-y-1.5">
@@ -803,6 +807,10 @@ export default function ResumeTailor() {
                       <button onClick={applyWorkspace}
                         className="flex items-center gap-2 h-9 px-4 rounded-xl text-xs font-black border border-primary/20 bg-primary/10 text-primary cursor-pointer transition-opacity hover:opacity-85">
                         <Sparkles className="h-3.5 w-3.5" /> Apply Draft
+                      </button>
+                      <button onClick={() => previewRef.current?.scrollIntoView({ behavior: "smooth" })}
+                        className="flex items-center gap-2 h-9 px-4 rounded-xl text-xs font-black border border-border bg-muted/40 text-foreground cursor-pointer transition-opacity hover:opacity-85">
+                        <Eye className="h-3.5 w-3.5" /> View Preview
                       </button>
                       <button onClick={downloadPdf}
                         className="flex items-center gap-2 h-9 px-4 rounded-xl text-xs font-black text-white cursor-pointer transition-opacity hover:opacity-85 border-none bg-gradient-to-r from-indigo-500 to-purple-600 shadow-glow">
@@ -950,7 +958,7 @@ export default function ResumeTailor() {
                   )}
 
                   {/* ── PDF Preview + Mobile Download ───────────────────── */}
-                  <div className="rounded-2xl overflow-hidden border border-border bg-card/25">
+                  <div ref={previewRef} className="rounded-2xl overflow-hidden border border-border bg-card/25">
                     <div className="px-4 py-3 flex items-center justify-between border-b border-border/80 bg-muted/30">
                       <div className="flex items-center gap-2">
                         <Eye className="h-4 w-4 text-muted-foreground/60" />
@@ -1006,12 +1014,12 @@ export default function ResumeTailor() {
                       <Plus className="h-4 w-4" /> New Run
                     </button>
                   </div>
-                </div>
               </motion.div>
             )}
           </AnimatePresence>
         </div>
       </div>
+    </div>
     </div>
   );
 }
