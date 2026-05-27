@@ -187,6 +187,12 @@ export interface ResumeContextType {
   jobDescription: string;
   atsReport: ATSAnalysis | null;
   revisionHistory: ResumeRevision[];
+  uploadedResumes: Array<{
+    id: string;
+    name: string;
+    uploaded_at: string;
+    resume: ResumeSchema;
+  }>;
   isLoading: boolean;
   saveStatus: "idle" | "saving" | "saved" | "error";
   isScoring: boolean;
@@ -248,6 +254,12 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
   const [jobDescription, setJobDescription] = useState("");
   const [atsReport, setAtsReport] = useState<ATSAnalysis | null>(null);
   const [revisionHistory, setRevisionHistory] = useState<ResumeRevision[]>([]);
+  const [uploadedResumes, setUploadedResumes] = useState<Array<{
+    id: string;
+    name: string;
+    uploaded_at: string;
+    resume: ResumeSchema;
+  }>>([]);
 
   const [isLoading, setIsLoading] = useState(true);
   const [saveStatus, setSaveStatus] = useState<
@@ -298,6 +310,7 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
           setJobDescription(draft.job_description || "");
           lastSyncedJDRef.current = draft.job_description || "";
           setRevisionHistory(draft.history || []);
+          setUploadedResumes(draft.uploaded_resumes || []);
         } else {
           // New account / no draft
           setResumeData(EMPTY_RESUME);
@@ -305,6 +318,7 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
           setJobDescription("");
           lastSyncedJDRef.current = "";
           setRevisionHistory([]);
+          setUploadedResumes([]);
           setSaveStatus("idle");
         }
       } catch (error) {
@@ -504,6 +518,7 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
     setJobDescription("");
     lastSyncedJDRef.current = "";
     setAtsReport(null);
+    setUploadedResumes([]);
     setSaveStatus("idle");
   };
 
@@ -537,6 +552,7 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
         jobDescription,
         atsReport,
         revisionHistory,
+        uploadedResumes,
         isLoading,
         saveStatus,
         isScoring,

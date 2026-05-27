@@ -29,6 +29,8 @@ import {
   MessageSquare,
   Copy,
   ChevronRight,
+  Check,
+  RefreshCw,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -235,6 +237,7 @@ export default function ResumeWorkspace() {
   const [tailorFile, setTailorFile] = useState<File | null>(null);
   const [isTailoring, setIsTailoring] = useState(false);
   const [tailorResult, setTailorResult] = useState<any | null>(null);
+  const [tailorMode, setTailorMode] = useState<"enhance" | "rewrite">("enhance");
 
   /* ─── HANDLERS ──────────────────────────────────────────────────── */
   const handleTailorResume = async () => {
@@ -259,7 +262,7 @@ export default function ResumeWorkspace() {
 
     setIsTailoring(true);
     try {
-      const result = await resumeApi.tailorAlignResume(tailorFile, tailorJd);
+      const result = await resumeApi.tailorAlignResume(tailorFile, tailorJd, tailorMode);
       setTailorResult(result);
       toast({
         title: "Resume Tailored & Aligned! 🎉",
@@ -2451,6 +2454,70 @@ export default function ResumeWorkspace() {
                             placeholder="Paste the target job description here..."
                             className={`${textareaCls} min-h-[160px] text-xs leading-relaxed`}
                           />
+                        </div>
+                      </SectionCard>
+
+                      <SectionCard>
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-2">
+                            <span className="inline-block text-[9px] font-black uppercase tracking-widest text-indigo-500 bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 px-2.5 py-1 rounded-lg">
+                              Step 3: Select Tailoring Mode
+                            </span>
+                          </div>
+                          <p className="text-xs text-zinc-500">
+                            Choose between enhancing your existing content or rewriting it completely.
+                          </p>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                            {/* Option 1: Enhance */}
+                            <div
+                              onClick={() => setTailorMode("enhance")}
+                              className={`p-4 rounded-xl cursor-pointer border-2 transition-all flex flex-col gap-2 relative overflow-hidden ${
+                                tailorMode === "enhance"
+                                  ? "border-indigo-500 bg-indigo-500/5 dark:bg-indigo-500/10"
+                                  : "border-zinc-200 dark:border-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-650 bg-zinc-50/50 dark:bg-zinc-900/50 hover:bg-zinc-50 dark:hover:bg-zinc-900"
+                              }`}
+                            >
+                              <div className="flex items-center gap-2">
+                                <div className={`p-1.5 rounded-lg ${tailorMode === "enhance" ? "bg-indigo-500/20 text-indigo-500" : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500"}`}>
+                                  <Sparkles className="h-4 w-4" />
+                                </div>
+                                <span className="text-xs font-black text-zinc-900 dark:text-zinc-100">Enhance Resume</span>
+                              </div>
+                              <p className="text-[11px] text-zinc-500 leading-relaxed">
+                                Refines existing achievements using the XYZ formula and target keywords. Preserves your exact career history, dates, and company details intact.
+                              </p>
+                              {tailorMode === "enhance" && (
+                                <div className="absolute top-2 right-2 h-4 w-4 rounded-full bg-indigo-500 flex items-center justify-center">
+                                  <Check className="h-2.5 w-2.5 text-white stroke-[3]" />
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Option 2: Rewrite */}
+                            <div
+                              onClick={() => setTailorMode("rewrite")}
+                              className={`p-4 rounded-xl cursor-pointer border-2 transition-all flex flex-col gap-2 relative overflow-hidden ${
+                                tailorMode === "rewrite"
+                                  ? "border-indigo-500 bg-indigo-500/5 dark:bg-indigo-500/10"
+                                  : "border-zinc-200 dark:border-zinc-850 hover:border-zinc-400 dark:hover:border-zinc-650 bg-zinc-50/50 dark:bg-zinc-900/50 hover:bg-zinc-50 dark:hover:bg-zinc-900"
+                              }`}
+                            >
+                              <div className="flex items-center gap-2">
+                                <div className={`p-1.5 rounded-lg ${tailorMode === "rewrite" ? "bg-indigo-500/20 text-indigo-500" : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500"}`}>
+                                  <RefreshCw className="h-4 w-4" />
+                                </div>
+                                <span className="text-xs font-black text-zinc-900 dark:text-zinc-100">Rewrite Completely</span>
+                              </div>
+                              <p className="text-[11px] text-zinc-500 leading-relaxed">
+                                Performs a full re-engineering of your experience and skills to match the Job Description. Generates custom, realistic highlights mapped directly to responsibilities.
+                              </p>
+                              {tailorMode === "rewrite" && (
+                                <div className="absolute top-2 right-2 h-4 w-4 rounded-full bg-indigo-500 flex items-center justify-center">
+                                  <Check className="h-2.5 w-2.5 text-white stroke-[3]" />
+                                </div>
+                              )}
+                            </div>
+                          </div>
                         </div>
                       </SectionCard>
 

@@ -529,12 +529,20 @@ export interface TailorAlignResult {
 export async function tailorAlignResume(
   file: File | null,
   jd: string,
+  mode?: "enhance" | "rewrite",
+  resumeId?: string,
 ): Promise<TailorAlignResult> {
   const formData = new FormData();
   if (file) {
     formData.append("file", file);
   }
   formData.append("jd", jd);
+  if (mode) {
+    formData.append("mode", mode);
+  }
+  if (resumeId) {
+    formData.append("resumeId", resumeId);
+  }
 
   const res = await apiClient.post("/api/resume/tailor-align", formData);
 
