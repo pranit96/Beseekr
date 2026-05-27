@@ -107,7 +107,7 @@ export default function ResumeTailor() {
     try {
       const data = await resumeApi.getTailorRuns();
       setRuns(data);
-      if (first && data.length) { setActiveRun(data[0]); }
+      // Never auto-open last run — user always lands on the new-run form.
     } catch { /* silent */ }
     finally { setLoadingRuns(false); }
   }, []);
@@ -681,9 +681,21 @@ export default function ResumeTailor() {
                 <div className="lg:col-span-8 space-y-6">
                   {/* Results Header */}
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-500 border border-indigo-500/20">Tailored Result</span>
+                        {(activeRun as any).mode === "rewrite" ? (
+                          <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded bg-purple-500/10 text-purple-500 border border-purple-500/20 flex items-center gap-1">
+                            <RefreshCw className="h-2.5 w-2.5" /> Rewrite
+                          </span>
+                        ) : (
+                          <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
+                            <Sparkles className="h-2.5 w-2.5" /> Enhance
+                          </span>
+                        )}
+                        <span className="text-[9px] text-muted-foreground/50">
+                          {new Date(activeRun.saved_at).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                        </span>
                       </div>
                       <h2 className="text-xl sm:text-2xl font-black text-foreground tracking-tight leading-tight">{activeRun.company_name}</h2>
                       <p className="text-sm font-semibold text-muted-foreground">{activeRun.job_title}</p>
@@ -704,26 +716,89 @@ export default function ResumeTailor() {
                   <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
                     {/* Radial ATS Score */}
                     <div className="rounded-2xl p-5 flex flex-col items-center justify-center gap-3 border border-border bg-card/25">
-                      <svg width="84" height="84" viewBox="0 0 84 84" style={{ transform: "rotate(-90deg)" }}>
-                        <circle cx="42" cy="42" r="36" fill="none" className="stroke-muted/30" strokeWidth="5" />
-                        <circle cx="42" cy="42" r="36" fill="none" stroke={scoreStroke(activeRun.ats_score)} strokeWidth="5"
-                          strokeLinecap="round"
-                          strokeDasharray={String(2 * Math.PI * 36)}
-                          strokeDashoffset={String(2 * Math.PI * 36 * (1 - activeRun.ats_score / 100))}
-                          style={{ transition: "stroke-dashoffset 1.2s cubic-bezier(.4,0,.2,1)" }} />
-                      </svg>
-                      <div className="text-center -mt-1">
-                        <p className="text-2xl font-black text-foreground">{activeRun.ats_score}%</p>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">ATS Score</p>
+                      <div className="relative">
+                        <svg width="84" height="84" viewBox="0 0 84 84" style={{ transform: "rotate(-90deg)" }}>
+                          <circle cx="42" cy="42" r="36" fill="none" className="stroke-muted/30" strokeWidth="5" />
+                          <circle cx="42" cy="42" r="36" fill="none" stroke={scoreStroke(activeRun.ats_score)} strokeWidth="5"
+                            strokeLinecap="round"
+                            strokeDasharray={String(2 * Math.PI * 36)}
+                            strokeDashoffset={String(2 * Math.PI * 36 * (1 - activeRun.ats_score / 100))}
+                            style={{ transition: "stroke-dashoffset 1.2s cubic-bezier(.4,0,.2,1)" }} />
+                        </svg>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="text-center">
+                            <p className="text-xl font-black text-foreground leading-none">{activeRun.ats_score}%</p>
+                          </div>
+                        </div>
                       </div>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">ATS Score</p>
                     </div>
 
                     {/* Executive Summary Feedback */}
                     <div className="sm:col-span-3 rounded-2xl p-5 border border-border bg-card/25">
-                      <p className="text-[10px] font-black uppercase tracking-widest mb-3 text-muted-foreground/60">Executive Summary</p>
+                      <p className="text-[10px] font-black uppercase tracking-widest mb-3 text-muted-foreground/60">AI Feedback</p>
                       <p className="text-sm leading-relaxed text-foreground/80">{activeRun.general_feedback}</p>
                     </div>
                   </div>
+
+                  {/* Score Breakdown */}
+                  {activeRun.score_breakdown && Object.keys(activeRun.score_breakdown).length > 0 && (
+                    <div className="rounded-2xl border border-border bg-card/25 overflow-hidden">
+                      <div className="px-4 py-3 border-b border-border/60 bg-muted/20">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Score Breakdown</p>
+                      </div>
+                      <div className="p-4 grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        {([
+                          ["Grammar", activeRun.score_breakdown.spelling_grammar_deduction],
+                          ["Metrics", activeRun.score_breakdown.metrics_density_deduction],
+                          ["Weak Verbs", activeRun.score_breakdown.weak_verb_deduction],
+                          ["Sections", activeRun.score_breakdown.missing_sections_deduction],
+                          ["Keywords", activeRun.score_breakdown.missing_keywords_deduction],
+                          ["Total Deducted", activeRun.score_breakdown.total_deductions],
+                        ] as [string, number][]).filter(([, v]) => v !== undefined && v !== null).map(([label, val]) => (
+                          <div key={label} className="flex flex-col gap-0.5">
+                            <span className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">{label}</span>
+                            <span className={`text-sm font-black ${ val < 0 ? "text-destructive" : "text-emerald-500"}`}>
+                              {val === 0 ? "✓ 0" : val}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ATS Checks */}
+                  {activeRun.ats_checks && Object.keys(activeRun.ats_checks).length > 0 && (
+                    <div className="rounded-2xl border border-border bg-card/25 overflow-hidden">
+                      <div className="px-4 py-3 border-b border-border/60 bg-muted/20">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">ATS Checks</p>
+                      </div>
+                      <div className="divide-y divide-border/40">
+                        {Object.entries(activeRun.ats_checks).map(([key, check]: [string, any]) => (
+                          <div key={key} className="px-4 py-3 flex items-start gap-3">
+                            <div className={`mt-0.5 h-4 w-4 rounded-full flex items-center justify-center shrink-0 ${
+                              check.passed ? "bg-emerald-500/15 text-emerald-500" : "bg-destructive/15 text-destructive"
+                            }`}>
+                              {check.passed
+                                ? <Check className="h-2.5 w-2.5 stroke-[3]" />
+                                : <X className="h-2.5 w-2.5 stroke-[3]" />}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[11px] font-black text-foreground capitalize">
+                                {key.replace(/_/g, " ")}
+                              </p>
+                              <p className="text-[10px] text-muted-foreground/70 mt-0.5 leading-snug">
+                                {check.details ?? (check.errors?.join(", ") ?? "")}
+                              </p>
+                            </div>
+                            {check.score_impact < 0 && (
+                              <span className="text-[10px] font-black text-destructive shrink-0">{check.score_impact}</span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Bullet improvements */}
                   {activeRun.bullet_point_suggestions?.length > 0 && (
@@ -775,19 +850,22 @@ export default function ResumeTailor() {
                     </div>
                   )}
 
-                  {/* Inline PDF Preview */}
+                  {/* ── PDF Preview + Mobile Download ───────────────────── */}
                   <div className="rounded-2xl overflow-hidden border border-border bg-card/25">
                     <div className="px-4 py-3 flex items-center justify-between border-b border-border/80 bg-muted/30">
                       <div className="flex items-center gap-2">
                         <Eye className="h-4 w-4 text-muted-foreground/60" />
                         <span className="text-[11px] font-black uppercase tracking-widest text-muted-foreground/80">PDF Preview</span>
+                        <span className="text-[9px] text-muted-foreground/40 hidden sm:inline">(desktop only)</span>
                       </div>
                       <button onClick={downloadPdf} disabled={!activeRun?.pdf_base64}
                         className="flex items-center gap-1.5 h-7 px-3 rounded-lg text-[10px] font-black border border-border bg-muted/60 text-muted-foreground hover:text-foreground transition-all hover:bg-muted/80 disabled:opacity-40">
                         <Download className="h-3.5 w-3.5" /> Download
                       </button>
                     </div>
-                    <div className="relative bg-muted/10" style={{ height: "min(70vh, 600px)" }}>
+
+                    {/* iframe — shown on sm+ only */}
+                    <div className="relative bg-muted/10 hidden sm:block" style={{ height: "min(70vh, 600px)" }}>
                       {activeRun?.pdf_base64 ? (
                         <iframe
                           src={`data:application/pdf;base64,${activeRun.pdf_base64}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
@@ -801,21 +879,32 @@ export default function ResumeTailor() {
                         </div>
                       )}
                     </div>
+
+                    {/* Mobile fallback — download prompt instead of broken iframe */}
+                    <div className="sm:hidden p-6 flex flex-col items-center gap-4 text-center">
+                      <div className="h-14 w-14 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
+                        <FileText className="h-7 w-7 text-indigo-500" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-black text-foreground">PDF Ready to Download</p>
+                        <p className="text-xs text-muted-foreground/60 mt-1">Open in your browser's PDF viewer after downloading</p>
+                      </div>
+                      <button onClick={downloadPdf} disabled={!activeRun?.pdf_base64}
+                        className="flex items-center gap-2 h-11 px-6 rounded-xl text-sm font-black text-white border-none cursor-pointer disabled:opacity-40 bg-gradient-to-r from-indigo-500 to-purple-600">
+                        <Download className="h-4 w-4" /> Download PDF
+                      </button>
+                    </div>
                   </div>
 
-                  {/* Bottom Action Bar (hidden on desktop sidebar, visible on mobile) */}
-                  <div className="flex flex-col sm:flex-row lg:hidden items-stretch gap-2 pt-2 pb-4">
+                  {/* Mobile Action Bar */}
+                  <div className="flex flex-col sm:hidden gap-2 pt-1 pb-4">
                     <button onClick={applyWorkspace}
                       className="flex-1 flex items-center justify-center gap-2 h-11 rounded-xl text-xs font-black border border-primary/20 bg-primary/10 text-primary cursor-pointer transition-opacity hover:opacity-85">
                       <Sparkles className="h-4 w-4" /> Apply to Workspace
                     </button>
-                    <button onClick={downloadPdf}
-                      className="flex-1 flex items-center justify-center gap-2 h-11 rounded-xl text-xs font-black text-white cursor-pointer transition-opacity hover:opacity-95 border-none bg-gradient-to-r from-indigo-500 to-purple-600 shadow-glow">
-                      <Download className="h-4 w-4" /> Download PDF
-                    </button>
                     <button onClick={() => setActiveRun(null)}
                       className="flex-1 flex items-center justify-center gap-2 h-11 rounded-xl text-xs font-black cursor-pointer transition-opacity hover:opacity-80 border border-border bg-muted/50 text-muted-foreground hover:text-foreground">
-                      <ArrowLeft className="h-4 w-4" /> Back to Editor
+                      <Plus className="h-4 w-4" /> New Run
                     </button>
                   </div>
                 </div>
