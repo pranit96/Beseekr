@@ -12,6 +12,7 @@ import {
   ExternalLink, ChevronRight, Target, Zap, Eye,
   ArrowLeft, X, RefreshCw, Clock, ChevronDown, PanelLeftClose,
 } from "lucide-react";
+import { GlobalHeader } from "@/components/GlobalHeader";
 
 // ─── constants ─────────────────────────────────────────────────────────────
 const ALLOWED_MIME = new Set([
@@ -68,6 +69,9 @@ export default function ResumeTailor() {
   const [selectedResumeId, setSelectedResumeId] = useState<string>("");
   const [generateCL, setGenerateCL]   = useState(false);
   const [clCompanyName, setClCompanyName] = useState("");
+  const [trackApp, setTrackApp]       = useState(false);
+  const [trackedAppId, setTrackedAppId] = useState<string | null>(null);
+  const [jobTitle, setJobTitle]       = useState("");
   const [activeResultView, setActiveResultView] = useState<"resume" | "cover_letter">("resume");
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -78,8 +82,69 @@ export default function ResumeTailor() {
 
   // ui
   const [online, setOnline] = useState(navigator.onLine);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [showAnalysisDetails, setShowAnalysisDetails] = useState(false);
   const previewRef = useRef<HTMLDivElement>(null);
+
+  // ── sync tracked application helper ─────────────────────────────────────────
+  const syncTrackedApplication = async (shouldTrack: boolean, currentCompany = clCompanyName, currentJobTitle = jobTitle) => {
+    if (shouldTrack) {
+      if (trackedAppId) return;
+      if (!currentCompany.trim()) return;
+      try {
+        const app = await resumeApi.createApplication({
+          company_name: currentCompany.trim(),
+          job_title: currentJobTitle.trim() || "Tailored Role",
+          status: "Applied",
+          job_url: url || undefined,
+          jd_text: jd || undefined,
+        });
+        setTrackedAppId(app.id);
+        toast({
+          title: "Application Tracked 🎯",
+          description: `${currentJobTitle.trim() || "Tailored Role"} at ${currentCompany.trim()} has been added to your Job Tracker.`,
+        });
+      } catch (err: any) {
+        toast({
+          variant: "destructive",
+          title: "Tracking failed",
+          description: err.message || "Could not track this application.",
+        });
+      }
+    } else {
+      if (trackedAppId) {
+        try {
+          await resumeApi.deleteApplication(trackedAppId);
+          setTrackedAppId(null);
+          toast({
+            title: "Application Untracked ✕",
+            description: "Removed from your Job Tracker.",
+          });
+        } catch (err: any) {
+          toast({
+            variant: "destructive",
+            title: "Failed to untrack",
+            description: err.message || "Could not remove application.",
+          });
+        }
+      }
+    }
+  };
+
+  const handleFieldBlur = async (currentCompany = clCompanyName, currentJobTitle = jobTitle) => {
+    if (trackApp && currentCompany.trim()) {
+      if (trackedAppId) {
+        try {
+          await resumeApi.updateApplication(trackedAppId, {
+            company_name: currentCompany.trim(),
+            job_title: currentJobTitle.trim() || "Tailored Role",
+          });
+        } catch {}
+      } else {
+        await syncTrackedApplication(true, currentCompany, currentJobTitle);
+      }
+    }
+  };
 
   // ── session restore ──────────────────────────────────────────────────────
   useEffect(() => {
@@ -125,6 +190,8 @@ export default function ResumeTailor() {
       if (!r.jd_text) throw new Error("Nothing found");
       setJd(r.jd_text);
       sessionStorage.setItem("tr_jd", r.jd_text);
+      if (r.company_name) setClCompanyName(r.company_name);
+      if (r.job_title) setJobTitle(r.job_title);
       toast({ title: `Imported: ${r.job_title || "role"} @ ${r.company_name || "company"}` });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -173,6 +240,7 @@ export default function ResumeTailor() {
         setProcessing(false);
         setFile(null); setJd(""); setUrl("");
         setGenerateCL(false); setClCompanyName("");
+        setTrackApp(false); setTrackedAppId(null); setJobTitle("");
         sessionStorage.removeItem("tr_jd"); sessionStorage.removeItem("tr_url");
         await loadRuns(false);
         setActiveRun(result as unknown as TailorRunRecord);
@@ -361,7 +429,8 @@ export default function ResumeTailor() {
   }
 
   return (
-    <div className="w-full min-h-[calc(100vh-100px)] flex flex-col font-sans relative bg-background text-foreground">
+    <div className="h-screen flex flex-col overflow-hidden bg-background text-foreground">
+      <GlobalHeader />
 
       {/* ── PROCESSING OVERLAY (fixed fullscreen, always on top) ───────── */}
       <AnimatePresence>
@@ -435,7 +504,7 @@ export default function ResumeTailor() {
       </AnimatePresence>
 
       {/* ── TOP BAR ────────────────────────────────────────────────────── */}
-      <header className="shrink-0 px-4 sm:px-6 py-3.5 flex items-center justify-between gap-3 border-b border-border bg-background">
+      <header className="shrink-0 px-4 sm:px-6 py-2.5 flex items-center justify-between gap-3 border-b border-border bg-background">
         <div className="flex items-center gap-2.5">
           <div className="h-8 w-8 rounded-xl flex items-center justify-center shrink-0 bg-indigo-500/10 border border-indigo-500/20">
             <Target className="h-4 w-4 text-indigo-500 dark:text-indigo-400" />
@@ -488,15 +557,25 @@ export default function ResumeTailor() {
                   {runs.length}
                 </span>
               </div>
-              <button
-                onClick={() => {
-                  setActiveRun(null);
-                  if (isMobile) setSidebarOpen(false);
-                }}
-                className="text-[10px] font-black flex items-center gap-1 cursor-pointer border-none bg-primary/10 text-primary hover:bg-primary/20 transition-colors px-2.5 py-1 rounded-lg"
-              >
-                <Plus className="h-3 w-3" /> New
-              </button>
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => {
+                    setActiveRun(null);
+                    setTrackApp(false); setTrackedAppId(null); setJobTitle("");
+                    if (isMobile) setSidebarOpen(false);
+                  }}
+                  className="text-[10px] font-black flex items-center gap-1 cursor-pointer border-none bg-primary/10 text-primary hover:bg-primary/20 transition-colors px-2.5 py-1 rounded-lg"
+                >
+                  <Plus className="h-3 w-3" /> New
+                </button>
+                <button
+                  onClick={() => setSidebarOpen(false)}
+                  className="h-7 w-7 rounded-lg flex items-center justify-center border border-border bg-background text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                  title="Close sidebar"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 space-y-2">
@@ -590,7 +669,7 @@ export default function ResumeTailor() {
             <AnimatePresence mode="wait">
               {!activeRun ? (
                 /* ═══════════════════════════════════════════════════════════
-                   1. EDITOR VIEW (Centered layout)
+                   1. EDITOR VIEW (Horizontal Optimized layout)
                    ═══════════════════════════════════════════════════════════ */
                 <motion.div
                   key="editor"
@@ -598,275 +677,319 @@ export default function ResumeTailor() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -12 }}
                   transition={{ duration: 0.2 }}
-                  className="max-w-3xl mx-auto space-y-6"
+                  className="max-w-5xl mx-auto"
                 >
-                  {/* Active resume badge */}
-                  {!isResumeBlank && (
-                    <div className="flex items-center gap-2 text-xs font-bold w-fit px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                      <Check className="h-3.5 w-3.5" />
-                      Active workspace resume loaded
-                    </div>
-                  )}
-
-                  {/* Step 1: Resume File & History Select */}
-                  <div className="rounded-2xl overflow-hidden border border-border bg-card/45">
-                    <div className="px-4 py-3 flex items-center justify-between border-b border-border/60 bg-muted/20">
-                      <div className="flex items-center gap-2.5">
-                        <span className="text-[9px] font-black text-white px-2 py-0.5 rounded-md bg-gradient-to-r from-indigo-500 to-purple-500">01</span>
-                        <span className="text-[11px] font-black uppercase tracking-widest text-foreground/80">Resume File</span>
-                      </div>
-                      {(file || selectedResumeId) && (
-                        <span className="text-[10px] font-bold flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
-                          <Check className="h-3 w-3" /> Ready
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="p-4 space-y-4">
-                      {/* Drag and Drop box */}
-                      <div
-                        onDragOver={e => { e.preventDefault(); setDragOver(true); }}
-                        onDragLeave={() => setDragOver(false)}
-                        onDrop={e => { e.preventDefault(); setDragOver(false); const f = e.dataTransfer.files[0]; if (f) acceptFile(f); }}
-                        onClick={() => fileRef.current?.click()}
-                        className={`flex items-center gap-4 p-4 rounded-xl cursor-pointer transition-all border-2 border-dashed ${
-                          dragOver
-                            ? "border-primary bg-primary/5"
-                            : (file || selectedResumeId)
-                            ? "border-emerald-500/40 bg-emerald-500/5"
-                            : "border-border hover:border-muted-foreground/35 hover:bg-muted/10"
-                        }`}
-                      >
-                        <input ref={fileRef} type="file" accept=".pdf,.docx" className="hidden"
-                          onChange={e => { const f = e.target.files?.[0]; if (f) acceptFile(f); if (fileRef.current) fileRef.current.value = ""; }} />
-                        <div className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${(file || selectedResumeId) ? "bg-emerald-500/10" : "bg-muted"}`}>
-                          {(file || selectedResumeId) ? <FileText className="h-5 w-5 text-emerald-600 dark:text-emerald-400" /> : <Upload className="h-5 w-5 text-muted-foreground/60" />}
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                    {/* Left Column: Step 1 (Resume Select), Step 3 (Mode Selection) & CTA */}
+                    <div className="lg:col-span-5 space-y-6">
+                      {/* Active resume badge */}
+                      {!isResumeBlank && (
+                        <div className="flex items-center gap-2 text-xs font-bold w-fit px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                          <Check className="h-3.5 w-3.5" />
+                          Active workspace resume loaded
                         </div>
-                        <div className="flex-1 min-w-0">
-                          {file || selectedResumeId ? (
-                            <>
-                              <p className="text-sm font-bold text-foreground truncate">
-                                {file ? file.name : uploadedResumes.find(r => r.id === selectedResumeId)?.name}
-                              </p>
-                              <p className="text-[11px] text-muted-foreground">
-                                {file ? fmtSize(file.size) : "Using past uploaded resume"}
-                              </p>
-                            </>
-                          ) : (
-                            <>
-                              <p className="text-sm font-semibold text-foreground/70">
-                                {dragOver ? "Drop to upload" : "Drag & drop or click"}
-                              </p>
-                              <p className="text-[11px] text-muted-foreground/60">
-                                {!isResumeBlank ? "Optional — skip to use active resume" : "PDF or DOCX · max 5 MB"}
-                              </p>
-                            </>
+                      )}
+
+                      {/* Step 1: Resume File & History Select */}
+                      <div className="rounded-2xl overflow-hidden border border-border bg-card/45">
+                        <div className="px-4 py-3 flex items-center justify-between border-b border-border/60 bg-muted/20">
+                          <div className="flex items-center gap-2.5">
+                            <span className="text-[9px] font-black text-white px-2 py-0.5 rounded-md bg-gradient-to-r from-indigo-500 to-purple-500">01</span>
+                            <span className="text-[11px] font-black uppercase tracking-widest text-foreground/80">Resume File</span>
+                          </div>
+                          {(file || selectedResumeId) && (
+                            <span className="text-[10px] font-bold flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+                              <Check className="h-3 w-3" /> Ready
+                            </span>
                           )}
                         </div>
-                        {(file || selectedResumeId) && (
-                          <button onClick={e => { e.stopPropagation(); setFile(null); setSelectedResumeId(""); if (fileRef.current) fileRef.current.value = ""; }}
-                            className="h-7 w-7 rounded-lg flex items-center justify-center border-none cursor-pointer shrink-0 bg-destructive/10 text-destructive hover:bg-destructive/25 transition-colors">
-                            <X className="h-3.5 w-3.5" />
-                          </button>
-                        )}
-                      </div>
 
-                      {/* Dropdown past resumes */}
-                      {uploadedResumes.length > 0 && (
-                        <div className="pt-3.5 border-t border-border/60">
-                          <label className="block text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 mb-2">
-                            Or select from last 5 uploaded resumes
-                          </label>
-                          <div className="relative">
-                            <select
-                              value={selectedResumeId}
-                              onChange={(e) => {
-                                setSelectedResumeId(e.target.value);
-                                if (e.target.value) {
-                                  setFile(null); // Clear local file if using past resume
-                                }
-                              }}
-                              className="w-full h-10 pl-3.5 pr-10 text-xs rounded-xl outline-none appearance-none transition-colors bg-muted/40 border border-border focus:border-primary/50 text-foreground"
-                            >
-                              <option value="">-- Select a past resume --</option>
-                              {uploadedResumes.slice(0, 5).map((r) => (
-                                <option key={r.id} value={r.id}>
-                                  {r.name} ({new Date(r.uploaded_at).toLocaleDateString()})
-                                </option>
-                              ))}
-                            </select>
-                            <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 pointer-events-none text-muted-foreground/60" />
+                        <div className="p-4 space-y-4">
+                          {/* Drag and Drop box */}
+                          <div
+                            onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+                            onDragLeave={() => setDragOver(false)}
+                            onDrop={e => { e.preventDefault(); setDragOver(false); const f = e.dataTransfer.files[0]; if (f) acceptFile(f); }}
+                            onClick={() => fileRef.current?.click()}
+                            className={`flex items-center gap-4 p-4 rounded-xl cursor-pointer transition-all border-2 border-dashed ${
+                              dragOver
+                                ? "border-primary bg-primary/5"
+                                : (file || selectedResumeId)
+                                ? "border-emerald-500/40 bg-emerald-500/5"
+                                : "border-border hover:border-muted-foreground/35 hover:bg-muted/10"
+                            }`}
+                          >
+                            <input ref={fileRef} type="file" accept=".pdf,.docx" className="hidden"
+                              onChange={e => { const f = e.target.files?.[0]; if (f) acceptFile(f); if (fileRef.current) fileRef.current.value = ""; }} />
+                            <div className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${(file || selectedResumeId) ? "bg-emerald-500/10" : "bg-muted"}`}>
+                              {(file || selectedResumeId) ? <FileText className="h-5 w-5 text-emerald-600 dark:text-emerald-400" /> : <Upload className="h-5 w-5 text-muted-foreground/60" />}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              {file || selectedResumeId ? (
+                                <>
+                                  <p className="text-sm font-bold text-foreground truncate">
+                                    {file ? file.name : uploadedResumes.find(r => r.id === selectedResumeId)?.name}
+                                  </p>
+                                  <p className="text-[11px] text-muted-foreground">
+                                    {file ? fmtSize(file.size) : "Using past uploaded resume"}
+                                  </p>
+                                </>
+                              ) : (
+                                <>
+                                  <p className="text-sm font-semibold text-foreground/70">
+                                    {dragOver ? "Drop to upload" : "Drag & drop or click"}
+                                  </p>
+                                  <p className="text-[11px] text-muted-foreground/60">
+                                    {!isResumeBlank ? "Optional — skip to use active resume" : "PDF or DOCX · max 5 MB"}
+                                  </p>
+                                </>
+                              )}
+                            </div>
+                            {(file || selectedResumeId) && (
+                              <button onClick={e => { e.stopPropagation(); setFile(null); setSelectedResumeId(""); if (fileRef.current) fileRef.current.value = ""; }}
+                                className="h-7 w-7 rounded-lg flex items-center justify-center border-none cursor-pointer shrink-0 bg-destructive/10 text-destructive hover:bg-destructive/25 transition-colors">
+                                <X className="h-3.5 w-3.5" />
+                              </button>
+                            )}
                           </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
 
-                  {/* Step 2: Job Description */}
-                  <div className="rounded-2xl overflow-hidden border border-border bg-card/45">
-                    <div className="px-4 py-3 flex items-center justify-between border-b border-border/60 bg-muted/20">
-                      <div className="flex items-center gap-2.5">
-                        <span className="text-[9px] font-black text-white px-2 py-0.5 rounded-md bg-gradient-to-r from-indigo-500 to-purple-500">02</span>
-                        <span className="text-[11px] font-black uppercase tracking-widest text-foreground/80">Job Description</span>
-                      </div>
-                      {jd.trim().length >= 20 && (
-                        <span className="text-[10px] font-bold flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
-                          <Check className="h-3 w-3" /> {jd.trim().length} chars
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="p-4 space-y-3">
-                      {/* URL Import */}
-                      <div className="flex gap-2">
-                        <div className="relative flex-1">
-                          <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 pointer-events-none text-muted-foreground/60" />
-                          <input
-                            value={url} onChange={e => { setUrl(e.target.value); sessionStorage.setItem("tr_url", e.target.value); }}
-                            onKeyDown={e => e.key === "Enter" && parseUrl()}
-                            placeholder="Paste job link to auto-import…"
-                            className="w-full h-9 pl-9 pr-3 text-sm rounded-xl outline-none transition-colors bg-muted/40 border border-border focus:border-primary/50 text-foreground caret-primary"
-                          />
-                        </div>
-                        <button onClick={parseUrl} disabled={parsingUrl || !url}
-                          className="h-9 px-3.5 rounded-xl text-xs font-black flex items-center gap-1.5 cursor-pointer transition-opacity disabled:opacity-40 border border-border bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted/80 whitespace-nowrap">
-                          {parsingUrl ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ExternalLink className="h-3.5 w-3.5" />}
-                          {parsingUrl ? "Parsing…" : "Parse"}
-                        </button>
-                      </div>
-
-                      {/* Divider */}
-                      <div className="flex items-center gap-3">
-                        <div className="flex-1 h-px bg-border/60" />
-                        <span className="text-[11px] text-muted-foreground/40">or paste manually</span>
-                        <div className="flex-1 h-px bg-border/60" />
-                      </div>
-
-                      {/* Textarea */}
-                      <textarea
-                        value={jd} onChange={e => { setJd(e.target.value); sessionStorage.setItem("tr_jd", e.target.value); }}
-                        placeholder="Paste the full job description here…"
-                        rows={6}
-                        className="w-full p-3 text-sm rounded-xl resize-none outline-none transition-colors bg-muted/30 border border-border focus:border-primary/50 text-foreground caret-primary"
-                      />
-
-                      {/* Cover Letter Option */}
-                      <div className="pt-4 border-t border-border/40 space-y-3">
-                        <label className="flex items-start gap-3 cursor-pointer group select-none">
-                          <input
-                            type="checkbox"
-                            checked={generateCL}
-                            onChange={e => setGenerateCL(e.target.checked)}
-                            className="mt-0.5 h-4 w-4 rounded border-border focus:ring-primary/45 accent-indigo-500 cursor-pointer"
-                          />
-                          <div className="flex flex-col">
-                            <span className="text-xs font-black text-foreground group-hover:text-primary transition-colors">
-                              Generate matching Cover Letter with AI
-                            </span>
-                            <span className="text-[10px] text-muted-foreground/80 mt-0.5 leading-snug">
-                              Creates a perfectly structured, professionally aligned cover letter matching your tailored resume.
-                            </span>
-                          </div>
-                        </label>
-
-                        <AnimatePresence>
-                          {generateCL && (
-                            <motion.div
-                              initial={{ height: 0, opacity: 0 }}
-                              animate={{ height: "auto", opacity: 1 }}
-                              exit={{ height: 0, opacity: 0 }}
-                              transition={{ duration: 0.2 }}
-                              className="overflow-hidden space-y-2 pl-7"
-                            >
-                              <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-500">
-                                Target Company Name <span className="text-destructive">*</span>
+                          {/* Dropdown past resumes */}
+                          {uploadedResumes.length > 0 && (
+                            <div className="pt-3.5 border-t border-border/60">
+                              <label className="block text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 mb-2">
+                                Or select from last 5 uploaded resumes
                               </label>
-                              <input
-                                type="text"
-                                value={clCompanyName}
-                                onChange={e => setClCompanyName(e.target.value)}
-                                placeholder="e.g. Stripe, Acme Corp, Google..."
-                                className="w-full h-9 px-3.5 text-xs rounded-xl outline-none transition-colors bg-muted/40 border border-border focus:border-primary/50 text-foreground caret-primary"
-                              />
-                            </motion.div>
+                              <div className="relative">
+                                <select
+                                  value={selectedResumeId}
+                                  onChange={(e) => {
+                                    setSelectedResumeId(e.target.value);
+                                    if (e.target.value) {
+                                      setFile(null); // Clear local file if using past resume
+                                    }
+                                  }}
+                                  className="w-full h-10 pl-3.5 pr-10 text-xs rounded-xl outline-none appearance-none transition-colors bg-muted/40 border border-border focus:border-primary/50 text-foreground"
+                                >
+                                  <option value="">-- Select a past resume --</option>
+                                  {uploadedResumes.slice(0, 5).map((r) => (
+                                    <option key={r.id} value={r.id}>
+                                      {r.name} ({new Date(r.uploaded_at).toLocaleDateString()})
+                                    </option>
+                                  ))}
+                                </select>
+                                <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 pointer-events-none text-muted-foreground/60" />
+                              </div>
+                            </div>
                           )}
-                        </AnimatePresence>
+                        </div>
+                      </div>
+
+                      {/* Step 3: Tailoring Mode */}
+                      <div className="rounded-2xl overflow-hidden border border-border bg-card/45">
+                        <div className="px-4 py-3 flex items-center justify-between border-b border-border/60 bg-muted/20">
+                          <div className="flex items-center gap-2.5">
+                            <span className="text-[9px] font-black text-white px-2 py-0.5 rounded-md bg-gradient-to-r from-indigo-500 to-purple-500">03</span>
+                            <span className="text-[11px] font-black uppercase tracking-widest text-foreground/80">Tailoring Mode</span>
+                          </div>
+                        </div>
+
+                        <div className="p-3.5 space-y-2 bg-card/10">
+                          {/* Option 1: Enhance */}
+                          <button
+                            onClick={() => setMode("enhance")}
+                            type="button"
+                            className={`w-full text-left p-3 rounded-xl border transition-all flex items-center justify-between gap-3 cursor-pointer ${
+                              mode === "enhance"
+                                ? "border-indigo-500/30 bg-indigo-500/10 text-foreground"
+                                : "border-border bg-muted/20 text-muted-foreground hover:bg-muted/45 hover:text-foreground"
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className={`p-1.5 rounded-lg shrink-0 ${mode === "enhance" ? "bg-indigo-500/20 text-indigo-400" : "bg-muted text-muted-foreground"}`}>
+                                <Sparkles className="h-4 w-4" />
+                              </div>
+                              <div>
+                                <p className="text-xs font-black text-foreground">Enhance Resume</p>
+                                <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-1">Refine with XYZ formula and keywords.</p>
+                              </div>
+                            </div>
+                            <div className={`h-4.5 w-4.5 rounded-full shrink-0 flex items-center justify-center border ${
+                              mode === "enhance" ? "bg-indigo-500 border-indigo-500" : "border-border bg-background"
+                            }`}>
+                              {mode === "enhance" && <Check className="h-3 w-3 text-white stroke-[3]" />}
+                            </div>
+                          </button>
+
+                          {/* Option 2: Rewrite */}
+                          <button
+                            onClick={() => setMode("rewrite")}
+                            type="button"
+                            className={`w-full text-left p-3 rounded-xl border transition-all flex items-center justify-between gap-3 cursor-pointer ${
+                              mode === "rewrite"
+                                ? "border-indigo-500/30 bg-indigo-500/10 text-foreground"
+                                : "border-border bg-muted/20 text-muted-foreground hover:bg-muted/45 hover:text-foreground"
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className={`p-1.5 rounded-lg shrink-0 ${mode === "rewrite" ? "bg-indigo-500/20 text-indigo-400" : "bg-muted text-muted-foreground"}`}>
+                                <RefreshCw className="h-4 w-4" />
+                              </div>
+                              <div>
+                                <p className="text-xs font-black text-foreground">Rewrite Completely</p>
+                                <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-1">Re-engineer experience achievements.</p>
+                              </div>
+                            </div>
+                            <div className={`h-4.5 w-4.5 rounded-full shrink-0 flex items-center justify-center border ${
+                              mode === "rewrite" ? "bg-indigo-500 border-indigo-500" : "border-border bg-background"
+                            }`}>
+                              {mode === "rewrite" && <Check className="h-3 w-3 text-white stroke-[3]" />}
+                            </div>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* CTA */}
+                      <button
+                        onClick={runTailoring}
+                        disabled={(!file && !selectedResumeId && isResumeBlank) || jd.trim().length < 20}
+                        className="w-full h-12 rounded-2xl text-sm font-black text-white flex items-center justify-center gap-2.5 transition-all uppercase tracking-wider disabled:opacity-40 disabled:cursor-not-allowed border-none cursor-pointer bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 shadow-glow hover:shadow-strong"
+                      >
+                        <Zap className="h-4 w-4" />
+                        Optimize Resume
+                      </button>
+                    </div>
+
+                    {/* Right Column: Step 2 (Job Description & Cover Letter Options) */}
+                    <div className="lg:col-span-7 h-full flex flex-col">
+                      {/* Step 2: Job Description */}
+                      <div className="rounded-2xl overflow-hidden border border-border bg-card/45 flex flex-col h-full">
+                        <div className="px-4 py-3 flex items-center justify-between border-b border-border/60 bg-muted/20 shrink-0">
+                          <div className="flex items-center gap-2.5">
+                            <span className="text-[9px] font-black text-white px-2 py-0.5 rounded-md bg-gradient-to-r from-indigo-500 to-purple-500">02</span>
+                            <span className="text-[11px] font-black uppercase tracking-widest text-foreground/80">Job Description</span>
+                          </div>
+                          {jd.trim().length >= 20 && (
+                            <span className="text-[10px] font-bold flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+                              <Check className="h-3 w-3" /> {jd.trim().length} chars
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="p-4 space-y-4 flex-1 flex flex-col">
+                          {/* URL Import */}
+                          <div className="flex gap-2 shrink-0">
+                            <div className="relative flex-1">
+                              <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 pointer-events-none text-muted-foreground/60" />
+                              <input
+                                value={url} onChange={e => { setUrl(e.target.value); sessionStorage.setItem("tr_url", e.target.value); }}
+                                onKeyDown={e => e.key === "Enter" && parseUrl()}
+                                placeholder="Paste job link to auto-import…"
+                                className="w-full h-9 pl-9 pr-3 text-sm rounded-xl outline-none transition-colors bg-muted/40 border border-border focus:border-primary/50 text-foreground caret-primary"
+                              />
+                            </div>
+                            <button onClick={parseUrl} disabled={parsingUrl || !url}
+                              className="h-9 px-3.5 rounded-xl text-xs font-black flex items-center gap-1.5 cursor-pointer transition-opacity disabled:opacity-40 border border-border bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted/80 whitespace-nowrap">
+                              {parsingUrl ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ExternalLink className="h-3.5 w-3.5" />}
+                              {parsingUrl ? "Parsing…" : "Parse"}
+                            </button>
+                          </div>
+
+                          {/* Divider */}
+                          <div className="flex items-center gap-3 shrink-0">
+                            <div className="flex-1 h-px bg-border/60" />
+                            <span className="text-[11px] text-muted-foreground/40">or paste manually</span>
+                            <div className="flex-1 h-px bg-border/60" />
+                          </div>
+
+                          {/* Textarea */}
+                          <textarea
+                            value={jd} onChange={e => { setJd(e.target.value); sessionStorage.setItem("tr_jd", e.target.value); }}
+                            placeholder="Paste the full job description here…"
+                            rows={8}
+                            className="w-full p-3 text-sm rounded-xl resize-none outline-none transition-colors bg-muted/30 border border-border focus:border-primary/50 text-foreground caret-primary flex-1 min-h-[160px]"
+                          />
+
+                          {/* Cover Letter Option */}
+                          <div className="pt-4 border-t border-border/40 space-y-3 shrink-0">
+                            <label className="flex items-start gap-3 cursor-pointer group select-none">
+                              <input
+                                type="checkbox"
+                                checked={generateCL}
+                                onChange={e => setGenerateCL(e.target.checked)}
+                                className="mt-0.5 h-4 w-4 rounded border-border focus:ring-primary/45 accent-indigo-500 cursor-pointer"
+                              />
+                              <div className="flex flex-col">
+                                <span className="text-xs font-black text-zinc-800 dark:text-foreground group-hover:text-primary transition-colors">
+                                  Generate matching Cover Letter with AI
+                                </span>
+                                <span className="text-[10px] text-muted-foreground/80 mt-0.5 leading-snug">
+                                  Creates a perfectly structured, professionally aligned cover letter.
+                                </span>
+                              </div>
+                            </label>
+
+                            <AnimatePresence>
+                              {generateCL && (
+                                <motion.div
+                                  initial={{ height: 0, opacity: 0 }}
+                                  animate={{ height: "auto", opacity: 1 }}
+                                  exit={{ height: 0, opacity: 0 }}
+                                  transition={{ duration: 0.2 }}
+                                  className="overflow-hidden space-y-3 pl-7"
+                                >
+                                  <div className="grid grid-cols-2 gap-3">
+                                    <div className="space-y-1.5">
+                                      <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-550">
+                                        Target Company Name <span className="text-destructive">*</span>
+                                      </label>
+                                      <input
+                                        type="text"
+                                        value={clCompanyName}
+                                        onChange={e => setClCompanyName(e.target.value)}
+                                        onBlur={() => handleFieldBlur()}
+                                        placeholder="e.g. Stripe, Acme Corp, Google..."
+                                        className="w-full h-9 px-3.5 text-xs rounded-xl outline-none transition-colors bg-muted/40 border border-border focus:border-primary/50 text-foreground caret-primary"
+                                      />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                      <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-555">
+                                        Job Title / Role
+                                      </label>
+                                      <input
+                                        type="text"
+                                        value={jobTitle}
+                                        onChange={e => setJobTitle(e.target.value)}
+                                        onBlur={() => handleFieldBlur()}
+                                        placeholder="e.g. SWE II, PM..."
+                                        className="w-full h-9 px-3.5 text-xs rounded-xl outline-none transition-colors bg-muted/40 border border-border focus:border-primary/50 text-foreground caret-primary"
+                                      />
+                                    </div>
+                                  </div>
+
+                                  <label className="flex items-center gap-2.5 pt-1.5 cursor-pointer group select-none">
+                                    <input
+                                      type="checkbox"
+                                      checked={trackApp}
+                                      onChange={async (e) => {
+                                        const val = e.target.checked;
+                                        setTrackApp(val);
+                                        await syncTrackedApplication(val);
+                                      }}
+                                      className="h-3.5 w-3.5 rounded border-border focus:ring-primary/45 accent-indigo-500 cursor-pointer"
+                                    />
+                                    <span className="text-[11px] font-bold text-foreground group-hover:text-primary transition-colors">
+                                      Track this application in Job Tracker
+                                    </span>
+                                  </label>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
-
-                  {/* Step 3: Tailoring Mode */}
-                  <div className="rounded-2xl overflow-hidden border border-border bg-card/45">
-                    <div className="px-4 py-3 flex items-center justify-between border-b border-border/60 bg-muted/20">
-                      <div className="flex items-center gap-2.5">
-                        <span className="text-[9px] font-black text-white px-2 py-0.5 rounded-md bg-gradient-to-r from-indigo-500 to-purple-500">03</span>
-                        <span className="text-[11px] font-black uppercase tracking-widest text-foreground/80">Tailoring Mode</span>
-                      </div>
-                    </div>
-
-                    <div className="p-3.5 space-y-2 bg-card/10">
-                      {/* Option 1: Enhance */}
-                      <button
-                        onClick={() => setMode("enhance")}
-                        className={`w-full text-left p-3 rounded-xl border transition-all flex items-center justify-between gap-3 ${
-                          mode === "enhance"
-                            ? "border-indigo-500/30 bg-indigo-500/10 text-foreground"
-                            : "border-border bg-muted/20 text-muted-foreground hover:bg-muted/45 hover:text-foreground"
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className={`p-1.5 rounded-lg shrink-0 ${mode === "enhance" ? "bg-indigo-500/20 text-indigo-400" : "bg-muted text-muted-foreground"}`}>
-                            <Sparkles className="h-4 w-4" />
-                          </div>
-                          <div>
-                            <p className="text-xs font-black text-foreground">Enhance Resume</p>
-                            <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-1">Refine with XYZ formula and keywords, keeping history intact.</p>
-                          </div>
-                        </div>
-                        <div className={`h-4.5 w-4.5 rounded-full shrink-0 flex items-center justify-center border ${
-                          mode === "enhance" ? "bg-indigo-500 border-indigo-500" : "border-border bg-background"
-                        }`}>
-                          {mode === "enhance" && <Check className="h-3 w-3 text-white stroke-[3]" />}
-                        </div>
-                      </button>
-
-                      {/* Option 2: Rewrite */}
-                      <button
-                        onClick={() => setMode("rewrite")}
-                        className={`w-full text-left p-3 rounded-xl border transition-all flex items-center justify-between gap-3 ${
-                          mode === "rewrite"
-                            ? "border-indigo-500/30 bg-indigo-500/10 text-indigo-500"
-                            : "border-border bg-muted/20 text-muted-foreground hover:bg-muted/45 hover:text-foreground"
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className={`p-1.5 rounded-lg shrink-0 ${mode === "rewrite" ? "bg-indigo-500/20 text-indigo-400" : "bg-muted text-muted-foreground"}`}>
-                            <RefreshCw className="h-4 w-4" />
-                          </div>
-                          <div>
-                            <p className="text-xs font-black text-foreground">Rewrite Completely</p>
-                            <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-1">Re-engineer experience to match job description with custom statements.</p>
-                          </div>
-                        </div>
-                        <div className={`h-4.5 w-4.5 rounded-full shrink-0 flex items-center justify-center border ${
-                          mode === "rewrite" ? "bg-indigo-500 border-indigo-500" : "border-border bg-background"
-                        }`}>
-                          {mode === "rewrite" && <Check className="h-3 w-3 text-white stroke-[3]" />}
-                        </div>
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* CTA */}
-                  <button
-                    onClick={runTailoring}
-                    disabled={(!file && !selectedResumeId && isResumeBlank) || jd.trim().length < 20}
-                    className="w-full h-12 rounded-2xl text-sm font-black text-white flex items-center justify-center gap-2.5 transition-all uppercase tracking-wider disabled:opacity-40 disabled:cursor-not-allowed border-none cursor-pointer bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 shadow-glow hover:shadow-strong"
-                  >
-                    <Zap className="h-4 w-4" />
-                    Optimize Resume
-                  </button>
-              </motion.div>
+                </motion.div>
             ) : (
               /* ═══════════════════════════════════════════════════════════
                  2. RESULTS VIEW (Centered layout)
@@ -988,64 +1111,91 @@ export default function ResumeTailor() {
                     </div>
                   </div>
 
-                  {/* Score Breakdown */}
-                  {activeRun.score_breakdown && Object.keys(activeRun.score_breakdown).length > 0 && (
-                    <div className="rounded-2xl border border-border bg-card/25 overflow-hidden">
-                      <div className="px-4 py-3 border-b border-border/60 bg-muted/20">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Score Breakdown</p>
-                      </div>
-                      <div className="p-4 grid grid-cols-2 sm:grid-cols-3 gap-3">
-                        {([
-                          ["Grammar", activeRun.score_breakdown.spelling_grammar_deduction],
-                          ["Metrics", activeRun.score_breakdown.metrics_density_deduction],
-                          ["Weak Verbs", activeRun.score_breakdown.weak_verb_deduction],
-                          ["Sections", activeRun.score_breakdown.missing_sections_deduction],
-                          ["Keywords", activeRun.score_breakdown.missing_keywords_deduction],
-                          ["Total Deducted", activeRun.score_breakdown.total_deductions],
-                        ] as [string, number][]).filter(([, v]) => v !== undefined && v !== null).map(([label, val]) => (
-                          <div key={label} className="flex flex-col gap-0.5">
-                            <span className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">{label}</span>
-                            <span className={`text-sm font-black ${ val < 0 ? "text-destructive" : "text-emerald-500"}`}>
-                              {val === 0 ? "✓ 0" : val}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                  {/* Collapsible compliance toggle */}
+                  <div className="pt-2">
+                    <button
+                      onClick={() => setShowAnalysisDetails(!showAnalysisDetails)}
+                      type="button"
+                      className="w-full flex items-center justify-between p-3.5 rounded-2xl border border-border bg-card/10 hover:bg-card/20 text-xs font-bold text-muted-foreground hover:text-foreground transition-all cursor-pointer select-none"
+                    >
+                      <span className="flex items-center gap-2">
+                        <Trophy className="h-4 w-4 text-indigo-400" />
+                        {showAnalysisDetails ? "Hide Detailed ATS Compliance Checks & Score Deductions" : "View Detailed ATS Compliance Checks & Score Deductions"}
+                      </span>
+                      <ChevronDown className={`h-4 w-4 text-muted-foreground/60 transition-transform duration-200 ${showAnalysisDetails ? "rotate-180" : ""}`} />
+                    </button>
+                  </div>
 
-                  {/* ATS Checks */}
-                  {activeRun.ats_checks && Object.keys(activeRun.ats_checks).length > 0 && (
-                    <div className="rounded-2xl border border-border bg-card/25 overflow-hidden">
-                      <div className="px-4 py-3 border-b border-border/60 bg-muted/20">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">ATS Checks</p>
-                      </div>
-                      <div className="divide-y divide-border/40">
-                        {Object.entries(activeRun.ats_checks).map(([key, check]: [string, any]) => (
-                          <div key={key} className="px-4 py-3 flex items-start gap-3">
-                            <div className={`mt-0.5 h-4 w-4 rounded-full flex items-center justify-center shrink-0 ${
-                              check.passed ? "bg-emerald-500/15 text-emerald-500" : "bg-destructive/15 text-destructive"
-                            }`}>
-                              {check.passed
-                                ? <Check className="h-2.5 w-2.5 stroke-[3]" />
-                                : <X className="h-2.5 w-2.5 stroke-[3]" />}
+                  <AnimatePresence>
+                    {showAnalysisDetails && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.25 }}
+                        className="overflow-hidden space-y-4 pt-2"
+                      >
+                        {/* Score Breakdown */}
+                        {activeRun.score_breakdown && Object.keys(activeRun.score_breakdown).length > 0 && (
+                          <div className="rounded-2xl border border-border bg-card/25 overflow-hidden">
+                            <div className="px-4 py-3 border-b border-border/60 bg-muted/20">
+                              <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Score Breakdown</p>
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-[11px] font-black text-foreground capitalize">
-                                {key.replace(/_/g, " ")}
-                              </p>
-                              <p className="text-[10px] text-muted-foreground/70 mt-0.5 leading-snug">
-                                {check.details ?? (check.errors?.join(", ") ?? "")}
-                              </p>
+                            <div className="p-4 grid grid-cols-2 sm:grid-cols-3 gap-3">
+                              {([
+                                ["Grammar", activeRun.score_breakdown.spelling_grammar_deduction],
+                                ["Metrics", activeRun.score_breakdown.metrics_density_deduction],
+                                ["Weak Verbs", activeRun.score_breakdown.weak_verb_deduction],
+                                ["Sections", activeRun.score_breakdown.missing_sections_deduction],
+                                ["Keywords", activeRun.score_breakdown.missing_keywords_deduction],
+                                ["Total Deducted", activeRun.score_breakdown.total_deductions],
+                              ] as [string, number][]).filter(([, v]) => v !== undefined && v !== null).map(([label, val]) => (
+                                <div key={label} className="flex flex-col gap-0.5">
+                                  <span className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">{label}</span>
+                                  <span className={`text-sm font-black ${ val < 0 ? "text-destructive" : "text-emerald-500"}`}>
+                                    {val === 0 ? "✓ 0" : val}
+                                  </span>
+                                </div>
+                              ))}
                             </div>
-                            {check.score_impact < 0 && (
-                              <span className="text-[10px] font-black text-destructive shrink-0">{check.score_impact}</span>
-                            )}
                           </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                        )}
+
+                        {/* ATS Checks */}
+                        {activeRun.ats_checks && Object.keys(activeRun.ats_checks).length > 0 && (
+                          <div className="rounded-2xl border border-border bg-card/25 overflow-hidden">
+                            <div className="px-4 py-3 border-b border-border/60 bg-muted/20">
+                              <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">ATS Checks</p>
+                            </div>
+                            <div className="divide-y divide-border/40">
+                              {Object.entries(activeRun.ats_checks).map(([key, check]: [string, any]) => (
+                                <div key={key} className="px-4 py-3 flex items-start gap-3">
+                                  <div className={`mt-0.5 h-4 w-4 rounded-full flex items-center justify-center shrink-0 ${
+                                    check.passed ? "bg-emerald-500/15 text-emerald-500" : "bg-destructive/15 text-destructive"
+                                  }`}>
+                                    {check.passed
+                                      ? <Check className="h-2.5 w-2.5 stroke-[3]" />
+                                      : <X className="h-2.5 w-2.5 stroke-[3]" />}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-[11px] font-black text-foreground capitalize">
+                                      {key.replace(/_/g, " ")}
+                                    </p>
+                                    <p className="text-[10px] text-muted-foreground/70 mt-0.5 leading-snug">
+                                      {check.details ?? (check.errors?.join(", ") ?? "")}
+                                    </p>
+                                  </div>
+                                  {check.score_impact < 0 && (
+                                    <span className="text-[10px] font-black text-destructive shrink-0">{check.score_impact}</span>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
 
                   {/* Bullet improvements */}
                   {activeRun.bullet_point_suggestions?.length > 0 && (
