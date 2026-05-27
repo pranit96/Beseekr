@@ -261,6 +261,20 @@ const Auth = () => {
     cleanupOAuthState();
   }, []); // Only run on mount
 
+  // Capture redirect query parameter and save to sessionStorage for redirection after login/signup
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const redirectParam = params.get("redirect");
+      if (redirectParam) {
+        console.log("Captured redirect URL from query parameter, saving to sessionStorage:", redirectParam);
+        sessionStorage.setItem("auth-redirect", redirectParam);
+      }
+    } catch (e) {
+      console.error("Failed to capture redirect parameter:", e);
+    }
+  }, []);
+
   const handleEmailInput = (val: string, type: "login" | "signup") => {
     if (type === "login") setLoginEmail(val);
     else setSignupEmail(val);

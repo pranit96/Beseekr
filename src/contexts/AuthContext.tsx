@@ -240,8 +240,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               return;
             }
             const fetchedUser = response.data.user;
+            const wasNull = !user;
             setUser(fetchedUser);
             setCachedUser(fetchedUser); // SAFARI FIX: Update cache so dashboard sees logged-in state
+            if (wasNull) {
+              localStorage.setItem("auth_login", Date.now().toString());
+            }
             lastActivityRef.current = Date.now();
             authErrorShownRef.current = false;
 
@@ -455,6 +459,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // ENHANCED: Initial auth check with optimistic loading
   useEffect(() => {
+    // 0. SELF-HEALING OAUTH REDIRECT: Catch Supabase oauth codes landing on non-callback pages
+    try {
+      const searchParams = new URLSearchParams(window.location.search);
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const hasCode = searchParams.has("code") || hashParams.has("code");
+      
+      if (hasCode && !window.location.pathname.startsWith("/auth/callback")) {
+        logger.info("Detected OAuth code in URL on non-callback route, self-healing to /auth/callback");
+        const targetUrl = `/auth/callback${window.location.search}${window.location.hash}`;
+        window.location.href = targetUrl;
+        return;
+      }
+    } catch (e) {
+      logger.error("OAuth self-healing check error:", e);
+    }
+
     const initAuth = async () => {
       try {
         logger.info("Checking initial authentication state");
@@ -499,18 +519,45 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     initAuth();
 
-    // Multi-tab logout sync
+    // Multi-tab sync
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === "auth_logout" && e.newValue) {
         logger.info("Logout detected in another tab");
         handleAuthError();
         setCachedUser(null);
+      } else if (e.key === "auth_login" && e.newValue) {
+        logger.info("Login detected in another tab, refreshing auth");
+        refreshAuth(true);
+      }
+    };
+
+    // Proactive background session sync on window focus/visibility
+    let lastFocusRefresh = Date.now();
+    const handleFocus = () => {
+      const now = Date.now();
+      if (now - lastFocusRefresh > 30000) {
+        lastFocusRefresh = now;
+        logger.info("Window focused, proactively refreshing auth state");
+        refreshAuth(true);
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        handleFocus();
       }
     };
 
     window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
-  }, [handleAuthError]);
+    window.addEventListener("focus", handleFocus);
+    window.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("focus", handleFocus);
+      window.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [handleAuthError, refreshAuth]);
 
   const fetchCurrentUser = async () => {
     try {
@@ -577,6 +624,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const fetchedUser = response.data.user;
         setUser(fetchedUser);
         setCachedUser(fetchedUser);
+        localStorage.setItem("auth_login", Date.now().toString());
         lastActivityRef.current = Date.now();
         authErrorShownRef.current = false;
 
