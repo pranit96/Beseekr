@@ -479,7 +479,7 @@ export default function ResumeTailorMobile({
                         <div
                           key={run.id}
                           onClick={() => setActiveRun(run)}
-                          className="w-full p-3.5 rounded-2xl flex items-center gap-3 border border-border bg-card/45 hover:border-primary/30 transition-all group relative active:bg-muted/30"
+                          className="w-full p-3.5 rounded-2xl flex items-center gap-3 border border-border bg-card/45 hover:border-primary/30 transition-all active:bg-muted/30"
                         >
                           <span className={`text-xs font-black px-2 py-0.5 rounded-lg border shrink-0 ${scoreClass(run.ats_score)}`}>
                             {run.ats_score}%
@@ -488,18 +488,17 @@ export default function ResumeTailorMobile({
                             <p className="text-xs font-black text-foreground truncate">{run.company_name}</p>
                             <p className="text-[10px] truncate text-muted-foreground">{run.job_title}</p>
                           </div>
-                          <div className="flex items-center gap-1.5 shrink-0">
+                          <div className="flex items-center gap-2 shrink-0">
                             <span className="text-[9px] text-muted-foreground/50">
                               {new Date(run.saved_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
                             </span>
-                            <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/45" />
+                            <button
+                              onClick={e => deleteRun(e, run.id)}
+                              className="h-7 w-7 rounded-lg flex items-center justify-center bg-destructive/10 text-destructive border border-destructive/20 active:bg-destructive/20 transition-colors shrink-0"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
                           </div>
-                          <button
-                            onClick={e => deleteRun(e, run.id)}
-                            className="absolute -top-1.5 -right-1.5 h-6 w-6 rounded-full flex items-center justify-center bg-destructive/15 text-destructive border border-destructive/20"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </button>
                         </div>
                       ))}
                     </div>
