@@ -41,6 +41,12 @@ interface ResumeTailorMobileProps {
   parseUrl: () => Promise<void>;
   parsingUrl: boolean;
   fmtSize: (bytes: number) => string;
+  trackApp: boolean;
+  setTrackApp: (val: boolean) => void;
+  jobTitle: string;
+  setJobTitle: (val: string) => void;
+  syncTrackedApplication: (shouldTrack: boolean, company?: string, title?: string) => Promise<void>;
+  handleFieldBlur: (company?: string, title?: string) => Promise<void>;
 }
 
 const scoreClass = (s: number) =>
@@ -83,7 +89,13 @@ export default function ResumeTailorMobile({
   isResumeBlank,
   parseUrl,
   parsingUrl,
-  fmtSize
+  fmtSize,
+  trackApp,
+  setTrackApp,
+  jobTitle,
+  setJobTitle,
+  syncTrackedApplication,
+  handleFieldBlur
 }: ResumeTailorMobileProps) {
   // Mobile sub-tabs when not in active run: "tailor" or "runs"
   const [formTab, setFormTab] = useState<"tailor" | "runs">("tailor");
@@ -102,7 +114,7 @@ export default function ResumeTailorMobile({
   };
 
   return (
-    <div className="w-full flex-1 flex flex-col font-sans bg-background text-foreground select-none pb-20">
+    <div className="w-full flex-1 flex flex-col font-sans bg-background text-foreground select-none pb-6 min-h-0">
       
       {/* ── HEADER ────────────────────────────────────────────────────── */}
       <div className="px-4 py-3 flex items-center justify-between border-b border-border bg-card sticky top-0 z-10">
@@ -330,18 +342,52 @@ export default function ResumeTailorMobile({
                             animate={{ height: "auto", opacity: 1 }}
                             exit={{ height: 0, opacity: 0 }}
                             transition={{ duration: 0.2 }}
-                            className="overflow-hidden space-y-1.5 pl-6"
+                            className="overflow-hidden space-y-3.5 pl-6"
                           >
-                            <label className="block text-[9px] font-black uppercase tracking-widest text-zinc-500">
-                              Company Name <span className="text-destructive">*</span>
+                            <div className="grid grid-cols-2 gap-3">
+                              <div className="space-y-1.5">
+                                <label className="block text-[9px] font-black uppercase tracking-widest text-zinc-500">
+                                  Company Name <span className="text-destructive">*</span>
+                                </label>
+                                <input
+                                  type="text"
+                                  value={clCompanyName}
+                                  onChange={e => setClCompanyName(e.target.value)}
+                                  onBlur={() => handleFieldBlur()}
+                                  placeholder="e.g. Stripe, Acme Corp..."
+                                  className="w-full h-9 px-3 text-xs rounded-xl outline-none transition-colors bg-muted/40 border border-border focus:border-primary/50 text-foreground caret-primary"
+                                />
+                              </div>
+                              <div className="space-y-1.5">
+                                <label className="block text-[9px] font-black uppercase tracking-widest text-zinc-500">
+                                  Job Title / Role
+                                </label>
+                                <input
+                                  type="text"
+                                  value={jobTitle}
+                                  onChange={e => setJobTitle(e.target.value)}
+                                  onBlur={() => handleFieldBlur()}
+                                  placeholder="e.g. SWE, Lead PM..."
+                                  className="w-full h-9 px-3 text-xs rounded-xl outline-none transition-colors bg-muted/40 border border-border focus:border-primary/50 text-foreground caret-primary"
+                                />
+                              </div>
+                            </div>
+
+                            <label className="flex items-center gap-2.5 pt-1.5 cursor-pointer select-none">
+                              <input
+                                type="checkbox"
+                                checked={trackApp}
+                                onChange={async (e) => {
+                                  const val = e.target.checked;
+                                  setTrackApp(val);
+                                  await syncTrackedApplication(val);
+                                }}
+                                className="h-3.5 w-3.5 rounded border-border focus:ring-primary/45 accent-indigo-500 cursor-pointer"
+                              />
+                              <span className="text-[10px] font-bold text-foreground">
+                                Track this application in Job Tracker
+                              </span>
                             </label>
-                            <input
-                              type="text"
-                              value={clCompanyName}
-                              onChange={e => setClCompanyName(e.target.value)}
-                              placeholder="e.g. Stripe, Acme Corp..."
-                              className="w-full h-9 px-3 text-xs rounded-xl outline-none transition-colors bg-muted/40 border border-border focus:border-primary/50 text-foreground caret-primary"
-                            />
                           </motion.div>
                         )}
                       </AnimatePresence>

@@ -329,7 +329,7 @@ export default function ResumeTailor() {
 
   if (isMobile) {
     return (
-      <div className="w-full min-h-[calc(100vh-100px)] flex flex-col font-sans relative bg-background text-foreground animate-fadeIn">
+      <div className="w-full h-full flex flex-col font-sans relative bg-background text-foreground animate-fadeIn overflow-hidden">
         <AnimatePresence>
           {processing && (
             <motion.div
@@ -423,6 +423,12 @@ export default function ResumeTailor() {
           parseUrl={parseUrl}
           parsingUrl={parsingUrl}
           fmtSize={fmtSize}
+          trackApp={trackApp}
+          setTrackApp={setTrackApp}
+          jobTitle={jobTitle}
+          setJobTitle={setJobTitle}
+          syncTrackedApplication={syncTrackedApplication}
+          handleFieldBlur={handleFieldBlur}
         />
       </div>
     );
