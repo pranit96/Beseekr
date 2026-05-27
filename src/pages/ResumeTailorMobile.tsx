@@ -9,6 +9,12 @@ import {
 import { type TailorRunRecord } from "@/api/resume";
 
 interface ResumeTailorMobileProps {
+  generateCL: boolean;
+  setGenerateCL: (val: boolean) => void;
+  clCompanyName: string;
+  setClCompanyName: (val: string) => void;
+  downloadCoverLetterPdf: () => void;
+  downloadCoverLetterWord: () => void;
   runs: TailorRunRecord[];
   loadingRuns: boolean;
   activeRun: TailorRunRecord | null;
@@ -46,6 +52,12 @@ const scoreStroke = (s: number) =>
   s >= 85 ? "#10b981" : s >= 70 ? "#6366f1" : "#f59e0b";
 
 export default function ResumeTailorMobile({
+  generateCL,
+  setGenerateCL,
+  clCompanyName,
+  setClCompanyName,
+  downloadCoverLetterPdf,
+  downloadCoverLetterWord,
   runs,
   loadingRuns,
   activeRun,
@@ -76,8 +88,8 @@ export default function ResumeTailorMobile({
   // Mobile sub-tabs when not in active run: "tailor" or "runs"
   const [formTab, setFormTab] = useState<"tailor" | "runs">("tailor");
 
-  // Mobile sub-tabs when viewing results: "overview" | "bullets" | "pdf"
-  const [resultsTab, setResultsTab] = useState<"overview" | "bullets" | "pdf">("overview");
+  // Mobile sub-tabs when viewing results: "overview" | "bullets" | "pdf" | "cover_letter"
+  const [resultsTab, setResultsTab] = useState<"overview" | "bullets" | "pdf" | "cover_letter">("overview");
 
   // Local drag-over state (touch fallback is click)
   const [dragOver, setDragOver] = useState(false);
@@ -291,6 +303,49 @@ export default function ResumeTailorMobile({
                       rows={5}
                       className="w-full p-3 text-xs rounded-xl resize-none outline-none bg-muted/30 border border-border focus:border-primary/50 text-foreground caret-primary leading-relaxed"
                     />
+
+                    {/* Cover Letter Option */}
+                    <div className="pt-3 border-t border-border/40 space-y-2">
+                      <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={generateCL}
+                          onChange={e => setGenerateCL(e.target.checked)}
+                          className="mt-0.5 h-4 w-4 rounded border-border focus:ring-primary/45 accent-indigo-500 cursor-pointer"
+                        />
+                        <div className="flex flex-col">
+                          <span className="text-xs font-bold text-foreground">
+                            Generate Cover Letter with AI
+                          </span>
+                          <span className="text-[9px] text-muted-foreground/80 leading-normal mt-0.5">
+                            Creates a matching cover letter aligned to this job description.
+                          </span>
+                        </div>
+                      </label>
+
+                      <AnimatePresence>
+                        {generateCL && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="overflow-hidden space-y-1.5 pl-6"
+                          >
+                            <label className="block text-[9px] font-black uppercase tracking-widest text-zinc-500">
+                              Company Name <span className="text-destructive">*</span>
+                            </label>
+                            <input
+                              type="text"
+                              value={clCompanyName}
+                              onChange={e => setClCompanyName(e.target.value)}
+                              placeholder="e.g. Stripe, Acme Corp..."
+                              className="w-full h-9 px-3 text-xs rounded-xl outline-none transition-colors bg-muted/40 border border-border focus:border-primary/50 text-foreground caret-primary"
+                            />
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
                   </div>
 
                   {/* Step 3: Mode Selector */}
@@ -468,32 +523,41 @@ export default function ResumeTailorMobile({
                 </div>
               </div>
 
-              {/* Segmented Controller for Results */}
               <div className="flex p-1 rounded-xl bg-muted/65 border border-border/40">
                 <button
                   onClick={() => setResultsTab("overview")}
-                  className={`flex-1 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all ${
+                  className={`flex-1 py-1.5 text-[9px] font-black uppercase tracking-wider rounded-lg transition-all ${
                     resultsTab === "overview" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground/85"
                   }`}
                 >
-                  Score Details
+                  Score
                 </button>
                 <button
                   onClick={() => setResultsTab("bullets")}
-                  className={`flex-1 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all ${
+                  className={`flex-1 py-1.5 text-[9px] font-black uppercase tracking-wider rounded-lg transition-all ${
                     resultsTab === "bullets" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground/85"
                   }`}
                 >
-                  Upgraded Bullets
+                  Bullets
                 </button>
                 <button
                   onClick={() => setResultsTab("pdf")}
-                  className={`flex-1 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all ${
+                  className={`flex-1 py-1.5 text-[9px] font-black uppercase tracking-wider rounded-lg transition-all ${
                     resultsTab === "pdf" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground/85"
                   }`}
                 >
-                  Download PDF
+                  Resume PDF
                 </button>
+                {activeRun.generate_cover_letter && (
+                  <button
+                    onClick={() => setResultsTab("cover_letter")}
+                    className={`flex-1 py-1.5 text-[9px] font-black uppercase tracking-wider rounded-lg transition-all ${
+                      resultsTab === "cover_letter" ? "bg-background text-foreground shadow-sm animate-fadeIn" : "text-muted-foreground/85"
+                    }`}
+                  >
+                    Cover Letter
+                  </button>
+                )}
               </div>
 
               {/* RESULTS TAB: SCORE DETAILS */}
@@ -643,6 +707,46 @@ export default function ResumeTailorMobile({
                     >
                       Apply Tailored Resume Draft
                     </button>
+                  </div>
+                </div>
+              )}
+
+              {/* RESULTS TAB: COVER LETTER */}
+              {resultsTab === "cover_letter" && activeRun.generate_cover_letter && (
+                <div className="space-y-4 animate-fadeIn">
+                  {/* Action buttons card */}
+                  <div className="rounded-2xl border border-border bg-card/45 p-5 flex flex-col items-center gap-3.5 text-center">
+                    <div className="h-11 w-11 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
+                      <FileText className="h-5 w-5 text-indigo-500" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-black text-foreground">Cover Letter Ready</p>
+                      <p className="text-[10px] text-muted-foreground/60 mt-1 max-w-[200px] leading-relaxed mx-auto">
+                        Download your cover letter instantly in your preferred format.
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 w-full">
+                      <button
+                        onClick={downloadCoverLetterWord}
+                        className="h-10 rounded-xl text-[10px] font-black flex items-center justify-center gap-1.5 bg-muted border border-border text-foreground hover:bg-muted/80 cursor-pointer"
+                      >
+                        <FileText className="h-3.5 w-3.5 text-blue-500" /> Word (Docx)
+                      </button>
+                      <button
+                        onClick={downloadCoverLetterPdf}
+                        className="h-10 rounded-xl text-[10px] font-black text-white flex items-center justify-center gap-1.5 bg-gradient-to-r from-indigo-500 to-purple-600 border-none cursor-pointer"
+                      >
+                        <Download className="h-3.5 w-3.5" /> PDF (LaTeX)
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Letter body */}
+                  <div className="rounded-2xl border border-border bg-white dark:bg-zinc-950 p-5 shadow-inner">
+                    <div className="text-zinc-800 dark:text-zinc-200 font-serif leading-relaxed text-[11px] select-text whitespace-pre-wrap">
+                      {activeRun.cover_letter_text}
+                    </div>
                   </div>
                 </div>
               )}

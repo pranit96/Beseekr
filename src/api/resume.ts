@@ -524,6 +524,9 @@ export interface TailorAlignResult {
     reason: string;
   }>;
   general_feedback: string;
+  generate_cover_letter?: boolean;
+  cover_letter_text?: string;
+  cover_letter_pdf_base64?: string;
 }
 
 export async function tailorAlignResume(
@@ -531,6 +534,8 @@ export async function tailorAlignResume(
   jd: string,
   mode?: "enhance" | "rewrite",
   resumeId?: string,
+  generateCoverLetter?: boolean,
+  companyName?: string,
 ): Promise<TailorAlignResult> {
   const formData = new FormData();
   if (file) {
@@ -542,6 +547,12 @@ export async function tailorAlignResume(
   }
   if (resumeId) {
     formData.append("resumeId", resumeId);
+  }
+  if (generateCoverLetter !== undefined) {
+    formData.append("generateCoverLetter", String(generateCoverLetter));
+  }
+  if (companyName) {
+    formData.append("companyName", companyName);
   }
 
   const res = await apiClient.post("/api/resume/tailor-align", formData);

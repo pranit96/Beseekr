@@ -66,6 +66,9 @@ export default function ResumeTailor() {
   const [dragOver, setDragOver]   = useState(false);
   const [mode, setMode]           = useState<"enhance" | "rewrite">("enhance");
   const [selectedResumeId, setSelectedResumeId] = useState<string>("");
+  const [generateCL, setGenerateCL]   = useState(false);
+  const [clCompanyName, setClCompanyName] = useState("");
+  const [activeResultView, setActiveResultView] = useState<"resume" | "cover_letter">("resume");
   const fileRef = useRef<HTMLInputElement>(null);
 
   // processing
@@ -106,6 +109,10 @@ export default function ResumeTailor() {
   }, []);
 
   useEffect(() => { loadRuns(true); }, [loadRuns]);
+
+  useEffect(() => {
+    setActiveResultView("resume");
+  }, [activeRun]);
 
   // ── parse url ────────────────────────────────────────────────────────────
   const parseUrl = async () => {
@@ -152,12 +159,20 @@ export default function ResumeTailor() {
     const sI = setInterval(() => setStepIdx(i => i < STEPS.length - 1 ? i + 1 : i), 1800);
 
     try {
-      const result = await resumeApi.tailorAlignResume(file, jd, mode, selectedResumeId || undefined);
+      const result = await resumeApi.tailorAlignResume(
+        file,
+        jd,
+        mode,
+        selectedResumeId || undefined,
+        generateCL,
+        clCompanyName || undefined
+      );
       clearInterval(pI); clearInterval(sI); setPct(100);
       toast({ title: "Resume tailored ✓" });
       setTimeout(async () => {
         setProcessing(false);
         setFile(null); setJd(""); setUrl("");
+        setGenerateCL(false); setClCompanyName("");
         sessionStorage.removeItem("tr_jd"); sessionStorage.removeItem("tr_url");
         await loadRuns(false);
         setActiveRun(result as unknown as TailorRunRecord);
@@ -199,6 +214,39 @@ export default function ResumeTailor() {
     a.download = `${activeRun.company_name ?? "resume"}_tailored.pdf`;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const downloadCoverLetterPdf = () => {
+    if (!activeRun?.cover_letter_pdf_base64) {
+      toast({ title: "No Cover Letter PDF available", variant: "destructive" }); return;
+    }
+    const byteStr = atob(activeRun.cover_letter_pdf_base64);
+    const bytes = new Uint8Array(byteStr.length);
+    for (let i = 0; i < byteStr.length; i++) bytes[i] = byteStr.charCodeAt(i);
+    const blob = new Blob([bytes], { type: "application/octet-stream" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${activeRun.company_name ?? "Cover_Letter"}_Cover_Letter.pdf`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const downloadCoverLetterWord = async () => {
+    if (!activeRun?.cover_letter_text) {
+      toast({ title: "No Cover Letter text available", variant: "destructive" }); return;
+    }
+    try {
+      toast({ title: "Generating Word document...", description: "Converting cover letter..." });
+      const objectUrl = await resumeApi.downloadCoverLetterWord(activeRun.resume, activeRun.cover_letter_text);
+      const a = document.createElement("a");
+      a.href = objectUrl;
+      a.download = `${activeRun.company_name ?? "Cover_Letter"}_Cover_Letter.docx`;
+      a.click();
+      window.URL.revokeObjectURL(objectUrl);
+    } catch (err: any) {
+      toast({ title: "Word generation failed", description: err.message, variant: "destructive" });
+    }
   };
 
   // ── apply to workspace ────────────────────────────────────────────────────
@@ -275,6 +323,12 @@ export default function ResumeTailor() {
         </AnimatePresence>
 
         <ResumeTailorMobile
+          generateCL={generateCL}
+          setGenerateCL={setGenerateCL}
+          clCompanyName={clCompanyName}
+          setClCompanyName={setClCompanyName}
+          downloadCoverLetterPdf={downloadCoverLetterPdf}
+          downloadCoverLetterWord={downloadCoverLetterWord}
           runs={runs}
           loadingRuns={loadingRuns}
           activeRun={activeRun}
@@ -695,6 +749,49 @@ export default function ResumeTailor() {
                         rows={6}
                         className="w-full p-3 text-sm rounded-xl resize-none outline-none transition-colors bg-muted/30 border border-border focus:border-primary/50 text-foreground caret-primary"
                       />
+
+                      {/* Cover Letter Option */}
+                      <div className="pt-4 border-t border-border/40 space-y-3">
+                        <label className="flex items-start gap-3 cursor-pointer group select-none">
+                          <input
+                            type="checkbox"
+                            checked={generateCL}
+                            onChange={e => setGenerateCL(e.target.checked)}
+                            className="mt-0.5 h-4 w-4 rounded border-border focus:ring-primary/45 accent-indigo-500 cursor-pointer"
+                          />
+                          <div className="flex flex-col">
+                            <span className="text-xs font-black text-foreground group-hover:text-primary transition-colors">
+                              Generate matching Cover Letter with AI
+                            </span>
+                            <span className="text-[10px] text-muted-foreground/80 mt-0.5 leading-snug">
+                              Creates a perfectly structured, professionally aligned cover letter matching your tailored resume.
+                            </span>
+                          </div>
+                        </label>
+
+                        <AnimatePresence>
+                          {generateCL && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: "auto", opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              transition={{ duration: 0.2 }}
+                              className="overflow-hidden space-y-2 pl-7"
+                            >
+                              <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-500">
+                                Target Company Name <span className="text-destructive">*</span>
+                              </label>
+                              <input
+                                type="text"
+                                value={clCompanyName}
+                                onChange={e => setClCompanyName(e.target.value)}
+                                placeholder="e.g. Stripe, Acme Corp, Google..."
+                                className="w-full h-9 px-3.5 text-xs rounded-xl outline-none transition-colors bg-muted/40 border border-border focus:border-primary/50 text-foreground caret-primary"
+                              />
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
                     </div>
                   </div>
 
@@ -804,23 +901,66 @@ export default function ResumeTailor() {
                       <p className="text-sm font-semibold text-muted-foreground">{activeRun.job_title}</p>
                     </div>
                     <div className="flex items-center gap-2 shrink-0 self-start sm:self-center">
-                      <button onClick={applyWorkspace}
-                        className="flex items-center gap-2 h-9 px-4 rounded-xl text-xs font-black border border-primary/20 bg-primary/10 text-primary cursor-pointer transition-opacity hover:opacity-85">
-                        <Sparkles className="h-3.5 w-3.5" /> Apply Draft
-                      </button>
-                      <button onClick={() => previewRef.current?.scrollIntoView({ behavior: "smooth" })}
-                        className="flex items-center gap-2 h-9 px-4 rounded-xl text-xs font-black border border-border bg-muted/40 text-foreground cursor-pointer transition-opacity hover:opacity-85">
-                        <Eye className="h-3.5 w-3.5" /> View Preview
-                      </button>
-                      <button onClick={downloadPdf}
-                        className="flex items-center gap-2 h-9 px-4 rounded-xl text-xs font-black text-white cursor-pointer transition-opacity hover:opacity-85 border-none bg-gradient-to-r from-indigo-500 to-purple-600 shadow-glow">
-                        <Download className="h-3.5 w-3.5" /> Download PDF
-                      </button>
+                      {activeResultView === "resume" ? (
+                        <>
+                          <button onClick={applyWorkspace}
+                            className="flex items-center gap-2 h-9 px-4 rounded-xl text-xs font-black border border-primary/20 bg-primary/10 text-primary cursor-pointer transition-opacity hover:opacity-85 animate-fadeIn">
+                            <Sparkles className="h-3.5 w-3.5" /> Apply Draft
+                          </button>
+                          <button onClick={() => previewRef.current?.scrollIntoView({ behavior: "smooth" })}
+                            className="flex items-center gap-2 h-9 px-4 rounded-xl text-xs font-black border border-border bg-muted/40 text-foreground cursor-pointer transition-opacity hover:opacity-85 animate-fadeIn">
+                            <Eye className="h-3.5 w-3.5" /> View Preview
+                          </button>
+                          <button onClick={downloadPdf}
+                            className="flex items-center gap-2 h-9 px-4 rounded-xl text-xs font-black text-white cursor-pointer transition-opacity hover:opacity-85 border-none bg-gradient-to-r from-indigo-500 to-purple-600 shadow-glow animate-fadeIn">
+                            <Download className="h-3.5 w-3.5" /> Download PDF
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button onClick={downloadCoverLetterWord}
+                            className="flex items-center gap-2 h-9 px-4 rounded-xl text-xs font-black border border-border bg-muted/40 text-foreground cursor-pointer transition-opacity hover:opacity-85 animate-fadeIn">
+                            <FileText className="h-3.5 w-3.5 text-blue-500" /> Word (Docx)
+                          </button>
+                          <button onClick={downloadCoverLetterPdf}
+                            className="flex items-center gap-2 h-9 px-4 rounded-xl text-xs font-black text-white cursor-pointer transition-opacity hover:opacity-85 border-none bg-gradient-to-r from-indigo-500 to-purple-600 shadow-glow animate-fadeIn">
+                            <Download className="h-3.5 w-3.5" /> PDF (LaTeX)
+                          </button>
+                        </>
+                      )}
                     </div>
                   </div>
 
+                  {/* Tab Selector for Resume vs Cover Letter */}
+                  {activeRun.generate_cover_letter && (
+                    <div className="flex p-1 rounded-xl bg-muted/65 border border-border/40 w-fit animate-fadeIn">
+                      <button
+                        onClick={() => setActiveResultView("resume")}
+                        className={`px-5 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all ${
+                          activeResultView === "resume"
+                            ? "bg-background text-foreground shadow-sm font-black"
+                            : "text-muted-foreground/80 hover:text-foreground"
+                        }`}
+                      >
+                        Tailored Resume
+                      </button>
+                      <button
+                        onClick={() => setActiveResultView("cover_letter")}
+                        className={`px-5 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all ${
+                          activeResultView === "cover_letter"
+                            ? "bg-background text-foreground shadow-sm font-black"
+                            : "text-muted-foreground/80 hover:text-foreground"
+                        }`}
+                      >
+                        Cover Letter
+                      </button>
+                    </div>
+                  )}
+
                   {/* Score & Feedback Cards */}
-                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                  {activeResultView === "resume" ? (
+                    <>
+                      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
                     {/* Radial ATS Score */}
                     <div className="rounded-2xl p-5 flex flex-col items-center justify-center gap-3 border border-border bg-card/25">
                       <div className="relative">
@@ -1014,6 +1154,59 @@ export default function ResumeTailor() {
                       <Plus className="h-4 w-4" /> New Run
                     </button>
                   </div>
+                  </>
+                  ) : (
+                    <motion.div
+                      key="cover-letter-result"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="space-y-6 animate-fadeIn"
+                    >
+                      {/* Cover Letter AI Feedback */}
+                      <div className="rounded-2xl p-5 border border-border bg-card/25">
+                        <p className="text-[10px] font-black uppercase tracking-widest mb-2 text-muted-foreground/60">
+                          AI Executive Cover Letter
+                        </p>
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          Your cover letter has been perfectly tailored using your resume achievements aligned to key points in the Job Description. Use the buttons below or in the header to download the styled PDF (LaTeX format) or editable Word format.
+                        </p>
+                      </div>
+
+                      {/* Cover Letter Paper Preview */}
+                      <div className="rounded-2xl border border-border bg-card/25 overflow-hidden animate-fadeIn">
+                        <div className="px-4 py-3 flex items-center justify-between border-b border-border/80 bg-muted/30">
+                          <div className="flex items-center gap-2">
+                            <FileText className="h-4 w-4 text-muted-foreground/60" />
+                            <span className="text-[11px] font-black uppercase tracking-widest text-muted-foreground/80">
+                              Document Preview
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={downloadCoverLetterWord}
+                              className="flex items-center gap-1.5 h-7 px-3 rounded-lg text-[10px] font-black border border-border bg-muted/60 text-muted-foreground hover:text-foreground transition-all hover:bg-muted/80 cursor-pointer"
+                            >
+                              <FileText className="h-3.5 w-3.5 text-blue-500" /> Word (Docx)
+                            </button>
+                            <button
+                              onClick={downloadCoverLetterPdf}
+                              className="flex items-center gap-1.5 h-7 px-3 rounded-lg text-[10px] font-black border border-border bg-muted/60 text-muted-foreground hover:text-foreground transition-all hover:bg-muted/80 cursor-pointer"
+                            >
+                              <Download className="h-3.5 w-3.5" /> PDF (LaTeX)
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Paper sheet representation */}
+                        <div className="p-6 sm:p-12 bg-white dark:bg-zinc-950 flex justify-center">
+                          <div className="w-full max-w-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xl rounded-xl p-8 sm:p-12 text-zinc-800 dark:text-zinc-200 font-serif leading-relaxed text-sm select-text whitespace-pre-wrap">
+                            {activeRun.cover_letter_text}
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
               </motion.div>
             )}
           </AnimatePresence>
