@@ -16,7 +16,7 @@ import {
   Trophy,
 } from "lucide-react";
 import { Badge } from "../../components/ui/badge";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import HiredShell from "./HiredShell";
 
 interface DraftInfo {
@@ -53,6 +53,7 @@ export default function GetHiredPortal() {
   const [isLoadingDrafts, setIsLoadingDrafts] = useState(true);
   const [uploadDraft, setUploadDraft] = useState<DraftInfo | null>(null);
   const [templateDraft, setTemplateDraft] = useState<DraftInfo | null>(null);
+  const [showCreateOptions, setShowCreateOptions] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -116,74 +117,9 @@ export default function GetHiredPortal() {
           </p>
         </div>
 
-        {/* ── THREE ACTION CARDS ── */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {/* Upload Resume Card */}
-          <motion.button
-            whileHover={{
-              y: -4,
-              boxShadow: "0 20px 40px -12px rgba(0,0,0,0.15)",
-            }}
-            whileTap={{ scale: 0.98 }}
-            transition={{ type: "spring", stiffness: 400, damping: 25 }}
-            onClick={() => navigate("resume/upload")}
-            className="relative group p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-left cursor-pointer transition-colors hover:border-violet-300 dark:hover:border-violet-500/30 overflow-hidden"
-          >
-            {/* Gradient accent */}
-            <div className="absolute inset-0 bg-gradient-to-br from-violet-50 to-transparent dark:from-violet-500/[0.04] dark:to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-            <div className="relative space-y-4">
-              <div className="h-12 w-12 rounded-xl bg-violet-100 dark:bg-violet-500/15 border border-violet-200 dark:border-violet-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Upload className="h-5 w-5 text-violet-600 dark:text-violet-400" />
-              </div>
-              <div className="space-y-1.5">
-                <h3 className="text-base font-black tracking-tight">
-                  Upload Resume
-                </h3>
-                <p className="text-xs text-zinc-500 leading-relaxed font-medium">
-                  Upload your existing PDF or Word resume. We'll parse it with
-                  AI and load it into the editor.
-                </p>
-              </div>
-              <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-violet-600 dark:text-violet-400">
-                <span>Select file</span>
-                <ArrowRight className="h-3 w-3 group-hover:translate-x-1 transition-transform" />
-              </div>
-            </div>
-          </motion.button>
-
-          {/* Start with Template Card */}
-          <motion.button
-            whileHover={{
-              y: -4,
-              boxShadow: "0 20px 40px -12px rgba(0,0,0,0.15)",
-            }}
-            whileTap={{ scale: 0.98 }}
-            transition={{ type: "spring", stiffness: 400, damping: 25 }}
-            onClick={() => navigate("resume/templates")}
-            className="relative group p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-left cursor-pointer transition-colors hover:border-emerald-300 dark:hover:border-emerald-500/30 overflow-hidden"
-          >
-            <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 to-transparent dark:from-emerald-500/[0.04] dark:to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-            <div className="relative space-y-4">
-              <div className="h-12 w-12 rounded-xl bg-emerald-100 dark:bg-emerald-500/15 border border-emerald-200 dark:border-emerald-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Sparkles className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-              </div>
-              <div className="space-y-1.5">
-                <h3 className="text-base font-black tracking-tight">
-                  Start with Template
-                </h3>
-                <p className="text-xs text-zinc-500 leading-relaxed font-medium">
-                  Choose from professional templates, customize the content, and
-                  make it your own.
-                </p>
-              </div>
-              <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-                <span>Browse templates</span>
-                <ArrowRight className="h-3 w-3 group-hover:translate-x-1 transition-transform" />
-              </div>
-            </div>
-          </motion.button>
-
-          {/* ATS Match & Tailor Card */}
+        {/* ── TWO ACTION CARDS (OPTIMIZE RESUME FIRST) ── */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-2xl mx-auto">
+          {/* ATS Match & Tailor Card (Optimize First!) */}
           <motion.button
             whileHover={{
               y: -4,
@@ -214,6 +150,116 @@ export default function GetHiredPortal() {
               </div>
             </div>
           </motion.button>
+
+          {/* Create New Resume Card (Combined Upload & Template) */}
+          <motion.div
+            layout
+            whileHover={!showCreateOptions ? {
+              y: -4,
+              boxShadow: "0 20px 40px -12px rgba(0,0,0,0.15)",
+            } : {}}
+            whileTap={!showCreateOptions ? { scale: 0.98 } : {}}
+            transition={{ type: "spring", stiffness: 400, damping: 25 }}
+            onClick={() => {
+              if (!showCreateOptions) setShowCreateOptions(true);
+            }}
+            className={`relative group p-6 rounded-2xl border transition-colors overflow-hidden ${
+              showCreateOptions 
+                ? "border-violet-300 dark:border-violet-500/30 bg-white dark:bg-zinc-900" 
+                : "border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 cursor-pointer hover:border-violet-300 dark:hover:border-violet-500/30"
+            }`}
+          >
+            {/* Gradient accent */}
+            <div className="absolute inset-0 bg-gradient-to-br from-violet-50/50 to-transparent dark:from-violet-500/[0.03] dark:to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            
+            <AnimatePresence mode="wait">
+              {!showCreateOptions ? (
+                <motion.div
+                  key="collapsed"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="relative space-y-4"
+                >
+                  <div className="h-12 w-12 rounded-xl bg-violet-100 dark:bg-violet-500/15 border border-violet-200 dark:border-violet-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Sparkles className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <h3 className="text-base font-black tracking-tight">
+                      Create New Resume
+                    </h3>
+                    <p className="text-xs text-zinc-500 leading-relaxed font-medium">
+                      Start fresh by uploading your existing PDF/Word resume or selecting from our professional design templates.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-violet-600 dark:text-violet-400">
+                    <span>Create Resume</span>
+                    <ArrowRight className="h-3 w-3 group-hover:translate-x-1 transition-transform" />
+                  </div>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="expanded"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="relative space-y-4"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="h-10 w-10 rounded-xl bg-violet-100 dark:bg-violet-500/15 border border-violet-200 dark:border-violet-500/20 flex items-center justify-center">
+                      <Sparkles className="h-4.5 w-4.5 text-violet-600 dark:text-violet-400" />
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowCreateOptions(false);
+                      }}
+                      className="text-[10px] font-black uppercase tracking-wider text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 bg-zinc-100 dark:bg-zinc-800/60 hover:bg-zinc-200 dark:hover:bg-zinc-800 border-none rounded-lg px-2.5 py-1 transition-colors cursor-pointer"
+                    >
+                      Back
+                    </button>
+                  </div>
+                  <div className="space-y-1">
+                    <h3 className="text-sm font-black tracking-tight text-foreground">
+                      Choose Starting Method
+                    </h3>
+                    <p className="text-[11px] text-zinc-500 leading-normal font-medium">
+                      Select how you would like to initialize your new resume workspace:
+                    </p>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 gap-2 pt-1.5">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate("resume/upload");
+                      }}
+                      className="w-full py-2.5 px-3.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 text-left hover:border-violet-500 dark:hover:border-violet-500/50 hover:bg-violet-500/5 dark:hover:bg-violet-500/10 flex items-center justify-between text-xs font-bold transition-all text-zinc-800 dark:text-zinc-200 cursor-pointer"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Upload className="h-4 w-4 text-violet-600 dark:text-violet-400" />
+                        <span>Upload PDF or Word Resume</span>
+                      </div>
+                      <ArrowRight className="h-3 w-3 text-zinc-400" />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate("resume/templates");
+                      }}
+                      className="w-full py-2.5 px-3.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 text-left hover:border-emerald-500 dark:hover:border-emerald-500/50 hover:bg-emerald-500/5 dark:hover:bg-emerald-500/10 flex items-center justify-between text-xs font-bold transition-all text-zinc-800 dark:text-zinc-200 cursor-pointer"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                        <span>Browse Professional Templates</span>
+                      </div>
+                      <ArrowRight className="h-3 w-3 text-zinc-400" />
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
         </div>
 
         {/* ── PAST WORKSPACES ── */}
