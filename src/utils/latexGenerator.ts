@@ -287,7 +287,11 @@ export function generateLatexResume(data: ResumeData): string {
           : "[Link]";
         linkParam = `\\href{${proj.link}}{\\color{cvblue}${linkText}}`;
       }
-      const techStack = escapeLatex(proj.description || "");
+      let cleanDesc = (proj.description || "").trim();
+      if (cleanDesc.endsWith(".")) {
+        cleanDesc = cleanDesc.slice(0, -1).trim();
+      }
+      const techStack = escapeLatex(cleanDesc);
 
       latex += `\\resumeProjectHeading{${name}}{${linkParam}}{${techStack}}\n`;
 
