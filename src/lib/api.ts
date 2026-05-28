@@ -1268,6 +1268,10 @@ class ApiClient {
     return this.request<any>("/api/monitoring/memory");
   }
 
+  async getAdminPerformanceSummary() {
+    return this.request<any>("/api/monitoring/performance");
+  }
+
   async getAdminQueueStatus() {
     return this.request<any>("/api/monitor/queues");
   }

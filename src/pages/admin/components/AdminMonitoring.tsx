@@ -36,6 +36,10 @@ import {
   Database,
   Layers,
   Clock,
+  Sparkles,
+  ShieldAlert,
+  Gauge,
+  ArrowUpRight,
 } from "lucide-react";
 
 const StatCard = ({
@@ -112,6 +116,16 @@ export function AdminMonitoring() {
     queryFn: () => apiClient.getSystemHealth(),
     refetchInterval: 15000,
   });
+
+  // Fetch LLM Performance Summary
+  const { data: perfRes } = useQuery({
+    queryKey: ["admin", "monitoring", "performance"],
+    queryFn: () =>
+      apiClient.getAdminPerformanceSummary().then((res) => res.data),
+    refetchInterval: 5000,
+  });
+
+  const perfData = perfRes?.llmPerformance || null;
 
   // Fetch Queue/Worker Stats
   const { data: queueRes } = useQuery({
@@ -458,6 +472,210 @@ export function AdminMonitoring() {
               </div>
             </div>
           ))}
+        </div>
+
+        {/* LLM & AI OPERATIONS */}
+        <div>
+          <div className="flex items-center justify-between mb-4 mt-2">
+            <h2 className="text-sm font-bold text-white flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-purple-400 animate-pulse" /> LLM
+              & AI Operations
+            </h2>
+            <div className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
+              Real-time Cognitive Telemetry
+            </div>
+          </div>
+
+          {!perfData || perfData.totalCalls === 0 ? (
+            <div className="bg-white/[0.01] border border-white/[0.05] rounded-2xl p-8 text-center space-y-3">
+              <Sparkles className="w-8 h-8 mx-auto text-zinc-600 animate-pulse" />
+              <p className="text-xs font-bold text-zinc-400">
+                No active LLM telemetry recorded
+              </p>
+              <p className="text-[10px] text-zinc-500 max-w-sm mx-auto leading-relaxed">
+                As users optimize resumes, tailor applications, or grade
+                profiles, real-time AI latency, tokens, and guardrail alerts
+                will populate here.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {/* Telemetry Stat Cards */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <StatCard
+                  label="AI Success Rate"
+                  value={perfData.successRate || "100.0%"}
+                  sub={`${perfData.failureCount || 0} failed requests`}
+                  accent="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                  icon={Activity}
+                  tooltip="Percentage of LLM completions that finished successfully without raising errors."
+                />
+                <StatCard
+                  label="Total LLM Requests"
+                  value={perfData.totalCalls || 0}
+                  sub="Completions in process lifetime"
+                  accent="bg-purple-500/10 text-purple-400 border border-purple-500/20"
+                  icon={Sparkles}
+                  tooltip="Total number of raw completions made to Groq, Claude, or OpenAI."
+                />
+                <StatCard
+                  label="P95 AI Latency"
+                  value={
+                    perfData.latency?.p95Ms
+                      ? `${Number(perfData.latency.p95Ms).toFixed(0)} ms`
+                      : "N/A"
+                  }
+                  sub={`Avg: ${perfData.latency?.avgMs ? Number(perfData.latency.avgMs).toFixed(0) : 0} ms`}
+                  accent="bg-sky-500/10 text-sky-400 border border-sky-500/20"
+                  icon={Gauge}
+                  tooltip="The 95th percentile completion speed for deep rewrites and analysis."
+                />
+                <StatCard
+                  label="Est. Consumption"
+                  value={`${(((perfData.totalInputTokensEstimate || 0) + (perfData.totalOutputTokensEstimate || 0)) / 1000).toFixed(1)}k tokens`}
+                  sub={`In: ${((perfData.totalInputTokensEstimate || 0) / 1000).toFixed(1)}k / Out: ${((perfData.totalOutputTokensEstimate || 0) / 1000).toFixed(1)}k`}
+                  accent="bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                  icon={Zap}
+                  tooltip="Rough estimate of consumed tokens. Calculated at ~4 chars per token."
+                />
+              </div>
+
+              {/* Providers and Functions breakdown */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                {/* Providers breakdown */}
+                <div className="bg-white/[0.02] border border-white/[0.07] rounded-2xl p-6 flex flex-col gap-5">
+                  <div>
+                    <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
+                      <Server className="w-3.5 h-3.5 text-indigo-400" />{" "}
+                      Infrastructure Providers
+                    </h3>
+                    <p className="text-[11px] text-zinc-500 mt-0.5">
+                      Traffic & latency distribution by model api host
+                    </p>
+                  </div>
+                  <div className="space-y-4">
+                    {Object.entries(perfData.byProvider || {}).map(
+                      ([key, prov]: [string, any]) => {
+                        const share = Math.round(
+                          (prov.calls / perfData.totalCalls) * 100,
+                        );
+                        const avgLat = prov.totalLatencyMs
+                          ? Math.round(prov.totalLatencyMs / prov.calls)
+                          : 0;
+                        return (
+                          <div key={key} className="space-y-1.5">
+                            <div className="flex items-center justify-between text-xs font-semibold">
+                              <span className="capitalize text-zinc-300 font-bold flex items-center gap-1.5">
+                                {key === "groq"
+                                  ? "Groq (Mixtral/Llama)"
+                                  : key === "claude"
+                                    ? "Anthropic Claude"
+                                    : "OpenAI GPT"}
+                                <span className="text-[10px] text-zinc-500 font-normal">
+                                  ({prov.calls} calls)
+                                </span>
+                              </span>
+                              <span className="text-zinc-400">
+                                {avgLat} ms avg
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Progress
+                                value={share}
+                                className="h-1.5 bg-white/[0.04]"
+                              />
+                              <span className="text-[10px] text-zinc-500 font-bold w-6 text-right shrink-0">
+                                {share}%
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      },
+                    )}
+                  </div>
+                </div>
+
+                {/* Functions breakdown */}
+                <div className="bg-white/[0.02] border border-white/[0.07] rounded-2xl p-6 flex flex-col gap-4">
+                  <div>
+                    <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
+                      <Cpu className="w-3.5 h-3.5 text-emerald-400" /> Pipeline
+                      Services
+                    </h3>
+                    <p className="text-[11px] text-zinc-500 mt-0.5">
+                      Cognitive latency breakdown by operational step
+                    </p>
+                  </div>
+                  <div className="divide-y divide-white/[0.04] max-h-[160px] overflow-y-auto pr-1">
+                    {Object.entries(perfData.byFunction || {}).map(
+                      ([key, fn]: [string, any]) => (
+                        <div
+                          key={key}
+                          className="flex items-center justify-between py-2.5 text-xs"
+                        >
+                          <span
+                            className="font-semibold text-zinc-400 truncate max-w-[200px]"
+                            title={key}
+                          >
+                            {key === "extractResumeSchema"
+                              ? "Schema Extraction (JSON)"
+                              : key === "scoreResumeATS"
+                                ? "Deep ATS Audit (Score)"
+                                : key === "optimizeResumeContent"
+                                  ? "Optimizer Engine"
+                                  : key === "extractGroundedContext"
+                                    ? "Grounded Candidate Context"
+                                    : key}
+                          </span>
+                          <div className="flex items-center gap-3 font-semibold text-zinc-300">
+                            <span>{fn.calls} runs</span>
+                            <span className="text-zinc-500">|</span>
+                            <span className="text-emerald-400">
+                              {Math.round(fn.avgLatencyMs || 0)} ms
+                            </span>
+                          </div>
+                        </div>
+                      ),
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Guardrail & Adversarial Alerts */}
+              {Object.keys(perfData.guardrailTriggerCounts || {}).length >
+                0 && (
+                <div className="p-4 rounded-xl border border-red-500/20 bg-red-500/[0.02] space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                  <div className="flex items-center gap-2">
+                    <ShieldAlert className="w-4 h-4 text-red-400 animate-pulse shrink-0" />
+                    <div>
+                      <span className="text-xs font-bold text-white block">
+                        Guardrail Observability Logs
+                      </span>
+                      <span className="text-[10px] text-zinc-500 block">
+                        AI guardrail mitigations triggered during session
+                        lifetime
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {Object.entries(perfData.guardrailTriggerCounts).map(
+                      ([rule, count]: [string, any]) => (
+                        <div
+                          key={rule}
+                          className="flex items-center gap-1.5 px-3 py-1 rounded bg-red-500/10 border border-red-500/20 text-[10px] font-black uppercase tracking-wider text-red-400"
+                        >
+                          <span>{rule.replace(/_/g, " ")}</span>
+                          <span className="text-white bg-red-500/30 px-1 rounded">
+                            {count}
+                          </span>
+                        </div>
+                      ),
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* MEMORY & SYSTEM */}
