@@ -248,20 +248,81 @@ export default function ResumeUpload() {
 
       // ── 2. Start the actual API call in parallel ──
       try {
-        const parsed = await resumeApi.uploadAndParseResumeWithProgress(
+        // Production path: signed upload to Supabase + async parse via worker + socket progress
+        const signed = await resumeApi.getSignedResumeUploadUrl(file);
+        await resumeApi.uploadResumeToSignedUrl({
+          bucket: signed.bucket,
+          storagePath: signed.storagePath,
+          token: signed.token,
           file,
-          () => {}, // We don't use XHR progress anymore — visual timer handles it
-        );
+        });
 
-        if (!parsed?.personal_info?.name) {
-          throw new Error(
-            "Could not extract resume details from this file. Please try a different format.",
-          );
-        }
+        const { jobId } = await resumeApi.enqueueResumeParseFromStorage({
+          bucket: signed.bucket,
+          storagePath: signed.storagePath,
+          originalname: file.name,
+          mimetype: file.type,
+        });
 
-        // Store result — the timer tick will pick it up
-        apiResultRef.current = parsed;
-        apiDoneRef.current = true;
+        // Subscribe to realtime progress + completion on /resume namespace
+        const { io } = await import("socket.io-client");
+        const SOCKET_URL = import.meta.env.VITE_API_BASE_URL;
+        const socket = io(`${SOCKET_URL}/resume`, {
+          withCredentials: true,
+          transports: ["websocket", "polling"],
+        });
+
+        const cleanup = () => {
+          try {
+            socket.removeAllListeners();
+            socket.disconnect();
+          } catch {}
+        };
+
+        const onError = (payload: any) => {
+          const msg =
+            payload?.message ||
+            payload?.error ||
+            payload?.details ||
+            "Upload processing failed. Please try again.";
+          apiErrorRef.current = msg;
+          apiDoneRef.current = true;
+          cleanup();
+        };
+
+        socket.on("connect", () => {
+          socket.emit("subscribe:tailor", jobId);
+        });
+
+        socket.on("progress", (data: any) => {
+          if (data?.jobId !== jobId) return;
+          // Let the visual timer keep animating; we only extend stage text via displayPercent thresholds.
+          // (If you want exact progress, we can map data.progress into displayPercent later.)
+        });
+
+        socket.on("complete", (res: any) => {
+          // Parse job completes with kind=upload_parse and data=<ResumeSchema>
+          if (res?.jobId !== jobId) return;
+          const parsed = (res as any)?.data as ResumeSchema | undefined;
+          if (!parsed) {
+            onError({ message: "Upload completed but resume data was missing." });
+            return;
+          }
+          if (!parsed?.personal_info?.name) {
+            onError({
+              message:
+                "Could not extract resume details from this file. Please try a different format.",
+            });
+            return;
+          }
+          apiResultRef.current = parsed;
+          apiDoneRef.current = true;
+          cleanup();
+        });
+
+        socket.on("error", onError);
+
+        // Result is set by socket "complete".
       } catch (err: any) {
         apiErrorRef.current =
           err.message || "Upload processing failed. Please try again.";

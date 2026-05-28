@@ -1,5 +1,6 @@
 // src/api/resume.ts
 import { apiClient } from "@/lib/api";
+import { supabase } from "@/lib/supabase";
 
 export interface ResumePersonalInfo {
   name: string;
@@ -157,6 +158,55 @@ export async function uploadAndParseResume(file: File): Promise<ResumeSchema> {
     throw new Error(data.error || "Failed to upload resume");
   }
   return data.data as ResumeSchema;
+}
+
+export interface SignedResumeUpload {
+  bucket: string;
+  storagePath: string;
+  token: string;
+  signedUrl: string;
+  contentType: string;
+}
+
+export async function getSignedResumeUploadUrl(file: File): Promise<SignedResumeUpload> {
+  const res = await apiClient.post("/api/resume/upload/signed-url", {
+    fileName: file.name,
+    contentType: file.type,
+    sizeBytes: file.size,
+  });
+  return res.data as SignedResumeUpload;
+}
+
+export async function uploadResumeToSignedUrl(params: {
+  bucket: string;
+  storagePath: string;
+  token: string;
+  file: File;
+}): Promise<void> {
+  const { bucket, storagePath, token, file } = params;
+  const { data, error } = await supabase.storage
+    .from(bucket)
+    .uploadToSignedUrl(storagePath, token, file, {
+      contentType: file.type,
+      upsert: true,
+    } as any);
+
+  if (error) {
+    throw new Error(error.message || "Failed to upload to storage");
+  }
+  if (!data) {
+    throw new Error("Upload failed: empty response");
+  }
+}
+
+export async function enqueueResumeParseFromStorage(params: {
+  bucket: string;
+  storagePath: string;
+  originalname: string;
+  mimetype: string;
+}): Promise<{ jobId: string }> {
+  const res = await apiClient.post("/api/resume/upload/parse", params);
+  return { jobId: (res as any)?.jobId || (res.data as any)?.jobId };
 }
 
 /**
@@ -580,6 +630,9 @@ export async function deleteTailorRun(id: string): Promise<any> {
 export const resumeApi = {
   uploadAndParseResume,
   uploadAndParseResumeWithProgress,
+  getSignedResumeUploadUrl,
+  uploadResumeToSignedUrl,
+  enqueueResumeParseFromStorage,
   scoreResume,
   optimizeResume,
   downloadResumePdf,
