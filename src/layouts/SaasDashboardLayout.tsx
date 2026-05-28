@@ -10,12 +10,12 @@ export function SaasDashboardLayout() {
   const location = useLocation();
   const { user } = useAuth();
 
-  const isWorkspace = location.pathname.includes("/resume/workspace");
-  const isUpload = location.pathname.includes("/resume/upload");
-  const isTailor = location.pathname.includes("/resume/tailor");
+  // const isWorkspace = location.pathname.includes("/resume/workspace");
+  // const isUpload = location.pathname.includes("/resume/upload");
+  // const isTailor = location.pathname.includes("/resume/tailor");
 
   // Full-screen pages that manage their own layout (no header/footer)
-  if (isWorkspace || isUpload || isTailor) {
+  if (false) {
     return (
       <div className="h-screen bg-background text-foreground flex flex-col overflow-hidden selection:bg-primary/20">
         <main className="flex-1 flex flex-col min-h-0 relative z-10">

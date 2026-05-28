@@ -12,7 +12,7 @@ import {
 } from "react-router-dom";
 import { ThemeProvider } from "./hooks/use-theme";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
-import { ResumeProvider } from "./contexts/ResumeContext";
+// import { ResumeProvider } from "./contexts/ResumeContext";
 import { DeviceProvider } from "./contexts/DeviceContext";
 import { KeyboardShortcutsDialog } from "./components/KeyboardShortcutsDialog";
 import { ErrorBoundary } from "./components/ErrorBoundary";
@@ -139,26 +139,26 @@ const SaasWatchlist = lazyRetry(
 );
 const Pricing = lazyRetry(() => import("./pages/saas/Pricing"), "Pricing");
 // Get Hired hub deprecated — ResumePortal at /dashboard/resume
-const ResumeUpload = lazyRetry(
-  () => import("./pages/ResumeUpload"),
-  "ResumeUpload",
-);
-const ResumePortal = lazyRetry(
-  () => import("./pages/ResumePortal"),
-  "ResumePortal",
-);
-const ResumeTemplateSelect = lazyRetry(
-  () => import("./pages/ResumeTemplateSelect"),
-  "ResumeTemplateSelect",
-);
-const ResumeWorkspace = lazyRetry(
-  () => import("./pages/ResumeWorkspace"),
-  "ResumeWorkspace",
-);
-const ResumeTailor = lazyRetry(
-  () => import("@/pages/ResumeTailor"),
-  "ResumeTailor",
-);
+// const ResumeUpload = lazyRetry(
+//   () => import("./pages/ResumeUpload"),
+//   "ResumeUpload",
+// );
+// const ResumePortal = lazyRetry(
+//   () => import("./pages/ResumePortal"),
+//   "ResumePortal",
+// );
+// const ResumeTemplateSelect = lazyRetry(
+//   () => import("./pages/ResumeTemplateSelect"),
+//   "ResumeTemplateSelect",
+// );
+// const ResumeWorkspace = lazyRetry(
+//   () => import("./pages/ResumeWorkspace"),
+//   "ResumeWorkspace",
+// );
+// const ResumeTailor = lazyRetry(
+//   () => import("@/pages/ResumeTailor"),
+//   "ResumeTailor",
+// );
 // Deprecated hired features (tracker, prep, cover letter) — routes redirect to /dashboard/resume
 
 // Trading System pages with retry logic
@@ -470,7 +470,7 @@ const App = () => {
                           </Suspense>
                         }
                       />
-                      <Route
+                      {/* <Route
                         path="resume"
                         element={
                           <ResumeProvider>
@@ -520,14 +520,14 @@ const App = () => {
                         />
                       </Route>
                       {/* Deprecated Get Hired hub — redirect to Resume Portal */}
-                      <Route
+                      {/* <Route
                         path="hired"
                         element={<Navigate to="/dashboard/resume" replace />}
                       />
                       <Route
                         path="hired/*"
                         element={<Navigate to="/dashboard/resume" replace />}
-                      />
+                      />  */}
 
                       {/* OLD STOCK ROUTES - Redirect to new trading system */}
                       <Route

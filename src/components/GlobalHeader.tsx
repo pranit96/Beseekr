@@ -101,46 +101,46 @@ const NAV_ITEMS = {
     color: "from-emerald-500 to-teal-500",
     exact: false,
   },
-  resume: {
-    key: "resume",
-    name: "Resume",
-    href: "/dashboard/resume",
-    icon: FileText,
-    color: "from-indigo-500 to-pink-500",
-    exact: false,
-  },
-  resumePortal: {
-    key: "resumePortal",
-    name: "Portal",
-    href: "/dashboard/resume",
-    icon: Trophy,
-    color: "from-indigo-500 to-pink-500",
-    exact: true,
-  },
-  resumeUpload: {
-    key: "resumeUpload",
-    name: "Upload",
-    href: "/dashboard/resume/upload",
-    icon: FileText,
-    color: "from-sky-400 to-indigo-500",
-    exact: false,
-  },
-  resumeTailor: {
-    key: "resumeTailor",
-    name: "Job Tailor",
-    href: "/dashboard/resume/tailor",
-    icon: Trophy,
-    color: "from-indigo-500 to-violet-500",
-    exact: false,
-  },
-  resumeWorkspace: {
-    key: "resumeWorkspace",
-    name: "Workspace",
-    href: "/dashboard/resume/workspace",
-    icon: LayoutDashboard,
-    color: "from-purple-500 to-indigo-500",
-    exact: false,
-  },
+  // resume: {
+  //   key: "resume",
+  //   name: "Resume",
+  //   href: "/dashboard/resume",
+  //   icon: FileText,
+  //   color: "from-indigo-500 to-pink-500",
+  //   exact: false,
+  // },
+  // resumePortal: {
+  //   key: "resumePortal",
+  //   name: "Portal",
+  //   href: "/dashboard/resume",
+  //   icon: Trophy,
+  //   color: "from-indigo-500 to-pink-500",
+  //   exact: true,
+  // },
+  // resumeUpload: {
+  //   key: "resumeUpload",
+  //   name: "Upload",
+  //   href: "/dashboard/resume/upload",
+  //   icon: FileText,
+  //   color: "from-sky-400 to-indigo-500",
+  //   exact: false,
+  // },
+  // resumeTailor: {
+  //   key: "resumeTailor",
+  //   name: "Job Tailor",
+  //   href: "/dashboard/resume/tailor",
+  //   icon: Trophy,
+  //   color: "from-indigo-500 to-violet-500",
+  //   exact: false,
+  // },
+  // resumeWorkspace: {
+  //   key: "resumeWorkspace",
+  //   name: "Workspace",
+  //   href: "/dashboard/resume/workspace",
+  //   icon: LayoutDashboard,
+  //   color: "from-purple-500 to-indigo-500",
+  //   exact: false,
+  // },
   pricing: {
     key: "pricing",
     name: "Pricing",
@@ -166,14 +166,6 @@ function getNavigationContext(pathname: string, isPremium: boolean) {
 
   if (isChatContext) {
     return [NAV_ITEMS.home, NAV_ITEMS.chat, NAV_ITEMS.agents];
-  } else if (isResumeContext) {
-    return [
-      NAV_ITEMS.home,
-      NAV_ITEMS.resumePortal,
-      NAV_ITEMS.resumeUpload,
-      NAV_ITEMS.resumeTailor,
-      NAV_ITEMS.resumeWorkspace,
-    ];
   } else if (isDiscoverContext) {
     const items = [
       NAV_ITEMS.home,
@@ -189,7 +181,6 @@ function getNavigationContext(pathname: string, isPremium: boolean) {
     NAV_ITEMS.home,
     NAV_ITEMS.chat,
     NAV_ITEMS.discover,
-    NAV_ITEMS.resume,
     NAV_ITEMS.blog,
     // NAV_ITEMS.trading,
     // NAV_ITEMS.wellness,
