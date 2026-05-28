@@ -2,6 +2,8 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useResume } from "@/contexts/ResumeContext";
 import { resumeApi, type TailorRunRecord } from "@/api/resume";
+import { TailorResultsView } from "@/components/resume/TailorResultsView";
+import { useTailorJob } from "@/hooks/useTailorJob";
 import ResumeTailorMobile from "./ResumeTailorMobile";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -26,15 +28,6 @@ function fmtSize(b: number) {
   if (b < 1048576) return `${(b / 1024).toFixed(1)} KB`;
   return `${(b / 1048576).toFixed(1)} MB`;
 }
-
-const STEPS = [
-  "Parsing resume structure",
-  "Reading job requirements",
-  "Matching keywords & skills",
-  "Rewriting with XYZ format",
-  "Compiling LaTeX PDF",
-  "Scoring ATS compatibility",
-];
 
 // ─── score helpers ──────────────────────────────────────────────────────────
 const scoreClass = (s: number) =>
@@ -75,15 +68,12 @@ export default function ResumeTailor() {
   const [activeResultView, setActiveResultView] = useState<"resume" | "cover_letter">("resume");
   const fileRef = useRef<HTMLInputElement>(null);
 
-  // processing
-  const [processing, setProcessing]   = useState(false);
-  const [pct, setPct]                 = useState(0);
-  const [stepIdx, setStepIdx]         = useState(0);
+  const tailorJob = useTailorJob();
+  const { processing, pct, stepIdx, stepMessage, steps: TAILOR_STEPS } = tailorJob;
 
   // ui
   const [online, setOnline] = useState(navigator.onLine);
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [showAnalysisDetails, setShowAnalysisDetails] = useState(false);
   const previewRef = useRef<HTMLDivElement>(null);
 
   // ── sync tracked application helper ─────────────────────────────────────────
@@ -212,42 +202,39 @@ export default function ResumeTailor() {
     }
   };
 
-  // ── run tailoring ─────────────────────────────────────────────────────────
+  // ── run tailoring (signed upload + async worker + socket progress) ────────
   const runTailoring = async () => {
-    if (!file && isResumeBlank) {
+    if (!file && !selectedResumeId && isResumeBlank) {
       toast({ title: "No resume loaded", description: "Upload a file or fill workspace resume.", variant: "destructive" }); return;
     }
     if (jd.trim().length < 20) {
       toast({ title: "Job description too short", variant: "destructive" }); return;
     }
-    setProcessing(true); setPct(0); setStepIdx(0);
-
-    const pI = setInterval(() => setPct(p => p >= 93 ? 93 : p + Math.floor(Math.random() * 5) + 2), 380);
-    const sI = setInterval(() => setStepIdx(i => i < STEPS.length - 1 ? i + 1 : i), 1800);
 
     try {
-      const result = await resumeApi.tailorAlignResume(
+      const result = await tailorJob.run({
         file,
         jd,
         mode,
-        selectedResumeId || undefined,
-        generateCL,
-        clCompanyName || undefined
-      );
-      clearInterval(pI); clearInterval(sI); setPct(100);
+        resumeId: selectedResumeId || undefined,
+        generateCoverLetter: generateCL,
+        companyName: clCompanyName || undefined,
+        jobTitle: jobTitle || undefined,
+      });
       toast({ title: "Resume tailored ✓" });
-      setTimeout(async () => {
-        setProcessing(false);
-        setFile(null); setJd(""); setUrl("");
-        setGenerateCL(false); setClCompanyName("");
-        setTrackApp(false); setTrackedAppId(null); setJobTitle("");
-        sessionStorage.removeItem("tr_jd"); sessionStorage.removeItem("tr_url");
-        await loadRuns(false);
-        setActiveRun(result as unknown as TailorRunRecord);
-      }, 700);
+      setFile(null);
+      setJd("");
+      setUrl("");
+      setGenerateCL(false);
+      setClCompanyName("");
+      setTrackApp(false);
+      setTrackedAppId(null);
+      setJobTitle("");
+      sessionStorage.removeItem("tr_jd");
+      sessionStorage.removeItem("tr_url");
+      await loadRuns(false);
+      setActiveRun(result);
     } catch (err: unknown) {
-      clearInterval(pI); clearInterval(sI);
-      setProcessing(false);
       const msg = err instanceof Error ? err.message : String(err);
       toast({ title: "Tailoring failed", description: msg, variant: "destructive" });
     }
@@ -323,7 +310,7 @@ export default function ResumeTailor() {
     setResumeData(activeRun.resume);
     setWorkspaceMode("upload", true);
     setShowOnboarding(false);
-    navigate("/dashboard/hired/resume/workspace");
+    navigate("/dashboard/resume/workspace");
     toast({ title: "Draft applied to workspace ✓" });
   };
 
@@ -364,14 +351,14 @@ export default function ResumeTailor() {
                       transition={{ duration: 0.25 }}
                       className="text-sm font-medium text-muted-foreground"
                     >
-                      {STEPS[stepIdx]}
+                      {stepMessage || TAILOR_STEPS[stepIdx]}
                     </motion.p>
                   </AnimatePresence>
                 </div>
 
                 {/* Step dots */}
                 <div className="flex items-center justify-center gap-1.5">
-                  {STEPS.map((_, i) => (
+                  {TAILOR_STEPS.map((_, i) => (
                     <div key={i} className={`rounded-full transition-all duration-300 ${i <= stepIdx ? "bg-primary" : "bg-muted"}`}
                       style={{
                         width: i === stepIdx ? 22 : 6,
@@ -414,6 +401,7 @@ export default function ResumeTailor() {
           processing={processing}
           pct={pct}
           stepIdx={stepIdx}
+          stepMessage={stepMessage}
           runTailoring={runTailoring}
           deleteRun={deleteRun}
           downloadPdf={downloadPdf}
@@ -473,14 +461,14 @@ export default function ResumeTailor() {
                     transition={{ duration: 0.25 }}
                     className="text-sm font-medium text-muted-foreground"
                   >
-                    {STEPS[stepIdx]}
+                    {stepMessage || TAILOR_STEPS[stepIdx]}
                   </motion.p>
                 </AnimatePresence>
               </div>
 
               {/* Step dots */}
               <div className="flex items-center justify-center gap-1.5">
-                {STEPS.map((_, i) => (
+                {TAILOR_STEPS.map((_, i) => (
                   <div key={i} className={`rounded-full transition-all duration-300 ${i <= stepIdx ? "bg-primary" : "bg-muted"}`}
                     style={{
                       width: i === stepIdx ? 22 : 6,
@@ -1006,363 +994,36 @@ export default function ResumeTailor() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}
                 transition={{ duration: 0.2 }}
-                className="max-w-4xl mx-auto space-y-6"
+                className="max-w-5xl mx-auto"
               >
-                  {/* Results Header */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border">
-                    <div className="space-y-1.5">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-500 border border-indigo-500/20">Tailored Result</span>
-                        {(activeRun as any).mode === "rewrite" ? (
-                          <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded bg-purple-500/10 text-purple-500 border border-purple-500/20 flex items-center gap-1">
-                            <RefreshCw className="h-2.5 w-2.5" /> Rewrite
-                          </span>
-                        ) : (
-                          <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
-                            <Sparkles className="h-2.5 w-2.5" /> Enhance
-                          </span>
-                        )}
-                        <span className="text-[9px] text-muted-foreground/50">
-                          {new Date(activeRun.saved_at).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
-                        </span>
-                      </div>
-                      <h2 className="text-xl sm:text-2xl font-black text-foreground tracking-tight leading-tight">{activeRun.company_name}</h2>
-                      <p className="text-sm font-semibold text-muted-foreground">{activeRun.job_title}</p>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0 self-start sm:self-center">
-                      {activeResultView === "resume" ? (
-                        <>
-                          <button onClick={applyWorkspace}
-                            className="flex items-center gap-2 h-9 px-4 rounded-xl text-xs font-black border border-primary/20 bg-primary/10 text-primary cursor-pointer transition-opacity hover:opacity-85 animate-fadeIn">
-                            <Sparkles className="h-3.5 w-3.5" /> Apply Draft
-                          </button>
-                          <button onClick={() => previewRef.current?.scrollIntoView({ behavior: "smooth" })}
-                            className="flex items-center gap-2 h-9 px-4 rounded-xl text-xs font-black border border-border bg-muted/40 text-foreground cursor-pointer transition-opacity hover:opacity-85 animate-fadeIn">
-                            <Eye className="h-3.5 w-3.5" /> View Preview
-                          </button>
-                          <button onClick={downloadPdf}
-                            className="flex items-center gap-2 h-9 px-4 rounded-xl text-xs font-black text-white cursor-pointer transition-opacity hover:opacity-85 border-none bg-gradient-to-r from-indigo-500 to-purple-600 shadow-glow animate-fadeIn">
-                            <Download className="h-3.5 w-3.5" /> Download PDF
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          <button onClick={downloadCoverLetterWord}
-                            className="flex items-center gap-2 h-9 px-4 rounded-xl text-xs font-black border border-border bg-muted/40 text-foreground cursor-pointer transition-opacity hover:opacity-85 animate-fadeIn">
-                            <FileText className="h-3.5 w-3.5 text-blue-500" /> Word (Docx)
-                          </button>
-                          <button onClick={downloadCoverLetterPdf}
-                            className="flex items-center gap-2 h-9 px-4 rounded-xl text-xs font-black text-white cursor-pointer transition-opacity hover:opacity-85 border-none bg-gradient-to-r from-indigo-500 to-purple-600 shadow-glow animate-fadeIn">
-                            <Download className="h-3.5 w-3.5" /> PDF (LaTeX)
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Tab Selector for Resume vs Cover Letter */}
-                  {activeRun.generate_cover_letter && (
-                    <div className="flex p-1 rounded-xl bg-muted/65 border border-border/40 w-fit animate-fadeIn">
-                      <button
-                        onClick={() => setActiveResultView("resume")}
-                        className={`px-5 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all ${
-                          activeResultView === "resume"
-                            ? "bg-background text-foreground shadow-sm font-black"
-                            : "text-muted-foreground/80 hover:text-foreground"
-                        }`}
-                      >
-                        Tailored Resume
-                      </button>
-                      <button
-                        onClick={() => setActiveResultView("cover_letter")}
-                        className={`px-5 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all ${
-                          activeResultView === "cover_letter"
-                            ? "bg-background text-foreground shadow-sm font-black"
-                            : "text-muted-foreground/80 hover:text-foreground"
-                        }`}
-                      >
-                        Cover Letter
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Score & Feedback Cards */}
-                  {activeResultView === "resume" ? (
-                    <>
-                      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-                    {/* Radial ATS Score */}
-                    <div className="rounded-2xl p-5 flex flex-col items-center justify-center gap-3 border border-border bg-card/25">
-                      <div className="relative">
-                        <svg width="84" height="84" viewBox="0 0 84 84" style={{ transform: "rotate(-90deg)" }}>
-                          <circle cx="42" cy="42" r="36" fill="none" className="stroke-muted/30" strokeWidth="5" />
-                          <circle cx="42" cy="42" r="36" fill="none" stroke={scoreStroke(activeRun.ats_score)} strokeWidth="5"
-                            strokeLinecap="round"
-                            strokeDasharray={String(2 * Math.PI * 36)}
-                            strokeDashoffset={String(2 * Math.PI * 36 * (1 - activeRun.ats_score / 100))}
-                            style={{ transition: "stroke-dashoffset 1.2s cubic-bezier(.4,0,.2,1)" }} />
-                        </svg>
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <div className="text-center">
-                            <p className="text-xl font-black text-foreground leading-none">{activeRun.ats_score}%</p>
-                          </div>
-                        </div>
-                      </div>
-                      <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">ATS Score</p>
-                    </div>
-
-                    {/* Executive Summary Feedback */}
-                    <div className="sm:col-span-3 rounded-2xl p-5 border border-border bg-card/25">
-                      <p className="text-[10px] font-black uppercase tracking-widest mb-3 text-muted-foreground/60">AI Feedback</p>
-                      <p className="text-sm leading-relaxed text-foreground/80">{activeRun.general_feedback}</p>
-                    </div>
-                  </div>
-
-                  {/* Collapsible compliance toggle */}
-                  <div className="pt-2">
-                    <button
-                      onClick={() => setShowAnalysisDetails(!showAnalysisDetails)}
-                      type="button"
-                      className="w-full flex items-center justify-between p-3.5 rounded-2xl border border-border bg-card/10 hover:bg-card/20 text-xs font-bold text-muted-foreground hover:text-foreground transition-all cursor-pointer select-none"
-                    >
-                      <span className="flex items-center gap-2">
-                        <Trophy className="h-4 w-4 text-indigo-400" />
-                        {showAnalysisDetails ? "Hide Detailed ATS Compliance Checks & Score Deductions" : "View Detailed ATS Compliance Checks & Score Deductions"}
-                      </span>
-                      <ChevronDown className={`h-4 w-4 text-muted-foreground/60 transition-transform duration-200 ${showAnalysisDetails ? "rotate-180" : ""}`} />
-                    </button>
-                  </div>
-
-                  <AnimatePresence>
-                    {showAnalysisDetails && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: "auto", opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.25 }}
-                        className="overflow-hidden space-y-4 pt-2"
-                      >
-                        {/* Score Breakdown */}
-                        {activeRun.score_breakdown && Object.keys(activeRun.score_breakdown).length > 0 && (
-                          <div className="rounded-2xl border border-border bg-card/25 overflow-hidden">
-                            <div className="px-4 py-3 border-b border-border/60 bg-muted/20">
-                              <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Score Breakdown</p>
-                            </div>
-                            <div className="p-4 grid grid-cols-2 sm:grid-cols-3 gap-3">
-                              {([
-                                ["Grammar", activeRun.score_breakdown.spelling_grammar_deduction],
-                                ["Metrics", activeRun.score_breakdown.metrics_density_deduction],
-                                ["Weak Verbs", activeRun.score_breakdown.weak_verb_deduction],
-                                ["Sections", activeRun.score_breakdown.missing_sections_deduction],
-                                ["Keywords", activeRun.score_breakdown.missing_keywords_deduction],
-                                ["Total Deducted", activeRun.score_breakdown.total_deductions],
-                              ] as [string, number][]).filter(([, v]) => v !== undefined && v !== null).map(([label, val]) => (
-                                <div key={label} className="flex flex-col gap-0.5">
-                                  <span className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">{label}</span>
-                                  <span className={`text-sm font-black ${ val < 0 ? "text-destructive" : "text-emerald-500"}`}>
-                                    {val === 0 ? "✓ 0" : val}
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* ATS Checks */}
-                        {activeRun.ats_checks && Object.keys(activeRun.ats_checks).length > 0 && (
-                          <div className="rounded-2xl border border-border bg-card/25 overflow-hidden">
-                            <div className="px-4 py-3 border-b border-border/60 bg-muted/20">
-                              <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">ATS Checks</p>
-                            </div>
-                            <div className="divide-y divide-border/40">
-                              {Object.entries(activeRun.ats_checks).map(([key, check]: [string, any]) => (
-                                <div key={key} className="px-4 py-3 flex items-start gap-3">
-                                  <div className={`mt-0.5 h-4 w-4 rounded-full flex items-center justify-center shrink-0 ${
-                                    check.passed ? "bg-emerald-500/15 text-emerald-500" : "bg-destructive/15 text-destructive"
-                                  }`}>
-                                    {check.passed
-                                      ? <Check className="h-2.5 w-2.5 stroke-[3]" />
-                                      : <X className="h-2.5 w-2.5 stroke-[3]" />}
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <p className="text-[11px] font-black text-foreground capitalize">
-                                      {key.replace(/_/g, " ")}
-                                    </p>
-                                    <p className="text-[10px] text-muted-foreground/70 mt-0.5 leading-snug">
-                                      {check.details ?? (check.errors?.join(", ") ?? "")}
-                                    </p>
-                                  </div>
-                                  {check.score_impact < 0 && (
-                                    <span className="text-[10px] font-black text-destructive shrink-0">{check.score_impact}</span>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-
-                  {/* Bullet improvements */}
-                  {activeRun.bullet_point_suggestions?.length > 0 && (
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2">
-                        <Briefcase className="h-4 w-4 text-primary" />
-                        <h3 className="text-xs font-black uppercase tracking-wider text-foreground/70">
-                          Bullet Improvements
-                        </h3>
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-muted text-muted-foreground">
-                          {activeRun.bullet_point_suggestions.length}
-                        </span>
-                      </div>
-
-                      {activeRun.bullet_point_suggestions.map((sug, i) => (
-                        <div key={i} className="rounded-2xl overflow-hidden border border-border bg-card/15">
-                          <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-border/60">
-                            <div className="p-4 space-y-2 bg-destructive/5">
-                              <span className="inline-block text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-destructive/10 text-destructive border border-destructive/20">Before</span>
-                              <p className="text-xs italic leading-relaxed text-muted-foreground/70">"{sug.original}"</p>
-                            </div>
-                            <div className="p-4 space-y-2 bg-emerald-500/5">
-                              <span className="inline-block text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">After</span>
-                              <p className="text-xs font-semibold leading-relaxed text-foreground/90">"{sug.improved}"</p>
-                            </div>
-                          </div>
-                          {sug.reason && (
-                            <div className="px-4 py-2.5 flex items-start gap-2 bg-muted/10 border-t border-border/60">
-                              <Sparkles className="h-3 w-3 text-primary mt-0.5 shrink-0" />
-                              <p className="text-[11px] leading-relaxed text-muted-foreground">{sug.reason}</p>
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Integrated Keywords */}
-                  {activeRun.missing_keywords?.length > 0 && (
-                    <div className="space-y-3">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Keywords Integrated</p>
-                      <div className="flex flex-wrap gap-2">
-                        {activeRun.missing_keywords.map((kw, i) => (
-                          <span key={i} className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-[11px] font-bold bg-muted border border-border text-foreground/80">
-                            <Check className="h-3 w-3 text-emerald-500 dark:text-emerald-400" />{kw}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* ── PDF Preview + Mobile Download ───────────────────── */}
-                  <div ref={previewRef} className="rounded-2xl overflow-hidden border border-border bg-card/25">
-                    <div className="px-4 py-3 flex items-center justify-between border-b border-border/80 bg-muted/30">
-                      <div className="flex items-center gap-2">
-                        <Eye className="h-4 w-4 text-muted-foreground/60" />
-                        <span className="text-[11px] font-black uppercase tracking-widest text-muted-foreground/80">PDF Preview</span>
-                        <span className="text-[9px] text-muted-foreground/40 hidden sm:inline">(desktop only)</span>
-                      </div>
-                      <button onClick={downloadPdf} disabled={!activeRun?.pdf_base64}
-                        className="flex items-center gap-1.5 h-7 px-3 rounded-lg text-[10px] font-black border border-border bg-muted/60 text-muted-foreground hover:text-foreground transition-all hover:bg-muted/80 disabled:opacity-40">
-                        <Download className="h-3.5 w-3.5" /> Download
-                      </button>
-                    </div>
-
-                    {/* iframe — shown on sm+ only */}
-                    <div className="relative bg-muted/10 hidden sm:block" style={{ height: "min(70vh, 600px)" }}>
-                      {activeRun?.pdf_base64 ? (
-                        <iframe
-                          src={`data:application/pdf;base64,${activeRun.pdf_base64}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
-                          className="absolute inset-0 w-full h-full border-none"
-                          title="Tailored Resume PDF"
-                        />
-                      ) : (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
-                          <FileText className="h-10 w-10 text-muted-foreground/30" />
-                          <p className="text-sm font-medium text-muted-foreground/50">No PDF available</p>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Mobile fallback — download prompt instead of broken iframe */}
-                    <div className="sm:hidden p-6 flex flex-col items-center gap-4 text-center">
-                      <div className="h-14 w-14 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
-                        <FileText className="h-7 w-7 text-indigo-500" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-black text-foreground">PDF Ready to Download</p>
-                        <p className="text-xs text-muted-foreground/60 mt-1">Open in your browser's PDF viewer after downloading</p>
-                      </div>
-                      <button onClick={downloadPdf} disabled={!activeRun?.pdf_base64}
-                        className="flex items-center gap-2 h-11 px-6 rounded-xl text-sm font-black text-white border-none cursor-pointer disabled:opacity-40 bg-gradient-to-r from-indigo-500 to-purple-600">
-                        <Download className="h-4 w-4" /> Download PDF
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Mobile Action Bar */}
-                  <div className="flex flex-col sm:hidden gap-2 pt-1 pb-4">
-                    <button onClick={applyWorkspace}
-                      className="flex-1 flex items-center justify-center gap-2 h-11 rounded-xl text-xs font-black border border-primary/20 bg-primary/10 text-primary cursor-pointer transition-opacity hover:opacity-85">
-                      <Sparkles className="h-4 w-4" /> Apply to Workspace
-                    </button>
-                    <button onClick={() => setActiveRun(null)}
-                      className="flex-1 flex items-center justify-center gap-2 h-11 rounded-xl text-xs font-black cursor-pointer transition-opacity hover:opacity-80 border border-border bg-muted/50 text-muted-foreground hover:text-foreground">
-                      <Plus className="h-4 w-4" /> New Run
-                    </button>
-                  </div>
-                  </>
-                  ) : (
-                    <motion.div
-                      key="cover-letter-result"
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      className="space-y-6 animate-fadeIn"
-                    >
-                      {/* Cover Letter AI Feedback */}
-                      <div className="rounded-2xl p-5 border border-border bg-card/25">
-                        <p className="text-[10px] font-black uppercase tracking-widest mb-2 text-muted-foreground/60">
-                          AI Executive Cover Letter
-                        </p>
-                        <p className="text-xs text-muted-foreground leading-relaxed">
-                          Your cover letter has been perfectly tailored using your resume achievements aligned to key points in the Job Description. Use the buttons below or in the header to download the styled PDF (LaTeX format) or editable Word format.
-                        </p>
-                      </div>
-
-                      {/* Cover Letter Paper Preview */}
-                      <div className="rounded-2xl border border-border bg-card/25 overflow-hidden animate-fadeIn">
-                        <div className="px-4 py-3 flex items-center justify-between border-b border-border/80 bg-muted/30">
-                          <div className="flex items-center gap-2">
-                            <FileText className="h-4 w-4 text-muted-foreground/60" />
-                            <span className="text-[11px] font-black uppercase tracking-widest text-muted-foreground/80">
-                              Document Preview
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={downloadCoverLetterWord}
-                              className="flex items-center gap-1.5 h-7 px-3 rounded-lg text-[10px] font-black border border-border bg-muted/60 text-muted-foreground hover:text-foreground transition-all hover:bg-muted/80 cursor-pointer"
-                            >
-                              <FileText className="h-3.5 w-3.5 text-blue-500" /> Word (Docx)
-                            </button>
-                            <button
-                              onClick={downloadCoverLetterPdf}
-                              className="flex items-center gap-1.5 h-7 px-3 rounded-lg text-[10px] font-black border border-border bg-muted/60 text-muted-foreground hover:text-foreground transition-all hover:bg-muted/80 cursor-pointer"
-                            >
-                              <Download className="h-3.5 w-3.5" /> PDF (LaTeX)
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* Paper sheet representation */}
-                        <div className="p-6 sm:p-12 bg-white dark:bg-zinc-950 flex justify-center">
-                          <div className="w-full max-w-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xl rounded-xl p-8 sm:p-12 text-zinc-800 dark:text-zinc-200 font-serif leading-relaxed text-sm select-text whitespace-pre-wrap">
-                            {activeRun.cover_letter_text}
-                          </div>
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
+                {activeRun && (
+                  <TailorResultsView
+                    run={activeRun}
+                    activeView={activeResultView}
+                    onViewChange={setActiveResultView}
+                    onApplyWorkspace={applyWorkspace}
+                    onDownloadPdf={downloadPdf}
+                    onDownloadCoverLetterPdf={downloadCoverLetterPdf}
+                    onDownloadCoverLetterWord={downloadCoverLetterWord}
+                    previewRef={previewRef}
+                  />
+                )}
+                <div className="flex flex-col sm:hidden gap-2 pt-4 pb-4">
+                  <button
+                    type="button"
+                    onClick={applyWorkspace}
+                    className="flex items-center justify-center gap-2 h-11 rounded-xl text-xs font-black border border-primary/20 bg-primary/10 text-primary"
+                  >
+                    <Sparkles className="h-4 w-4" /> Apply to Workspace
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveRun(null)}
+                    className="flex items-center justify-center gap-2 h-11 rounded-xl text-xs font-black border border-border bg-muted/50 text-muted-foreground"
+                  >
+                    <Plus className="h-4 w-4" /> New Run
+                  </button>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>

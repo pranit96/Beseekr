@@ -32,6 +32,7 @@ interface ResumeTailorMobileProps {
   processing: boolean;
   pct: number;
   stepIdx: number;
+  stepMessage?: string;
   runTailoring: () => Promise<void>;
   deleteRun: (e: React.MouseEvent, id: string) => Promise<void>;
   downloadPdf: () => void;
@@ -81,6 +82,7 @@ export default function ResumeTailorMobile({
   processing,
   pct,
   stepIdx,
+  stepMessage: _stepMessage,
   runTailoring,
   deleteRun,
   downloadPdf,

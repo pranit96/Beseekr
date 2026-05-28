@@ -110,12 +110,12 @@ export default function ResumePortal() {
     setWorkspaceMode(mode, action === "create");
     if (action === "create" && mode === "template") {
       resetWorkspace();
-      navigate("/dashboard/hired/resume/templates");
+      navigate("/dashboard/resume/templates");
     } else if (action === "create" && mode === "upload") {
       resetWorkspace();
-      navigate("/dashboard/hired/resume/upload");
+      navigate("/dashboard/resume/upload");
     } else {
-      navigate("/dashboard/hired/resume/workspace");
+      navigate("/dashboard/resume/workspace");
     }
   };
 
@@ -164,7 +164,7 @@ export default function ResumePortal() {
   const handleRestore = async (id: string) => {
     try {
       await restoreSnapshot(id);
-      navigate("/dashboard/hired/resume/workspace");
+      navigate("/dashboard/resume/workspace");
       toast({
         title: "Version Restored",
         description:
@@ -187,8 +187,8 @@ export default function ResumePortal() {
         <div className="space-y-4 text-left">
           <div className="flex items-center gap-2 mb-3">
             <span className="text-[10px] sm:text-[11px] font-bold tracking-[0.2em] text-zinc-500 uppercase flex items-center select-none">
-              GET HIRED <span className="mx-2 opacity-50 text-[8px]">•</span>{" "}
-              RESUME INTELLIGENCE
+              RESUME <span className="mx-2 opacity-50 text-[8px]">•</span>{" "}
+              INTELLIGENCE
             </span>
           </div>
 
@@ -295,7 +295,39 @@ export default function ResumePortal() {
               );
             })}
           </div>
-        </div>{" "}
+        </div>
+
+        {/* JOB TAILOR — async cloud pipeline (not on portal upload path) */}
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-3xl border border-violet-500/20 bg-gradient-to-r from-violet-500/[0.06] to-indigo-500/[0.04] p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+        >
+          <div className="space-y-1.5 text-left">
+            <div className="flex items-center gap-2">
+              <Zap className="w-4 h-4 text-violet-400" />
+              <span className="text-[10px] font-black uppercase tracking-widest text-violet-500">
+                Job Tailor
+              </span>
+            </div>
+            <h3 className="text-lg font-bold text-foreground">
+              Tailor resume to a job description
+            </h3>
+            <p className="text-xs text-muted-foreground max-w-xl">
+              Paste a JD, upload a PDF, and get ATS scoring plus a tailored PDF via
+              signed cloud upload and background workers — same pipeline as Resume
+              Tailor.
+            </p>
+          </div>
+          <Button
+            onClick={() => navigate("/dashboard/resume/tailor")}
+            className="shrink-0 bg-violet-600 hover:bg-violet-500 text-white font-bold h-10 px-5 rounded-xl border-none shadow-lg"
+          >
+            Open Job Tailor
+            <ArrowUpRight className="w-4 h-4 ml-1" />
+          </Button>
+        </motion.div>
+
         {/* WORKSPACE SELECTION PILLARS */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* UPLOAD & SCORE WORKSPACE CARD */}

@@ -137,7 +137,7 @@ export default function ResumeUpload() {
       // Auto-navigate after brief display
       setTimeout(() => {
         if (isMountedRef.current) {
-          navigate("/dashboard/hired/resume/workspace");
+          navigate("/dashboard/resume/workspace");
         }
       }, 1500);
     },
@@ -377,13 +377,13 @@ export default function ResumeUpload() {
       {/* ── TOP BAR ── */}
       <div className="px-5 py-4 flex items-center gap-3">
         <button
-          onClick={() => navigate("/dashboard/hired")}
+          onClick={() => navigate("/dashboard/resume")}
           className="h-8 w-8 rounded-lg bg-white dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] flex items-center justify-center text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.08] transition-all"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
         </button>
         <span className="text-[10px] font-bold tracking-[0.2em] text-zinc-400 uppercase select-none">
-          Get Hired · Upload Resume
+          Resume · Upload
         </span>
       </div>
 

@@ -579,6 +579,66 @@ export interface TailorAlignResult {
   cover_letter_pdf_base64?: string;
 }
 
+export interface TailorJobAccepted {
+  jobId: string;
+  accepted: boolean;
+}
+
+/**
+ * Production tailor flow: optional direct-to-Supabase file upload, then async job + socket progress.
+ */
+export async function startTailorAlignJob(params: {
+  file?: File | null;
+  jd: string;
+  mode?: "enhance" | "rewrite";
+  resumeId?: string;
+  generateCoverLetter?: boolean;
+  companyName?: string;
+  jobTitle?: string;
+}): Promise<TailorJobAccepted> {
+  let storagePath: string | undefined;
+  let bucket: string | undefined;
+
+  if (params.file) {
+    const signed = await getSignedResumeUploadUrl(params.file);
+    await uploadResumeToSignedUrl({
+      bucket: signed.bucket,
+      storagePath: signed.storagePath,
+      token: signed.token,
+      file: params.file,
+    });
+    storagePath = signed.storagePath;
+    bucket = signed.bucket;
+  }
+
+  const res = await apiClient.post<{
+    jobId?: string;
+    accepted?: boolean;
+  }>("/api/resume/tailor-align", {
+    jd: params.jd,
+    mode: params.mode || "enhance",
+    resumeId: params.resumeId,
+    generateCoverLetter: params.generateCoverLetter,
+    generate_cover_letter: params.generateCoverLetter,
+    company_name: params.companyName,
+    companyName: params.companyName,
+    job_title: params.jobTitle,
+    jobTitle: params.jobTitle,
+    storagePath,
+    bucket,
+    originalname: params.file?.name,
+    mimetype: params.file?.type,
+  });
+
+  const jobId = (res as { jobId?: string }).jobId;
+  if (!jobId) {
+    throw new Error("Tailor job was not accepted — missing jobId.");
+  }
+
+  return { jobId, accepted: true };
+}
+
+/** @deprecated Use startTailorAlignJob + socket subscription instead */
 export async function tailorAlignResume(
   file: File | null,
   jd: string,
@@ -587,27 +647,17 @@ export async function tailorAlignResume(
   generateCoverLetter?: boolean,
   companyName?: string,
 ): Promise<TailorAlignResult> {
-  const formData = new FormData();
-  if (file) {
-    formData.append("file", file);
-  }
-  formData.append("jd", jd);
-  if (mode) {
-    formData.append("mode", mode);
-  }
-  if (resumeId) {
-    formData.append("resumeId", resumeId);
-  }
-  if (generateCoverLetter !== undefined) {
-    formData.append("generateCoverLetter", String(generateCoverLetter));
-  }
-  if (companyName) {
-    formData.append("companyName", companyName);
-  }
-
-  const res = await apiClient.post("/api/resume/tailor-align", formData);
-
-  return res.data;
+  const { jobId } = await startTailorAlignJob({
+    file,
+    jd,
+    mode,
+    resumeId,
+    generateCoverLetter,
+    companyName,
+  });
+  throw new Error(
+    `Tailor job ${jobId} started — use startTailorAlignJob with socket progress (legacy sync API removed).`,
+  );
 }
 
 export interface TailorRunRecord extends TailorAlignResult {
@@ -656,6 +706,7 @@ export const resumeApi = {
   summarizeResearch,
   parseJobUrl,
   getCoachInsights,
+  startTailorAlignJob,
   tailorAlignResume,
   getTailorRuns,
   deleteTailorRun,

@@ -57,7 +57,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ATSAnalysis, resumeApi } from "@/api/resume";
+import { ATSAnalysis, resumeApi, type TailorRunRecord } from "@/api/resume";
+import { TailorResultsView } from "@/components/resume/TailorResultsView";
+import { useTailorJob } from "@/hooks/useTailorJob";
 import { GlobalFooter } from "@/components/GlobalFooter";
 import { generateLatexResume } from "@/utils/latexGenerator";
 
@@ -227,9 +229,11 @@ export default function ResumeWorkspace() {
   // Tailor & Align AI State
   const [tailorJd, setTailorJd] = useState("");
   const [tailorFile, setTailorFile] = useState<File | null>(null);
-  const [isTailoring, setIsTailoring] = useState(false);
-  const [tailorResult, setTailorResult] = useState<any | null>(null);
+  const [tailorResult, setTailorResult] = useState<TailorRunRecord | null>(null);
+  const [tailorResultView, setTailorResultView] = useState<"resume" | "cover_letter">("resume");
   const [tailorMode, setTailorMode] = useState<"enhance" | "rewrite">("enhance");
+  const tailorJob = useTailorJob();
+  const { processing: isTailoring, pct: tailorPct, stepIdx: tailorStepIdx, stepMessage: tailorStepMessage, steps: tailorSteps } = tailorJob;
 
   /* ─── HANDLERS ──────────────────────────────────────────────────── */
   const handleTailorResume = async () => {
@@ -252,22 +256,26 @@ export default function ResumeWorkspace() {
       return;
     }
 
-    setIsTailoring(true);
+    setTailorResult(null);
     try {
-      const result = await resumeApi.tailorAlignResume(tailorFile, tailorJd, tailorMode);
-      setTailorResult(result);
-      toast({
-        title: "Resume Tailored & Aligned! 🎉",
-        description: "Your optimized LaTeX PDF and ATS score are ready below.",
+      const result = await tailorJob.run({
+        file: tailorFile,
+        jd: tailorJd,
+        mode: tailorMode,
       });
-    } catch (e: any) {
+      setTailorResult(result);
+      setTailorResultView("resume");
+      toast({
+        title: "Resume tailored",
+        description: "Your optimized PDF and ATS score are ready below.",
+      });
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Failed to parse and optimize resume.";
       toast({
         variant: "destructive",
-        title: "Tailoring Failed",
-        description: e.message || "Failed to parse and optimize resume.",
+        title: "Tailoring failed",
+        description: msg,
       });
-    } finally {
-      setIsTailoring(false);
     }
   };
 
@@ -1266,14 +1274,14 @@ export default function ResumeWorkspace() {
           {/* LEFT: Breadcrumb + Name */}
           <div className="flex items-center gap-3 min-w-0">
             <button
-              onClick={() => navigate("/dashboard/hired")}
+              onClick={() => navigate("/dashboard/resume")}
               className="h-8 w-8 rounded-lg bg-zinc-100 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] flex items-center justify-center text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-200 dark:hover:bg-white/[0.08] transition-all shrink-0"
             >
               <ArrowLeft className="h-3.5 w-3.5" />
             </button>
 
             <div className="hidden sm:flex items-center gap-1.5 text-[9px] font-black tracking-[0.2em] text-zinc-400 uppercase select-none">
-              <span>Get Hired</span>
+              <span>Resume</span>
               <ChevronRight className="h-2.5 w-2.5 opacity-40" />
               <span className="text-zinc-600 dark:text-zinc-300">
                 Workspace
@@ -2534,119 +2542,34 @@ export default function ResumeWorkspace() {
                         </button>
                       </div>
 
-                      {tailorResult && (
+                      {isTailoring && (
+                        <div className="rounded-2xl border border-indigo-500/20 bg-indigo-500/5 p-5 space-y-3">
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="text-xs font-black uppercase tracking-wider text-indigo-500">
+                              Tailoring in cloud
+                            </p>
+                            <span className="text-sm font-black tabular-nums">{tailorPct}%</span>
+                          </div>
+                          <Progress value={tailorPct} className="h-2" />
+                          <p className="text-xs text-muted-foreground">
+                            {tailorStepMessage || tailorSteps[tailorStepIdx]}
+                          </p>
+                        </div>
+                      )}
+
+                      {tailorResult && !isTailoring && (
                         <motion.div
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
-                          className="space-y-5 pt-4"
+                          className="pt-4"
                         >
-                          {/* ATS Score & Action Card */}
-                          <div className="p-6 rounded-2xl bg-gradient-to-br from-zinc-900 to-indigo-950 text-white border border-zinc-800 shadow-xl space-y-5">
-                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
-                              <div className="flex items-center gap-4">
-                                <div className="h-16 w-16 rounded-full border-4 border-indigo-400/20 border-t-indigo-400 flex items-center justify-center shrink-0">
-                                  <span className="text-xl font-black text-indigo-300">
-                                    {tailorResult.ats_score}%
-                                  </span>
-                                </div>
-                                <div className="space-y-1">
-                                  <p className="text-xs font-black uppercase tracking-wider text-indigo-400">
-                                    ATS Match Rating
-                                  </p>
-                                  <p className="text-sm font-bold leading-tight">
-                                    Your tailored resume has been aligned
-                                    successfully!
-                                  </p>
-                                </div>
-                              </div>
-                              <div className="flex gap-2">
-                                <button
-                                  onClick={handleDownloadTailoredPdf}
-                                  className="h-9 px-4 rounded-lg text-[10px] font-black uppercase bg-indigo-500 hover:bg-indigo-600 text-white transition-all"
-                                >
-                                  Download PDF
-                                </button>
-                                <button
-                                  onClick={handleApplyTailoredResume}
-                                  className="h-9 px-4 rounded-lg text-[10px] font-black uppercase bg-white hover:bg-zinc-100 text-zinc-900 transition-all"
-                                >
-                                  Apply to Workspace
-                                </button>
-                              </div>
-                            </div>
-
-                            <div className="border-t border-white/[0.08] pt-4">
-                              <p className="text-[10px] font-black uppercase tracking-wider text-zinc-400 mb-1">
-                                Executive AI Summary
-                              </p>
-                              <p className="text-xs text-zinc-300 leading-relaxed font-medium">
-                                {tailorResult.general_feedback}
-                              </p>
-                            </div>
-                          </div>
-
-                          {/* Keywords Aligned */}
-                          {tailorResult.missing_keywords &&
-                            tailorResult.missing_keywords.length > 0 && (
-                              <SectionCard>
-                                <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
-                                  Keywords Integrated
-                                </p>
-                                <div className="flex flex-wrap gap-1.5 pt-2">
-                                  {tailorResult.missing_keywords.map(
-                                    (kw: string) => (
-                                      <span
-                                        key={kw}
-                                        className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-500/20"
-                                      >
-                                        + {kw}
-                                      </span>
-                                    ),
-                                  )}
-                                </div>
-                              </SectionCard>
-                            )}
-
-                          {/* Bullet Point Suggestions */}
-                          {tailorResult.bullet_point_suggestions &&
-                            tailorResult.bullet_point_suggestions.length >
-                              0 && (
-                              <SectionCard>
-                                <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
-                                  Highlight Enhancements (Google XYZ Formula)
-                                </p>
-                                <div className="space-y-4 pt-3 divide-y divide-zinc-100 dark:divide-white/[0.04]">
-                                  {tailorResult.bullet_point_suggestions.map(
-                                    (sug: any, idx: number) => (
-                                      <div
-                                        key={idx}
-                                        className={`space-y-2 ${idx > 0 ? "pt-4" : ""}`}
-                                      >
-                                        <div className="flex items-start gap-2">
-                                          <span className="text-[9px] font-black uppercase tracking-wider text-red-500 bg-red-50 dark:bg-red-500/10 px-1.5 py-0.5 rounded shrink-0">
-                                            Original
-                                          </span>
-                                          <p className="text-[11px] text-zinc-500 italic">
-                                            "{sug.original}"
-                                          </p>
-                                        </div>
-                                        <div className="flex items-start gap-2">
-                                          <span className="text-[9px] font-black uppercase tracking-wider text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 px-1.5 py-0.5 rounded shrink-0">
-                                            Tailored
-                                          </span>
-                                          <p className="text-[11px] font-bold text-zinc-800 dark:text-zinc-200 leading-relaxed">
-                                            "{sug.improved}"
-                                          </p>
-                                        </div>
-                                        <p className="text-[10px] text-zinc-400 font-medium pl-14">
-                                          {sug.reason}
-                                        </p>
-                                      </div>
-                                    ),
-                                  )}
-                                </div>
-                              </SectionCard>
-                            )}
+                          <TailorResultsView
+                            run={tailorResult}
+                            activeView={tailorResultView}
+                            onViewChange={setTailorResultView}
+                            onApplyWorkspace={handleApplyTailoredResume}
+                            onDownloadPdf={handleDownloadTailoredPdf}
+                          />
                         </motion.div>
                       )}
                     </>

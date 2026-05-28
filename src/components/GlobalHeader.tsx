@@ -103,58 +103,42 @@ const NAV_ITEMS = {
   },
   resume: {
     key: "resume",
-    name: "Get Hired",
-    href: "/dashboard/hired",
+    name: "Resume",
+    href: "/dashboard/resume",
     icon: FileText,
     color: "from-indigo-500 to-pink-500",
     exact: false,
   },
-  hiredOverview: {
-    key: "hiredOverview",
-    name: "Overview",
-    href: "/dashboard/hired",
+  resumePortal: {
+    key: "resumePortal",
+    name: "Portal",
+    href: "/dashboard/resume",
     icon: Trophy,
     color: "from-indigo-500 to-pink-500",
     exact: true,
   },
-  hiredResume: {
-    key: "hiredResume",
-    name: "Resume",
-    href: "/dashboard/hired/resume/upload",
+  resumeUpload: {
+    key: "resumeUpload",
+    name: "Upload",
+    href: "/dashboard/resume/upload",
     icon: FileText,
     color: "from-sky-400 to-indigo-500",
     exact: false,
   },
-  hiredTailor: {
-    key: "hiredTailor",
-    name: "ATS Tailor",
-    href: "/dashboard/hired/resume/tailor",
+  resumeTailor: {
+    key: "resumeTailor",
+    name: "Job Tailor",
+    href: "/dashboard/resume/tailor",
     icon: Trophy,
     color: "from-indigo-500 to-violet-500",
     exact: false,
   },
-  hiredTracker: {
-    key: "hiredTracker",
-    name: "Tracker",
-    href: "/dashboard/hired/tracker",
+  resumeWorkspace: {
+    key: "resumeWorkspace",
+    name: "Workspace",
+    href: "/dashboard/resume/workspace",
     icon: LayoutDashboard,
     color: "from-purple-500 to-indigo-500",
-    exact: false,
-  },
-  hiredPrep: {
-    key: "hiredPrep",
-    name: "Interview Intel",
-    href: "/dashboard/hired/prep",
-    icon: Target,
-    color: "from-rose-500 to-red-500",
-    exact: false,
-  },
-  hiredCoverLetter: {
-    key: "hiredCoverLetter",
-    name: "Cover Letter",
-    href: "/dashboard/hired/cover-letter",
-    icon: Sparkles,
-    color: "from-amber-500 to-orange-500",
     exact: false,
   },
   pricing: {
@@ -175,7 +159,7 @@ function isPathActive(pathname: string, href: string, exact?: boolean) {
 function getNavigationContext(pathname: string, isPremium: boolean) {
   const isChatContext =
     pathname.startsWith("/chat") || pathname.startsWith("/agents");
-  const isResumeContext = pathname.startsWith("/dashboard/hired");
+  const isResumeContext = pathname.startsWith("/dashboard/resume");
   const isDiscoverContext =
     pathname.startsWith("/dashboard") &&
     !pathname.startsWith("/dashboard/profile");
@@ -185,12 +169,10 @@ function getNavigationContext(pathname: string, isPremium: boolean) {
   } else if (isResumeContext) {
     return [
       NAV_ITEMS.home,
-      NAV_ITEMS.hiredOverview,
-      NAV_ITEMS.hiredResume,
-      NAV_ITEMS.hiredTailor,
-      NAV_ITEMS.hiredTracker,
-      NAV_ITEMS.hiredPrep,
-      NAV_ITEMS.hiredCoverLetter,
+      NAV_ITEMS.resumePortal,
+      NAV_ITEMS.resumeUpload,
+      NAV_ITEMS.resumeTailor,
+      NAV_ITEMS.resumeWorkspace,
     ];
   } else if (isDiscoverContext) {
     const items = [

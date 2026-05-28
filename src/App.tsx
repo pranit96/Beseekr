@@ -138,10 +138,7 @@ const SaasWatchlist = lazyRetry(
   "Watchlist",
 );
 const Pricing = lazyRetry(() => import("./pages/saas/Pricing"), "Pricing");
-const GetHiredPortal = lazyRetry(
-  () => import("./pages/hired/GetHiredPortal"),
-  "GetHiredPortal",
-);
+// Get Hired hub deprecated — ResumePortal at /dashboard/resume
 const ResumeUpload = lazyRetry(
   () => import("./pages/ResumeUpload"),
   "ResumeUpload",
@@ -162,19 +159,7 @@ const ResumeTailor = lazyRetry(
   () => import("@/pages/ResumeTailor"),
   "ResumeTailor",
 );
-const JobTracker = lazyRetry(
-  () => import("./pages/hired/JobTracker"),
-  "JobTracker",
-);
-const InterviewPrep = lazyRetry(
-  () => import("./pages/hired/InterviewPrep"),
-  "InterviewPrep",
-);
-
-const CoverLetter = lazyRetry(
-  () => import("./pages/hired/CoverLetter"),
-  "CoverLetter",
-);
+// Deprecated hired features (tracker, prep, cover letter) — routes redirect to /dashboard/resume
 
 // Trading System pages with retry logic
 // const TradingOverview = lazyRetry(() => import("./pages/trading/Overview"), "TradingOverview");
@@ -487,10 +472,6 @@ const App = () => {
                       />
                       <Route
                         path="resume"
-                        element={<Navigate to="../hired" replace />}
-                      />
-                      <Route
-                        path="hired"
                         element={
                           <ResumeProvider>
                             <Outlet />
@@ -501,32 +482,12 @@ const App = () => {
                           index
                           element={
                             <Suspense fallback={<PageLoader />}>
-                              <GetHiredPortal />
+                              <ResumePortal />
                             </Suspense>
                           }
                         />
                         <Route
-                          path="resume"
-                          element={<Navigate to="/dashboard/hired" replace />}
-                        />
-                        <Route
-                          path="resume/workspace"
-                          element={
-                            <Suspense fallback={<PageLoader />}>
-                              <ResumeWorkspace />
-                            </Suspense>
-                          }
-                        />
-                        <Route
-                          path="resume/tailor"
-                          element={
-                            <Suspense fallback={<PageLoader />}>
-                              <ResumeTailor />
-                            </Suspense>
-                          }
-                        />
-                        <Route
-                          path="resume/upload"
+                          path="upload"
                           element={
                             <Suspense fallback={<PageLoader />}>
                               <ResumeUpload />
@@ -534,44 +495,39 @@ const App = () => {
                           }
                         />
                         <Route
-                          path="resume/templates"
+                          path="workspace"
+                          element={
+                            <Suspense fallback={<PageLoader />}>
+                              <ResumeWorkspace />
+                            </Suspense>
+                          }
+                        />
+                        <Route
+                          path="tailor"
+                          element={
+                            <Suspense fallback={<PageLoader />}>
+                              <ResumeTailor />
+                            </Suspense>
+                          }
+                        />
+                        <Route
+                          path="templates"
                           element={
                             <Suspense fallback={<PageLoader />}>
                               <ResumeTemplateSelect />
                             </Suspense>
                           }
                         />
-                        <Route
-                          path="tracker"
-                          element={
-                            <Suspense fallback={<PageLoader />}>
-                              <JobTracker />
-                            </Suspense>
-                          }
-                        />
-                        <Route
-                          path="prep"
-                          element={
-                            <Suspense fallback={<PageLoader />}>
-                              <InterviewPrep />
-                            </Suspense>
-                          }
-                        />
-                        <Route
-                          path="research"
-                          element={
-                            <Navigate to="../prep?tab=research" replace />
-                          }
-                        />
-                        <Route
-                          path="cover-letter"
-                          element={
-                            <Suspense fallback={<PageLoader />}>
-                              <CoverLetter />
-                            </Suspense>
-                          }
-                        />
                       </Route>
+                      {/* Deprecated Get Hired hub — redirect to Resume Portal */}
+                      <Route
+                        path="hired"
+                        element={<Navigate to="/dashboard/resume" replace />}
+                      />
+                      <Route
+                        path="hired/*"
+                        element={<Navigate to="/dashboard/resume" replace />}
+                      />
 
                       {/* OLD STOCK ROUTES - Redirect to new trading system */}
                       <Route

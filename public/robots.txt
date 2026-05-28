@@ -28,12 +28,9 @@ Disallow: /*.json$
 Disallow: /*?*
 
 # Disallow private authenticated dashboards to optimize crawl budget
-Disallow: /dashboard/hired/resume/workspace
-Disallow: /dashboard/hired/resume/upload
-Disallow: /dashboard/hired/tracker
-Disallow: /dashboard/hired/prep
-Disallow: /dashboard/hired/research
-Disallow: /dashboard/hired/cover-letter
+Disallow: /dashboard/resume/workspace
+Disallow: /dashboard/resume/upload
+Disallow: /dashboard/resume/tailor
 Disallow: /wellness/plan
 Disallow: /wellness/nutrition
 Disallow: /wellness/training
