@@ -13,6 +13,7 @@ import {
   Loader2,
   SlidersHorizontal,
   X,
+  Pencil,
 } from "lucide-react";
 import {
   Dialog,
@@ -39,6 +40,7 @@ export const AdminSettings = () => {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [updating, setUpdating] = useState<string | null>(null);
   const [newSetting, setNewSetting] = useState({
     key: "",
@@ -46,6 +48,13 @@ export const AdminSettings = () => {
     description: "",
     value: "",
   });
+  const [editingSetting, setEditingSetting] = useState<{
+    key: string;
+    category: string;
+    description: string;
+    type: string;
+    value: string;
+  } | null>(null);
 
   const { data: settings = [], isLoading: loading } = useQuery({
     queryKey: ["admin", "settings"],
@@ -60,16 +69,26 @@ export const AdminSettings = () => {
       key,
       value,
       type,
+      category,
+      description,
     }: {
       key: string;
-      value: any;
-      type: string;
+      value?: any;
+      type?: string;
+      category?: string;
+      description?: string;
     }) => {
       setUpdating(key);
-      return apiClient.updateAdminConfig(key, { value, type });
+      return apiClient.updateAdminConfig(key, {
+        value,
+        type,
+        category,
+        description,
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "settings"] });
+      setIsEditDialogOpen(false);
       toast({ title: "Saved", description: "Configuration updated." });
     },
     onError: (error: any) => {
@@ -81,6 +100,26 @@ export const AdminSettings = () => {
     },
     onSettled: () => setUpdating(null),
   });
+
+  const handleStartEdit = (setting: any) => {
+    let valStr = "";
+    if (setting.type === "boolean") {
+      valStr = String(setting.value_boolean);
+    } else if (setting.type === "number") {
+      valStr = String(setting.value_number ?? "");
+    } else {
+      valStr = setting.value_string ?? "";
+    }
+
+    setEditingSetting({
+      key: setting.key,
+      category: setting.category || "general",
+      description: setting.description || "",
+      type: setting.type || "string",
+      value: valStr,
+    });
+    setIsEditDialogOpen(true);
+  };
 
   const addMutation = useMutation({
     mutationFn: async (payload: typeof newSetting) => {
@@ -264,12 +303,22 @@ export const AdminSettings = () => {
                         />
                       )}
 
-                      <div className="flex items-center gap-1.5 mt-3 text-[10px] text-zinc-700">
-                        <Info className="w-3 h-3" />
-                        <span>
-                          Updated{" "}
-                          {new Date(setting.updated_at).toLocaleDateString()}
-                        </span>
+                      <div className="flex items-center justify-between mt-3">
+                        <div className="flex items-center gap-1.5 text-[10px] text-zinc-600">
+                          <Info className="w-3 h-3 text-zinc-650" />
+                          <span>
+                            Updated{" "}
+                            {new Date(setting.updated_at).toLocaleDateString()}
+                          </span>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="w-6 h-6 rounded-md text-zinc-500 hover:text-white hover:bg-white/[0.05] transition-colors"
+                          onClick={() => handleStartEdit(setting)}
+                        >
+                          <Pencil className="w-3 h-3" />
+                        </Button>
                       </div>
                     </div>
                   ))}
@@ -378,6 +427,166 @@ export const AdminSettings = () => {
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
                 "Create Flag"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Flag Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-lg bg-[#111113] border border-white/[0.1] rounded-[28px] p-8 shadow-2xl">
+          <DialogHeader className="mb-6">
+            <DialogTitle className="text-xl font-bold text-white">
+              Edit Setting
+            </DialogTitle>
+            <DialogDescription className="text-zinc-500 text-sm">
+              Modify the configuration parameters or metadata for this flag.
+            </DialogDescription>
+          </DialogHeader>
+
+          {editingSetting && (
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-black uppercase tracking-widest text-zinc-500">
+                  Key
+                </label>
+                <Input
+                  value={editingSetting.key}
+                  disabled
+                  className="h-10 bg-white/[0.01] border-white/[0.04] text-zinc-400 rounded-xl text-sm font-mono cursor-not-allowed"
+                />
+                <p className="text-[10px] text-zinc-600">Keys cannot be renamed to preserve configuration references.</p>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-black uppercase tracking-widest text-zinc-500">
+                  Category
+                </label>
+                <Input
+                  value={editingSetting.category}
+                  onChange={(e) =>
+                    setEditingSetting({
+                      ...editingSetting,
+                      category: e.target.value,
+                    })
+                  }
+                  placeholder="ai, security, infrastructure..."
+                  className="h-10 bg-white/[0.03] border-white/[0.08] focus:border-indigo-500/50 rounded-xl text-sm text-zinc-200 font-mono"
+                  maxLength={32}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-black uppercase tracking-widest text-zinc-500">
+                    Type
+                  </label>
+                  <select
+                    value={editingSetting.type}
+                    onChange={(e) =>
+                      setEditingSetting({
+                        ...editingSetting,
+                        type: e.target.value,
+                        value: e.target.value === "boolean" ? "true" : editingSetting.value,
+                      })
+                    }
+                    className="flex h-10 w-full rounded-xl border border-white/[0.08] bg-[#1a1a1c] px-3 py-2 text-sm text-zinc-200 focus-visible:outline-none focus:border-indigo-500/50 font-mono"
+                  >
+                    <option value="string">string</option>
+                    <option value="boolean">boolean</option>
+                    <option value="number">number</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-black uppercase tracking-widest text-zinc-500">
+                    Value
+                  </label>
+                  {editingSetting.type === "boolean" ? (
+                    <select
+                      value={editingSetting.value}
+                      onChange={(e) =>
+                        setEditingSetting({
+                          ...editingSetting,
+                          value: e.target.value,
+                        })
+                      }
+                      className="flex h-10 w-full rounded-xl border border-white/[0.08] bg-[#1a1a1c] px-3 py-2 text-sm text-zinc-200 focus-visible:outline-none focus:border-indigo-500/50 font-mono"
+                    >
+                      <option value="true">true</option>
+                      <option value="false">false</option>
+                    </select>
+                  ) : (
+                    <Input
+                      type={editingSetting.type === "number" ? "number" : "text"}
+                      value={editingSetting.value}
+                      onChange={(e) =>
+                        setEditingSetting({
+                          ...editingSetting,
+                          value: e.target.value,
+                        })
+                      }
+                      placeholder={editingSetting.type === "number" ? "0" : "value..."}
+                      className="h-10 bg-white/[0.03] border-white/[0.08] focus:border-indigo-500/50 rounded-xl text-sm text-zinc-200 font-mono"
+                    />
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-black uppercase tracking-widest text-zinc-500">
+                  Purpose / Description
+                </label>
+                <textarea
+                  value={editingSetting.description}
+                  onChange={(e) =>
+                    setEditingSetting({
+                      ...editingSetting,
+                      description: e.target.value,
+                    })
+                  }
+                  placeholder="Describe what this flag controls..."
+                  className="flex min-h-[80px] w-full rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-sm text-zinc-200 placeholder:text-zinc-650 focus-visible:outline-none focus:border-indigo-500/50 font-sans"
+                  maxLength={500}
+                />
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="mt-8 flex gap-3">
+            <Button
+              variant="ghost"
+              onClick={() => setIsEditDialogOpen(false)}
+              className="flex-1 text-zinc-500 hover:text-white rounded-xl h-11"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                if (editingSetting) {
+                  let typedVal: any = editingSetting.value;
+                  if (editingSetting.type === "boolean") {
+                    typedVal = editingSetting.value === "true";
+                  } else if (editingSetting.type === "number") {
+                    typedVal = Number(editingSetting.value);
+                  }
+                  updateMutation.mutate({
+                    key: editingSetting.key,
+                    value: typedVal,
+                    type: editingSetting.type,
+                    category: editingSetting.category,
+                    description: editingSetting.description,
+                  });
+                }
+              }}
+              disabled={updating === editingSetting?.key || !editingSetting}
+              className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl h-11"
+            >
+              {updating === editingSetting?.key ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                "Save Changes"
               )}
             </Button>
           </DialogFooter>
