@@ -31,6 +31,7 @@ import PaymentFailed from "./pages/PaymentFailed";
 import Contact from "./pages/Contact";
 import About from "./pages/About";
 import Home from "./pages/Home";
+import VerifyEmail from "./pages/VerifyEmail";
 
 /**
  * Wrapper for lazy imports that handles chunk loading failures after deployments.
@@ -241,6 +242,12 @@ const App = () => {
                           <AuthCallback />
                         </Suspense>
                       }
+                    />
+
+                    {/* Email verification callback */}
+                    <Route
+                      path="/verify-email"
+                      element={<VerifyEmail />}
                     />
 
                     {/* Password reset */}
