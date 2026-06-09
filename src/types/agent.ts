@@ -143,3 +143,81 @@ export interface AgentStats {
     tokens: number;
   }>;
 }
+
+// Canvas workflow types
+export type CanvasNodeType = "input" | "agent" | "output" | "email";
+
+export interface CanvasWorkflow {
+  id: string;
+  name: string;
+  description: string;
+  canvas_data: {
+    nodes: any[];
+    edges: any[];
+    viewport?: { x: number; y: number; zoom: number };
+  };
+  agent_ids: string[];
+  output_format:
+    | "plain"
+    | "pdf"
+    | "csv"
+    | "excel"
+    | "docx"
+    | "latex";
+  status: "draft" | "active" | "archived";
+  last_run_at: string | null;
+  last_run_status: "success" | "failed" | "running" | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CanvasExecutionResult {
+  workflow_id: string;
+  workflow_name: string;
+  agent_results: Array<{
+    node_id: string;
+    agent_id: string;
+    agent_name: string;
+    agent_domain?: string;
+    response?: string;
+    error?: string;
+    tokens?: number;
+    tools_used?: string[];
+  }>;
+  final_output: string;
+  output_format: string;
+  metadata: {
+    total_tokens: number;
+    execution_time_ms: number;
+    agents_executed: number;
+    agents_succeeded: number;
+  };
+}
+
+export interface CanvasSchedule {
+  id: string;
+  user_id: string;
+  workflow_id: string;
+  cron_expression: string;
+  timezone: string;
+  label: string;
+  input_text: string;
+  output_format: string | null;
+  email_enabled: boolean;
+  email_to: string;
+  email_subject: string;
+  email_template: string;
+  is_active: boolean;
+  next_run_at: string | null;
+  last_run_at: string | null;
+  last_run_status: "success" | "failed" | null;
+  run_count: number;
+  max_runs: number | null;
+  created_at: string;
+  updated_at: string;
+  canvas_workflows?: {
+    name: string;
+  };
+}
+
+

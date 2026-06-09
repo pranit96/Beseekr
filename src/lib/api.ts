@@ -1113,6 +1113,142 @@ class ApiClient {
 
   // ========== END AUTONOMOUS WORKFLOW ENDPOINTS ==========
 
+  // ========== CANVAS WORKFLOW ENDPOINTS ==========
+
+  async getCanvasWorkflows(params?: {
+    page?: number;
+    limit?: number;
+    status?: string;
+  }) {
+    const query = new URLSearchParams(params as any).toString();
+    return this.request<any>(
+      `/api/canvas-workflows${query ? `?${query}` : ""}`,
+    );
+  }
+
+  async getCanvasWorkflow(id: string) {
+    return this.request<any>(`/api/canvas-workflows/${id}`);
+  }
+
+  async createCanvasWorkflow(data: {
+    name: string;
+    description?: string;
+    canvas_data: any;
+    agent_ids?: string[];
+    output_format?: string;
+  }) {
+    this.invalidateCache("/api/canvas-workflows");
+    return this.request<any>("/api/canvas-workflows", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateCanvasWorkflow(
+    id: string,
+    data: {
+      name?: string;
+      description?: string;
+      canvas_data?: any;
+      agent_ids?: string[];
+      output_format?: string;
+      status?: string;
+    },
+  ) {
+    this.invalidateCache("/api/canvas-workflows");
+    return this.request<any>(`/api/canvas-workflows/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteCanvasWorkflow(id: string) {
+    this.invalidateCache("/api/canvas-workflows");
+    return this.request<any>(`/api/canvas-workflows/${id}`, {
+      method: "DELETE",
+    });
+  }
+
+  async executeCanvasWorkflow(
+    id: string,
+    payload: { input_text: string; output_format?: string },
+  ) {
+    return this.request<any>(`/api/canvas-workflows/${id}/execute`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async getCanvasSchedules(params?: { workflow_id?: string }) {
+    const query = params?.workflow_id ? `?workflow_id=${params.workflow_id}` : "";
+    return this.request<any>(`/api/canvas-schedules${query}`);
+  }
+
+  async getCanvasSchedule(id: string) {
+    return this.request<any>(`/api/canvas-schedules/${id}`);
+  }
+
+  async createCanvasSchedule(data: {
+    workflow_id: string;
+    cron_expression: string;
+    timezone?: string;
+    label?: string;
+    input_text: string;
+    output_format?: string | null;
+    email_enabled?: boolean;
+    email_to?: string;
+    email_subject?: string;
+    email_template?: string;
+    max_runs?: number | null;
+    is_active?: boolean;
+  }) {
+    this.invalidateCache("/api/canvas-schedules");
+    return this.request<any>("/api/canvas-schedules", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateCanvasSchedule(
+    id: string,
+    data: {
+      cron_expression?: string;
+      timezone?: string;
+      label?: string;
+      input_text?: string;
+      output_format?: string | null;
+      email_enabled?: boolean;
+      email_to?: string;
+      email_subject?: string;
+      email_template?: string;
+      max_runs?: number | null;
+      is_active?: boolean;
+    },
+  ) {
+    this.invalidateCache("/api/canvas-schedules");
+    return this.request<any>(`/api/canvas-schedules/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteCanvasSchedule(id: string) {
+    this.invalidateCache("/api/canvas-schedules");
+    return this.request<any>(`/api/canvas-schedules/${id}`, {
+      method: "DELETE",
+    });
+  }
+
+  async toggleCanvasSchedule(id: string) {
+    this.invalidateCache("/api/canvas-schedules");
+    return this.request<any>(`/api/canvas-schedules/${id}/toggle`, {
+      method: "PATCH",
+    });
+  }
+
+
+  // ========== END CANVAS WORKFLOW ENDPOINTS ==========
+
   // Notification preferences endpoints
   async getNotificationPreferences() {
     return this.request<{

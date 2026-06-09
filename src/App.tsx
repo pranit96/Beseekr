@@ -91,6 +91,10 @@ const AutonomousWorkflow = lazyRetry(
   () => import("./pages/AutonomousWorkflow"),
   "AutonomousWorkflow",
 );
+const AgentCanvas = lazyRetry(
+  () => import("./pages/AgentCanvas"),
+  "AgentCanvas",
+);
 // const Deck = lazyRetry(() => import("./pages/Deck"), "Deck");
 const AuthCallback = lazyRetry(
   () => import("./pages/AuthCallback"),
@@ -404,6 +408,26 @@ const App = () => {
                         <ProtectedRoute>
                           <Suspense fallback={<PageLoader />}>
                             <AutonomousWorkflow />
+                          </Suspense>
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/canvas"
+                      element={
+                        <ProtectedRoute>
+                          <Suspense fallback={<PageLoader />}>
+                            <AgentCanvas />
+                          </Suspense>
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/canvas/:id"
+                      element={
+                        <ProtectedRoute>
+                          <Suspense fallback={<PageLoader />}>
+                            <AgentCanvas />
                           </Suspense>
                         </ProtectedRoute>
                       }

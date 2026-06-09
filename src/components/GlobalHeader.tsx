@@ -32,6 +32,7 @@ import {
   Trophy,
   LayoutDashboard,
   Target,
+  LayoutGrid,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -83,6 +84,14 @@ const NAV_ITEMS = {
     href: "/agents",
     icon: Bot,
     color: "from-cyan-500 to-blue-500",
+    exact: false,
+  },
+  canvas: {
+    key: "canvas",
+    name: "AI canvase",
+    href: "/canvas",
+    icon: LayoutGrid,
+    color: "from-purple-500 to-pink-500",
     exact: false,
   },
   research: {
@@ -158,14 +167,21 @@ function isPathActive(pathname: string, href: string, exact?: boolean) {
 
 function getNavigationContext(pathname: string, isPremium: boolean) {
   const isChatContext =
-    pathname.startsWith("/chat") || pathname.startsWith("/agents");
+    pathname.startsWith("/chat") ||
+    pathname.startsWith("/agents") ||
+    pathname.startsWith("/canvas");
   const isResumeContext = pathname.startsWith("/dashboard/resume");
   const isDiscoverContext =
     pathname.startsWith("/dashboard") &&
     !pathname.startsWith("/dashboard/profile");
 
   if (isChatContext) {
-    return [NAV_ITEMS.home, NAV_ITEMS.chat, NAV_ITEMS.agents];
+    return [
+      NAV_ITEMS.home,
+      NAV_ITEMS.chat,
+      NAV_ITEMS.agents,
+      NAV_ITEMS.canvas,
+    ];
   } else if (isDiscoverContext) {
     const items = [
       NAV_ITEMS.home,

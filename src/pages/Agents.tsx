@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Plus,
   Pencil,
@@ -20,6 +21,7 @@ import {
   Languages,
   BarChart3,
   Share2,
+  LayoutGrid,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -76,6 +78,7 @@ const Agents = () => {
   const [quickChatAgent, setQuickChatAgent] = useState<Agent | null>(null);
   const [sharingAgent, setSharingAgent] = useState<Agent | null>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const {
     data: agentsResponse,
@@ -406,6 +409,13 @@ const Agents = () => {
               >
                 <Workflow className="w-3.5 h-3.5" />
                 <span>Workflows</span>
+              </button>
+              <button
+                onClick={() => navigate("/canvas")}
+                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold border border-violet-500/30 bg-violet-500/10 hover:bg-violet-500/20 text-violet-400 hover:text-violet-300 transition-all"
+              >
+                <LayoutGrid className="w-3.5 h-3.5" />
+                <span>Canvas</span>
               </button>
               <button
                 onClick={fetchTemplates}

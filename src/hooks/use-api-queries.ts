@@ -8,7 +8,7 @@ import {
 import { apiClient } from "@/lib/api";
 import { getBlogs, getBlog, getTopics, subscribeNewsletter } from "@/api/blogs";
 import { useToast } from "@/hooks/use-toast";
-import { Agent, AgentTemplate, AgentStats } from "@/types/agent";
+import { Agent, AgentTemplate, AgentStats, CanvasSchedule } from "@/types/agent";
 import { Conversation, Message } from "@/types/conversation";
 
 // Query Keys
@@ -37,6 +37,10 @@ export const queryKeys = {
   notificationPreferences: ["notificationPreferences"] as const,
   authSessions: ["authSessions"] as const,
   twoFAStatus: ["2fa", "status"] as const,
+  canvasWorkflows: ["canvasWorkflows"] as const,
+  canvasWorkflow: (id: string) => ["canvasWorkflow", id] as const,
+  canvasSchedules: ["canvasSchedules"] as const,
+  canvasSchedule: (id: string) => ["canvasSchedule", id] as const,
 };
 
 // ============= AGENTS =============
@@ -617,3 +621,290 @@ export function useAvatarGallery() {
     gcTime: 24 * 60 * 60 * 1000,
   });
 }
+
+// ============= CANVAS WORKFLOWS =============
+
+export function useCanvasWorkflows(params?: {
+  page?: number;
+  limit?: number;
+  status?: string;
+}) {
+  return useQuery({
+    queryKey: [...queryKeys.canvasWorkflows, params],
+    queryFn: () => apiClient.getCanvasWorkflows(params),
+    staleTime: 30 * 1000,
+    gcTime: 5 * 60 * 1000,
+  });
+}
+
+export function useCanvasWorkflow(id: string) {
+  return useQuery({
+    queryKey: queryKeys.canvasWorkflow(id),
+    queryFn: () => apiClient.getCanvasWorkflow(id),
+    enabled: !!id,
+    staleTime: 30 * 1000,
+    gcTime: 5 * 60 * 1000,
+  });
+}
+
+export function useCreateCanvasWorkflow() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: (data: {
+      name: string;
+      description?: string;
+      canvas_data: any;
+      agent_ids?: string[];
+      output_format?: string;
+    }) => apiClient.createCanvasWorkflow(data),
+    onSuccess: (response: any) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.canvasWorkflows });
+      toast({
+        title: "Canvas workflow saved",
+        description: `"${response.data?.name || "Workflow"}" has been saved.`,
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to save canvas workflow",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+}
+
+export function useUpdateCanvasWorkflow() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: {
+        name?: string;
+        description?: string;
+        canvas_data?: any;
+        agent_ids?: string[];
+        output_format?: string;
+        status?: string;
+      };
+    }) => apiClient.updateCanvasWorkflow(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.canvasWorkflows });
+      toast({
+        title: "Canvas workflow updated",
+        description: "Your changes have been saved.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to update canvas workflow",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+}
+
+export function useDeleteCanvasWorkflow() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: (id: string) => apiClient.deleteCanvasWorkflow(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.canvasWorkflows });
+      toast({
+        title: "Canvas workflow deleted",
+        description: "The workflow has been permanently deleted.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to delete canvas workflow",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+}
+
+export function useExecuteCanvasWorkflow() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string;
+      payload: { input_text: string; output_format?: string };
+    }) => apiClient.executeCanvasWorkflow(id, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.canvasWorkflows });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Canvas workflow execution failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+}
+
+// ============= CANVAS SCHEDULES =============
+
+export function useCanvasSchedules(params?: { workflow_id?: string }) {
+  return useQuery({
+    queryKey: [...queryKeys.canvasSchedules, params],
+    queryFn: () => apiClient.getCanvasSchedules(params),
+    staleTime: 10 * 1000,
+    gcTime: 5 * 60 * 1000,
+  });
+}
+
+export function useCanvasSchedule(id: string) {
+  return useQuery({
+    queryKey: queryKeys.canvasSchedule(id),
+    queryFn: () => apiClient.getCanvasSchedule(id),
+    enabled: !!id,
+    staleTime: 10 * 1000,
+    gcTime: 5 * 60 * 1000,
+  });
+}
+
+export function useCreateCanvasSchedule() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: (data: {
+      workflow_id: string;
+      cron_expression: string;
+      timezone?: string;
+      label?: string;
+      input_text: string;
+      output_format?: string | null;
+      email_enabled?: boolean;
+      email_to?: string;
+      email_subject?: string;
+      email_template?: string;
+      max_runs?: number | null;
+      is_active?: boolean;
+    }) => apiClient.createCanvasSchedule(data),
+    onSuccess: (response: any) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.canvasSchedules });
+      toast({
+        title: "Schedule created",
+        description: `"${response.data?.label || "Schedule"}" has been created.`,
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to create schedule",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+}
+
+export function useUpdateCanvasSchedule() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: {
+        cron_expression?: string;
+        timezone?: string;
+        label?: string;
+        input_text?: string;
+        output_format?: string | null;
+        email_enabled?: boolean;
+        email_to?: string;
+        email_subject?: string;
+        email_template?: string;
+        max_runs?: number | null;
+        is_active?: boolean;
+      };
+    }) => apiClient.updateCanvasSchedule(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.canvasSchedules });
+      toast({
+        title: "Schedule updated",
+        description: "Your schedule has been successfully updated.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to update schedule",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+}
+
+export function useDeleteCanvasSchedule() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: (id: string) => apiClient.deleteCanvasSchedule(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.canvasSchedules });
+      toast({
+        title: "Schedule deleted",
+        description: "The execution schedule has been removed.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to delete schedule",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+}
+
+export function useToggleCanvasSchedule() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: (id: string) => apiClient.toggleCanvasSchedule(id),
+    onSuccess: (response: any) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.canvasSchedules });
+      const active = response.data?.is_active;
+      toast({
+        title: active ? "Schedule activated" : "Schedule paused",
+        description: active
+          ? "Workflow will execute on the specified schedule."
+          : "Scheduled executions have been paused.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to toggle schedule",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+}
+
+
