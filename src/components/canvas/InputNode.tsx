@@ -95,6 +95,13 @@ const InputNode: React.FC<NodeProps> = ({ data, selected }) => {
           : "border-border/40 hover:border-emerald-500/30 bg-card/60"
       } backdrop-blur-xl`}
     >
+      {/* Input handle */}
+      <Handle
+        type="target"
+        position={Position.Left}
+        className="!w-3.5 !h-3.5 !bg-emerald-500 !border-2 !border-background !rounded-full !shadow-lg !shadow-emerald-500/30"
+      />
+
       {/* Header */}
       <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border/20">
         <div
