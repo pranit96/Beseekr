@@ -1,6 +1,6 @@
 import React, { memo, useState, useEffect } from "react";
 import { Handle, Position, type NodeProps } from "@xyflow/react";
-import { Clock, Play, Pause, ChevronDown, Globe } from "lucide-react";
+import { Clock, Play, Pause, ChevronDown, Globe, Loader2, Zap } from "lucide-react";
 
 interface ScheduleNodeData {
   label?: string;
@@ -19,6 +19,9 @@ interface ScheduleNodeData {
   scheduleId?: string;
   runCount?: number;
   lastRunStatus?: string;
+  inputText?: string;
+  onInputTextChange?: (val: string) => void;
+  onExecute?: () => Promise<void>;
   [key: string]: unknown;
 }
 
@@ -45,11 +48,85 @@ const TIMEZONES = [
   { value: "Australia/Sydney", label: "Sydney" },
 ];
 
+function humanizeCron(cronStr: string): string {
+  if (!cronStr) return "Invalid cron expression";
+  const parts = cronStr.trim().split(/\s+/);
+  if (parts.length !== 5) return "Custom cron expression";
+  const [min, hour, dom, month, dow] = parts;
+
+  // Presets mapping
+  if (min === "*/5" && hour === "*" && dom === "*" && month === "*" && dow === "*") {
+    return "Runs every 5 minutes";
+  }
+  if (min === "0" && hour === "*" && dom === "*" && month === "*" && dow === "*") {
+    return "Runs every hour";
+  }
+  if (min === "0" && hour === "0" && dom === "*" && month === "*" && dow === "*") {
+    return "Runs daily at midnight";
+  }
+  if (min === "0" && hour === "9" && dom === "*" && month === "*" && dow === "*") {
+    return "Runs daily at 9:00 AM";
+  }
+  if (min === "0" && hour === "0" && dom === "*" && month === "*" && dow === "1") {
+    return "Runs weekly on Mondays at midnight";
+  }
+  if (min === "0" && hour === "0" && dom === "1" && month === "*" && dow === "*") {
+    return "Runs monthly on the 1st at midnight";
+  }
+
+  try {
+    let timeStr = "";
+    if (hour !== "*" && min !== "*") {
+      const h = parseInt(hour, 10);
+      const m = parseInt(min, 10);
+      if (!isNaN(h) && !isNaN(m)) {
+        const ampm = h >= 12 ? "PM" : "AM";
+        const displayHour = h % 12 === 0 ? 12 : h % 12;
+        const displayMin = m < 10 ? `0${m}` : m;
+        timeStr = `at ${displayHour}:${displayMin} ${ampm}`;
+      } else {
+        timeStr = `at hour ${hour} and minute ${min}`;
+      }
+    } else if (min !== "*") {
+      timeStr = `at minute ${min} of every hour`;
+    } else {
+      timeStr = "every minute";
+    }
+
+    let dayStr = "";
+    if (dow !== "*") {
+      const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+      const activeDays = dow.split(",").map(d => {
+        const val = parseInt(d, 10);
+        return days[val] || d;
+      });
+      dayStr = ` on ${activeDays.join(", ")}`;
+    } else if (dom !== "*") {
+      dayStr = ` on day ${dom} of the month`;
+    }
+
+    let monthStr = "";
+    if (month !== "*") {
+      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      const activeMonths = month.split(",").map(m => {
+        const val = parseInt(m, 10) - 1;
+        return months[val] || m;
+      });
+      monthStr = ` in ${activeMonths.join(", ")}`;
+    }
+
+    return `Runs ${timeStr}${dayStr}${monthStr}`;
+  } catch (err) {
+    return "Custom cron expression";
+  }
+}
+
 const ScheduleNode: React.FC<NodeProps> = ({ data, selected }) => {
   const d = data as ScheduleNodeData;
   const preset = d.cronPreset || "0 0 * * *";
   const isCustom = preset === "custom";
   const isActive = d.isActive ?? false;
+  const [isExecuting, setIsExecuting] = useState(false);
   const [localTz] = useState(
     () => Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
   );
@@ -82,6 +159,13 @@ const ScheduleNode: React.FC<NodeProps> = ({ data, selected }) => {
       <Handle
         type="target"
         position={Position.Left}
+        className="!w-3.5 !h-3.5 !bg-amber-500 !border-2 !border-background !rounded-full !shadow-lg !shadow-amber-500/30"
+      />
+
+      {/* Output handle */}
+      <Handle
+        type="source"
+        position={Position.Right}
         className="!w-3.5 !h-3.5 !bg-amber-500 !border-2 !border-background !rounded-full !shadow-lg !shadow-amber-500/30"
       />
 
@@ -136,6 +220,20 @@ const ScheduleNode: React.FC<NodeProps> = ({ data, selected }) => {
             onChange={(e) => d.onLabelChange?.(e.target.value)}
             placeholder="e.g. Daily Digest"
             className="w-full bg-background/40 border border-border/30 rounded-lg px-2.5 py-1 text-[10px] text-foreground placeholder-muted-foreground/45 outline-none focus:ring-1 focus:ring-amber-500/40 focus:border-amber-500/40 transition-all"
+          />
+        </div>
+
+        {/* Startup Message Payload */}
+        <div>
+          <label className="text-[9px] font-bold text-muted-foreground/70 uppercase tracking-wider block mb-1">
+            Startup Message (Input Payload)
+          </label>
+          <textarea
+            value={d.inputText || ""}
+            onChange={(e) => d.onInputTextChange?.(e.target.value)}
+            placeholder="e.g. Run daily research report..."
+            rows={2}
+            className="w-full bg-background/40 border border-border/30 rounded-lg px-2.5 py-1.5 text-[10px] text-foreground placeholder-muted-foreground/45 outline-none focus:ring-1 focus:ring-amber-500/40 focus:border-amber-500/40 transition-all resize-none font-sans"
           />
         </div>
 
@@ -216,6 +314,41 @@ const ScheduleNode: React.FC<NodeProps> = ({ data, selected }) => {
             className="w-full bg-background/40 border border-border/30 rounded-lg px-2.5 py-1 text-[10px] text-foreground placeholder-muted-foreground/45 outline-none focus:ring-1 focus:ring-amber-500/40 focus:border-amber-500/40 transition-all"
           />
         </div>
+
+        {/* Cron explainer */}
+        <div className="bg-amber-500/5 rounded-lg px-2.5 py-1.5 border border-amber-500/10 mt-1">
+          <p className="text-[9px] text-amber-400 font-medium leading-relaxed">
+            {humanizeCron(activeCron)}
+          </p>
+        </div>
+
+        {/* Trigger Now Button */}
+        {d.onExecute && (
+          <button
+            type="button"
+            onClick={async (e) => {
+              e.stopPropagation();
+              if (isExecuting) return;
+              setIsExecuting(true);
+              try {
+                await d.onExecute();
+              } catch (err) {
+                console.error(err);
+              } finally {
+                setIsExecuting(false);
+              }
+            }}
+            disabled={isExecuting}
+            className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold bg-amber-500/10 border border-amber-500/20 text-amber-400 hover:bg-amber-500/20 active:scale-95 disabled:opacity-50 transition-all cursor-pointer mt-1"
+          >
+            {isExecuting ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-400" />
+            ) : (
+              <Zap className="w-3.5 h-3.5 text-amber-400" />
+            )}
+            Trigger Workflow Now
+          </button>
+        )}
 
         {/* Status footer */}
         {(d.scheduleId || d.runCount !== undefined) && (

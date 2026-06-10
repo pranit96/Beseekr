@@ -24,6 +24,7 @@ interface CanvasSidebarProps {
     e: React.DragEvent,
     agent: Agent,
   ) => void;
+  onAddAgentNode?: (agent: Agent) => void;
   onAddInputNode: () => void;
   onAddOutputNode: () => void;
   onAddEmailNode: () => void;
@@ -43,6 +44,7 @@ export const CanvasSidebar: React.FC<CanvasSidebarProps> = ({
   agents,
   savedWorkflows,
   onDragAgentStart,
+  onAddAgentNode,
   onAddInputNode,
   onAddOutputNode,
   onAddEmailNode,
@@ -232,7 +234,17 @@ export const CanvasSidebar: React.FC<CanvasSidebarProps> = ({
                             ` · ${agent.tools.length} tools`}
                         </p>
                       </div>
-                      <Plus className="w-3.5 h-3.5 text-muted-foreground/30 group-hover:text-primary transition-colors shrink-0" />
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onAddAgentNode?.(agent);
+                        }}
+                        className="p-1 rounded-lg hover:bg-primary/10 transition-all shrink-0 cursor-pointer"
+                        title={`Add ${agent.name} to canvas`}
+                      >
+                        <Plus className="w-3.5 h-3.5 text-muted-foreground/35 group-hover:text-primary transition-colors" />
+                      </button>
                     </div>
                   );
                 })

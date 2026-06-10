@@ -124,6 +124,7 @@ const AgentCanvas: React.FC = () => {
   const updateMutation = useUpdateCanvasWorkflow();
   const deleteMutation = useDeleteCanvasWorkflow();
   const executeMutation = useExecuteCanvasWorkflow();
+  const handleExecuteRef = useRef<(() => Promise<void>) | null>(null);
 
   const agents: Agent[] = useMemo(() => {
     if (!agentsResponse) return [];
@@ -224,6 +225,9 @@ const AgentCanvas: React.FC = () => {
               updateNodeData(n.id, "maxRuns", val),
             onActiveToggle: (val: boolean) =>
               updateNodeData(n.id, "isActive", val),
+            onInputTextChange: (val: string) =>
+              updateNodeData(n.id, "inputText", val),
+            onExecute: () => handleExecuteRef.current?.(),
           },
         };
       }
@@ -317,9 +321,6 @@ const AgentCanvas: React.FC = () => {
 
       // Note nodes cannot have connections (purely annotation)
       if (sourceNode.type === "noteNode" || targetNode.type === "noteNode") return false;
-
-      // Schedule nodes are terminal — cannot have outgoing connections
-      if (sourceNode.type === "scheduleNode") return false;
 
       // Input nodes should not receive connections (they are entry points)
       if (targetNode.type === "inputNode") return false;
@@ -422,6 +423,40 @@ const AgentCanvas: React.FC = () => {
     setNodes((nds) => [...nds, newNode]);
   }, [setNodes, updateNodeData]);
 
+  // Add agent node programmatically via click
+  const addAgentNode = useCallback(
+    (agent: Agent) => {
+      const id = getNodeId("agent");
+      let position = { x: 400 + Math.random() * 100, y: 300 + Math.random() * 100 };
+      if (reactFlowInstance) {
+        position = reactFlowInstance.screenToFlowPosition({
+          x: window.innerWidth / 2,
+          y: window.innerHeight / 2,
+        });
+      }
+      const newNode: Node = {
+        id,
+        type: "agentNode",
+        position,
+        data: {
+          agentId: agent.id,
+          agentName: agent.name,
+          agentDomain: agent.domain || "General",
+          agentColor: agent.color || "hsl(258, 70%, 60%)",
+          provider: (agent as any).provider || "",
+          model: (agent as any).model || "",
+          tools: agent.tools || [],
+          instruction: "",
+          onInstructionChange: (text: string) =>
+            updateNodeData(id, "instruction", text),
+          status: "idle",
+        },
+      };
+      setNodes((nds) => [...nds, newNode]);
+    },
+    [reactFlowInstance, setNodes, updateNodeData],
+  );
+
   // Add schedule node
   const addScheduleNode = useCallback(() => {
     const id = getNodeId("schedule");
@@ -437,6 +472,7 @@ const AgentCanvas: React.FC = () => {
         timezone: localTz,
         maxRuns: "",
         isActive: true,
+        inputText: "",
         onLabelChange: (val: string) =>
           updateNodeData(id, "label", val),
         onCronPresetChange: (val: string) =>
@@ -449,6 +485,9 @@ const AgentCanvas: React.FC = () => {
           updateNodeData(id, "maxRuns", val),
         onActiveToggle: (val: boolean) =>
           updateNodeData(id, "isActive", val),
+        onInputTextChange: (val: string) =>
+          updateNodeData(id, "inputText", val),
+        onExecute: () => handleExecuteRef.current?.(),
       },
     };
     setNodes((nds) => [...nds, newNode]);
@@ -853,6 +892,8 @@ const AgentCanvas: React.FC = () => {
     toast,
   ]);
 
+  handleExecuteRef.current = handleExecute;
+
   // Load saved workflow
   const handleLoadWorkflow = useCallback(
     (wf: CanvasWorkflow) => {
@@ -901,16 +942,27 @@ const AgentCanvas: React.FC = () => {
     navigate("/canvas", { replace: true });
   }, [navigate, setNodes, setEdges]);
 
-  // Download result
   const handleDownload = useCallback(
     (format: string) => {
       if (!executionResult?.final_output) return;
       const content = executionResult.final_output;
+
+      if (format === "pdf") {
+        const urlMatch = content.match(/\[Download PDF\]\((https?:\/\/[^\s)]+)\)/i) ||
+                         content.match(/(https?:\/\/[^\s)]+\/api\/files\/[^\s)]+)/i) ||
+                         content.match(/(https?:\/\/[^\s)]+\.pdf[^\s)]*)/i);
+        if (urlMatch && urlMatch[1]) {
+          window.open(urlMatch[1], "_blank");
+          return;
+        }
+      }
+
       let mimeType = "text/plain";
       let extension = "txt";
 
       switch (format) {
         case "csv":
+        case "excel":
           mimeType = "text/csv";
           extension = "csv";
           break;
@@ -1026,6 +1078,7 @@ const AgentCanvas: React.FC = () => {
           agents={agents}
           savedWorkflows={savedWorkflows}
           onDragAgentStart={onDragAgentStart}
+          onAddAgentNode={addAgentNode}
           onAddInputNode={addInputNode}
           onAddOutputNode={addOutputNode}
           onAddEmailNode={addEmailNode}
