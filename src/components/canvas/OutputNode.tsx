@@ -27,7 +27,6 @@ const FORMAT_OPTIONS = [
   { value: "csv", label: "CSV", icon: FileText },
   { value: "excel", label: "Excel", icon: FileSpreadsheet },
   { value: "docx", label: "DOCX", icon: FileType },
-  { value: "latex", label: "LaTeX", icon: FileText },
 ];
 
 const OutputNode: React.FC<NodeProps> = ({ data, selected }) => {
