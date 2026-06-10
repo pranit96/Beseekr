@@ -54,6 +54,7 @@ import {
   useUpdateCanvasWorkflow,
   useDeleteCanvasWorkflow,
   useExecuteCanvasWorkflow,
+  useGenerateCanvasWorkflow,
 } from "@/hooks/use-api-queries";
 import { useToast } from "@/hooks/use-toast";
 import type { Agent, CanvasWorkflow, CanvasExecutionResult } from "@/types/agent";
@@ -116,6 +117,10 @@ const AgentCanvas: React.FC = () => {
     useState<CanvasExecutionResult | null>(null);
   const [showResults, setShowResults] = useState(false);
 
+  // AI Workflow Generator state
+  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState("");
+
   // Data fetching
   const { data: agentsResponse, isLoading: loadingAgents } = useMyAgents();
   const { data: workflowsResponse, isLoading: loadingWorkflows } =
@@ -126,6 +131,7 @@ const AgentCanvas: React.FC = () => {
   const updateMutation = useUpdateCanvasWorkflow();
   const deleteMutation = useDeleteCanvasWorkflow();
   const executeMutation = useExecuteCanvasWorkflow();
+  const generateMutation = useGenerateCanvasWorkflow();
   const handleExecuteRef = useRef<(() => Promise<void>) | null>(null);
 
   const agents: Agent[] = useMemo(() => {
@@ -978,6 +984,34 @@ const AgentCanvas: React.FC = () => {
     navigate("/canvas", { replace: true });
   }, [navigate, setNodes, setEdges]);
 
+  // Generate workflow using AI
+  const handleGenerateWorkflow = useCallback(async () => {
+    if (!aiPrompt.trim()) return;
+    try {
+      const response = await generateMutation.mutateAsync(aiPrompt);
+      if (response && response.success && response.data) {
+        const nodesWithCallbacks = restoreNodesWithCallbacks(response.data.nodes || []);
+        setNodes(nodesWithCallbacks);
+        setEdges(response.data.edges || []);
+        
+        // Auto-extract name if provided, or construct from prompt
+        const cleanName = aiPrompt.length > 35 
+          ? `${aiPrompt.substring(0, 32)}...` 
+          : aiPrompt;
+        setWorkflowName(`AI Builder: ${cleanName}`);
+        
+        toast({
+          title: "Workflow generated",
+          description: "Your AI-generated canvas workflow is ready!",
+        });
+        setIsAiModalOpen(false);
+        setAiPrompt("");
+      }
+    } catch (err) {
+      // Handled by hook onError
+    }
+  }, [aiPrompt, generateMutation, restoreNodesWithCallbacks, setNodes, setEdges, toast]);
+
   const handleDownload = useCallback(
     (format: string) => {
       if (!executionResult?.final_output) return;
@@ -1074,6 +1108,13 @@ const AgentCanvas: React.FC = () => {
 
         {/* Right: Actions */}
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setIsAiModalOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-violet-600/15 border border-violet-500/35 text-violet-400 hover:bg-violet-600/25 hover:text-violet-300 transition-all shadow-sm shadow-violet-500/5 hover:scale-[1.02] active:scale-[0.98] duration-200"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-violet-400 animate-pulse" />
+            AI Builder
+          </button>
           <button
             onClick={handleClear}
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border border-border/40 bg-card/10 hover:bg-muted/60 text-muted-foreground hover:text-foreground transition-all"
@@ -1219,6 +1260,129 @@ const AgentCanvas: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* AI Workflow Generator Modal */}
+      {isAiModalOpen && (
+        <div 
+          onClick={() => {
+            if (!generateMutation.isPending) {
+              setIsAiModalOpen(false);
+              setAiPrompt("");
+            }
+          }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/85 backdrop-blur-md transition-all duration-300"
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-border/40 bg-card/90 p-6 shadow-2xl backdrop-blur-2xl transition-all scale-100 flex flex-col gap-4"
+          >
+            
+            {/* Header */}
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 via-fuchsia-500 to-pink-500 flex items-center justify-center shadow-lg shadow-violet-500/25 animate-pulse">
+                  <Sparkles className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-foreground">
+                    AI Workflow Builder
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    Describe your automated pipeline and watch it design itself.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Warning if there's existing canvas content */}
+            {nodes.length > 0 && (
+              <div className="px-3.5 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-500 text-[10px] leading-relaxed flex items-center gap-2">
+                <span className="shrink-0 font-bold">⚠️ Warning:</span>
+                <span>Generating will replace your current canvas. Make sure you save any changes first.</span>
+              </div>
+            )}
+
+            {/* Prompt input */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                Describe the workflow you want to build
+              </label>
+              <textarea
+                value={aiPrompt}
+                onChange={(e) => setAiPrompt(e.target.value)}
+                placeholder="e.g. Create a workflow that runs daily and feeds my research trends to a news analyst agent, then mails me a PDF report."
+                disabled={generateMutation.isPending}
+                className="w-full min-h-[110px] rounded-xl border border-border/40 bg-background/50 hover:bg-background/85 focus:bg-background/85 p-3.5 text-xs text-foreground placeholder:text-muted-foreground/45 focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/50 outline-none transition-all resize-none shadow-inner"
+              />
+            </div>
+
+            {/* Suggestions */}
+            {!generateMutation.isPending && (
+              <div className="flex flex-col gap-1.5">
+                <span className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider">
+                  Suggestions to try:
+                </span>
+                <div className="flex flex-col gap-1.5">
+                  <button
+                    onClick={() => setAiPrompt("Create a scheduler that runs daily and feeds my research trends to a news analyst agent, then mails me a PDF report.")}
+                    className="text-left text-[11px] text-muted-foreground hover:text-foreground hover:bg-muted/30 px-2.5 py-1.5 rounded-lg border border-border/10 bg-card/25 transition-all text-ellipsis overflow-hidden whitespace-nowrap"
+                  >
+                    💡 Daily trends email digest in PDF format
+                  </button>
+                  <button
+                    onClick={() => setAiPrompt("Ask an email classifier agent to organize incoming prompts and notify my Telegram channel if it is urgent.")}
+                    className="text-left text-[11px] text-muted-foreground hover:text-foreground hover:bg-muted/30 px-2.5 py-1.5 rounded-lg border border-border/10 bg-card/25 transition-all text-ellipsis overflow-hidden whitespace-nowrap"
+                  >
+                    💡 Sort messages & send Telegram alerts for urgent items
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Progress steps when generating */}
+            {generateMutation.isPending && (
+              <div className="py-2 flex flex-col gap-2 bg-violet-500/5 border border-violet-500/10 rounded-xl p-3.5 animate-pulse">
+                <div className="flex items-center gap-2 text-xs font-bold text-violet-400">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  Generating Canvas Workflow...
+                </div>
+                <div className="text-[10px] text-muted-foreground/75 leading-relaxed">
+                  The AI is checking available custom agents, planning the pipeline logic, placing node structures, and aligning grid coordinates.
+                </div>
+              </div>
+            )}
+
+            {/* Footer Buttons */}
+            <div className="flex items-center justify-end gap-2 mt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsAiModalOpen(false);
+                  setAiPrompt("");
+                }}
+                disabled={generateMutation.isPending}
+                className="px-3 py-2 rounded-xl text-xs font-semibold border border-border/40 hover:bg-muted text-muted-foreground hover:text-foreground transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleGenerateWorkflow}
+                disabled={generateMutation.isPending || !aiPrompt.trim()}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-violet-600 to-purple-600 text-white hover:from-violet-500 hover:to-purple-500 disabled:opacity-40 disabled:pointer-events-none transition-all shadow-md shadow-violet-500/20"
+              >
+                {generateMutation.isPending ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Sparkles className="w-3.5 h-3.5" />
+                )}
+                Generate Workflow
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
     </div>
   );
 };

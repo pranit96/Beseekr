@@ -1179,6 +1179,13 @@ class ApiClient {
     });
   }
 
+  async generateCanvasWorkflow(prompt: string) {
+    return this.request<any>("/api/canvas-workflows/generate", {
+      method: "POST",
+      body: JSON.stringify({ prompt }),
+    });
+  }
+
   async getCanvasSchedules(params?: { workflow_id?: string }) {
     const query = params?.workflow_id ? `?workflow_id=${params.workflow_id}` : "";
     return this.request<any>(`/api/canvas-schedules${query}`);

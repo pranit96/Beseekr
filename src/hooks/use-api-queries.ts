@@ -760,6 +760,21 @@ export function useExecuteCanvasWorkflow() {
   });
 }
 
+export function useGenerateCanvasWorkflow() {
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: (prompt: string) => apiClient.generateCanvasWorkflow(prompt),
+    onError: (error: Error) => {
+      toast({
+        title: "Workflow generation failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+}
+
 // ============= CANVAS SCHEDULES =============
 
 export function useCanvasSchedules(params?: { workflow_id?: string }) {
