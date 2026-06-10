@@ -45,6 +45,7 @@ import MergeNode from "@/components/canvas/MergeNode";
 import NoteNode from "@/components/canvas/NoteNode";
 import HttpNode from "@/components/canvas/HttpNode";
 import TransformNode from "@/components/canvas/TransformNode";
+import TelegramNode from "@/components/canvas/TelegramNode";
 import {
   useMyAgents,
   useCanvasWorkflows,
@@ -69,6 +70,7 @@ const nodeTypes = {
   noteNode: NoteNode,
   httpNode: HttpNode,
   transformNode: TransformNode,
+  telegramNode: TelegramNode,
 };
 
 // Default edge style
@@ -205,6 +207,20 @@ const AgentCanvas: React.FC = () => {
               updateNodeData(n.id, "emailTo", val),
             onEmailSubjectChange: (val: string) =>
               updateNodeData(n.id, "emailSubject", val),
+          },
+        };
+      }
+      if (n.type === "telegramNode") {
+        return {
+          ...n,
+          data: {
+            ...n.data,
+            onBotTokenChange: (val: string) =>
+              updateNodeData(n.id, "botToken", val),
+            onChatIdChange: (val: string) =>
+              updateNodeData(n.id, "chatId", val),
+            onMessageTemplateChange: (val: string) =>
+              updateNodeData(n.id, "messageTemplate", val),
           },
         };
       }
@@ -418,6 +434,29 @@ const AgentCanvas: React.FC = () => {
           updateNodeData(id, "emailTo", val),
         onEmailSubjectChange: (val: string) =>
           updateNodeData(id, "emailSubject", val),
+      },
+    };
+    setNodes((nds) => [...nds, newNode]);
+  }, [setNodes, updateNodeData]);
+
+  // Add telegram node
+  const addTelegramNode = useCallback(() => {
+    const id = getNodeId("telegram");
+    const newNode: Node = {
+      id,
+      type: "telegramNode",
+      position: { x: 800, y: 380 + Math.random() * 100 },
+      data: {
+        label: "Telegram Notification",
+        botToken: "",
+        chatId: "",
+        messageTemplate: "",
+        onBotTokenChange: (val: string) =>
+          updateNodeData(id, "botToken", val),
+        onChatIdChange: (val: string) =>
+          updateNodeData(id, "chatId", val),
+        onMessageTemplateChange: (val: string) =>
+          updateNodeData(id, "messageTemplate", val),
       },
     };
     setNodes((nds) => [...nds, newNode]);
@@ -1083,6 +1122,7 @@ const AgentCanvas: React.FC = () => {
           onAddOutputNode={addOutputNode}
           onAddEmailNode={addEmailNode}
           onAddScheduleNode={addScheduleNode}
+          onAddTelegramNode={addTelegramNode}
           onAddConditionalNode={addConditionalNode}
           onAddMergeNode={addMergeNode}
           onAddNoteNode={addNoteNode}
@@ -1134,6 +1174,7 @@ const AgentCanvas: React.FC = () => {
                 if (node.type === "inputNode") return "hsl(145, 70%, 45%)";
                 if (node.type === "outputNode") return "hsl(200, 80%, 50%)";
                 if (node.type === "emailNode") return "hsl(340, 75%, 55%)";
+                if (node.type === "telegramNode") return "hsl(200, 85%, 45%)";
                 if (node.type === "scheduleNode") return "hsl(35, 80%, 55%)";
                 if (node.type === "conditionalNode") return "hsl(190, 80%, 50%)";
                 if (node.type === "mergeNode") return "hsl(235, 80%, 60%)";

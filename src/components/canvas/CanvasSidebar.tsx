@@ -14,6 +14,7 @@ import {
   Zap,
   Globe,
   StickyNote,
+  Send,
 } from "lucide-react";
 import type { Agent, CanvasWorkflow } from "@/types/agent";
 
@@ -29,6 +30,7 @@ interface CanvasSidebarProps {
   onAddOutputNode: () => void;
   onAddEmailNode: () => void;
   onAddScheduleNode: () => void;
+  onAddTelegramNode: () => void;
   onAddConditionalNode: () => void;
   onAddMergeNode: () => void;
   onAddNoteNode: () => void;
@@ -49,6 +51,7 @@ export const CanvasSidebar: React.FC<CanvasSidebarProps> = ({
   onAddOutputNode,
   onAddEmailNode,
   onAddScheduleNode,
+  onAddTelegramNode,
   onAddConditionalNode,
   onAddMergeNode,
   onAddNoteNode,
@@ -134,6 +137,13 @@ export const CanvasSidebar: React.FC<CanvasSidebarProps> = ({
               >
                 <Clock className="w-3.5 h-3.5" />
                 Schedule
+              </button>
+              <button
+                onClick={onAddTelegramNode}
+                className="col-span-2 flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl border border-sky-500/20 bg-sky-500/5 hover:bg-sky-500/10 hover:border-sky-500/40 transition-all text-[11px] font-semibold text-sky-400"
+              >
+                <Send className="w-3.5 h-3.5" />
+                Telegram Bot
               </button>
             </div>
           </div>
