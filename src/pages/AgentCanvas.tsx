@@ -338,9 +338,6 @@ const AgentCanvas: React.FC = () => {
       // Note nodes cannot have connections (purely annotation)
       if (sourceNode.type === "noteNode" || targetNode.type === "noteNode") return false;
 
-      // Input nodes should not receive connections (they are entry points)
-      if (targetNode.type === "inputNode") return false;
-
       // Prevent duplicate edges, taking handle IDs into account
       const exists = edges.some(
         (e) =>
