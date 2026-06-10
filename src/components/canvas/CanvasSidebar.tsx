@@ -9,6 +9,11 @@ import {
   FolderOpen,
   Sparkles,
   Mail,
+  Split,
+  Merge,
+  Zap,
+  Globe,
+  StickyNote,
 } from "lucide-react";
 import type { Agent, CanvasWorkflow } from "@/types/agent";
 
@@ -23,6 +28,11 @@ interface CanvasSidebarProps {
   onAddOutputNode: () => void;
   onAddEmailNode: () => void;
   onAddScheduleNode: () => void;
+  onAddConditionalNode: () => void;
+  onAddMergeNode: () => void;
+  onAddNoteNode: () => void;
+  onAddHttpNode: () => void;
+  onAddTransformNode: () => void;
   onLoadWorkflow: (workflow: CanvasWorkflow) => void;
   onDeleteWorkflow: (id: string) => void;
   loadingWorkflows?: boolean;
@@ -37,6 +47,11 @@ export const CanvasSidebar: React.FC<CanvasSidebarProps> = ({
   onAddOutputNode,
   onAddEmailNode,
   onAddScheduleNode,
+  onAddConditionalNode,
+  onAddMergeNode,
+  onAddNoteNode,
+  onAddHttpNode,
+  onAddTransformNode,
   onLoadWorkflow,
   onDeleteWorkflow,
   loadingWorkflows,
@@ -117,6 +132,50 @@ export const CanvasSidebar: React.FC<CanvasSidebarProps> = ({
               >
                 <Clock className="w-3.5 h-3.5" />
                 Schedule
+              </button>
+            </div>
+          </div>
+
+          {/* Logic nodes */}
+          <div className="px-3 pb-3 border-b border-border/10">
+            <p className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-widest mb-2 px-1">
+              Logic & Utility Nodes
+            </p>
+            <div className="grid grid-cols-2 gap-1.5">
+              <button
+                onClick={onAddConditionalNode}
+                className="flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl border border-cyan-500/20 bg-cyan-500/5 hover:bg-cyan-500/10 hover:border-cyan-500/40 transition-all text-[11px] font-semibold text-cyan-400"
+              >
+                <Split className="w-3.5 h-3.5" />
+                IF / Cond
+              </button>
+              <button
+                onClick={onAddMergeNode}
+                className="flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl border border-indigo-500/20 bg-indigo-500/5 hover:bg-indigo-500/10 hover:border-indigo-500/40 transition-all text-[11px] font-semibold text-indigo-400"
+              >
+                <Merge className="w-3.5 h-3.5" />
+                Merge
+              </button>
+              <button
+                onClick={onAddTransformNode}
+                className="flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl border border-fuchsia-500/20 bg-fuchsia-500/5 hover:bg-fuchsia-500/10 hover:border-fuchsia-500/40 transition-all text-[11px] font-semibold text-fuchsia-400"
+              >
+                <Zap className="w-3.5 h-3.5" />
+                Transform
+              </button>
+              <button
+                onClick={onAddHttpNode}
+                className="flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl border border-teal-500/20 bg-teal-500/5 hover:bg-teal-500/10 hover:border-teal-500/40 transition-all text-[11px] font-semibold text-teal-400"
+              >
+                <Globe className="w-3.5 h-3.5" />
+                HTTP Req
+              </button>
+              <button
+                onClick={onAddNoteNode}
+                className="col-span-2 flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl border border-amber-500/20 bg-amber-500/5 hover:bg-amber-500/10 hover:border-amber-500/40 transition-all text-[11px] font-semibold text-amber-400"
+              >
+                <StickyNote className="w-3.5 h-3.5" />
+                Sticky Note
               </button>
             </div>
           </div>

@@ -40,6 +40,11 @@ import AgentNode from "@/components/canvas/AgentNode";
 import OutputNode from "@/components/canvas/OutputNode";
 import EmailNode from "@/components/canvas/EmailNode";
 import ScheduleNode from "@/components/canvas/ScheduleNode";
+import ConditionalNode from "@/components/canvas/ConditionalNode";
+import MergeNode from "@/components/canvas/MergeNode";
+import NoteNode from "@/components/canvas/NoteNode";
+import HttpNode from "@/components/canvas/HttpNode";
+import TransformNode from "@/components/canvas/TransformNode";
 import {
   useMyAgents,
   useCanvasWorkflows,
@@ -59,6 +64,11 @@ const nodeTypes = {
   outputNode: OutputNode,
   emailNode: EmailNode,
   scheduleNode: ScheduleNode,
+  conditionalNode: ConditionalNode,
+  mergeNode: MergeNode,
+  noteNode: NoteNode,
+  httpNode: HttpNode,
+  transformNode: TransformNode,
 };
 
 // Default edge style
@@ -217,6 +227,63 @@ const AgentCanvas: React.FC = () => {
           },
         };
       }
+      if (n.type === "conditionalNode") {
+        return {
+          ...n,
+          data: {
+            ...n.data,
+            onLabelChange: (val: string) => updateNodeData(n.id, "label", val),
+            onRuleTypeChange: (val: string) => updateNodeData(n.id, "ruleType", val),
+            onRuleValueChange: (val: string) => updateNodeData(n.id, "ruleValue", val),
+            onRuleDescriptionChange: (val: string) => updateNodeData(n.id, "ruleDescription", val),
+          },
+        };
+      }
+      if (n.type === "mergeNode") {
+        return {
+          ...n,
+          data: {
+            ...n.data,
+            onLabelChange: (val: string) => updateNodeData(n.id, "label", val),
+            onStrategyChange: (val: string) => updateNodeData(n.id, "strategy", val),
+            onSeparatorChange: (val: string) => updateNodeData(n.id, "separator", val),
+          },
+        };
+      }
+      if (n.type === "noteNode") {
+        return {
+          ...n,
+          data: {
+            ...n.data,
+            onLabelChange: (val: string) => updateNodeData(n.id, "label", val),
+            onNoteTextChange: (val: string) => updateNodeData(n.id, "noteText", val),
+            onNoteColorChange: (val: string) => updateNodeData(n.id, "noteColor", val),
+          },
+        };
+      }
+      if (n.type === "httpNode") {
+        return {
+          ...n,
+          data: {
+            ...n.data,
+            onLabelChange: (val: string) => updateNodeData(n.id, "label", val),
+            onMethodChange: (val: string) => updateNodeData(n.id, "method", val),
+            onUrlChange: (val: string) => updateNodeData(n.id, "url", val),
+            onHeadersChange: (val: string) => updateNodeData(n.id, "headers", val),
+            onBodyChange: (val: string) => updateNodeData(n.id, "body", val),
+          },
+        };
+      }
+      if (n.type === "transformNode") {
+        return {
+          ...n,
+          data: {
+            ...n.data,
+            onLabelChange: (val: string) => updateNodeData(n.id, "label", val),
+            onOperationChange: (val: string) => updateNodeData(n.id, "operation", val),
+          },
+        };
+      }
       return n;
     });
   }, [updateNodeData]);
@@ -248,15 +315,22 @@ const AgentCanvas: React.FC = () => {
       const targetNode = nodes.find((n) => n.id === target);
       if (!sourceNode || !targetNode) return false;
 
+      // Note nodes cannot have connections (purely annotation)
+      if (sourceNode.type === "noteNode" || targetNode.type === "noteNode") return false;
+
       // Schedule nodes are terminal — cannot have outgoing connections
       if (sourceNode.type === "scheduleNode") return false;
 
       // Input nodes should not receive connections (they are entry points)
       if (targetNode.type === "inputNode") return false;
 
-      // Prevent duplicate edges
+      // Prevent duplicate edges, taking handle IDs into account
       const exists = edges.some(
-        (e) => e.source === source && e.target === target,
+        (e) =>
+          e.source === source &&
+          e.target === target &&
+          e.sourceHandle === (connection as any).sourceHandle &&
+          e.targetHandle === (connection as any).targetHandle,
       );
       if (exists) return false;
 
@@ -375,6 +449,105 @@ const AgentCanvas: React.FC = () => {
           updateNodeData(id, "maxRuns", val),
         onActiveToggle: (val: boolean) =>
           updateNodeData(id, "isActive", val),
+      },
+    };
+    setNodes((nds) => [...nds, newNode]);
+  }, [setNodes, updateNodeData]);
+
+  // Add conditional node
+  const addConditionalNode = useCallback(() => {
+    const id = getNodeId("conditional");
+    const newNode: Node = {
+      id,
+      type: "conditionalNode",
+      position: { x: 450, y: 250 + Math.random() * 100 },
+      data: {
+        label: "Conditional / IF",
+        ruleType: "contains",
+        ruleValue: "",
+        ruleDescription: "",
+        onLabelChange: (val: string) => updateNodeData(id, "label", val),
+        onRuleTypeChange: (val: string) => updateNodeData(id, "ruleType", val),
+        onRuleValueChange: (val: string) => updateNodeData(id, "ruleValue", val),
+        onRuleDescriptionChange: (val: string) => updateNodeData(id, "ruleDescription", val),
+      },
+    };
+    setNodes((nds) => [...nds, newNode]);
+  }, [setNodes, updateNodeData]);
+
+  // Add merge node
+  const addMergeNode = useCallback(() => {
+    const id = getNodeId("merge");
+    const newNode: Node = {
+      id,
+      type: "mergeNode",
+      position: { x: 600, y: 300 + Math.random() * 100 },
+      data: {
+        label: "Merge / Combiner",
+        strategy: "concat",
+        separator: "\\n\\n",
+        onLabelChange: (val: string) => updateNodeData(id, "label", val),
+        onStrategyChange: (val: string) => updateNodeData(id, "strategy", val),
+        onSeparatorChange: (val: string) => updateNodeData(id, "separator", val),
+      },
+    };
+    setNodes((nds) => [...nds, newNode]);
+  }, [setNodes, updateNodeData]);
+
+  // Add note node
+  const addNoteNode = useCallback(() => {
+    const id = getNodeId("note");
+    const newNode: Node = {
+      id,
+      type: "noteNode",
+      position: { x: 300, y: 100 + Math.random() * 50 },
+      data: {
+        label: "Sticky Note",
+        noteText: "Double-click to edit this note...",
+        noteColor: "yellow",
+        onLabelChange: (val: string) => updateNodeData(id, "label", val),
+        onNoteTextChange: (val: string) => updateNodeData(id, "noteText", val),
+        onNoteColorChange: (val: string) => updateNodeData(id, "noteColor", val),
+      },
+    };
+    setNodes((nds) => [...nds, newNode]);
+  }, [setNodes, updateNodeData]);
+
+  // Add HTTP request node
+  const addHttpNode = useCallback(() => {
+    const id = getNodeId("http");
+    const newNode: Node = {
+      id,
+      type: "httpNode",
+      position: { x: 300, y: 250 + Math.random() * 100 },
+      data: {
+        label: "HTTP Request",
+        method: "GET",
+        url: "",
+        headers: "",
+        body: "",
+        onLabelChange: (val: string) => updateNodeData(id, "label", val),
+        onMethodChange: (val: string) => updateNodeData(id, "method", val),
+        onUrlChange: (val: string) => updateNodeData(id, "url", val),
+        onHeadersChange: (val: string) => updateNodeData(id, "headers", val),
+        onBodyChange: (val: string) => updateNodeData(id, "body", val),
+      },
+    };
+    setNodes((nds) => [...nds, newNode]);
+  }, [setNodes, updateNodeData]);
+
+  // Add transform node
+  const addTransformNode = useCallback(() => {
+    const id = getNodeId("transform");
+    const newNode: Node = {
+      id,
+      type: "transformNode",
+      position: { x: 600, y: 200 + Math.random() * 100 },
+      data: {
+        label: "Transform / Utility",
+        operation: "json_to_csv",
+        onLabelChange: (val: string) => updateNodeData(id, "label", val),
+        onOperationChange: (val: string) => updateNodeData(id, "operation", val),
       },
     };
     setNodes((nds) => [...nds, newNode]);
@@ -590,6 +763,23 @@ const AgentCanvas: React.FC = () => {
     setShowResults(true);
     setExecutionResult(null);
 
+    // Initialize all execution nodes as running
+    setNodes((nds) =>
+      nds.map((n) => {
+        if (["noteNode", "inputNode", "scheduleNode"].includes(n.type)) return n;
+        return {
+          ...n,
+          data: {
+            ...n.data,
+            status: "running",
+            responseStatus: undefined,
+            responsePreview: undefined,
+            transformPreview: undefined,
+          },
+        };
+      })
+    );
+
     try {
       const result = await executeMutation.mutateAsync({
         id: execId,
@@ -601,9 +791,53 @@ const AgentCanvas: React.FC = () => {
 
       if (result?.data) {
         setExecutionResult(result.data);
+        
+        // Staggered node animation based on agent_results
+        const results = result.data.agent_results || [];
+        results.forEach((res: any, idx: number) => {
+          setTimeout(() => {
+            setNodes((nds) =>
+              nds.map((n) => {
+                if (n.id !== res.node_id) return n;
+                
+                const hasError = !!res.error;
+                
+                let updatedData = {
+                  ...n.data,
+                  status: (hasError ? "error" : "done") as any,
+                };
+                
+                if (n.type === "httpNode") {
+                  updatedData.responseStatus = hasError ? 500 : 200;
+                  updatedData.responsePreview = hasError ? res.error : res.response;
+                } else if (n.type === "transformNode") {
+                  updatedData.transformPreview = hasError ? res.error : res.response;
+                }
+                
+                return {
+                  ...n,
+                  data: updatedData,
+                };
+              })
+            );
+          }, (idx + 1) * 600); // 600ms stagger delay per node execution step
+        });
       }
     } catch {
       // Error handled by hook
+      // Reset statuses to error/idle on failure
+      setNodes((nds) =>
+        nds.map((n) => {
+          if (["noteNode", "inputNode", "scheduleNode"].includes(n.type)) return n;
+          return {
+            ...n,
+            data: {
+              ...n.data,
+              status: "error",
+            },
+          };
+        })
+      );
     }
   }, [
     nodes,
@@ -796,6 +1030,11 @@ const AgentCanvas: React.FC = () => {
           onAddOutputNode={addOutputNode}
           onAddEmailNode={addEmailNode}
           onAddScheduleNode={addScheduleNode}
+          onAddConditionalNode={addConditionalNode}
+          onAddMergeNode={addMergeNode}
+          onAddNoteNode={addNoteNode}
+          onAddHttpNode={addHttpNode}
+          onAddTransformNode={addTransformNode}
           onLoadWorkflow={handleLoadWorkflow}
           onDeleteWorkflow={handleDeleteWorkflow}
           loadingWorkflows={loadingWorkflows}
@@ -843,6 +1082,11 @@ const AgentCanvas: React.FC = () => {
                 if (node.type === "outputNode") return "hsl(200, 80%, 50%)";
                 if (node.type === "emailNode") return "hsl(340, 75%, 55%)";
                 if (node.type === "scheduleNode") return "hsl(35, 80%, 55%)";
+                if (node.type === "conditionalNode") return "hsl(190, 80%, 50%)";
+                if (node.type === "mergeNode") return "hsl(235, 80%, 60%)";
+                if (node.type === "noteNode") return "hsl(45, 80%, 55%)";
+                if (node.type === "httpNode") return "hsl(170, 80%, 45%)";
+                if (node.type === "transformNode") return "hsl(295, 80%, 50%)";
                 return (
                   (node.data?.agentColor as string) || "hsl(258, 70%, 60%)"
                 );
