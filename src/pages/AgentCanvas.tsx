@@ -31,6 +31,8 @@ import {
   Trash2,
   Sparkles,
   LayoutGrid,
+  ZoomIn,
+  ZoomOut,
 } from "lucide-react";
 import { GlobalHeader } from "@/components/GlobalHeader";
 import { CanvasSidebar } from "@/components/canvas/CanvasSidebar";
@@ -977,6 +979,68 @@ const AgentCanvas: React.FC = () => {
     [navigate, setNodes, setEdges, restoreNodesWithCallbacks],
   );
 
+  // Auto layout canvas nodes in sequential columns/swimlanes
+  const autoLayout = useCallback(() => {
+    // Basic step-based layout using node types
+    const nodesByType = {
+      triggers: [] as any[],     // scheduleNode, inputNode
+      processors: [] as any[],   // agentNode, httpNode, transformNode, noteNode
+      conditionals: [] as any[], // conditionalNode
+      mergers: [] as any[],      // mergeNode
+      outputs: [] as any[],      // outputNode, emailNode, telegramNode
+    };
+
+    nodes.forEach((n) => {
+      if (n.type === "scheduleNode" || n.type === "inputNode") {
+        nodesByType.triggers.push(n);
+      } else if (n.type === "conditionalNode") {
+        nodesByType.conditionals.push(n);
+      } else if (n.type === "mergeNode") {
+        nodesByType.mergers.push(n);
+      } else if (n.type === "outputNode" || n.type === "emailNode" || n.type === "telegramNode") {
+        nodesByType.outputs.push(n);
+      } else {
+        nodesByType.processors.push(n);
+      }
+    });
+
+    const columns = [
+      { list: nodesByType.triggers, x: 100 },
+      { list: nodesByType.processors, x: 450 },
+      { list: nodesByType.conditionals, x: 800 },
+      { list: nodesByType.mergers, x: 1100 },
+      { list: nodesByType.outputs, x: 1400 },
+    ];
+
+    setNodes((nds) => {
+      return nds.map((n) => {
+        let colIndex = 1; // Default to processors
+        if (n.type === "scheduleNode" || n.type === "inputNode") colIndex = 0;
+        else if (n.type === "conditionalNode") colIndex = 2;
+        else if (n.type === "mergeNode") colIndex = 3;
+        else if (n.type === "outputNode" || n.type === "emailNode" || n.type === "telegramNode") colIndex = 4;
+
+        const col = columns[colIndex];
+        const indexInCol = col.list.findIndex((item) => item.id === n.id);
+
+        // Calculate y coordinate to spread nodes vertically
+        const startY = 150;
+        const spacingY = 180;
+        const y = startY + (indexInCol >= 0 ? indexInCol : 0) * spacingY;
+
+        return {
+          ...n,
+          position: { x: col.x, y },
+        };
+      });
+    });
+
+    // Fit view after layout to center the nodes
+    setTimeout(() => {
+      reactFlowInstance?.fitView({ duration: 600 });
+    }, 50);
+  }, [nodes, setNodes, reactFlowInstance]);
+
   // Delete workflow
   const handleDeleteWorkflow = useCallback(
     async (id: string) => {
@@ -1135,6 +1199,32 @@ const AgentCanvas: React.FC = () => {
           >
             <Sparkles className="w-3.5 h-3.5 text-violet-400 animate-pulse" />
             AI Builder
+          </button>
+          {/* Zoom Controls */}
+          <div className="flex items-center border border-border/40 bg-card/10 rounded-xl overflow-hidden">
+            <button
+              onClick={() => reactFlowInstance?.zoomOut({ duration: 300 })}
+              className="p-2 hover:bg-muted/60 text-muted-foreground hover:text-foreground transition-all border-r border-border/30"
+              title="Zoom Out (-)"
+            >
+              <ZoomOut className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={() => reactFlowInstance?.zoomIn({ duration: 300 })}
+              className="p-2 hover:bg-muted/60 text-muted-foreground hover:text-foreground transition-all"
+              title="Zoom In (+)"
+            >
+              <ZoomIn className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          <button
+            onClick={autoLayout}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border border-border/40 bg-card/10 hover:bg-muted/60 text-muted-foreground hover:text-foreground transition-all"
+            title="Auto-arrange nodes in lanes"
+          >
+            <LayoutGrid className="w-3.5 h-3.5" />
+            Auto Layout
           </button>
           <button
             onClick={handleClear}
