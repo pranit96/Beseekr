@@ -163,7 +163,28 @@ const AgentCanvas: React.FC = () => {
 
   // Restore node callbacks helper
   const restoreNodesWithCallbacks = useCallback((nodesList: any[]) => {
-    return nodesList.map((n: any) => {
+    return nodesList.map((rawNode: any) => {
+      // Normalize raw node layout and data
+      const id = rawNode.id || `node_${Math.random().toString(36).substring(2, 9)}`;
+      const type = rawNode.type || "inputNode";
+
+      let position = { x: 100, y: 150 };
+      if (rawNode.position && typeof rawNode.position.x === "number" && typeof rawNode.position.y === "number") {
+        position = { x: rawNode.position.x, y: rawNode.position.y };
+      } else if (typeof rawNode.x === "number" && typeof rawNode.y === "number") {
+        position = { x: rawNode.x, y: rawNode.y };
+      }
+
+      let data = {};
+      if (rawNode.data && typeof rawNode.data === "object") {
+        data = { ...rawNode.data };
+      } else {
+        const { id: _id, type: _type, position: _pos, x: _x, y: _y, ...flatData } = rawNode;
+        data = flatData;
+      }
+
+      const n = { id, type, position, data };
+
       if (n.type === "inputNode") {
         return {
           ...n,
