@@ -126,16 +126,16 @@ const OutputNode: React.FC<NodeProps> = ({ data, selected }) => {
               placeholder="Email Subject"
               className="w-full bg-background/40 border border-border/30 rounded-lg px-2.5 py-1 text-[10px] text-foreground placeholder-muted-foreground/40 outline-none focus:ring-1 focus:ring-sky-500/40 focus:border-sky-500/40"
             />
-            <textarea
-              value={d.emailTemplate || ""}
-              onChange={(e) => d.onEmailTemplateChange?.(e.target.value)}
-              placeholder="HTML template with {{output}} placeholder"
-              rows={2}
-              className="w-full bg-background/40 border border-border/30 rounded-lg px-2.5 py-1.5 text-[10px] text-foreground placeholder-muted-foreground/40 outline-none focus:ring-1 focus:ring-sky-500/40 focus:border-sky-500/40 resize-none"
-            />
           </div>
         )}
       </div>
+
+      {/* Output handle — allows connecting to downstream nodes like Email */}
+      <Handle
+        type="source"
+        position={Position.Right}
+        className="!w-3.5 !h-3.5 !bg-sky-500 !border-2 !border-background !rounded-full !shadow-lg !shadow-sky-500/30"
+      />
     </div>
   );
 };

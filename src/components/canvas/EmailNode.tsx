@@ -48,7 +48,7 @@ const EmailNode: React.FC<NodeProps> = ({ data, selected }) => {
             {d.label || "Email Delivery"}
           </p>
           <p className="text-[10px] text-muted-foreground/60">
-            Sends parent output via email
+            Auto-converts output to a styled email
           </p>
         </div>
       </div>
@@ -81,19 +81,18 @@ const EmailNode: React.FC<NodeProps> = ({ data, selected }) => {
           />
         </div>
 
-        <div>
-          <label className="text-[9px] font-bold text-muted-foreground/70 uppercase tracking-wider block mb-1">
-            HTML Email Template
-          </label>
-          <textarea
-            value={d.emailTemplate || ""}
-            onChange={(e) => d.onEmailTemplateChange?.(e.target.value)}
-            placeholder="Use {{output}} where you want the content, {{workflow_name}} for title."
-            rows={3}
-            className="w-full bg-background/40 border border-border/30 rounded-lg px-2.5 py-1.5 text-[10px] text-foreground placeholder-muted-foreground/45 outline-none focus:ring-1 focus:ring-rose-500/40 focus:border-rose-500/40 resize-none transition-all"
-          />
-        </div>
+        <p className="text-[9px] text-muted-foreground/40 italic leading-snug">
+          The agent output (markdown, text, etc.) is automatically converted to
+          a styled HTML email — no template needed.
+        </p>
       </div>
+
+      {/* Output handle — allows chaining email node to downstream nodes */}
+      <Handle
+        type="source"
+        position={Position.Right}
+        className="!w-3.5 !h-3.5 !bg-rose-500 !border-2 !border-background !rounded-full !shadow-lg !shadow-rose-500/30"
+      />
     </div>
   );
 };
