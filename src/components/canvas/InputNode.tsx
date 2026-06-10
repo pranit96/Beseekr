@@ -1,4 +1,4 @@
-import React, { memo, useRef } from "react";
+import React, { memo, useRef, useState } from "react";
 import { Handle, Position, type NodeProps } from "@xyflow/react";
 import {
   MessageSquareText,
@@ -6,7 +6,9 @@ import {
   Braces,
   Table,
   Upload,
+  Loader2,
 } from "lucide-react";
+import { apiClient } from "@/lib/api";
 
 interface InputNodeData {
   label?: string;
@@ -29,6 +31,8 @@ const InputNode: React.FC<NodeProps> = ({ data, selected }) => {
   const format = d.inputFormat || "text";
   const text = d.inputText || "";
   const fileRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const charCount = text.length;
   const isJsonValid =
@@ -43,21 +47,44 @@ const InputNode: React.FC<NodeProps> = ({ data, selected }) => {
         })()
       : null;
 
-  const handleFileRead = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileRead = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const content = ev.target?.result as string;
-      d.onInputChange?.(content);
+    const ext = "." + file.name.split(".").pop()?.toLowerCase();
+    const simpleTextExtensions = [".txt", ".json", ".csv", ".md", ".xml", ".html", ".log", ".tsv"];
 
-      // Auto-detect format from extension
-      const ext = file.name.split(".").pop()?.toLowerCase();
-      if (ext === "json" && d.onFormatChange) d.onFormatChange("json");
-      else if (ext === "csv" && d.onFormatChange) d.onFormatChange("csv");
-    };
-    reader.readAsText(file);
+    if (simpleTextExtensions.includes(ext)) {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const content = ev.target?.result as string;
+        d.onInputChange?.(content);
+
+        // Auto-detect format from extension
+        const rawExt = file.name.split(".").pop()?.toLowerCase();
+        if (rawExt === "json" && d.onFormatChange) d.onFormatChange("json");
+        else if (rawExt === "csv" && d.onFormatChange) d.onFormatChange("csv");
+      };
+      reader.readAsText(file);
+      setError(null);
+    } else {
+      setUploading(true);
+      setError(null);
+      try {
+        const response = await apiClient.uploadChatFiles([file]);
+        if (response.success && response.data?.[0]) {
+          const parsedText = response.data[0].extracted_content || "";
+          d.onInputChange?.(parsedText);
+        } else {
+          setError(response.error || "Failed to parse file");
+        }
+      } catch (err: any) {
+        setError(err.message || "Failed to upload and parse file");
+      } finally {
+        setUploading(false);
+        if (fileRef.current) fileRef.current.value = "";
+      }
+    }
   };
 
   return (
@@ -127,11 +154,19 @@ const InputNode: React.FC<NodeProps> = ({ data, selected }) => {
             <input
               ref={fileRef}
               type="file"
-              accept=".txt,.json,.csv,.md,.xml,.html,.log,.tsv"
+              accept=".txt,.json,.csv,.md,.xml,.html,.log,.tsv,.pdf,.docx,.doc,.xlsx,.xls"
               onChange={handleFileRead}
               className="hidden"
+              disabled={uploading}
             />
-            {text ? (
+            {uploading ? (
+              <div className="flex flex-col items-center gap-1.5 px-3 py-5 border-2 border-dashed border-emerald-500/20 rounded-xl bg-emerald-500/5">
+                <Loader2 className="w-5 h-5 animate-spin text-emerald-400" />
+                <span className="text-[10px] text-emerald-400 font-medium animate-pulse">
+                  Parsing document...
+                </span>
+              </div>
+            ) : text ? (
               <div className="space-y-1.5">
                 <div className="w-full bg-background/40 border border-border/30 rounded-xl px-3 py-2 text-[10px] text-foreground max-h-[80px] overflow-y-auto custom-scrollbar font-mono leading-relaxed whitespace-pre-wrap">
                   {text.slice(0, 500)}
@@ -155,9 +190,14 @@ const InputNode: React.FC<NodeProps> = ({ data, selected }) => {
               >
                 <Upload className="w-5 h-5 text-muted-foreground/30" />
                 <span className="text-[10px] text-muted-foreground/40">
-                  Click to upload .txt, .json, .csv, …
+                  Click to upload PDF, DOCX, CSV, TXT...
                 </span>
               </button>
+            )}
+            {error && (
+              <p className="text-[9px] text-red-400 mt-1.5 font-medium text-center">
+                {error}
+              </p>
             )}
           </div>
         ) : (
