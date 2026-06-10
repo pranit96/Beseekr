@@ -22,9 +22,11 @@ interface CanvasSidebarProps {
   onAddInputNode: () => void;
   onAddOutputNode: () => void;
   onAddEmailNode: () => void;
+  onAddScheduleNode: () => void;
   onLoadWorkflow: (workflow: CanvasWorkflow) => void;
   onDeleteWorkflow: (id: string) => void;
   loadingWorkflows?: boolean;
+  nodeCount?: number;
 }
 
 export const CanvasSidebar: React.FC<CanvasSidebarProps> = ({
@@ -34,9 +36,11 @@ export const CanvasSidebar: React.FC<CanvasSidebarProps> = ({
   onAddInputNode,
   onAddOutputNode,
   onAddEmailNode,
+  onAddScheduleNode,
   onLoadWorkflow,
   onDeleteWorkflow,
   loadingWorkflows,
+  nodeCount = 0,
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<"nodes" | "saved">("nodes");
@@ -60,6 +64,11 @@ export const CanvasSidebar: React.FC<CanvasSidebarProps> = ({
           }`}
         >
           Nodes
+          {nodeCount > 0 && (
+            <span className="ml-1.5 text-[9px] font-bold bg-primary/15 text-primary/70 px-1.5 py-0.5 rounded-md">
+              {nodeCount}
+            </span>
+          )}
         </button>
         <button
           onClick={() => setActiveTab("saved")}
@@ -78,29 +87,36 @@ export const CanvasSidebar: React.FC<CanvasSidebarProps> = ({
           {/* Special nodes */}
           <div className="px-3 pt-3 pb-2">
             <p className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-widest mb-2 px-1">
-              I/O Nodes
+              Flow Nodes
             </p>
-            <div className="flex gap-1.5 flex-wrap">
+            <div className="grid grid-cols-2 gap-1.5">
               <button
                 onClick={onAddInputNode}
-                className="flex-1 min-w-[70px] flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl border border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500/10 hover:border-emerald-500/40 transition-all text-[11px] font-semibold text-emerald-400"
+                className="flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl border border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500/10 hover:border-emerald-500/40 transition-all text-[11px] font-semibold text-emerald-400"
               >
                 <MessageSquareText className="w-3.5 h-3.5" />
                 Input
               </button>
               <button
                 onClick={onAddOutputNode}
-                className="flex-1 min-w-[70px] flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl border border-sky-500/20 bg-sky-500/5 hover:bg-sky-500/10 hover:border-sky-500/40 transition-all text-[11px] font-semibold text-sky-400"
+                className="flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl border border-sky-500/20 bg-sky-500/5 hover:bg-sky-500/10 hover:border-sky-500/40 transition-all text-[11px] font-semibold text-sky-400"
               >
                 <FileOutput className="w-3.5 h-3.5" />
                 Output
               </button>
               <button
                 onClick={onAddEmailNode}
-                className="flex-1 min-w-[70px] flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl border border-rose-500/20 bg-rose-500/5 hover:bg-rose-500/10 hover:border-rose-500/40 transition-all text-[11px] font-semibold text-rose-400"
+                className="flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl border border-rose-500/20 bg-rose-500/5 hover:bg-rose-500/10 hover:border-rose-500/40 transition-all text-[11px] font-semibold text-rose-400"
               >
                 <Mail className="w-3.5 h-3.5" />
                 Email
+              </button>
+              <button
+                onClick={onAddScheduleNode}
+                className="flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl border border-amber-500/20 bg-amber-500/5 hover:bg-amber-500/10 hover:border-amber-500/40 transition-all text-[11px] font-semibold text-amber-400"
+              >
+                <Clock className="w-3.5 h-3.5" />
+                Schedule
               </button>
             </div>
           </div>

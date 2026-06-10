@@ -18,8 +18,6 @@ interface OutputNodeData {
   onEmailToChange?: (val: string) => void;
   emailSubject?: string;
   onEmailSubjectChange?: (val: string) => void;
-  emailTemplate?: string;
-  onEmailTemplateChange?: (val: string) => void;
   [key: string]: unknown;
 }
 

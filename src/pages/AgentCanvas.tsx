@@ -31,8 +31,6 @@ import {
   Trash2,
   Sparkles,
   LayoutGrid,
-  Mail,
-  Clock,
 } from "lucide-react";
 import { GlobalHeader } from "@/components/GlobalHeader";
 import { CanvasSidebar } from "@/components/canvas/CanvasSidebar";
@@ -41,7 +39,7 @@ import InputNode from "@/components/canvas/InputNode";
 import AgentNode from "@/components/canvas/AgentNode";
 import OutputNode from "@/components/canvas/OutputNode";
 import EmailNode from "@/components/canvas/EmailNode";
-import { SchedulePanel } from "@/components/canvas/SchedulePanel";
+import ScheduleNode from "@/components/canvas/ScheduleNode";
 import {
   useMyAgents,
   useCanvasWorkflows,
@@ -60,6 +58,7 @@ const nodeTypes = {
   agentNode: AgentNode,
   outputNode: OutputNode,
   emailNode: EmailNode,
+  scheduleNode: ScheduleNode,
 };
 
 // Default edge style
@@ -131,8 +130,6 @@ const AgentCanvas: React.FC = () => {
     return Array.isArray(d) ? d : [];
   }, [workflowsResponse]);
 
-  const [schedulePanelOpen, setSchedulePanelOpen] = useState(false);
-
   // Update node data helper
   const updateNodeData = useCallback(
     (nodeId: string, key: string, value: any) => {
@@ -155,6 +152,8 @@ const AgentCanvas: React.FC = () => {
             ...n.data,
             onInputChange: (text: string) =>
               updateNodeData(n.id, "inputText", text),
+            onFormatChange: (format: string) =>
+              updateNodeData(n.id, "inputFormat", format),
           },
         };
       }
@@ -183,8 +182,6 @@ const AgentCanvas: React.FC = () => {
               updateNodeData(n.id, "emailTo", val),
             onEmailSubjectChange: (val: string) =>
               updateNodeData(n.id, "emailSubject", val),
-            onEmailTemplateChange: (val: string) =>
-              updateNodeData(n.id, "emailTemplate", val),
           },
         };
       }
@@ -197,8 +194,26 @@ const AgentCanvas: React.FC = () => {
               updateNodeData(n.id, "emailTo", val),
             onEmailSubjectChange: (val: string) =>
               updateNodeData(n.id, "emailSubject", val),
-            onEmailTemplateChange: (val: string) =>
-              updateNodeData(n.id, "emailTemplate", val),
+          },
+        };
+      }
+      if (n.type === "scheduleNode") {
+        return {
+          ...n,
+          data: {
+            ...n.data,
+            onLabelChange: (val: string) =>
+              updateNodeData(n.id, "label", val),
+            onCronPresetChange: (val: string) =>
+              updateNodeData(n.id, "cronPreset", val),
+            onCustomCronChange: (val: string) =>
+              updateNodeData(n.id, "customCron", val),
+            onTimezoneChange: (val: string) =>
+              updateNodeData(n.id, "timezone", val),
+            onMaxRunsChange: (val: string) =>
+              updateNodeData(n.id, "maxRuns", val),
+            onActiveToggle: (val: boolean) =>
+              updateNodeData(n.id, "isActive", val),
           },
         };
       }
@@ -222,6 +237,33 @@ const AgentCanvas: React.FC = () => {
       }
     }
   }, [loadedWorkflow, restoreNodesWithCallbacks, setNodes, setEdges]);
+
+  // Connection validation
+  const isValidConnection = useCallback(
+    (connection: Connection | Edge) => {
+      const { source, target } = connection;
+      if (!source || !target || source === target) return false;
+
+      const sourceNode = nodes.find((n) => n.id === source);
+      const targetNode = nodes.find((n) => n.id === target);
+      if (!sourceNode || !targetNode) return false;
+
+      // Schedule nodes are terminal — cannot have outgoing connections
+      if (sourceNode.type === "scheduleNode") return false;
+
+      // Input nodes should not receive connections (they are entry points)
+      if (targetNode.type === "inputNode") return false;
+
+      // Prevent duplicate edges
+      const exists = edges.some(
+        (e) => e.source === source && e.target === target,
+      );
+      if (exists) return false;
+
+      return true;
+    },
+    [nodes, edges],
+  );
 
   // Connect nodes
   const onConnect = useCallback(
@@ -251,8 +293,11 @@ const AgentCanvas: React.FC = () => {
       data: {
         label: "Input",
         inputText: "",
+        inputFormat: "text",
         onInputChange: (text: string) =>
           updateNodeData(id, "inputText", text),
+        onFormatChange: (format: string) =>
+          updateNodeData(id, "inputFormat", format),
       },
     };
     setNodes((nds) => [...nds, newNode]);
@@ -278,8 +323,6 @@ const AgentCanvas: React.FC = () => {
           updateNodeData(id, "emailTo", val),
         onEmailSubjectChange: (val: string) =>
           updateNodeData(id, "emailSubject", val),
-        onEmailTemplateChange: (val: string) =>
-          updateNodeData(id, "emailTemplate", val),
       },
     };
     setNodes((nds) => [...nds, newNode]);
@@ -296,13 +339,42 @@ const AgentCanvas: React.FC = () => {
         label: "Email Delivery",
         emailTo: "",
         emailSubject: "",
-        emailTemplate: "",
         onEmailToChange: (val: string) =>
           updateNodeData(id, "emailTo", val),
         onEmailSubjectChange: (val: string) =>
           updateNodeData(id, "emailSubject", val),
-        onEmailTemplateChange: (val: string) =>
-          updateNodeData(id, "emailTemplate", val),
+      },
+    };
+    setNodes((nds) => [...nds, newNode]);
+  }, [setNodes, updateNodeData]);
+
+  // Add schedule node
+  const addScheduleNode = useCallback(() => {
+    const id = getNodeId("schedule");
+    const localTz = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+    const newNode: Node = {
+      id,
+      type: "scheduleNode",
+      position: { x: 800, y: 500 + Math.random() * 100 },
+      data: {
+        label: "Schedule",
+        cronPreset: "0 0 * * *",
+        customCron: "*/5 * * * *",
+        timezone: localTz,
+        maxRuns: "",
+        isActive: true,
+        onLabelChange: (val: string) =>
+          updateNodeData(id, "label", val),
+        onCronPresetChange: (val: string) =>
+          updateNodeData(id, "cronPreset", val),
+        onCustomCronChange: (val: string) =>
+          updateNodeData(id, "customCron", val),
+        onTimezoneChange: (val: string) =>
+          updateNodeData(id, "timezone", val),
+        onMaxRunsChange: (val: string) =>
+          updateNodeData(id, "maxRuns", val),
+        onActiveToggle: (val: boolean) =>
+          updateNodeData(id, "isActive", val),
       },
     };
     setNodes((nds) => [...nds, newNode]);
@@ -350,6 +422,8 @@ const AgentCanvas: React.FC = () => {
           agentName: agent.name,
           agentDomain: agent.domain || "General",
           agentColor: agent.color || "hsl(258, 70%, 60%)",
+          provider: (agent as any).provider || "",
+          model: (agent as any).model || "",
           tools: agent.tools || [],
           instruction: "",
           onInstructionChange: (text: string) =>
@@ -685,15 +759,6 @@ const AgentCanvas: React.FC = () => {
             <Trash2 className="w-3.5 h-3.5" />
             Clear
           </button>
-          {currentWorkflowId && (
-            <button
-              onClick={() => setSchedulePanelOpen(true)}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold border border-amber-500/30 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 transition-all"
-            >
-              <Clock className="w-3.5 h-3.5" />
-              Schedule
-            </button>
-          )}
           <button
             onClick={handleSave}
             disabled={isSaving}
@@ -730,9 +795,11 @@ const AgentCanvas: React.FC = () => {
           onAddInputNode={addInputNode}
           onAddOutputNode={addOutputNode}
           onAddEmailNode={addEmailNode}
+          onAddScheduleNode={addScheduleNode}
           onLoadWorkflow={handleLoadWorkflow}
           onDeleteWorkflow={handleDeleteWorkflow}
           loadingWorkflows={loadingWorkflows}
+          nodeCount={nodes.length}
         />
 
         {/* React Flow Canvas */}
@@ -748,6 +815,7 @@ const AgentCanvas: React.FC = () => {
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
+            isValidConnection={isValidConnection}
             onInit={(instance) => setReactFlowInstance(instance)}
             nodeTypes={nodeTypes}
             defaultEdgeOptions={defaultEdgeOptions}
@@ -774,6 +842,7 @@ const AgentCanvas: React.FC = () => {
                 if (node.type === "inputNode") return "hsl(145, 70%, 45%)";
                 if (node.type === "outputNode") return "hsl(200, 80%, 50%)";
                 if (node.type === "emailNode") return "hsl(340, 75%, 55%)";
+                if (node.type === "scheduleNode") return "hsl(35, 80%, 55%)";
                 return (
                   (node.data?.agentColor as string) || "hsl(258, 70%, 60%)"
                 );
@@ -795,7 +864,7 @@ const AgentCanvas: React.FC = () => {
                     Build Your Agent Canvas
                   </h3>
                   <p className="text-xs text-muted-foreground/50 leading-relaxed">
-                    Drag agents from the sidebar, add Input & Output
+                    Drag agents from the sidebar, add Input &amp; Output
                     nodes, then wire them together to create powerful
                     multi-agent workflows.
                   </p>
@@ -815,16 +884,6 @@ const AgentCanvas: React.FC = () => {
           )}
         </div>
       </div>
-
-      {/* Schedule Management Panel */}
-      {currentWorkflowId && (
-        <SchedulePanel
-          workflowId={currentWorkflowId}
-          workflowName={workflowName}
-          isOpen={schedulePanelOpen}
-          onClose={() => setSchedulePanelOpen(false)}
-        />
-      )}
     </div>
   );
 };

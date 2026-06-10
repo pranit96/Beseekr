@@ -7,6 +7,8 @@ interface AgentNodeData {
   agentName?: string;
   agentDomain?: string;
   agentColor?: string;
+  provider?: string;
+  model?: string;
   tools?: string[];
   instruction?: string;
   onInstructionChange?: (text: string) => void;
@@ -14,11 +16,19 @@ interface AgentNodeData {
   [key: string]: unknown;
 }
 
+const PROVIDER_LABELS: Record<string, { label: string; color: string }> = {
+  openai: { label: "OpenAI", color: "hsl(160,60%,45%)" },
+  groq: { label: "Groq", color: "hsl(25,80%,55%)" },
+  anthropic: { label: "Anthropic", color: "hsl(30,70%,55%)" },
+};
+
 const AgentNode: React.FC<NodeProps> = ({ data, selected }) => {
   const d = data as AgentNodeData;
   const color = d.agentColor || "hsl(258, 70%, 60%)";
   const initial = (d.agentName || "A").charAt(0).toUpperCase();
   const status = d.status || "idle";
+  const provider = d.provider || "";
+  const providerInfo = PROVIDER_LABELS[provider.toLowerCase()] || null;
 
   return (
     <div
@@ -64,9 +74,22 @@ const AgentNode: React.FC<NodeProps> = ({ data, selected }) => {
           <p className="text-xs font-bold text-foreground truncate tracking-tight">
             {d.agentName || "Agent"}
           </p>
-          <p className="text-[10px] text-muted-foreground/60 truncate">
-            {d.agentDomain || "General"}
-          </p>
+          <div className="flex items-center gap-1.5">
+            <p className="text-[10px] text-muted-foreground/60 truncate">
+              {d.agentDomain || "General"}
+            </p>
+            {providerInfo && (
+              <span
+                className="text-[8px] font-bold px-1.5 py-0.5 rounded-md shrink-0"
+                style={{
+                  backgroundColor: `${providerInfo.color}15`,
+                  color: providerInfo.color,
+                }}
+              >
+                {providerInfo.label}
+              </span>
+            )}
+          </div>
         </div>
         {status === "running" && (
           <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
@@ -99,15 +122,25 @@ const AgentNode: React.FC<NodeProps> = ({ data, selected }) => {
         </div>
       )}
 
-      {/* Instruction override */}
+      {/* Instruction override — now a textarea for multi-line */}
       <div className="px-4 py-3">
-        <input
+        <textarea
           value={d.instruction || ""}
           onChange={(e) => d.onInstructionChange?.(e.target.value)}
           placeholder="Override instruction (optional)…"
-          className="w-full bg-background/40 border border-border/30 rounded-lg px-3 py-1.5 text-[11px] text-foreground placeholder-muted-foreground/40 outline-none focus:ring-1 focus:ring-primary/40 focus:border-primary/40 transition-all"
+          rows={2}
+          className="w-full bg-background/40 border border-border/30 rounded-lg px-3 py-1.5 text-[11px] text-foreground placeholder-muted-foreground/40 outline-none focus:ring-1 focus:ring-primary/40 focus:border-primary/40 transition-all resize-none"
         />
       </div>
+
+      {/* Model name */}
+      {d.model && (
+        <div className="px-4 pb-2.5 -mt-1">
+          <p className="text-[9px] text-muted-foreground/30 truncate">
+            Model: {d.model}
+          </p>
+        </div>
+      )}
 
       {/* Output handle */}
       <Handle

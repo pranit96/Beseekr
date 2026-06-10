@@ -11,6 +11,8 @@ import {
   Clock,
   Zap,
   Loader2,
+  Copy,
+  Check,
 } from "lucide-react";
 import type { CanvasExecutionResult } from "@/types/agent";
 
@@ -28,6 +30,7 @@ export const CanvasResultPanel: React.FC<CanvasResultPanelProps> = ({
   onDownload,
 }) => {
   const [expandedAgents, setExpandedAgents] = useState<Set<string>>(new Set());
+  const [copied, setCopied] = useState(false);
 
   const toggleAgent = (id: string) => {
     setExpandedAgents((prev) => {
@@ -36,6 +39,25 @@ export const CanvasResultPanel: React.FC<CanvasResultPanelProps> = ({
       else next.add(id);
       return next;
     });
+  };
+
+  const handleCopy = async () => {
+    if (!result?.final_output) return;
+    try {
+      await navigator.clipboard.writeText(result.final_output);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Fallback
+      const ta = document.createElement("textarea");
+      ta.value = result.final_output;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   if (!result && !isRunning) return null;
@@ -81,15 +103,32 @@ export const CanvasResultPanel: React.FC<CanvasResultPanelProps> = ({
           ) : null}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           {result && (
-            <button
-              onClick={() => onDownload(result.output_format)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold bg-primary/10 border border-primary/20 text-primary hover:bg-primary hover:text-primary-foreground transition-all"
-            >
-              <Download className="w-3 h-3" />
-              Download {result.output_format.toUpperCase()}
-            </button>
+            <>
+              <button
+                onClick={handleCopy}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold border transition-all ${
+                  copied
+                    ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+                    : "bg-muted/20 border-border/20 text-muted-foreground/60 hover:bg-muted/40 hover:text-foreground"
+                }`}
+              >
+                {copied ? (
+                  <Check className="w-3 h-3" />
+                ) : (
+                  <Copy className="w-3 h-3" />
+                )}
+                {copied ? "Copied" : "Copy"}
+              </button>
+              <button
+                onClick={() => onDownload(result.output_format)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold bg-primary/10 border border-primary/20 text-primary hover:bg-primary hover:text-primary-foreground transition-all"
+              >
+                <Download className="w-3 h-3" />
+                Download {result.output_format.toUpperCase()}
+              </button>
+            </>
           )}
           <button
             onClick={onClose}
@@ -136,7 +175,7 @@ export const CanvasResultPanel: React.FC<CanvasResultPanelProps> = ({
                       <span className="text-xs font-semibold text-foreground flex-1">
                         {ar.agent_name}
                       </span>
-                      {ar.tokens && (
+                      {ar.tokens != null && ar.tokens > 0 && (
                         <span className="text-[10px] text-muted-foreground/40">
                           {ar.tokens} tokens
                         </span>
