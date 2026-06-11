@@ -979,58 +979,105 @@ const AgentCanvas: React.FC = () => {
     [navigate, setNodes, setEdges, restoreNodesWithCallbacks],
   );
 
-  // Auto layout canvas nodes in sequential columns/swimlanes
+  // Auto layout canvas nodes in sequential columns/swimlanes dynamically based on connection layers
   const autoLayout = useCallback(() => {
-    // Basic step-based layout using node types
-    const nodesByType = {
-      triggers: [] as any[],     // scheduleNode, inputNode
-      processors: [] as any[],   // agentNode, httpNode, transformNode, noteNode
-      conditionals: [] as any[], // conditionalNode
-      mergers: [] as any[],      // mergeNode
-      outputs: [] as any[],      // outputNode, emailNode, telegramNode
-    };
-
-    nodes.forEach((n) => {
-      if (n.type === "scheduleNode" || n.type === "inputNode") {
-        nodesByType.triggers.push(n);
-      } else if (n.type === "conditionalNode") {
-        nodesByType.conditionals.push(n);
-      } else if (n.type === "mergeNode") {
-        nodesByType.mergers.push(n);
-      } else if (n.type === "outputNode" || n.type === "emailNode" || n.type === "telegramNode") {
-        nodesByType.outputs.push(n);
-      } else {
-        nodesByType.processors.push(n);
-      }
-    });
-
-    const columns = [
-      { list: nodesByType.triggers, x: 100 },
-      { list: nodesByType.processors, x: 450 },
-      { list: nodesByType.conditionals, x: 800 },
-      { list: nodesByType.mergers, x: 1100 },
-      { list: nodesByType.outputs, x: 1400 },
-    ];
-
     setNodes((nds) => {
+      if (nds.length === 0) return nds;
+
+      // 1. Build adjacency list and parent mappings
+      const adj = new Map<string, string[]>();
+      const parentMap = new Map<string, string[]>();
+      const inDegree = new Map<string, number>();
+
+      nds.forEach((n) => {
+        adj.set(n.id, []);
+        parentMap.set(n.id, []);
+        inDegree.set(n.id, 0);
+      });
+
+      edges.forEach((e) => {
+        if (adj.has(e.source) && adj.has(e.target)) {
+          adj.get(e.source)!.push(e.target);
+          parentMap.get(e.target)!.push(e.source);
+          inDegree.set(e.target, (inDegree.get(e.target) || 0) + 1);
+        }
+      });
+
+      // 2. Compute layers using a topological layer assignment
+      const layers = new Map<string, number>();
+      const queue: string[] = [];
+
+      // Start with nodes that have in-degree 0
+      nds.forEach((n) => {
+        if ((inDegree.get(n.id) || 0) === 0) {
+          layers.set(n.id, 0);
+          queue.push(n.id);
+        }
+      });
+
+      // Cycle or empty queue safeguard
+      if (queue.length === 0 && nds.length > 0) {
+        nds.forEach((n) => {
+          layers.set(n.id, 0);
+          queue.push(n.id);
+        });
+      }
+
+      const visited = new Set<string>();
+      while (queue.length > 0) {
+        const curr = queue.shift()!;
+        if (visited.has(curr)) continue;
+        visited.add(curr);
+
+        const currLayer = layers.get(curr) || 0;
+        const children = adj.get(curr) || [];
+
+        children.forEach((child) => {
+          const childParents = parentMap.get(child) || [];
+          let maxParentLayer = currLayer;
+          childParents.forEach((pId) => {
+            const pLayer = layers.get(pId) ?? -1;
+            if (pLayer > maxParentLayer) {
+              maxParentLayer = pLayer;
+            }
+          });
+          const childLayer = maxParentLayer + 1;
+          layers.set(child, childLayer);
+          queue.push(child);
+        });
+      }
+
+      // Ensure all nodes have a layer
+      nds.forEach((n) => {
+        if (!layers.has(n.id)) {
+          layers.set(n.id, 0);
+        }
+      });
+
+      // 3. Group nodes by layer
+      const nodesByLayer = new Map<number, any[]>();
+      nds.forEach((n) => {
+        const layer = layers.get(n.id) || 0;
+        if (!nodesByLayer.has(layer)) {
+          nodesByLayer.set(layer, []);
+        }
+        nodesByLayer.get(layer)!.push(n);
+      });
+
+      // 4. Map nodes to new positions
       return nds.map((n) => {
-        let colIndex = 1; // Default to processors
-        if (n.type === "scheduleNode" || n.type === "inputNode") colIndex = 0;
-        else if (n.type === "conditionalNode") colIndex = 2;
-        else if (n.type === "mergeNode") colIndex = 3;
-        else if (n.type === "outputNode" || n.type === "emailNode" || n.type === "telegramNode") colIndex = 4;
+        const layer = layers.get(n.id) || 0;
+        const listInLayer = nodesByLayer.get(layer) || [];
+        const indexInLayer = listInLayer.findIndex((item) => item.id === n.id);
 
-        const col = columns[colIndex];
-        const indexInCol = col.list.findIndex((item) => item.id === n.id);
-
-        // Calculate y coordinate to spread nodes vertically
+        const colX = 100 + layer * 350;
         const startY = 150;
         const spacingY = 180;
-        const y = startY + (indexInCol >= 0 ? indexInCol : 0) * spacingY;
+        const y = startY + (indexInLayer >= 0 ? indexInLayer : 0) * spacingY;
 
         return {
           ...n,
-          position: { x: col.x, y },
+          position: { x: colX, y },
         };
       });
     });
@@ -1039,7 +1086,7 @@ const AgentCanvas: React.FC = () => {
     setTimeout(() => {
       reactFlowInstance?.fitView({ duration: 600 });
     }, 50);
-  }, [nodes, setNodes, reactFlowInstance]);
+  }, [edges, setNodes, reactFlowInstance]);
 
   // Delete workflow
   const handleDeleteWorkflow = useCallback(

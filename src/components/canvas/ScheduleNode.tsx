@@ -200,9 +200,9 @@ const ScheduleNode: React.FC<NodeProps> = ({ data, selected }) => {
           title={isActive ? "Pause schedule" : "Activate schedule"}
         >
           {isActive ? (
-            <Play className="w-3.5 h-3.5" />
-          ) : (
             <Pause className="w-3.5 h-3.5" />
+          ) : (
+            <Play className="w-3.5 h-3.5" />
           )}
         </button>
       </div>
