@@ -15,6 +15,7 @@ const OPERATIONS = [
   { value: "json_to_csv", label: "JSON array ➔ CSV" },
   { value: "csv_to_json", label: "CSV ➔ JSON array" },
   { value: "json_to_table", label: "JSON ➔ Markdown Table" },
+  { value: "json_to_text", label: "JSON ➔ Proper Text List" },
   { value: "uppercase", label: "UPPERCASE" },
   { value: "lowercase", label: "lowercase" },
   { value: "titlecase", label: "Title Case" },

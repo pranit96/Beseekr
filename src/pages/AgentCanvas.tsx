@@ -136,7 +136,7 @@ const AgentCanvas: React.FC = () => {
   const [showWebhookPanel, setShowWebhookPanel] = useState(false);
   const [showDiffPanel, setShowDiffPanel] = useState(false);
   // Store snapshot of previous run for diff comparison
-  const previousRunRef = useRef<{ output: string; tokens: number; duration_ms: number; timestamp: string; status: "success" | "failed" } | null>(null);
+  const previousRunRef = useRef<{ run_id: string; output: string; tokens: number; duration_ms: number; timestamp: string; status: "success" | "failed" } | null>(null);
 
   // AI Workflow Generator state
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
@@ -237,6 +237,8 @@ const AgentCanvas: React.FC = () => {
               setOutputFormat(format);
               updateNodeData(n.id, "outputFormat", format);
             },
+            onJsonModeChange: (mode: "table" | "text") =>
+              updateNodeData(n.id, "jsonMode", mode),
             onEmailToggleChange: (enabled: boolean) =>
               updateNodeData(n.id, "emailEnabled", enabled),
             onEmailToChange: (val: string) =>
@@ -510,10 +512,13 @@ const AgentCanvas: React.FC = () => {
       data: {
         label: "Output",
         outputFormat,
+        jsonMode: "table",
         onFormatChange: (format: string) => {
           setOutputFormat(format);
           updateNodeData(id, "outputFormat", format);
         },
+        onJsonModeChange: (mode: "table" | "text") =>
+          updateNodeData(id, "jsonMode", mode),
         onEmailToggleChange: (enabled: boolean) =>
           updateNodeData(id, "emailEnabled", enabled),
         onEmailToChange: (val: string) =>
@@ -983,6 +988,7 @@ const AgentCanvas: React.FC = () => {
         // ── Save snapshot for diff comparison ─────────────────────────────
         if (executionResult?.final_output) {
           previousRunRef.current = {
+            run_id: "run-" + Date.now(),
             output: executionResult.final_output,
             tokens: executionResult.metadata.total_tokens,
             duration_ms: executionResult.metadata.execution_time_ms,

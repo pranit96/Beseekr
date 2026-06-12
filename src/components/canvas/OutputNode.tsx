@@ -12,6 +12,8 @@ interface OutputNodeData {
   label?: string;
   outputFormat?: string;
   onFormatChange?: (format: string) => void;
+  jsonMode?: "table" | "text";
+  onJsonModeChange?: (mode: "table" | "text") => void;
   emailEnabled?: boolean;
   onEmailToggleChange?: (enabled: boolean) => void;
   emailTo?: string;
@@ -93,6 +95,37 @@ const OutputNode: React.FC<NodeProps> = ({ data, selected }) => {
           })}
         </div>
       </div>
+
+      {/* JSON Conversion Mode selector */}
+      {(format === "pdf" || format === "latex" || format === "plain" || format === "docx") && (
+        <div className="px-4 py-2.5 border-t border-border/10">
+          <label className="text-[9px] font-bold text-muted-foreground/70 uppercase tracking-wider block mb-1">
+            JSON Conversion Mode
+          </label>
+          <div className="grid grid-cols-2 gap-1.5">
+            <button
+              onClick={() => d.onJsonModeChange?.("table")}
+              className={`px-2 py-1 rounded-lg text-[9px] font-medium transition-all ${
+                (d.jsonMode || "table") === "table"
+                  ? "bg-sky-500/15 border border-sky-500/40 text-sky-400"
+                  : "bg-muted/20 border border-border/20 text-muted-foreground/60 hover:border-sky-500/20"
+              }`}
+            >
+              Table Format
+            </button>
+            <button
+              onClick={() => d.onJsonModeChange?.("text")}
+              className={`px-2 py-1 rounded-lg text-[9px] font-medium transition-all ${
+                d.jsonMode === "text"
+                  ? "bg-sky-500/15 border border-sky-500/40 text-sky-400"
+                  : "bg-muted/20 border border-border/20 text-muted-foreground/60 hover:border-sky-500/20"
+              }`}
+            >
+              Text List Format
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Email toggle & fields */}
       <div className="border-t border-border/10 px-4 py-3 bg-muted/5 flex flex-col gap-2 rounded-b-2xl">
