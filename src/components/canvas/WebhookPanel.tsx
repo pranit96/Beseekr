@@ -38,12 +38,12 @@ export const WebhookPanel = memo(({ workflowId, onClose }: WebhookPanelProps) =>
     setLoading(true);
     try {
       const res = await api.get(`/api/canvas-workflows/${workflowId}/webhook`);
-      if (res.data?.success && res.data.data) {
-        setWebhookUrl(res.data.data.url);
-        setSecret(res.data.data.secret);
-        setHmacAlgo(res.data.data.hmac_algo || "sha256");
-        setHits(res.data.data.recent_hits || []);
-        setRateLimit(res.data.data.rate_limit || { max: 10, window: 60, current: 0 });
+      if (res.success && res.data) {
+        setWebhookUrl(res.data.url);
+        setSecret(res.data.secret);
+        setHmacAlgo(res.data.hmac_algo || "sha256");
+        setHits(res.data.recent_hits || []);
+        setRateLimit(res.data.rate_limit || { max: 10, window: 60, current: 0 });
       }
     } catch {
       // No webhook yet — that's fine
@@ -59,9 +59,9 @@ export const WebhookPanel = memo(({ workflowId, onClose }: WebhookPanelProps) =>
       const res = await api.post(`/api/canvas-workflows/${workflowId}/webhook/generate`, {
         hmac_algo: hmacAlgo,
       });
-      if (res.data?.success) {
-        setWebhookUrl(res.data.data.url);
-        setSecret(res.data.data.secret);
+      if (res.success && res.data) {
+        setWebhookUrl(res.data.url);
+        setSecret(res.data.secret);
         toast({ title: "Webhook generated!", description: "Your secret URL is ready to use." });
       }
     } catch (err: any) {
@@ -76,8 +76,8 @@ export const WebhookPanel = memo(({ workflowId, onClose }: WebhookPanelProps) =>
     setRotating(true);
     try {
       const res = await api.post(`/api/canvas-workflows/${workflowId}/webhook/rotate`);
-      if (res.data?.success) {
-        setSecret(res.data.data.secret);
+      if (res.success && res.data) {
+        setSecret(res.data.secret);
         toast({ title: "Secret rotated", description: "New HMAC secret generated. Update your integrations." });
       }
     } catch (err: any) {
