@@ -15,6 +15,10 @@ import {
   Globe,
   StickyNote,
   Send,
+  RefreshCw,
+  GitFork,
+  ShieldCheck,
+  Brain,
 } from "lucide-react";
 import type { Agent, CanvasWorkflow } from "@/types/agent";
 
@@ -40,6 +44,11 @@ interface CanvasSidebarProps {
   onDeleteWorkflow: (id: string) => void;
   loadingWorkflows?: boolean;
   nodeCount?: number;
+  // ── Crazy feature nodes ────────────────────────────────────────────
+  onAddLoopNode?: () => void;
+  onAddSplitNode?: () => void;
+  onAddRetryNode?: () => void;
+  onAddMemoryNode?: () => void;
 }
 
 export const CanvasSidebar: React.FC<CanvasSidebarProps> = ({
@@ -61,6 +70,10 @@ export const CanvasSidebar: React.FC<CanvasSidebarProps> = ({
   onDeleteWorkflow,
   loadingWorkflows,
   nodeCount = 0,
+  onAddLoopNode,
+  onAddSplitNode,
+  onAddRetryNode,
+  onAddMemoryNode,
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<"nodes" | "saved">("nodes");
@@ -188,6 +201,43 @@ export const CanvasSidebar: React.FC<CanvasSidebarProps> = ({
               >
                 <StickyNote className="w-3.5 h-3.5" />
                 Sticky Note
+              </button>
+            </div>
+          </div>
+
+          {/* Advanced & Loops */}
+          <div className="px-3 pb-3 border-b border-border/10">
+            <p className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-widest mb-2 px-1">
+              Advanced & Loops
+            </p>
+            <div className="grid grid-cols-2 gap-1.5">
+              <button
+                onClick={onAddLoopNode}
+                className="flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl border border-amber-500/20 bg-amber-500/5 hover:bg-amber-500/10 hover:border-amber-500/40 transition-all text-[11px] font-semibold text-amber-400"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                Loop
+              </button>
+              <button
+                onClick={onAddSplitNode}
+                className="flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl border border-cyan-500/20 bg-cyan-500/5 hover:bg-cyan-500/10 hover:border-cyan-500/40 transition-all text-[11px] font-semibold text-cyan-400"
+              >
+                <GitFork className="w-3.5 h-3.5" />
+                Split
+              </button>
+              <button
+                onClick={onAddRetryNode}
+                className="flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl border border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500/10 hover:border-emerald-500/40 transition-all text-[11px] font-semibold text-emerald-400"
+              >
+                <ShieldCheck className="w-3.5 h-3.5" />
+                Retry
+              </button>
+              <button
+                onClick={onAddMemoryNode}
+                className="flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl border border-violet-500/20 bg-violet-500/5 hover:bg-violet-500/10 hover:border-violet-500/40 transition-all text-[11px] font-semibold text-violet-400"
+              >
+                <Brain className="w-3.5 h-3.5" />
+                Memory
               </button>
             </div>
           </div>

@@ -33,6 +33,8 @@ import {
   LayoutGrid,
   ZoomIn,
   ZoomOut,
+  Webhook,
+  GitCompare,
 } from "lucide-react";
 import { GlobalHeader } from "@/components/GlobalHeader";
 import { CanvasSidebar } from "@/components/canvas/CanvasSidebar";
@@ -48,6 +50,12 @@ import NoteNode from "@/components/canvas/NoteNode";
 import HttpNode from "@/components/canvas/HttpNode";
 import TransformNode from "@/components/canvas/TransformNode";
 import TelegramNode from "@/components/canvas/TelegramNode";
+import LoopNode from "@/components/canvas/LoopNode";
+import SplitNode from "@/components/canvas/SplitNode";
+import RetryNode from "@/components/canvas/RetryNode";
+import MemoryNode from "@/components/canvas/MemoryNode";
+import { WebhookPanel } from "@/components/canvas/WebhookPanel";
+import { ExecutionDiffPanel } from "@/components/canvas/ExecutionDiffPanel";
 import {
   useMyAgents,
   useCanvasWorkflows,
@@ -74,6 +82,11 @@ const nodeTypes = {
   httpNode: HttpNode,
   transformNode: TransformNode,
   telegramNode: TelegramNode,
+  // ── Crazy Features ─────────────────────────────────────
+  loopNode: LoopNode,
+  splitNode: SplitNode,
+  retryNode: RetryNode,
+  memoryNode: MemoryNode,
 };
 
 // Default edge style
@@ -118,6 +131,12 @@ const AgentCanvas: React.FC = () => {
   const [executionResult, setExecutionResult] =
     useState<CanvasExecutionResult | null>(null);
   const [showResults, setShowResults] = useState(false);
+
+  // ── Crazy feature panels ───────────────────────────────────────────────
+  const [showWebhookPanel, setShowWebhookPanel] = useState(false);
+  const [showDiffPanel, setShowDiffPanel] = useState(false);
+  // Store snapshot of previous run for diff comparison
+  const previousRunRef = useRef<{ output: string; tokens: number; duration_ms: number; timestamp: string; status: "success" | "failed" } | null>(null);
 
   // AI Workflow Generator state
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
@@ -272,6 +291,10 @@ const AgentCanvas: React.FC = () => {
               updateNodeData(n.id, "isActive", val),
             onInputTextChange: (val: string) =>
               updateNodeData(n.id, "inputText", val),
+            onAdaptiveCronToggle: (val: boolean) =>
+              updateNodeData(n.id, "adaptiveCron", val),
+            onDependsOnScheduleIdChange: (val: string) =>
+              updateNodeData(n.id, "dependsOnScheduleId", val),
             onExecute: () => handleExecuteRef.current?.(),
           },
         };
@@ -329,6 +352,63 @@ const AgentCanvas: React.FC = () => {
           data: {
             ...n.data,
             onLabelChange: (val: string) => updateNodeData(n.id, "label", val),
+            onOperationChange: (val: string) => updateNodeData(n.id, "operation", val),
+          },
+        };
+      }
+      if (n.type === "loopNode") {
+        return {
+          ...n,
+          data: {
+            ...n.data,
+            onLabelChange: (val: string) => updateNodeData(n.id, "label", val),
+            onMaxIterationsChange: (val: number) => updateNodeData(n.id, "maxIterations", val),
+            onConvergenceModeChange: (val: string) => updateNodeData(n.id, "convergenceMode", val),
+            onConvergencePromptChange: (val: string) => updateNodeData(n.id, "convergencePrompt", val),
+            onAgentChange: (agentId: string, agentName: string) => {
+              updateNodeData(n.id, "agentId", agentId);
+              updateNodeData(n.id, "agentName", agentName);
+            },
+          },
+        };
+      }
+      if (n.type === "splitNode") {
+        return {
+          ...n,
+          data: {
+            ...n.data,
+            onLabelChange: (val: string) => updateNodeData(n.id, "label", val),
+            onBranchesChange: (val: any[]) => updateNodeData(n.id, "branches", val),
+            onAgentChange: (agentId: string, agentName: string) => {
+              updateNodeData(n.id, "agentId", agentId);
+              updateNodeData(n.id, "agentName", agentName);
+            },
+          },
+        };
+      }
+      if (n.type === "retryNode") {
+        return {
+          ...n,
+          data: {
+            ...n.data,
+            onLabelChange: (val: string) => updateNodeData(n.id, "label", val),
+            onMaxRetriesChange: (val: number) => updateNodeData(n.id, "maxRetries", val),
+            onCheckModeChange: (val: string) => updateNodeData(n.id, "checkMode", val),
+            onCheckValueChange: (val: string) => updateNodeData(n.id, "checkValue", val),
+            onAgentChange: (agentId: string, agentName: string) => {
+              updateNodeData(n.id, "agentId", agentId);
+              updateNodeData(n.id, "agentName", agentName);
+            },
+          },
+        };
+      }
+      if (n.type === "memoryNode") {
+        return {
+          ...n,
+          data: {
+            ...n.data,
+            onLabelChange: (val: string) => updateNodeData(n.id, "label", val),
+            onMemoryKeyChange: (val: string) => updateNodeData(n.id, "memoryKey", val),
             onOperationChange: (val: string) => updateNodeData(n.id, "operation", val),
           },
         };
@@ -538,6 +618,8 @@ const AgentCanvas: React.FC = () => {
         maxRuns: "",
         isActive: true,
         inputText: "",
+        adaptiveCron: false,
+        dependsOnScheduleId: "",
         onLabelChange: (val: string) =>
           updateNodeData(id, "label", val),
         onCronPresetChange: (val: string) =>
@@ -552,6 +634,10 @@ const AgentCanvas: React.FC = () => {
           updateNodeData(id, "isActive", val),
         onInputTextChange: (val: string) =>
           updateNodeData(id, "inputText", val),
+        onAdaptiveCronToggle: (val: boolean) =>
+          updateNodeData(id, "adaptiveCron", val),
+        onDependsOnScheduleIdChange: (val: string) =>
+          updateNodeData(id, "dependsOnScheduleId", val),
         onExecute: () => handleExecuteRef.current?.(),
       },
     };
@@ -894,6 +980,17 @@ const AgentCanvas: React.FC = () => {
       });
 
       if (result?.data) {
+        // ── Save snapshot for diff comparison ─────────────────────────────
+        if (executionResult?.final_output) {
+          previousRunRef.current = {
+            output: executionResult.final_output,
+            tokens: executionResult.metadata.total_tokens,
+            duration_ms: executionResult.metadata.execution_time_ms,
+            timestamp: new Date().toISOString(),
+            status: "success",
+          };
+        }
+
         setExecutionResult(result.data);
         
         // Staggered node animation based on agent_results
@@ -906,7 +1003,7 @@ const AgentCanvas: React.FC = () => {
                 
                 const hasError = !!res.error;
                 
-                let updatedData = {
+                let updatedData: any = {
                   ...n.data,
                   status: (hasError ? "error" : "done") as any,
                 };
@@ -916,6 +1013,15 @@ const AgentCanvas: React.FC = () => {
                   updatedData.responsePreview = hasError ? res.error : res.response;
                 } else if (n.type === "transformNode") {
                   updatedData.transformPreview = hasError ? res.error : res.response;
+                } else if (n.type === "loopNode") {
+                  updatedData._currentIteration = res.iterations_used ?? 1;
+                } else if (n.type === "retryNode") {
+                  updatedData._attemptsUsed = res.attempts_used ?? 1;
+                  updatedData._passed = !hasError;
+                } else if (n.type === "memoryNode") {
+                  updatedData._memoryPreview = res.memory_preview ?? "";
+                  updatedData._byteSize = res.memory_bytes ?? 0;
+                  updatedData._lastUpdated = new Date().toISOString();
                 }
                 
                 return {
@@ -924,8 +1030,13 @@ const AgentCanvas: React.FC = () => {
                 };
               })
             );
-          }, (idx + 1) * 600); // 600ms stagger delay per node execution step
+          }, (idx + 1) * 600);
         });
+
+        // Auto-show diff panel if there's a previous run
+        if (previousRunRef.current) {
+          setTimeout(() => setShowDiffPanel(true), 800);
+        }
       }
     } catch {
       // Error handled by hook
@@ -1188,6 +1299,102 @@ const AgentCanvas: React.FC = () => {
     [executionResult, workflowName],
   );
 
+  // ── Add new crazy node types ──────────────────────────────────────────────
+  const addLoopNode = useCallback(() => {
+    const id = getNodeId("loop");
+    const newNode: Node = {
+      id,
+      type: "loopNode",
+      position: { x: 450, y: 200 + Math.random() * 100 },
+      data: {
+        label: "Agent Loop",
+        maxIterations: 3,
+        convergenceMode: "count",
+        convergencePrompt: "",
+        agentId: "",
+        agentName: "Select agent...",
+        onLabelChange: (val: string) => updateNodeData(id, "label", val),
+        onMaxIterationsChange: (val: number) => updateNodeData(id, "maxIterations", val),
+        onConvergenceModeChange: (val: string) => updateNodeData(id, "convergenceMode", val),
+        onConvergencePromptChange: (val: string) => updateNodeData(id, "convergencePrompt", val),
+        onAgentChange: (agentId: string, agentName: string) => {
+          updateNodeData(id, "agentId", agentId);
+          updateNodeData(id, "agentName", agentName);
+        },
+      },
+    };
+    setNodes((nds) => [...nds, newNode]);
+  }, [setNodes, updateNodeData]);
+
+  const addSplitNode = useCallback(() => {
+    const id = getNodeId("split");
+    const newNode: Node = {
+      id,
+      type: "splitNode",
+      position: { x: 400, y: 150 + Math.random() * 100 },
+      data: {
+        label: "Fan-Out Split",
+        branches: [
+          { label: "Branch 1", instruction: "" },
+          { label: "Branch 2", instruction: "" },
+        ],
+        agentId: "",
+        agentName: "None (Shared)",
+        onLabelChange: (val: string) => updateNodeData(id, "label", val),
+        onBranchesChange: (val: any[]) => updateNodeData(id, "branches", val),
+        onAgentChange: (agentId: string, agentName: string) => {
+          updateNodeData(id, "agentId", agentId);
+          updateNodeData(id, "agentName", agentName);
+        },
+      },
+    };
+    setNodes((nds) => [...nds, newNode]);
+  }, [setNodes, updateNodeData]);
+
+  const addRetryNode = useCallback(() => {
+    const id = getNodeId("retry");
+    const newNode: Node = {
+      id,
+      type: "retryNode",
+      position: { x: 550, y: 200 + Math.random() * 100 },
+      data: {
+        label: "Quality Gate",
+        maxRetries: 2,
+        checkMode: "min_length",
+        checkValue: "300",
+        agentId: "",
+        agentName: "Select agent...",
+        onLabelChange: (val: string) => updateNodeData(id, "label", val),
+        onMaxRetriesChange: (val: number) => updateNodeData(id, "maxRetries", val),
+        onCheckModeChange: (val: string) => updateNodeData(id, "checkMode", val),
+        onCheckValueChange: (val: string) => updateNodeData(id, "checkValue", val),
+        onAgentChange: (agentId: string, agentName: string) => {
+          updateNodeData(id, "agentId", agentId);
+          updateNodeData(id, "agentName", agentName);
+        },
+      },
+    };
+    setNodes((nds) => [...nds, newNode]);
+  }, [setNodes, updateNodeData]);
+
+  const addMemoryNode = useCallback(() => {
+    const id = getNodeId("memory");
+    const newNode: Node = {
+      id,
+      type: "memoryNode",
+      position: { x: 300, y: 350 + Math.random() * 100 },
+      data: {
+        label: "Memory",
+        memoryKey: "workflow_memory",
+        operation: "read_write",
+        onLabelChange: (val: string) => updateNodeData(id, "label", val),
+        onMemoryKeyChange: (val: string) => updateNodeData(id, "memoryKey", val),
+        onOperationChange: (val: string) => updateNodeData(id, "operation", val),
+      },
+    };
+    setNodes((nds) => [...nds, newNode]);
+  }, [setNodes, updateNodeData]);
+
   const isSaving = createMutation.isPending || updateMutation.isPending;
   const isExecuting = executeMutation.isPending;
 
@@ -1247,6 +1454,39 @@ const AgentCanvas: React.FC = () => {
             <Sparkles className="w-3.5 h-3.5 text-violet-400 animate-pulse" />
             AI Builder
           </button>
+
+          {/* Webhook panel toggle */}
+          <button
+            onClick={() => { setShowWebhookPanel(v => !v); setShowDiffPanel(false); }}
+            disabled={!currentWorkflowId}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition-all ${
+              showWebhookPanel
+                ? "bg-fuchsia-600/20 border-fuchsia-500/50 text-fuchsia-300"
+                : "bg-card/10 border-border/40 text-muted-foreground hover:text-fuchsia-400 hover:border-fuchsia-500/30"
+            } disabled:opacity-30`}
+            title={currentWorkflowId ? "Webhook trigger" : "Save workflow first"}
+          >
+            <Webhook className="w-3.5 h-3.5" />
+            Webhook
+          </button>
+
+          {/* Diff panel toggle */}
+          {executionResult && (
+            <button
+              onClick={() => { setShowDiffPanel(v => !v); setShowWebhookPanel(false); }}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition-all ${
+                showDiffPanel
+                  ? "bg-blue-600/20 border-blue-500/50 text-blue-300"
+                  : "bg-card/10 border-border/40 text-muted-foreground hover:text-blue-400 hover:border-blue-500/30"
+              }`}
+            >
+              <GitCompare className="w-3.5 h-3.5" />
+              Diff
+              {previousRunRef.current && (
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
+              )}
+            </button>
+          )}
           {/* Zoom Controls */}
           <div className="flex items-center border border-border/40 bg-card/10 rounded-xl overflow-hidden">
             <button
@@ -1328,6 +1568,11 @@ const AgentCanvas: React.FC = () => {
           onDeleteWorkflow={handleDeleteWorkflow}
           loadingWorkflows={loadingWorkflows}
           nodeCount={nodes.length}
+          // ── Crazy feature node adders ───────────────────────
+          onAddLoopNode={addLoopNode}
+          onAddSplitNode={addSplitNode}
+          onAddRetryNode={addRetryNode}
+          onAddMemoryNode={addMemoryNode}
         />
 
         {/* React Flow Canvas */}
@@ -1414,6 +1659,26 @@ const AgentCanvas: React.FC = () => {
               isRunning={isExecuting}
               onClose={() => setShowResults(false)}
               onDownload={handleDownload}
+            />
+          )}
+
+          {/* ── Webhook Panel ────────────────────────────────── */}
+          {showWebhookPanel && (
+            <WebhookPanel
+              workflowId={currentWorkflowId}
+              onClose={() => setShowWebhookPanel(false)}
+            />
+          )}
+
+          {/* ── Execution Diff Panel ─────────────────────────── */}
+          {showDiffPanel && executionResult && (
+            <ExecutionDiffPanel
+              currentResult={executionResult.final_output || ""}
+              currentTokens={executionResult.metadata.total_tokens}
+              currentDuration={executionResult.metadata.execution_time_ms}
+              previousRun={previousRunRef.current}
+              workflowId={currentWorkflowId}
+              onClose={() => setShowDiffPanel(false)}
             />
           )}
         </div>

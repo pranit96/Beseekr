@@ -1,6 +1,8 @@
 import React, { memo, useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
 import { Handle, Position, type NodeProps } from "@xyflow/react";
 import { Clock, Play, Pause, ChevronDown, Globe, Loader2, Zap } from "lucide-react";
+import { useCanvasSchedules } from "@/hooks/use-api-queries";
 
 interface ScheduleNodeData {
   label?: string;
@@ -22,6 +24,10 @@ interface ScheduleNodeData {
   inputText?: string;
   onInputTextChange?: (val: string) => void;
   onExecute?: () => Promise<void>;
+  adaptiveCron?: boolean;
+  onAdaptiveCronToggle?: (val: boolean) => void;
+  dependsOnScheduleId?: string;
+  onDependsOnScheduleIdChange?: (val: string) => void;
   [key: string]: unknown;
 }
 
@@ -123,6 +129,14 @@ function humanizeCron(cronStr: string): string {
 
 const ScheduleNode: React.FC<NodeProps> = ({ data, selected }) => {
   const d = data as ScheduleNodeData;
+  const { id: workflowId } = useParams<{ id?: string }>();
+  const { data: schedulesResponse } = useCanvasSchedules(
+    workflowId ? { workflow_id: workflowId } : undefined
+  );
+  const otherSchedules = (schedulesResponse?.data || []).filter(
+    (s: any) => s.id !== d.scheduleId
+  );
+
   const preset = d.cronPreset || "0 0 * * *";
   const isCustom = preset === "custom";
   const isActive = d.isActive ?? false;
@@ -313,6 +327,45 @@ const ScheduleNode: React.FC<NodeProps> = ({ data, selected }) => {
             placeholder="Unlimited"
             className="w-full bg-background/40 border border-border/30 rounded-lg px-2.5 py-1 text-[10px] text-foreground placeholder-muted-foreground/45 outline-none focus:ring-1 focus:ring-amber-500/40 focus:border-amber-500/40 transition-all"
           />
+        </div>
+
+        {/* Adaptive Cadence Toggle */}
+        <div className="flex items-center justify-between py-1.5 px-2.5 bg-amber-500/5 rounded-lg border border-amber-500/10 mt-1">
+          <div>
+            <span className="text-[10px] font-bold text-amber-400 block">Smart Cadence</span>
+            <span className="text-[8px] text-muted-foreground/50 block leading-tight">Backs off cadence if output novelty is low</span>
+          </div>
+          <input
+            type="checkbox"
+            checked={d.adaptiveCron ?? false}
+            onChange={(e) => d.onAdaptiveCronToggle?.(e.target.checked)}
+            className="w-4 h-4 rounded border-border text-amber-500 focus:ring-amber-500 bg-background/40 cursor-pointer"
+          />
+        </div>
+
+        {/* Schedule Dependency Chain */}
+        <div>
+          <label className="text-[9px] font-bold text-muted-foreground/70 uppercase tracking-wider block mb-1">
+            Run After (Dependency)
+          </label>
+          <div className="relative">
+            <select
+              value={d.dependsOnScheduleId || ""}
+              onChange={(e) => d.onDependsOnScheduleIdChange?.(e.target.value || "")}
+              className="w-full bg-background/40 border border-border/30 rounded-lg pl-2.5 pr-6 py-1 text-[10px] text-foreground outline-none focus:ring-1 focus:ring-amber-500/40 focus:border-amber-500/40 transition-all appearance-none cursor-pointer"
+            >
+              <option value="">-- No Dependency --</option>
+              {otherSchedules.map((s: any) => (
+                <option key={s.id} value={s.id}>
+                  {s.label || `Schedule ${s.id.slice(0, 6)}`}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-2.5 h-2.5 text-muted-foreground/40 pointer-events-none" />
+          </div>
+          <p className="text-[8px] text-muted-foreground/35 mt-0.5">
+            Only execute if this upstream schedule ran successfully today
+          </p>
         </div>
 
         {/* Cron explainer */}
