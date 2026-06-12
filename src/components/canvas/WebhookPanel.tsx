@@ -60,7 +60,7 @@ export const WebhookPanel = memo(({ workflowId, onClose }: WebhookPanelProps) =>
         hmac_algo: hmacAlgo,
       });
       if (res.success && res.data) {
-        setWebhookUrl(res.data.url);
+        setWebhookUrl(res.data.url); 
         setSecret(res.data.secret);
         toast({ title: "Webhook generated!", description: "Your secret URL is ready to use." });
       }
