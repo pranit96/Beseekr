@@ -33,6 +33,8 @@ import {
   LayoutGrid,
   ZoomIn,
   ZoomOut,
+  Maximize2,
+  Plus,
   Webhook,
   GitCompare,
 } from "lucide-react";
@@ -92,8 +94,8 @@ const nodeTypes = {
 // Default edge style
 const defaultEdgeOptions = {
   style: {
-    stroke: "hsl(258, 60%, 55%)",
-    strokeWidth: 2,
+    stroke: "hsla(250, 65%, 62%, 0.55)",
+    strokeWidth: 2.5,
   },
   animated: true,
   type: "smoothstep" as const,
@@ -1405,21 +1407,22 @@ const AgentCanvas: React.FC = () => {
   const isExecuting = executeMutation.isPending;
 
   return (
-    <div className="h-screen bg-background text-foreground flex flex-col overflow-hidden selection:bg-primary/30">
+    <div className="h-screen flex flex-col overflow-hidden canvas-bg selection:bg-primary/30">
       <GlobalHeader />
 
-      {/* Top Toolbar */}
-      <div className="shrink-0 flex items-center justify-between px-4 py-2.5 border-b border-border/30 bg-card/30 backdrop-blur-xl z-10">
+      {/* ═══ Top Toolbar ═══ */}
+      <div className="shrink-0 flex items-center justify-between px-4 py-2 canvas-toolbar z-30">
         {/* Left: Back + Name */}
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate("/agents")}
-            className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+            className="canvas-toolbar-btn !px-2"
+            aria-label="Back to agents"
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-md shadow-violet-500/20">
               <LayoutGrid className="w-3.5 h-3.5 text-white" />
             </div>
@@ -1433,103 +1436,114 @@ const AgentCanvas: React.FC = () => {
                   if (e.key === "Enter") setIsEditingName(false);
                 }}
                 autoFocus
-                className="text-sm font-bold text-foreground bg-transparent border-b border-primary/50 outline-none px-1 py-0.5 min-w-[200px]"
+                className="canvas-name-input"
+                aria-label="Workflow name"
               />
             ) : (
               <button
                 onClick={() => setIsEditingName(true)}
-                className="text-sm font-bold text-foreground hover:text-primary transition-colors"
+                className="text-sm font-bold text-white/90 hover:text-white transition-colors"
+                aria-label="Edit workflow name"
               >
                 {workflowName}
               </button>
             )}
             {currentWorkflowId && (
-              <span className="text-[9px] font-medium text-muted-foreground/40 bg-muted/30 px-2 py-0.5 rounded-md">
+              <span className="text-[9px] font-semibold text-emerald-400/70 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/15">
                 Saved
               </span>
             )}
           </div>
         </div>
 
-        {/* Right: Actions */}
+        {/* Center: Zoom Controls */}
+        <div className="canvas-zoom-pill">
+          <button
+            onClick={() => reactFlowInstance?.zoomOut({ duration: 300 })}
+            className="canvas-zoom-btn"
+            aria-label="Zoom out"
+          >
+            <ZoomOut className="w-3.5 h-3.5" />
+          </button>
+          <div className="canvas-zoom-divider" />
+          <button
+            onClick={() => reactFlowInstance?.fitView({ duration: 400 })}
+            className="canvas-zoom-btn"
+            aria-label="Fit view"
+          >
+            <Maximize2 className="w-3.5 h-3.5" />
+          </button>
+          <div className="canvas-zoom-divider" />
+          <button
+            onClick={() => reactFlowInstance?.zoomIn({ duration: 300 })}
+            className="canvas-zoom-btn"
+            aria-label="Zoom in"
+          >
+            <ZoomIn className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        {/* Right: Grouped Actions */}
         <div className="flex items-center gap-2">
+          {/* Tools group */}
           <button
             onClick={() => setIsAiModalOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-violet-600/15 border border-violet-500/35 text-violet-400 hover:bg-violet-600/25 hover:text-violet-300 transition-all shadow-sm shadow-violet-500/5 hover:scale-[1.02] active:scale-[0.98] duration-200"
+            className="canvas-toolbar-btn"
+            style={{ borderColor: "hsla(270, 60%, 55%, 0.35)", color: "hsl(270, 70%, 75%)" }}
+            title="AI Workflow Builder"
           >
-            <Sparkles className="w-3.5 h-3.5 text-violet-400 animate-pulse" />
-            AI Builder
+            <Sparkles className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">AI Builder</span>
           </button>
 
-          {/* Webhook panel toggle */}
           <button
             onClick={() => { setShowWebhookPanel(v => !v); setShowDiffPanel(false); }}
             disabled={!currentWorkflowId}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition-all ${
-              showWebhookPanel
-                ? "bg-fuchsia-600/20 border-fuchsia-500/50 text-fuchsia-300"
-                : "bg-card/10 border-border/40 text-muted-foreground hover:text-fuchsia-400 hover:border-fuchsia-500/30"
-            } disabled:opacity-30`}
+            className={`canvas-toolbar-btn ${showWebhookPanel ? "canvas-toolbar-btn-active" : ""} disabled:opacity-30 disabled:cursor-not-allowed`}
             title={currentWorkflowId ? "Webhook trigger" : "Save workflow first"}
           >
             <Webhook className="w-3.5 h-3.5" />
-            Webhook
           </button>
 
-          {/* Diff panel toggle */}
           {executionResult && (
             <button
               onClick={() => { setShowDiffPanel(v => !v); setShowWebhookPanel(false); }}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition-all ${
-                showDiffPanel
-                  ? "bg-blue-600/20 border-blue-500/50 text-blue-300"
-                  : "bg-card/10 border-border/40 text-muted-foreground hover:text-blue-400 hover:border-blue-500/30"
-              }`}
+              className={`canvas-toolbar-btn ${showDiffPanel ? "canvas-toolbar-btn-active" : ""}`}
+              title="Execution diff"
             >
               <GitCompare className="w-3.5 h-3.5" />
-              Diff
               {previousRunRef.current && (
                 <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
               )}
             </button>
           )}
-          {/* Zoom Controls */}
-          <div className="flex items-center border border-border/40 bg-card/10 rounded-xl overflow-hidden">
-            <button
-              onClick={() => reactFlowInstance?.zoomOut({ duration: 300 })}
-              className="p-2 hover:bg-muted/60 text-muted-foreground hover:text-foreground transition-all border-r border-border/30"
-              title="Zoom Out (-)"
-            >
-              <ZoomOut className="w-3.5 h-3.5" />
-            </button>
-            <button
-              onClick={() => reactFlowInstance?.zoomIn({ duration: 300 })}
-              className="p-2 hover:bg-muted/60 text-muted-foreground hover:text-foreground transition-all"
-              title="Zoom In (+)"
-            >
-              <ZoomIn className="w-3.5 h-3.5" />
-            </button>
-          </div>
 
+          <div className="canvas-toolbar-divider" />
+
+          {/* Canvas group */}
           <button
             onClick={autoLayout}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border border-border/40 bg-card/10 hover:bg-muted/60 text-muted-foreground hover:text-foreground transition-all"
-            title="Auto-arrange nodes in lanes"
+            className="canvas-toolbar-btn"
+            title="Auto-arrange nodes"
           >
             <LayoutGrid className="w-3.5 h-3.5" />
-            Auto Layout
           </button>
           <button
             onClick={handleClear}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border border-border/40 bg-card/10 hover:bg-muted/60 text-muted-foreground hover:text-foreground transition-all"
+            className="canvas-toolbar-btn"
+            title="Clear canvas"
           >
             <Trash2 className="w-3.5 h-3.5" />
-            Clear
           </button>
+
+          <div className="canvas-toolbar-divider" />
+
+          {/* Primary group */}
           <button
             onClick={handleSave}
             disabled={isSaving}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold border border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 transition-all disabled:opacity-50"
+            className="canvas-toolbar-btn disabled:opacity-50"
+            title="Save workflow"
           >
             {isSaving ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -1541,7 +1555,8 @@ const AgentCanvas: React.FC = () => {
           <button
             onClick={handleExecute}
             disabled={isExecuting}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-violet-600 to-purple-600 text-white hover:from-violet-500 hover:to-purple-500 transition-all shadow-md shadow-violet-500/20 disabled:opacity-50"
+            className={`canvas-toolbar-btn canvas-toolbar-primary disabled:opacity-50 ${isExecuting ? "canvas-run-active" : ""}`}
+            title="Execute workflow"
           >
             {isExecuting ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -1553,7 +1568,7 @@ const AgentCanvas: React.FC = () => {
         </div>
       </div>
 
-      {/* Main layout: Sidebar + Canvas */}
+      {/* ═══ Main Layout: Sidebar + Canvas ═══ */}
       <div className="flex-1 flex overflow-hidden relative">
         <CanvasSidebar
           agents={agents}
@@ -1574,14 +1589,13 @@ const AgentCanvas: React.FC = () => {
           onDeleteWorkflow={handleDeleteWorkflow}
           loadingWorkflows={loadingWorkflows}
           nodeCount={nodes.length}
-          // ── Crazy feature node adders ───────────────────────
           onAddLoopNode={addLoopNode}
           onAddSplitNode={addSplitNode}
           onAddRetryNode={addRetryNode}
           onAddMemoryNode={addMemoryNode}
         />
 
-        {/* React Flow Canvas */}
+        {/* ═══ React Flow Canvas ═══ */}
         <div
           ref={reactFlowWrapper}
           className="flex-1 relative"
@@ -1604,19 +1618,16 @@ const AgentCanvas: React.FC = () => {
             minZoom={0.2}
             maxZoom={2}
             deleteKeyCode={["Backspace", "Delete"]}
-            className="bg-background/25"
+            className="!bg-transparent"
           >
             <Background
               variant={BackgroundVariant.Dots}
-              gap={12}
+              gap={20}
               size={1}
-            />
-            <Controls
-              className="!bg-card/60 !border-border/20 !rounded-xl !shadow-xl !backdrop-blur-xl"
-              position="bottom-right"
+              color="hsla(250, 40%, 40%, 0.12)"
             />
             <MiniMap
-              className="!bg-card/60 !border-border/20 !rounded-xl !shadow-xl !backdrop-blur-xl"
+              className="!bg-[hsla(230,15%,8%,0.75)] !border-[hsla(250,25%,25%,0.3)] !rounded-xl !shadow-xl !backdrop-blur-xl"
               nodeColor={(node) => {
                 if (node.type === "inputNode") return "hsl(145, 70%, 45%)";
                 if (node.type === "outputNode") return "hsl(200, 80%, 50%)";
@@ -1628,37 +1639,58 @@ const AgentCanvas: React.FC = () => {
                 if (node.type === "noteNode") return "hsl(45, 80%, 55%)";
                 if (node.type === "httpNode") return "hsl(170, 80%, 45%)";
                 if (node.type === "transformNode") return "hsl(295, 80%, 50%)";
+                if (node.type === "loopNode") return "hsl(25, 85%, 55%)";
+                if (node.type === "splitNode") return "hsl(150, 70%, 50%)";
+                if (node.type === "retryNode") return "hsl(350, 75%, 55%)";
+                if (node.type === "memoryNode") return "hsl(280, 70%, 60%)";
                 return (
                   (node.data?.agentColor as string) || "hsl(258, 70%, 60%)"
                 );
               }}
-              maskColor="hsla(0, 0%, 0%, 0.7)"
-              position="top-right"
+              maskColor="hsla(230, 15%, 4%, 0.75)"
+              position="bottom-right"
+              style={{ width: 160, height: 100 }}
             />
           </ReactFlow>
 
-          {/* Empty state */}
+          {/* ── Empty State ──────────────────────────────── */}
           {nodes.length === 0 && (
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10 select-none">
-              <div className="flex flex-col items-center gap-4 text-center max-w-xs">
-                <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center shadow-lg shadow-primary/5">
-                  <Sparkles className="w-7 h-7 text-primary" />
+            <div className="canvas-empty select-none">
+              <div className="canvas-empty-inner animate-fade-in-up">
+                <div className="canvas-empty-orb">
+                  <Sparkles className="w-8 h-8 text-violet-400/70" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-foreground/80 mb-1">
+                  <h3 className="canvas-empty-title mb-2">
                     Build Your Agent Canvas
                   </h3>
-                  <p className="text-xs text-muted-foreground/50 leading-relaxed">
-                    Drag agents from the sidebar, add Input &amp; Output
-                    nodes, then wire them together to create powerful
-                    multi-agent workflows.
+                  <p className="canvas-empty-desc">
+                    Add nodes from the sidebar, connect them together, and
+                    create powerful multi-agent workflows that run automatically.
                   </p>
+                </div>
+                <div className="canvas-empty-actions">
+                  <button
+                    onClick={addInputNode}
+                    className="canvas-toolbar-btn"
+                    style={{ borderColor: "hsla(145, 60%, 45%, 0.3)", color: "hsl(145, 60%, 55%)" }}
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    Add Input
+                  </button>
+                  <button
+                    onClick={() => setIsAiModalOpen(true)}
+                    className="canvas-toolbar-btn canvas-toolbar-primary"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    AI Builder
+                  </button>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Results panel */}
+          {/* ── Results Panel ────────────────────────────── */}
           {showResults && (
             <CanvasResultPanel
               result={executionResult}
@@ -1668,7 +1700,7 @@ const AgentCanvas: React.FC = () => {
             />
           )}
 
-          {/* ── Webhook Panel ────────────────────────────────── */}
+          {/* ── Webhook Panel ────────────────────────────── */}
           {showWebhookPanel && (
             <WebhookPanel
               workflowId={currentWorkflowId}
@@ -1676,7 +1708,7 @@ const AgentCanvas: React.FC = () => {
             />
           )}
 
-          {/* ── Execution Diff Panel ─────────────────────────── */}
+          {/* ── Execution Diff Panel ─────────────────────── */}
           {showDiffPanel && executionResult && (
             <ExecutionDiffPanel
               currentResult={executionResult.final_output || ""}
@@ -1690,99 +1722,117 @@ const AgentCanvas: React.FC = () => {
         </div>
       </div>
 
-      {/* AI Workflow Generator Modal */}
+      {/* ═══ AI Workflow Generator Modal ═══ */}
       {isAiModalOpen && (
-        <div 
+        <div
           onClick={() => {
             if (!generateMutation.isPending) {
               setIsAiModalOpen(false);
               setAiPrompt("");
             }
           }}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/85 backdrop-blur-md transition-all duration-300"
+          className="canvas-modal-backdrop"
+          role="dialog"
+          aria-modal="true"
+          aria-label="AI Workflow Builder"
         >
-          <div 
+          <div
             onClick={(e) => e.stopPropagation()}
-            className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-border/40 bg-card/90 p-6 shadow-2xl backdrop-blur-2xl transition-all scale-100 flex flex-col gap-4"
+            className="canvas-modal animate-fade-in"
           >
-            
             {/* Header */}
             <div className="flex items-start justify-between gap-4">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 via-fuchsia-500 to-pink-500 flex items-center justify-center shadow-lg shadow-violet-500/25 animate-pulse">
-                  <Sparkles className="w-4 h-4 text-white" />
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 via-fuchsia-500 to-pink-500 flex items-center justify-center shadow-lg shadow-violet-500/25">
+                  <Sparkles className="w-4.5 h-4.5 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-foreground">
+                  <h3 className="text-base font-bold text-white">
                     AI Workflow Builder
                   </h3>
-                  <p className="text-xs text-muted-foreground">
-                    Describe your automated pipeline and watch it design itself.
+                  <p className="text-xs text-white/40">
+                    Describe your pipeline and watch it build itself.
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* Warning if there's existing canvas content */}
+            {/* Warning if canvas has content */}
             {nodes.length > 0 && (
-              <div className="px-3.5 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-500 text-[10px] leading-relaxed flex items-center gap-2">
-                <span className="shrink-0 font-bold">⚠️ Warning:</span>
-                <span>Generating will replace your current canvas. Make sure you save any changes first.</span>
+              <div className="px-3.5 py-2.5 rounded-lg bg-amber-500/8 border border-amber-500/15 text-amber-400/80 text-[11px] leading-relaxed flex items-center gap-2">
+                <span className="shrink-0 font-bold">⚠️</span>
+                <span>Generating will replace your current canvas. Save first.</span>
               </div>
             )}
 
             {/* Prompt input */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                Describe the workflow you want to build
+            <div className="flex flex-col gap-2">
+              <label className="text-[10px] font-bold text-white/30 uppercase tracking-wider">
+                Describe the workflow
               </label>
               <textarea
                 value={aiPrompt}
                 onChange={(e) => setAiPrompt(e.target.value)}
                 placeholder="e.g. Create a workflow that runs daily and feeds my research trends to a news analyst agent, then mails me a PDF report."
                 disabled={generateMutation.isPending}
-                className="w-full min-h-[110px] rounded-xl border border-border/40 bg-background/50 hover:bg-background/85 focus:bg-background/85 p-3.5 text-xs text-foreground placeholder:text-muted-foreground/45 focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/50 outline-none transition-all resize-none shadow-inner"
+                className="w-full min-h-[110px] rounded-xl border border-[hsla(250,20%,25%,0.4)] bg-[hsla(230,15%,6%,0.6)] hover:bg-[hsla(230,15%,8%,0.6)] focus:bg-[hsla(230,15%,8%,0.6)] p-3.5 text-xs text-white placeholder:text-white/25 focus:border-[hsla(250,50%,55%,0.5)] focus:ring-1 focus:ring-[hsla(250,50%,55%,0.3)] outline-none transition-all resize-none"
+                aria-label="Workflow description"
               />
             </div>
 
             {/* Suggestions */}
             {!generateMutation.isPending && (
-              <div className="flex flex-col gap-1.5">
-                <span className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider">
-                  Suggestions to try:
+              <div className="flex flex-col gap-2">
+                <span className="text-[10px] font-bold text-white/25 uppercase tracking-wider">
+                  Try these:
                 </span>
                 <div className="flex flex-col gap-1.5">
                   <button
                     onClick={() => setAiPrompt("Create a scheduler that runs daily and feeds my research trends to a news analyst agent, then mails me a PDF report.")}
-                    className="text-left text-[11px] text-muted-foreground hover:text-foreground hover:bg-muted/30 px-2.5 py-1.5 rounded-lg border border-border/10 bg-card/25 transition-all text-ellipsis overflow-hidden whitespace-nowrap"
+                    className="text-left text-[11px] text-white/40 hover:text-white/80 hover:bg-white/5 px-3 py-2 rounded-lg border border-white/5 transition-all"
                   >
                     💡 Daily trends email digest in PDF format
                   </button>
                   <button
                     onClick={() => setAiPrompt("Ask an email classifier agent to organize incoming prompts and notify my Telegram channel if it is urgent.")}
-                    className="text-left text-[11px] text-muted-foreground hover:text-foreground hover:bg-muted/30 px-2.5 py-1.5 rounded-lg border border-border/10 bg-card/25 transition-all text-ellipsis overflow-hidden whitespace-nowrap"
+                    className="text-left text-[11px] text-white/40 hover:text-white/80 hover:bg-white/5 px-3 py-2 rounded-lg border border-white/5 transition-all"
                   >
-                    💡 Sort messages & send Telegram alerts for urgent items
+                    💡 Sort messages &amp; send Telegram alerts for urgent items
                   </button>
                 </div>
               </div>
             )}
 
-            {/* Progress steps when generating */}
+            {/* Progress Stepper when generating */}
             {generateMutation.isPending && (
-              <div className="py-2 flex flex-col gap-2 bg-violet-500/5 border border-violet-500/10 rounded-xl p-3.5 animate-pulse">
+              <div className="py-3 flex flex-col gap-3 bg-violet-500/5 border border-violet-500/10 rounded-xl p-4">
                 <div className="flex items-center gap-2 text-xs font-bold text-violet-400">
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  Generating Canvas Workflow...
+                  Generating Canvas Workflow…
                 </div>
-                <div className="text-[10px] text-muted-foreground/75 leading-relaxed">
-                  The AI is checking available custom agents, planning the pipeline logic, placing node structures, and aligning grid coordinates.
+                <div className="flex flex-col gap-2 pl-1">
+                  <div className="canvas-step canvas-step-done">
+                    <div className="canvas-step-dot" />
+                    <span>Analyzing available agents</span>
+                  </div>
+                  <div className="canvas-step canvas-step-active">
+                    <div className="canvas-step-dot" />
+                    <span>Planning pipeline logic</span>
+                  </div>
+                  <div className="canvas-step">
+                    <div className="canvas-step-dot" />
+                    <span>Placing node structures</span>
+                  </div>
+                  <div className="canvas-step">
+                    <div className="canvas-step-dot" />
+                    <span>Aligning grid coordinates</span>
+                  </div>
                 </div>
               </div>
             )}
 
             {/* Footer Buttons */}
-            <div className="flex items-center justify-end gap-2 mt-2">
+            <div className="flex items-center justify-end gap-2 mt-1">
               <button
                 type="button"
                 onClick={() => {
@@ -1790,7 +1840,7 @@ const AgentCanvas: React.FC = () => {
                   setAiPrompt("");
                 }}
                 disabled={generateMutation.isPending}
-                className="px-3 py-2 rounded-xl text-xs font-semibold border border-border/40 hover:bg-muted text-muted-foreground hover:text-foreground transition-all"
+                className="canvas-toolbar-btn"
               >
                 Cancel
               </button>
@@ -1798,7 +1848,7 @@ const AgentCanvas: React.FC = () => {
                 type="button"
                 onClick={handleGenerateWorkflow}
                 disabled={generateMutation.isPending || !aiPrompt.trim()}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-violet-600 to-purple-600 text-white hover:from-violet-500 hover:to-purple-500 disabled:opacity-40 disabled:pointer-events-none transition-all shadow-md shadow-violet-500/20"
+                className="canvas-toolbar-btn canvas-toolbar-primary disabled:opacity-40 disabled:pointer-events-none"
               >
                 {generateMutation.isPending ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -1808,7 +1858,6 @@ const AgentCanvas: React.FC = () => {
                 Generate Workflow
               </button>
             </div>
-
           </div>
         </div>
       )}
@@ -1817,3 +1866,4 @@ const AgentCanvas: React.FC = () => {
 };
 
 export default AgentCanvas;
+

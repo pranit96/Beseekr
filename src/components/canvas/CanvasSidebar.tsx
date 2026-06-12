@@ -19,6 +19,8 @@ import {
   GitFork,
   ShieldCheck,
   Brain,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import type { Agent, CanvasWorkflow } from "@/types/agent";
 
@@ -51,6 +53,15 @@ interface CanvasSidebarProps {
   onAddMemoryNode?: () => void;
 }
 
+/* ── Node definition for the grid ────────────────────────────────── */
+interface NodeDef {
+  label: string;
+  icon: React.ElementType;
+  onClick: () => void;
+  color: string;
+  colorFg: string;
+}
+
 export const CanvasSidebar: React.FC<CanvasSidebarProps> = ({
   agents,
   savedWorkflows,
@@ -77,6 +88,7 @@ export const CanvasSidebar: React.FC<CanvasSidebarProps> = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<"nodes" | "saved">("nodes");
+  const [collapsed, setCollapsed] = useState(false);
 
   const filteredAgents = agents.filter(
     (a) =>
@@ -84,21 +96,106 @@ export const CanvasSidebar: React.FC<CanvasSidebarProps> = ({
       (a.domain || "").toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
+  /* ── Node categories ───────────────────────────────── */
+  const coreNodes: NodeDef[] = [
+    { label: "Input", icon: MessageSquareText, onClick: onAddInputNode, color: "hsla(145, 55%, 42%, 0.15)", colorFg: "hsl(145, 60%, 55%)" },
+    { label: "Output", icon: FileOutput, onClick: onAddOutputNode, color: "hsla(200, 70%, 50%, 0.15)", colorFg: "hsl(200, 75%, 60%)" },
+    { label: "Email", icon: Mail, onClick: onAddEmailNode, color: "hsla(340, 65%, 52%, 0.15)", colorFg: "hsl(340, 70%, 62%)" },
+    { label: "Schedule", icon: Clock, onClick: onAddScheduleNode, color: "hsla(35, 75%, 52%, 0.15)", colorFg: "hsl(35, 80%, 62%)" },
+    { label: "Telegram", icon: Send, onClick: onAddTelegramNode, color: "hsla(200, 80%, 48%, 0.15)", colorFg: "hsl(200, 80%, 58%)" },
+    { label: "HTTP", icon: Globe, onClick: onAddHttpNode, color: "hsla(170, 70%, 42%, 0.15)", colorFg: "hsl(170, 75%, 52%)" },
+  ];
+
+  const logicNodes: NodeDef[] = [
+    { label: "IF / Cond", icon: Split, onClick: onAddConditionalNode, color: "hsla(190, 70%, 48%, 0.15)", colorFg: "hsl(190, 75%, 58%)" },
+    { label: "Merge", icon: Merge, onClick: onAddMergeNode, color: "hsla(235, 65%, 55%, 0.15)", colorFg: "hsl(235, 70%, 65%)" },
+    { label: "Transform", icon: Zap, onClick: onAddTransformNode, color: "hsla(295, 65%, 50%, 0.15)", colorFg: "hsl(295, 70%, 62%)" },
+    { label: "Note", icon: StickyNote, onClick: onAddNoteNode, color: "hsla(45, 70%, 50%, 0.15)", colorFg: "hsl(45, 75%, 60%)" },
+  ];
+
+  const advancedNodes: NodeDef[] = [
+    { label: "Loop", icon: RefreshCw, onClick: () => onAddLoopNode?.(), color: "hsla(25, 80%, 50%, 0.15)", colorFg: "hsl(25, 80%, 60%)" },
+    { label: "Split", icon: GitFork, onClick: () => onAddSplitNode?.(), color: "hsla(150, 65%, 48%, 0.15)", colorFg: "hsl(150, 70%, 55%)" },
+    { label: "Retry", icon: ShieldCheck, onClick: () => onAddRetryNode?.(), color: "hsla(350, 70%, 52%, 0.15)", colorFg: "hsl(350, 70%, 62%)" },
+    { label: "Memory", icon: Brain, onClick: () => onAddMemoryNode?.(), color: "hsla(280, 60%, 55%, 0.15)", colorFg: "hsl(280, 65%, 65%)" },
+  ];
+
+  const renderNodeBtn = (n: NodeDef) => (
+    <button
+      key={n.label}
+      onClick={n.onClick}
+      className="canvas-node-btn"
+      style={{ "--node-color": n.color, "--node-color-fg": n.colorFg } as React.CSSProperties}
+      title={n.label}
+    >
+      <div className="canvas-node-btn-icon">
+        <n.icon className="w-3.5 h-3.5" />
+      </div>
+      {!collapsed && <span>{n.label}</span>}
+    </button>
+  );
+
+  /* ── Collapsed icon strip ─────────────────────────── */
+  if (collapsed) {
+    return (
+      <aside
+        className="canvas-sidebar canvas-sidebar-collapsed"
+        role="complementary"
+        aria-label="Canvas sidebar collapsed"
+      >
+        <button
+          onClick={() => setCollapsed(false)}
+          className="canvas-sidebar-toggle"
+          aria-label="Expand sidebar"
+        >
+          <ChevronRight className="w-3.5 h-3.5" />
+        </button>
+        <div className="flex flex-col items-center gap-1 py-3 overflow-y-auto custom-scrollbar">
+          {[...coreNodes, ...logicNodes, ...advancedNodes].map((n) => (
+            <button
+              key={n.label}
+              onClick={n.onClick}
+              className="w-9 h-9 rounded-lg flex items-center justify-center transition-all hover:scale-110"
+              style={{ background: n.color, color: n.colorFg }}
+              title={n.label}
+            >
+              <n.icon className="w-3.5 h-3.5" />
+            </button>
+          ))}
+        </div>
+      </aside>
+    );
+  }
+
+  /* ── Expanded panel ───────────────────────────────── */
   return (
-    <aside className="w-[280px] shrink-0 h-full border-r border-border/30 bg-card/30 backdrop-blur-xl flex flex-col overflow-hidden">
+    <aside
+      className="canvas-sidebar canvas-sidebar-expanded"
+      role="complementary"
+      aria-label="Canvas sidebar"
+    >
+      {/* Collapse toggle */}
+      <button
+        onClick={() => setCollapsed(true)}
+        className="canvas-sidebar-toggle"
+        aria-label="Collapse sidebar"
+      >
+        <ChevronLeft className="w-3.5 h-3.5" />
+      </button>
+
       {/* Tab header */}
-      <div className="flex border-b border-border/20">
+      <div className="flex border-b border-white/5">
         <button
           onClick={() => setActiveTab("nodes")}
           className={`flex-1 px-4 py-3 text-xs font-semibold tracking-wide transition-all ${
             activeTab === "nodes"
-              ? "text-primary border-b-2 border-primary bg-primary/5"
-              : "text-muted-foreground/60 hover:text-muted-foreground"
+              ? "text-violet-400 border-b-2 border-violet-500 bg-violet-500/5"
+              : "text-white/35 hover:text-white/60"
           }`}
         >
           Nodes
           {nodeCount > 0 && (
-            <span className="ml-1.5 text-[9px] font-bold bg-primary/15 text-primary/70 px-1.5 py-0.5 rounded-md">
+            <span className="ml-1.5 text-[9px] font-bold bg-violet-500/15 text-violet-400/70 px-1.5 py-0.5 rounded-md">
               {nodeCount}
             </span>
           )}
@@ -107,8 +204,8 @@ export const CanvasSidebar: React.FC<CanvasSidebarProps> = ({
           onClick={() => setActiveTab("saved")}
           className={`flex-1 px-4 py-3 text-xs font-semibold tracking-wide transition-all ${
             activeTab === "saved"
-              ? "text-primary border-b-2 border-primary bg-primary/5"
-              : "text-muted-foreground/60 hover:text-muted-foreground"
+              ? "text-violet-400 border-b-2 border-violet-500 bg-violet-500/5"
+              : "text-white/35 hover:text-white/60"
           }`}
         >
           Saved ({savedWorkflows.length})
@@ -117,167 +214,65 @@ export const CanvasSidebar: React.FC<CanvasSidebarProps> = ({
 
       {activeTab === "nodes" ? (
         <div className="flex-1 overflow-y-auto custom-scrollbar">
-          {/* Special nodes */}
+          {/* ── Core Flow ───────────────────────────── */}
           <div className="px-3 pt-3 pb-2">
-            <p className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-widest mb-2 px-1">
-              Flow Nodes
-            </p>
-            <div className="grid grid-cols-2 gap-1.5">
-              <button
-                onClick={onAddInputNode}
-                className="flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl border border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500/10 hover:border-emerald-500/40 transition-all text-[11px] font-semibold text-emerald-400"
-              >
-                <MessageSquareText className="w-3.5 h-3.5" />
-                Input
-              </button>
-              <button
-                onClick={onAddOutputNode}
-                className="flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl border border-sky-500/20 bg-sky-500/5 hover:bg-sky-500/10 hover:border-sky-500/40 transition-all text-[11px] font-semibold text-sky-400"
-              >
-                <FileOutput className="w-3.5 h-3.5" />
-                Output
-              </button>
-              <button
-                onClick={onAddEmailNode}
-                className="flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl border border-rose-500/20 bg-rose-500/5 hover:bg-rose-500/10 hover:border-rose-500/40 transition-all text-[11px] font-semibold text-rose-400"
-              >
-                <Mail className="w-3.5 h-3.5" />
-                Email
-              </button>
-              <button
-                onClick={onAddScheduleNode}
-                className="flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl border border-amber-500/20 bg-amber-500/5 hover:bg-amber-500/10 hover:border-amber-500/40 transition-all text-[11px] font-semibold text-amber-400"
-              >
-                <Clock className="w-3.5 h-3.5" />
-                Schedule
-              </button>
-              <button
-                onClick={onAddTelegramNode}
-                className="col-span-2 flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl border border-sky-500/20 bg-sky-500/5 hover:bg-sky-500/10 hover:border-sky-500/40 transition-all text-[11px] font-semibold text-sky-400"
-              >
-                <Send className="w-3.5 h-3.5" />
-                Telegram Bot
-              </button>
+            <p className="canvas-section-label">Core Flow</p>
+            <div className="grid grid-cols-3 gap-1.5">
+              {coreNodes.map(renderNodeBtn)}
             </div>
           </div>
 
-          {/* Logic nodes */}
-          <div className="px-3 pb-3 border-b border-border/10">
-            <p className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-widest mb-2 px-1">
-              Logic & Utility Nodes
-            </p>
-            <div className="grid grid-cols-2 gap-1.5">
-              <button
-                onClick={onAddConditionalNode}
-                className="flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl border border-cyan-500/20 bg-cyan-500/5 hover:bg-cyan-500/10 hover:border-cyan-500/40 transition-all text-[11px] font-semibold text-cyan-400"
-              >
-                <Split className="w-3.5 h-3.5" />
-                IF / Cond
-              </button>
-              <button
-                onClick={onAddMergeNode}
-                className="flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl border border-indigo-500/20 bg-indigo-500/5 hover:bg-indigo-500/10 hover:border-indigo-500/40 transition-all text-[11px] font-semibold text-indigo-400"
-              >
-                <Merge className="w-3.5 h-3.5" />
-                Merge
-              </button>
-              <button
-                onClick={onAddTransformNode}
-                className="flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl border border-fuchsia-500/20 bg-fuchsia-500/5 hover:bg-fuchsia-500/10 hover:border-fuchsia-500/40 transition-all text-[11px] font-semibold text-fuchsia-400"
-              >
-                <Zap className="w-3.5 h-3.5" />
-                Transform
-              </button>
-              <button
-                onClick={onAddHttpNode}
-                className="flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl border border-teal-500/20 bg-teal-500/5 hover:bg-teal-500/10 hover:border-teal-500/40 transition-all text-[11px] font-semibold text-teal-400"
-              >
-                <Globe className="w-3.5 h-3.5" />
-                HTTP Req
-              </button>
-              <button
-                onClick={onAddNoteNode}
-                className="col-span-2 flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl border border-amber-500/20 bg-amber-500/5 hover:bg-amber-500/10 hover:border-amber-500/40 transition-all text-[11px] font-semibold text-amber-400"
-              >
-                <StickyNote className="w-3.5 h-3.5" />
-                Sticky Note
-              </button>
-            </div>
-          </div>
-
-          {/* Advanced & Loops */}
-          <div className="px-3 pb-3 border-b border-border/10">
-            <p className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-widest mb-2 px-1">
-              Advanced & Loops
-            </p>
-            <div className="grid grid-cols-2 gap-1.5">
-              <button
-                onClick={onAddLoopNode}
-                className="flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl border border-amber-500/20 bg-amber-500/5 hover:bg-amber-500/10 hover:border-amber-500/40 transition-all text-[11px] font-semibold text-amber-400"
-              >
-                <RefreshCw className="w-3.5 h-3.5" />
-                Loop
-              </button>
-              <button
-                onClick={onAddSplitNode}
-                className="flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl border border-cyan-500/20 bg-cyan-500/5 hover:bg-cyan-500/10 hover:border-cyan-500/40 transition-all text-[11px] font-semibold text-cyan-400"
-              >
-                <GitFork className="w-3.5 h-3.5" />
-                Split
-              </button>
-              <button
-                onClick={onAddRetryNode}
-                className="flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl border border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500/10 hover:border-emerald-500/40 transition-all text-[11px] font-semibold text-emerald-400"
-              >
-                <ShieldCheck className="w-3.5 h-3.5" />
-                Retry
-              </button>
-              <button
-                onClick={onAddMemoryNode}
-                className="flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl border border-violet-500/20 bg-violet-500/5 hover:bg-violet-500/10 hover:border-violet-500/40 transition-all text-[11px] font-semibold text-violet-400"
-              >
-                <Brain className="w-3.5 h-3.5" />
-                Memory
-              </button>
-            </div>
-          </div>
-
-          {/* Search */}
+          {/* ── Logic & Control ─────────────────────── */}
           <div className="px-3 pb-2">
+            <p className="canvas-section-label">Logic & Control</p>
+            <div className="grid grid-cols-4 gap-1.5">
+              {logicNodes.map(renderNodeBtn)}
+            </div>
+          </div>
+
+          {/* ── Advanced ────────────────────────────── */}
+          <div className="px-3 pb-3 border-b border-white/5">
+            <p className="canvas-section-label">Advanced</p>
+            <div className="grid grid-cols-4 gap-1.5">
+              {advancedNodes.map(renderNodeBtn)}
+            </div>
+          </div>
+
+          {/* ── Agent Search ────────────────────────── */}
+          <div className="px-3 pt-3 pb-2">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/40" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/25" />
               <input
                 placeholder="Search agents…"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 bg-background/40 border border-border/30 rounded-xl text-xs text-foreground placeholder-muted-foreground/40 outline-none focus:ring-1 focus:ring-primary/30 transition-all"
+                className="w-full pl-9 pr-3 py-2 bg-white/[0.03] border border-white/8 rounded-lg text-xs text-white placeholder-white/25 outline-none focus:ring-1 focus:ring-violet-500/30 focus:border-violet-500/30 transition-all"
+                aria-label="Search agents"
               />
             </div>
           </div>
 
-          {/* Agent list */}
+          {/* ── Agent list ──────────────────────────── */}
           <div className="px-3 pb-3">
-            <p className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-widest mb-2 px-1">
-              Agents ({filteredAgents.length})
-            </p>
-            <div className="space-y-1.5">
+            <p className="canvas-section-label">Agents ({filteredAgents.length})</p>
+            <div className="space-y-1">
               {filteredAgents.length === 0 ? (
-                <p className="text-xs text-muted-foreground/40 text-center py-6">
+                <p className="text-xs text-white/25 text-center py-6">
                   No agents found
                 </p>
               ) : (
                 filteredAgents.map((agent) => {
-                  const color = agent.color || "hsl(var(--primary))";
+                  const color = agent.color || "hsl(250, 70%, 60%)";
                   const initial = agent.name.charAt(0).toUpperCase();
                   return (
                     <div
                       key={agent.id}
                       draggable
                       onDragStart={(e) => onDragAgentStart(e, agent)}
-                      className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl border border-border/20 bg-background/30 hover:bg-primary/5 hover:border-primary/20 cursor-grab active:cursor-grabbing transition-all group"
+                      className="canvas-agent-card"
                     >
                       <div
-                        className="w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-bold text-white shrink-0 transition-transform group-hover:scale-105"
+                        className="canvas-agent-avatar"
                         style={{
                           background: `linear-gradient(135deg, ${color}, ${color}cc)`,
                         }}
@@ -285,10 +280,10 @@ export const CanvasSidebar: React.FC<CanvasSidebarProps> = ({
                         {initial}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold text-foreground truncate">
+                        <p className="text-xs font-semibold text-white/85 truncate">
                           {agent.name}
                         </p>
-                        <p className="text-[10px] text-muted-foreground/50 truncate">
+                        <p className="text-[10px] text-white/35 truncate">
                           {agent.domain || "General"}
                           {agent.tools && agent.tools.length > 0 &&
                             ` · ${agent.tools.length} tools`}
@@ -300,10 +295,10 @@ export const CanvasSidebar: React.FC<CanvasSidebarProps> = ({
                           e.stopPropagation();
                           onAddAgentNode?.(agent);
                         }}
-                        className="p-1 rounded-lg hover:bg-primary/10 transition-all shrink-0 cursor-pointer"
+                        className="p-1 rounded-lg hover:bg-violet-500/15 transition-all shrink-0 cursor-pointer"
                         title={`Add ${agent.name} to canvas`}
                       >
-                        <Plus className="w-3.5 h-3.5 text-muted-foreground/35 group-hover:text-primary transition-colors" />
+                        <Plus className="w-3.5 h-3.5 text-white/25 hover:text-violet-400 transition-colors" />
                       </button>
                     </div>
                   );
@@ -317,15 +312,15 @@ export const CanvasSidebar: React.FC<CanvasSidebarProps> = ({
           <div className="px-3 pt-3 pb-3 space-y-1.5">
             {loadingWorkflows ? (
               <div className="flex items-center justify-center py-8">
-                <div className="w-5 h-5 rounded-full border-2 border-primary/20 border-t-primary animate-spin" />
+                <div className="w-5 h-5 rounded-full border-2 border-violet-500/20 border-t-violet-500 animate-spin" />
               </div>
             ) : savedWorkflows.length === 0 ? (
               <div className="text-center py-10">
-                <FolderOpen className="w-8 h-8 text-muted-foreground/30 mx-auto mb-3" />
-                <p className="text-xs text-muted-foreground/50">
+                <FolderOpen className="w-8 h-8 text-white/15 mx-auto mb-3" />
+                <p className="text-xs text-white/35">
                   No saved workflows yet
                 </p>
-                <p className="text-[10px] text-muted-foreground/30 mt-1">
+                <p className="text-[10px] text-white/20 mt-1">
                   Build and save your first canvas
                 </p>
               </div>
@@ -333,18 +328,18 @@ export const CanvasSidebar: React.FC<CanvasSidebarProps> = ({
               savedWorkflows.map((wf) => (
                 <div
                   key={wf.id}
-                  className="flex items-start gap-2.5 px-3 py-3 rounded-xl border border-border/20 bg-background/30 hover:bg-primary/5 hover:border-primary/20 transition-all group cursor-pointer"
+                  className="canvas-wf-row group"
                   onClick={() => onLoadWorkflow(wf)}
                 >
-                  <div className="w-7 h-7 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
-                    <Sparkles className="w-3.5 h-3.5 text-primary" />
+                  <div className="w-7 h-7 rounded-lg bg-violet-500/10 border border-violet-500/15 flex items-center justify-center shrink-0">
+                    <Sparkles className="w-3.5 h-3.5 text-violet-400/60" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold text-foreground truncate">
+                    <p className="text-xs font-semibold text-white/80 truncate">
                       {wf.name}
                     </p>
                     <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-[10px] text-muted-foreground/50">
+                      <span className="text-[10px] text-white/30">
                         {wf.agent_ids?.length || 0} agents
                       </span>
                       {wf.last_run_status && (
@@ -362,7 +357,7 @@ export const CanvasSidebar: React.FC<CanvasSidebarProps> = ({
                       )}
                     </div>
                     {wf.last_run_at && (
-                      <p className="text-[9px] text-muted-foreground/30 mt-0.5 flex items-center gap-1">
+                      <p className="text-[9px] text-white/20 mt-0.5 flex items-center gap-1">
                         <Clock className="w-2.5 h-2.5" />
                         {new Date(wf.last_run_at).toLocaleDateString()}
                       </p>
@@ -373,7 +368,8 @@ export const CanvasSidebar: React.FC<CanvasSidebarProps> = ({
                       e.stopPropagation();
                       onDeleteWorkflow(wf.id);
                     }}
-                    className="p-1.5 rounded-lg text-muted-foreground/30 hover:text-red-400 hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100 shrink-0"
+                    className="p-1.5 rounded-lg text-white/15 hover:text-red-400 hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100 shrink-0"
+                    aria-label={`Delete ${wf.name}`}
                   >
                     <Trash2 className="w-3 h-3" />
                   </button>
