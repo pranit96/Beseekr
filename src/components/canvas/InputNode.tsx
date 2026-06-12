@@ -1,5 +1,5 @@
 import React, { memo, useRef, useState } from "react";
-import { Handle, Position, type NodeProps } from "@xyflow/react";
+import { Handle, Position, useReactFlow, type NodeProps } from "@xyflow/react";
 import {
   MessageSquareText,
   Type,
@@ -7,6 +7,7 @@ import {
   Table,
   Upload,
   Loader2,
+  Trash2,
 } from "lucide-react";
 import { apiClient } from "@/lib/api";
 
@@ -26,7 +27,7 @@ const INPUT_FORMATS = [
   { value: "file", label: "File", icon: Upload },
 ];
 
-const InputNode: React.FC<NodeProps> = ({ data, selected }) => {
+const InputNode: React.FC<NodeProps> = ({ id, data, selected }) => {
   const d = data as InputNodeData;
   const format = d.inputFormat || "text";
   const text = d.inputText || "";
@@ -46,6 +47,13 @@ const InputNode: React.FC<NodeProps> = ({ data, selected }) => {
           }
         })()
       : null;
+
+  const { setNodes } = useReactFlow();
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setNodes((nds) => nds.filter((n) => n.id !== id));
+  };
 
   const handleFileRead = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -138,6 +146,15 @@ const InputNode: React.FC<NodeProps> = ({ data, selected }) => {
               : charCount}
           </span>
         )}
+
+        {/* Delete button */}
+        <button
+          onClick={handleDelete}
+          className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg text-white/30 hover:text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/20 shrink-0 ml-auto cursor-pointer"
+          title="Delete Node"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+        </button>
       </div>
 
       {/* Format selector */}

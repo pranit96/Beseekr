@@ -1,6 +1,6 @@
 import React, { memo } from "react";
-import { Handle, Position, type NodeProps } from "@xyflow/react";
-import { Sparkles, Wrench } from "lucide-react";
+import { Handle, Position, useReactFlow, type NodeProps } from "@xyflow/react";
+import { Sparkles, Wrench, Trash2 } from "lucide-react";
 
 interface AgentNodeData {
   agentId?: string;
@@ -22,13 +22,20 @@ const PROVIDER_LABELS: Record<string, { label: string; color: string }> = {
   anthropic: { label: "Anthropic", color: "hsl(30,70%,55%)" },
 };
 
-const AgentNode: React.FC<NodeProps> = ({ data, selected }) => {
+const AgentNode: React.FC<NodeProps> = ({ id, data, selected }) => {
   const d = data as AgentNodeData;
   const color = d.agentColor || "hsl(258, 70%, 60%)";
   const initial = (d.agentName || "A").charAt(0).toUpperCase();
   const status = d.status || "idle";
   const provider = d.provider || "";
   const providerInfo = PROVIDER_LABELS[provider.toLowerCase()] || null;
+
+  const { setNodes } = useReactFlow();
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setNodes((nds) => nds.filter((n) => n.id !== id));
+  };
 
   const cardClass = [
     "canvas-node-card group relative min-w-[260px] max-w-[320px]",
@@ -106,6 +113,15 @@ const AgentNode: React.FC<NodeProps> = ({ data, selected }) => {
             )}
           </div>
         </div>
+
+        {/* Delete button */}
+        <button
+          onClick={handleDelete}
+          className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg text-white/30 hover:text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/20 shrink-0 ml-auto cursor-pointer"
+          title="Delete Node"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+        </button>
       </div>
 
       {/* Tools */}

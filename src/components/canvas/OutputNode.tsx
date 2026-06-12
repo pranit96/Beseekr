@@ -1,11 +1,12 @@
 import React, { memo } from "react";
-import { Handle, Position, type NodeProps } from "@xyflow/react";
+import { Handle, Position, useReactFlow, type NodeProps } from "@xyflow/react";
 import {
   FileOutput,
   FileText,
   FileSpreadsheet,
   FileType,
   AlignLeft,
+  Trash2,
 } from "lucide-react";
 
 interface OutputNodeData {
@@ -31,9 +32,16 @@ const FORMAT_OPTIONS = [
   { value: "docx", label: "DOCX", icon: FileType },
 ];
 
-const OutputNode: React.FC<NodeProps> = ({ data, selected }) => {
+const OutputNode: React.FC<NodeProps> = ({ id, data, selected }) => {
   const d = data as OutputNodeData;
   const format = d.outputFormat || "plain";
+
+  const { setNodes } = useReactFlow();
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setNodes((nds) => nds.filter((n) => n.id !== id));
+  };
 
   const cardClass = [
     "canvas-node-card group relative min-w-[240px] max-w-[300px]",
@@ -72,7 +80,7 @@ const OutputNode: React.FC<NodeProps> = ({ data, selected }) => {
         >
           <FileOutput className="w-4 h-4 text-white" />
         </div>
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <p className="text-xs font-bold text-white/90 tracking-tight">
             {d.label || "Output"}
           </p>
@@ -80,6 +88,15 @@ const OutputNode: React.FC<NodeProps> = ({ data, selected }) => {
             Final result format
           </p>
         </div>
+
+        {/* Delete button */}
+        <button
+          onClick={handleDelete}
+          className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg text-white/30 hover:text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/20 shrink-0 ml-auto cursor-pointer"
+          title="Delete Node"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+        </button>
       </div>
 
       {/* Format selector */}

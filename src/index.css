@@ -1951,4 +1951,9 @@
     border-radius: 16px;
     box-shadow: 0 8px 32px hsla(0, 0%, 0%, 0.4);
   }
+
+  /* ── Selection active crosshair cursor ───────────── */
+  .selection-active .react-flow__pane {
+    cursor: crosshair !important;
+  }
 }

@@ -20,6 +20,7 @@ import {
   type Node,
   type ReactFlowInstance,
   Panel,
+  SelectionMode,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useNavigate, useParams } from "react-router-dom";
@@ -37,6 +38,8 @@ import {
   Plus,
   Webhook,
   GitCompare,
+  Hand,
+  MousePointer,
 } from "lucide-react";
 import { GlobalHeader } from "@/components/GlobalHeader";
 import { CanvasSidebar } from "@/components/canvas/CanvasSidebar";
@@ -127,6 +130,7 @@ const AgentCanvas: React.FC = () => {
     workflowId || null,
   );
   const [isEditingName, setIsEditingName] = useState(false);
+  const [selectionModeActive, setSelectionModeActive] = useState(false);
   const nameInputRef = useRef<HTMLInputElement>(null);
 
   // Execution state
@@ -1456,31 +1460,55 @@ const AgentCanvas: React.FC = () => {
           </div>
         </div>
 
-        {/* Center: Zoom Controls */}
-        <div className="canvas-zoom-pill">
-          <button
-            onClick={() => reactFlowInstance?.zoomOut({ duration: 300 })}
-            className="canvas-zoom-btn"
-            aria-label="Zoom out"
-          >
-            <ZoomOut className="w-3.5 h-3.5" />
-          </button>
-          <div className="canvas-zoom-divider" />
-          <button
-            onClick={() => reactFlowInstance?.fitView({ duration: 400 })}
-            className="canvas-zoom-btn"
-            aria-label="Fit view"
-          >
-            <Maximize2 className="w-3.5 h-3.5" />
-          </button>
-          <div className="canvas-zoom-divider" />
-          <button
-            onClick={() => reactFlowInstance?.zoomIn({ duration: 300 })}
-            className="canvas-zoom-btn"
-            aria-label="Zoom in"
-          >
-            <ZoomIn className="w-3.5 h-3.5" />
-          </button>
+        {/* Center: Zoom and Mode Controls */}
+        <div className="flex items-center gap-2">
+          {/* Zoom Controls */}
+          <div className="canvas-zoom-pill">
+            <button
+              onClick={() => reactFlowInstance?.zoomOut({ duration: 300 })}
+              className="canvas-zoom-btn"
+              aria-label="Zoom out"
+            >
+              <ZoomOut className="w-3.5 h-3.5" />
+            </button>
+            <div className="canvas-zoom-divider" />
+            <button
+              onClick={() => reactFlowInstance?.fitView({ duration: 400 })}
+              className="canvas-zoom-btn"
+              aria-label="Fit view"
+            >
+              <Maximize2 className="w-3.5 h-3.5" />
+            </button>
+            <div className="canvas-zoom-divider" />
+            <button
+              onClick={() => reactFlowInstance?.zoomIn({ duration: 300 })}
+              className="canvas-zoom-btn"
+              aria-label="Zoom in"
+            >
+              <ZoomIn className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          {/* Mode Controls */}
+          <div className="canvas-zoom-pill">
+            <button
+              onClick={() => setSelectionModeActive(false)}
+              className={`canvas-zoom-btn ${!selectionModeActive ? "!bg-violet-500/20 !text-violet-400" : ""}`}
+              title="Pan Mode (Drag to pan)"
+              aria-label="Pan mode"
+            >
+              <Hand className="w-3.5 h-3.5" />
+            </button>
+            <div className="canvas-zoom-divider" />
+            <button
+              onClick={() => setSelectionModeActive(true)}
+              className={`canvas-zoom-btn ${selectionModeActive ? "!bg-violet-500/20 !text-violet-400" : ""}`}
+              title="Selection Mode (Drag to select nodes)"
+              aria-label="Selection mode"
+            >
+              <MousePointer className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
 
         {/* Right: Grouped Actions */}
@@ -1598,7 +1626,7 @@ const AgentCanvas: React.FC = () => {
         {/* ═══ React Flow Canvas ═══ */}
         <div
           ref={reactFlowWrapper}
-          className="flex-1 relative"
+          className={`flex-1 relative ${selectionModeActive ? "selection-active" : ""}`}
           onDragOver={onDragOver}
           onDrop={onDrop}
         >
@@ -1618,6 +1646,9 @@ const AgentCanvas: React.FC = () => {
             minZoom={0.2}
             maxZoom={2}
             deleteKeyCode={["Backspace", "Delete"]}
+            panOnDrag={!selectionModeActive}
+            selectionOnDrag={selectionModeActive}
+            selectionMode={SelectionMode.Partial}
             className="!bg-transparent"
           >
             <Background

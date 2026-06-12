@@ -1,6 +1,6 @@
 import React, { memo } from "react";
-import { Handle, Position, type NodeProps } from "@xyflow/react";
-import { Split, ChevronDown } from "lucide-react";
+import { Handle, Position, useReactFlow, type NodeProps } from "@xyflow/react";
+import { Split, ChevronDown, Trash2 } from "lucide-react";
 
 interface ConditionalNodeData {
   label?: string;
@@ -20,9 +20,16 @@ const RULE_TYPES = [
   { value: "length", label: "Length Exceeds" },
   { value: "ai", label: "AI Classify (LLM)" },
 ];
-const ConditionalNode: React.FC<NodeProps> = ({ data, selected }) => {
+const ConditionalNode: React.FC<NodeProps> = ({ id, data, selected }) => {
   const d = data as ConditionalNodeData;
   const ruleType = d.ruleType || "contains";
+
+  const { setNodes } = useReactFlow();
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setNodes((nds) => nds.filter((n) => n.id !== id));
+  };
 
   const cardClass = [
     "canvas-node-card group relative min-w-[280px] max-w-[340px]",
@@ -88,6 +95,15 @@ const ConditionalNode: React.FC<NodeProps> = ({ data, selected }) => {
             Route flow based on conditions
           </p>
         </div>
+
+        {/* Delete button */}
+        <button
+          onClick={handleDelete}
+          className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg text-white/30 hover:text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/20 shrink-0 ml-auto cursor-pointer"
+          title="Delete Node"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+        </button>
       </div>
 
       {/* Body / Configuration */}
