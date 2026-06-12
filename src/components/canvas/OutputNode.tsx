@@ -35,23 +35,33 @@ const OutputNode: React.FC<NodeProps> = ({ data, selected }) => {
   const d = data as OutputNodeData;
   const format = d.outputFormat || "plain";
 
+  const cardClass = [
+    "canvas-node-card group relative min-w-[240px] max-w-[300px]",
+    selected && "canvas-node-card-selected",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   return (
-    <div
-      className={`group relative min-w-[240px] max-w-[300px] rounded-2xl border transition-all duration-300 ${
-        selected
-          ? "border-sky-500/60 shadow-lg shadow-sky-500/20 bg-sky-500/[0.04]"
-          : "border-border/40 hover:border-sky-500/30 bg-card/60"
-      } backdrop-blur-xl`}
-    >
+    <div className={cardClass}>
+      {/* Accent strip */}
+      <div
+        className="canvas-node-accent"
+        style={{
+          background: "linear-gradient(90deg, hsl(200, 80%, 50%), transparent)",
+        }}
+      />
+
       {/* Input handle */}
       <Handle
         type="target"
         position={Position.Left}
-        className="!w-3.5 !h-3.5 !bg-sky-500 !border-2 !border-background !rounded-full !shadow-lg !shadow-sky-500/30"
+        className="canvas-handle !bg-sky-500"
+        style={{ "--handle-color": "hsla(200, 70%, 50%, 0.5)" } as React.CSSProperties}
       />
 
       {/* Header */}
-      <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border/20">
+      <div className="flex items-center gap-2.5 px-4 py-3 border-b border-white/5">
         <div
           className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
           style={{
@@ -63,10 +73,10 @@ const OutputNode: React.FC<NodeProps> = ({ data, selected }) => {
           <FileOutput className="w-4 h-4 text-white" />
         </div>
         <div className="min-w-0">
-          <p className="text-xs font-bold text-foreground tracking-tight">
+          <p className="text-xs font-bold text-white/90 tracking-tight">
             {d.label || "Output"}
           </p>
-          <p className="text-[10px] text-muted-foreground/60">
+          <p className="text-[10px] text-white/35">
             Final result format
           </p>
         </div>
@@ -85,7 +95,7 @@ const OutputNode: React.FC<NodeProps> = ({ data, selected }) => {
                 className={`flex flex-col items-center gap-1 px-2 py-2 rounded-lg text-[10px] font-medium transition-all ${
                   isActive
                     ? "bg-sky-500/15 border border-sky-500/40 text-sky-400"
-                    : "bg-muted/20 border border-border/20 text-muted-foreground/60 hover:border-sky-500/20 hover:text-muted-foreground"
+                    : "bg-white/[0.02] border border-white/8 text-white/40 hover:border-sky-500/20 hover:text-white/60"
                 }`}
               >
                 <Icon className="w-3.5 h-3.5" />
@@ -98,8 +108,8 @@ const OutputNode: React.FC<NodeProps> = ({ data, selected }) => {
 
       {/* JSON Conversion Mode selector */}
       {(format === "pdf" || format === "latex" || format === "plain" || format === "docx") && (
-        <div className="px-4 py-2.5 border-t border-border/10">
-          <label className="text-[9px] font-bold text-muted-foreground/70 uppercase tracking-wider block mb-1">
+        <div className="px-4 py-2.5 border-t border-white/5">
+          <label className="text-[9px] font-bold text-white/30 uppercase tracking-wider block mb-1">
             JSON Conversion Mode
           </label>
           <div className="grid grid-cols-2 gap-1.5">
@@ -108,7 +118,7 @@ const OutputNode: React.FC<NodeProps> = ({ data, selected }) => {
               className={`px-2 py-1 rounded-lg text-[9px] font-medium transition-all ${
                 (d.jsonMode || "table") === "table"
                   ? "bg-sky-500/15 border border-sky-500/40 text-sky-400"
-                  : "bg-muted/20 border border-border/20 text-muted-foreground/60 hover:border-sky-500/20"
+                  : "bg-white/[0.02] border border-white/8 text-white/40 hover:border-sky-500/20 hover:text-white/60"
               }`}
             >
               Table Format
@@ -118,7 +128,7 @@ const OutputNode: React.FC<NodeProps> = ({ data, selected }) => {
               className={`px-2 py-1 rounded-lg text-[9px] font-medium transition-all ${
                 d.jsonMode === "text"
                   ? "bg-sky-500/15 border border-sky-500/40 text-sky-400"
-                  : "bg-muted/20 border border-border/20 text-muted-foreground/60 hover:border-sky-500/20"
+                  : "bg-white/[0.02] border border-white/8 text-white/40 hover:border-sky-500/20 hover:text-white/60"
               }`}
             >
               Text List Format
@@ -128,15 +138,15 @@ const OutputNode: React.FC<NodeProps> = ({ data, selected }) => {
       )}
 
       {/* Email toggle & fields */}
-      <div className="border-t border-border/10 px-4 py-3 bg-muted/5 flex flex-col gap-2 rounded-b-2xl">
+      <div className="border-t border-white/5 px-4 py-3 bg-white/[0.01] flex flex-col gap-2 rounded-b-2xl">
         <label className="flex items-center gap-2 cursor-pointer">
           <input
             type="checkbox"
             checked={!!d.emailEnabled}
             onChange={(e) => d.onEmailToggleChange?.(e.target.checked)}
-            className="w-3 h-3 rounded border-border/40 text-sky-500 focus:ring-sky-500/30"
+            className="w-3.5 h-3.5 rounded border-white/10 text-sky-500 bg-white/[0.02] focus:ring-sky-500/30"
           />
-          <span className="text-[10px] font-medium text-muted-foreground select-none">
+          <span className="text-[10px] font-medium text-white/40 select-none">
             Send output copy to my email
           </span>
         </label>
@@ -147,14 +157,14 @@ const OutputNode: React.FC<NodeProps> = ({ data, selected }) => {
               value={d.emailTo || ""}
               onChange={(e) => d.onEmailToChange?.(e.target.value)}
               placeholder="Recipient Email (Default: Me)"
-              className="w-full bg-background/40 border border-border/30 rounded-lg px-2.5 py-1 text-[10px] text-foreground placeholder-muted-foreground/45 outline-none focus:ring-1 focus:ring-sky-500/40 focus:border-sky-500/40"
+              className="w-full bg-white/[0.02] border border-white/8 rounded-lg px-2.5 py-1 text-[10px] text-white placeholder-white/20 outline-none focus:ring-1 focus:ring-sky-500/40 focus:border-sky-500/40"
             />
             <input
               type="text"
               value={d.emailSubject || ""}
               onChange={(e) => d.onEmailSubjectChange?.(e.target.value)}
               placeholder="Email Subject"
-              className="w-full bg-background/40 border border-border/30 rounded-lg px-2.5 py-1 text-[10px] text-foreground placeholder-muted-foreground/40 outline-none focus:ring-1 focus:ring-sky-500/40 focus:border-sky-500/40"
+              className="w-full bg-white/[0.02] border border-white/8 rounded-lg px-2.5 py-1 text-[10px] text-white placeholder-white/20 outline-none focus:ring-1 focus:ring-sky-500/40 focus:border-sky-500/40"
             />
           </div>
         )}
@@ -164,7 +174,8 @@ const OutputNode: React.FC<NodeProps> = ({ data, selected }) => {
       <Handle
         type="source"
         position={Position.Right}
-        className="!w-3.5 !h-3.5 !bg-sky-500 !border-2 !border-background !rounded-full !shadow-lg !shadow-sky-500/30"
+        className="canvas-handle !bg-sky-500"
+        style={{ "--handle-color": "hsla(200, 70%, 50%, 0.5)" } as React.CSSProperties}
       />
     </div>
   );

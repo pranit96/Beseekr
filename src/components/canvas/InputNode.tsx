@@ -87,23 +87,33 @@ const InputNode: React.FC<NodeProps> = ({ data, selected }) => {
     }
   };
 
+  const cardClass = [
+    "canvas-node-card group relative min-w-[260px] max-w-[320px]",
+    selected && "canvas-node-card-selected",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   return (
-    <div
-      className={`group relative min-w-[260px] max-w-[320px] rounded-2xl border transition-all duration-300 ${
-        selected
-          ? "border-emerald-500/60 shadow-lg shadow-emerald-500/20 bg-emerald-500/[0.04]"
-          : "border-border/40 hover:border-emerald-500/30 bg-card/60"
-      } backdrop-blur-xl`}
-    >
+    <div className={cardClass}>
+      {/* Accent strip */}
+      <div
+        className="canvas-node-accent"
+        style={{
+          background: "linear-gradient(90deg, hsl(145, 70%, 45%), transparent)",
+        }}
+      />
+
       {/* Input handle */}
       <Handle
         type="target"
         position={Position.Left}
-        className="!w-3.5 !h-3.5 !bg-emerald-500 !border-2 !border-background !rounded-full !shadow-lg !shadow-emerald-500/30"
+        className="canvas-handle !bg-emerald-500"
+        style={{ "--handle-color": "hsla(145, 60%, 45%, 0.5)" } as React.CSSProperties}
       />
 
       {/* Header */}
-      <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border/20">
+      <div className="flex items-center gap-2.5 px-4 py-3 border-b border-white/5">
         <div
           className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
           style={{
@@ -115,14 +125,14 @@ const InputNode: React.FC<NodeProps> = ({ data, selected }) => {
           <MessageSquareText className="w-4 h-4 text-white" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-bold text-foreground tracking-tight">
+          <p className="text-xs font-bold text-white/90 tracking-tight">
             {d.label || "Input"}
           </p>
-          <p className="text-[10px] text-muted-foreground/60">User prompt</p>
+          <p className="text-[10px] text-white/35">User prompt</p>
         </div>
         {/* Char count badge */}
         {charCount > 0 && (
-          <span className="text-[9px] font-medium text-muted-foreground/40 bg-muted/20 px-1.5 py-0.5 rounded-md tabular-nums">
+          <span className="text-[9px] font-medium text-white/40 bg-white/[0.04] border border-white/8 px-1.5 py-0.5 rounded-md tabular-nums">
             {charCount > 999
               ? `${(charCount / 1000).toFixed(1)}k`
               : charCount}
@@ -143,7 +153,7 @@ const InputNode: React.FC<NodeProps> = ({ data, selected }) => {
                 className={`flex-1 flex items-center justify-center gap-1 px-1.5 py-1.5 rounded-lg text-[9px] font-semibold transition-all ${
                   active
                     ? "bg-emerald-500/15 border border-emerald-500/40 text-emerald-400"
-                    : "bg-muted/15 border border-border/15 text-muted-foreground/50 hover:border-emerald-500/20 hover:text-muted-foreground/70"
+                    : "bg-white/[0.02] border border-white/8 text-white/40 hover:border-emerald-500/20 hover:text-white/60"
                 }`}
               >
                 <Icon className="w-3 h-3" />
@@ -175,10 +185,10 @@ const InputNode: React.FC<NodeProps> = ({ data, selected }) => {
               </div>
             ) : text ? (
               <div className="space-y-1.5">
-                <div className="w-full bg-background/40 border border-border/30 rounded-xl px-3 py-2 text-[10px] text-foreground max-h-[80px] overflow-y-auto custom-scrollbar font-mono leading-relaxed whitespace-pre-wrap">
+                <div className="w-full bg-white/[0.02] border border-white/8 rounded-xl px-3 py-2 text-[10px] text-white/80 max-h-[80px] overflow-y-auto custom-scrollbar font-mono leading-relaxed whitespace-pre-wrap">
                   {text.slice(0, 500)}
                   {text.length > 500 && (
-                    <span className="text-muted-foreground/40">
+                    <span className="text-white/20">
                       …({text.length - 500} more chars)
                     </span>
                   )}
@@ -193,10 +203,10 @@ const InputNode: React.FC<NodeProps> = ({ data, selected }) => {
             ) : (
               <button
                 onClick={() => fileRef.current?.click()}
-                className="w-full flex flex-col items-center gap-1.5 px-3 py-4 border-2 border-dashed border-border/30 rounded-xl hover:border-emerald-500/30 hover:bg-emerald-500/5 transition-all cursor-pointer"
+                className="w-full flex flex-col items-center gap-1.5 px-3 py-4 border-2 border-dashed border-white/8 rounded-xl hover:border-emerald-500/30 hover:bg-emerald-500/5 transition-all cursor-pointer"
               >
-                <Upload className="w-5 h-5 text-muted-foreground/30" />
-                <span className="text-[10px] text-muted-foreground/40">
+                <Upload className="w-5 h-5 text-white/20" />
+                <span className="text-[10px] text-white/30">
                   Click to upload PDF, DOCX, CSV, TXT...
                 </span>
               </button>
@@ -220,14 +230,14 @@ const InputNode: React.FC<NodeProps> = ({ data, selected }) => {
                     : "Type your prompt here…"
               }
               rows={4}
-              className={`w-full bg-background/40 border rounded-xl px-3 py-2 text-xs text-foreground placeholder-muted-foreground/50 resize-none outline-none focus:ring-1 transition-all ${
+              className={`w-full bg-white/[0.03] border rounded-xl px-3 py-2 text-xs text-white placeholder-white/20 resize-none outline-none focus:ring-1 transition-all ${
                 format === "json" || format === "csv"
                   ? "font-mono text-[11px] leading-relaxed"
                   : ""
               } ${
                 isJsonValid === false
                   ? "border-red-500/40 focus:ring-red-500/30 focus:border-red-500/40"
-                  : "border-border/30 focus:ring-emerald-500/40 focus:border-emerald-500/40"
+                  : "border-white/8 focus:ring-emerald-500/40 focus:border-emerald-500/40"
               }`}
             />
             {/* JSON validation badge */}
@@ -250,7 +260,8 @@ const InputNode: React.FC<NodeProps> = ({ data, selected }) => {
       <Handle
         type="source"
         position={Position.Right}
-        className="!w-3.5 !h-3.5 !bg-emerald-500 !border-2 !border-background !rounded-full !shadow-lg !shadow-emerald-500/30"
+        className="canvas-handle !bg-emerald-500"
+        style={{ "--handle-color": "hsla(145, 60%, 45%, 0.5)" } as React.CSSProperties}
       />
     </div>
   );
