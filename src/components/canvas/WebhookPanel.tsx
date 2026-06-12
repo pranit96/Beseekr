@@ -37,7 +37,7 @@ export const WebhookPanel = memo(({ workflowId, onClose }: WebhookPanelProps) =>
     if (!workflowId) return;
     setLoading(true);
     try {
-      const res = await api.get(`/api/canvas/workflows/${workflowId}/webhook`);
+      const res = await api.get(`/api/canvas-workflows/${workflowId}/webhook`);
       if (res.data?.success && res.data.data) {
         setWebhookUrl(res.data.data.url);
         setSecret(res.data.data.secret);
@@ -56,7 +56,7 @@ export const WebhookPanel = memo(({ workflowId, onClose }: WebhookPanelProps) =>
     if (!workflowId) return;
     setLoading(true);
     try {
-      const res = await api.post(`/api/canvas/workflows/${workflowId}/webhook/generate`, {
+      const res = await api.post(`/api/canvas-workflows/${workflowId}/webhook/generate`, {
         hmac_algo: hmacAlgo,
       });
       if (res.data?.success) {
@@ -75,7 +75,7 @@ export const WebhookPanel = memo(({ workflowId, onClose }: WebhookPanelProps) =>
     if (!workflowId) return;
     setRotating(true);
     try {
-      const res = await api.post(`/api/canvas/workflows/${workflowId}/webhook/rotate`);
+      const res = await api.post(`/api/canvas-workflows/${workflowId}/webhook/rotate`);
       if (res.data?.success) {
         setSecret(res.data.data.secret);
         toast({ title: "Secret rotated", description: "New HMAC secret generated. Update your integrations." });
