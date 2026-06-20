@@ -1305,6 +1305,7 @@ class ApiClient {
     avatar_url?: string;
     language?: string;
     timezone?: string;
+    preferred_currency?: string;
   }) {
     this.clearCache();
     return this.request<{
@@ -1314,6 +1315,7 @@ class ApiClient {
       avatar_url?: string;
       language?: string;
       timezone?: string;
+      preferred_currency?: string;
     }>("/api/auth/profile", {
       method: "PATCH",
       body: JSON.stringify(profile),

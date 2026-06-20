@@ -116,8 +116,8 @@ export default function Profile() {
   useEffect(() => {
     if (user?.timezone) setTimezone(user.timezone);
     if (user?.language) setLanguage(user.language);
-    if ((user as any)?.preferred_currency) setPreferredCurrency((user as any).preferred_currency);
-  }, [user?.timezone, user?.language, (user as any)?.preferred_currency]);
+    if (user?.preferred_currency) setPreferredCurrency(user.preferred_currency);
+  }, [user?.timezone, user?.language, user?.preferred_currency]);
 
   const { toast } = useToast();
 
@@ -190,7 +190,7 @@ export default function Profile() {
         payload.language = language;
       }
 
-      const baselineCurrency = (user as any)?.preferred_currency || "USD";
+      const baselineCurrency = user?.preferred_currency || "USD";
       if (preferredCurrency !== baselineCurrency) {
         payload.preferred_currency = preferredCurrency;
       }
@@ -445,10 +445,10 @@ export default function Profile() {
                 disabled={
                   isUpdatingProfile ||
                   (fullName === (user?.full_name || user?.name || "") &&
-                    avatarUrl === ((user as any)?.avatar || null) &&
+                    avatarUrl === (user?.avatar || null) &&
                     timezone === (user?.timezone || detectedTimezone) &&
                     language === (user?.language || detectedLang) &&
-                    preferredCurrency === ((user as any)?.preferred_currency || "USD"))
+                    preferredCurrency === (user?.preferred_currency || "USD"))
                 }
               >
                 {isUpdatingProfile

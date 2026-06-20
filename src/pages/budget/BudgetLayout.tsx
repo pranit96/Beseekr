@@ -15,6 +15,7 @@ import {
   Target,
   Lightbulb,
   ChevronDown,
+  Coins,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -44,6 +45,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import { apiClient } from "@/lib/api";
 
 // ─── Constants ───────────────────────────────────────────────────
 const MONTHS = [
@@ -64,6 +66,14 @@ const MONTHS = [
 export const PREDEFINED_CATEGORIES = [
   "Housing", "Utilities", "Food/Groceries", "Transportation",
   "Entertainment", "Healthcare", "Salary", "Investment", "Refund", "Other",
+];
+
+const SUPPORTED_CURRENCIES = [
+  { code: "USD", symbol: "$", label: "USD ($)" },
+  { code: "INR", symbol: "₹", label: "INR (₹)" },
+  { code: "EUR", symbol: "€", label: "EUR (€)" },
+  { code: "GBP", symbol: "£", label: "GBP (£)" },
+  { code: "CAD", symbol: "CA$", label: "CAD (CA$)" },
 ];
 
 export const getCurrencySymbol = (code?: string) => {
@@ -118,11 +128,11 @@ const SUB_NAV = [
 
 // ─── Component ───────────────────────────────────────────────────
 export default function BudgetLayout() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, refreshAuth } = useAuth();
   const { toast } = useToast();
   const location = useLocation();
 
-  const preferredCurrency = (user as any)?.preferred_currency || "USD";
+  const preferredCurrency = user?.preferred_currency || "USD";
   const preferredCurrencySymbol = getCurrencySymbol(preferredCurrency);
 
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
@@ -152,6 +162,33 @@ export default function BudgetLayout() {
   // Import Form
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isUploadingStatement, setIsUploadingStatement] = useState(false);
+  const [isChangingCurrency, setIsChangingCurrency] = useState(false);
+
+  // ─── Currency Change Handler ──────────────────────────────────
+  const handleCurrencyChange = async (newCurrency: string) => {
+    if (newCurrency === preferredCurrency) return;
+    setIsChangingCurrency(true);
+    try {
+      const response = await apiClient.updateProfile({ preferred_currency: newCurrency });
+      if (response.success) {
+        await refreshAuth(true);
+        toast({
+          title: "Currency Updated",
+          description: `Switched to ${newCurrency} (${getCurrencySymbol(newCurrency)}). All pages now use this currency.`,
+        });
+        // Refresh budget data with new currency context
+        setTimeout(() => handleRefresh(), 300);
+      }
+    } catch (e: any) {
+      toast({
+        title: "Failed to update currency",
+        description: e.message || "Could not save your preference.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsChangingCurrency(false);
+    }
+  };
 
   // ─── Data Fetching ─────────────────────────────────────────────
   const fetchDashboard = async (m: number, y: number) => {
@@ -338,6 +375,18 @@ export default function BudgetLayout() {
                 <SelectContent>
                   {[2024, 2025, 2026, 2027, 2028].map((y) => (
                     <SelectItem key={y} value={y.toString()}>{y}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={preferredCurrency} onValueChange={handleCurrencyChange} disabled={isChangingCurrency}>
+                <SelectTrigger className="w-[95px] h-9 rounded-xl bg-background text-sm" title="Preferred currency">
+                  <Coins className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                  <SelectValue placeholder="Currency" />
+                </SelectTrigger>
+                <SelectContent>
+                  {SUPPORTED_CURRENCIES.map((c) => (
+                    <SelectItem key={c.code} value={c.code}>{c.label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

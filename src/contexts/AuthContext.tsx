@@ -65,6 +65,7 @@ interface User {
   timezone?: string;
   avatar?: string | null;
   tier?: string;
+  preferred_currency?: string;
   providers?: string[];
   trial?: {
     active: boolean;
