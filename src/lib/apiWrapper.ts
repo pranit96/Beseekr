@@ -23,9 +23,10 @@ export const api = {
     data?: any,
     customOptions?: any,
   ): Promise<T> => {
+    const isFormData = data instanceof FormData;
     return apiClient["request"]<any>(endpoint, {
       method: "POST",
-      body: data ? JSON.stringify(data) : undefined,
+      body: data ? (isFormData ? data : JSON.stringify(data)) : undefined,
       ...customOptions,
     }) as unknown as Promise<T>;
   },
@@ -35,9 +36,10 @@ export const api = {
     data?: any,
     customOptions?: any,
   ): Promise<T> => {
+    const isFormData = data instanceof FormData;
     return apiClient["request"]<any>(endpoint, {
       method: "PUT",
-      body: data ? JSON.stringify(data) : undefined,
+      body: data ? (isFormData ? data : JSON.stringify(data)) : undefined,
       ...customOptions,
     }) as unknown as Promise<T>;
   },
