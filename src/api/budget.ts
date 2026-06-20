@@ -86,6 +86,12 @@ export interface BudgetInsights {
     income_change_pct?: number;
     expense_change_pct?: number;
   };
+  category_breakdown?: {
+    [category: string]: {
+      count: number;
+      total: number;
+    };
+  };
 }
 
 export interface YearlyOverview {

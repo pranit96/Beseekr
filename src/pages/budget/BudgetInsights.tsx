@@ -6,6 +6,7 @@ import {
   MessageSquare,
   AlertTriangle,
   Sparkle,
+  Coins,
 } from "lucide-react";
 import { useBudget } from "./BudgetLayout";
 import { Card } from "@/components/ui/card";
@@ -204,6 +205,10 @@ export default function BudgetInsights() {
                         <span className="text-muted-foreground">Total Expenses:</span>
                         <span className="font-semibold text-foreground">{preferredCurrencySymbol}{(insights.total_expenses ?? 0).toLocaleString()}</span>
                       </div>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-muted-foreground">Savings Amount:</span>
+                        <span className="font-semibold text-foreground">{preferredCurrencySymbol}{(insights.savings_amount ?? 0).toLocaleString()}</span>
+                      </div>
                       <div className="flex justify-between text-xs border-t border-border/20 pt-1">
                         <span className="text-muted-foreground font-medium">Savings Rate:</span>
                         <span className="font-bold text-emerald-500">{insights.savings_rate ?? 0}%</span>
@@ -213,16 +218,56 @@ export default function BudgetInsights() {
                 </Card>
               </div>
 
-              {/* AI Summary (Full Width) */}
-              <Card className="bg-background/60 border-border/20 rounded-xl p-5 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-2xl pointer-events-none" />
-                <h4 className="text-sm font-semibold text-indigo-500 mb-2.5 flex items-center gap-1.5">
-                  <MessageSquare className="w-4 h-4" /> AI Summary & Strategy
-                </h4>
-                <p className="text-sm leading-relaxed text-muted-foreground">
-                  {insights.ai_summary || "AI Summary text is being processed."}
-                </p>
-              </Card>
+              {/* AI Summary and Category Breakdown Grid */}
+              <div className="grid md:grid-cols-3 gap-4">
+                {/* AI Summary & Strategy (Span 2) */}
+                <Card className="bg-background/60 border-border/20 rounded-xl p-5 relative overflow-hidden md:col-span-2 flex flex-col justify-between">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-2xl pointer-events-none" />
+                  <div>
+                    <h4 className="text-sm font-semibold text-indigo-500 mb-2.5 flex items-center gap-1.5">
+                      <MessageSquare className="w-4 h-4" /> AI Summary & Strategy
+                    </h4>
+                    <p className="text-sm leading-relaxed text-muted-foreground">
+                      {insights.ai_summary || "AI Summary text is being processed."}
+                    </p>
+                  </div>
+                </Card>
+
+                {/* Category Spending Breakdown (Span 1) */}
+                <Card className="bg-background/60 border-border/20 rounded-xl p-5 relative overflow-hidden flex flex-col justify-between">
+                  <div>
+                    <h4 className="text-sm font-semibold text-indigo-500 mb-3 flex items-center gap-1.5">
+                      <Coins className="w-4 h-4 text-indigo-500" /> Category Breakdown
+                    </h4>
+                    {(!insights.category_breakdown || Object.keys(insights.category_breakdown).length === 0) ? (
+                      <p className="text-xs text-muted-foreground italic">No category data available.</p>
+                    ) : (
+                      <div className="space-y-3 max-h-[160px] overflow-y-auto pr-1">
+                        {Object.entries(insights.category_breakdown)
+                          .sort((a, b) => b[1].total - a[1].total)
+                          .map(([category, info]) => {
+                            const totalExpenses = insights.total_expenses || 1;
+                            const percentage = Math.round((info.total / totalExpenses) * 100);
+                            return (
+                              <div key={category} className="space-y-1">
+                                <div className="flex justify-between text-xs">
+                                  <span className="font-medium text-foreground text-[11px] truncate max-w-[120px]">{category} <span className="text-[9px] text-muted-foreground font-normal">({info.count})</span></span>
+                                  <span className="font-semibold text-foreground text-[11px]">{preferredCurrencySymbol}{info.total.toLocaleString(undefined, { maximumFractionDigits: 0 })} <span className="text-[9px] text-muted-foreground font-normal">({percentage}%)</span></span>
+                                </div>
+                                <div className="w-full bg-muted/30 rounded-full h-1 overflow-hidden">
+                                  <div 
+                                    className="bg-indigo-500 h-full rounded-full transition-all duration-500" 
+                                    style={{ width: `${Math.min(percentage, 100)}%` }}
+                                  />
+                                </div>
+                              </div>
+                            );
+                          })}
+                      </div>
+                    )}
+                  </div>
+                </Card>
+              </div>
 
               {/* ─── Detailed Lists (Tips, Patterns, Anomalies) ─── */}
               <div className="grid md:grid-cols-3 gap-4">
