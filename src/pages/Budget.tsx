@@ -170,7 +170,7 @@ export default function Budget() {
   const [isSubmittingContrib, setIsSubmittingContrib] = useState(false);
 
   // Statement Import Form
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isUploadingStatement, setIsUploadingStatement] = useState(false);
 
   // Sorting / Filtering for Ledger Tab
@@ -418,10 +418,10 @@ export default function Budget() {
 
   const handleImportSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedFile) {
+    if (selectedFiles.length === 0) {
       toast({
-        title: "No File Selected",
-        description: "Please drop or select a bank statement PDF, XLS, XLSX or CSV file.",
+        title: "No Files Selected",
+        description: "Please drop or select one or more bank statement files.",
         variant: "destructive",
       });
       return;
@@ -430,22 +430,24 @@ export default function Budget() {
     setIsUploadingStatement(true);
     try {
       const formData = new FormData();
-      formData.append("file", selectedFile);
+      selectedFiles.forEach((file) => {
+        formData.append("files", file);
+      });
 
       const response = await budgetApi.importStatement(formData);
       if (response.success && response.data) {
         toast({
-          title: "Statement Processed",
-          description: `${response.data.message || "Import success"}. Added ${response.data.transactionsImported} new transactions.`,
+          title: "Statements Processed",
+          description: response.data.message || "Import success",
         });
         setIsImportOpen(false);
-        setSelectedFile(null);
+        setSelectedFiles([]);
         handleRefresh();
       }
     } catch (e: any) {
       toast({
         title: "Import Failed",
-        description: e.message || "Could not parse statement file. Make sure backend parser is loaded.",
+        description: e.message || "Could not parse statement files. Make sure backend parser is loaded.",
         variant: "destructive",
       });
     } finally {
@@ -1577,14 +1579,17 @@ export default function Budget() {
       </Dialog>
 
       {/* ── Import Statement Dialog ── */}
-      <Dialog open={isImportOpen} onOpenChange={setIsImportOpen}>
+      <Dialog open={isImportOpen} onOpenChange={(open) => {
+        setIsImportOpen(open);
+        if (!open) setSelectedFiles([]);
+      }}>
         <DialogContent className="max-w-md bg-background border border-border/50 shadow-2xl rounded-2xl z-[99999]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Upload className="w-5 h-5 text-primary" /> Import Bank Statement
+              <Upload className="w-5 h-5 text-primary" /> Import Bank Statements
             </DialogTitle>
             <DialogDescription>
-              Drop a bank statement statement PDF, XLS, XLSX or CSV. The backend parses it automatically.
+              Drop one or more bank statement PDFs, XLS, XLSX or CSV files. The backend parses them automatically.
             </DialogDescription>
           </DialogHeader>
 
@@ -1593,22 +1598,30 @@ export default function Budget() {
               <input
                 type="file"
                 accept=".pdf,.xls,.xlsx,.csv"
+                multiple
                 className="absolute inset-0 opacity-0 cursor-pointer"
                 onChange={(e) => {
                   if (e.target.files && e.target.files.length > 0) {
-                    setSelectedFile(e.target.files[0]);
+                    setSelectedFiles(Array.from(e.target.files));
                   }
                 }}
               />
               <FileText className="mx-auto h-10 w-10 text-muted-foreground/60 mb-2" />
-              {selectedFile ? (
-                <div>
-                  <p className="text-sm font-semibold text-foreground truncate max-w-[280px] mx-auto">{selectedFile.name}</p>
-                  <p className="text-xs text-muted-foreground">{(selectedFile.size / 1024).toFixed(1)} KB — Click to change</p>
+              {selectedFiles.length > 0 ? (
+                <div className="space-y-2">
+                  <p className="text-sm font-semibold text-foreground">
+                    {selectedFiles.length} file(s) selected:
+                  </p>
+                  <ul className="text-xs text-muted-foreground max-h-[100px] overflow-y-auto space-y-0.5 text-left max-w-[280px] mx-auto list-disc list-inside">
+                    {selectedFiles.map((file, idx) => (
+                      <li key={idx} className="truncate">{file.name} ({(file.size / 1024).toFixed(1)} KB)</li>
+                    ))}
+                  </ul>
+                  <p className="text-xs text-primary mt-1">Click to change files</p>
                 </div>
               ) : (
                 <div>
-                  <p className="text-sm font-medium text-foreground">Select or Drag bank statement file</p>
+                  <p className="text-sm font-medium text-foreground">Select or Drag bank statement files</p>
                   <p className="text-xs text-muted-foreground mt-1">Supports PDF, XLS, XLSX, and CSV formats</p>
                 </div>
               )}
@@ -1619,7 +1632,7 @@ export default function Budget() {
                 Cancel
               </Button>
               <Button type="submit" disabled={isUploadingStatement} className="bg-primary hover:bg-primary/95 text-primary-foreground font-semibold">
-                {isUploadingStatement ? "Processing Parser..." : "Parse and Upload"}
+                {isUploadingStatement ? "Processing Parsers..." : "Parse and Upload"}
               </Button>
             </DialogFooter>
           </form>
