@@ -127,7 +127,11 @@ const SaasWatchlist = lazyRetry(
   "Watchlist",
 );
 const Pricing = lazyRetry(() => import("./pages/saas/Pricing"), "Pricing");
-const Budget = lazyRetry(() => import("./pages/Budget"), "Budget");
+const BudgetLayout = lazyRetry(() => import("./pages/budget/BudgetLayout"), "BudgetLayout");
+const BudgetOverview = lazyRetry(() => import("./pages/budget/BudgetOverview"), "BudgetOverview");
+const BudgetLedger = lazyRetry(() => import("./pages/budget/BudgetLedger"), "BudgetLedger");
+const BudgetGoals = lazyRetry(() => import("./pages/budget/BudgetGoals"), "BudgetGoals");
+const BudgetInsights = lazyRetry(() => import("./pages/budget/BudgetInsights"), "BudgetInsights");
 
 // Loading fallback for lazy components
 const PageLoader = () => (
@@ -363,10 +367,47 @@ const App = () => {
                         path="budget"
                         element={
                           <Suspense fallback={<PageLoader />}>
-                            <Budget />
+                            <BudgetLayout />
                           </Suspense>
                         }
-                      />
+                      >
+                        <Route
+                          index
+                          element={<Navigate to="overview" replace />}
+                        />
+                        <Route
+                          path="overview"
+                          element={
+                            <Suspense fallback={<PageLoader />}>
+                              <BudgetOverview />
+                            </Suspense>
+                          }
+                        />
+                        <Route
+                          path="ledger"
+                          element={
+                            <Suspense fallback={<PageLoader />}>
+                              <BudgetLedger />
+                            </Suspense>
+                          }
+                        />
+                        <Route
+                          path="goals"
+                          element={
+                            <Suspense fallback={<PageLoader />}>
+                              <BudgetGoals />
+                            </Suspense>
+                          }
+                        />
+                        <Route
+                          path="insights"
+                          element={
+                            <Suspense fallback={<PageLoader />}>
+                              <BudgetInsights />
+                            </Suspense>
+                          }
+                        />
+                      </Route>
 
                       {/* OLD STOCK ROUTES - Redirect to new trading system */}
                       <Route

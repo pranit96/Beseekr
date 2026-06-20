@@ -89,6 +89,11 @@
     "research": "Research",
     "watchlist": "Watchlist",
     "pricing": "Pricing",
+    "budget": "Wallet",
+    "budgetOverview": "Overview",
+    "budgetLedger": "Ledger",
+    "budgetGoals": "Goals",
+    "budgetInsights": "Insights",
     "trial": {
       "left": "left",
       "days_one": "{{count}} day",

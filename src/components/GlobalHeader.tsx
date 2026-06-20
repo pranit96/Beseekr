@@ -168,6 +168,38 @@ const NAV_ITEMS = {
     color: "from-emerald-500 to-teal-500",
     exact: false,
   },
+  budgetOverview: {
+    key: "budgetOverview",
+    name: "Overview",
+    href: "/dashboard/budget/overview",
+    icon: LayoutDashboard,
+    color: "from-emerald-500 to-teal-500",
+    exact: false,
+  },
+  budgetLedger: {
+    key: "budgetLedger",
+    name: "Ledger",
+    href: "/dashboard/budget/ledger",
+    icon: BookOpen,
+    color: "from-blue-500 to-indigo-500",
+    exact: false,
+  },
+  budgetGoals: {
+    key: "budgetGoals",
+    name: "Goals",
+    href: "/dashboard/budget/goals",
+    icon: Target,
+    color: "from-amber-500 to-orange-500",
+    exact: false,
+  },
+  budgetInsights: {
+    key: "budgetInsights",
+    name: "Insights",
+    href: "/dashboard/budget/insights",
+    icon: Sparkles,
+    color: "from-purple-500 to-pink-500",
+    exact: false,
+  },
 };
 
 function isPathActive(pathname: string, href: string, exact?: boolean) {
@@ -181,11 +213,21 @@ function getNavigationContext(pathname: string, isPremium: boolean, isBudgetEnab
     pathname.startsWith("/agents") ||
     pathname.startsWith("/canvas");
   const isResumeContext = pathname.startsWith("/dashboard/resume");
+  const isBudgetContext = pathname.startsWith("/dashboard/budget");
   const isDiscoverContext =
     pathname.startsWith("/dashboard") &&
     !pathname.startsWith("/dashboard/profile");
 
-  if (isChatContext) {
+  if (isBudgetContext) {
+    return [
+      NAV_ITEMS.home,
+      NAV_ITEMS.discover,
+      NAV_ITEMS.budgetOverview,
+      NAV_ITEMS.budgetLedger,
+      NAV_ITEMS.budgetGoals,
+      NAV_ITEMS.budgetInsights,
+    ];
+  } else if (isChatContext) {
     const items = [
       NAV_ITEMS.home,
       NAV_ITEMS.chat,
