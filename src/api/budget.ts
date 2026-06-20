@@ -172,8 +172,8 @@ export const budgetApi = {
   getInsights: (params?: { month?: number; year?: number }) =>
     apiClient.get<{ success: boolean; data: BudgetInsights }>("/api/budget/insights", { params }),
 
-  generateInsights: () =>
-    apiClient.post<{ success: boolean; data: BudgetInsights }>("/api/budget/insights/generate", {}),
+  generateInsights: (payload?: { month?: number; year?: number }) =>
+    apiClient.post<{ success: boolean; data: BudgetInsights }>("/api/budget/insights/generate", payload || {}),
 
   getYearlyOverview: (year?: number) =>
     apiClient.get<{ success: boolean; data: YearlyOverview }>("/api/budget/overview/yearly", {

@@ -15,7 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { budgetApi } from "@/api/budget";
 
 export default function BudgetInsights() {
-  const { insights, setInsights } = useBudget();
+  const { insights, setInsights, selectedMonth, selectedYear } = useBudget();
   const { toast } = useToast();
 
   const [loading, setLoading] = useState(false);
@@ -24,10 +24,17 @@ export default function BudgetInsights() {
   const handleGenerate = async () => {
     setGenerating(true);
     try {
-      const response = await budgetApi.generateInsights();
-      if (response.success && response.data) {
-        setInsights(response.data);
-        toast({ title: "Insights Updated", description: "AI financial diagnostics refreshed." });
+      const response = await budgetApi.generateInsights({ month: selectedMonth, year: selectedYear });
+      if (response.success) {
+        if (response.data) {
+          setInsights(response.data);
+          toast({ title: "Insights Updated", description: "AI financial diagnostics refreshed." });
+        } else {
+          toast({
+            title: "No Data Available",
+            description: "No transactions found for the selected month. Please add or import transactions first.",
+          });
+        }
       }
     } catch (e: any) {
       toast({ title: "Failed to Generate", description: e.message || "AI model returned an error.", variant: "destructive" });

@@ -197,7 +197,6 @@ export default function BudgetLayout() {
       const response = await budgetApi.getDashboard({ month: m, year: y });
       if (response.success && response.data) {
         setDashboard(response.data);
-        if (response.data.recentTransactions) setTransactions(response.data.recentTransactions);
         if (response.data.savingGoals) setGoals(response.data.savingGoals);
       }
     } catch (e: any) {
@@ -207,9 +206,19 @@ export default function BudgetLayout() {
     }
   };
 
-  const fetchTransactions = async () => {
+  const fetchTransactions = async (m?: number, y?: number) => {
+    const month = m ?? selectedMonth;
+    const year = y ?? selectedYear;
+    const startDate = `${year}-${String(month).padStart(2, "0")}-01`;
+    const lastDay = new Date(year, month, 0).getDate();
+    const endDate = `${year}-${String(month).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+
     try {
-      const response = await budgetApi.getTransactions({ limit: 200 });
+      const response = await budgetApi.getTransactions({
+        startDate,
+        endDate,
+        limit: 200,
+      });
       if (response.success && response.data) setTransactions(response.data.transactions);
     } catch (e: any) {
       console.error(e);
@@ -249,6 +258,7 @@ export default function BudgetLayout() {
       fetchInsights(selectedMonth, selectedYear);
       fetchYearlyOverview(selectedYear);
       fetchGoals();
+      fetchTransactions(selectedMonth, selectedYear);
     }
   }, [selectedMonth, selectedYear, user]);
 
@@ -257,6 +267,7 @@ export default function BudgetLayout() {
     fetchInsights(selectedMonth, selectedYear);
     fetchYearlyOverview(selectedYear);
     fetchGoals();
+    fetchTransactions(selectedMonth, selectedYear);
   };
 
   // ─── Form Handlers ─────────────────────────────────────────────

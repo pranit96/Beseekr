@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Trash2,
@@ -57,7 +57,9 @@ export default function BudgetLedger() {
   };
 
   // Fetch on first render
-  useState(() => { handleLoad(); });
+  useEffect(() => {
+    handleLoad();
+  }, []);
 
   const filteredTransactions = useMemo(() => {
     return transactions
