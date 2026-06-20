@@ -15,7 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { budgetApi } from "@/api/budget";
 
 export default function BudgetInsights() {
-  const { insights, setInsights, selectedMonth, selectedYear } = useBudget();
+  const { insights, setInsights, selectedMonth, selectedYear, preferredCurrencySymbol } = useBudget();
   const { toast } = useToast();
 
   const [loading, setLoading] = useState(false);
@@ -194,18 +194,23 @@ export default function BudgetInsights() {
                     </div>
                   ) : (
                     <ul className="space-y-2">
-                      {insights.anomalies.map((anom, idx) => (
-                        <motion.li
-                          key={idx}
-                          initial={{ opacity: 0, x: -8 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: idx * 0.1 + 0.2, duration: 0.3 }}
-                          className="flex gap-2.5 text-sm text-muted-foreground items-start"
-                        >
-                          <span className="w-1.5 h-1.5 rounded-full bg-rose-500 mt-2 shrink-0" />
-                          <span>{anom}</span>
-                        </motion.li>
-                      ))}
+                      {insights.anomalies.map((anom, idx) => {
+                        const formattedText = typeof anom === "object" && anom !== null
+                          ? `${anom.category} ${anom.direction || "changed"} by ${Math.abs(anom.changePercent || 0)}% (${preferredCurrencySymbol}${anom.previousAmount} → ${preferredCurrencySymbol}${anom.currentAmount})`
+                          : String(anom);
+                        return (
+                          <motion.li
+                            key={idx}
+                            initial={{ opacity: 0, x: -8 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: idx * 0.1 + 0.2, duration: 0.3 }}
+                            className="flex gap-2.5 text-sm text-muted-foreground items-start"
+                          >
+                            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 mt-2 shrink-0" />
+                            <span>{formattedText}</span>
+                          </motion.li>
+                        );
+                      })}
                     </ul>
                   )}
                 </div>

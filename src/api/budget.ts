@@ -75,7 +75,7 @@ export interface BudgetInsights {
   id: string;
   ai_summary: string;
   ai_tips: string[];
-  anomalies: string[];
+  anomalies: any[];
   spending_patterns: string[];
   month_over_month: {
     income_change_pct?: number;
