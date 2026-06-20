@@ -127,6 +127,7 @@ const SaasWatchlist = lazyRetry(
   "Watchlist",
 );
 const Pricing = lazyRetry(() => import("./pages/saas/Pricing"), "Pricing");
+const Budget = lazyRetry(() => import("./pages/Budget"), "Budget");
 
 // Loading fallback for lazy components
 const PageLoader = () => (
@@ -355,6 +356,14 @@ const App = () => {
                         element={
                           <Suspense fallback={<PageLoader />}>
                             <Profile />
+                          </Suspense>
+                        }
+                      />
+                      <Route
+                        path="budget"
+                        element={
+                          <Suspense fallback={<PageLoader />}>
+                            <Budget />
                           </Suspense>
                         }
                       />

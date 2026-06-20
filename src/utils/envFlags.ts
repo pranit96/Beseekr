@@ -19,3 +19,19 @@ export function getIsNewMode(): boolean {
 
   return envFlag;
 }
+
+export function getIsBudgetEnabled(): boolean {
+  const envFlag = import.meta.env.VITE_ENABLE_BUDGET === "Y";
+
+  if (typeof document !== "undefined") {
+    const cookieMatch = document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("EnableBudget="))
+      ?.split("=")[1];
+
+    if (cookieMatch === "true") return true;
+    if (cookieMatch === "false") return false;
+  }
+
+  return envFlag;
+}

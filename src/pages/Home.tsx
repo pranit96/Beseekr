@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { getIsNewMode } from "@/utils/envFlags";
+import { getIsNewMode, getIsBudgetEnabled } from "@/utils/envFlags";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { MessageSquare, TrendingUp, ArrowRight, FileText } from "lucide-react";
+import { MessageSquare, TrendingUp, ArrowRight, FileText, Wallet } from "lucide-react";
 import { GlobalHeader } from "@/components/GlobalHeader";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
@@ -26,6 +26,8 @@ export default function Home() {
     }
   };
 
+  const isBudgetEnabled = getIsBudgetEnabled();
+
   if (!isNewMode) {
     return (
       <div className="min-h-screen bg-background text-foreground">
@@ -45,7 +47,7 @@ export default function Home() {
         </section>
 
         {/* LAYOUT */}
-        <section className="max-w-5xl mx-auto px-6 pb-20 grid md:grid-cols-3 gap-6">
+        <section className={`max-w-5xl mx-auto px-6 pb-20 grid gap-6 ${isBudgetEnabled ? "md:grid-cols-3" : "md:grid-cols-2 max-w-3xl"}`}>
           {/* CARD 1: DISCOVER */}
           <motion.div
             onClick={() => go("/dashboard/problems")}
@@ -106,6 +108,39 @@ export default function Home() {
               <ArrowRight className="w-3 h-3" />
             </div>
           </motion.div>
+
+          {/* CARD 3: BUDGET */}
+          {isBudgetEnabled && (
+            <motion.div
+              onClick={() => go("/dashboard/budget")}
+              whileHover={{ y: -4 }}
+              transition={{ type: "spring", stiffness: 220, damping: 20 }}
+              className="border border-border/30 rounded-2xl p-8 cursor-pointer transition
+                                  bg-muted/10 backdrop-blur-md
+                                  hover:bg-emerald-500/5
+                                  hover:border-emerald-500/30 group shadow-2xl shadow-black/5"
+            >
+              <div className="h-10 w-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 mb-4 group-hover:scale-110 transition-transform">
+                <Wallet className="w-5 h-5" />
+              </div>
+
+              <h3 className="text-xl font-bold mb-2 tracking-tight text-foreground">
+                {t("home.budgetTitle", "3. Manage Budget")}
+              </h3>
+
+              <p className="text-muted-foreground/80 mb-6 text-sm leading-relaxed">
+                {t(
+                  "home.budgetDesc",
+                  "Track spending, set saving goals, import statements, and get AI financial insights.",
+                )}
+              </p>
+
+              <div className="text-xs font-bold tracking-wider uppercase flex items-center gap-1 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all">
+                {t("home.openBudget", "Open Dashboard")}
+                <ArrowRight className="w-3 h-3" />
+              </div>
+            </motion.div>
+          )}
         </section>
 
         {/* FOOTER */}
@@ -152,8 +187,8 @@ export default function Home() {
             </p>
           </section>
 
-          {/* CARDS LAYOUT - SYMMETRICAL 3-COLUMN GRID */}
-          <section className="grid md:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-6 duration-700 delay-150 fill-mode-both">
+          {/* CARDS LAYOUT - SYMMETRICAL GRID */}
+          <section className={`grid gap-6 animate-in fade-in slide-in-from-bottom-6 duration-700 delay-150 fill-mode-both ${isBudgetEnabled ? "md:grid-cols-3" : "md:grid-cols-2 max-w-3xl mx-auto"}`}>
             {/* CARD 1: DISCOVER */}
             <motion.div
               onClick={() => go("/dashboard/problems")}
@@ -218,6 +253,38 @@ export default function Home() {
                 <ArrowRight className="w-4 h-4" />
               </div>
             </motion.div>
+
+            {/* CARD 3: BUDGET */}
+            {isBudgetEnabled && (
+              <motion.div
+                onClick={() => go("/dashboard/budget")}
+                whileHover={{ y: -6 }}
+                transition={{ type: "spring", stiffness: 200, damping: 22 }}
+                className="border border-border/30 rounded-3xl p-10 cursor-pointer transition bg-card/5 backdrop-blur-xl hover:bg-emerald-500/[0.03] hover:border-emerald-500/20 group shadow-2xl shadow-black/20 relative overflow-hidden"
+              >
+                <div className="absolute top-0 right-0 w-40 h-40 bg-emerald-500/5 rounded-full blur-[60px] -mr-10 -mt-10 pointer-events-none" />
+
+                <div className="h-14 w-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 mb-8 group-hover:scale-110 transition-transform duration-500 shadow-lg shadow-emerald-500/5">
+                  <Wallet className="w-6 h-6" />
+                </div>
+
+                <h3 className="text-xl font-bold mb-2 tracking-tight text-foreground">
+                  {t("home.budgetTitle", "3. Manage Budget")}
+                </h3>
+
+                <p className="text-muted-foreground/80 text-sm mb-8 leading-relaxed">
+                  {t(
+                    "home.budgetDesc",
+                    "Track spending, set saving goals, import statements, and get AI financial insights.",
+                  )}
+                </p>
+
+                <div className="text-xs font-bold tracking-widest uppercase flex items-center gap-2 text-emerald-400 group-hover:translate-x-1 transition-transform">
+                  {t("home.openBudget", "Open Dashboard")}
+                  <ArrowRight className="w-4 h-4" />
+                </div>
+              </motion.div>
+            )}
           </section>
         </div>
       </main>

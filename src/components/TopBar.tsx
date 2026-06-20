@@ -25,13 +25,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 
 import { useTranslation } from "react-i18next";
-
-const navigation = [
-  { key: "home", name: "Home", href: "/" },
-  { key: "chat", name: "Chat", href: "/chat" },
-  { key: "agents", name: "Agents", href: "/agents" },
-  { key: "analytics", name: "Analytics", href: "/analytics" },
-];
+import { getIsBudgetEnabled } from "@/utils/envFlags";
 
 interface TopBarProps {
   sidebarOpen?: boolean;
@@ -49,6 +43,15 @@ export const TopBar = ({
   const location = useLocation();
   const { theme, setTheme } = useTheme();
   const { user, logout } = useAuth();
+
+  const isBudgetEnabled = getIsBudgetEnabled();
+  const navigation = [
+    { key: "home", name: "Home", href: "/" },
+    { key: "chat", name: "Chat", href: "/chat" },
+    { key: "agents", name: "Agents", href: "/agents" },
+    { key: "analytics", name: "Analytics", href: "/analytics" },
+    ...(isBudgetEnabled ? [{ key: "budget", name: "Budget", href: "/dashboard/budget" }] : []),
+  ];
 
   const toggleMobileNav = () => setMobileNavOpen((prev) => !prev);
 

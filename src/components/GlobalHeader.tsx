@@ -33,6 +33,7 @@ import {
   LayoutDashboard,
   Target,
   LayoutGrid,
+  Wallet,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -44,6 +45,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
+import { getIsBudgetEnabled } from "@/utils/envFlags";
 
 const NAV_ITEMS = {
   home: {
@@ -158,6 +160,14 @@ const NAV_ITEMS = {
     color: "from-amber-500 to-orange-500",
     exact: false,
   },
+  budget: {
+    key: "budget",
+    name: "Budget",
+    href: "/dashboard/budget",
+    icon: Wallet,
+    color: "from-emerald-500 to-teal-500",
+    exact: false,
+  },
 };
 
 function isPathActive(pathname: string, href: string, exact?: boolean) {
@@ -165,7 +175,7 @@ function isPathActive(pathname: string, href: string, exact?: boolean) {
   return pathname === href || pathname.startsWith(href + "/");
 }
 
-function getNavigationContext(pathname: string, isPremium: boolean) {
+function getNavigationContext(pathname: string, isPremium: boolean, isBudgetEnabled: boolean) {
   const isChatContext =
     pathname.startsWith("/chat") ||
     pathname.startsWith("/agents") ||
@@ -176,12 +186,16 @@ function getNavigationContext(pathname: string, isPremium: boolean) {
     !pathname.startsWith("/dashboard/profile");
 
   if (isChatContext) {
-    return [
+    const items = [
       NAV_ITEMS.home,
       NAV_ITEMS.chat,
       NAV_ITEMS.agents,
       NAV_ITEMS.canvas,
     ];
+    if (isBudgetEnabled) {
+      items.push(NAV_ITEMS.budget);
+    }
+    return items;
   } else if (isDiscoverContext) {
     const items = [
       NAV_ITEMS.home,
@@ -189,18 +203,23 @@ function getNavigationContext(pathname: string, isPremium: boolean) {
       NAV_ITEMS.research,
       NAV_ITEMS.watchlist,
     ];
+    if (isBudgetEnabled) {
+      items.push(NAV_ITEMS.budget);
+    }
     if (!isPremium) items.push(NAV_ITEMS.pricing);
     return items;
   }
 
-  return [
+  const items = [
     NAV_ITEMS.home,
     NAV_ITEMS.chat,
     NAV_ITEMS.discover,
     NAV_ITEMS.blog,
-    // NAV_ITEMS.trading,
-    // NAV_ITEMS.wellness,
   ];
+  if (isBudgetEnabled) {
+    items.push(NAV_ITEMS.budget);
+  }
+  return items;
 }
 
 export function GlobalHeader() {
@@ -350,7 +369,8 @@ export function GlobalHeader() {
   // Compute contextual navigation items based on current route
   const currentNavigation = useMemo(() => {
     const isPremium = plansData?.user?.is_premium === true;
-    return getNavigationContext(location.pathname, isPremium);
+    const isBudgetEnabled = getIsBudgetEnabled();
+    return getNavigationContext(location.pathname, isPremium, isBudgetEnabled);
   }, [location.pathname, plansData?.user?.is_premium]);
 
   return (
