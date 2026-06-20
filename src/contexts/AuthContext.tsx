@@ -712,6 +712,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(null);
       refreshingRef.current = false;
 
+      sessionStorage.removeItem("budget_selected_month");
+      sessionStorage.removeItem("budget_selected_year");
+
       localStorage.setItem("auth_logout", Date.now().toString());
       setTimeout(() => localStorage.removeItem("auth_logout"), 1000);
 
