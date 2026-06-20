@@ -173,6 +173,8 @@ export default function BudgetLayout() {
   const [txMerchant, setTxMerchant] = useState("");
   const [txDescription, setTxDescription] = useState("");
   const [txDate, setTxDate] = useState(new Date().toISOString().split("T")[0]);
+  const [txAccountType, setTxAccountType] = useState<"savings_account" | "credit_card" | "cash" | "other">("savings_account");
+  const [txInstitutionName, setTxInstitutionName] = useState("");
   const [isSubmittingTx, setIsSubmittingTx] = useState(false);
 
   // Import Form
@@ -298,13 +300,24 @@ export default function BudgetLayout() {
     setIsSubmittingTx(true);
     try {
       const response = await budgetApi.addTransaction({
-        type: txType, amount: parseFloat(txAmount), category: txCategory,
-        merchant: txMerchant || undefined, description: txDescription || undefined, date: txDate || undefined,
+        type: txType,
+        amount: parseFloat(txAmount),
+        category: txCategory,
+        merchant: txMerchant || undefined,
+        description: txDescription || undefined,
+        date: txDate || undefined,
+        account_type: txAccountType || undefined,
+        institution_name: txInstitutionName || undefined,
       });
       if (response.success) {
         toast({ title: "Transaction Recorded", description: `Added ${txType} of ${preferredCurrencySymbol}${parseFloat(txAmount).toFixed(2)}.` });
         setIsAddTxOpen(false);
-        setTxAmount(""); setTxMerchant(""); setTxDescription(""); setTxDate(new Date().toISOString().split("T")[0]);
+        setTxAmount("");
+        setTxMerchant("");
+        setTxDescription("");
+        setTxDate(new Date().toISOString().split("T")[0]);
+        setTxAccountType("savings_account");
+        setTxInstitutionName("");
         handleRefresh();
       }
     } catch (e: any) {
@@ -551,6 +564,25 @@ export default function BudgetLayout() {
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-muted-foreground">Merchant / Source</label>
                 <Input placeholder="Amazon, Starbucks, Employer etc." value={txMerchant} onChange={(e) => setTxMerchant(e.target.value)} className="bg-background rounded-xl" />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-muted-foreground">Account Type</label>
+                  <Select value={txAccountType} onValueChange={(val) => setTxAccountType(val as any)}>
+                    <SelectTrigger className="bg-background rounded-xl"><SelectValue placeholder="Account Type" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="savings_account">Savings Account</SelectItem>
+                      <SelectItem value="credit_card">Credit Card</SelectItem>
+                      <SelectItem value="cash">Cash</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-muted-foreground">Bank / Institution</label>
+                  <Input placeholder="e.g. HDFC Bank, SBI" value={txInstitutionName} onChange={(e) => setTxInstitutionName(e.target.value)} className="bg-background rounded-xl" />
+                </div>
               </div>
 
               <div className="space-y-1.5">

@@ -139,6 +139,8 @@ export const budgetApi = {
     description?: string;
     date?: string;
     merchant?: string;
+    account_type?: "savings_account" | "credit_card" | "cash" | "other" | null;
+    institution_name?: string | null;
   }) =>
     apiClient.post<{ success: boolean; data: Transaction }>("/api/budget/transactions", payload),
 

@@ -180,6 +180,7 @@ export default function BudgetLedger() {
                   <TableRow>
                     <TableHead className="w-[110px]">Date</TableHead>
                     <TableHead>Merchant</TableHead>
+                    <TableHead className="w-[140px]">Account</TableHead>
                     <TableHead>Category</TableHead>
                     <TableHead className="hidden lg:table-cell">Description</TableHead>
                     <TableHead className="w-[90px]">Type</TableHead>
@@ -203,16 +204,19 @@ export default function BudgetLedger() {
                         </TableCell>
                         <TableCell>
                           <div className="font-semibold text-foreground text-sm">{tx.merchant || "—"}</div>
-                          {tx.institution_name && (
-                            <div className="text-[10px] text-muted-foreground font-normal flex items-center gap-1 mt-0.5">
-                              <span className="capitalize">{tx.institution_name}</span>
+                        </TableCell>
+                        <TableCell>
+                          {tx.institution_name ? (
+                            <div className="flex flex-col">
+                              <span className="font-medium text-foreground text-xs">{tx.institution_name}</span>
                               {tx.account_type && (
-                                <>
-                                  <span className="opacity-40">•</span>
-                                  <span>{tx.account_type === "credit_card" ? "Credit Card" : tx.account_type === "savings_account" ? "Savings" : tx.account_type}</span>
-                                </>
+                                <span className="text-[10px] text-muted-foreground font-normal">
+                                  {tx.account_type === "credit_card" ? "Credit Card" : tx.account_type === "savings_account" ? "Savings" : tx.account_type === "cash" ? "Cash" : tx.account_type}
+                                </span>
                               )}
                             </div>
+                          ) : (
+                            <span className="text-muted-foreground/30 italic text-xs">—</span>
                           )}
                         </TableCell>
                         <TableCell>
@@ -262,10 +266,20 @@ export default function BudgetLedger() {
                           {tx.type}
                         </Badge>
                       </div>
-                      <p className="text-xs text-muted-foreground truncate max-w-[250px]">
-                        {new Date(tx.transaction_date).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
-                        {tx.institution_name && ` · ${tx.institution_name} (${tx.account_type === "credit_card" ? "Card" : "Savings"})`}
-                        {tx.description && ` · ${tx.description}`}
+                      <p className="text-xs text-muted-foreground flex flex-wrap items-center gap-1.5 mt-0.5">
+                        <span>{new Date(tx.transaction_date).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</span>
+                        {tx.institution_name && (
+                          <>
+                            <span className="opacity-40">•</span>
+                            <span className="font-semibold text-foreground/70">{tx.institution_name} ({tx.account_type === "credit_card" ? "Card" : "Savings"})</span>
+                          </>
+                        )}
+                        {tx.description && (
+                          <>
+                            <span className="opacity-40">•</span>
+                            <span className="italic max-w-[150px] truncate">{tx.description}</span>
+                          </>
+                        )}
                       </p>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
