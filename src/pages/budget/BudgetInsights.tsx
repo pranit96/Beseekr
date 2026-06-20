@@ -19,6 +19,11 @@ export default function BudgetInsights() {
   const { insights, setInsights, selectedMonth, selectedYear, preferredCurrencySymbol } = useBudget();
   const { toast } = useToast();
 
+  const incChange = insights?.month_over_month?.income_change_pct;
+  const hasInc = incChange !== undefined && incChange !== null;
+  const expChange = insights?.month_over_month?.expense_change_pct ?? insights?.month_over_month?.expenseChange;
+  const hasExp = expChange !== undefined && expChange !== null;
+
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
 
@@ -158,15 +163,15 @@ export default function BudgetInsights() {
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-muted-foreground">Income Change:</span>
                         <div className="flex items-center gap-1.5 font-bold tabular-nums">
-                          {insights.month_over_month?.income_change_pct !== undefined
-                            ? `${insights.month_over_month.income_change_pct >= 0 ? "+" : ""}${insights.month_over_month.income_change_pct}%`
+                          {hasInc
+                            ? `${incChange >= 0 ? "+" : ""}${incChange}%`
                             : "0%"}
-                          {insights.month_over_month?.income_change_pct !== undefined && (
-                            <Badge className={insights.month_over_month.income_change_pct >= 0
+                          {hasInc && (
+                            <Badge className={incChange >= 0
                               ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 text-[10px] h-4 rounded-md font-medium"
                               : "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20 text-[10px] h-4 rounded-md font-medium"
                             }>
-                              {insights.month_over_month.income_change_pct >= 0 ? "Up" : "Down"}
+                              {incChange >= 0 ? "Up" : "Down"}
                             </Badge>
                           )}
                         </div>
@@ -175,19 +180,33 @@ export default function BudgetInsights() {
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-muted-foreground">Expense Change:</span>
                         <div className="flex items-center gap-1.5 font-bold tabular-nums">
-                          {insights.month_over_month?.expense_change_pct !== undefined
-                            ? `${insights.month_over_month.expense_change_pct >= 0 ? "+" : ""}${insights.month_over_month.expense_change_pct}%`
+                          {hasExp
+                            ? `${expChange >= 0 ? "+" : ""}${expChange}%`
                             : "0%"}
-                          {insights.month_over_month?.expense_change_pct !== undefined && (
-                            <Badge className={insights.month_over_month.expense_change_pct <= 0
+                          {hasExp && (
+                            <Badge className={expChange <= 0
                               ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 text-[10px] h-4 rounded-md font-medium"
                               : "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20 text-[10px] h-4 rounded-md font-medium"
                             }>
-                              {insights.month_over_month.expense_change_pct <= 0 ? "Reduced" : "Increased"}
+                              {expChange <= 0 ? "Reduced" : "Increased"}
                             </Badge>
                           )}
                         </div>
                       </div>
+
+                      {insights.month_over_month?.previousExpenses !== undefined && insights.month_over_month.previousExpenses !== null && (
+                        <div className="flex items-center justify-between text-xs text-muted-foreground border-t border-border/10 pt-1.5 mt-1.5">
+                          <span>Prev. Month Expenses:</span>
+                          <span className="font-semibold">{preferredCurrencySymbol}{insights.month_over_month.previousExpenses.toLocaleString()}</span>
+                        </div>
+                      )}
+
+                      {insights.month_over_month?.previousIncome !== undefined && insights.month_over_month.previousIncome !== null && (
+                        <div className="flex items-center justify-between text-xs text-muted-foreground">
+                          <span>Prev. Month Income:</span>
+                          <span className="font-semibold">{preferredCurrencySymbol}{insights.month_over_month.previousIncome.toLocaleString()}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </Card>

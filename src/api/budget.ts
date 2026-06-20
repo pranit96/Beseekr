@@ -83,8 +83,12 @@ export interface BudgetInsights {
   savings_amount?: number;
   savings_rate?: number;
   month_over_month: {
-    income_change_pct?: number;
-    expense_change_pct?: number;
+    income_change_pct?: number | null;
+    expense_change_pct?: number | null;
+    expenseChange?: number | null;
+    previousExpenses?: number | null;
+    previousIncome?: number | null;
+    direction?: string | null;
   };
   category_breakdown?: {
     [category: string]: {
