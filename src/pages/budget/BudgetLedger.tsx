@@ -201,7 +201,20 @@ export default function BudgetLedger() {
                         <TableCell className="font-medium whitespace-nowrap text-sm">
                           {new Date(tx.transaction_date).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
                         </TableCell>
-                        <TableCell className="font-semibold text-foreground text-sm">{tx.merchant || "—"}</TableCell>
+                        <TableCell>
+                          <div className="font-semibold text-foreground text-sm">{tx.merchant || "—"}</div>
+                          {tx.institution_name && (
+                            <div className="text-[10px] text-muted-foreground font-normal flex items-center gap-1 mt-0.5">
+                              <span className="capitalize">{tx.institution_name}</span>
+                              {tx.account_type && (
+                                <>
+                                  <span className="opacity-40">•</span>
+                                  <span>{tx.account_type === "credit_card" ? "Credit Card" : tx.account_type === "savings_account" ? "Savings" : tx.account_type}</span>
+                                </>
+                              )}
+                            </div>
+                          )}
+                        </TableCell>
                         <TableCell>
                           <Badge variant="outline" className="bg-muted/50 text-muted-foreground hover:bg-muted font-normal text-xs rounded-lg">
                             {tx.category}
@@ -249,8 +262,9 @@ export default function BudgetLedger() {
                           {tx.type}
                         </Badge>
                       </div>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-muted-foreground truncate max-w-[250px]">
                         {new Date(tx.transaction_date).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                        {tx.institution_name && ` · ${tx.institution_name} (${tx.account_type === "credit_card" ? "Card" : "Savings"})`}
                         {tx.description && ` · ${tx.description}`}
                       </p>
                     </div>

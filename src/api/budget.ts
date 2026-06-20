@@ -12,6 +12,8 @@ export interface Transaction {
   merchant: string | null;
   source: string;
   transaction_date: string;
+  account_type?: "savings_account" | "credit_card" | "cash" | "other" | null;
+  institution_name?: string | null;
   created_at: string;
 }
 
