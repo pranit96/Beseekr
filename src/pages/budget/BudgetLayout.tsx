@@ -151,14 +151,8 @@ export default function BudgetLayout() {
   const preferredCurrency = user?.preferred_currency || "USD";
   const preferredCurrencySymbol = getCurrencySymbol(preferredCurrency);
 
-  const [selectedMonth, setSelectedMonth] = useState<number>(() => {
-    const saved = sessionStorage.getItem("budget_selected_month");
-    return saved ? parseInt(saved, 10) : new Date().getMonth() + 1;
-  });
-  const [selectedYear, setSelectedYear] = useState<number>(() => {
-    const saved = sessionStorage.getItem("budget_selected_year");
-    return saved ? parseInt(saved, 10) : new Date().getFullYear();
-  });
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
   // Data states
   const [dashboard, setDashboard] = useState<BudgetDashboard | null>(null);
@@ -284,13 +278,7 @@ export default function BudgetLayout() {
     }
   }, [selectedMonth, selectedYear, user]);
 
-  useEffect(() => {
-    sessionStorage.setItem("budget_selected_month", selectedMonth.toString());
-  }, [selectedMonth]);
 
-  useEffect(() => {
-    sessionStorage.setItem("budget_selected_year", selectedYear.toString());
-  }, [selectedYear]);
 
   const handleRefresh = () => {
     fetchDashboard(selectedMonth, selectedYear);
