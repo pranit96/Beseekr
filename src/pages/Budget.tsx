@@ -98,9 +98,29 @@ const PREDEFINED_CATEGORIES = [
 
 const CURRENCIES = ["USD", "INR", "EUR", "GBP", "CAD"];
 
+const getCurrencySymbol = (code?: string) => {
+  if (!code) return "$";
+  switch (code.toUpperCase()) {
+    case "INR":
+      return "₹";
+    case "EUR":
+      return "€";
+    case "GBP":
+      return "£";
+    case "CAD":
+      return "CA$";
+    case "USD":
+    default:
+      return "$";
+  }
+};
+
 export default function Budget() {
   const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
+
+  const preferredCurrency = (user as any)?.preferred_currency || "USD";
+  const preferredCurrencySymbol = getCurrencySymbol(preferredCurrency);
 
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
@@ -284,7 +304,7 @@ export default function Budget() {
       if (response.success) {
         toast({
           title: "Transaction Recorded",
-          description: `Successfully added ${txType} of $${parseFloat(txAmount).toFixed(2)}.`,
+          description: `Successfully added ${txType} of ${preferredCurrencySymbol}${parseFloat(txAmount).toFixed(2)}.`,
         });
         setIsAddTxOpen(false);
         // Reset form
@@ -331,7 +351,7 @@ export default function Budget() {
       if (response.success) {
         toast({
           title: "Saving Goal Created",
-          description: `Successfully created "${goalName}" with a target of $${parseFloat(goalTargetAmount).toLocaleString()}.`,
+          description: `Successfully created "${goalName}" with a target of ${preferredCurrencySymbol}${parseFloat(goalTargetAmount).toLocaleString()}.`,
         });
         setIsAddGoalOpen(false);
         // Reset form
@@ -376,7 +396,7 @@ export default function Budget() {
       if (response.success) {
         toast({
           title: "Contribution Saved",
-          description: `Contributed $${parseFloat(contribAmount).toFixed(2)} to saving goal!`,
+          description: `Contributed ${preferredCurrencySymbol}${parseFloat(contribAmount).toFixed(2)} to saving goal!`,
         });
         setContributeGoalId(null);
         setContribAmount("");
@@ -650,7 +670,7 @@ export default function Budget() {
             </CardHeader>
             <CardContent className="p-4 pt-0">
               <span className={`text-xl font-bold tracking-tight ${(dashboard?.summary.netSavings ?? 0) >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
-                ${dashboard?.summary.netSavings.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                {preferredCurrencySymbol}{dashboard?.summary.netSavings.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
             </CardContent>
           </Card>
@@ -678,7 +698,7 @@ export default function Budget() {
             </CardHeader>
             <CardContent className="p-4 pt-0">
               <span className="text-xl font-bold tracking-tight text-emerald-400">
-                ${dashboard?.summary.totalIncome.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                {preferredCurrencySymbol}{dashboard?.summary.totalIncome.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
             </CardContent>
           </Card>
@@ -692,7 +712,7 @@ export default function Budget() {
             </CardHeader>
             <CardContent className="p-4 pt-0">
               <span className="text-xl font-bold tracking-tight text-rose-400">
-                ${dashboard?.summary.totalExpenses.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                {preferredCurrencySymbol}{dashboard?.summary.totalExpenses.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
             </CardContent>
           </Card>
@@ -706,7 +726,7 @@ export default function Budget() {
             </CardHeader>
             <CardContent className="p-4 pt-0">
               <span className="text-xl font-bold tracking-tight text-foreground">
-                ${dashboard?.summary.avgDailySpend.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                {preferredCurrencySymbol}{dashboard?.summary.avgDailySpend.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
             </CardContent>
           </Card>
@@ -720,7 +740,7 @@ export default function Budget() {
             </CardHeader>
             <CardContent className="p-4 pt-0">
               <span className="text-xl font-bold tracking-tight text-foreground">
-                ${dashboard?.summary.projectedMonthlySpend.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                {preferredCurrencySymbol}{dashboard?.summary.projectedMonthlySpend.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
             </CardContent>
           </Card>
@@ -774,7 +794,7 @@ export default function Budget() {
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" className="opacity-40" />
                       <XAxis dataKey="date" stroke="var(--muted-foreground)" fontSize={11} tickLine={false} axisLine={false} />
-                      <YAxis stroke="var(--muted-foreground)" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(val) => `$${val}`} />
+                      <YAxis stroke="var(--muted-foreground)" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(val) => `${preferredCurrencySymbol}${val}`} />
                       <Tooltip
                         contentStyle={{
                           backgroundColor: "var(--background)",
@@ -783,7 +803,7 @@ export default function Budget() {
                           boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
                         }}
                         labelFormatter={(label) => `Date: ${label}`}
-                        formatter={(val: any) => [`$${val.toFixed(2)}`, "Expenses"]}
+                        formatter={(val: any) => [`${preferredCurrencySymbol}${val.toFixed(2)}`, "Expenses"]}
                       />
                       <Area type="monotone" dataKey="amount" stroke="var(--primary)" strokeWidth={2} fillOpacity={1} fill="url(#spendGrad)" />
                     </AreaChart>
@@ -822,7 +842,7 @@ export default function Budget() {
                                 {item.name}
                               </span>
                               <span className="text-foreground font-semibold">
-                                ${item.value.toLocaleString(undefined, { maximumFractionDigits: 0 })} / ${progressMax}
+                                {preferredCurrencySymbol}{item.value.toLocaleString(undefined, { maximumFractionDigits: 0 })} / {preferredCurrencySymbol}{progressMax}
                               </span>
                             </div>
                             <Progress value={percentage} className="h-1.5 bg-muted/40" />
@@ -863,7 +883,7 @@ export default function Budget() {
                           {merchant.name || "Unknown Merchant"}
                         </span>
                         <span className="font-semibold text-rose-400">
-                          -${merchant.total.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                          -{preferredCurrencySymbol}{merchant.total.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                         </span>
                       </div>
                     ))}
@@ -892,14 +912,14 @@ export default function Budget() {
                     <BarChart data={yearlyOverviewChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" className="opacity-40" />
                       <XAxis dataKey="month" stroke="var(--muted-foreground)" fontSize={11} tickLine={false} axisLine={false} />
-                      <YAxis stroke="var(--muted-foreground)" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(val) => `$${val}`} />
+                      <YAxis stroke="var(--muted-foreground)" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(val) => `${preferredCurrencySymbol}${val}`} />
                       <Tooltip
                         contentStyle={{
                           backgroundColor: "var(--background)",
                           borderColor: "var(--border)",
                           borderRadius: "12px",
                         }}
-                        formatter={(val: any) => [`$${val.toFixed(0)}`]}
+                        formatter={(val: any) => [`${preferredCurrencySymbol}${val.toFixed(0)}`]}
                       />
                       <Bar dataKey="income" fill="var(--emerald-500)" radius={[4, 4, 0, 0]} opacity={0.8} name="Income" />
                       <Bar dataKey="expenses" fill="var(--rose-500)" radius={[4, 4, 0, 0]} opacity={0.8} name="Expenses" />
@@ -1045,7 +1065,7 @@ export default function Budget() {
                           </Badge>
                         </TableCell>
                         <TableCell className={`text-right font-bold ${tx.type === "income" || tx.type === "refund" ? "text-emerald-400" : "text-rose-400"}`}>
-                          {tx.type === "income" || tx.type === "refund" ? "+" : "-"}${tx.amount.toLocaleString(undefined, {
+                          {tx.type === "income" || tx.type === "refund" ? "+" : "-"}{getCurrencySymbol(tx.currency)}{tx.amount.toLocaleString(undefined, {
                             minimumFractionDigits: 2,
                             maximumFractionDigits: 2,
                           })}
@@ -1132,11 +1152,11 @@ export default function Budget() {
                       <div className="flex justify-between text-sm">
                         <div>
                           <p className="text-xs text-muted-foreground">Saved</p>
-                          <p className="font-bold text-emerald-400">${goal.current_amount.toLocaleString()}</p>
+                          <p className="font-bold text-emerald-400">{getCurrencySymbol(goal.currency)}{goal.current_amount.toLocaleString()}</p>
                         </div>
                         <div className="text-right">
                           <p className="text-xs text-muted-foreground">Target</p>
-                          <p className="font-bold text-foreground">${goal.target_amount.toLocaleString()}</p>
+                          <p className="font-bold text-foreground">{getCurrencySymbol(goal.currency)}{goal.target_amount.toLocaleString()}</p>
                         </div>
                       </div>
                     </CardContent>
@@ -1338,7 +1358,7 @@ export default function Budget() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-muted-foreground">Amount ($)</label>
+                <label className="text-xs font-semibold text-muted-foreground">Amount ({preferredCurrency})</label>
                 <Input
                   type="number"
                   step="0.01"
@@ -1438,7 +1458,7 @@ export default function Budget() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-muted-foreground">Target Amount ($)</label>
+                <label className="text-xs font-semibold text-muted-foreground">Target Amount ({preferredCurrency})</label>
                 <Input
                   type="number"
                   placeholder="1,000.00"
@@ -1523,7 +1543,7 @@ export default function Budget() {
 
           <form onSubmit={handleContributeSubmit} className="space-y-4 pt-2">
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-muted-foreground">Contribution Amount ($)</label>
+              <label className="text-xs font-semibold text-muted-foreground">Contribution Amount ({preferredCurrency})</label>
               <Input
                 type="number"
                 placeholder="100.00"

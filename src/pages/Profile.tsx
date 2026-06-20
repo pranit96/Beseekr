@@ -109,13 +109,15 @@ export default function Profile() {
 
   const [timezone, setTimezone] = useState(detectedTimezone);
   const [language, setLanguage] = useState(detectedLang);
+  const [preferredCurrency, setPreferredCurrency] = useState("USD");
 
   const { user, loading, exportData, deleteAccount, refreshAuth } = useAuth();
 
   useEffect(() => {
     if (user?.timezone) setTimezone(user.timezone);
     if (user?.language) setLanguage(user.language);
-  }, [user?.timezone, user?.language]);
+    if ((user as any)?.preferred_currency) setPreferredCurrency((user as any).preferred_currency);
+  }, [user?.timezone, user?.language, (user as any)?.preferred_currency]);
 
   const { toast } = useToast();
 
@@ -186,6 +188,11 @@ export default function Profile() {
       const baselineLang = user?.language || detectedLang;
       if (language !== baselineLang) {
         payload.language = language;
+      }
+
+      const baselineCurrency = (user as any)?.preferred_currency || "USD";
+      if (preferredCurrency !== baselineCurrency) {
+        payload.preferred_currency = preferredCurrency;
       }
 
       if (Object.keys(payload).length === 0) {
@@ -357,7 +364,7 @@ export default function Profile() {
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label>{t("profile.language")}</Label>
                   <Select
@@ -411,6 +418,24 @@ export default function Profile() {
                     </SelectContent>
                   </Select>
                 </div>
+                <div className="space-y-2">
+                  <Label>Preferred Currency</Label>
+                  <Select
+                    value={preferredCurrency}
+                    onValueChange={(val) => setPreferredCurrency(val)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Currency" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="USD">USD ($)</SelectItem>
+                      <SelectItem value="INR">INR (₹)</SelectItem>
+                      <SelectItem value="EUR">EUR (€)</SelectItem>
+                      <SelectItem value="GBP">GBP (£)</SelectItem>
+                      <SelectItem value="CAD">CAD (CA$)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
 
@@ -422,7 +447,8 @@ export default function Profile() {
                   (fullName === (user?.full_name || user?.name || "") &&
                     avatarUrl === ((user as any)?.avatar || null) &&
                     timezone === (user?.timezone || detectedTimezone) &&
-                    language === (user?.language || detectedLang))
+                    language === (user?.language || detectedLang) &&
+                    preferredCurrency === ((user as any)?.preferred_currency || "USD"))
                 }
               >
                 {isUpdatingProfile
