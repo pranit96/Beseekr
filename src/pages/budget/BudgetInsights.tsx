@@ -104,49 +104,118 @@ export default function BudgetInsights() {
               transition={{ duration: 0.4 }}
               className="space-y-6 relative z-10"
             >
-              {/* MoM Comparison Cards */}
-              <div className="grid sm:grid-cols-2 gap-3">
-                <Card className="bg-background/60 border-border/20 p-4 rounded-xl">
-                  <p className="text-[10px] text-muted-foreground uppercase font-semibold tracking-wider mb-1.5">Month-over-Month Income</p>
-                  <div className="flex items-center gap-2">
-                    <span className="text-2xl font-bold tabular-nums">
-                      {insights.month_over_month?.income_change_pct !== undefined
-                        ? `${insights.month_over_month.income_change_pct >= 0 ? "+" : ""}${insights.month_over_month.income_change_pct.toFixed(1)}%`
-                        : "0.0%"}
-                    </span>
-                    {insights.month_over_month?.income_change_pct !== undefined && (
-                      <Badge variant="outline" className={insights.month_over_month.income_change_pct >= 0
-                        ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 text-xs rounded-md"
-                        : "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20 text-xs rounded-md"
-                      }>
-                        {insights.month_over_month.income_change_pct >= 0 ? "Up" : "Down"}
-                      </Badge>
-                    )}
+              {/* ─── Top Grid: Health Score, MoM cards, and Quick stats ─── */}
+              <div className="grid md:grid-cols-3 gap-4">
+                
+                {/* 1. Health Score Ring */}
+                <Card className="bg-background/60 border-border/20 p-5 rounded-xl flex items-center justify-between relative overflow-hidden group hover:border-primary/20 transition-all">
+                  <div className="space-y-1">
+                    <p className="text-[10px] text-muted-foreground uppercase font-semibold tracking-wider">Health Score</p>
+                    <div className="text-2xl font-bold tracking-tight">
+                      {insights.financial_health_score ?? 50}
+                      <span className="text-xs text-muted-foreground font-normal">/100</span>
+                    </div>
+                    <p className="text-xs font-medium text-emerald-500">
+                      {(() => {
+                        const score = insights.financial_health_score ?? 50;
+                        if (score >= 80) return "Excellent Standing";
+                        if (score >= 60) return "Healthy Position";
+                        if (score >= 50) return "Fair Standing";
+                        return "Requires Attention";
+                      })()}
+                    </p>
+                  </div>
+                  
+                  {/* Circular progress */}
+                  <div className="relative w-18 h-18 shrink-0 flex items-center justify-center">
+                    <svg className="w-16 h-16 transform -rotate-90">
+                      <circle cx="32" cy="32" r="26" stroke="hsl(var(--muted)/0.2)" strokeWidth="4.5" fill="transparent" />
+                      <circle
+                        cx="32" cy="32" r="26"
+                        stroke={(() => {
+                          const score = insights.financial_health_score ?? 50;
+                          if (score >= 80) return "hsl(var(--primary))";
+                          if (score >= 50) return "#f59e0b"; // amber-500
+                          return "#f43f5e"; // rose-500
+                        })()}
+                        strokeWidth="4.5" fill="transparent"
+                        strokeDasharray={2 * Math.PI * 26}
+                        strokeDashoffset={2 * Math.PI * 26 - ((insights.financial_health_score ?? 50) / 100) * 2 * Math.PI * 26}
+                        strokeLinecap="round"
+                        className="transition-all duration-1000 ease-out"
+                      />
+                    </svg>
+                    <span className="absolute text-sm font-bold">{insights.financial_health_score ?? 50}</span>
                   </div>
                 </Card>
 
-                <Card className="bg-background/60 border-border/20 p-4 rounded-xl">
-                  <p className="text-[10px] text-muted-foreground uppercase font-semibold tracking-wider mb-1.5">Month-over-Month Expenses</p>
-                  <div className="flex items-center gap-2">
-                    <span className="text-2xl font-bold tabular-nums">
-                      {insights.month_over_month?.expense_change_pct !== undefined
-                        ? `${insights.month_over_month.expense_change_pct >= 0 ? "+" : ""}${insights.month_over_month.expense_change_pct.toFixed(1)}%`
-                        : "0.0%"}
-                    </span>
-                    {insights.month_over_month?.expense_change_pct !== undefined && (
-                      <Badge variant="outline" className={insights.month_over_month.expense_change_pct <= 0
-                        ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 text-xs rounded-md"
-                        : "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20 text-xs rounded-md"
-                      }>
-                        {insights.month_over_month.expense_change_pct <= 0 ? "Reduced" : "Increased"}
-                      </Badge>
-                    )}
+                {/* 2. MoM Changes */}
+                <Card className="bg-background/60 border-border/20 p-5 rounded-xl flex flex-col justify-between">
+                  <div>
+                    <p className="text-[10px] text-muted-foreground uppercase font-semibold tracking-wider mb-2">Month-over-Month Changes</p>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Income Change:</span>
+                        <div className="flex items-center gap-1.5 font-bold tabular-nums">
+                          {insights.month_over_month?.income_change_pct !== undefined
+                            ? `${insights.month_over_month.income_change_pct >= 0 ? "+" : ""}${insights.month_over_month.income_change_pct}%`
+                            : "0%"}
+                          {insights.month_over_month?.income_change_pct !== undefined && (
+                            <Badge className={insights.month_over_month.income_change_pct >= 0
+                              ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 text-[10px] h-4 rounded-md font-medium"
+                              : "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20 text-[10px] h-4 rounded-md font-medium"
+                            }>
+                              {insights.month_over_month.income_change_pct >= 0 ? "Up" : "Down"}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Expense Change:</span>
+                        <div className="flex items-center gap-1.5 font-bold tabular-nums">
+                          {insights.month_over_month?.expense_change_pct !== undefined
+                            ? `${insights.month_over_month.expense_change_pct >= 0 ? "+" : ""}${insights.month_over_month.expense_change_pct}%`
+                            : "0%"}
+                          {insights.month_over_month?.expense_change_pct !== undefined && (
+                            <Badge className={insights.month_over_month.expense_change_pct <= 0
+                              ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 text-[10px] h-4 rounded-md font-medium"
+                              : "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20 text-[10px] h-4 rounded-md font-medium"
+                            }>
+                              {insights.month_over_month.expense_change_pct <= 0 ? "Reduced" : "Increased"}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+
+                {/* 3. Base Metrics Card */}
+                <Card className="bg-background/60 border-border/20 p-5 rounded-xl flex flex-col justify-between">
+                  <div>
+                    <p className="text-[10px] text-muted-foreground uppercase font-semibold tracking-wider mb-2">Metrics Summary</p>
+                    <div className="space-y-1.5">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-muted-foreground">Total Income:</span>
+                        <span className="font-semibold text-foreground">{preferredCurrencySymbol}{(insights.total_income ?? 0).toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-muted-foreground">Total Expenses:</span>
+                        <span className="font-semibold text-foreground">{preferredCurrencySymbol}{(insights.total_expenses ?? 0).toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between text-xs border-t border-border/20 pt-1">
+                        <span className="text-muted-foreground font-medium">Savings Rate:</span>
+                        <span className="font-bold text-emerald-500">{insights.savings_rate ?? 0}%</span>
+                      </div>
+                    </div>
                   </div>
                 </Card>
               </div>
 
-              {/* AI Summary */}
-              <Card className="bg-background/60 border-border/20 rounded-xl p-5">
+              {/* AI Summary (Full Width) */}
+              <Card className="bg-background/60 border-border/20 rounded-xl p-5 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-2xl pointer-events-none" />
                 <h4 className="text-sm font-semibold text-indigo-500 mb-2.5 flex items-center gap-1.5">
                   <MessageSquare className="w-4 h-4" /> AI Summary & Strategy
                 </h4>
@@ -155,9 +224,10 @@ export default function BudgetInsights() {
                 </p>
               </Card>
 
-              {/* Tips & Anomalies Grid */}
-              <div className="grid md:grid-cols-2 gap-4">
-                {/* Tips */}
+              {/* ─── Detailed Lists (Tips, Patterns, Anomalies) ─── */}
+              <div className="grid md:grid-cols-3 gap-4">
+                
+                {/* 1. Saving Tips */}
                 <div className="space-y-3">
                   <h4 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
                     <Sparkles className="w-4 h-4 text-emerald-500" /> Saving Tips
@@ -165,14 +235,14 @@ export default function BudgetInsights() {
                   {(!insights.ai_tips || insights.ai_tips.length === 0) ? (
                     <p className="text-xs text-muted-foreground italic">No tips generated.</p>
                   ) : (
-                    <ul className="space-y-2">
+                    <ul className="space-y-2.5">
                       {insights.ai_tips.map((tip, idx) => (
                         <motion.li
                           key={idx}
                           initial={{ opacity: 0, x: -8 }}
                           animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: idx * 0.1, duration: 0.3 }}
-                          className="flex gap-2.5 text-sm text-muted-foreground items-start"
+                          transition={{ delay: idx * 0.08, duration: 0.3 }}
+                          className="flex gap-2 text-sm text-muted-foreground items-start leading-relaxed bg-muted/10 p-2.5 rounded-lg border border-border/10"
                         >
                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-2 shrink-0" />
                           <span>{tip}</span>
@@ -182,7 +252,32 @@ export default function BudgetInsights() {
                   )}
                 </div>
 
-                {/* Anomalies */}
+                {/* 2. Spending Patterns */}
+                <div className="space-y-3">
+                  <h4 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+                    <Sparkles className="w-4 h-4 text-blue-500" /> Spending Patterns
+                  </h4>
+                  {(!insights.spending_patterns || insights.spending_patterns.length === 0) ? (
+                    <p className="text-xs text-muted-foreground italic">No patterns detected.</p>
+                  ) : (
+                    <ul className="space-y-2.5">
+                      {insights.spending_patterns.map((pattern, idx) => (
+                        <motion.li
+                          key={idx}
+                          initial={{ opacity: 0, x: -8 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: idx * 0.08 + 0.1, duration: 0.3 }}
+                          className="flex gap-2 text-sm text-muted-foreground items-start leading-relaxed bg-muted/10 p-2.5 rounded-lg border border-border/10"
+                        >
+                          <span className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-2 shrink-0" />
+                          <span>{pattern}</span>
+                        </motion.li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+
+                {/* 3. Anomalies */}
                 <div className="space-y-3">
                   <h4 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
                     <AlertTriangle className="w-4 h-4 text-rose-500" /> Anomaly Warnings
@@ -193,18 +288,18 @@ export default function BudgetInsights() {
                       No major spending anomalies detected. Keep it up!
                     </div>
                   ) : (
-                    <ul className="space-y-2">
+                    <ul className="space-y-2.5">
                       {insights.anomalies.map((anom, idx) => {
                         const formattedText = typeof anom === "object" && anom !== null
-                          ? `${anom.category} ${anom.direction || "changed"} by ${Math.abs(anom.changePercent || 0)}% (${preferredCurrencySymbol}${anom.previousAmount} → ${preferredCurrencySymbol}${anom.currentAmount})`
+                          ? `${anom.category} ${anom.direction || "changed"} by ${Math.abs(anom.changePercent || 0)}% (${preferredCurrencySymbol}${anom.previousAmount.toLocaleString()} → ${preferredCurrencySymbol}${anom.currentAmount.toLocaleString()})`
                           : String(anom);
                         return (
                           <motion.li
                             key={idx}
                             initial={{ opacity: 0, x: -8 }}
                             animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: idx * 0.1 + 0.2, duration: 0.3 }}
-                            className="flex gap-2.5 text-sm text-muted-foreground items-start"
+                            transition={{ delay: idx * 0.08 + 0.2, duration: 0.3 }}
+                            className="flex gap-2 text-sm text-muted-foreground items-start leading-relaxed bg-muted/10 p-2.5 rounded-lg border border-border/10"
                           >
                             <span className="w-1.5 h-1.5 rounded-full bg-rose-500 mt-2 shrink-0" />
                             <span>{formattedText}</span>

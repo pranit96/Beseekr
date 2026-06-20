@@ -77,6 +77,11 @@ export interface BudgetInsights {
   ai_tips: string[];
   anomalies: any[];
   spending_patterns: string[];
+  financial_health_score?: number;
+  total_income?: number;
+  total_expenses?: number;
+  savings_amount?: number;
+  savings_rate?: number;
   month_over_month: {
     income_change_pct?: number;
     expense_change_pct?: number;
