@@ -241,6 +241,7 @@ export default function BudgetOverview() {
                   <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(val) => `${preferredCurrencySymbol}${val}`} />
                   <Tooltip
                     contentStyle={{ backgroundColor: "hsl(var(--background))", borderColor: "hsl(var(--border))", borderRadius: "12px" }}
+                    cursor={{ fill: "rgba(255, 255, 255, 0.05)" }}
                     formatter={(val: any) => [`${preferredCurrencySymbol}${val.toFixed(0)}`]}
                   />
                   <Bar dataKey="income" fill="hsl(160 84% 39%)" radius={[4, 4, 0, 0]} opacity={0.85} name="Income" />
