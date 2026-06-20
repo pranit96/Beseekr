@@ -1,6 +1,6 @@
 import { useState, useEffect, createContext, useContext } from "react";
 import { Outlet, NavLink, Navigate, useLocation } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Wallet,
   Plus,
@@ -131,6 +131,22 @@ export default function BudgetLayout() {
   const { user, loading: authLoading, refreshAuth } = useAuth();
   const { toast } = useToast();
   const location = useLocation();
+
+  const getPageMessage = () => {
+    const monthName = MONTHS.find((m) => m.value === selectedMonth)?.label || "";
+    const periodStr = `${monthName} ${selectedYear}`;
+    
+    if (location.pathname.endsWith("/overview")) {
+      return `Overview for ${periodStr}`;
+    } else if (location.pathname.endsWith("/ledger")) {
+      return `Transactions for ${periodStr}`;
+    } else if (location.pathname.endsWith("/goals")) {
+      return `Savings Goals for ${periodStr}`;
+    } else if (location.pathname.endsWith("/insights")) {
+      return `AI Insights for ${periodStr}`;
+    }
+    return `Period: ${periodStr}`;
+  };
 
   const preferredCurrency = user?.preferred_currency || "USD";
   const preferredCurrencySymbol = getCurrencySymbol(preferredCurrency);
@@ -357,8 +373,22 @@ export default function BudgetLayout() {
               <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">
                 Your Finance Hub
               </h1>
-              <p className="text-sm text-muted-foreground mt-0.5">
-                Track spending, set goals, and get AI-powered financial insights.
+              <p className="text-sm text-muted-foreground mt-0.5 flex flex-wrap items-center gap-1.5">
+                <span>Track spending, set goals, and get AI-powered financial insights.</span>
+                <span className="text-muted-foreground/30">•</span>
+                <AnimatePresence mode="wait">
+                  <motion.span
+                    key={`${selectedMonth}-${selectedYear}`}
+                    initial={{ opacity: 0, y: -2 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 2 }}
+                    transition={{ duration: 0.15 }}
+                    className="text-primary font-medium bg-primary/5 px-2 py-0.5 rounded-md border border-primary/10 inline-flex items-center gap-1.5 shadow-sm"
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    Viewing data for {MONTHS.find(m => m.value === selectedMonth)?.label || ""} {selectedYear}
+                  </motion.span>
+                </AnimatePresence>
               </p>
             </div>
 
