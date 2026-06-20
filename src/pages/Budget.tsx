@@ -533,8 +533,8 @@ export default function Budget() {
       return ledgerSortOrder === "asc" ? comparison : -comparison;
     });
 
-  const getPriorityBadgeColor = (p: string) => {
-    switch (p.toLowerCase()) {
+  const getPriorityBadgeColor = (p?: string) => {
+    switch ((p || "medium").toLowerCase()) {
       case "critical":
         return "bg-rose-500/20 text-rose-500 border border-rose-500/30";
       case "high":
@@ -546,8 +546,8 @@ export default function Budget() {
     }
   };
 
-  const getGoalStatusColor = (s: string) => {
-    switch (s.toLowerCase()) {
+  const getGoalStatusColor = (s?: string) => {
+    switch ((s || "active").toLowerCase()) {
       case "completed":
         return "bg-emerald-500/20 text-emerald-500 border border-emerald-500/30";
       case "failed":

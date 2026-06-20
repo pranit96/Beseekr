@@ -142,9 +142,7 @@ export const budgetApi = {
         duplicatesSkipped: number;
         message: string;
       };
-    }>("/api/budget/import", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    }),
+    }>("/api/budget/import", formData),
 
   getImportHistory: () =>
     apiClient.get<{ success: boolean; data: any[] }>("/api/budget/import/history"),
