@@ -207,15 +207,18 @@ function isPathActive(pathname: string, href: string, exact?: boolean) {
   return pathname === href || pathname.startsWith(href + "/");
 }
 
-function getNavigationContext(pathname: string, isPremium: boolean, isBudgetEnabled: boolean) {
+function getNavigationContext(
+  pathname: string,
+  isPremium: boolean,
+  isBudgetEnabled: boolean,
+) {
   const isChatContext =
     pathname.startsWith("/chat") ||
     pathname.startsWith("/agents") ||
     pathname.startsWith("/canvas");
   const isResumeContext = pathname.startsWith("/dashboard/resume");
   const isBudgetContext = pathname.startsWith("/dashboard/budget");
-  const isDiscoverContext =
-    pathname.startsWith("/dashboard");
+  const isDiscoverContext = pathname.startsWith("/dashboard");
 
   if (isBudgetContext) {
     return [
@@ -614,10 +617,7 @@ export function GlobalHeader() {
                       asChild
                       className="rounded-lg cursor-pointer"
                     >
-                      <Link
-                        to="/profile"
-                        className="flex items-center w-full"
-                      >
+                      <Link to="/profile" className="flex items-center w-full">
                         <Settings className="mr-2 h-4 w-4" />
                         {t("nav.settings", "Settings")}
                       </Link>

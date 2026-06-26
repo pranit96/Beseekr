@@ -50,7 +50,9 @@ export const TopBar = ({
     { key: "chat", name: "Chat", href: "/chat" },
     { key: "agents", name: "Agents", href: "/agents" },
     { key: "analytics", name: "Analytics", href: "/analytics" },
-    ...(isBudgetEnabled ? [{ key: "budget", name: "Budget", href: "/dashboard/budget" }] : []),
+    ...(isBudgetEnabled
+      ? [{ key: "budget", name: "Budget", href: "/dashboard/budget" }]
+      : []),
   ];
 
   const toggleMobileNav = () => setMobileNavOpen((prev) => !prev);
