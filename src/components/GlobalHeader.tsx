@@ -215,8 +215,7 @@ function getNavigationContext(pathname: string, isPremium: boolean, isBudgetEnab
   const isResumeContext = pathname.startsWith("/dashboard/resume");
   const isBudgetContext = pathname.startsWith("/dashboard/budget");
   const isDiscoverContext =
-    pathname.startsWith("/dashboard") &&
-    !pathname.startsWith("/dashboard/profile");
+    pathname.startsWith("/dashboard");
 
   if (isBudgetContext) {
     return [
@@ -616,7 +615,7 @@ export function GlobalHeader() {
                       className="rounded-lg cursor-pointer"
                     >
                       <Link
-                        to="/dashboard/profile"
+                        to="/profile"
                         className="flex items-center w-full"
                       >
                         <Settings className="mr-2 h-4 w-4" />

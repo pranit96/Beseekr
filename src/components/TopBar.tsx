@@ -168,7 +168,7 @@ export const TopBar = ({
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
                   <Link
-                    to="/dashboard/profile"
+                    to="/profile"
                     className="flex items-center w-full cursor-pointer"
                   >
                     <Settings className="mr-2 h-4 w-4" />

@@ -355,13 +355,10 @@ const App = () => {
                           </Suspense>
                         }
                       />
+                      {/* /dashboard/profile → /profile (backward compat redirect) */}
                       <Route
                         path="profile"
-                        element={
-                          <Suspense fallback={<PageLoader />}>
-                            <Profile />
-                          </Suspense>
-                        }
+                        element={<Navigate to="/profile" replace />}
                       />
                       <Route
                         path="budget"
@@ -496,9 +493,19 @@ const App = () => {
                     path="/metaLayer"
                     element={<ProtectedRoute><Suspense fallback={<PageLoader />}><DeepAnalytics /></Suspense></ProtectedRoute>}
                   /> */}
+                    {/* =============================================
+                      PROFILE - Top-level, protected, standalone
+                      (not inside dashboard layout)
+                      ============================================= */}
                     <Route
                       path="/profile"
-                      element={<Navigate to="/dashboard/profile" replace />}
+                      element={
+                        <ProtectedRoute>
+                          <Suspense fallback={<PageLoader />}>
+                            <Profile />
+                          </Suspense>
+                        </ProtectedRoute>
+                      }
                     />
 
                     {/* =============================================
