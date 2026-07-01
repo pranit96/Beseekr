@@ -27,10 +27,7 @@ import type { Agent, CanvasWorkflow } from "@/types/agent";
 interface CanvasSidebarProps {
   agents: Agent[];
   savedWorkflows: CanvasWorkflow[];
-  onDragAgentStart: (
-    e: React.DragEvent,
-    agent: Agent,
-  ) => void;
+  onDragAgentStart: (e: React.DragEvent, agent: Agent) => void;
   onAddAgentNode?: (agent: Agent) => void;
   onAddInputNode: () => void;
   onAddOutputNode: () => void;
@@ -98,26 +95,110 @@ export const CanvasSidebar: React.FC<CanvasSidebarProps> = ({
 
   /* ── Node categories ───────────────────────────────── */
   const coreNodes: NodeDef[] = [
-    { label: "Input", icon: MessageSquareText, onClick: onAddInputNode, color: "hsla(145, 55%, 42%, 0.15)", colorFg: "hsl(145, 60%, 55%)" },
-    { label: "Output", icon: FileOutput, onClick: onAddOutputNode, color: "hsla(200, 70%, 50%, 0.15)", colorFg: "hsl(200, 75%, 60%)" },
-    { label: "Email", icon: Mail, onClick: onAddEmailNode, color: "hsla(340, 65%, 52%, 0.15)", colorFg: "hsl(340, 70%, 62%)" },
-    { label: "Schedule", icon: Clock, onClick: onAddScheduleNode, color: "hsla(35, 75%, 52%, 0.15)", colorFg: "hsl(35, 80%, 62%)" },
-    { label: "Telegram", icon: Send, onClick: onAddTelegramNode, color: "hsla(200, 80%, 48%, 0.15)", colorFg: "hsl(200, 80%, 58%)" },
-    { label: "HTTP", icon: Globe, onClick: onAddHttpNode, color: "hsla(170, 70%, 42%, 0.15)", colorFg: "hsl(170, 75%, 52%)" },
+    {
+      label: "Input",
+      icon: MessageSquareText,
+      onClick: onAddInputNode,
+      color: "hsla(145, 55%, 42%, 0.15)",
+      colorFg: "hsl(145, 60%, 55%)",
+    },
+    {
+      label: "Output",
+      icon: FileOutput,
+      onClick: onAddOutputNode,
+      color: "hsla(200, 70%, 50%, 0.15)",
+      colorFg: "hsl(200, 75%, 60%)",
+    },
+    {
+      label: "Email",
+      icon: Mail,
+      onClick: onAddEmailNode,
+      color: "hsla(340, 65%, 52%, 0.15)",
+      colorFg: "hsl(340, 70%, 62%)",
+    },
+    {
+      label: "Schedule",
+      icon: Clock,
+      onClick: onAddScheduleNode,
+      color: "hsla(35, 75%, 52%, 0.15)",
+      colorFg: "hsl(35, 80%, 62%)",
+    },
+    {
+      label: "Telegram",
+      icon: Send,
+      onClick: onAddTelegramNode,
+      color: "hsla(200, 80%, 48%, 0.15)",
+      colorFg: "hsl(200, 80%, 58%)",
+    },
+    {
+      label: "HTTP",
+      icon: Globe,
+      onClick: onAddHttpNode,
+      color: "hsla(170, 70%, 42%, 0.15)",
+      colorFg: "hsl(170, 75%, 52%)",
+    },
   ];
 
   const logicNodes: NodeDef[] = [
-    { label: "IF / Cond", icon: Split, onClick: onAddConditionalNode, color: "hsla(190, 70%, 48%, 0.15)", colorFg: "hsl(190, 75%, 58%)" },
-    { label: "Merge", icon: Merge, onClick: onAddMergeNode, color: "hsla(235, 65%, 55%, 0.15)", colorFg: "hsl(235, 70%, 65%)" },
-    { label: "Transform", icon: Zap, onClick: onAddTransformNode, color: "hsla(295, 65%, 50%, 0.15)", colorFg: "hsl(295, 70%, 62%)" },
-    { label: "Note", icon: StickyNote, onClick: onAddNoteNode, color: "hsla(45, 70%, 50%, 0.15)", colorFg: "hsl(45, 75%, 60%)" },
+    {
+      label: "IF / Cond",
+      icon: Split,
+      onClick: onAddConditionalNode,
+      color: "hsla(190, 70%, 48%, 0.15)",
+      colorFg: "hsl(190, 75%, 58%)",
+    },
+    {
+      label: "Merge",
+      icon: Merge,
+      onClick: onAddMergeNode,
+      color: "hsla(235, 65%, 55%, 0.15)",
+      colorFg: "hsl(235, 70%, 65%)",
+    },
+    {
+      label: "Transform",
+      icon: Zap,
+      onClick: onAddTransformNode,
+      color: "hsla(295, 65%, 50%, 0.15)",
+      colorFg: "hsl(295, 70%, 62%)",
+    },
+    {
+      label: "Note",
+      icon: StickyNote,
+      onClick: onAddNoteNode,
+      color: "hsla(45, 70%, 50%, 0.15)",
+      colorFg: "hsl(45, 75%, 60%)",
+    },
   ];
 
   const advancedNodes: NodeDef[] = [
-    { label: "Loop", icon: RefreshCw, onClick: () => onAddLoopNode?.(), color: "hsla(25, 80%, 50%, 0.15)", colorFg: "hsl(25, 80%, 60%)" },
-    { label: "Split", icon: GitFork, onClick: () => onAddSplitNode?.(), color: "hsla(150, 65%, 48%, 0.15)", colorFg: "hsl(150, 70%, 55%)" },
-    { label: "Retry", icon: ShieldCheck, onClick: () => onAddRetryNode?.(), color: "hsla(350, 70%, 52%, 0.15)", colorFg: "hsl(350, 70%, 62%)" },
-    { label: "Memory", icon: Brain, onClick: () => onAddMemoryNode?.(), color: "hsla(280, 60%, 55%, 0.15)", colorFg: "hsl(280, 65%, 65%)" },
+    {
+      label: "Loop",
+      icon: RefreshCw,
+      onClick: () => onAddLoopNode?.(),
+      color: "hsla(25, 80%, 50%, 0.15)",
+      colorFg: "hsl(25, 80%, 60%)",
+    },
+    {
+      label: "Split",
+      icon: GitFork,
+      onClick: () => onAddSplitNode?.(),
+      color: "hsla(150, 65%, 48%, 0.15)",
+      colorFg: "hsl(150, 70%, 55%)",
+    },
+    {
+      label: "Retry",
+      icon: ShieldCheck,
+      onClick: () => onAddRetryNode?.(),
+      color: "hsla(350, 70%, 52%, 0.15)",
+      colorFg: "hsl(350, 70%, 62%)",
+    },
+    {
+      label: "Memory",
+      icon: Brain,
+      onClick: () => onAddMemoryNode?.(),
+      color: "hsla(280, 60%, 55%, 0.15)",
+      colorFg: "hsl(280, 65%, 65%)",
+    },
   ];
 
   const renderNodeBtn = (n: NodeDef) => (
@@ -125,7 +206,12 @@ export const CanvasSidebar: React.FC<CanvasSidebarProps> = ({
       key={n.label}
       onClick={n.onClick}
       className="canvas-node-btn"
-      style={{ "--node-color": n.color, "--node-color-fg": n.colorFg } as React.CSSProperties}
+      style={
+        {
+          "--node-color": n.color,
+          "--node-color-fg": n.colorFg,
+        } as React.CSSProperties
+      }
       title={n.label}
     >
       <div className="canvas-node-btn-icon">
@@ -254,7 +340,9 @@ export const CanvasSidebar: React.FC<CanvasSidebarProps> = ({
 
           {/* ── Agent list ──────────────────────────── */}
           <div className="px-3 pb-3">
-            <p className="canvas-section-label">Agents ({filteredAgents.length})</p>
+            <p className="canvas-section-label">
+              Agents ({filteredAgents.length})
+            </p>
             <div className="space-y-1">
               {filteredAgents.length === 0 ? (
                 <p className="text-xs text-white/25 text-center py-6">
@@ -285,7 +373,8 @@ export const CanvasSidebar: React.FC<CanvasSidebarProps> = ({
                         </p>
                         <p className="text-[10px] text-white/35 truncate">
                           {agent.domain || "General"}
-                          {agent.tools && agent.tools.length > 0 &&
+                          {agent.tools &&
+                            agent.tools.length > 0 &&
                             ` · ${agent.tools.length} tools`}
                         </p>
                       </div>
@@ -317,9 +406,7 @@ export const CanvasSidebar: React.FC<CanvasSidebarProps> = ({
             ) : savedWorkflows.length === 0 ? (
               <div className="text-center py-10">
                 <FolderOpen className="w-8 h-8 text-white/15 mx-auto mb-3" />
-                <p className="text-xs text-white/35">
-                  No saved workflows yet
-                </p>
+                <p className="text-xs text-white/35">No saved workflows yet</p>
                 <p className="text-[10px] text-white/20 mt-1">
                   Build and save your first canvas
                 </p>

@@ -62,14 +62,22 @@ const LoopNode = memo(({ data, selected }: NodeProps) => {
           <RefreshCw className="w-4 h-4 text-white" />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="text-[10px] font-black text-amber-400 uppercase tracking-widest">Loop</div>
-          <div className="text-xs font-bold text-foreground truncate">{label}</div>
+          <div className="text-[10px] font-black text-amber-400 uppercase tracking-widest">
+            Loop
+          </div>
+          <div className="text-xs font-bold text-foreground truncate">
+            {label}
+          </div>
         </div>
         <button
-          onClick={() => setExpanded(e => !e)}
+          onClick={() => setExpanded((e) => !e)}
           className="p-1 rounded-lg hover:bg-amber-500/10 text-amber-400/60 hover:text-amber-400 transition-colors"
         >
-          {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+          {expanded ? (
+            <ChevronUp className="w-3.5 h-3.5" />
+          ) : (
+            <ChevronDown className="w-3.5 h-3.5" />
+          )}
         </button>
       </div>
 
@@ -77,7 +85,9 @@ const LoopNode = memo(({ data, selected }: NodeProps) => {
       <div className="px-3.5 py-3 space-y-2.5">
         {/* Visual iteration dots */}
         <div className="flex items-center gap-1.5">
-          <span className="text-[10px] text-amber-400/60 font-bold mr-1">Iterations:</span>
+          <span className="text-[10px] text-amber-400/60 font-bold mr-1">
+            Iterations:
+          </span>
           {Array.from({ length: maxIter }).map((_, i) => (
             <div
               key={i}
@@ -90,65 +100,96 @@ const LoopNode = memo(({ data, selected }: NodeProps) => {
             />
           ))}
           {isDone && (
-            <span className="ml-1 text-[10px] font-black text-emerald-400">✓ Done</span>
+            <span className="ml-1 text-[10px] font-black text-emerald-400">
+              ✓ Done
+            </span>
           )}
         </div>
 
         {/* Agent chip */}
         <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-amber-500/8 border border-amber-500/15">
           <Cpu className="w-3 h-3 text-amber-400 shrink-0" />
-          <span className="text-[11px] font-semibold text-amber-300/80 truncate">{agentName}</span>
+          <span className="text-[11px] font-semibold text-amber-300/80 truncate">
+            {agentName}
+          </span>
         </div>
 
         {/* Expanded config */}
         {expanded && (
           <div className="space-y-2 pt-1 border-t border-amber-500/10">
             <div className="space-y-1">
-              <label className="text-[9px] font-black text-amber-400/50 uppercase tracking-widest">Agent</label>
+              <label className="text-[9px] font-black text-amber-400/50 uppercase tracking-widest">
+                Agent
+              </label>
               <select
                 value={(data.agentId as string) || ""}
-                onChange={e => {
+                onChange={(e) => {
                   const selectedId = e.target.value;
-                  const selectedAgent = agents.find((a: any) => a.id === selectedId);
-                  (data.onAgentChange as Function)?.(selectedId, selectedAgent ? selectedAgent.name : "Unknown");
+                  const selectedAgent = agents.find(
+                    (a: any) => a.id === selectedId,
+                  );
+                  (data.onAgentChange as Function)?.(
+                    selectedId,
+                    selectedAgent ? selectedAgent.name : "Unknown",
+                  );
                 }}
                 className="w-full px-2.5 py-1.5 rounded-lg text-xs bg-background/40 border border-amber-500/20 text-foreground focus:border-amber-400/50 focus:outline-none"
               >
                 <option value="">-- Select Agent --</option>
                 {agents.map((a: any) => (
-                  <option key={a.id} value={a.id}>{a.name}</option>
+                  <option key={a.id} value={a.id}>
+                    {a.name}
+                  </option>
                 ))}
               </select>
             </div>
             <div className="space-y-1">
-              <label className="text-[9px] font-black text-amber-400/50 uppercase tracking-widest">Max Iterations</label>
+              <label className="text-[9px] font-black text-amber-400/50 uppercase tracking-widest">
+                Max Iterations
+              </label>
               <input
                 type="number"
                 min={1}
                 max={10}
                 value={maxIter}
-                onChange={e => (data.onMaxIterationsChange as Function)?.(parseInt(e.target.value))}
+                onChange={(e) =>
+                  (data.onMaxIterationsChange as Function)?.(
+                    parseInt(e.target.value),
+                  )
+                }
                 className="w-full px-2.5 py-1.5 rounded-lg text-xs bg-background/40 border border-amber-500/20 text-foreground focus:border-amber-400/50 focus:outline-none"
               />
             </div>
             <div className="space-y-1">
-              <label className="text-[9px] font-black text-amber-400/50 uppercase tracking-widest">Convergence</label>
+              <label className="text-[9px] font-black text-amber-400/50 uppercase tracking-widest">
+                Convergence
+              </label>
               <select
                 value={mode}
-                onChange={e => (data.onConvergenceModeChange as Function)?.(e.target.value)}
+                onChange={(e) =>
+                  (data.onConvergenceModeChange as Function)?.(e.target.value)
+                }
                 className="w-full px-2.5 py-1.5 rounded-lg text-xs bg-background/40 border border-amber-500/20 text-foreground focus:border-amber-400/50 focus:outline-none"
               >
-                {CONVERGENCE_MODES.map(m => (
-                  <option key={m.value} value={m.value}>{m.label}</option>
+                {CONVERGENCE_MODES.map((m) => (
+                  <option key={m.value} value={m.value}>
+                    {m.label}
+                  </option>
                 ))}
               </select>
             </div>
             {mode === "ai" && (
               <div className="space-y-1">
-                <label className="text-[9px] font-black text-amber-400/50 uppercase tracking-widest">Convergence Prompt</label>
+                <label className="text-[9px] font-black text-amber-400/50 uppercase tracking-widest">
+                  Convergence Prompt
+                </label>
                 <textarea
                   value={(data.convergencePrompt as string) || ""}
-                  onChange={e => (data.onConvergencePromptChange as Function)?.(e.target.value)}
+                  onChange={(e) =>
+                    (data.onConvergencePromptChange as Function)?.(
+                      e.target.value,
+                    )
+                  }
                   placeholder="Is this output complete and satisfactory?"
                   rows={2}
                   className="w-full px-2.5 py-1.5 rounded-lg text-[11px] bg-background/40 border border-amber-500/20 text-foreground placeholder:text-muted-foreground/40 focus:border-amber-400/50 focus:outline-none resize-none"

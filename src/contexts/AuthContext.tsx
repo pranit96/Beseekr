@@ -465,9 +465,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const searchParams = new URLSearchParams(window.location.search);
       const hashParams = new URLSearchParams(window.location.hash.substring(1));
       const hasCode = searchParams.has("code") || hashParams.has("code");
-      
+
       if (hasCode && !window.location.pathname.startsWith("/auth/callback")) {
-        logger.info("Detected OAuth code in URL on non-callback route, self-healing to /auth/callback");
+        logger.info(
+          "Detected OAuth code in URL on non-callback route, self-healing to /auth/callback",
+        );
         const targetUrl = `/auth/callback${window.location.search}${window.location.hash}`;
         window.location.href = targetUrl;
         return;

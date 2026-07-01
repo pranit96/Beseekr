@@ -72,7 +72,11 @@ import {
   useGenerateCanvasWorkflow,
 } from "@/hooks/use-api-queries";
 import { useToast } from "@/hooks/use-toast";
-import type { Agent, CanvasWorkflow, CanvasExecutionResult } from "@/types/agent";
+import type {
+  Agent,
+  CanvasWorkflow,
+  CanvasExecutionResult,
+} from "@/types/agent";
 
 // Register custom node types
 const nodeTypes = {
@@ -119,8 +123,10 @@ const AgentCanvas: React.FC = () => {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
-  const [reactFlowInstance, setReactFlowInstance] =
-    useState<ReactFlowInstance<any, any> | null>(null);
+  const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance<
+    any,
+    any
+  > | null>(null);
 
   // Canvas metadata
   const [workflowName, setWorkflowName] = useState("Untitled Canvas");
@@ -142,7 +148,14 @@ const AgentCanvas: React.FC = () => {
   const [showWebhookPanel, setShowWebhookPanel] = useState(false);
   const [showDiffPanel, setShowDiffPanel] = useState(false);
   // Store snapshot of previous run for diff comparison
-  const previousRunRef = useRef<{ run_id: string; output: string; tokens: number; duration_ms: number; timestamp: string; status: "success" | "failed" } | null>(null);
+  const previousRunRef = useRef<{
+    run_id: string;
+    output: string;
+    tokens: number;
+    duration_ms: number;
+    timestamp: string;
+    status: "success" | "failed";
+  } | null>(null);
 
   // AI Workflow Generator state
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
@@ -189,241 +202,287 @@ const AgentCanvas: React.FC = () => {
   );
 
   // Restore node callbacks helper
-  const restoreNodesWithCallbacks = useCallback((nodesList: any[]) => {
-    return nodesList.map((rawNode: any) => {
-      // Normalize raw node layout and data
-      const id = rawNode.id || `node_${Math.random().toString(36).substring(2, 9)}`;
-      const type = rawNode.type || "inputNode";
+  const restoreNodesWithCallbacks = useCallback(
+    (nodesList: any[]) => {
+      return nodesList.map((rawNode: any) => {
+        // Normalize raw node layout and data
+        const id =
+          rawNode.id || `node_${Math.random().toString(36).substring(2, 9)}`;
+        const type = rawNode.type || "inputNode";
 
-      let position = { x: 100, y: 150 };
-      if (rawNode.position && typeof rawNode.position.x === "number" && typeof rawNode.position.y === "number") {
-        position = { x: rawNode.position.x, y: rawNode.position.y };
-      } else if (typeof rawNode.x === "number" && typeof rawNode.y === "number") {
-        position = { x: rawNode.x, y: rawNode.y };
-      }
+        let position = { x: 100, y: 150 };
+        if (
+          rawNode.position &&
+          typeof rawNode.position.x === "number" &&
+          typeof rawNode.position.y === "number"
+        ) {
+          position = { x: rawNode.position.x, y: rawNode.position.y };
+        } else if (
+          typeof rawNode.x === "number" &&
+          typeof rawNode.y === "number"
+        ) {
+          position = { x: rawNode.x, y: rawNode.y };
+        }
 
-      let data = {};
-      if (rawNode.data && typeof rawNode.data === "object") {
-        data = { ...rawNode.data };
-      } else {
-        const { id: _id, type: _type, position: _pos, x: _x, y: _y, ...flatData } = rawNode;
-        data = flatData;
-      }
+        let data = {};
+        if (rawNode.data && typeof rawNode.data === "object") {
+          data = { ...rawNode.data };
+        } else {
+          const {
+            id: _id,
+            type: _type,
+            position: _pos,
+            x: _x,
+            y: _y,
+            ...flatData
+          } = rawNode;
+          data = flatData;
+        }
 
-      const n = { id, type, position, data };
+        const n = { id, type, position, data };
 
-      if (n.type === "inputNode") {
-        return {
-          ...n,
-          data: {
-            ...n.data,
-            onInputChange: (text: string) =>
-              updateNodeData(n.id, "inputText", text),
-            onFormatChange: (format: string) =>
-              updateNodeData(n.id, "inputFormat", format),
-          },
-        };
-      }
-      if (n.type === "agentNode") {
-        return {
-          ...n,
-          data: {
-            ...n.data,
-            onInstructionChange: (text: string) =>
-              updateNodeData(n.id, "instruction", text),
-          },
-        };
-      }
-      if (n.type === "outputNode") {
-        return {
-          ...n,
-          data: {
-            ...n.data,
-            onFormatChange: (format: string) => {
-              setOutputFormat(format);
-              updateNodeData(n.id, "outputFormat", format);
+        if (n.type === "inputNode") {
+          return {
+            ...n,
+            data: {
+              ...n.data,
+              onInputChange: (text: string) =>
+                updateNodeData(n.id, "inputText", text),
+              onFormatChange: (format: string) =>
+                updateNodeData(n.id, "inputFormat", format),
             },
-            onJsonModeChange: (mode: "table" | "text") =>
-              updateNodeData(n.id, "jsonMode", mode),
-            onEmailToggleChange: (enabled: boolean) =>
-              updateNodeData(n.id, "emailEnabled", enabled),
-            onEmailToChange: (val: string) =>
-              updateNodeData(n.id, "emailTo", val),
-            onEmailSubjectChange: (val: string) =>
-              updateNodeData(n.id, "emailSubject", val),
-          },
-        };
-      }
-      if (n.type === "emailNode") {
-        return {
-          ...n,
-          data: {
-            ...n.data,
-            onEmailToChange: (val: string) =>
-              updateNodeData(n.id, "emailTo", val),
-            onEmailSubjectChange: (val: string) =>
-              updateNodeData(n.id, "emailSubject", val),
-          },
-        };
-      }
-      if (n.type === "telegramNode") {
-        return {
-          ...n,
-          data: {
-            ...n.data,
-            onBotTokenChange: (val: string) =>
-              updateNodeData(n.id, "botToken", val),
-            onChatIdChange: (val: string) =>
-              updateNodeData(n.id, "chatId", val),
-            onMessageTemplateChange: (val: string) =>
-              updateNodeData(n.id, "messageTemplate", val),
-          },
-        };
-      }
-      if (n.type === "scheduleNode") {
-        return {
-          ...n,
-          data: {
-            ...n.data,
-            onLabelChange: (val: string) =>
-              updateNodeData(n.id, "label", val),
-            onCronPresetChange: (val: string) =>
-              updateNodeData(n.id, "cronPreset", val),
-            onCustomCronChange: (val: string) =>
-              updateNodeData(n.id, "customCron", val),
-            onTimezoneChange: (val: string) =>
-              updateNodeData(n.id, "timezone", val),
-            onMaxRunsChange: (val: string) =>
-              updateNodeData(n.id, "maxRuns", val),
-            onActiveToggle: (val: boolean) =>
-              updateNodeData(n.id, "isActive", val),
-            onInputTextChange: (val: string) =>
-              updateNodeData(n.id, "inputText", val),
-            onAdaptiveCronToggle: (val: boolean) =>
-              updateNodeData(n.id, "adaptiveCron", val),
-            onDependsOnScheduleIdChange: (val: string) =>
-              updateNodeData(n.id, "dependsOnScheduleId", val),
-            onExecute: () => handleExecuteRef.current?.(),
-          },
-        };
-      }
-      if (n.type === "conditionalNode") {
-        return {
-          ...n,
-          data: {
-            ...n.data,
-            onLabelChange: (val: string) => updateNodeData(n.id, "label", val),
-            onRuleTypeChange: (val: string) => updateNodeData(n.id, "ruleType", val),
-            onRuleValueChange: (val: string) => updateNodeData(n.id, "ruleValue", val),
-            onRuleDescriptionChange: (val: string) => updateNodeData(n.id, "ruleDescription", val),
-          },
-        };
-      }
-      if (n.type === "mergeNode") {
-        return {
-          ...n,
-          data: {
-            ...n.data,
-            onLabelChange: (val: string) => updateNodeData(n.id, "label", val),
-            onStrategyChange: (val: string) => updateNodeData(n.id, "strategy", val),
-            onSeparatorChange: (val: string) => updateNodeData(n.id, "separator", val),
-          },
-        };
-      }
-      if (n.type === "noteNode") {
-        return {
-          ...n,
-          data: {
-            ...n.data,
-            onLabelChange: (val: string) => updateNodeData(n.id, "label", val),
-            onNoteTextChange: (val: string) => updateNodeData(n.id, "noteText", val),
-            onNoteColorChange: (val: string) => updateNodeData(n.id, "noteColor", val),
-          },
-        };
-      }
-      if (n.type === "httpNode") {
-        return {
-          ...n,
-          data: {
-            ...n.data,
-            onLabelChange: (val: string) => updateNodeData(n.id, "label", val),
-            onMethodChange: (val: string) => updateNodeData(n.id, "method", val),
-            onUrlChange: (val: string) => updateNodeData(n.id, "url", val),
-            onHeadersChange: (val: string) => updateNodeData(n.id, "headers", val),
-            onBodyChange: (val: string) => updateNodeData(n.id, "body", val),
-          },
-        };
-      }
-      if (n.type === "transformNode") {
-        return {
-          ...n,
-          data: {
-            ...n.data,
-            onLabelChange: (val: string) => updateNodeData(n.id, "label", val),
-            onOperationChange: (val: string) => updateNodeData(n.id, "operation", val),
-          },
-        };
-      }
-      if (n.type === "loopNode") {
-        return {
-          ...n,
-          data: {
-            ...n.data,
-            onLabelChange: (val: string) => updateNodeData(n.id, "label", val),
-            onMaxIterationsChange: (val: number) => updateNodeData(n.id, "maxIterations", val),
-            onConvergenceModeChange: (val: string) => updateNodeData(n.id, "convergenceMode", val),
-            onConvergencePromptChange: (val: string) => updateNodeData(n.id, "convergencePrompt", val),
-            onAgentChange: (agentId: string, agentName: string) => {
-              updateNodeData(n.id, "agentId", agentId);
-              updateNodeData(n.id, "agentName", agentName);
+          };
+        }
+        if (n.type === "agentNode") {
+          return {
+            ...n,
+            data: {
+              ...n.data,
+              onInstructionChange: (text: string) =>
+                updateNodeData(n.id, "instruction", text),
             },
-          },
-        };
-      }
-      if (n.type === "splitNode") {
-        return {
-          ...n,
-          data: {
-            ...n.data,
-            onLabelChange: (val: string) => updateNodeData(n.id, "label", val),
-            onBranchesChange: (val: any[]) => updateNodeData(n.id, "branches", val),
-            onAgentChange: (agentId: string, agentName: string) => {
-              updateNodeData(n.id, "agentId", agentId);
-              updateNodeData(n.id, "agentName", agentName);
+          };
+        }
+        if (n.type === "outputNode") {
+          return {
+            ...n,
+            data: {
+              ...n.data,
+              onFormatChange: (format: string) => {
+                setOutputFormat(format);
+                updateNodeData(n.id, "outputFormat", format);
+              },
+              onJsonModeChange: (mode: "table" | "text") =>
+                updateNodeData(n.id, "jsonMode", mode),
+              onEmailToggleChange: (enabled: boolean) =>
+                updateNodeData(n.id, "emailEnabled", enabled),
+              onEmailToChange: (val: string) =>
+                updateNodeData(n.id, "emailTo", val),
+              onEmailSubjectChange: (val: string) =>
+                updateNodeData(n.id, "emailSubject", val),
             },
-          },
-        };
-      }
-      if (n.type === "retryNode") {
-        return {
-          ...n,
-          data: {
-            ...n.data,
-            onLabelChange: (val: string) => updateNodeData(n.id, "label", val),
-            onMaxRetriesChange: (val: number) => updateNodeData(n.id, "maxRetries", val),
-            onCheckModeChange: (val: string) => updateNodeData(n.id, "checkMode", val),
-            onCheckValueChange: (val: string) => updateNodeData(n.id, "checkValue", val),
-            onAgentChange: (agentId: string, agentName: string) => {
-              updateNodeData(n.id, "agentId", agentId);
-              updateNodeData(n.id, "agentName", agentName);
+          };
+        }
+        if (n.type === "emailNode") {
+          return {
+            ...n,
+            data: {
+              ...n.data,
+              onEmailToChange: (val: string) =>
+                updateNodeData(n.id, "emailTo", val),
+              onEmailSubjectChange: (val: string) =>
+                updateNodeData(n.id, "emailSubject", val),
             },
-          },
-        };
-      }
-      if (n.type === "memoryNode") {
-        return {
-          ...n,
-          data: {
-            ...n.data,
-            onLabelChange: (val: string) => updateNodeData(n.id, "label", val),
-            onMemoryKeyChange: (val: string) => updateNodeData(n.id, "memoryKey", val),
-            onOperationChange: (val: string) => updateNodeData(n.id, "operation", val),
-          },
-        };
-      }
-      return n;
-    });
-  }, [updateNodeData]);
+          };
+        }
+        if (n.type === "telegramNode") {
+          return {
+            ...n,
+            data: {
+              ...n.data,
+              onBotTokenChange: (val: string) =>
+                updateNodeData(n.id, "botToken", val),
+              onChatIdChange: (val: string) =>
+                updateNodeData(n.id, "chatId", val),
+              onMessageTemplateChange: (val: string) =>
+                updateNodeData(n.id, "messageTemplate", val),
+            },
+          };
+        }
+        if (n.type === "scheduleNode") {
+          return {
+            ...n,
+            data: {
+              ...n.data,
+              onLabelChange: (val: string) =>
+                updateNodeData(n.id, "label", val),
+              onCronPresetChange: (val: string) =>
+                updateNodeData(n.id, "cronPreset", val),
+              onCustomCronChange: (val: string) =>
+                updateNodeData(n.id, "customCron", val),
+              onTimezoneChange: (val: string) =>
+                updateNodeData(n.id, "timezone", val),
+              onMaxRunsChange: (val: string) =>
+                updateNodeData(n.id, "maxRuns", val),
+              onActiveToggle: (val: boolean) =>
+                updateNodeData(n.id, "isActive", val),
+              onInputTextChange: (val: string) =>
+                updateNodeData(n.id, "inputText", val),
+              onAdaptiveCronToggle: (val: boolean) =>
+                updateNodeData(n.id, "adaptiveCron", val),
+              onDependsOnScheduleIdChange: (val: string) =>
+                updateNodeData(n.id, "dependsOnScheduleId", val),
+              onExecute: () => handleExecuteRef.current?.(),
+            },
+          };
+        }
+        if (n.type === "conditionalNode") {
+          return {
+            ...n,
+            data: {
+              ...n.data,
+              onLabelChange: (val: string) =>
+                updateNodeData(n.id, "label", val),
+              onRuleTypeChange: (val: string) =>
+                updateNodeData(n.id, "ruleType", val),
+              onRuleValueChange: (val: string) =>
+                updateNodeData(n.id, "ruleValue", val),
+              onRuleDescriptionChange: (val: string) =>
+                updateNodeData(n.id, "ruleDescription", val),
+            },
+          };
+        }
+        if (n.type === "mergeNode") {
+          return {
+            ...n,
+            data: {
+              ...n.data,
+              onLabelChange: (val: string) =>
+                updateNodeData(n.id, "label", val),
+              onStrategyChange: (val: string) =>
+                updateNodeData(n.id, "strategy", val),
+              onSeparatorChange: (val: string) =>
+                updateNodeData(n.id, "separator", val),
+            },
+          };
+        }
+        if (n.type === "noteNode") {
+          return {
+            ...n,
+            data: {
+              ...n.data,
+              onLabelChange: (val: string) =>
+                updateNodeData(n.id, "label", val),
+              onNoteTextChange: (val: string) =>
+                updateNodeData(n.id, "noteText", val),
+              onNoteColorChange: (val: string) =>
+                updateNodeData(n.id, "noteColor", val),
+            },
+          };
+        }
+        if (n.type === "httpNode") {
+          return {
+            ...n,
+            data: {
+              ...n.data,
+              onLabelChange: (val: string) =>
+                updateNodeData(n.id, "label", val),
+              onMethodChange: (val: string) =>
+                updateNodeData(n.id, "method", val),
+              onUrlChange: (val: string) => updateNodeData(n.id, "url", val),
+              onHeadersChange: (val: string) =>
+                updateNodeData(n.id, "headers", val),
+              onBodyChange: (val: string) => updateNodeData(n.id, "body", val),
+            },
+          };
+        }
+        if (n.type === "transformNode") {
+          return {
+            ...n,
+            data: {
+              ...n.data,
+              onLabelChange: (val: string) =>
+                updateNodeData(n.id, "label", val),
+              onOperationChange: (val: string) =>
+                updateNodeData(n.id, "operation", val),
+            },
+          };
+        }
+        if (n.type === "loopNode") {
+          return {
+            ...n,
+            data: {
+              ...n.data,
+              onLabelChange: (val: string) =>
+                updateNodeData(n.id, "label", val),
+              onMaxIterationsChange: (val: number) =>
+                updateNodeData(n.id, "maxIterations", val),
+              onConvergenceModeChange: (val: string) =>
+                updateNodeData(n.id, "convergenceMode", val),
+              onConvergencePromptChange: (val: string) =>
+                updateNodeData(n.id, "convergencePrompt", val),
+              onAgentChange: (agentId: string, agentName: string) => {
+                updateNodeData(n.id, "agentId", agentId);
+                updateNodeData(n.id, "agentName", agentName);
+              },
+            },
+          };
+        }
+        if (n.type === "splitNode") {
+          return {
+            ...n,
+            data: {
+              ...n.data,
+              onLabelChange: (val: string) =>
+                updateNodeData(n.id, "label", val),
+              onBranchesChange: (val: any[]) =>
+                updateNodeData(n.id, "branches", val),
+              onAgentChange: (agentId: string, agentName: string) => {
+                updateNodeData(n.id, "agentId", agentId);
+                updateNodeData(n.id, "agentName", agentName);
+              },
+            },
+          };
+        }
+        if (n.type === "retryNode") {
+          return {
+            ...n,
+            data: {
+              ...n.data,
+              onLabelChange: (val: string) =>
+                updateNodeData(n.id, "label", val),
+              onMaxRetriesChange: (val: number) =>
+                updateNodeData(n.id, "maxRetries", val),
+              onCheckModeChange: (val: string) =>
+                updateNodeData(n.id, "checkMode", val),
+              onCheckValueChange: (val: string) =>
+                updateNodeData(n.id, "checkValue", val),
+              onAgentChange: (agentId: string, agentName: string) => {
+                updateNodeData(n.id, "agentId", agentId);
+                updateNodeData(n.id, "agentName", agentName);
+              },
+            },
+          };
+        }
+        if (n.type === "memoryNode") {
+          return {
+            ...n,
+            data: {
+              ...n.data,
+              onLabelChange: (val: string) =>
+                updateNodeData(n.id, "label", val),
+              onMemoryKeyChange: (val: string) =>
+                updateNodeData(n.id, "memoryKey", val),
+              onOperationChange: (val: string) =>
+                updateNodeData(n.id, "operation", val),
+            },
+          };
+        }
+        return n;
+      });
+    },
+    [updateNodeData],
+  );
 
   // Load workflow from URL param
   useEffect(() => {
@@ -453,7 +512,8 @@ const AgentCanvas: React.FC = () => {
       if (!sourceNode || !targetNode) return false;
 
       // Note nodes cannot have connections (purely annotation)
-      if (sourceNode.type === "noteNode" || targetNode.type === "noteNode") return false;
+      if (sourceNode.type === "noteNode" || targetNode.type === "noteNode")
+        return false;
 
       // Prevent duplicate edges, taking handle IDs into account
       const exists = edges.some(
@@ -499,8 +559,7 @@ const AgentCanvas: React.FC = () => {
         label: "Input",
         inputText: "",
         inputFormat: "text",
-        onInputChange: (text: string) =>
-          updateNodeData(id, "inputText", text),
+        onInputChange: (text: string) => updateNodeData(id, "inputText", text),
         onFormatChange: (format: string) =>
           updateNodeData(id, "inputFormat", format),
       },
@@ -527,8 +586,7 @@ const AgentCanvas: React.FC = () => {
           updateNodeData(id, "jsonMode", mode),
         onEmailToggleChange: (enabled: boolean) =>
           updateNodeData(id, "emailEnabled", enabled),
-        onEmailToChange: (val: string) =>
-          updateNodeData(id, "emailTo", val),
+        onEmailToChange: (val: string) => updateNodeData(id, "emailTo", val),
         onEmailSubjectChange: (val: string) =>
           updateNodeData(id, "emailSubject", val),
       },
@@ -547,8 +605,7 @@ const AgentCanvas: React.FC = () => {
         label: "Email Delivery",
         emailTo: "",
         emailSubject: "",
-        onEmailToChange: (val: string) =>
-          updateNodeData(id, "emailTo", val),
+        onEmailToChange: (val: string) => updateNodeData(id, "emailTo", val),
         onEmailSubjectChange: (val: string) =>
           updateNodeData(id, "emailSubject", val),
       },
@@ -568,10 +625,8 @@ const AgentCanvas: React.FC = () => {
         botToken: "",
         chatId: "",
         messageTemplate: "",
-        onBotTokenChange: (val: string) =>
-          updateNodeData(id, "botToken", val),
-        onChatIdChange: (val: string) =>
-          updateNodeData(id, "chatId", val),
+        onBotTokenChange: (val: string) => updateNodeData(id, "botToken", val),
+        onChatIdChange: (val: string) => updateNodeData(id, "chatId", val),
         onMessageTemplateChange: (val: string) =>
           updateNodeData(id, "messageTemplate", val),
       },
@@ -583,7 +638,10 @@ const AgentCanvas: React.FC = () => {
   const addAgentNode = useCallback(
     (agent: Agent) => {
       const id = getNodeId("agent");
-      let position = { x: 400 + Math.random() * 100, y: 300 + Math.random() * 100 };
+      let position = {
+        x: 400 + Math.random() * 100,
+        y: 300 + Math.random() * 100,
+      };
       if (reactFlowInstance) {
         position = reactFlowInstance.screenToFlowPosition({
           x: window.innerWidth / 2,
@@ -631,18 +689,14 @@ const AgentCanvas: React.FC = () => {
         inputText: "",
         adaptiveCron: false,
         dependsOnScheduleId: "",
-        onLabelChange: (val: string) =>
-          updateNodeData(id, "label", val),
+        onLabelChange: (val: string) => updateNodeData(id, "label", val),
         onCronPresetChange: (val: string) =>
           updateNodeData(id, "cronPreset", val),
         onCustomCronChange: (val: string) =>
           updateNodeData(id, "customCron", val),
-        onTimezoneChange: (val: string) =>
-          updateNodeData(id, "timezone", val),
-        onMaxRunsChange: (val: string) =>
-          updateNodeData(id, "maxRuns", val),
-        onActiveToggle: (val: boolean) =>
-          updateNodeData(id, "isActive", val),
+        onTimezoneChange: (val: string) => updateNodeData(id, "timezone", val),
+        onMaxRunsChange: (val: string) => updateNodeData(id, "maxRuns", val),
+        onActiveToggle: (val: boolean) => updateNodeData(id, "isActive", val),
         onInputTextChange: (val: string) =>
           updateNodeData(id, "inputText", val),
         onAdaptiveCronToggle: (val: boolean) =>
@@ -669,8 +723,10 @@ const AgentCanvas: React.FC = () => {
         ruleDescription: "",
         onLabelChange: (val: string) => updateNodeData(id, "label", val),
         onRuleTypeChange: (val: string) => updateNodeData(id, "ruleType", val),
-        onRuleValueChange: (val: string) => updateNodeData(id, "ruleValue", val),
-        onRuleDescriptionChange: (val: string) => updateNodeData(id, "ruleDescription", val),
+        onRuleValueChange: (val: string) =>
+          updateNodeData(id, "ruleValue", val),
+        onRuleDescriptionChange: (val: string) =>
+          updateNodeData(id, "ruleDescription", val),
       },
     };
     setNodes((nds) => [...nds, newNode]);
@@ -689,7 +745,8 @@ const AgentCanvas: React.FC = () => {
         separator: "\\n\\n",
         onLabelChange: (val: string) => updateNodeData(id, "label", val),
         onStrategyChange: (val: string) => updateNodeData(id, "strategy", val),
-        onSeparatorChange: (val: string) => updateNodeData(id, "separator", val),
+        onSeparatorChange: (val: string) =>
+          updateNodeData(id, "separator", val),
       },
     };
     setNodes((nds) => [...nds, newNode]);
@@ -708,7 +765,8 @@ const AgentCanvas: React.FC = () => {
         noteColor: "yellow",
         onLabelChange: (val: string) => updateNodeData(id, "label", val),
         onNoteTextChange: (val: string) => updateNodeData(id, "noteText", val),
-        onNoteColorChange: (val: string) => updateNodeData(id, "noteColor", val),
+        onNoteColorChange: (val: string) =>
+          updateNodeData(id, "noteColor", val),
       },
     };
     setNodes((nds) => [...nds, newNode]);
@@ -748,23 +806,18 @@ const AgentCanvas: React.FC = () => {
         label: "Transform / Utility",
         operation: "json_to_csv",
         onLabelChange: (val: string) => updateNodeData(id, "label", val),
-        onOperationChange: (val: string) => updateNodeData(id, "operation", val),
+        onOperationChange: (val: string) =>
+          updateNodeData(id, "operation", val),
       },
     };
     setNodes((nds) => [...nds, newNode]);
   }, [setNodes, updateNodeData]);
 
   // Drag and drop agent from sidebar
-  const onDragAgentStart = useCallback(
-    (e: React.DragEvent, agent: Agent) => {
-      e.dataTransfer.setData(
-        "application/agentcanvas",
-        JSON.stringify(agent),
-      );
-      e.dataTransfer.effectAllowed = "move";
-    },
-    [],
-  );
+  const onDragAgentStart = useCallback((e: React.DragEvent, agent: Agent) => {
+    e.dataTransfer.setData("application/agentcanvas", JSON.stringify(agent));
+    e.dataTransfer.effectAllowed = "move";
+  }, []);
 
   const onDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -920,8 +973,7 @@ const AgentCanvas: React.FC = () => {
     if (inputTexts.length === 0) {
       toast({
         title: "Input required",
-        description:
-          "Add an Input node and type your prompt before running.",
+        description: "Add an Input node and type your prompt before running.",
         variant: "destructive",
       });
       return;
@@ -967,7 +1019,8 @@ const AgentCanvas: React.FC = () => {
     // Initialize all execution nodes as running
     setNodes((nds) =>
       nds.map((n) => {
-        if (["noteNode", "inputNode", "scheduleNode"].includes(n.type)) return n;
+        if (["noteNode", "inputNode", "scheduleNode"].includes(n.type))
+          return n;
         return {
           ...n,
           data: {
@@ -978,7 +1031,7 @@ const AgentCanvas: React.FC = () => {
             transformPreview: undefined,
           },
         };
-      })
+      }),
     );
 
     try {
@@ -1004,45 +1057,52 @@ const AgentCanvas: React.FC = () => {
         }
 
         setExecutionResult(result.data);
-        
+
         // Staggered node animation based on agent_results
         const results = result.data.agent_results || [];
         results.forEach((res: any, idx: number) => {
-          setTimeout(() => {
-            setNodes((nds) =>
-              nds.map((n) => {
-                if (n.id !== res.node_id) return n;
-                
-                const hasError = !!res.error;
-                
-                let updatedData: any = {
-                  ...n.data,
-                  status: (hasError ? "error" : "done") as any,
-                };
-                
-                if (n.type === "httpNode") {
-                  updatedData.responseStatus = hasError ? 500 : 200;
-                  updatedData.responsePreview = hasError ? res.error : res.response;
-                } else if (n.type === "transformNode") {
-                  updatedData.transformPreview = hasError ? res.error : res.response;
-                } else if (n.type === "loopNode") {
-                  updatedData._currentIteration = res.iterations_used ?? 1;
-                } else if (n.type === "retryNode") {
-                  updatedData._attemptsUsed = res.attempts_used ?? 1;
-                  updatedData._passed = !hasError;
-                } else if (n.type === "memoryNode") {
-                  updatedData._memoryPreview = res.memory_preview ?? "";
-                  updatedData._byteSize = res.memory_bytes ?? 0;
-                  updatedData._lastUpdated = new Date().toISOString();
-                }
-                
-                return {
-                  ...n,
-                  data: updatedData,
-                };
-              })
-            );
-          }, (idx + 1) * 600);
+          setTimeout(
+            () => {
+              setNodes((nds) =>
+                nds.map((n) => {
+                  if (n.id !== res.node_id) return n;
+
+                  const hasError = !!res.error;
+
+                  let updatedData: any = {
+                    ...n.data,
+                    status: (hasError ? "error" : "done") as any,
+                  };
+
+                  if (n.type === "httpNode") {
+                    updatedData.responseStatus = hasError ? 500 : 200;
+                    updatedData.responsePreview = hasError
+                      ? res.error
+                      : res.response;
+                  } else if (n.type === "transformNode") {
+                    updatedData.transformPreview = hasError
+                      ? res.error
+                      : res.response;
+                  } else if (n.type === "loopNode") {
+                    updatedData._currentIteration = res.iterations_used ?? 1;
+                  } else if (n.type === "retryNode") {
+                    updatedData._attemptsUsed = res.attempts_used ?? 1;
+                    updatedData._passed = !hasError;
+                  } else if (n.type === "memoryNode") {
+                    updatedData._memoryPreview = res.memory_preview ?? "";
+                    updatedData._byteSize = res.memory_bytes ?? 0;
+                    updatedData._lastUpdated = new Date().toISOString();
+                  }
+
+                  return {
+                    ...n,
+                    data: updatedData,
+                  };
+                }),
+              );
+            },
+            (idx + 1) * 600,
+          );
         });
 
         // Auto-show diff panel if there's a previous run
@@ -1055,7 +1115,8 @@ const AgentCanvas: React.FC = () => {
       // Reset statuses to error/idle on failure
       setNodes((nds) =>
         nds.map((n) => {
-          if (["noteNode", "inputNode", "scheduleNode"].includes(n.type)) return n;
+          if (["noteNode", "inputNode", "scheduleNode"].includes(n.type))
+            return n;
           return {
             ...n,
             data: {
@@ -1063,7 +1124,7 @@ const AgentCanvas: React.FC = () => {
               status: "error",
             },
           };
-        })
+        }),
       );
     }
   }, [
@@ -1245,16 +1306,17 @@ const AgentCanvas: React.FC = () => {
     try {
       const response = await generateMutation.mutateAsync(aiPrompt);
       if (response && response.success && response.data) {
-        const nodesWithCallbacks = restoreNodesWithCallbacks(response.data.nodes || []);
+        const nodesWithCallbacks = restoreNodesWithCallbacks(
+          response.data.nodes || [],
+        );
         setNodes(nodesWithCallbacks);
         setEdges(response.data.edges || []);
-        
+
         // Auto-extract name if provided, or construct from prompt
-        const cleanName = aiPrompt.length > 35 
-          ? `${aiPrompt.substring(0, 32)}...` 
-          : aiPrompt;
+        const cleanName =
+          aiPrompt.length > 35 ? `${aiPrompt.substring(0, 32)}...` : aiPrompt;
         setWorkflowName(`AI Builder: ${cleanName}`);
-        
+
         toast({
           title: "Workflow generated",
           description: "Your AI-generated canvas workflow is ready!",
@@ -1265,7 +1327,14 @@ const AgentCanvas: React.FC = () => {
     } catch (err) {
       // Handled by hook onError
     }
-  }, [aiPrompt, generateMutation, restoreNodesWithCallbacks, setNodes, setEdges, toast]);
+  }, [
+    aiPrompt,
+    generateMutation,
+    restoreNodesWithCallbacks,
+    setNodes,
+    setEdges,
+    toast,
+  ]);
 
   const handleDownload = useCallback(
     (format: string) => {
@@ -1273,9 +1342,10 @@ const AgentCanvas: React.FC = () => {
       const content = executionResult.final_output;
 
       if (format === "pdf") {
-        const urlMatch = content.match(/\[Download PDF\]\((https?:\/\/[^\s)]+)\)/i) ||
-                         content.match(/(https?:\/\/[^\s)]+\/api\/files\/[^\s)]+)/i) ||
-                         content.match(/(https?:\/\/[^\s)]+\.pdf[^\s)]*)/i);
+        const urlMatch =
+          content.match(/\[Download PDF\]\((https?:\/\/[^\s)]+)\)/i) ||
+          content.match(/(https?:\/\/[^\s)]+\/api\/files\/[^\s)]+)/i) ||
+          content.match(/(https?:\/\/[^\s)]+\.pdf[^\s)]*)/i);
         if (urlMatch && urlMatch[1]) {
           window.open(urlMatch[1], "_blank");
           return;
@@ -1326,9 +1396,12 @@ const AgentCanvas: React.FC = () => {
         agentId: "",
         agentName: "Select agent...",
         onLabelChange: (val: string) => updateNodeData(id, "label", val),
-        onMaxIterationsChange: (val: number) => updateNodeData(id, "maxIterations", val),
-        onConvergenceModeChange: (val: string) => updateNodeData(id, "convergenceMode", val),
-        onConvergencePromptChange: (val: string) => updateNodeData(id, "convergencePrompt", val),
+        onMaxIterationsChange: (val: number) =>
+          updateNodeData(id, "maxIterations", val),
+        onConvergenceModeChange: (val: string) =>
+          updateNodeData(id, "convergenceMode", val),
+        onConvergencePromptChange: (val: string) =>
+          updateNodeData(id, "convergencePrompt", val),
         onAgentChange: (agentId: string, agentName: string) => {
           updateNodeData(id, "agentId", agentId);
           updateNodeData(id, "agentName", agentName);
@@ -1377,9 +1450,12 @@ const AgentCanvas: React.FC = () => {
         agentId: "",
         agentName: "Select agent...",
         onLabelChange: (val: string) => updateNodeData(id, "label", val),
-        onMaxRetriesChange: (val: number) => updateNodeData(id, "maxRetries", val),
-        onCheckModeChange: (val: string) => updateNodeData(id, "checkMode", val),
-        onCheckValueChange: (val: string) => updateNodeData(id, "checkValue", val),
+        onMaxRetriesChange: (val: number) =>
+          updateNodeData(id, "maxRetries", val),
+        onCheckModeChange: (val: string) =>
+          updateNodeData(id, "checkMode", val),
+        onCheckValueChange: (val: string) =>
+          updateNodeData(id, "checkValue", val),
         onAgentChange: (agentId: string, agentName: string) => {
           updateNodeData(id, "agentId", agentId);
           updateNodeData(id, "agentName", agentName);
@@ -1400,8 +1476,10 @@ const AgentCanvas: React.FC = () => {
         memoryKey: "workflow_memory",
         operation: "read_write",
         onLabelChange: (val: string) => updateNodeData(id, "label", val),
-        onMemoryKeyChange: (val: string) => updateNodeData(id, "memoryKey", val),
-        onOperationChange: (val: string) => updateNodeData(id, "operation", val),
+        onMemoryKeyChange: (val: string) =>
+          updateNodeData(id, "memoryKey", val),
+        onOperationChange: (val: string) =>
+          updateNodeData(id, "operation", val),
       },
     };
     setNodes((nds) => [...nds, newNode]);
@@ -1517,7 +1595,10 @@ const AgentCanvas: React.FC = () => {
           <button
             onClick={() => setIsAiModalOpen(true)}
             className="canvas-toolbar-btn"
-            style={{ borderColor: "hsla(270, 60%, 55%, 0.35)", color: "hsl(270, 70%, 75%)" }}
+            style={{
+              borderColor: "hsla(270, 60%, 55%, 0.35)",
+              color: "hsl(270, 70%, 75%)",
+            }}
             title="AI Workflow Builder"
           >
             <Sparkles className="w-3.5 h-3.5" />
@@ -1525,17 +1606,25 @@ const AgentCanvas: React.FC = () => {
           </button>
 
           <button
-            onClick={() => { setShowWebhookPanel(v => !v); setShowDiffPanel(false); }}
+            onClick={() => {
+              setShowWebhookPanel((v) => !v);
+              setShowDiffPanel(false);
+            }}
             disabled={!currentWorkflowId}
             className={`canvas-toolbar-btn ${showWebhookPanel ? "canvas-toolbar-btn-active" : ""} disabled:opacity-30 disabled:cursor-not-allowed`}
-            title={currentWorkflowId ? "Webhook trigger" : "Save workflow first"}
+            title={
+              currentWorkflowId ? "Webhook trigger" : "Save workflow first"
+            }
           >
             <Webhook className="w-3.5 h-3.5" />
           </button>
 
           {executionResult && (
             <button
-              onClick={() => { setShowDiffPanel(v => !v); setShowWebhookPanel(false); }}
+              onClick={() => {
+                setShowDiffPanel((v) => !v);
+                setShowWebhookPanel(false);
+              }}
               className={`canvas-toolbar-btn ${showDiffPanel ? "canvas-toolbar-btn-active" : ""}`}
               title="Execution diff"
             >
@@ -1665,7 +1754,8 @@ const AgentCanvas: React.FC = () => {
                 if (node.type === "emailNode") return "hsl(340, 75%, 55%)";
                 if (node.type === "telegramNode") return "hsl(200, 85%, 45%)";
                 if (node.type === "scheduleNode") return "hsl(35, 80%, 55%)";
-                if (node.type === "conditionalNode") return "hsl(190, 80%, 50%)";
+                if (node.type === "conditionalNode")
+                  return "hsl(190, 80%, 50%)";
                 if (node.type === "mergeNode") return "hsl(235, 80%, 60%)";
                 if (node.type === "noteNode") return "hsl(45, 80%, 55%)";
                 if (node.type === "httpNode") return "hsl(170, 80%, 45%)";
@@ -1697,14 +1787,18 @@ const AgentCanvas: React.FC = () => {
                   </h3>
                   <p className="canvas-empty-desc">
                     Add nodes from the sidebar, connect them together, and
-                    create powerful multi-agent workflows that run automatically.
+                    create powerful multi-agent workflows that run
+                    automatically.
                   </p>
                 </div>
                 <div className="canvas-empty-actions">
                   <button
                     onClick={addInputNode}
                     className="canvas-toolbar-btn"
-                    style={{ borderColor: "hsla(145, 60%, 45%, 0.3)", color: "hsl(145, 60%, 55%)" }}
+                    style={{
+                      borderColor: "hsla(145, 60%, 45%, 0.3)",
+                      color: "hsl(145, 60%, 55%)",
+                    }}
                   >
                     <Plus className="w-3.5 h-3.5" />
                     Add Input
@@ -1792,7 +1886,9 @@ const AgentCanvas: React.FC = () => {
             {nodes.length > 0 && (
               <div className="px-3.5 py-2.5 rounded-lg bg-amber-500/8 border border-amber-500/15 text-amber-400/80 text-[11px] leading-relaxed flex items-center gap-2">
                 <span className="shrink-0 font-bold">⚠️</span>
-                <span>Generating will replace your current canvas. Save first.</span>
+                <span>
+                  Generating will replace your current canvas. Save first.
+                </span>
               </div>
             )}
 
@@ -1819,13 +1915,21 @@ const AgentCanvas: React.FC = () => {
                 </span>
                 <div className="flex flex-col gap-1.5">
                   <button
-                    onClick={() => setAiPrompt("Create a scheduler that runs daily and feeds my research trends to a news analyst agent, then mails me a PDF report.")}
+                    onClick={() =>
+                      setAiPrompt(
+                        "Create a scheduler that runs daily and feeds my research trends to a news analyst agent, then mails me a PDF report.",
+                      )
+                    }
                     className="text-left text-[11px] text-white/40 hover:text-white/80 hover:bg-white/5 px-3 py-2 rounded-lg border border-white/5 transition-all"
                   >
                     💡 Daily trends email digest in PDF format
                   </button>
                   <button
-                    onClick={() => setAiPrompt("Ask an email classifier agent to organize incoming prompts and notify my Telegram channel if it is urgent.")}
+                    onClick={() =>
+                      setAiPrompt(
+                        "Ask an email classifier agent to organize incoming prompts and notify my Telegram channel if it is urgent.",
+                      )
+                    }
                     className="text-left text-[11px] text-white/40 hover:text-white/80 hover:bg-white/5 px-3 py-2 rounded-lg border border-white/5 transition-all"
                   >
                     💡 Sort messages &amp; send Telegram alerts for urgent items
@@ -1897,4 +2001,3 @@ const AgentCanvas: React.FC = () => {
 };
 
 export default AgentCanvas;
-

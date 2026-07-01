@@ -157,13 +157,7 @@ export interface CanvasWorkflow {
     viewport?: { x: number; y: number; zoom: number };
   };
   agent_ids: string[];
-  output_format:
-    | "plain"
-    | "pdf"
-    | "csv"
-    | "excel"
-    | "docx"
-    | "latex";
+  output_format: "plain" | "pdf" | "csv" | "excel" | "docx" | "latex";
   status: "draft" | "active" | "archived";
   last_run_at: string | null;
   last_run_status: "success" | "failed" | "running" | null;
@@ -219,5 +213,3 @@ export interface CanvasSchedule {
     name: string;
   };
 }
-
-

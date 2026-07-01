@@ -119,7 +119,10 @@ export interface YearlyOverview {
 
 export const budgetApi = {
   getDashboard: (params?: { month?: number; year?: number }) =>
-    apiClient.get<{ success: boolean; data: BudgetDashboard }>("/api/budget/dashboard", { params }),
+    apiClient.get<{ success: boolean; data: BudgetDashboard }>(
+      "/api/budget/dashboard",
+      { params },
+    ),
 
   getTransactions: (params?: {
     startDate?: string;
@@ -130,7 +133,10 @@ export const budgetApi = {
     limit?: number;
     offset?: number;
   }) =>
-    apiClient.get<{ success: boolean; data: { transactions: Transaction[]; total: number } }>("/api/budget/transactions", { params }),
+    apiClient.get<{
+      success: boolean;
+      data: { transactions: Transaction[]; total: number };
+    }>("/api/budget/transactions", { params }),
 
   addTransaction: (payload: {
     type: "income" | "expense" | "transfer" | "refund";
@@ -142,10 +148,16 @@ export const budgetApi = {
     account_type?: "savings_account" | "credit_card" | "cash" | "other" | null;
     institution_name?: string | null;
   }) =>
-    apiClient.post<{ success: boolean; data: Transaction }>("/api/budget/transactions", payload),
+    apiClient.post<{ success: boolean; data: Transaction }>(
+      "/api/budget/transactions",
+      payload,
+    ),
 
   updateTransaction: (id: string, payload: Partial<Transaction>) =>
-    apiClient.put<{ success: boolean; data: Transaction }>(`/api/budget/transactions/${id}`, payload),
+    apiClient.put<{ success: boolean; data: Transaction }>(
+      `/api/budget/transactions/${id}`,
+      payload,
+    ),
 
   deleteTransaction: (id: string) =>
     apiClient.delete<{ success: boolean }>(`/api/budget/transactions/${id}`),
@@ -164,10 +176,14 @@ export const budgetApi = {
     }>("/api/budget/import", formData),
 
   getImportHistory: () =>
-    apiClient.get<{ success: boolean; data: any[] }>("/api/budget/import/history"),
+    apiClient.get<{ success: boolean; data: any[] }>(
+      "/api/budget/import/history",
+    ),
 
   getGoals: () =>
-    apiClient.get<{ success: boolean; data: SavingGoal[] }>("/api/budget/goals"),
+    apiClient.get<{ success: boolean; data: SavingGoal[] }>(
+      "/api/budget/goals",
+    ),
 
   createGoal: (payload: {
     name: string;
@@ -177,26 +193,41 @@ export const budgetApi = {
     icon?: string;
     notes?: string;
   }) =>
-    apiClient.post<{ success: boolean; data: SavingGoal }>("/api/budget/goals", payload),
-
-  updateGoal: (id: string, payload: Partial<SavingGoal>) =>
-    apiClient.put<{ success: boolean; data: SavingGoal }>(`/api/budget/goals/${id}`, payload),
-
-  contributeToGoal: (id: string, payload: { amount: number; note?: string }) =>
-    apiClient.post<{ success: boolean; data: { progress: number; goal: SavingGoal } }>(
-      `/api/budget/goals/${id}/contribute`,
-      payload
+    apiClient.post<{ success: boolean; data: SavingGoal }>(
+      "/api/budget/goals",
+      payload,
     ),
 
+  updateGoal: (id: string, payload: Partial<SavingGoal>) =>
+    apiClient.put<{ success: boolean; data: SavingGoal }>(
+      `/api/budget/goals/${id}`,
+      payload,
+    ),
+
+  contributeToGoal: (id: string, payload: { amount: number; note?: string }) =>
+    apiClient.post<{
+      success: boolean;
+      data: { progress: number; goal: SavingGoal };
+    }>(`/api/budget/goals/${id}/contribute`, payload),
+
   getInsights: (params?: { month?: number; year?: number }) =>
-    apiClient.get<{ success: boolean; data: BudgetInsights }>("/api/budget/insights", { params }),
+    apiClient.get<{ success: boolean; data: BudgetInsights }>(
+      "/api/budget/insights",
+      { params },
+    ),
 
   generateInsights: (payload?: { month?: number; year?: number }) =>
-    apiClient.post<{ success: boolean; data: BudgetInsights }>("/api/budget/insights/generate", payload || {}),
+    apiClient.post<{ success: boolean; data: BudgetInsights }>(
+      "/api/budget/insights/generate",
+      payload || {},
+    ),
 
   getYearlyOverview: (year?: number) =>
-    apiClient.get<{ success: boolean; data: YearlyOverview }>("/api/budget/overview/yearly", {
-      params: year ? { year } : {},
-    }),
+    apiClient.get<{ success: boolean; data: YearlyOverview }>(
+      "/api/budget/overview/yearly",
+      {
+        params: year ? { year } : {},
+      },
+    ),
 };
 export default budgetApi;

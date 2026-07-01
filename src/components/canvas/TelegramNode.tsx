@@ -36,8 +36,7 @@ const TelegramNode: React.FC<NodeProps> = ({ data, selected }) => {
         <div
           className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
           style={{
-            background:
-              "linear-gradient(135deg, #0088cc, #006699)",
+            background: "linear-gradient(135deg, #0088cc, #006699)",
             boxShadow: "0 4px 16px rgba(0, 136, 204, 0.3)",
           }}
         >

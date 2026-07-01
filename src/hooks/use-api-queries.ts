@@ -8,7 +8,12 @@ import {
 import { apiClient } from "@/lib/api";
 import { getBlogs, getBlog, getTopics, subscribeNewsletter } from "@/api/blogs";
 import { useToast } from "@/hooks/use-toast";
-import { Agent, AgentTemplate, AgentStats, CanvasSchedule } from "@/types/agent";
+import {
+  Agent,
+  AgentTemplate,
+  AgentStats,
+  CanvasSchedule,
+} from "@/types/agent";
 import { Conversation, Message } from "@/types/conversation";
 
 // Query Keys
@@ -410,6 +415,7 @@ export function useUpdateNotificationPreferences() {
       email_problem_alerts?: boolean;
       email_product_updates?: boolean;
       email_marketing?: boolean;
+      notify_budget_reminders?: boolean;
     }) => {
       const response =
         await apiClient.updateNotificationPreferences(preferences);
@@ -921,5 +927,3 @@ export function useToggleCanvasSchedule() {
     },
   });
 }
-
-

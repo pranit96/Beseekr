@@ -267,7 +267,10 @@ const Auth = () => {
       const params = new URLSearchParams(window.location.search);
       const redirectParam = params.get("redirect");
       if (redirectParam) {
-        console.log("Captured redirect URL from query parameter, saving to sessionStorage:", redirectParam);
+        console.log(
+          "Captured redirect URL from query parameter, saving to sessionStorage:",
+          redirectParam,
+        );
         sessionStorage.setItem("auth-redirect", redirectParam);
       }
     } catch (e) {

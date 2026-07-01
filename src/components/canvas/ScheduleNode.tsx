@@ -1,7 +1,15 @@
 import React, { memo, useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Handle, Position, type NodeProps } from "@xyflow/react";
-import { Clock, Play, Pause, ChevronDown, Globe, Loader2, Zap } from "lucide-react";
+import {
+  Clock,
+  Play,
+  Pause,
+  ChevronDown,
+  Globe,
+  Loader2,
+  Zap,
+} from "lucide-react";
 import { useCanvasSchedules } from "@/hooks/use-api-queries";
 
 interface ScheduleNodeData {
@@ -61,22 +69,58 @@ function humanizeCron(cronStr: string): string {
   const [min, hour, dom, month, dow] = parts;
 
   // Presets mapping
-  if (min === "*/5" && hour === "*" && dom === "*" && month === "*" && dow === "*") {
+  if (
+    min === "*/5" &&
+    hour === "*" &&
+    dom === "*" &&
+    month === "*" &&
+    dow === "*"
+  ) {
     return "Runs every 5 minutes";
   }
-  if (min === "0" && hour === "*" && dom === "*" && month === "*" && dow === "*") {
+  if (
+    min === "0" &&
+    hour === "*" &&
+    dom === "*" &&
+    month === "*" &&
+    dow === "*"
+  ) {
     return "Runs every hour";
   }
-  if (min === "0" && hour === "0" && dom === "*" && month === "*" && dow === "*") {
+  if (
+    min === "0" &&
+    hour === "0" &&
+    dom === "*" &&
+    month === "*" &&
+    dow === "*"
+  ) {
     return "Runs daily at midnight";
   }
-  if (min === "0" && hour === "9" && dom === "*" && month === "*" && dow === "*") {
+  if (
+    min === "0" &&
+    hour === "9" &&
+    dom === "*" &&
+    month === "*" &&
+    dow === "*"
+  ) {
     return "Runs daily at 9:00 AM";
   }
-  if (min === "0" && hour === "0" && dom === "*" && month === "*" && dow === "1") {
+  if (
+    min === "0" &&
+    hour === "0" &&
+    dom === "*" &&
+    month === "*" &&
+    dow === "1"
+  ) {
     return "Runs weekly on Mondays at midnight";
   }
-  if (min === "0" && hour === "0" && dom === "1" && month === "*" && dow === "*") {
+  if (
+    min === "0" &&
+    hour === "0" &&
+    dom === "1" &&
+    month === "*" &&
+    dow === "*"
+  ) {
     return "Runs monthly on the 1st at midnight";
   }
 
@@ -101,8 +145,16 @@ function humanizeCron(cronStr: string): string {
 
     let dayStr = "";
     if (dow !== "*") {
-      const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-      const activeDays = dow.split(",").map(d => {
+      const days = [
+        "Sunday",
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+      ];
+      const activeDays = dow.split(",").map((d) => {
         const val = parseInt(d, 10);
         return days[val] || d;
       });
@@ -113,8 +165,21 @@ function humanizeCron(cronStr: string): string {
 
     let monthStr = "";
     if (month !== "*") {
-      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-      const activeMonths = month.split(",").map(m => {
+      const months = [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
+      ];
+      const activeMonths = month.split(",").map((m) => {
         const val = parseInt(m, 10) - 1;
         return months[val] || m;
       });
@@ -131,10 +196,10 @@ const ScheduleNode: React.FC<NodeProps> = ({ data, selected }) => {
   const d = data as ScheduleNodeData;
   const { id: workflowId } = useParams<{ id?: string }>();
   const { data: schedulesResponse } = useCanvasSchedules(
-    workflowId ? { workflow_id: workflowId } : undefined
+    workflowId ? { workflow_id: workflowId } : undefined,
   );
   const otherSchedules = (schedulesResponse?.data || []).filter(
-    (s: any) => s.id !== d.scheduleId
+    (s: any) => s.id !== d.scheduleId,
   );
 
   const preset = d.cronPreset || "0 0 * * *";
@@ -155,11 +220,15 @@ const ScheduleNode: React.FC<NodeProps> = ({ data, selected }) => {
   // Build timezone list with local timezone at top
   const tzOptions = [...TIMEZONES];
   if (!TIMEZONES.some((t) => t.value === localTz)) {
-    tzOptions.unshift({ value: localTz, label: `Local (${localTz.split("/").pop()})` });
+    tzOptions.unshift({
+      value: localTz,
+      label: `Local (${localTz.split("/").pop()})`,
+    });
   }
 
   const activeCron = isCustom ? d.customCron || "*/5 * * * *" : preset;
-  const presetLabel = CRON_PRESETS.find((p) => p.value === preset)?.label || "Custom";
+  const presetLabel =
+    CRON_PRESETS.find((p) => p.value === preset)?.label || "Custom";
 
   return (
     <div
@@ -332,8 +401,12 @@ const ScheduleNode: React.FC<NodeProps> = ({ data, selected }) => {
         {/* Adaptive Cadence Toggle */}
         <div className="flex items-center justify-between py-1.5 px-2.5 bg-amber-500/5 rounded-lg border border-amber-500/10 mt-1">
           <div>
-            <span className="text-[10px] font-bold text-amber-400 block">Smart Cadence</span>
-            <span className="text-[8px] text-muted-foreground/50 block leading-tight">Backs off cadence if output novelty is low</span>
+            <span className="text-[10px] font-bold text-amber-400 block">
+              Smart Cadence
+            </span>
+            <span className="text-[8px] text-muted-foreground/50 block leading-tight">
+              Backs off cadence if output novelty is low
+            </span>
           </div>
           <input
             type="checkbox"
@@ -351,7 +424,9 @@ const ScheduleNode: React.FC<NodeProps> = ({ data, selected }) => {
           <div className="relative">
             <select
               value={d.dependsOnScheduleId || ""}
-              onChange={(e) => d.onDependsOnScheduleIdChange?.(e.target.value || "")}
+              onChange={(e) =>
+                d.onDependsOnScheduleIdChange?.(e.target.value || "")
+              }
               className="w-full bg-background/40 border border-border/30 rounded-lg pl-2.5 pr-6 py-1 text-[10px] text-foreground outline-none focus:ring-1 focus:ring-amber-500/40 focus:border-amber-500/40 transition-all appearance-none cursor-pointer"
             >
               <option value="">-- No Dependency --</option>

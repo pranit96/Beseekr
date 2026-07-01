@@ -43,10 +43,13 @@ export function TailorResultsView({
   onDownloadCoverLetterWord,
   previewRef,
 }: Props) {
-  const [tab, setTab] = useState<"overview" | "improvements" | "preview">("overview");
+  const [tab, setTab] = useState<"overview" | "improvements" | "preview">(
+    "overview",
+  );
   const [showDetails, setShowDetails] = useState(false);
 
-  const modeRewrite = (run as TailorRunRecord & { mode?: string }).mode === "rewrite";
+  const modeRewrite =
+    (run as TailorRunRecord & { mode?: string }).mode === "rewrite";
 
   return (
     <div className="space-y-6">
@@ -60,8 +63,20 @@ export function TailorResultsView({
         <div className="relative flex flex-col lg:flex-row lg:items-center gap-8">
           <div className="flex items-center gap-6 shrink-0">
             <div className="relative w-28 h-28">
-              <svg width="112" height="112" viewBox="0 0 112 112" className="-rotate-90">
-                <circle cx="56" cy="56" r="48" fill="none" className="stroke-muted/25" strokeWidth="8" />
+              <svg
+                width="112"
+                height="112"
+                viewBox="0 0 112 112"
+                className="-rotate-90"
+              >
+                <circle
+                  cx="56"
+                  cy="56"
+                  r="48"
+                  fill="none"
+                  className="stroke-muted/25"
+                  strokeWidth="8"
+                />
                 <circle
                   cx="56"
                   cy="56"
@@ -71,12 +86,16 @@ export function TailorResultsView({
                   strokeWidth="8"
                   strokeLinecap="round"
                   strokeDasharray={String(2 * Math.PI * 48)}
-                  strokeDashoffset={String(2 * Math.PI * 48 * (1 - run.ats_score / 100))}
+                  strokeDashoffset={String(
+                    2 * Math.PI * 48 * (1 - run.ats_score / 100),
+                  )}
                   style={{ transition: "stroke-dashoffset 1s ease" }}
                 />
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-3xl font-black tabular-nums">{run.ats_score}%</span>
+                <span className="text-3xl font-black tabular-nums">
+                  {run.ats_score}%
+                </span>
                 <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
                   ATS
                 </span>
@@ -86,7 +105,9 @@ export function TailorResultsView({
               <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
                 <Check className="h-4 w-4" /> Tailoring complete
               </p>
-              <p className="text-xs text-muted-foreground">{scoreLabel(run.ats_score)}</p>
+              <p className="text-xs text-muted-foreground">
+                {scoreLabel(run.ats_score)}
+              </p>
             </div>
           </div>
 
@@ -116,7 +137,9 @@ export function TailorResultsView({
             <h2 className="text-2xl sm:text-3xl font-black tracking-tight truncate">
               {run.company_name}
             </h2>
-            <p className="text-sm font-semibold text-muted-foreground">{run.job_title}</p>
+            <p className="text-sm font-semibold text-muted-foreground">
+              {run.job_title}
+            </p>
           </div>
 
           <div className="flex flex-wrap gap-2 shrink-0">
@@ -131,7 +154,11 @@ export function TailorResultsView({
               type="button"
               onClick={() => {
                 setTab("preview");
-                setTimeout(() => previewRef?.current?.scrollIntoView({ behavior: "smooth" }), 120);
+                setTimeout(
+                  () =>
+                    previewRef?.current?.scrollIntoView({ behavior: "smooth" }),
+                  120,
+                );
               }}
               className="h-10 px-4 rounded-xl text-xs font-black border border-border bg-muted/40 hover:bg-muted/60 transition-colors flex items-center gap-2"
             >
@@ -154,7 +181,9 @@ export function TailorResultsView({
             type="button"
             onClick={() => onViewChange("resume")}
             className={`px-4 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all ${
-              activeView === "resume" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground"
+              activeView === "resume"
+                ? "bg-background shadow-sm text-foreground"
+                : "text-muted-foreground"
             }`}
           >
             Resume
@@ -188,7 +217,9 @@ export function TailorResultsView({
                 type="button"
                 onClick={() => setTab(id)}
                 className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-2 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all ${
-                  tab === id ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
+                  tab === id
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground"
                 }`}
               >
                 <Icon className="h-3 w-3" />
@@ -210,7 +241,9 @@ export function TailorResultsView({
                   <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-2">
                     Recruiter summary
                   </p>
-                  <p className="text-sm leading-relaxed text-foreground/85">{run.general_feedback}</p>
+                  <p className="text-sm leading-relaxed text-foreground/85">
+                    {run.general_feedback}
+                  </p>
                 </div>
 
                 {run.missing_keywords && run.missing_keywords.length > 0 && (
@@ -281,14 +314,20 @@ export function TailorResultsView({
                     >
                       <div className="grid sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-border">
                         <div className="p-4 bg-destructive/5">
-                          <span className="text-[9px] font-black uppercase text-destructive">Before</span>
-                          <p className="text-xs italic mt-2 text-muted-foreground">"{sug.original}"</p>
+                          <span className="text-[9px] font-black uppercase text-destructive">
+                            Before
+                          </span>
+                          <p className="text-xs italic mt-2 text-muted-foreground">
+                            "{sug.original}"
+                          </p>
                         </div>
                         <div className="p-4 bg-emerald-500/5">
                           <span className="text-[9px] font-black uppercase text-emerald-600 dark:text-emerald-400">
                             After
                           </span>
-                          <p className="text-xs font-semibold mt-2">"{sug.improved}"</p>
+                          <p className="text-xs font-semibold mt-2">
+                            "{sug.improved}"
+                          </p>
                         </div>
                       </div>
                       {sug.reason && (
@@ -324,7 +363,10 @@ export function TailorResultsView({
                     <Download className="h-3 w-3" /> Download
                   </button>
                 </div>
-                <div className="relative bg-muted/10" style={{ minHeight: "min(70vh, 560px)" }}>
+                <div
+                  className="relative bg-muted/10"
+                  style={{ minHeight: "min(70vh, 560px)" }}
+                >
                   {run.pdf_base64 ? (
                     <iframe
                       title="Tailored resume"
@@ -343,7 +385,9 @@ export function TailorResultsView({
         </>
       ) : (
         <div className="rounded-2xl border border-border bg-card/30 p-6 prose prose-sm dark:prose-invert max-w-none">
-          <pre className="whitespace-pre-wrap font-sans text-sm">{run.cover_letter_text}</pre>
+          <pre className="whitespace-pre-wrap font-sans text-sm">
+            {run.cover_letter_text}
+          </pre>
           <div className="flex gap-2 mt-6 not-prose">
             {onDownloadCoverLetterWord && (
               <button

@@ -60,7 +60,16 @@ const InputNode: React.FC<NodeProps> = ({ id, data, selected }) => {
     if (!file) return;
 
     const ext = "." + file.name.split(".").pop()?.toLowerCase();
-    const simpleTextExtensions = [".txt", ".json", ".csv", ".md", ".xml", ".html", ".log", ".tsv"];
+    const simpleTextExtensions = [
+      ".txt",
+      ".json",
+      ".csv",
+      ".md",
+      ".xml",
+      ".html",
+      ".log",
+      ".tsv",
+    ];
 
     if (simpleTextExtensions.includes(ext)) {
       const reader = new FileReader();
@@ -117,7 +126,11 @@ const InputNode: React.FC<NodeProps> = ({ id, data, selected }) => {
         type="target"
         position={Position.Left}
         className="canvas-handle !bg-emerald-500"
-        style={{ "--handle-color": "hsla(145, 60%, 45%, 0.5)" } as React.CSSProperties}
+        style={
+          {
+            "--handle-color": "hsla(145, 60%, 45%, 0.5)",
+          } as React.CSSProperties
+        }
       />
 
       {/* Header */}
@@ -141,9 +154,7 @@ const InputNode: React.FC<NodeProps> = ({ id, data, selected }) => {
         {/* Char count badge */}
         {charCount > 0 && (
           <span className="text-[9px] font-medium text-white/40 bg-white/[0.04] border border-white/8 px-1.5 py-0.5 rounded-md tabular-nums">
-            {charCount > 999
-              ? `${(charCount / 1000).toFixed(1)}k`
-              : charCount}
+            {charCount > 999 ? `${(charCount / 1000).toFixed(1)}k` : charCount}
           </span>
         )}
 
@@ -278,7 +289,11 @@ const InputNode: React.FC<NodeProps> = ({ id, data, selected }) => {
         type="source"
         position={Position.Right}
         className="canvas-handle !bg-emerald-500"
-        style={{ "--handle-color": "hsla(145, 60%, 45%, 0.5)" } as React.CSSProperties}
+        style={
+          {
+            "--handle-color": "hsla(145, 60%, 45%, 0.5)",
+          } as React.CSSProperties
+        }
       />
     </div>
   );

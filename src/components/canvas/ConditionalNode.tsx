@@ -53,7 +53,11 @@ const ConditionalNode: React.FC<NodeProps> = ({ id, data, selected }) => {
         type="target"
         position={Position.Left}
         className="canvas-handle !bg-cyan-500"
-        style={{ "--handle-color": "hsla(190, 70%, 50%, 0.5)" } as React.CSSProperties}
+        style={
+          {
+            "--handle-color": "hsla(190, 70%, 50%, 0.5)",
+          } as React.CSSProperties
+        }
       />
 
       {/* Source output handles */}
@@ -63,7 +67,12 @@ const ConditionalNode: React.FC<NodeProps> = ({ id, data, selected }) => {
         position={Position.Right}
         id="true"
         className="canvas-handle !bg-emerald-500"
-        style={{ top: "28%", "--handle-color": "hsla(145, 60%, 45%, 0.5)" } as React.CSSProperties}
+        style={
+          {
+            top: "28%",
+            "--handle-color": "hsla(145, 60%, 45%, 0.5)",
+          } as React.CSSProperties
+        }
       />
 
       {/* False Handle (Bottom Right) */}
@@ -72,7 +81,12 @@ const ConditionalNode: React.FC<NodeProps> = ({ id, data, selected }) => {
         position={Position.Right}
         id="false"
         className="canvas-handle !bg-rose-500"
-        style={{ top: "72%", "--handle-color": "hsla(350, 70%, 50%, 0.5)" } as React.CSSProperties}
+        style={
+          {
+            top: "72%",
+            "--handle-color": "hsla(350, 70%, 50%, 0.5)",
+          } as React.CSSProperties
+        }
       />
 
       {/* Header */}
@@ -134,7 +148,11 @@ const ConditionalNode: React.FC<NodeProps> = ({ id, data, selected }) => {
               className="w-full bg-white/[0.02] border border-white/8 rounded-lg pl-2.5 pr-6 py-1 text-[10px] text-white outline-none focus:ring-1 focus:ring-cyan-500/40 focus:border-cyan-500/40 transition-all appearance-none cursor-pointer"
             >
               {RULE_TYPES.map((t) => (
-                <option key={t.value} value={t.value} className="bg-neutral-900 text-white">
+                <option
+                  key={t.value}
+                  value={t.value}
+                  className="bg-neutral-900 text-white"
+                >
                   {t.label}
                 </option>
               ))}
@@ -160,7 +178,9 @@ const ConditionalNode: React.FC<NodeProps> = ({ id, data, selected }) => {
         ) : (
           <div>
             <label className="text-[9px] font-bold text-white/30 uppercase tracking-wider block mb-1">
-              {ruleType === "length" ? "Length Threshold (chars)" : "Match Pattern / Keyword"}
+              {ruleType === "length"
+                ? "Length Threshold (chars)"
+                : "Match Pattern / Keyword"}
             </label>
             <input
               type={ruleType === "length" ? "number" : "text"}
@@ -170,8 +190,8 @@ const ConditionalNode: React.FC<NodeProps> = ({ id, data, selected }) => {
                 ruleType === "length"
                   ? "e.g. 500"
                   : ruleType === "regex"
-                  ? "e.g. \\b(error|failed)\\b"
-                  : "e.g. successful"
+                    ? "e.g. \\b(error|failed)\\b"
+                    : "e.g. successful"
               }
               className="w-full bg-white/[0.02] border border-white/8 rounded-lg px-2.5 py-1 text-[10px] text-white placeholder-white/20 outline-none focus:ring-1 focus:ring-cyan-500/40 focus:border-cyan-500/40 transition-all"
             />

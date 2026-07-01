@@ -63,7 +63,9 @@ export const AdminSettings = () => {
   const [isSaving, setIsSaving] = useState(false);
 
   // key → pending change (staged but not yet saved)
-  const [pendingChanges, setPendingChanges] = useState<Record<string, PendingChange>>({});
+  const [pendingChanges, setPendingChanges] = useState<
+    Record<string, PendingChange>
+  >({});
 
   const [newSetting, setNewSetting] = useState({
     key: "",
@@ -100,7 +102,8 @@ export const AdminSettings = () => {
       type?: string;
       category?: string;
       description?: string;
-    }) => apiClient.updateAdminConfig(key, { value, type, category, description }),
+    }) =>
+      apiClient.updateAdminConfig(key, { value, type, category, description }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "settings"] });
     },
@@ -123,8 +126,16 @@ export const AdminSettings = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "settings"] });
       setIsAddDialogOpen(false);
-      setNewSetting({ key: "", category: "general", description: "", value: "" });
-      toast({ title: "Flag created", description: "New system flag is now active." });
+      setNewSetting({
+        key: "",
+        category: "general",
+        description: "",
+        value: "",
+      });
+      toast({
+        title: "Flag created",
+        description: "New system flag is now active.",
+      });
     },
     onError: (error: any) => {
       toast({
@@ -136,17 +147,13 @@ export const AdminSettings = () => {
   });
 
   // Stage a change locally — does NOT call the API
-  const stageChange = (
-    setting: any,
-    newValue: any,
-    type: string,
-  ) => {
+  const stageChange = (setting: any, newValue: any, type: string) => {
     const oldValue =
       type === "boolean"
         ? setting.value_boolean
         : type === "number"
-        ? setting.value_number
-        : setting.value_string;
+          ? setting.value_number
+          : setting.value_string;
 
     // If the new value equals the original, remove any pending change for this key
     if (String(newValue) === String(oldValue)) {
@@ -382,14 +389,18 @@ export const AdminSettings = () => {
                               pendingChanges[setting.key] !== undefined
                                 ? String(pendingChanges[setting.key].newValue)
                                 : setting.type === "number"
-                                ? setting.value_number
-                                : setting.value_string
+                                  ? setting.value_number
+                                  : setting.value_string
                             }
                             type={setting.type === "number" ? "number" : "text"}
                             className={`h-8 text-xs bg-white/[0.03] border-white/[0.08] focus:border-indigo-500/50 rounded-lg font-mono transition-colors ${
-                              hasPending ? "border-amber-500/30 bg-amber-500/[0.05]" : ""
+                              hasPending
+                                ? "border-amber-500/30 bg-amber-500/[0.05]"
+                                : ""
                             }`}
-                            onBlur={(e) => stageChange(setting, e.target.value, setting.type)}
+                            onBlur={(e) =>
+                              stageChange(setting, e.target.value, setting.type)
+                            }
                           />
                         )}
 
@@ -398,7 +409,9 @@ export const AdminSettings = () => {
                             <Info className="w-3 h-3 text-zinc-650" />
                             <span>
                               Updated{" "}
-                              {new Date(setting.updated_at).toLocaleDateString()}
+                              {new Date(
+                                setting.updated_at,
+                              ).toLocaleDateString()}
                             </span>
                           </div>
                           <Button
@@ -431,9 +444,7 @@ export const AdminSettings = () => {
       {/* ── STICKY SAVE BAR ─────────────────────────────────────────── */}
       {pendingCount > 0 && (
         <div className="fixed bottom-0 left-0 right-0 z-50 flex justify-center px-6 pb-5 pointer-events-none">
-          <div
-            className="pointer-events-auto w-full max-w-2xl bg-[#111113]/95 backdrop-blur-xl border border-white/[0.1] rounded-2xl px-5 py-3.5 shadow-[0_8px_40px_rgba(0,0,0,0.6)] flex items-center gap-4"
-          >
+          <div className="pointer-events-auto w-full max-w-2xl bg-[#111113]/95 backdrop-blur-xl border border-white/[0.1] rounded-2xl px-5 py-3.5 shadow-[0_8px_40px_rgba(0,0,0,0.6)] flex items-center gap-4">
             {/* Left: summary */}
             <div className="flex-1 min-w-0">
               <p className="text-sm font-bold text-white">
@@ -474,8 +485,8 @@ export const AdminSettings = () => {
               Review Changes
             </DialogTitle>
             <DialogDescription className="text-zinc-500 text-sm mt-1">
-              {pendingCount} setting{pendingCount > 1 ? "s" : ""} will be updated.
-              Review the diff below before confirming.
+              {pendingCount} setting{pendingCount > 1 ? "s" : ""} will be
+              updated. Review the diff below before confirming.
             </DialogDescription>
           </DialogHeader>
 
@@ -681,7 +692,10 @@ export const AdminSettings = () => {
                 <Input
                   value={editingSetting.category}
                   onChange={(e) =>
-                    setEditingSetting({ ...editingSetting, category: e.target.value })
+                    setEditingSetting({
+                      ...editingSetting,
+                      category: e.target.value,
+                    })
                   }
                   placeholder="ai, security, infrastructure..."
                   className="h-10 bg-white/[0.03] border-white/[0.08] focus:border-indigo-500/50 rounded-xl text-sm text-zinc-200 font-mono"
@@ -700,7 +714,10 @@ export const AdminSettings = () => {
                       setEditingSetting({
                         ...editingSetting,
                         type: e.target.value,
-                        value: e.target.value === "boolean" ? "true" : editingSetting.value,
+                        value:
+                          e.target.value === "boolean"
+                            ? "true"
+                            : editingSetting.value,
                       })
                     }
                     className="flex h-10 w-full rounded-xl border border-white/[0.08] bg-[#1a1a1c] px-3 py-2 text-sm text-zinc-200 focus-visible:outline-none focus:border-indigo-500/50 font-mono"
@@ -719,7 +736,10 @@ export const AdminSettings = () => {
                     <select
                       value={editingSetting.value}
                       onChange={(e) =>
-                        setEditingSetting({ ...editingSetting, value: e.target.value })
+                        setEditingSetting({
+                          ...editingSetting,
+                          value: e.target.value,
+                        })
                       }
                       className="flex h-10 w-full rounded-xl border border-white/[0.08] bg-[#1a1a1c] px-3 py-2 text-sm text-zinc-200 focus-visible:outline-none focus:border-indigo-500/50 font-mono"
                     >
@@ -728,12 +748,19 @@ export const AdminSettings = () => {
                     </select>
                   ) : (
                     <Input
-                      type={editingSetting.type === "number" ? "number" : "text"}
+                      type={
+                        editingSetting.type === "number" ? "number" : "text"
+                      }
                       value={editingSetting.value}
                       onChange={(e) =>
-                        setEditingSetting({ ...editingSetting, value: e.target.value })
+                        setEditingSetting({
+                          ...editingSetting,
+                          value: e.target.value,
+                        })
                       }
-                      placeholder={editingSetting.type === "number" ? "0" : "value..."}
+                      placeholder={
+                        editingSetting.type === "number" ? "0" : "value..."
+                      }
                       className="h-10 bg-white/[0.03] border-white/[0.08] focus:border-indigo-500/50 rounded-xl text-sm text-zinc-200 font-mono"
                     />
                   )}
@@ -747,7 +774,10 @@ export const AdminSettings = () => {
                 <textarea
                   value={editingSetting.description}
                   onChange={(e) =>
-                    setEditingSetting({ ...editingSetting, description: e.target.value })
+                    setEditingSetting({
+                      ...editingSetting,
+                      description: e.target.value,
+                    })
                   }
                   placeholder="Describe what this flag controls..."
                   className="flex min-h-[80px] w-full rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-sm text-zinc-200 placeholder:text-zinc-650 focus-visible:outline-none focus:border-indigo-500/50 font-sans"

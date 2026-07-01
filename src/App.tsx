@@ -127,11 +127,26 @@ const SaasWatchlist = lazyRetry(
   "Watchlist",
 );
 const Pricing = lazyRetry(() => import("./pages/saas/Pricing"), "Pricing");
-const BudgetLayout = lazyRetry(() => import("./pages/budget/BudgetLayout"), "BudgetLayout");
-const BudgetOverview = lazyRetry(() => import("./pages/budget/BudgetOverview"), "BudgetOverview");
-const BudgetLedger = lazyRetry(() => import("./pages/budget/BudgetLedger"), "BudgetLedger");
-const BudgetGoals = lazyRetry(() => import("./pages/budget/BudgetGoals"), "BudgetGoals");
-const BudgetInsights = lazyRetry(() => import("./pages/budget/BudgetInsights"), "BudgetInsights");
+const BudgetLayout = lazyRetry(
+  () => import("./pages/budget/BudgetLayout"),
+  "BudgetLayout",
+);
+const BudgetOverview = lazyRetry(
+  () => import("./pages/budget/BudgetOverview"),
+  "BudgetOverview",
+);
+const BudgetLedger = lazyRetry(
+  () => import("./pages/budget/BudgetLedger"),
+  "BudgetLedger",
+);
+const BudgetGoals = lazyRetry(
+  () => import("./pages/budget/BudgetGoals"),
+  "BudgetGoals",
+);
+const BudgetInsights = lazyRetry(
+  () => import("./pages/budget/BudgetInsights"),
+  "BudgetInsights",
+);
 
 // Loading fallback for lazy components
 const PageLoader = () => (
@@ -254,10 +269,7 @@ const App = () => {
                     />
 
                     {/* Email verification callback */}
-                    <Route
-                      path="/verify-email"
-                      element={<VerifyEmail />}
-                    />
+                    <Route path="/verify-email" element={<VerifyEmail />} />
 
                     {/* Password reset */}
                     <Route

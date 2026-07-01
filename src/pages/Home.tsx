@@ -2,7 +2,13 @@ import { useEffect, useState } from "react";
 import { getIsNewMode, getIsBudgetEnabled } from "@/utils/envFlags";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { MessageSquare, TrendingUp, ArrowRight, FileText, Wallet } from "lucide-react";
+import {
+  MessageSquare,
+  TrendingUp,
+  ArrowRight,
+  FileText,
+  Wallet,
+} from "lucide-react";
 import { GlobalHeader } from "@/components/GlobalHeader";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
@@ -47,7 +53,9 @@ export default function Home() {
         </section>
 
         {/* LAYOUT */}
-        <section className={`max-w-5xl mx-auto px-6 pb-20 grid gap-6 ${isBudgetEnabled ? "md:grid-cols-3" : "md:grid-cols-2 max-w-3xl"}`}>
+        <section
+          className={`max-w-5xl mx-auto px-6 pb-20 grid gap-6 ${isBudgetEnabled ? "md:grid-cols-3" : "md:grid-cols-2 max-w-3xl"}`}
+        >
           {/* CARD 1: DISCOVER */}
           <motion.div
             onClick={() => go("/dashboard/problems")}
@@ -188,7 +196,9 @@ export default function Home() {
           </section>
 
           {/* CARDS LAYOUT - SYMMETRICAL GRID */}
-          <section className={`grid gap-6 animate-in fade-in slide-in-from-bottom-6 duration-700 delay-150 fill-mode-both ${isBudgetEnabled ? "md:grid-cols-3" : "md:grid-cols-2 max-w-3xl mx-auto"}`}>
+          <section
+            className={`grid gap-6 animate-in fade-in slide-in-from-bottom-6 duration-700 delay-150 fill-mode-both ${isBudgetEnabled ? "md:grid-cols-3" : "md:grid-cols-2 max-w-3xl mx-auto"}`}
+          >
             {/* CARD 1: DISCOVER */}
             <motion.div
               onClick={() => go("/dashboard/problems")}

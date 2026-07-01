@@ -32,7 +32,11 @@ export function subscribeTailorJob(
   handlers: {
     onProgress?: (data: TailorProgressPayload) => void;
     onComplete?: (data: TailorCompletePayload) => void;
-    onError?: (data: { message?: string; error?: string; details?: string }) => void;
+    onError?: (data: {
+      message?: string;
+      error?: string;
+      details?: string;
+    }) => void;
     onCancelled?: () => void;
   },
 ): () => void {
@@ -57,7 +61,11 @@ export function subscribeTailorJob(
   });
 
   socket.on("error", (err) => {
-    if ((err as { jobId?: string })?.jobId && (err as { jobId?: string }).jobId !== jobId) return;
+    if (
+      (err as { jobId?: string })?.jobId &&
+      (err as { jobId?: string }).jobId !== jobId
+    )
+      return;
     handlers.onError?.(err);
     cleanup();
   });

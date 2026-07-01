@@ -112,7 +112,9 @@ const TransformNode: React.FC<NodeProps> = ({ data, selected }) => {
         {/* Output Preview */}
         {d.transformPreview && (
           <div className="pt-2 border-t border-border/10">
-            <span className="text-[8px] font-bold text-muted-foreground/60 uppercase block mb-1">Preview</span>
+            <span className="text-[8px] font-bold text-muted-foreground/60 uppercase block mb-1">
+              Preview
+            </span>
             <pre className="w-full max-h-[80px] bg-background/50 border border-border/20 rounded-lg p-1.5 text-[8px] text-foreground overflow-auto font-mono whitespace-pre-wrap">
               {d.transformPreview}
             </pre>

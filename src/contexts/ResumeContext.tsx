@@ -254,12 +254,14 @@ export const ResumeProvider = ({ children }: { children: ReactNode }) => {
   const [jobDescription, setJobDescription] = useState("");
   const [atsReport, setAtsReport] = useState<ATSAnalysis | null>(null);
   const [revisionHistory, setRevisionHistory] = useState<ResumeRevision[]>([]);
-  const [uploadedResumes, setUploadedResumes] = useState<Array<{
-    id: string;
-    name: string;
-    uploaded_at: string;
-    resume: ResumeSchema;
-  }>>([]);
+  const [uploadedResumes, setUploadedResumes] = useState<
+    Array<{
+      id: string;
+      name: string;
+      uploaded_at: string;
+      resume: ResumeSchema;
+    }>
+  >([]);
 
   const [isLoading, setIsLoading] = useState(true);
   const [saveStatus, setSaveStatus] = useState<

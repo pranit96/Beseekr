@@ -168,7 +168,9 @@ export interface SignedResumeUpload {
   contentType: string;
 }
 
-export async function getSignedResumeUploadUrl(file: File): Promise<SignedResumeUpload> {
+export async function getSignedResumeUploadUrl(
+  file: File,
+): Promise<SignedResumeUpload> {
   const res = await apiClient.post("/api/resume/upload/signed-url", {
     fileName: file.name,
     contentType: file.type,

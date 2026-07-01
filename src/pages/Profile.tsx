@@ -71,6 +71,7 @@ interface NotificationPreferences {
   email_problem_alerts: boolean;
   email_product_updates: boolean;
   email_marketing: boolean;
+  notify_budget_reminders: boolean;
 }
 
 export default function Profile() {
@@ -150,11 +151,12 @@ export default function Profile() {
   const updateNotificationMutation = useUpdateNotificationPreferences();
 
   // Default values to use before data is loaded
-  const notificationPrefs = notificationPrefsData || {
+  const notificationPrefs = (notificationPrefsData as any) || {
     email_weekly_digest: true,
     email_problem_alerts: true,
     email_product_updates: false,
     email_marketing: false,
+    notify_budget_reminders: false,
   };
 
   useEffect(() => {
@@ -588,6 +590,23 @@ export default function Profile() {
                       handleNotificationToggle("email_marketing")
                     }
                     disabled={savingNotification === "email_marketing"}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between p-4">
+                  <div className="flex-1 pr-4">
+                    <div className="font-medium">Monthly Budget Reminders</div>
+                    <div className="text-sm text-muted-foreground mt-1">
+                      Receive email summaries and reminders for budget data
+                      collection.
+                    </div>
+                  </div>
+                  <Switch
+                    checked={notificationPrefs.notify_budget_reminders}
+                    onCheckedChange={() =>
+                      handleNotificationToggle("notify_budget_reminders")
+                    }
+                    disabled={savingNotification === "notify_budget_reminders"}
                   />
                 </div>
               </div>

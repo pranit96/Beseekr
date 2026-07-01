@@ -14,10 +14,38 @@ interface NoteNodeData {
 }
 
 const COLORS = [
-  { id: "yellow", bg: "bg-amber-500/10 hover:border-amber-500/50", border: "border-amber-500/40", text: "text-amber-300", badge: "bg-amber-500", label: "Yellow" },
-  { id: "blue", bg: "bg-cyan-500/10 hover:border-cyan-500/50", border: "border-cyan-500/40", text: "text-cyan-300", badge: "bg-cyan-500", label: "Blue" },
-  { id: "green", bg: "bg-emerald-500/10 hover:border-emerald-500/50", border: "border-emerald-500/40", text: "text-emerald-300", badge: "bg-emerald-500", label: "Green" },
-  { id: "pink", bg: "bg-rose-500/10 hover:border-rose-500/50", border: "border-rose-500/40", text: "text-rose-300", badge: "bg-rose-500", label: "Pink" },
+  {
+    id: "yellow",
+    bg: "bg-amber-500/10 hover:border-amber-500/50",
+    border: "border-amber-500/40",
+    text: "text-amber-300",
+    badge: "bg-amber-500",
+    label: "Yellow",
+  },
+  {
+    id: "blue",
+    bg: "bg-cyan-500/10 hover:border-cyan-500/50",
+    border: "border-cyan-500/40",
+    text: "text-cyan-300",
+    badge: "bg-cyan-500",
+    label: "Blue",
+  },
+  {
+    id: "green",
+    bg: "bg-emerald-500/10 hover:border-emerald-500/50",
+    border: "border-emerald-500/40",
+    text: "text-emerald-300",
+    badge: "bg-emerald-500",
+    label: "Green",
+  },
+  {
+    id: "pink",
+    bg: "bg-rose-500/10 hover:border-rose-500/50",
+    border: "border-rose-500/40",
+    text: "text-rose-300",
+    badge: "bg-rose-500",
+    label: "Pink",
+  },
 ];
 
 const NoteNode: React.FC<NodeProps> = ({ data, selected }) => {
@@ -32,7 +60,9 @@ const NoteNode: React.FC<NodeProps> = ({ data, selected }) => {
   return (
     <div
       className={`group relative min-w-[280px] max-w-[340px] rounded-2xl border transition-all duration-300 ${
-        selected ? `ring-2 ring-primary/40 ${colorConfig.border}` : `border-border/30`
+        selected
+          ? `ring-2 ring-primary/40 ${colorConfig.border}`
+          : `border-border/30`
       } ${colorConfig.bg} backdrop-blur-xl`}
       onDoubleClick={() => setIsEditing(true)}
     >
@@ -96,7 +126,9 @@ const NoteNode: React.FC<NodeProps> = ({ data, selected }) => {
         {/* Color presets (only visible when editing) */}
         {isEditing && (
           <div className="flex items-center gap-1.5 mt-1 pt-1.5 border-t border-border/10">
-            <span className="text-[8px] font-bold text-muted-foreground/60 uppercase mr-1">Color:</span>
+            <span className="text-[8px] font-bold text-muted-foreground/60 uppercase mr-1">
+              Color:
+            </span>
             {COLORS.map((c) => (
               <button
                 key={c.id}
@@ -105,7 +137,9 @@ const NoteNode: React.FC<NodeProps> = ({ data, selected }) => {
                   d.onNoteColorChange?.(c.id);
                 }}
                 className={`w-4.5 h-4.5 rounded-full border transition-transform ${
-                  colorId === c.id ? "scale-110 border-white" : "border-transparent"
+                  colorId === c.id
+                    ? "scale-110 border-white"
+                    : "border-transparent"
                 } ${c.badge}`}
                 title={c.label}
               />

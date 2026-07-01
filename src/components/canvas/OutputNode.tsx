@@ -65,7 +65,11 @@ const OutputNode: React.FC<NodeProps> = ({ id, data, selected }) => {
         type="target"
         position={Position.Left}
         className="canvas-handle !bg-sky-500"
-        style={{ "--handle-color": "hsla(200, 70%, 50%, 0.5)" } as React.CSSProperties}
+        style={
+          {
+            "--handle-color": "hsla(200, 70%, 50%, 0.5)",
+          } as React.CSSProperties
+        }
       />
 
       {/* Header */}
@@ -84,9 +88,7 @@ const OutputNode: React.FC<NodeProps> = ({ id, data, selected }) => {
           <p className="text-xs font-bold text-white/90 tracking-tight">
             {d.label || "Output"}
           </p>
-          <p className="text-[10px] text-white/35">
-            Final result format
-          </p>
+          <p className="text-[10px] text-white/35">Final result format</p>
         </div>
 
         {/* Delete button */}
@@ -124,7 +126,10 @@ const OutputNode: React.FC<NodeProps> = ({ id, data, selected }) => {
       </div>
 
       {/* JSON Conversion Mode selector */}
-      {(format === "pdf" || format === "latex" || format === "plain" || format === "docx") && (
+      {(format === "pdf" ||
+        format === "latex" ||
+        format === "plain" ||
+        format === "docx") && (
         <div className="px-4 py-2.5 border-t border-white/5">
           <label className="text-[9px] font-bold text-white/30 uppercase tracking-wider block mb-1">
             JSON Conversion Mode
@@ -192,7 +197,11 @@ const OutputNode: React.FC<NodeProps> = ({ id, data, selected }) => {
         type="source"
         position={Position.Right}
         className="canvas-handle !bg-sky-500"
-        style={{ "--handle-color": "hsla(200, 70%, 50%, 0.5)" } as React.CSSProperties}
+        style={
+          {
+            "--handle-color": "hsla(200, 70%, 50%, 0.5)",
+          } as React.CSSProperties
+        }
       />
     </div>
   );

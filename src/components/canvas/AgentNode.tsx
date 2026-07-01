@@ -62,7 +62,11 @@ const AgentNode: React.FC<NodeProps> = ({ id, data, selected }) => {
         type="target"
         position={Position.Left}
         className="canvas-handle !bg-violet-500"
-        style={{ "--handle-color": "hsla(250, 60%, 55%, 0.5)" } as React.CSSProperties}
+        style={
+          {
+            "--handle-color": "hsla(250, 60%, 55%, 0.5)",
+          } as React.CSSProperties
+        }
       />
 
       {/* Header */}
@@ -158,9 +162,7 @@ const AgentNode: React.FC<NodeProps> = ({ id, data, selected }) => {
       {/* Model name */}
       {d.model && (
         <div className="px-4 pb-2.5 -mt-1">
-          <p className="text-[9px] text-white/15 truncate">
-            Model: {d.model}
-          </p>
+          <p className="text-[9px] text-white/15 truncate">Model: {d.model}</p>
         </div>
       )}
 
@@ -169,7 +171,11 @@ const AgentNode: React.FC<NodeProps> = ({ id, data, selected }) => {
         type="source"
         position={Position.Right}
         className="canvas-handle !bg-violet-500"
-        style={{ "--handle-color": "hsla(250, 60%, 55%, 0.5)" } as React.CSSProperties}
+        style={
+          {
+            "--handle-color": "hsla(250, 60%, 55%, 0.5)",
+          } as React.CSSProperties
+        }
       />
     </div>
   );

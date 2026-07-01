@@ -1187,7 +1187,9 @@ class ApiClient {
   }
 
   async getCanvasSchedules(params?: { workflow_id?: string }) {
-    const query = params?.workflow_id ? `?workflow_id=${params.workflow_id}` : "";
+    const query = params?.workflow_id
+      ? `?workflow_id=${params.workflow_id}`
+      : "";
     return this.request<any>(`/api/canvas-schedules${query}`);
   }
 
@@ -1253,7 +1255,6 @@ class ApiClient {
     });
   }
 
-
   // ========== END CANVAS WORKFLOW ENDPOINTS ==========
 
   // Notification preferences endpoints
@@ -1263,6 +1264,7 @@ class ApiClient {
       email_problem_alerts: boolean;
       email_product_updates: boolean;
       email_marketing: boolean;
+      notify_budget_reminders: boolean;
     }>("/api/user/notifications");
   }
 
@@ -1271,6 +1273,7 @@ class ApiClient {
     email_problem_alerts?: boolean;
     email_product_updates?: boolean;
     email_marketing?: boolean;
+    notify_budget_reminders?: boolean;
   }) {
     this.clearCache();
     return this.request<{
@@ -1278,6 +1281,7 @@ class ApiClient {
       email_problem_alerts: boolean;
       email_product_updates: boolean;
       email_marketing: boolean;
+      notify_budget_reminders: boolean;
     }>("/api/user/notifications", {
       method: "PUT",
       body: JSON.stringify(preferences),

@@ -15,7 +15,9 @@ export default function VerifyEmail() {
   const navigate = useNavigate();
   const { user, loading, refreshAuth } = useAuth();
   const { toast } = useToast();
-  const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
+  const [status, setStatus] = useState<"loading" | "success" | "error">(
+    "loading",
+  );
   const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
@@ -38,7 +40,8 @@ export default function VerifyEmail() {
       if (code) {
         setStatus("loading");
         try {
-          const apiBase = import.meta.env.VITE_API_BASE_URL || "https://api.beseekr.com";
+          const apiBase =
+            import.meta.env.VITE_API_BASE_URL || "https://api.beseekr.com";
           const redirectUrl = `${apiBase}/api/auth/google-popup-callback?code=${encodeURIComponent(
             code,
           )}&origin=${encodeURIComponent(window.location.origin)}`;
@@ -46,7 +49,9 @@ export default function VerifyEmail() {
         } catch (err: any) {
           console.error("PKCE redirect failed:", err);
           setStatus("error");
-          setErrorMessage(err.message || "Failed to redirect for verification.");
+          setErrorMessage(
+            err.message || "Failed to redirect for verification.",
+          );
         }
         return;
       }
@@ -84,16 +89,16 @@ export default function VerifyEmail() {
               "",
               window.location.pathname + window.location.search,
             );
-            
+
             // Refresh auth context
             await refreshAuth(true, 3, true);
-            
+
             setStatus("success");
             toast({
               title: "Email verified!",
               description: "Successfully logged in.",
             });
-            
+
             setTimeout(() => {
               navigate("/", { replace: true });
             }, 2000);
@@ -114,14 +119,18 @@ export default function VerifyEmail() {
         const hashParams = new URLSearchParams(hash.substring(1));
         const errorDesc = hashParams.get("error_description");
         setStatus("error");
-        setErrorMessage(decodeURIComponent(errorDesc || "Verification failed."));
+        setErrorMessage(
+          decodeURIComponent(errorDesc || "Verification failed."),
+        );
         return;
       }
 
       // Case D: No tokens found
       if (!loading) {
         setStatus("error");
-        setErrorMessage("No verification token found in URL. Please make sure the link is complete.");
+        setErrorMessage(
+          "No verification token found in URL. Please make sure the link is complete.",
+        );
       }
     };
 
@@ -141,7 +150,9 @@ export default function VerifyEmail() {
             <>
               <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
               <div className="space-y-2">
-                <h2 className="text-xl font-semibold">Verifying your email...</h2>
+                <h2 className="text-xl font-semibold">
+                  Verifying your email...
+                </h2>
                 <p className="text-sm text-muted-foreground">
                   Setting up your secure session. Please hold on.
                 </p>
@@ -155,9 +166,12 @@ export default function VerifyEmail() {
                 <CheckCircle2 className="h-8 w-8 text-green-500" />
               </div>
               <div className="space-y-2">
-                <h2 className="text-xl font-semibold text-green-600">Email Verified!</h2>
+                <h2 className="text-xl font-semibold text-green-600">
+                  Email Verified!
+                </h2>
                 <p className="text-sm text-muted-foreground">
-                  Your email is confirmed and you are logged in. Redirecting to home...
+                  Your email is confirmed and you are logged in. Redirecting to
+                  home...
                 </p>
               </div>
             </>
@@ -169,7 +183,9 @@ export default function VerifyEmail() {
                 <AlertCircle className="h-8 w-8 text-destructive" />
               </div>
               <div className="space-y-2">
-                <h2 className="text-xl font-semibold text-destructive">Verification Failed</h2>
+                <h2 className="text-xl font-semibold text-destructive">
+                  Verification Failed
+                </h2>
                 <p className="text-sm text-destructive max-w-xs break-words mx-auto">
                   {errorMessage}
                 </p>
@@ -178,7 +194,11 @@ export default function VerifyEmail() {
                 <Button onClick={() => navigate("/auth")} className="w-full">
                   Sign In / Sign Up
                 </Button>
-                <Button variant="outline" onClick={() => navigate("/")} className="w-full">
+                <Button
+                  variant="outline"
+                  onClick={() => navigate("/")}
+                  className="w-full"
+                >
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Go to Home
                 </Button>

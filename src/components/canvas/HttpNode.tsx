@@ -176,7 +176,9 @@ const HttpNode: React.FC<NodeProps> = ({ data, selected }) => {
         {d.responseStatus !== undefined && (
           <div className="pt-2 border-t border-border/10">
             <div className="flex items-center justify-between mb-1">
-              <span className="text-[8px] font-bold text-muted-foreground/60 uppercase">Response</span>
+              <span className="text-[8px] font-bold text-muted-foreground/60 uppercase">
+                Response
+              </span>
               <span
                 className={`text-[8px] font-bold px-1 py-0.5 rounded ${
                   d.responseStatus >= 200 && d.responseStatus < 300
