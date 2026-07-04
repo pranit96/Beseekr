@@ -53,6 +53,16 @@ interface BlogPost {
   image_alt?: string;
 }
 
+const DAYS_OF_WEEK = [
+  { index: 0, name: "Sunday" },
+  { index: 1, name: "Monday" },
+  { index: 2, name: "Tuesday" },
+  { index: 3, name: "Wednesday" },
+  { index: 4, name: "Thursday" },
+  { index: 5, name: "Friday" },
+  { index: 6, name: "Saturday" },
+];
+
 export function AdminBlogs() {
   const queryClient = useQueryClient();
   const [selectedDayIndex, setSelectedDayIndex] = useState<string>("0");
@@ -255,11 +265,19 @@ export function AdminBlogs() {
                   className="h-9 w-full rounded-lg border border-white/10 bg-zinc-900 px-3 py-1 text-xs text-white outline-none focus:border-red-500/50"
                 >
                   <option value="">-- Direct Generation (No Day Template) --</option>
-                  {configs.map((config) => (
-                    <option key={config.id} value={config.day_index}>
-                      Day {config.day_index} ({config.day_name}) — {config.topic.slice(0, 45)}...
-                    </option>
-                  ))}
+                  {configs && configs.length > 0 ? (
+                    configs.map((config) => (
+                      <option key={config.id} value={config.day_index}>
+                        Day {config.day_index} ({config.day_name}) — {config.topic.slice(0, 45)}...
+                      </option>
+                    ))
+                  ) : (
+                    DAYS_OF_WEEK.map((day) => (
+                      <option key={day.index} value={day.index}>
+                        Day {day.index} ({day.name})
+                      </option>
+                    ))
+                  )}
                 </select>
               )}
             </div>
