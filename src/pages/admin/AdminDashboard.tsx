@@ -14,8 +14,9 @@ import {
   ChevronRight,
   Cpu,
   Zap,
+  BookOpen,
 } from "lucide-react";
-import { AdminMonitoring, AdminSettings } from "./components";
+import { AdminMonitoring, AdminSettings, AdminBlogs } from "./components";
 
 const NAV = [
   {
@@ -29,6 +30,12 @@ const NAV = [
     label: "Feature Flags",
     icon: Settings,
     description: "Live config & toggles",
+  },
+  {
+    id: "blogs",
+    label: "Blogs Suite",
+    icon: BookOpen,
+    description: "Manual generation & content analytics",
   },
 ];
 
@@ -145,6 +152,7 @@ export default function AdminDashboard() {
             >
               {activeTab === "overview" && <AdminMonitoring />}
               {activeTab === "settings" && <AdminSettings />}
+              {activeTab === "blogs" && <AdminBlogs />}
             </motion.div>
           </AnimatePresence>
         </div>

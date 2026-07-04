@@ -16,6 +16,7 @@ interface ApiResponse<T> {
   data?: T;
   message?: string;
   error?: string;
+  source?: string;
   pagination?: {
     page: number;
     limit: number;
@@ -1393,6 +1394,32 @@ class ApiClient {
   }
 
   // Admin & Monitoring Endpoints
+  async getBlogConfigs() {
+    return this.request<any>("/api/blogs/admin/configs");
+  }
+
+  async triggerBlogGeneration(payload: {
+    day?: number;
+    customTopic?: string;
+    customKeyword?: string;
+    customMood?: string;
+    customNarrator?: string;
+    customAuthorName?: string;
+    customUnsplashQuery?: string;
+    force?: boolean;
+  }) {
+    return this.request<any>("/api/blogs/generate", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async clearBlogCache() {
+    return this.request<any>("/api/blogs/admin/clear-cache", {
+      method: "POST",
+    });
+  }
+
   async getAdminConfig() {
     return this.request<any>("/api/admin/config");
   }
