@@ -15,8 +15,9 @@ import {
   Cpu,
   Zap,
   BookOpen,
+  Radio,
 } from "lucide-react";
-import { AdminMonitoring, AdminSettings, AdminBlogs } from "./components";
+import { AdminMonitoring, AdminSettings, AdminBlogs, AdminPodcasts } from "./components";
 
 const NAV = [
   {
@@ -36,6 +37,12 @@ const NAV = [
     label: "Blogs Suite",
     icon: BookOpen,
     description: "Manual generation & content analytics",
+  },
+  {
+    id: "podcasts",
+    label: "Podcasts Suite",
+    icon: Radio,
+    description: "Multi-agent roundtable manual generation & analytics",
   },
 ];
 
@@ -153,6 +160,7 @@ export default function AdminDashboard() {
               {activeTab === "overview" && <AdminMonitoring />}
               {activeTab === "settings" && <AdminSettings />}
               {activeTab === "blogs" && <AdminBlogs />}
+              {activeTab === "podcasts" && <AdminPodcasts />}
             </motion.div>
           </AnimatePresence>
         </div>

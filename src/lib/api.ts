@@ -1420,6 +1420,34 @@ class ApiClient {
     });
   }
 
+  // Podcasts Suite API methods
+  async getPodcastConfigs() {
+    return this.request<any>("/api/podcasts/admin/configs");
+  }
+
+  async triggerPodcastGeneration(payload: {
+    dayIndex?: number;
+    topic?: string;
+    keyword?: string;
+    mood?: string;
+    sourceUrl?: string;
+    title?: string;
+    description?: string;
+  }) {
+    return this.request<any>("/api/podcasts/generate", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async getPodcasts(page = 1, limit = 12) {
+    return this.request<any>(`/api/podcasts?page=${page}&limit=${limit}`);
+  }
+
+  async getPodcastJobStatus(jobId: string) {
+    return this.request<any>(`/api/podcasts/jobs/${jobId}`);
+  }
+
   async getAdminConfig() {
     return this.request<any>("/api/admin/config");
   }
