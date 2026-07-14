@@ -1441,7 +1441,15 @@ class ApiClient {
   }
 
   async getPodcasts(page = 1, limit = 12) {
-    return this.request<any>(`/api/podcasts?page=${page}&limit=${limit}`);
+    return this.request<any>(
+      `/api/podcasts?page=${page}&limit=${limit}&t=${Date.now()}`,
+      {
+        headers: {
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+          "Pragma": "no-cache",
+        },
+      }
+    );
   }
 
   async getPodcastJobStatus(jobId: string) {
