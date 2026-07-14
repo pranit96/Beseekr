@@ -1448,6 +1448,12 @@ class ApiClient {
     return this.request<any>(`/api/podcasts/jobs/${jobId}`);
   }
 
+  async cancelPodcastJob(jobId: string) {
+    return this.request<any>(`/api/podcasts/jobs/${jobId}/cancel`, {
+      method: "POST",
+    });
+  }
+
   async getAdminConfig() {
     return this.request<any>("/api/admin/config");
   }

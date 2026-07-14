@@ -273,6 +273,28 @@ export function AdminPodcasts() {
       });
     }
   };
+  
+  const handleCancel = async () => {
+    stopPolling();
+    const activeJobId = jobId;
+    setJobStatus("idle");
+    setJobId(null);
+    setDisplayedElapsed(0);
+    elapsedRef.current = 0;
+
+    toast({
+      title: "Monitoring Cancelled",
+      description: "Podcast generation polling stopped.",
+    });
+
+    if (activeJobId) {
+      try {
+        await apiClient.cancelPodcastJob(activeJobId);
+      } catch {
+        // fail-soft
+      }
+    }
+  };
 
   const isGenerating = jobStatus === "running";
   const stageLabel = getStageLabel(displayedElapsed);
@@ -461,11 +483,22 @@ export function AdminPodcasts() {
                     style={{ width: `${Math.min(97, (displayedElapsed / ESTIMATED_TOTAL_SECONDS) * 100)}%` }}
                   />
                 </div>
-                {jobId && (
-                  <p className="text-[9px] text-zinc-600 font-mono truncate">
-                    Job: {jobId}
-                  </p>
-                )}
+                <div className="flex items-center justify-between gap-4 pt-1">
+                  {jobId ? (
+                    <p className="text-[9px] text-zinc-600 font-mono truncate flex-1">
+                      Job: {jobId}
+                    </p>
+                  ) : (
+                    <div className="flex-1" />
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleCancel}
+                    className="text-[10px] text-zinc-400 hover:text-white underline cursor-pointer transition-colors shrink-0"
+                  >
+                    Cancel Generation
+                  </button>
+                </div>
               </div>
             )}
 
