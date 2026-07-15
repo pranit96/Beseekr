@@ -21,6 +21,8 @@ import {
   Link as LinkIcon,
   CheckCircle2,
   XCircle,
+  Trash2,
+  Database,
 } from "lucide-react";
 
 interface PodcastConfig {
@@ -113,6 +115,7 @@ export function AdminPodcasts() {
   const [audioPlaying, setAudioPlaying] = useState(false);
 
   const [viewingTranscript, setViewingTranscript] = useState<PodcastEpisode | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -129,6 +132,15 @@ export function AdminPodcasts() {
     queryFn: async () => {
       const response = await apiClient.getPodcastConfigs();
       return response.data || [];
+    },
+  });
+
+  // Fetch DB space usage metrics
+  const { data: dbSpace, isLoading: loadingDbSpace, refetch: refetchDbSpace } = useQuery({
+    queryKey: ["admin", "dbSpaceStats"],
+    queryFn: async () => {
+      const response = await apiClient.getDbSpaceStats();
+      return response.data || null;
     },
   });
 
@@ -296,6 +308,35 @@ export function AdminPodcasts() {
     }
   };
 
+  const handleDelete = async (id: string) => {
+    if (!window.confirm("Are you absolutely sure you want to eradicate this podcast episode? This will delete the database record and delete its audio file from Supabase storage permanently.")) {
+      return;
+    }
+    
+    setDeletingId(id);
+    try {
+      const res = await apiClient.deletePodcast(id);
+      if (res.success) {
+        toast({
+          title: "🗑️ Podcast Eradicated",
+          description: "The episode was permanently deleted from DB and storage.",
+        });
+        refetchEpisodes();
+        refetchDbSpace();
+      } else {
+        throw new Error(res.error || "Failed to delete podcast");
+      }
+    } catch (err: any) {
+      toast({
+        variant: "destructive",
+        title: "Eradication Failed",
+        description: err.message,
+      });
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   const isGenerating = jobStatus === "running";
   const stageLabel = getStageLabel(displayedElapsed);
 
@@ -303,6 +344,80 @@ export function AdminPodcasts() {
     const mins = Math.floor(sec / 60);
     const secs = sec % 60;
     return `${mins}:${secs.toString().padStart(2, "0")}`;
+  };
+
+  const renderDbSpaceUsage = () => {
+    if (loadingDbSpace) {
+      return (
+        <div className="bg-[#0c0c0e] border border-white/[0.04] rounded-xl p-4 flex items-center justify-center py-6 text-zinc-500 gap-2">
+          <Loader2 className="w-3.5 h-3.5 animate-spin text-zinc-400" />
+          <span className="text-[11px]">Fetching storage metrics...</span>
+        </div>
+      );
+    }
+
+    if (!dbSpace) return null;
+
+    const usedBytes = dbSpace.db_size_bytes || 0;
+    const limitBytes = 500 * 1024 * 1024; // 500 MB Supabase Free Tier limit
+    const usedMB = (usedBytes / 1024 / 1024).toFixed(2);
+    const limitMB = (limitBytes / 1024 / 1024).toFixed(0);
+    const usedPercentage = Math.min(100, Math.max(0.1, (usedBytes / limitBytes) * 100));
+
+    // Progress bar color based on usage
+    let progressColor = "bg-[#22c55e]";
+    if (usedPercentage > 85) progressColor = "bg-[#ef4444]";
+    else if (usedPercentage > 60) progressColor = "bg-[#f59e0b]";
+
+    return (
+      <div className="bg-[#0c0c0e] border border-white/[0.04] rounded-xl p-5 space-y-4">
+        <div className="flex items-center justify-between">
+          <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
+            <Database className="w-3.5 h-3.5 text-zinc-400" />
+            Supabase DB Storage Usage
+          </h4>
+          <span className="text-[10px] font-mono text-zinc-400">
+            {usedMB} MB / {limitMB} MB ({usedPercentage.toFixed(1)}%)
+          </span>
+        </div>
+
+        <div className="w-full bg-[#18181b] h-1.5 rounded-full overflow-hidden border border-white/[0.02]">
+          <div className={`h-full ${progressColor} transition-all duration-500`} style={{ width: `${usedPercentage}%` }} />
+        </div>
+
+        {dbSpace.rpc_missing ? (
+          <div className="text-[10px] leading-relaxed text-zinc-500 bg-amber-500/5 border border-amber-500/10 rounded-lg p-3 space-y-2">
+            <p>
+              💡 <strong>Direct size metrics locked:</strong> Run the helper SQL script on your Supabase dashboard to enable database disk analytics.
+            </p>
+            <details className="cursor-pointer group">
+              <summary className="text-[10px] text-amber-400 font-bold hover:underline select-none">
+                Show Helper SQL Script
+              </summary>
+              <pre className="mt-2 p-2.5 bg-[#18181b] border border-white/[0.04] rounded text-[9px] text-zinc-300 font-mono overflow-x-auto whitespace-pre-wrap select-all">
+                {dbSpace.sql_script}
+              </pre>
+            </details>
+          </div>
+        ) : (
+          <div className="pt-1.5 space-y-2">
+            <p className="text-[10px] text-zinc-500">Top tables by disk usage:</p>
+            <div className="grid grid-cols-1 gap-1 max-h-[140px] overflow-y-auto pr-1">
+              {dbSpace.tables?.slice(0, 5).map((table: any, idx: number) => {
+                const tableSizeMB = (table.size_bytes / 1024 / 1024).toFixed(2);
+                return (
+                  <div key={idx} className="flex items-center justify-between text-[10px] font-mono py-1 px-2 rounded bg-white/[0.02] hover:bg-white/[0.04] text-zinc-400">
+                    <span className="truncate flex-1 font-bold text-zinc-300">{table.name}</span>
+                    <span className="shrink-0 text-zinc-500 mr-3">({table.rows?.toLocaleString() || 0} rows)</span>
+                    <span className="shrink-0 text-zinc-400">{tableSizeMB} MB</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -518,6 +633,7 @@ export function AdminPodcasts() {
               </div>
             )}
           </div>
+          {renderDbSpaceUsage()}
         </div>
 
         {/* RIGHT COLUMN: PUBLISHED PODCASTS FEED LIST */}
@@ -599,7 +715,7 @@ export function AdminPodcasts() {
                     </div>
 
                     {/* Quick options */}
-                    <div className="flex flex-col justify-between shrink-0 pl-2">
+                    <div className="flex flex-col justify-between items-end shrink-0 pl-2">
                       <Button
                         variant="ghost"
                         size="sm"
@@ -609,14 +725,30 @@ export function AdminPodcasts() {
                         <FileText className="w-3.5 h-3.5" />
                         Script
                       </Button>
-                      <a
-                        href={ep.audio_url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="p-1 rounded-md text-zinc-600 hover:text-zinc-400 self-end transition-colors"
-                      >
-                        <ExternalLink className="w-3.5 h-3.5" />
-                      </a>
+                      <div className="flex items-center gap-1.5 mt-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          disabled={deletingId === ep.id}
+                          onClick={() => handleDelete(ep.id)}
+                          className="h-7 w-7 p-0 rounded-md text-zinc-600 hover:text-red-400 hover:bg-red-500/10 cursor-pointer"
+                          title="Eradicate Episode"
+                        >
+                          {deletingId === ep.id ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin text-zinc-400" />
+                          ) : (
+                            <Trash2 className="w-3.5 h-3.5" />
+                          )}
+                        </Button>
+                        <a
+                          href={ep.audio_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="p-1 rounded-md text-zinc-600 hover:text-zinc-400 transition-colors"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </a>
+                      </div>
                     </div>
                   </div>
                 );
@@ -638,7 +770,7 @@ export function AdminPodcasts() {
                   Dialogue Script — {viewingTranscript.title}
                 </h3>
                 <span className="text-[10px] text-zinc-500">
-                  Synthesized alternating voices: Alex (Host), Sam (Tech), Taylor (Pragmatic), Morgan (Philosophy)
+                  Synthesized alternating voices: George (Host), Bella (Tech), Alice (Pragmatic), Fenrir (Philosophy)
                 </span>
               </div>
               <button
@@ -652,10 +784,10 @@ export function AdminPodcasts() {
             {/* Modal body */}
             <div className="p-6 overflow-y-auto space-y-4 max-h-[55vh] bg-[#0c0c0e]/50 font-mono text-[11px] leading-relaxed">
               {viewingTranscript.script_json?.map((turn, i) => {
-                let speakerColor = "text-purple-400";
-                if (turn.speaker === "Sam") speakerColor = "text-blue-400";
-                if (turn.speaker === "Taylor") speakerColor = "text-emerald-400";
-                if (turn.speaker === "Morgan") speakerColor = "text-amber-400";
+                let speakerColor = "text-purple-400"; // George (Host)
+                if (turn.speaker === "Bella") speakerColor = "text-blue-400";
+                if (turn.speaker === "Alice") speakerColor = "text-emerald-400";
+                if (turn.speaker === "Fenrir") speakerColor = "text-amber-400";
 
                 return (
                   <div key={i} className="border-l-2 border-white/[0.04] pl-3.5 py-1">

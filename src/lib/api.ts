@@ -1462,6 +1462,16 @@ class ApiClient {
     });
   }
 
+  async deletePodcast(id: string) {
+    return this.request<any>(`/api/podcasts/${id}`, {
+      method: "DELETE",
+    });
+  }
+
+  async getDbSpaceStats() {
+    return this.request<any>("/api/monitoring/db-space");
+  }
+
   async getAdminConfig() {
     return this.request<any>("/api/admin/config");
   }
