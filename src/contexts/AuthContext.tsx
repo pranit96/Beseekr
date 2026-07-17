@@ -241,6 +241,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               return;
             }
             const fetchedUser = response.data.user;
+            if (fetchedUser?.feature_flags) {
+              const { second_brain, weekly_digest } = fetchedUser.feature_flags;
+              document.cookie = `EnableSecondBrain=${second_brain}; path=/; max-age=86400; SameSite=Lax`;
+              document.cookie = `EnableWeeklyDigest=${weekly_digest}; path=/; max-age=86400; SameSite=Lax`;
+            }
             const wasNull = !user;
             setUser(fetchedUser);
             setCachedUser(fetchedUser); // SAFARI FIX: Update cache so dashboard sees logged-in state
@@ -574,6 +579,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           return;
         }
         const fetchedUser = response.data.user;
+        if (fetchedUser?.feature_flags) {
+          const { second_brain, weekly_digest } = fetchedUser.feature_flags;
+          document.cookie = `EnableSecondBrain=${second_brain}; path=/; max-age=86400; SameSite=Lax`;
+          document.cookie = `EnableWeeklyDigest=${weekly_digest}; path=/; max-age=86400; SameSite=Lax`;
+        }
         setUser(fetchedUser);
         setCachedUser(fetchedUser); // Update cache
         lastActivityRef.current = Date.now();

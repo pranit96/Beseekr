@@ -16,6 +16,10 @@ export interface User {
   };
   role?: string;
   email_confirmed_at?: string;
+  feature_flags?: {
+    second_brain: boolean;
+    weekly_digest: boolean;
+  };
 }
 
 export interface AuthResponse {
