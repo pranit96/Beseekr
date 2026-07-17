@@ -49,6 +49,8 @@ export const TopBar = ({
     { key: "home", name: "Home", href: "/" },
     { key: "chat", name: "Chat", href: "/chat" },
     { key: "agents", name: "Agents", href: "/agents" },
+    { key: "brain", name: "Second Brain", href: "/brain" },
+    { key: "digest", name: "Weekly Digest", href: "/digest" },
     { key: "analytics", name: "Analytics", href: "/analytics" },
     ...(isBudgetEnabled
       ? [{ key: "budget", name: "Budget", href: "/dashboard/budget" }]

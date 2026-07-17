@@ -8,6 +8,8 @@ import {
   ArrowRight,
   FileText,
   Wallet,
+  Brain,
+  Mail,
 } from "lucide-react";
 import { GlobalHeader } from "@/components/GlobalHeader";
 import { motion } from "framer-motion";
@@ -53,8 +55,9 @@ export default function Home() {
         </section>
 
         {/* LAYOUT */}
+        {/* LAYOUT */}
         <section
-          className={`max-w-5xl mx-auto px-6 pb-20 grid gap-6 ${isBudgetEnabled ? "md:grid-cols-3" : "md:grid-cols-2 max-w-3xl"}`}
+          className="max-w-5xl mx-auto px-6 pb-20 grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
         >
           {/* CARD 1: DISCOVER */}
           <motion.div
@@ -117,7 +120,63 @@ export default function Home() {
             </div>
           </motion.div>
 
-          {/* CARD 3: BUDGET */}
+          {/* CARD 3: SECOND BRAIN */}
+          <motion.div
+            onClick={() => go("/brain")}
+            whileHover={{ y: -4 }}
+            transition={{ type: "spring", stiffness: 200, damping: 22 }}
+            className="border border-border/30 rounded-2xl p-8 cursor-pointer transition bg-muted/10 backdrop-blur-md hover:bg-violet-500/5 hover:border-violet-500/30 group shadow-2xl shadow-black/5"
+          >
+            <div className="h-10 w-10 rounded-xl bg-violet-500/10 flex items-center justify-center text-violet-400 mb-4 group-hover:scale-110 transition-transform">
+              <Brain className="w-5 h-5" />
+            </div>
+
+            <h3 className="text-xl font-bold mb-2 tracking-tight text-foreground">
+              {t("home.brainTitle", "3. Second Brain")}
+            </h3>
+
+            <p className="text-muted-foreground/80 mb-6 text-sm leading-relaxed">
+              {t(
+                "home.brainDesc",
+                "Save articles, notes, and links to your personal knowledge base. Query your knowledge with RAG.",
+              )}
+            </p>
+
+            <div className="text-xs font-bold tracking-wider uppercase flex items-center gap-1 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all">
+              {t("home.openBrain", "Open Brain")}
+              <ArrowRight className="w-3 h-3" />
+            </div>
+          </motion.div>
+
+          {/* CARD 4: WEEKLY DIGEST */}
+          <motion.div
+            onClick={() => go("/digest")}
+            whileHover={{ y: -4 }}
+            transition={{ type: "spring", stiffness: 200, damping: 22 }}
+            className="border border-border/30 rounded-2xl p-8 cursor-pointer transition bg-muted/10 backdrop-blur-md hover:bg-indigo-500/5 hover:border-indigo-500/30 group shadow-2xl shadow-black/5"
+          >
+            <div className="h-10 w-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 mb-4 group-hover:scale-110 transition-transform">
+              <Mail className="w-5 h-5" />
+            </div>
+
+            <h3 className="text-xl font-bold mb-2 tracking-tight text-foreground">
+              {t("home.digestTitle", "4. Weekly Digest")}
+            </h3>
+
+            <p className="text-muted-foreground/80 mb-6 text-sm leading-relaxed">
+              {t(
+                "home.digestDesc",
+                "Connect RSS feeds, select your summary style, and receive weekly email digests every Sunday.",
+              )}
+            </p>
+
+            <div className="text-xs font-bold tracking-wider uppercase flex items-center gap-1 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all">
+              {t("home.openDigest", "Open Digest")}
+              <ArrowRight className="w-3 h-3" />
+            </div>
+          </motion.div>
+
+          {/* CARD 5: BUDGET */}
           {isBudgetEnabled && (
             <motion.div
               onClick={() => go("/dashboard/budget")}
@@ -133,7 +192,7 @@ export default function Home() {
               </div>
 
               <h3 className="text-xl font-bold mb-2 tracking-tight text-foreground">
-                {t("home.budgetTitle", "3. Manage Budget")}
+                {t("home.budgetTitle", "5. Manage Budget")}
               </h3>
 
               <p className="text-muted-foreground/80 mb-6 text-sm leading-relaxed">
@@ -197,7 +256,7 @@ export default function Home() {
 
           {/* CARDS LAYOUT - SYMMETRICAL GRID */}
           <section
-            className={`grid gap-6 animate-in fade-in slide-in-from-bottom-6 duration-700 delay-150 fill-mode-both ${isBudgetEnabled ? "md:grid-cols-3" : "md:grid-cols-2 max-w-3xl mx-auto"}`}
+            className="grid gap-6 animate-in fade-in slide-in-from-bottom-6 duration-700 delay-150 fill-mode-both grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
           >
             {/* CARD 1: DISCOVER */}
             <motion.div
@@ -264,7 +323,67 @@ export default function Home() {
               </div>
             </motion.div>
 
-            {/* CARD 3: BUDGET */}
+            {/* CARD 3: SECOND BRAIN */}
+            <motion.div
+              onClick={() => go("/brain")}
+              whileHover={{ y: -6 }}
+              transition={{ type: "spring", stiffness: 200, damping: 22 }}
+              className="border border-border/30 rounded-3xl p-10 cursor-pointer transition bg-card/5 backdrop-blur-xl hover:bg-violet-500/[0.03] hover:border-violet-500/20 group shadow-2xl shadow-black/20 relative overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 w-40 h-40 bg-violet-500/5 rounded-full blur-[60px] -mr-10 -mt-10 pointer-events-none" />
+
+              <div className="h-14 w-14 rounded-2xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-violet-400 mb-8 group-hover:scale-110 transition-transform duration-500 shadow-lg shadow-violet-500/5">
+                <Brain className="w-6 h-6" />
+              </div>
+
+              <h3 className="text-xl font-bold mb-2 tracking-tight text-foreground">
+                {t("home.brainTitle", "3. Second Brain")}
+              </h3>
+
+              <p className="text-muted-foreground/80 text-sm mb-8 leading-relaxed">
+                {t(
+                  "home.brainDesc",
+                  "Save articles, notes, and links to your personal knowledge base. Query your knowledge with RAG.",
+                )}
+              </p>
+
+              <div className="text-xs font-bold tracking-widest uppercase flex items-center gap-2 text-violet-400 group-hover:translate-x-1 transition-transform">
+                {t("home.openBrain", "Open Brain")}
+                <ArrowRight className="w-4 h-4" />
+              </div>
+            </motion.div>
+
+            {/* CARD 4: WEEKLY DIGEST */}
+            <motion.div
+              onClick={() => go("/digest")}
+              whileHover={{ y: -6 }}
+              transition={{ type: "spring", stiffness: 200, damping: 22 }}
+              className="border border-border/30 rounded-3xl p-10 cursor-pointer transition bg-card/5 backdrop-blur-xl hover:bg-indigo-500/[0.03] hover:border-indigo-500/20 group shadow-2xl shadow-black/20 relative overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 w-40 h-40 bg-indigo-500/5 rounded-full blur-[60px] -mr-10 -mt-10 pointer-events-none" />
+
+              <div className="h-14 w-14 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 mb-8 group-hover:scale-110 transition-transform duration-500 shadow-lg shadow-indigo-500/5">
+                <Mail className="w-6 h-6" />
+              </div>
+
+              <h3 className="text-xl font-bold mb-2 tracking-tight text-foreground">
+                {t("home.digestTitle", "4. Weekly Digest")}
+              </h3>
+
+              <p className="text-muted-foreground/80 text-sm mb-8 leading-relaxed">
+                {t(
+                  "home.digestDesc",
+                  "Connect RSS feeds, select your summary style, and receive weekly email digests every Sunday.",
+                )}
+              </p>
+
+              <div className="text-xs font-bold tracking-widest uppercase flex items-center gap-2 text-indigo-400 group-hover:translate-x-1 transition-transform">
+                {t("home.openDigest", "Open Digest")}
+                <ArrowRight className="w-4 h-4" />
+              </div>
+            </motion.div>
+
+            {/* CARD 5: BUDGET */}
             {isBudgetEnabled && (
               <motion.div
                 onClick={() => go("/dashboard/budget")}
@@ -279,7 +398,7 @@ export default function Home() {
                 </div>
 
                 <h3 className="text-xl font-bold mb-2 tracking-tight text-foreground">
-                  {t("home.budgetTitle", "3. Manage Budget")}
+                  {t("home.budgetTitle", "5. Manage Budget")}
                 </h3>
 
                 <p className="text-muted-foreground/80 text-sm mb-8 leading-relaxed">

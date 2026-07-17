@@ -152,7 +152,7 @@ export default function Profile() {
 
   // Default values to use before data is loaded
   const notificationPrefs = (notificationPrefsData as any) || {
-    email_weekly_digest: true,
+    email_weekly_digest: false,
     email_problem_alerts: true,
     email_product_updates: false,
     email_marketing: false,

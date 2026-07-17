@@ -1621,6 +1621,62 @@ class ApiClient {
             : undefined,
     });
   }
+
+  // ─── Second Brain API ────────────────────────────────────────────────────────
+
+  async brainSaveUrl(url: string, title?: string) {
+    return this.post<{ id: string; title: string; chunk_count: number }>("/api/brain/save", { type: "url", url, title });
+  }
+
+  async brainSaveText(text: string, title?: string, type: "text" | "note" = "text") {
+    return this.post<{ id: string; title: string; chunk_count: number }>("/api/brain/save", { type, text, title });
+  }
+
+  async brainQuery(question: string) {
+    return this.post<{ answer: string; sources: { id: string; title: string; url: string | null }[] }>("/api/brain/query", { question });
+  }
+
+  async brainListItems() {
+    return this.get<any[]>("/api/brain/items");
+  }
+
+  async brainDeleteItem(id: string) {
+    return this.delete<void>(`/api/brain/items/${id}`);
+  }
+
+  // ─── Weekly Digest API ───────────────────────────────────────────────────────
+
+  async getDigestPreferences() {
+    return this.get<any | null>("/api/digest/preferences");
+  }
+
+  async upsertDigestPreferences(prefs: {
+    email?: string;
+    style?: "bullets" | "narrative" | "eli5";
+    enabled?: boolean;
+  }) {
+    return this.put<any>("/api/digest/preferences", prefs);
+  }
+
+  async listDigestFeeds() {
+    return this.get<any[]>("/api/digest/feeds");
+  }
+
+  async addDigestFeed(feed_url: string, label?: string) {
+    return this.post<any>("/api/digest/feeds", { feed_url, label });
+  }
+
+  async removeDigestFeed(id: string) {
+    return this.delete<void>(`/api/digest/feeds/${id}`);
+  }
+
+  async previewDigest(style: "bullets" | "narrative" | "eli5") {
+    return this.post<{ html: string | null; sectionCount: number; itemCount: number; message?: string }>("/api/digest/preview", { style });
+  }
+
+  async sendMeDigest() {
+    return this.post<{ sent: boolean; itemCount: number; reason?: string }>("/api/digest/send-me");
+  }
 }
 
 export const apiClient = new ApiClient(API_BASE_URL);
