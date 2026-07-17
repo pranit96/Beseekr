@@ -132,7 +132,7 @@ export default function Home() {
             </div>
 
             <h3 className="text-xl font-bold mb-2 tracking-tight text-foreground">
-              {t("home.brainTitle", "3. Second Brain")}
+              {t("home.brainTitle", "Mind")}
             </h3>
 
             <p className="text-muted-foreground/80 mb-6 text-sm leading-relaxed">
@@ -160,7 +160,7 @@ export default function Home() {
             </div>
 
             <h3 className="text-xl font-bold mb-2 tracking-tight text-foreground">
-              {t("home.digestTitle", "4. Weekly Digest")}
+              {t("home.digestTitle", "Weekly Digest")}
             </h3>
 
             <p className="text-muted-foreground/80 mb-6 text-sm leading-relaxed">
@@ -192,7 +192,7 @@ export default function Home() {
               </div>
 
               <h3 className="text-xl font-bold mb-2 tracking-tight text-foreground">
-                {t("home.budgetTitle", "5. Manage Budget")}
+                {t("home.budgetTitle", "Budget")}
               </h3>
 
               <p className="text-muted-foreground/80 mb-6 text-sm leading-relaxed">

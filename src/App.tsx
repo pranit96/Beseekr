@@ -21,6 +21,7 @@ import { Analytics as VercelAnalytics } from "@vercel/analytics/react";
 import { SpeedInsightsTracker } from "@/components/SpeedInsightsTracker";
 import { useEffect, lazy, Suspense } from "react";
 import { Loader2 } from "lucide-react";
+import { getIsSecondBrainEnabled, getIsWeeklyDigestEnabled } from "@/utils/envFlags";
 
 // Critical page imports (loaded immediately)
 import Auth from "./pages/Auth";
@@ -210,6 +211,23 @@ const App = () => {
     import("./lib/performance-budget")
       .then(({ performanceBudget }) => {
         setTimeout(() => performanceBudget.check(), 3000);
+      })
+      .catch(() => {});
+
+    // Fetch dynamic feature flags from backend config
+    import("@/lib/api")
+      .then(({ apiClient }) => {
+        apiClient.getFeatureFlags()
+          .then((res) => {
+            if (res.success && res.data) {
+              const { second_brain, weekly_digest } = res.data;
+              document.cookie = `EnableSecondBrain=${second_brain}; path=/; max-age=86400; SameSite=Lax`;
+              document.cookie = `EnableWeeklyDigest=${weekly_digest}; path=/; max-age=86400; SameSite=Lax`;
+            }
+          })
+          .catch((err) => {
+            console.error("Failed to load feature flags:", err);
+          });
       })
       .catch(() => {});
   }, []);
@@ -456,21 +474,29 @@ const App = () => {
                     <Route
                       path="/brain"
                       element={
-                        <ProtectedRoute>
-                          <Suspense fallback={<PageLoader />}>
-                            <Brain />
-                          </Suspense>
-                        </ProtectedRoute>
+                        getIsSecondBrainEnabled() ? (
+                          <ProtectedRoute>
+                            <Suspense fallback={<PageLoader />}>
+                              <Brain />
+                            </Suspense>
+                          </ProtectedRoute>
+                        ) : (
+                          <Navigate to="/" replace />
+                        )
                       }
                     />
                     <Route
                       path="/digest"
                       element={
-                        <ProtectedRoute>
-                          <Suspense fallback={<PageLoader />}>
-                            <Digest />
-                          </Suspense>
-                        </ProtectedRoute>
+                        getIsWeeklyDigestEnabled() ? (
+                          <ProtectedRoute>
+                            <Suspense fallback={<PageLoader />}>
+                              <Digest />
+                            </Suspense>
+                          </ProtectedRoute>
+                        ) : (
+                          <Navigate to="/" replace />
+                        )
                       }
                     />
                     <Route

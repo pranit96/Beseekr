@@ -1677,6 +1677,13 @@ class ApiClient {
   async sendMeDigest() {
     return this.post<{ sent: boolean; itemCount: number; reason?: string }>("/api/digest/send-me");
   }
+
+  async getFeatureFlags() {
+    return this.request<{
+      second_brain: boolean;
+      weekly_digest: boolean;
+    }>("/api/system/features");
+  }
 }
 
 export const apiClient = new ApiClient(API_BASE_URL);

@@ -25,7 +25,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 
 import { useTranslation } from "react-i18next";
-import { getIsBudgetEnabled } from "@/utils/envFlags";
+import { 
+  getIsBudgetEnabled,
+  getIsSecondBrainEnabled,
+  getIsWeeklyDigestEnabled,
+} from "@/utils/envFlags";
 
 interface TopBarProps {
   sidebarOpen?: boolean;
@@ -45,12 +49,15 @@ export const TopBar = ({
   const { user, logout } = useAuth();
 
   const isBudgetEnabled = getIsBudgetEnabled();
+  const isSecondBrainEnabled = getIsSecondBrainEnabled();
+  const isWeeklyDigestEnabled = getIsWeeklyDigestEnabled();
+
   const navigation = [
     { key: "home", name: "Home", href: "/" },
     { key: "chat", name: "Chat", href: "/chat" },
     { key: "agents", name: "Agents", href: "/agents" },
-    { key: "brain", name: "Second Brain", href: "/brain" },
-    { key: "digest", name: "Weekly Digest", href: "/digest" },
+    ...(isSecondBrainEnabled ? [{ key: "brain", name: "Second Brain", href: "/brain" }] : []),
+    ...(isWeeklyDigestEnabled ? [{ key: "digest", name: "Weekly Digest", href: "/digest" }] : []),
     { key: "analytics", name: "Analytics", href: "/analytics" },
     ...(isBudgetEnabled
       ? [{ key: "budget", name: "Budget", href: "/dashboard/budget" }]

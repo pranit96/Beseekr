@@ -35,3 +35,37 @@ export function getIsBudgetEnabled(): boolean {
 
   return envFlag;
 }
+
+export function getIsSecondBrainEnabled(): boolean {
+  // Active by default unless VITE_ENABLE_SECOND_BRAIN is false
+  const envFlag = import.meta.env.VITE_ENABLE_SECOND_BRAIN !== "false";
+
+  if (typeof document !== "undefined") {
+    const cookieMatch = document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("EnableSecondBrain="))
+      ?.split("=")[1];
+
+    if (cookieMatch === "true") return true;
+    if (cookieMatch === "false") return false;
+  }
+
+  return envFlag;
+}
+
+export function getIsWeeklyDigestEnabled(): boolean {
+  // Active by default unless VITE_ENABLE_WEEKLY_DIGEST is false
+  const envFlag = import.meta.env.VITE_ENABLE_WEEKLY_DIGEST !== "false";
+
+  if (typeof document !== "undefined") {
+    const cookieMatch = document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("EnableWeeklyDigest="))
+      ?.split("=")[1];
+
+    if (cookieMatch === "true") return true;
+    if (cookieMatch === "false") return false;
+  }
+
+  return envFlag;
+}
