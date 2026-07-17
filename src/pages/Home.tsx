@@ -275,7 +275,7 @@ export default function Home() {
               </div>
 
               <h3 className="text-xl font-bold mb-2 tracking-tight text-foreground">
-                {t("home.discoverTitle", "1. Uncover Problems")}
+                {t("home.discoverTitle", "Uncover Problems")}
               </h3>
 
               <p className="text-muted-foreground/80 mb-8 leading-relaxed text-sm">
@@ -305,7 +305,7 @@ export default function Home() {
               </div>
 
               <h3 className="text-xl font-bold mb-2 tracking-tight text-foreground">
-                {t("home.chatTitle", "2. Execute Solutions")}
+                {t("home.chatTitle", "AI Chat")}
               </h3>
 
               <p className="text-muted-foreground/80 text-sm mb-8 leading-relaxed">
@@ -337,7 +337,7 @@ export default function Home() {
               </div>
 
               <h3 className="text-xl font-bold mb-2 tracking-tight text-foreground">
-                {t("home.brainTitle", "3. Second Brain")}
+                {t("home.brainTitle", "Mind")}
               </h3>
 
               <p className="text-muted-foreground/80 text-sm mb-8 leading-relaxed">
@@ -367,7 +367,7 @@ export default function Home() {
               </div>
 
               <h3 className="text-xl font-bold mb-2 tracking-tight text-foreground">
-                {t("home.digestTitle", "4. Weekly Digest")}
+                {t("home.digestTitle", "Weekly Digest")}
               </h3>
 
               <p className="text-muted-foreground/80 text-sm mb-8 leading-relaxed">
@@ -398,7 +398,7 @@ export default function Home() {
                 </div>
 
                 <h3 className="text-xl font-bold mb-2 tracking-tight text-foreground">
-                  {t("home.budgetTitle", "5. Manage Budget")}
+                  {t("home.budgetTitle", "Manage Budget")}
                 </h3>
 
                 <p className="text-muted-foreground/80 text-sm mb-8 leading-relaxed">
