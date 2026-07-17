@@ -12,8 +12,36 @@ import {
   RotateCcw,
   AlertTriangle,
   Upload,
+  Loader2,
+  AlignLeft,
+  BookOpen,
+  Smile,
 } from "lucide-react";
 import { Navigate } from "react-router-dom";
+
+const STYLE_OPTIONS = [
+  {
+    key: "bullets" as const,
+    label: "Bullet Points",
+    description: "Tight, scannable summaries. Perfect for busy mornings.",
+    icon: AlignLeft,
+    color: "border-blue-500/40 bg-blue-500/5 text-blue-400 hover:border-blue-500/60",
+  },
+  {
+    key: "narrative" as const,
+    label: "Narrative",
+    description: "Flowing paragraphs — like a friend explaining the week.",
+    icon: BookOpen,
+    color: "border-violet-500/40 bg-violet-500/5 text-violet-400 hover:border-violet-500/60",
+  },
+  {
+    key: "eli5" as const,
+    label: "ELI5",
+    description: "Explain Like I'm Five. Simple, fun, and delightful.",
+    icon: Smile,
+    color: "border-amber-500/40 bg-amber-500/5 text-amber-400 hover:border-amber-500/60",
+  },
+];
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -148,7 +176,83 @@ export default function Profile() {
   const { data: notificationPrefsData, isLoading: loadingNotifications } =
     useNotificationPreferences();
 
-  const updateNotificationMutation = useUpdateNotificationPreferences();
+    const updateNotificationMutation = useUpdateNotificationPreferences();
+
+  // Weekly Digest Preferences States
+  const [digestEmail, setDigestEmail] = useState("");
+  const [digestStyle, setDigestStyle] = useState<"bullets" | "narrative" | "eli5">("bullets");
+  const [digestEnabled, setDigestEnabled] = useState(false);
+  const [loadingDigestPrefs, setLoadingDigestPrefs] = useState(false);
+  const [savingDigestPrefs, setSavingDigestPrefs] = useState(false);
+
+  // Sync digest preferences on mount
+  useEffect(() => {
+    const fetchDigestPrefs = async () => {
+      setLoadingDigestPrefs(true);
+      try {
+        const res = await apiClient.getDigestPreferences();
+        if (res.success && res.data) {
+          setDigestEmail(res.data.email || user?.email || "");
+          setDigestStyle(res.data.style || "bullets");
+          setDigestEnabled(res.data.enabled ?? false);
+        } else {
+          setDigestEmail(user?.email || "");
+        }
+      } catch (err) {
+        console.error("Failed to load digest preferences:", err);
+      } finally {
+        setLoadingDigestPrefs(false);
+      }
+    };
+
+    if (user) {
+      fetchDigestPrefs();
+    }
+  }, [user]);
+
+  const handleSaveDigestPrefs = async () => {
+    if (!digestEmail.trim()) {
+      return toast({
+        title: "Validation error",
+        description: "Please enter a valid email address.",
+        variant: "destructive",
+      });
+    }
+
+    setSavingDigestPrefs(true);
+    try {
+      // 1. Save digest preferences
+      const res = await apiClient.upsertDigestPreferences({
+        email: digestEmail.trim(),
+        style: digestStyle,
+        enabled: digestEnabled,
+      });
+
+      if (res.success && res.data) {
+        // 2. Sync to notifications panel in profiles table
+        if (notificationPrefs.email_weekly_digest !== digestEnabled) {
+          await updateNotificationMutation.mutateAsync({
+            email_weekly_digest: digestEnabled
+          });
+        }
+        
+        toast({
+          title: "Digest preferences updated",
+          description: "Your weekly digest delivery settings have been saved.",
+        });
+      } else {
+        throw new Error(res.error || "Failed to save digest preferences");
+      }
+    } catch (err: any) {
+      toast({
+        title: "Update failed",
+        description: err.message || "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setSavingDigestPrefs(false);
+    }
+  };
 
   // Default values to use before data is loaded
   const notificationPrefs = (notificationPrefsData as any) || {
@@ -261,6 +365,16 @@ export default function Profile() {
     updateNotificationMutation.mutate(
       { [key]: newValue },
       {
+        onSuccess: async () => {
+          if (key === "email_weekly_digest") {
+            setDigestEnabled(newValue);
+            await apiClient.upsertDigestPreferences({
+              email: digestEmail || user?.email || "",
+              style: digestStyle,
+              enabled: newValue
+            }).catch(err => console.error("Failed to sync digest preference:", err));
+          }
+        },
         onSettled: () => setSavingNotification(null),
       },
     );
@@ -608,6 +722,93 @@ export default function Profile() {
                     }
                     disabled={savingNotification === "notify_budget_reminders"}
                   />
+                </div>
+              </div>
+            )}
+
+            <div className="pt-6 border-t border-border/40">
+              <h2 className="text-lg font-medium text-foreground">
+                Weekly Personal Digest Configurations
+              </h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Configure your newsletter delivery email, layout design, and summary style.
+              </p>
+            </div>
+
+            {loadingDigestPrefs ? (
+              <div className="py-8 text-muted-foreground animate-pulse">
+                Loading digest preferences...
+              </div>
+            ) : (
+              <div className="rounded-xl border p-6 space-y-6 bg-muted/5">
+                {/* Enable Switch */}
+                <div className="flex items-center justify-between pb-4 border-b border-border/40">
+                  <div>
+                    <div className="font-medium text-sm">Weekly Digest Dispatch</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">
+                      Check this to receive compiled briefs on Sundays.
+                    </div>
+                  </div>
+                  <Switch
+                    checked={digestEnabled}
+                    onCheckedChange={(checked) => {
+                      setDigestEnabled(checked);
+                    }}
+                  />
+                </div>
+
+                {/* Email Address */}
+                <div>
+                  <Label htmlFor="digest-email" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-2">
+                    Delivery Email Address
+                  </Label>
+                  <Input
+                    id="digest-email"
+                    type="email"
+                    placeholder="you@example.com"
+                    value={digestEmail}
+                    onChange={(e) => setDigestEmail(e.target.value)}
+                    className="text-sm rounded-xl max-w-md bg-background border-border/60"
+                  />
+                </div>
+
+                {/* Summary Style Selector */}
+                <div>
+                  <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-3">
+                    Synthesis Style
+                  </Label>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {STYLE_OPTIONS.map(({ key, label, description, icon: Icon, color }) => (
+                      <button
+                        key={key}
+                        onClick={() => setDigestStyle(key)}
+                        className={`rounded-xl border p-4 text-left transition-all duration-300 flex flex-col gap-2 ${
+                          digestStyle === key
+                            ? `${color} border-opacity-100 shadow-md`
+                            : "border-border bg-white/[0.01] hover:bg-muted/40 text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        <Icon className="h-4.5 w-4.5" />
+                        <div>
+                          <p className="text-xs font-bold text-foreground">
+                            {label}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground mt-0.5 leading-tight">{description}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex justify-end pt-2">
+                  <Button
+                    onClick={handleSaveDigestPrefs}
+                    disabled={savingDigestPrefs}
+                    className="bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl px-5 text-xs font-bold"
+                  >
+                    {savingDigestPrefs ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                    Save Digest Settings
+                  </Button>
                 </div>
               </div>
             )}
