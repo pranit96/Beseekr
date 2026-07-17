@@ -1644,6 +1644,14 @@ class ApiClient {
     return this.delete<void>(`/api/brain/items/${id}`);
   }
 
+  async brainGetMindMap() {
+    return this.get<{ nodes: any[]; edges: any[] }>("/api/brain/mindmap");
+  }
+
+  async brainGetInsights() {
+    return this.get<{ summary: string; themes: string[]; stats: any }>("/api/brain/insights");
+  }
+
   // ─── Weekly Digest API ───────────────────────────────────────────────────────
 
   async getDigestPreferences() {
