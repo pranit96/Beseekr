@@ -22,6 +22,11 @@ import {
   CheckCircle2,
   ExternalLink,
   X,
+  Trash2,
+  Inbox,
+  Settings2,
+  ArrowRight,
+  Globe,
 } from "lucide-react";
 
 type DigestStyle = "bullets" | "narrative" | "eli5";
@@ -32,27 +37,31 @@ const STYLE_OPTIONS: {
   description: string;
   icon: React.ElementType;
   color: string;
+  glow: string;
 }[] = [
   {
     key: "bullets",
     label: "Bullet Points",
     description: "Tight, scannable summaries. Perfect for busy mornings.",
     icon: AlignLeft,
-    color: "border-blue-500/40 bg-blue-500/5 text-blue-400",
+    color: "border-blue-500/40 bg-blue-500/5 text-blue-400 hover:border-blue-500/60",
+    glow: "shadow-blue-500/10",
   },
   {
     key: "narrative",
     label: "Narrative",
     description: "Flowing paragraphs — like a friend explaining the week.",
     icon: BookOpen,
-    color: "border-violet-500/40 bg-violet-500/5 text-violet-400",
+    color: "border-violet-500/40 bg-violet-500/5 text-violet-400 hover:border-violet-500/60",
+    glow: "shadow-violet-500/10",
   },
   {
     key: "eli5",
     label: "ELI5",
     description: "Explain Like I'm Five. Simple, fun, and delightful.",
     icon: Smile,
-    color: "border-amber-500/40 bg-amber-500/5 text-amber-400",
+    color: "border-amber-500/40 bg-amber-500/5 text-amber-400 hover:border-amber-500/60",
+    glow: "shadow-amber-500/10",
   },
 ];
 
@@ -89,6 +98,9 @@ export default function Digest() {
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
   const [isGeneratingPreview, setIsGeneratingPreview] = useState(false);
   const [isSending, setIsSending] = useState(false);
+
+  // Layout state
+  const [activeMobileTab, setActiveMobileTab] = useState<"configure" | "preview">("configure");
 
   useEffect(() => {
     if (!loading && !user) {
@@ -206,6 +218,7 @@ export default function Digest() {
           toast({ title: "Information", description: res.data.message || "No new articles found this week" });
         } else {
           setPreviewHtml(res.data.html);
+          setActiveMobileTab("preview"); // Switch to preview tab on mobile
           toast({
             title: "Success",
             description: `Preview ready — ${res.data.itemCount} articles from ${res.data.sectionCount} topics`,
@@ -244,283 +257,458 @@ export default function Digest() {
 
   if (loading || isLoading) {
     return (
-      <div className="h-screen flex flex-col bg-background text-foreground overflow-hidden">
+      <div className="min-h-screen flex flex-col bg-[#0b0c10] text-[#c5c6c7] overflow-hidden">
         <GlobalHeader />
-        <div className="flex-1 flex items-center justify-center">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        <div className="flex-1 flex flex-col items-center justify-center gap-4">
+          <Loader2 className="h-10 w-10 animate-spin text-indigo-400" />
+          <p className="text-sm text-muted-foreground animate-pulse">Loading weekly digest system...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="h-screen flex flex-col bg-background text-foreground overflow-hidden">
+    <div className="min-h-screen flex flex-col bg-[#08090d] text-foreground overflow-x-hidden relative">
+      {/* Background Decorative Blur Nodes */}
+      <div className="absolute top-1/4 left-1/10 w-96 h-96 bg-indigo-500/5 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-1/4 right-1/10 w-[500px] h-[500px] bg-violet-500/5 rounded-full blur-[160px] pointer-events-none" />
+
       <GlobalHeader />
 
-      <main className="flex-1 overflow-y-auto px-4 py-8 max-w-2xl mx-auto w-full">
-        {/* Header */}
-        <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-500/10 border border-indigo-500/20">
-              <Mail className="h-5 w-5 text-indigo-400" />
+      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-6 relative z-10">
+        
+        {/* Main Title Banner */}
+        <motion.div 
+          initial={{ opacity: 0, y: -10 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          transition={{ duration: 0.5 }}
+          className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/5 pb-6"
+        >
+          <div>
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 shadow-lg shadow-indigo-500/5">
+                <Mail className="h-6 w-6" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-3">
+                  Weekly Personal Digest
+                  {prefs?.enabled && (
+                    <span className="inline-flex items-center gap-1 rounded-full border border-green-500/30 bg-green-500/10 px-2.5 py-0.5 text-[10px] font-bold text-green-400 uppercase tracking-widest">
+                      <span className="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse" /> Active
+                    </span>
+                  )}
+                </h1>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Synthesize your customized news feeds into a beautiful weekly brief generated directly on Sundays.
+                </p>
+              </div>
             </div>
-            <h1 className="text-xl font-bold tracking-tight text-foreground">Weekly Digest</h1>
-            {prefs?.enabled && (
-              <span className="inline-flex items-center gap-1 rounded-full border border-green-500/30 bg-green-500/10 px-2 py-0.5 text-xs font-semibold text-green-400">
-                <CheckCircle2 className="h-3 w-3" /> Active
-              </span>
-            )}
           </div>
-          <p className="text-xs text-muted-foreground pl-12">
-            Every Sunday at 10:00 AM IST, receive a personalised AI summary of your saved RSS/Atom feeds.
-          </p>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={loadAll}
+              className="border-white/10 hover:bg-white/5 text-xs rounded-xl h-9"
+            >
+              Refresh Settings
+            </Button>
+          </div>
         </motion.div>
 
-        <div className="space-y-6">
-          {/* Preferences Card */}
-          <motion.section
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="rounded-2xl border border-border bg-card p-5"
+        {/* Mobile Tab Selectors (hides on desktop) */}
+        <div className="flex lg:hidden bg-muted/20 border border-white/5 p-1 rounded-xl">
+          <button
+            onClick={() => setActiveMobileTab("configure")}
+            className={`flex-1 py-2 text-xs font-semibold rounded-lg flex items-center justify-center gap-2 transition-all ${
+              activeMobileTab === "configure"
+                ? "bg-indigo-500/10 border border-indigo-500/20 text-indigo-400"
+                : "text-muted-foreground hover:text-white"
+            }`}
           >
-            <h2 className="text-sm font-semibold text-foreground mb-4">Delivery settings</h2>
+            <Settings2 className="w-4 h-4" />
+            Configure
+          </button>
+          <button
+            onClick={() => setActiveMobileTab("preview")}
+            className={`flex-1 py-2 text-xs font-semibold rounded-lg flex items-center justify-center gap-2 transition-all ${
+              activeMobileTab === "preview"
+                ? "bg-indigo-500/10 border border-indigo-500/20 text-indigo-400"
+                : "text-muted-foreground hover:text-white"
+            }`}
+          >
+            <Eye className="w-4 h-4" />
+            Live Preview
+          </button>
+        </div>
 
-            <div className="flex items-center justify-between mb-4 pb-4 border-b border-border/40">
-              <div>
-                <p className="text-sm font-medium text-foreground">Enable digest</p>
-                <p className="text-xs text-muted-foreground">Receive weekly emails every Sunday</p>
-              </div>
-              <button
-                onClick={() => setEnabled((v) => !v)}
-                className="text-muted-foreground hover:text-foreground transition-colors focus:outline-none"
-              >
-                {enabled ? (
-                  <ToggleRight className="h-8 w-8 text-indigo-400" />
-                ) : (
-                  <ToggleLeft className="h-8 w-8" />
-                )}
-              </button>
-            </div>
-
-            <div className="mb-4">
-              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">
-                Delivery email
-              </label>
-              <Input
-                type="email"
-                placeholder="you@example.com"
-                value={emailInput}
-                onChange={(e) => setEmailInput(e.target.value)}
-                className="text-sm rounded-lg"
-              />
-            </div>
-
-            <div className="mb-5">
-              <label className="text-xs font-medium text-muted-foreground mb-2 block">
-                Summary style
-              </label>
-              <div className="grid grid-cols-3 gap-2">
-                {STYLE_OPTIONS.map(({ key, label, description, icon: Icon, color }) => (
-                  <button
-                    key={key}
-                    onClick={() => setSelectedStyle(key)}
-                    className={`relative rounded-xl border p-3 text-left transition-all ${
-                      selectedStyle === key
-                        ? `${color} border-opacity-100`
-                        : "border-border bg-muted/20 hover:bg-muted/40"
-                    }`}
-                  >
-                    <Icon className={`h-4 w-4 mb-1.5 ${selectedStyle === key ? "" : "text-muted-foreground"}`} />
-                    <p className={`text-xs font-semibold ${selectedStyle === key ? "" : "text-foreground"}`}>
-                      {label}
-                    </p>
-                    <p className="text-[10px] text-muted-foreground mt-0.5 leading-tight">{description}</p>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <Button
-              className="w-full bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-semibold"
-              onClick={handleSavePrefs}
-              disabled={isSavingPrefs}
+        {/* Content Layout Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          
+          {/* LEFT PANEL: CONFIGURATION */}
+          <div className={`lg:col-span-5 space-y-6 ${activeMobileTab === "configure" ? "block" : "hidden lg:block"}`}>
+            
+            {/* Delivery Preferences */}
+            <motion.section
+              initial={{ opacity: 0, x: -15 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.4 }}
+              className="rounded-3xl border border-white/5 bg-slate-950/40 backdrop-blur-md p-6 shadow-xl relative overflow-hidden"
             >
-              {isSavingPrefs ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              Save Preferences
-            </Button>
-          </motion.section>
+              <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none" />
+              
+              <h2 className="text-sm font-bold text-white uppercase tracking-wider mb-6 flex items-center gap-2">
+                <Settings2 className="w-4 h-4 text-indigo-400" />
+                Delivery Configurations
+              </h2>
 
-          {/* Feeds Card */}
-          <motion.section
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="rounded-2xl border border-border bg-card p-5"
-          >
-            <h2 className="text-sm font-semibold text-foreground mb-4">
-              RSS Feeds
-              {feeds.length > 0 && (
-                <span className="ml-2 text-xs font-normal text-muted-foreground">({feeds.length})</span>
-              )}
-            </h2>
-
-            <div className="flex gap-2 mb-3">
-              <Input
-                placeholder="https://example.com/feed.xml"
-                value={newFeedUrl}
-                onChange={(e) => setNewFeedUrl(e.target.value)}
-                className="text-sm font-mono flex-1 rounded-lg"
-                onKeyDown={(e) => e.key === "Enter" && handleAddFeed()}
-              />
-              <Input
-                placeholder="Label"
-                value={newFeedLabel}
-                onChange={(e) => setNewFeedLabel(e.target.value)}
-                className="text-sm w-28 rounded-lg"
-              />
-              <Button
-                onClick={() => handleAddFeed()}
-                disabled={isAddingFeed || !newFeedUrl.trim()}
-                size="sm"
-                className="gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg shrink-0"
-              >
-                {isAddingFeed ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-                Add
-              </Button>
-            </div>
-
-            <div className="mb-4">
-              <p className="text-xs text-muted-foreground mb-2">Suggested feeds:</p>
-              <div className="flex flex-wrap gap-1.5">
-                {SUGGESTED_FEEDS.filter((s) => !feeds.some((f) => f.feed_url === s.url)).map((s) => (
+              <div className="space-y-6">
+                {/* Enable toggle */}
+                <div className="flex items-center justify-between pb-4 border-b border-white/5">
+                  <div>
+                    <p className="text-sm font-semibold text-white">Subscribe to Digest</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Dispatches weekly briefings on Sundays.</p>
+                  </div>
                   <button
-                    key={s.url}
-                    onClick={() => handleAddFeed(s.url, s.label)}
-                    disabled={isAddingFeed}
-                    className="inline-flex items-center gap-1 rounded-full border border-dashed border-border px-2.5 py-0.5 text-xs text-muted-foreground hover:text-foreground hover:border-indigo-500/50 hover:bg-indigo-500/5 transition-colors disabled:opacity-40"
+                    onClick={() => setEnabled((v) => !v)}
+                    className="text-muted-foreground hover:text-white transition-colors focus:outline-none"
                   >
-                    <Rss className="h-2.5 w-2.5" />
-                    {s.label}
+                    {enabled ? (
+                      <ToggleRight className="h-9 w-9 text-indigo-400" />
+                    ) : (
+                      <ToggleLeft className="h-9 w-9" />
+                    )}
                   </button>
-                ))}
-              </div>
-            </div>
-
-            <AnimatePresence>
-              {feeds.length === 0 ? (
-                <div className="flex items-center justify-center py-6 text-center">
-                  <p className="text-xs text-muted-foreground">No RSS feeds added yet.</p>
                 </div>
-              ) : (
-                <div className="space-y-1.5">
-                  {feeds.map((feed) => (
-                    <motion.div
-                      key={feed.id}
-                      layout
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="flex items-center gap-2 rounded-lg border border-border/40 bg-muted/10 px-3 py-2 group"
-                    >
-                      <Rss className="h-3.5 w-3.5 text-indigo-400 flex-shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        {feed.label && (
-                          <p className="text-xs font-semibold text-foreground">{feed.label}</p>
-                        )}
-                        <p className="text-xs text-muted-foreground truncate">{feed.feed_url}</p>
-                      </div>
-                      <a
-                        href={feed.feed_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground transition-all"
-                      >
-                        <ExternalLink className="h-3.5 w-3.5" />
-                      </a>
+
+                {/* Email address */}
+                <div>
+                  <label className="text-xs font-semibold text-muted-foreground mb-2 block uppercase tracking-wider">
+                    Recipient Email Address
+                  </label>
+                  <div className="relative">
+                    <Mail className="absolute left-3.5 top-3 h-4.5 w-4.5 text-muted-foreground" />
+                    <Input
+                      type="email"
+                      placeholder="you@example.com"
+                      value={emailInput}
+                      onChange={(e) => setEmailInput(e.target.value)}
+                      className="text-sm pl-11 rounded-xl bg-white/5 border-white/10 text-white h-11 focus-visible:ring-indigo-500/40"
+                    />
+                  </div>
+                </div>
+
+                {/* Summary style */}
+                <div>
+                  <label className="text-xs font-semibold text-muted-foreground mb-3 block uppercase tracking-wider">
+                    Synthesis Synthesis Style
+                  </label>
+                  <div className="grid grid-cols-1 gap-2.5">
+                    {STYLE_OPTIONS.map(({ key, label, description, icon: Icon, color, glow }) => (
                       <button
-                        onClick={() => handleRemoveFeed(feed.id)}
-                        disabled={deletingFeedId === feed.id}
-                        className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all focus:outline-none"
+                        key={key}
+                        onClick={() => setSelectedStyle(key)}
+                        className={`relative rounded-2xl border p-4 text-left transition-all duration-300 flex items-start gap-4 ${
+                          selectedStyle === key
+                            ? `${color} border-opacity-100 shadow-lg ${glow}`
+                            : "border-white/5 bg-white/[0.02] hover:bg-white/[0.05] text-muted-foreground hover:text-white"
+                        }`}
                       >
-                        {deletingFeedId === feed.id ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        ) : (
-                          <X className="h-3.5 w-3.5" />
-                        )}
+                        <div className={`h-8 w-8 rounded-xl flex items-center justify-center shrink-0 ${
+                          selectedStyle === key ? "bg-white/10" : "bg-white/5"
+                        }`}>
+                          <Icon className="h-4.5 w-4.5" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-white tracking-wide">
+                            {label}
+                          </p>
+                          <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed">{description}</p>
+                        </div>
                       </button>
-                    </motion.div>
-                  ))}
+                    ))}
+                  </div>
+                </div>
+
+                <Button
+                  className="w-full bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl h-11 font-semibold transition-all duration-300 shadow-lg shadow-indigo-600/10"
+                  onClick={handleSavePrefs}
+                  disabled={isSavingPrefs}
+                >
+                  {isSavingPrefs ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                  Save Delivery Settings
+                </Button>
+              </div>
+            </motion.section>
+
+            {/* RSS Feed Management */}
+            <motion.section
+              initial={{ opacity: 0, x: -15 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.4, delay: 0.1 }}
+              className="rounded-3xl border border-white/5 bg-slate-950/40 backdrop-blur-md p-6 shadow-xl"
+            >
+              <h2 className="text-sm font-bold text-white uppercase tracking-wider mb-4 flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <Rss className="w-4 h-4 text-indigo-400" />
+                  Feed Streams
+                </span>
+                {feeds.length > 0 && (
+                  <span className="rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-2 py-0.5 text-[10px] font-bold">
+                    {feeds.length} Streams
+                  </span>
+                )}
+              </h2>
+
+              <div className="space-y-4">
+                {/* Inputs for adding feeds */}
+                <div className="space-y-2 border-b border-white/5 pb-4">
+                  <Input
+                    placeholder="Feed URL (RSS or Atom link)"
+                    value={newFeedUrl}
+                    onChange={(e) => setNewFeedUrl(e.target.value)}
+                    className="text-xs font-mono rounded-xl bg-white/5 border-white/10 text-white h-10 placeholder:text-muted-foreground/60"
+                    onKeyDown={(e) => e.key === "Enter" && handleAddFeed()}
+                  />
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Stream Name (e.g. HN)"
+                      value={newFeedLabel}
+                      onChange={(e) => setNewFeedLabel(e.target.value)}
+                      className="text-xs rounded-xl bg-white/5 border-white/10 text-white h-10"
+                    />
+                    <Button
+                      onClick={() => handleAddFeed()}
+                      disabled={isAddingFeed || !newFeedUrl.trim()}
+                      className="bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl h-10 px-4 flex items-center gap-1.5 text-xs font-bold"
+                    >
+                      {isAddingFeed ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-4 w-4" />}
+                      Add Stream
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Suggested feeds helper */}
+                {SUGGESTED_FEEDS.filter((s) => !feeds.some((f) => f.feed_url === s.url)).length > 0 && (
+                  <div>
+                    <p className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground mb-2">Recommended feeds:</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {SUGGESTED_FEEDS.filter((s) => !feeds.some((f) => f.feed_url === s.url)).map((s) => (
+                        <button
+                          key={s.url}
+                          onClick={() => handleAddFeed(s.url, s.label)}
+                          disabled={isAddingFeed}
+                          className="inline-flex items-center gap-1.5 rounded-full border border-white/10 px-3 py-1 text-[11px] text-muted-foreground bg-white/[0.01] hover:text-white hover:border-indigo-500/40 hover:bg-indigo-500/5 transition-all duration-300 disabled:opacity-40"
+                        >
+                          <Rss className="h-3 w-3" />
+                          {s.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Feed item list */}
+                <div className="max-h-60 overflow-y-auto pr-1 space-y-2">
+                  <AnimatePresence>
+                    {feeds.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center py-8 text-center border border-dashed border-white/5 rounded-2xl bg-white/[0.01]">
+                        <Rss className="w-8 h-8 text-muted-foreground/30 mb-2" />
+                        <p className="text-xs text-muted-foreground">Add RSS/Atom feeds to start compiling your digest.</p>
+                      </div>
+                    ) : (
+                      feeds.map((feed) => (
+                        <motion.div
+                          key={feed.id}
+                          layout
+                          initial={{ opacity: 0, scale: 0.98 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.98 }}
+                          className="flex items-center gap-3 rounded-xl border border-white/5 bg-white/[0.02] px-3.5 py-2.5 group hover:border-indigo-500/20 hover:bg-indigo-500/[0.01] transition-all duration-300"
+                        >
+                          <div className="h-7 w-7 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-400 shrink-0">
+                            <Globe className="h-3.5 w-3.5" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-bold text-white truncate">
+                              {feed.label || "Untitled Stream"}
+                            </p>
+                            <p className="text-[10px] text-muted-foreground truncate font-mono mt-0.5">{feed.feed_url}</p>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <a
+                              href={feed.feed_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-muted-foreground hover:text-white transition-colors p-1"
+                              title="Open original feed"
+                            >
+                              <ExternalLink className="h-3.5 w-3.5" />
+                            </a>
+                            <button
+                              onClick={() => handleRemoveFeed(feed.id)}
+                              disabled={deletingFeedId === feed.id}
+                              className="text-muted-foreground hover:text-red-400 transition-colors p-1 focus:outline-none"
+                              title="Delete stream"
+                            >
+                              {deletingFeedId === feed.id ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              ) : (
+                                <Trash2 className="h-3.5 w-3.5" />
+                              )}
+                            </button>
+                          </div>
+                        </motion.div>
+                      ))
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
+            </motion.section>
+          </div>
+
+          {/* RIGHT PANEL: LIVE PREVIEW & INTERACTIVE MOCK INBOX */}
+          <div className={`lg:col-span-7 space-y-6 ${activeMobileTab === "preview" ? "block" : "hidden lg:block"}`}>
+            
+            {/* Quick Actions Panel */}
+            <motion.section
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="rounded-3xl border border-white/5 bg-slate-950/40 backdrop-blur-md p-5 shadow-xl flex flex-col sm:flex-row gap-4 items-center justify-between"
+            >
+              <div>
+                <h2 className="text-sm font-bold text-white">Compile & Dispatch</h2>
+                <p className="text-[11px] text-muted-foreground mt-0.5">Generate a preview instantly or test delivery to your inbox.</p>
+              </div>
+              <div className="flex gap-2.5 w-full sm:w-auto shrink-0">
+                <Button
+                  variant="outline"
+                  className="flex-1 sm:flex-initial gap-2 border-white/10 hover:bg-white/5 rounded-xl h-10 text-xs font-semibold"
+                  onClick={handlePreview}
+                  disabled={isGeneratingPreview || !feeds.length}
+                >
+                  {isGeneratingPreview ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin text-indigo-400" />
+                  ) : (
+                    <Eye className="h-3.5 w-3.5 text-indigo-400" />
+                  )}
+                  Preview
+                </Button>
+                <Button
+                  className="flex-1 sm:flex-initial gap-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl h-10 text-xs font-bold transition-all"
+                  onClick={handleSendNow}
+                  disabled={isSending || !prefs}
+                >
+                  {isSending ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Send className="h-3.5 w-3.5" />
+                  )}
+                  Send test email
+                </Button>
+              </div>
+            </motion.section>
+
+            {/* High-Fidelity Mock Inbox Container */}
+            <motion.section
+              initial={{ opacity: 0, scale: 0.99 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.4 }}
+              className="rounded-3xl border border-white/5 bg-slate-950/60 shadow-2xl relative overflow-hidden"
+            >
+              {/* Browser mockup controls */}
+              <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/5 bg-[#0f1118]">
+                <div className="flex items-center gap-1.5">
+                  <span className="h-3 w-3 rounded-full bg-red-500/70" />
+                  <span className="h-3 w-3 rounded-full bg-yellow-500/70" />
+                  <span className="h-3 w-3 rounded-full bg-green-500/70" />
+                </div>
+                <span className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest font-mono">
+                  Weekly Brief Viewer
+                </span>
+                <div className="w-12" /> {/* alignment spacer */}
+              </div>
+
+              {/* Email Client Metadata Header */}
+              {previewHtml && (
+                <div className="px-6 py-4 bg-[#11131c] border-b border-white/5 flex flex-col gap-1.5 text-xs text-muted-foreground">
+                  <p><span className="font-semibold text-white/50">From:</span> Beseekr AI Digest &lt;noreply@support.beseekr.com&gt;</p>
+                  <p><span className="font-semibold text-white/50">To:</span> {emailInput || "you@example.com"}</p>
+                  <p><span className="font-semibold text-white/50">Subject:</span> 🧠 Your Weekly Digest — {new Date().toLocaleDateString("en-US", { month: "long", day: "numeric" })}</p>
                 </div>
               )}
-            </AnimatePresence>
-          </motion.section>
 
-          {/* Actions Card */}
-          <motion.section
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="rounded-2xl border border-border bg-card p-5"
-          >
-            <h2 className="text-sm font-semibold text-foreground mb-1">Preview & Send</h2>
-            <p className="text-xs text-muted-foreground mb-4">
-              Generate a live preview from your RSS articles, or trigger an immediate test send to your email.
-            </p>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                className="flex-1 gap-1.5 rounded-lg"
-                onClick={handlePreview}
-                disabled={isGeneratingPreview || !feeds.length}
-              >
-                {isGeneratingPreview ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <Eye className="h-3.5 w-3.5" />
-                )}
-                {isGeneratingPreview ? "Generating Preview…" : "Preview Digest"}
-              </Button>
-              <Button
-                className="flex-1 gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-semibold"
-                onClick={handleSendNow}
-                disabled={isSending || !prefs}
-              >
-                {isSending ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <Send className="h-3.5 w-3.5" />
-                )}
-                {isSending ? "Sending…" : "Send to Me Now"}
-              </Button>
-            </div>
-          </motion.section>
+              {/* Live Preview Display Box */}
+              <div className="p-1 min-h-[460px] bg-slate-900/10 flex flex-col justify-center">
+                <AnimatePresence mode="wait">
+                  {previewHtml ? (
+                    <motion.div
+                      key="preview-content"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="w-full flex flex-col"
+                    >
+                      <iframe
+                        srcDoc={previewHtml}
+                        title="Digest email preview"
+                        className="w-full rounded-2xl bg-white"
+                        style={{ height: "550px", border: "none" }}
+                        sandbox="allow-same-origin"
+                      />
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="empty-state"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="flex flex-col items-center justify-center text-center p-8 py-14"
+                    >
+                      {/* Premium Asset Illustration */}
+                      <motion.div 
+                        animate={{ y: [0, -10, 0] }}
+                        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+                        className="relative w-56 h-56 rounded-3xl overflow-hidden mb-8 shadow-2xl border border-white/5 shadow-indigo-500/5 group"
+                      >
+                        <img 
+                          src="/images/weekly_digest_illustration.png" 
+                          alt="Futuristic Digest Illustration" 
+                          className="object-cover w-full h-full transform scale-105 group-hover:scale-110 transition-transform duration-1000"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-80" />
+                      </motion.div>
 
-          {/* HTML Preview iframe */}
-          <AnimatePresence>
-            {previewHtml && (
-              <motion.section
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                className="rounded-2xl border border-border overflow-hidden"
-              >
-                <div className="flex items-center justify-between px-4 py-2.5 border-b border-border/40 bg-card">
-                  <span className="text-xs font-semibold text-foreground">Email preview</span>
-                  <button
+                      <div className="max-w-sm">
+                        <h3 className="text-lg font-bold text-white flex items-center justify-center gap-2">
+                          <Inbox className="w-5 h-5 text-indigo-400" />
+                          No digest generated
+                        </h3>
+                        <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
+                          Once you add your feed streams above, click <strong>"Preview"</strong> to see how your weekly synthesized newsletter compiles.
+                        </p>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* Close Button / Bottom control if preview active */}
+              {previewHtml && (
+                <div className="flex justify-end p-3 border-t border-white/5 bg-[#0f1118]">
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => setPreviewHtml(null)}
-                    className="text-muted-foreground hover:text-foreground transition-colors focus:outline-none"
+                    className="text-xs font-semibold text-muted-foreground hover:text-white gap-1.5"
                   >
-                    <X className="h-4 w-4" />
-                  </button>
+                    Clear Preview
+                    <X className="w-3.5 h-3.5" />
+                  </Button>
                 </div>
-                <iframe
-                  srcDoc={previewHtml}
-                  title="Digest email preview"
-                  className="w-full bg-white"
-                  style={{ height: "600px", border: "none" }}
-                  sandbox="allow-same-origin"
-                />
-              </motion.section>
-            )}
-          </AnimatePresence>
+              )}
+            </motion.section>
+          </div>
+
         </div>
       </main>
     </div>
