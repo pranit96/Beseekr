@@ -14,56 +14,13 @@ import {
   Plus,
   Eye,
   Send,
-  ToggleLeft,
-  ToggleRight,
-  AlignLeft,
-  BookOpen,
-  Smile,
-  CheckCircle2,
   ExternalLink,
   X,
   Trash2,
   Inbox,
   Settings2,
-  ArrowRight,
   Globe,
 } from "lucide-react";
-
-type DigestStyle = "bullets" | "narrative" | "eli5";
-
-const STYLE_OPTIONS: {
-  key: DigestStyle;
-  label: string;
-  description: string;
-  icon: React.ElementType;
-  color: string;
-  glow: string;
-}[] = [
-  {
-    key: "bullets",
-    label: "Bullet Points",
-    description: "Tight, scannable summaries. Perfect for busy mornings.",
-    icon: AlignLeft,
-    color: "border-blue-500/40 bg-blue-500/5 text-blue-400 hover:border-blue-500/60",
-    glow: "shadow-blue-500/10",
-  },
-  {
-    key: "narrative",
-    label: "Narrative",
-    description: "Flowing paragraphs — like a friend explaining the week.",
-    icon: BookOpen,
-    color: "border-violet-500/40 bg-violet-500/5 text-violet-400 hover:border-violet-500/60",
-    glow: "shadow-violet-500/10",
-  },
-  {
-    key: "eli5",
-    label: "ELI5",
-    description: "Explain Like I'm Five. Simple, fun, and delightful.",
-    icon: Smile,
-    color: "border-amber-500/40 bg-amber-500/5 text-amber-400 hover:border-amber-500/60",
-    glow: "shadow-amber-500/10",
-  },
-];
 
 const SUGGESTED_FEEDS = [
   { label: "Hacker News", url: "https://news.ycombinator.com/rss" },
@@ -81,12 +38,6 @@ export default function Digest() {
   const [prefs, setPrefs] = useState<any | null>(null);
   const [feeds, setFeeds] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSavingPrefs, setIsSavingPrefs] = useState(false);
-
-  // Edit state
-  const [emailInput, setEmailInput] = useState("");
-  const [selectedStyle, setSelectedStyle] = useState<DigestStyle>("bullets");
-  const [enabled, setEnabled] = useState(true);
 
   // Feed add state
   const [newFeedUrl, setNewFeedUrl] = useState("");
@@ -118,11 +69,6 @@ export default function Digest() {
 
       if (pRes.success && pRes.data) {
         setPrefs(pRes.data);
-        setEmailInput(pRes.data.email || "");
-        setSelectedStyle(pRes.data.style || "bullets");
-        setEnabled(pRes.data.enabled ?? true);
-      } else {
-        setEmailInput(user?.email || "");
       }
 
       if (fRes.success && fRes.data) {
@@ -137,35 +83,11 @@ export default function Digest() {
     } finally {
       setIsLoading(false);
     }
-  }, [user, toast]);
+  }, [toast]);
 
   useEffect(() => {
     if (user) loadAll();
   }, [user, loadAll]);
-
-  const handleSavePrefs = async () => {
-    if (!emailInput.trim()) {
-      return toast({ title: "Error", description: "Enter your email address", variant: "destructive" });
-    }
-    setIsSavingPrefs(true);
-    try {
-      const res = await apiClient.upsertDigestPreferences({
-        email: emailInput.trim(),
-        style: selectedStyle,
-        enabled,
-      });
-      if (res.success && res.data) {
-        setPrefs(res.data);
-        toast({ title: "Success", description: "Preferences saved successfully" });
-      } else {
-        toast({ title: "Failed", description: res.error || "Failed to save preferences", variant: "destructive" });
-      }
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message || "Failed to save preferences", variant: "destructive" });
-    } finally {
-      setIsSavingPrefs(false);
-    }
-  };
 
   const handleAddFeed = async (url?: string, label?: string) => {
     const feedUrl = url || newFeedUrl.trim();
@@ -212,7 +134,7 @@ export default function Digest() {
     setIsGeneratingPreview(true);
     setPreviewHtml(null);
     try {
-      const res = await apiClient.previewDigest(selectedStyle);
+      const res = await apiClient.previewDigest(prefs?.style || "bullets");
       if (res.success && res.data) {
         if (!res.data.html) {
           toast({ title: "Information", description: res.data.message || "No new articles found this week" });
@@ -235,7 +157,7 @@ export default function Digest() {
   };
 
   const handleSendNow = async () => {
-    if (!prefs?.email) return toast({ title: "Error", description: "Save your email preferences first", variant: "destructive" });
+    if (!prefs?.email) return toast({ title: "Error", description: "Save your email preferences in Profile settings first", variant: "destructive" });
     setIsSending(true);
     try {
       const res = await apiClient.sendMeDigest();
@@ -261,7 +183,7 @@ export default function Digest() {
         <GlobalHeader />
         <div className="flex-1 flex flex-col items-center justify-center gap-4">
           <Loader2 className="h-10 w-10 animate-spin text-indigo-400" />
-          <p className="text-sm text-muted-foreground animate-pulse">Loading weekly digest system...</p>
+          <p className="text-sm text-muted-foreground animate-pulse">Loading weekly digest streams...</p>
         </div>
       </div>
     );
@@ -310,7 +232,7 @@ export default function Digest() {
               onClick={loadAll}
               className="border-white/10 hover:bg-white/5 text-xs rounded-xl h-9"
             >
-              Refresh Settings
+              Refresh Feeds
             </Button>
           </div>
         </motion.div>
@@ -325,8 +247,8 @@ export default function Digest() {
                 : "text-muted-foreground hover:text-white"
             }`}
           >
-            <Settings2 className="w-4 h-4" />
-            Configure
+            <Rss className="w-4 h-4" />
+            Manage Feeds
           </button>
           <button
             onClick={() => setActiveMobileTab("preview")}
@@ -344,10 +266,8 @@ export default function Digest() {
         {/* Content Layout Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           
-          {/* LEFT PANEL: CONFIGURATION */}
+          {/* LEFT PANEL: RSS Feed Management */}
           <div className={`lg:col-span-5 space-y-6 ${activeMobileTab === "configure" ? "block" : "hidden lg:block"}`}>
-            
-            {/* Delivery Preferences */}
             <motion.section
               initial={{ opacity: 0, x: -15 }}
               animate={{ opacity: 1, x: 0 }}
@@ -355,98 +275,7 @@ export default function Digest() {
               className="rounded-3xl border border-white/5 bg-slate-950/40 backdrop-blur-md p-6 shadow-xl relative overflow-hidden"
             >
               <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none" />
-              
-              <h2 className="text-sm font-bold text-white uppercase tracking-wider mb-6 flex items-center gap-2">
-                <Settings2 className="w-4 h-4 text-indigo-400" />
-                Delivery Configurations
-              </h2>
 
-              <div className="space-y-6">
-                {/* Enable toggle */}
-                <div className="flex items-center justify-between pb-4 border-b border-white/5">
-                  <div>
-                    <p className="text-sm font-semibold text-white">Subscribe to Digest</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">Dispatches weekly briefings on Sundays.</p>
-                  </div>
-                  <button
-                    onClick={() => setEnabled((v) => !v)}
-                    className="text-muted-foreground hover:text-white transition-colors focus:outline-none"
-                  >
-                    {enabled ? (
-                      <ToggleRight className="h-9 w-9 text-indigo-400" />
-                    ) : (
-                      <ToggleLeft className="h-9 w-9" />
-                    )}
-                  </button>
-                </div>
-
-                {/* Email address */}
-                <div>
-                  <label className="text-xs font-semibold text-muted-foreground mb-2 block uppercase tracking-wider">
-                    Recipient Email Address
-                  </label>
-                  <div className="relative">
-                    <Mail className="absolute left-3.5 top-3 h-4.5 w-4.5 text-muted-foreground" />
-                    <Input
-                      type="email"
-                      placeholder="you@example.com"
-                      value={emailInput}
-                      onChange={(e) => setEmailInput(e.target.value)}
-                      className="text-sm pl-11 rounded-xl bg-white/5 border-white/10 text-white h-11 focus-visible:ring-indigo-500/40"
-                    />
-                  </div>
-                </div>
-
-                {/* Summary style */}
-                <div>
-                  <label className="text-xs font-semibold text-muted-foreground mb-3 block uppercase tracking-wider">
-                    Synthesis Synthesis Style
-                  </label>
-                  <div className="grid grid-cols-1 gap-2.5">
-                    {STYLE_OPTIONS.map(({ key, label, description, icon: Icon, color, glow }) => (
-                      <button
-                        key={key}
-                        onClick={() => setSelectedStyle(key)}
-                        className={`relative rounded-2xl border p-4 text-left transition-all duration-300 flex items-start gap-4 ${
-                          selectedStyle === key
-                            ? `${color} border-opacity-100 shadow-lg ${glow}`
-                            : "border-white/5 bg-white/[0.02] hover:bg-white/[0.05] text-muted-foreground hover:text-white"
-                        }`}
-                      >
-                        <div className={`h-8 w-8 rounded-xl flex items-center justify-center shrink-0 ${
-                          selectedStyle === key ? "bg-white/10" : "bg-white/5"
-                        }`}>
-                          <Icon className="h-4.5 w-4.5" />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-xs font-bold text-white tracking-wide">
-                            {label}
-                          </p>
-                          <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed">{description}</p>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <Button
-                  className="w-full bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl h-11 font-semibold transition-all duration-300 shadow-lg shadow-indigo-600/10"
-                  onClick={handleSavePrefs}
-                  disabled={isSavingPrefs}
-                >
-                  {isSavingPrefs ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                  Save Delivery Settings
-                </Button>
-              </div>
-            </motion.section>
-
-            {/* RSS Feed Management */}
-            <motion.section
-              initial={{ opacity: 0, x: -15 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.4, delay: 0.1 }}
-              className="rounded-3xl border border-white/5 bg-slate-950/40 backdrop-blur-md p-6 shadow-xl"
-            >
               <h2 className="text-sm font-bold text-white uppercase tracking-wider mb-4 flex items-center justify-between">
                 <span className="flex items-center gap-2">
                   <Rss className="w-4 h-4 text-indigo-400" />
@@ -508,7 +337,7 @@ export default function Digest() {
                 )}
 
                 {/* Feed item list */}
-                <div className="max-h-60 overflow-y-auto pr-1 space-y-2">
+                <div className="max-h-96 overflow-y-auto pr-1 space-y-2">
                   <AnimatePresence>
                     {feeds.length === 0 ? (
                       <div className="flex flex-col items-center justify-center py-8 text-center border border-dashed border-white/5 rounded-2xl bg-white/[0.01]">
@@ -632,7 +461,7 @@ export default function Digest() {
               {previewHtml && (
                 <div className="px-6 py-4 bg-[#11131c] border-b border-white/5 flex flex-col gap-1.5 text-xs text-muted-foreground">
                   <p><span className="font-semibold text-white/50">From:</span> Beseekr AI Digest &lt;noreply@support.beseekr.com&gt;</p>
-                  <p><span className="font-semibold text-white/50">To:</span> {emailInput || "you@example.com"}</p>
+                  <p><span className="font-semibold text-white/50">To:</span> {prefs?.email || "you@example.com"}</p>
                   <p><span className="font-semibold text-white/50">Subject:</span> 🧠 Your Weekly Digest — {new Date().toLocaleDateString("en-US", { month: "long", day: "numeric" })}</p>
                 </div>
               )}
