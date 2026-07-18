@@ -46,6 +46,10 @@ export const queryKeys = {
   canvasWorkflow: (id: string) => ["canvasWorkflow", id] as const,
   canvasSchedules: ["canvasSchedules"] as const,
   canvasSchedule: (id: string) => ["canvasSchedule", id] as const,
+  // Digest
+  digestFeeds: ["digest", "feeds"] as const,
+  digestFeedItems: ["digest", "feedItems"] as const,
+  digestPreferences: ["digest", "preferences"] as const,
 };
 
 // ============= AGENTS =============
@@ -922,6 +926,127 @@ export function useToggleCanvasSchedule() {
       toast({
         title: "Failed to toggle schedule",
         description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+}
+
+// ============= DIGEST =============
+
+/** Cached list of the user's registered RSS feeds. Stale after 5 min. */
+export function useDigestFeeds(enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.digestFeeds,
+    queryFn: () => apiClient.listDigestFeeds(),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    enabled,
+    select: (res) => res.data ?? [],
+  });
+}
+
+/**
+ * Cached live feed items from all registered RSS/Atom sources.
+ * Stale after 10 min — RSS doesn't update every second.
+ */
+export function useDigestFeedItems(enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.digestFeedItems,
+    queryFn: () => apiClient.digestGetFeedItems(),
+    staleTime: 10 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    enabled,
+    select: (res) => res.data ?? [],
+  });
+}
+
+/** Cached digest preferences. Stale after 5 min. */
+export function useDigestPreferences(enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.digestPreferences,
+    queryFn: () => apiClient.getDigestPreferences(),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    enabled,
+    select: (res) => res.data ?? null,
+  });
+}
+
+/** Add a new RSS feed and invalidate both feeds + feed items caches. */
+export function useAddDigestFeed() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: ({ feed_url, label }: { feed_url: string; label?: string }) =>
+      apiClient.addDigestFeed(feed_url, label),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.digestFeeds });
+      queryClient.invalidateQueries({ queryKey: queryKeys.digestFeedItems });
+    },
+    onError: (err: Error) => {
+      toast({
+        title: "Failed to add feed",
+        description: err.message,
+        variant: "destructive",
+      });
+    },
+  });
+}
+
+/** Remove a feed and optimistically remove it from the cache. */
+export function useRemoveDigestFeed() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: (id: string) => apiClient.removeDigestFeed(id),
+    onMutate: async (id: string) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.digestFeeds });
+      const previous = queryClient.getQueryData(queryKeys.digestFeeds);
+      queryClient.setQueryData<any>(queryKeys.digestFeeds, (old: any) => {
+        if (!old?.data) return old;
+        return { ...old, data: old.data.filter((f: any) => f.id !== id) };
+      });
+      return { previous };
+    },
+    onError: (_err: Error, _id: string, ctx: any) => {
+      if (ctx?.previous)
+        queryClient.setQueryData(queryKeys.digestFeeds, ctx.previous);
+      toast({ title: "Failed to remove feed", variant: "destructive" });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.digestFeeds });
+      queryClient.invalidateQueries({ queryKey: queryKeys.digestFeedItems });
+      toast({ title: "Feed removed" });
+    },
+  });
+}
+
+/** Send the digest email immediately to the current user. */
+export function useSendDigest() {
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: () => apiClient.sendMeDigest(),
+    onSuccess: (res) => {
+      if (res.data?.sent) {
+        toast({
+          title: "Digest sent! 🎉",
+          description: `${res.data.itemCount} articles delivered to your inbox`,
+        });
+      } else {
+        toast({
+          title: "Nothing to send",
+          description: res.data?.reason || "No new articles this week",
+        });
+      }
+    },
+    onError: (err: Error) => {
+      toast({
+        title: "Send failed",
+        description: err.message,
         variant: "destructive",
       });
     },

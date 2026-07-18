@@ -56,9 +56,7 @@ export default function Home() {
 
         {/* LAYOUT */}
         {/* LAYOUT */}
-        <section
-          className="max-w-5xl mx-auto px-6 pb-20 grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
-        >
+        <section className="max-w-5xl mx-auto px-6 pb-20 grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
           {/* CARD 1: DISCOVER */}
           <motion.div
             onClick={() => go("/dashboard/problems")}
@@ -255,9 +253,7 @@ export default function Home() {
           </section>
 
           {/* CARDS LAYOUT - SYMMETRICAL GRID */}
-          <section
-            className="grid gap-6 animate-in fade-in slide-in-from-bottom-6 duration-700 delay-150 fill-mode-both grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
-          >
+          <section className="grid gap-6 animate-in fade-in slide-in-from-bottom-6 duration-700 delay-150 fill-mode-both grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
             {/* CARD 1: DISCOVER */}
             <motion.div
               onClick={() => go("/dashboard/problems")}

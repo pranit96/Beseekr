@@ -25,21 +25,24 @@ const STYLE_OPTIONS = [
     label: "Bullet Points",
     description: "Tight, scannable summaries. Perfect for busy mornings.",
     icon: AlignLeft,
-    color: "border-blue-500/40 bg-blue-500/5 text-blue-400 hover:border-blue-500/60",
+    color:
+      "border-blue-500/40 bg-blue-500/5 text-blue-400 hover:border-blue-500/60",
   },
   {
     key: "narrative" as const,
     label: "Narrative",
     description: "Flowing paragraphs — like a friend explaining the week.",
     icon: BookOpen,
-    color: "border-violet-500/40 bg-violet-500/5 text-violet-400 hover:border-violet-500/60",
+    color:
+      "border-violet-500/40 bg-violet-500/5 text-violet-400 hover:border-violet-500/60",
   },
   {
     key: "eli5" as const,
     label: "ELI5",
     description: "Explain Like I'm Five. Simple, fun, and delightful.",
     icon: Smile,
-    color: "border-amber-500/40 bg-amber-500/5 text-amber-400 hover:border-amber-500/60",
+    color:
+      "border-amber-500/40 bg-amber-500/5 text-amber-400 hover:border-amber-500/60",
   },
 ];
 
@@ -176,11 +179,13 @@ export default function Profile() {
   const { data: notificationPrefsData, isLoading: loadingNotifications } =
     useNotificationPreferences();
 
-    const updateNotificationMutation = useUpdateNotificationPreferences();
+  const updateNotificationMutation = useUpdateNotificationPreferences();
 
   // Weekly Digest Preferences States
   const [digestEmail, setDigestEmail] = useState("");
-  const [digestStyle, setDigestStyle] = useState<"bullets" | "narrative" | "eli5">("bullets");
+  const [digestStyle, setDigestStyle] = useState<
+    "bullets" | "narrative" | "eli5"
+  >("bullets");
   const [digestEnabled, setDigestEnabled] = useState(false);
   const [loadingDigestPrefs, setLoadingDigestPrefs] = useState(false);
   const [savingDigestPrefs, setSavingDigestPrefs] = useState(false);
@@ -232,10 +237,10 @@ export default function Profile() {
         // 2. Sync to notifications panel in profiles table
         if (notificationPrefs.email_weekly_digest !== digestEnabled) {
           await updateNotificationMutation.mutateAsync({
-            email_weekly_digest: digestEnabled
+            email_weekly_digest: digestEnabled,
           });
         }
-        
+
         toast({
           title: "Digest preferences updated",
           description: "Your weekly digest delivery settings have been saved.",
@@ -368,11 +373,15 @@ export default function Profile() {
         onSuccess: async () => {
           if (key === "email_weekly_digest") {
             setDigestEnabled(newValue);
-            await apiClient.upsertDigestPreferences({
-              email: digestEmail || user?.email || "",
-              style: digestStyle,
-              enabled: newValue
-            }).catch(err => console.error("Failed to sync digest preference:", err));
+            await apiClient
+              .upsertDigestPreferences({
+                email: digestEmail || user?.email || "",
+                style: digestStyle,
+                enabled: newValue,
+              })
+              .catch((err) =>
+                console.error("Failed to sync digest preference:", err),
+              );
           }
         },
         onSettled: () => setSavingNotification(null),
@@ -731,7 +740,8 @@ export default function Profile() {
                 Weekly Personal Digest Configurations
               </h2>
               <p className="text-sm text-muted-foreground mt-1">
-                Configure your newsletter delivery email, layout design, and summary style.
+                Configure your newsletter delivery email, layout design, and
+                summary style.
               </p>
             </div>
 
@@ -744,7 +754,9 @@ export default function Profile() {
                 {/* Enable Switch */}
                 <div className="flex items-center justify-between pb-4 border-b border-border/40">
                   <div>
-                    <div className="font-medium text-sm">Weekly Digest Dispatch</div>
+                    <div className="font-medium text-sm">
+                      Weekly Digest Dispatch
+                    </div>
                     <div className="text-xs text-muted-foreground mt-0.5">
                       Check this to receive compiled briefs on Sundays.
                     </div>
@@ -759,7 +771,10 @@ export default function Profile() {
 
                 {/* Email Address */}
                 <div>
-                  <Label htmlFor="digest-email" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-2">
+                  <Label
+                    htmlFor="digest-email"
+                    className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-2"
+                  >
                     Delivery Email Address
                   </Label>
                   <Input
@@ -778,25 +793,29 @@ export default function Profile() {
                     Synthesis Style
                   </Label>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    {STYLE_OPTIONS.map(({ key, label, description, icon: Icon, color }) => (
-                      <button
-                        key={key}
-                        onClick={() => setDigestStyle(key)}
-                        className={`rounded-xl border p-4 text-left transition-all duration-300 flex flex-col gap-2 ${
-                          digestStyle === key
-                            ? `${color} border-opacity-100 shadow-md`
-                            : "border-border bg-white/[0.01] hover:bg-muted/40 text-muted-foreground hover:text-foreground"
-                        }`}
-                      >
-                        <Icon className="h-4.5 w-4.5" />
-                        <div>
-                          <p className="text-xs font-bold text-foreground">
-                            {label}
-                          </p>
-                          <p className="text-[10px] text-muted-foreground mt-0.5 leading-tight">{description}</p>
-                        </div>
-                      </button>
-                    ))}
+                    {STYLE_OPTIONS.map(
+                      ({ key, label, description, icon: Icon, color }) => (
+                        <button
+                          key={key}
+                          onClick={() => setDigestStyle(key)}
+                          className={`rounded-xl border p-4 text-left transition-all duration-300 flex flex-col gap-2 ${
+                            digestStyle === key
+                              ? `${color} border-opacity-100 shadow-md`
+                              : "border-border bg-white/[0.01] hover:bg-muted/40 text-muted-foreground hover:text-foreground"
+                          }`}
+                        >
+                          <Icon className="h-4.5 w-4.5" />
+                          <div>
+                            <p className="text-xs font-bold text-foreground">
+                              {label}
+                            </p>
+                            <p className="text-[10px] text-muted-foreground mt-0.5 leading-tight">
+                              {description}
+                            </p>
+                          </div>
+                        </button>
+                      ),
+                    )}
                   </div>
                 </div>
 
@@ -806,7 +825,9 @@ export default function Profile() {
                     disabled={savingDigestPrefs}
                     className="bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl px-5 text-xs font-bold"
                   >
-                    {savingDigestPrefs ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                    {savingDigestPrefs ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : null}
                     Save Digest Settings
                   </Button>
                 </div>

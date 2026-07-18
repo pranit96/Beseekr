@@ -21,7 +21,10 @@ import { Analytics as VercelAnalytics } from "@vercel/analytics/react";
 import { SpeedInsightsTracker } from "@/components/SpeedInsightsTracker";
 import { useEffect, lazy, Suspense } from "react";
 import { Loader2 } from "lucide-react";
-import { getIsSecondBrainEnabled, getIsWeeklyDigestEnabled } from "@/utils/envFlags";
+import {
+  getIsSecondBrainEnabled,
+  getIsWeeklyDigestEnabled,
+} from "@/utils/envFlags";
 
 // Critical page imports (loaded immediately)
 import Auth from "./pages/Auth";
@@ -217,7 +220,8 @@ const App = () => {
     // Fetch dynamic feature flags from backend config
     import("@/lib/api")
       .then(({ apiClient }) => {
-        apiClient.getFeatureFlags()
+        apiClient
+          .getFeatureFlags()
           .then((res) => {
             if (res.success && res.data) {
               const { second_brain, weekly_digest } = res.data;

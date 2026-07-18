@@ -1,5 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { motion, AnimatePresence, useMotionValue, useTransform } from "framer-motion";
+import {
+  motion,
+  AnimatePresence,
+  useMotionValue,
+  useTransform,
+} from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import { GlobalHeader } from "@/components/GlobalHeader";
 import { apiClient } from "@/lib/api";
@@ -49,16 +54,35 @@ interface ChatMessage {
 // ─── Sub-components ──────────────────────────────────────────────────────────
 
 const TypeBadge = ({ type }: { type: string }) => {
-  const cfg: Record<string, { icon: React.ReactNode; color: string; bg: string }> = {
-    url:  { icon: <Globe className="h-3 w-3" />,       color: "#6366f1", bg: "#6366f120" },
-    text: { icon: <FileText className="h-3 w-3" />,    color: "#8b5cf6", bg: "#8b5cf620" },
-    note: { icon: <StickyNote className="h-3 w-3" />, color: "#a78bfa", bg: "#a78bfa20" },
+  const cfg: Record<
+    string,
+    { icon: React.ReactNode; color: string; bg: string }
+  > = {
+    url: {
+      icon: <Globe className="h-3 w-3" />,
+      color: "#6366f1",
+      bg: "#6366f120",
+    },
+    text: {
+      icon: <FileText className="h-3 w-3" />,
+      color: "#8b5cf6",
+      bg: "#8b5cf620",
+    },
+    note: {
+      icon: <StickyNote className="h-3 w-3" />,
+      color: "#a78bfa",
+      bg: "#a78bfa20",
+    },
   };
   const c = cfg[type] || cfg["note"];
   return (
     <span
       className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider"
-      style={{ color: c.color, backgroundColor: c.bg, border: `1px solid ${c.color}30` }}
+      style={{
+        color: c.color,
+        backgroundColor: c.bg,
+        border: `1px solid ${c.color}30`,
+      }}
     >
       {c.icon} {type}
     </span>
@@ -115,7 +139,11 @@ export default function Brain() {
   const [isGeneratingMap, setIsGeneratingMap] = useState(false);
 
   // Insights
-  const [insights, setInsights] = useState<{ summary: string; themes: string[]; stats: any } | null>(null);
+  const [insights, setInsights] = useState<{
+    summary: string;
+    themes: string[];
+    stats: any;
+  } | null>(null);
   const [isGeneratingInsights, setIsGeneratingInsights] = useState(false);
 
   // ── Effects ───────────────────────────────────────────────────────────────
@@ -145,7 +173,11 @@ export default function Brain() {
       const res = await apiClient.brainListItems();
       if (res.success && res.data) setItems(res.data);
     } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+      toast({
+        title: "Error",
+        description: err.message,
+        variant: "destructive",
+      });
     } finally {
       setIsLoadingItems(false);
     }
@@ -153,28 +185,56 @@ export default function Brain() {
 
   const handleSave = async () => {
     if (saveTab === "url" && !urlInput.trim())
-      return toast({ title: "Error", description: "Enter a URL first", variant: "destructive" });
+      return toast({
+        title: "Error",
+        description: "Enter a URL first",
+        variant: "destructive",
+      });
     if (saveTab !== "url" && !textInput.trim())
-      return toast({ title: "Error", description: "Enter some content first", variant: "destructive" });
+      return toast({
+        title: "Error",
+        description: "Enter some content first",
+        variant: "destructive",
+      });
 
     setIsSaving(true);
     try {
       let res;
       if (saveTab === "url") {
-        res = await apiClient.brainSaveUrl(urlInput.trim(), titleInput.trim() || undefined);
+        res = await apiClient.brainSaveUrl(
+          urlInput.trim(),
+          titleInput.trim() || undefined,
+        );
       } else {
-        res = await apiClient.brainSaveText(textInput.trim(), titleInput.trim() || undefined, saveTab);
+        res = await apiClient.brainSaveText(
+          textInput.trim(),
+          titleInput.trim() || undefined,
+          saveTab,
+        );
       }
       if (res.success && res.data) {
-        toast({ title: "Saved to Brain", description: `"${res.data.title}" — ${res.data.chunk_count} chunks indexed` });
-        setUrlInput(""); setTextInput(""); setTitleInput("");
+        toast({
+          title: "Saved to Brain",
+          description: `"${res.data.title}" — ${res.data.chunk_count} chunks indexed`,
+        });
+        setUrlInput("");
+        setTextInput("");
+        setTitleInput("");
         setShowAddPanel(false);
         if (viewTab === "library") loadItems();
       } else {
-        toast({ title: "Failed", description: res.error || "Something went wrong", variant: "destructive" });
+        toast({
+          title: "Failed",
+          description: res.error || "Something went wrong",
+          variant: "destructive",
+        });
       }
     } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+      toast({
+        title: "Error",
+        description: err.message,
+        variant: "destructive",
+      });
     } finally {
       setIsSaving(false);
     }
@@ -190,12 +250,31 @@ export default function Brain() {
     try {
       const res = await apiClient.brainQuery(q);
       if (res.success && res.data) {
-        setMessages((prev) => [...prev, { role: "assistant", content: res.data!.answer, sources: res.data!.sources }]);
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "assistant",
+            content: res.data!.answer,
+            sources: res.data!.sources,
+          },
+        ]);
       } else {
-        setMessages((prev) => [...prev, { role: "assistant", content: `Error: ${res.error || "Unknown error"}` }]);
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "assistant",
+            content: `Error: ${res.error || "Unknown error"}`,
+          },
+        ]);
       }
     } catch (err: any) {
-      setMessages((prev) => [...prev, { role: "assistant", content: `Sorry, something went wrong: ${err.message}` }]);
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: `Sorry, something went wrong: ${err.message}`,
+        },
+      ]);
     } finally {
       setIsQuerying(false);
     }
@@ -210,7 +289,11 @@ export default function Brain() {
         toast({ title: "Deleted" });
       }
     } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+      toast({
+        title: "Error",
+        description: err.message,
+        variant: "destructive",
+      });
     } finally {
       setDeletingId(null);
     }
@@ -230,20 +313,51 @@ export default function Brain() {
           return {
             id: n.id,
             position: {
-              x: isCategory ? 350 * Math.cos(angle) : (Math.random() - 0.5) * 900,
-              y: isCategory ? 350 * Math.sin(angle) : (Math.random() - 0.5) * 900,
+              x: isCategory
+                ? 350 * Math.cos(angle)
+                : (Math.random() - 0.5) * 900,
+              y: isCategory
+                ? 350 * Math.sin(angle)
+                : (Math.random() - 0.5) * 900,
             },
             data: { label: n.label },
             style: isCategory
-              ? { background: "#7c3aed", color: "white", borderRadius: "12px", padding: "10px 16px", fontWeight: "700", fontSize: "13px", border: "1px solid #8b5cf640" }
-              : { background: "#13141f", color: "#c4b5fd", border: "1px solid #3730a340", borderRadius: "8px", padding: "8px 12px", fontSize: "11px" },
+              ? {
+                  background: "#7c3aed",
+                  color: "white",
+                  borderRadius: "12px",
+                  padding: "10px 16px",
+                  fontWeight: "700",
+                  fontSize: "13px",
+                  border: "1px solid #8b5cf640",
+                }
+              : {
+                  background: "#13141f",
+                  color: "#c4b5fd",
+                  border: "1px solid #3730a340",
+                  borderRadius: "8px",
+                  padding: "8px 12px",
+                  fontSize: "11px",
+                },
           };
         });
         setNodes(positionedNodes);
-        setEdges(rawEdges.map((e: any, i: number) => ({ id: `e${i}`, source: e.source, target: e.target, animated: true, style: { stroke: "#6366f1" } })));
+        setEdges(
+          rawEdges.map((e: any, i: number) => ({
+            id: `e${i}`,
+            source: e.source,
+            target: e.target,
+            animated: true,
+            style: { stroke: "#6366f1" },
+          })),
+        );
       }
     } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+      toast({
+        title: "Error",
+        description: err.message,
+        variant: "destructive",
+      });
     } finally {
       setIsGeneratingMap(false);
     }
@@ -255,21 +369,44 @@ export default function Brain() {
       const res = await apiClient.brainGetInsights();
       if (res.success && res.data) setInsights(res.data);
     } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+      toast({
+        title: "Error",
+        description: err.message,
+        variant: "destructive",
+      });
     } finally {
       setIsGeneratingInsights(false);
     }
   };
 
   const filteredItems = items.filter(
-    (i) => !searchQuery || i.title.toLowerCase().includes(searchQuery.toLowerCase()) || (i.source_url || "").toLowerCase().includes(searchQuery.toLowerCase())
+    (i) =>
+      !searchQuery ||
+      i.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (i.source_url || "").toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   const TAB_CONFIG = [
-    { id: "chat" as ViewTab,     icon: <MessageSquare className="h-3.5 w-3.5" />, label: "Ask AI" },
-    { id: "library" as ViewTab,  icon: <Library className="h-3.5 w-3.5" />,       label: "Library" },
-    { id: "map" as ViewTab,      icon: <MapIcon className="h-3.5 w-3.5" />,        label: "Mind Map" },
-    { id: "insights" as ViewTab, icon: <Lightbulb className="h-3.5 w-3.5" />,     label: "Insights" },
+    {
+      id: "chat" as ViewTab,
+      icon: <MessageSquare className="h-3.5 w-3.5" />,
+      label: "Ask AI",
+    },
+    {
+      id: "library" as ViewTab,
+      icon: <Library className="h-3.5 w-3.5" />,
+      label: "Library",
+    },
+    {
+      id: "map" as ViewTab,
+      icon: <MapIcon className="h-3.5 w-3.5" />,
+      label: "Mind Map",
+    },
+    {
+      id: "insights" as ViewTab,
+      icon: <Lightbulb className="h-3.5 w-3.5" />,
+      label: "Insights",
+    },
   ];
 
   if (loading) return null;
@@ -286,7 +423,6 @@ export default function Brain() {
       <GlobalHeader />
 
       <div className="flex-1 flex overflow-hidden relative z-10">
-
         {/* ── Left Navigation Sidebar ───────────────────── */}
         <aside className="w-56 shrink-0 flex flex-col border-r border-white/[0.05] bg-[#0c0e18]/80 backdrop-blur-sm p-3 gap-1">
           {/* Brand header */}
@@ -295,8 +431,14 @@ export default function Brain() {
               <BrainIcon className="h-4 w-4 text-violet-400" />
             </div>
             <div>
-              <p className="text-xs font-bold text-white tracking-tight">Second Brain</p>
-              <p className="text-[10px] text-muted-foreground">{items.length > 0 ? `${items.length} items saved` : "Knowledge RAG"}</p>
+              <p className="text-xs font-bold text-white tracking-tight">
+                Second Brain
+              </p>
+              <p className="text-[10px] text-muted-foreground">
+                {items.length > 0
+                  ? `${items.length} items saved`
+                  : "Knowledge RAG"}
+              </p>
             </div>
           </div>
 
@@ -316,7 +458,9 @@ export default function Brain() {
                     : "text-muted-foreground hover:text-white hover:bg-white/[0.04]"
                 }`}
               >
-                <span className={`transition-colors ${viewTab === tab.id ? "text-violet-400" : "text-muted-foreground group-hover:text-white"}`}>
+                <span
+                  className={`transition-colors ${viewTab === tab.id ? "text-violet-400" : "text-muted-foreground group-hover:text-white"}`}
+                >
                   {tab.icon}
                 </span>
                 {tab.label}
@@ -348,13 +492,17 @@ export default function Brain() {
               <div className="mt-3 rounded-xl border border-white/5 bg-white/[0.02] p-3">
                 <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1.5">
                   <span>Knowledge base</span>
-                  <span className="text-violet-400 font-bold">{items.length}</span>
+                  <span className="text-violet-400 font-bold">
+                    {items.length}
+                  </span>
                 </div>
                 <div className="h-1 rounded-full bg-white/5 overflow-hidden">
                   <motion.div
                     className="h-full rounded-full bg-gradient-to-r from-violet-500 to-indigo-500"
                     initial={{ width: 0 }}
-                    animate={{ width: `${Math.min((items.length / 50) * 100, 100)}%` }}
+                    animate={{
+                      width: `${Math.min((items.length / 50) * 100, 100)}%`,
+                    }}
                     transition={{ duration: 1, delay: 0.3 }}
                   />
                 </div>
@@ -366,7 +514,6 @@ export default function Brain() {
         {/* ── Main Content Area ─────────────────────────── */}
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           <AnimatePresence mode="wait">
-
             {/* ── CHAT VIEW ──────────────────────────────── */}
             {viewTab === "chat" && (
               <motion.div
@@ -389,8 +536,15 @@ export default function Brain() {
                       {/* Animated brain orb */}
                       <div className="relative mb-8">
                         <motion.div
-                          animate={{ scale: [1, 1.05, 1], opacity: [0.5, 1, 0.5] }}
-                          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                          animate={{
+                            scale: [1, 1.05, 1],
+                            opacity: [0.5, 1, 0.5],
+                          }}
+                          transition={{
+                            duration: 3,
+                            repeat: Infinity,
+                            ease: "easeInOut",
+                          }}
                           className="absolute inset-0 rounded-full bg-violet-500/20 blur-xl"
                         />
                         <div className="relative h-20 w-20 rounded-3xl bg-violet-500/10 border border-violet-500/25 flex items-center justify-center shadow-2xl shadow-violet-500/10">
@@ -398,9 +552,12 @@ export default function Brain() {
                         </div>
                       </div>
 
-                      <h2 className="text-2xl font-bold text-white mb-2 tracking-tight">Query your Second Brain</h2>
+                      <h2 className="text-2xl font-bold text-white mb-2 tracking-tight">
+                        Query your Second Brain
+                      </h2>
                       <p className="text-sm text-muted-foreground max-w-sm leading-relaxed mb-8">
-                        Ask anything. I'll search through all your saved notes, URLs, and articles to find answers.
+                        Ask anything. I'll search through all your saved notes,
+                        URLs, and articles to find answers.
                       </p>
 
                       {/* Suggestion chips */}
@@ -542,8 +699,12 @@ export default function Brain() {
                 {/* Library Header */}
                 <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.05]">
                   <div>
-                    <h2 className="text-base font-bold text-white">Knowledge Library</h2>
-                    <p className="text-xs text-muted-foreground">{items.length} items indexed</p>
+                    <h2 className="text-base font-bold text-white">
+                      Knowledge Library
+                    </h2>
+                    <p className="text-xs text-muted-foreground">
+                      {items.length} items indexed
+                    </p>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="flex items-center gap-2 bg-white/[0.04] border border-white/[0.06] rounded-xl px-3 py-2">
@@ -562,7 +723,9 @@ export default function Brain() {
                       disabled={isLoadingItems}
                       className="h-9 w-9 p-0 rounded-xl border border-white/5 hover:bg-white/5"
                     >
-                      <RefreshCw className={`h-3.5 w-3.5 text-muted-foreground ${isLoadingItems ? "animate-spin" : ""}`} />
+                      <RefreshCw
+                        className={`h-3.5 w-3.5 text-muted-foreground ${isLoadingItems ? "animate-spin" : ""}`}
+                      />
                     </Button>
                   </div>
                 </div>
@@ -586,7 +749,9 @@ export default function Brain() {
                         {searchQuery ? "No results found" : "Library is empty"}
                       </p>
                       <p className="text-xs text-muted-foreground max-w-xs">
-                        {searchQuery ? "Try a different search term" : "Add URLs, text, or notes to start building your knowledge base."}
+                        {searchQuery
+                          ? "Try a different search term"
+                          : "Add URLs, text, or notes to start building your knowledge base."}
                       </p>
                       {!searchQuery && (
                         <Button
@@ -617,17 +782,25 @@ export default function Brain() {
                             </div>
 
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-semibold text-white truncate">{item.title}</p>
+                              <p className="text-sm font-semibold text-white truncate">
+                                {item.title}
+                              </p>
                               {item.source_url && (
-                                <p className="text-[11px] text-muted-foreground truncate mt-0.5 font-mono">{item.source_url}</p>
+                                <p className="text-[11px] text-muted-foreground truncate mt-0.5 font-mono">
+                                  {item.source_url}
+                                </p>
                               )}
                               <div className="flex items-center gap-3 mt-1.5">
                                 <span className="text-[10px] text-muted-foreground/50 flex items-center gap-1">
-                                  <Hash className="h-2.5 w-2.5" /> {item.chunk_count} chunks
+                                  <Hash className="h-2.5 w-2.5" />{" "}
+                                  {item.chunk_count} chunks
                                 </span>
                                 <span className="text-[10px] text-muted-foreground/50 flex items-center gap-1">
                                   <Clock className="h-2.5 w-2.5" />
-                                  {new Date(item.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                                  {new Date(item.created_at).toLocaleDateString(
+                                    undefined,
+                                    { month: "short", day: "numeric" },
+                                  )}
                                 </span>
                               </div>
                             </div>
@@ -648,7 +821,11 @@ export default function Brain() {
                                 disabled={deletingId === item.id}
                                 className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors"
                               >
-                                {deletingId === item.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                                {deletingId === item.id ? (
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                )}
                               </button>
                             </div>
                           </motion.div>
@@ -672,8 +849,12 @@ export default function Brain() {
               >
                 <div className="absolute top-4 left-4 z-10 flex items-center gap-2">
                   <div className="px-3 py-1.5 rounded-xl bg-[#0d0f1a]/80 border border-white/[0.06] backdrop-blur-sm">
-                    <p className="text-xs font-bold text-white">Knowledge Map</p>
-                    <p className="text-[10px] text-muted-foreground">{nodes.length} nodes · {edges.length} connections</p>
+                    <p className="text-xs font-bold text-white">
+                      Knowledge Map
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {nodes.length} nodes · {edges.length} connections
+                    </p>
                   </div>
                 </div>
 
@@ -684,7 +865,9 @@ export default function Brain() {
                   disabled={isGeneratingMap}
                   className="absolute top-4 right-4 z-10 h-8 gap-1.5 bg-[#0d0f1a]/80 border-white/[0.08] backdrop-blur-sm rounded-xl text-xs font-semibold hover:bg-white/[0.05]"
                 >
-                  <RefreshCw className={`h-3.5 w-3.5 ${isGeneratingMap ? "animate-spin" : ""}`} />
+                  <RefreshCw
+                    className={`h-3.5 w-3.5 ${isGeneratingMap ? "animate-spin" : ""}`}
+                  />
                   Regenerate
                 </Button>
 
@@ -697,8 +880,12 @@ export default function Brain() {
                     >
                       <BrainIcon className="h-8 w-8 text-violet-400" />
                     </motion.div>
-                    <p className="text-sm font-bold text-white mb-1">Mapping your knowledge…</p>
-                    <p className="text-xs text-muted-foreground">AI is clustering your saved items</p>
+                    <p className="text-sm font-bold text-white mb-1">
+                      Mapping your knowledge…
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      AI is clustering your saved items
+                    </p>
                   </div>
                 )}
 
@@ -713,12 +900,18 @@ export default function Brain() {
                     <Background color="#1e2035" gap={24} size={1} />
                     <Controls className="!bg-[#0d0f1a]/80 !border-white/[0.06] !rounded-xl !shadow-xl" />
                   </ReactFlow>
-                ) : !isGeneratingMap && (
-                  <div className="flex flex-col items-center justify-center h-full text-center">
-                    <MapIcon className="h-12 w-12 text-muted-foreground/20 mb-4" />
-                    <p className="text-sm font-semibold text-white mb-1">No map generated</p>
-                    <p className="text-xs text-muted-foreground mb-4">Click Regenerate to build a visual map of your brain</p>
-                  </div>
+                ) : (
+                  !isGeneratingMap && (
+                    <div className="flex flex-col items-center justify-center h-full text-center">
+                      <MapIcon className="h-12 w-12 text-muted-foreground/20 mb-4" />
+                      <p className="text-sm font-semibold text-white mb-1">
+                        No map generated
+                      </p>
+                      <p className="text-xs text-muted-foreground mb-4">
+                        Click Regenerate to build a visual map of your brain
+                      </p>
+                    </div>
+                  )
                 )}
               </motion.div>
             )}
@@ -737,8 +930,12 @@ export default function Brain() {
                   {/* Header */}
                   <div className="flex items-center justify-between mb-8">
                     <div>
-                      <h2 className="text-xl font-bold text-white">Knowledge Insights</h2>
-                      <p className="text-xs text-muted-foreground mt-0.5">AI-powered analysis of your Second Brain</p>
+                      <h2 className="text-xl font-bold text-white">
+                        Knowledge Insights
+                      </h2>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        AI-powered analysis of your Second Brain
+                      </p>
                     </div>
                     <Button
                       size="sm"
@@ -747,7 +944,9 @@ export default function Brain() {
                       disabled={isGeneratingInsights}
                       className="h-8 gap-1.5 border-white/[0.08] rounded-xl text-xs font-semibold hover:bg-white/[0.05] bg-transparent"
                     >
-                      <RefreshCw className={`h-3.5 w-3.5 ${isGeneratingInsights ? "animate-spin" : ""}`} />
+                      <RefreshCw
+                        className={`h-3.5 w-3.5 ${isGeneratingInsights ? "animate-spin" : ""}`}
+                      />
                       Refresh
                     </Button>
                   </div>
@@ -761,18 +960,42 @@ export default function Brain() {
                       >
                         <Sparkles className="h-7 w-7 text-violet-400" />
                       </motion.div>
-                      <p className="text-sm font-bold text-white mb-1">Analyzing your brain…</p>
-                      <p className="text-xs text-muted-foreground">This takes a few seconds</p>
+                      <p className="text-sm font-bold text-white mb-1">
+                        Analyzing your brain…
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        This takes a few seconds
+                      </p>
                     </div>
                   ) : insights ? (
                     <div className="space-y-5">
                       {/* Stats */}
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                         {[
-                          { label: "Total Items", value: insights.stats?.total || 0, icon: <Library className="h-4 w-4" />, color: "#8b5cf6" },
-                          { label: "Web URLs", value: insights.stats?.urls || 0, icon: <Globe className="h-4 w-4" />, color: "#6366f1" },
-                          { label: "Notes", value: insights.stats?.notes || 0, icon: <StickyNote className="h-4 w-4" />, color: "#a78bfa" },
-                          { label: "Data Chunks", value: insights.stats?.chunks || 0, icon: <Activity className="h-4 w-4" />, color: "#818cf8" },
+                          {
+                            label: "Total Items",
+                            value: insights.stats?.total || 0,
+                            icon: <Library className="h-4 w-4" />,
+                            color: "#8b5cf6",
+                          },
+                          {
+                            label: "Web URLs",
+                            value: insights.stats?.urls || 0,
+                            icon: <Globe className="h-4 w-4" />,
+                            color: "#6366f1",
+                          },
+                          {
+                            label: "Notes",
+                            value: insights.stats?.notes || 0,
+                            icon: <StickyNote className="h-4 w-4" />,
+                            color: "#a78bfa",
+                          },
+                          {
+                            label: "Data Chunks",
+                            value: insights.stats?.chunks || 0,
+                            icon: <Activity className="h-4 w-4" />,
+                            color: "#818cf8",
+                          },
                         ].map((stat, i) => (
                           <motion.div
                             key={stat.label}
@@ -782,8 +1005,12 @@ export default function Brain() {
                             className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4 flex flex-col gap-2"
                           >
                             <div className="flex items-center gap-2">
-                              <span style={{ color: stat.color }}>{stat.icon}</span>
-                              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{stat.label}</span>
+                              <span style={{ color: stat.color }}>
+                                {stat.icon}
+                              </span>
+                              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                                {stat.label}
+                              </span>
                             </div>
                             <motion.span
                               className="text-3xl font-black text-white"
@@ -811,7 +1038,9 @@ export default function Brain() {
                           <div className="h-6 w-6 rounded-lg bg-violet-500/20 border border-violet-500/30 flex items-center justify-center">
                             <Sparkles className="h-3.5 w-3.5 text-violet-400" />
                           </div>
-                          <span className="text-xs font-bold text-violet-300 uppercase tracking-wider">AI Assessment</span>
+                          <span className="text-xs font-bold text-violet-300 uppercase tracking-wider">
+                            AI Assessment
+                          </span>
                         </div>
                         <p className="text-sm leading-relaxed text-foreground/90 relative z-10">
                           {insights.summary}
@@ -825,7 +1054,9 @@ export default function Brain() {
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: 0.4 }}
                         >
-                          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3">Prominent Themes</p>
+                          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3">
+                            Prominent Themes
+                          </p>
                           <div className="flex flex-wrap gap-2">
                             {insights.themes.map((theme, i) => (
                               <motion.span
@@ -851,14 +1082,18 @@ export default function Brain() {
                       >
                         <Lightbulb className="h-7 w-7 text-muted-foreground/30" />
                       </motion.div>
-                      <p className="text-sm font-semibold text-white mb-1">No insights yet</p>
-                      <p className="text-xs text-muted-foreground mb-4 max-w-xs">Click Refresh to let AI analyze your knowledge base and surface key patterns</p>
+                      <p className="text-sm font-semibold text-white mb-1">
+                        No insights yet
+                      </p>
+                      <p className="text-xs text-muted-foreground mb-4 max-w-xs">
+                        Click Refresh to let AI analyze your knowledge base and
+                        surface key patterns
+                      </p>
                     </div>
                   )}
                 </div>
               </motion.div>
             )}
-
           </AnimatePresence>
         </div>
       </div>
@@ -889,8 +1124,12 @@ export default function Brain() {
                       <Plus className="h-4 w-4 text-violet-400" />
                     </div>
                     <div>
-                      <h3 className="text-sm font-bold text-white">Add Context to Brain</h3>
-                      <p className="text-[11px] text-muted-foreground">Save URLs, text or notes to your knowledge base</p>
+                      <h3 className="text-sm font-bold text-white">
+                        Add Context to Brain
+                      </h3>
+                      <p className="text-[11px] text-muted-foreground">
+                        Save URLs, text or notes to your knowledge base
+                      </p>
                     </div>
                   </div>
                   <button
@@ -904,11 +1143,23 @@ export default function Brain() {
                 {/* Source Type Tabs */}
                 <div className="px-6 pt-5">
                   <div className="flex gap-1 bg-white/[0.03] border border-white/[0.05] rounded-2xl p-1">
-                    {([
-                      { id: "url" as SaveTab, icon: <Link2 className="h-3.5 w-3.5" />, label: "URL" },
-                      { id: "text" as SaveTab, icon: <FileText className="h-3.5 w-3.5" />, label: "Text" },
-                      { id: "note" as SaveTab, icon: <StickyNote className="h-3.5 w-3.5" />, label: "Note" },
-                    ]).map((t) => (
+                    {[
+                      {
+                        id: "url" as SaveTab,
+                        icon: <Link2 className="h-3.5 w-3.5" />,
+                        label: "URL",
+                      },
+                      {
+                        id: "text" as SaveTab,
+                        icon: <FileText className="h-3.5 w-3.5" />,
+                        label: "Text",
+                      },
+                      {
+                        id: "note" as SaveTab,
+                        icon: <StickyNote className="h-3.5 w-3.5" />,
+                        label: "Note",
+                      },
+                    ].map((t) => (
                       <button
                         key={t.id}
                         onClick={() => setSaveTab(t.id)}
@@ -944,14 +1195,21 @@ export default function Brain() {
                     </label>
                     <AnimatePresence mode="wait">
                       {saveTab === "url" ? (
-                        <motion.div key="url" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}>
+                        <motion.div
+                          key="url"
+                          initial={{ opacity: 0, y: 4 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -4 }}
+                        >
                           <div className="flex items-center gap-2 bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-2.5 focus-within:border-violet-500/50 transition-colors">
                             <Globe className="h-4 w-4 text-muted-foreground shrink-0" />
                             <input
                               type="url"
                               value={urlInput}
                               onChange={(e) => setUrlInput(e.target.value)}
-                              onKeyDown={(e) => e.key === "Enter" && handleSave()}
+                              onKeyDown={(e) =>
+                                e.key === "Enter" && handleSave()
+                              }
                               placeholder="https://example.com/article"
                               className="flex-1 bg-transparent text-sm text-white placeholder:text-muted-foreground/50 focus:outline-none font-mono"
                               autoFocus
@@ -959,11 +1217,20 @@ export default function Brain() {
                           </div>
                         </motion.div>
                       ) : (
-                        <motion.div key="text" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}>
+                        <motion.div
+                          key="text"
+                          initial={{ opacity: 0, y: 4 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -4 }}
+                        >
                           <textarea
                             value={textInput}
                             onChange={(e) => setTextInput(e.target.value)}
-                            placeholder={saveTab === "note" ? "Write a note or thought…" : "Paste article text or content…"}
+                            placeholder={
+                              saveTab === "note"
+                                ? "Write a note or thought…"
+                                : "Paste article text or content…"
+                            }
                             rows={5}
                             className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-white placeholder:text-muted-foreground/50 focus:outline-none focus:border-violet-500/50 transition-colors resize-none"
                             autoFocus
@@ -979,9 +1246,13 @@ export default function Brain() {
                     className="w-full bg-violet-600 hover:bg-violet-500 text-white rounded-xl h-11 font-bold gap-2 mt-1 shadow-lg shadow-violet-500/20"
                   >
                     {isSaving ? (
-                      <><Loader2 className="h-4 w-4 animate-spin" /> Indexing…</>
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" /> Indexing…
+                      </>
                     ) : (
-                      <><BrainIcon className="h-4 w-4" /> Save to Brain</>
+                      <>
+                        <BrainIcon className="h-4 w-4" /> Save to Brain
+                      </>
                     )}
                   </Button>
                 </div>

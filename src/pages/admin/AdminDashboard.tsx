@@ -17,7 +17,12 @@ import {
   BookOpen,
   Radio,
 } from "lucide-react";
-import { AdminMonitoring, AdminSettings, AdminBlogs, AdminPodcasts } from "./components";
+import {
+  AdminMonitoring,
+  AdminSettings,
+  AdminBlogs,
+  AdminPodcasts,
+} from "./components";
 
 const NAV = [
   {

@@ -22,7 +22,7 @@ import {
   ExternalLink,
   ChevronRight,
   Clock,
-  LayoutGrid
+  LayoutGrid,
 } from "lucide-react";
 
 interface BlogConfig {
@@ -76,12 +76,14 @@ export function AdminBlogs() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [genStage, setGenStage] = useState<string>("");
   const [genElapsedTime, setGenElapsedTime] = useState(0);
-  
+
   const [sortBy, setSortBy] = useState<"date" | "likes">("likes");
   const [searchQuery, setSearchQuery] = useState("");
 
   // Fetch standard configurations from the backend
-  const { data: configs = [], isLoading: loadingConfigs } = useQuery<BlogConfig[]>({
+  const { data: configs = [], isLoading: loadingConfigs } = useQuery<
+    BlogConfig[]
+  >({
     queryKey: ["admin", "blogConfigs"],
     queryFn: async () => {
       const response = await apiClient.getBlogConfigs();
@@ -90,7 +92,11 @@ export function AdminBlogs() {
   });
 
   // Fetch blogs list for analytics with likes count
-  const { data: blogsResponse, isLoading: loadingBlogs, refetch: refetchBlogs } = useQuery({
+  const {
+    data: blogsResponse,
+    isLoading: loadingBlogs,
+    refetch: refetchBlogs,
+  } = useQuery({
     queryKey: ["admin", "blogsList", sortBy, searchQuery],
     queryFn: async () => {
       const response = await apiClient.get<any>("/api/blogs", {
@@ -136,10 +142,24 @@ export function AdminBlogs() {
 
       // Simulated state transitions for user feedback during the long LLM generation
       const stages = [
-        { time: 5, stage: "Stage 1/4: Analyzing topic & generating content outline..." },
-        { time: 25, stage: "Stage 2/4: Expanding sections & drafting 2000+ words..." },
-        { time: 70, stage: "Stage 3/4: Polishing draft & applying SEO meta optimization..." },
-        { time: 105, stage: "Stage 4/4: Fetching stock cover photo & scheduling newsletter campaign..." },
+        {
+          time: 5,
+          stage: "Stage 1/4: Analyzing topic & generating content outline...",
+        },
+        {
+          time: 25,
+          stage: "Stage 2/4: Expanding sections & drafting 2000+ words...",
+        },
+        {
+          time: 70,
+          stage:
+            "Stage 3/4: Polishing draft & applying SEO meta optimization...",
+        },
+        {
+          time: 105,
+          stage:
+            "Stage 4/4: Fetching stock cover photo & scheduling newsletter campaign...",
+        },
       ];
 
       const stageTracker = setInterval(() => {
@@ -161,7 +181,7 @@ export function AdminBlogs() {
           customUnsplashQuery: customUnsplashQuery.trim() || undefined,
           force: forceGenerate,
         });
-        
+
         clearInterval(interval);
         clearInterval(stageTracker);
         return res;
@@ -175,7 +195,7 @@ export function AdminBlogs() {
       setIsGenerating(false);
       setGenStage("");
       queryClient.invalidateQueries({ queryKey: ["admin", "blogsList"] });
-      
+
       if (data?.success && data?.data) {
         toast({
           title: "Blog Post Published!",
@@ -201,7 +221,8 @@ export function AdminBlogs() {
       setGenStage("");
       toast({
         title: "Generation Failed",
-        description: error.message || "An error occurred during blog post generation.",
+        description:
+          error.message || "An error occurred during blog post generation.",
         variant: "destructive",
       });
     },
@@ -217,7 +238,8 @@ export function AdminBlogs() {
       refetchBlogs();
       toast({
         title: "Cache Cleared",
-        description: "Blog list and post caches have been successfully purged from Redis.",
+        description:
+          "Blog list and post caches have been successfully purged from Redis.",
       });
     },
     onError: (error: any) => {
@@ -235,15 +257,21 @@ export function AdminBlogs() {
       <div className="lg:col-span-5 flex flex-col gap-6">
         <div className="bg-[#18181b]/30 border border-white/[0.06] rounded-2xl p-6 backdrop-blur-xl flex flex-col gap-5 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-red-500/5 rounded-full blur-[120px] pointer-events-none" />
-          
+
           <div>
             <div className="flex items-center gap-2 text-red-400 mb-1">
               <Sparkles className="w-4 h-4" />
-              <span className="text-xs font-bold uppercase tracking-wider">AI Content Suite</span>
+              <span className="text-xs font-bold uppercase tracking-wider">
+                AI Content Suite
+              </span>
             </div>
-            <h2 className="text-xl font-bold text-white tracking-tight">Manual Blog Creator</h2>
+            <h2 className="text-xl font-bold text-white tracking-tight">
+              Manual Blog Creator
+            </h2>
             <p className="text-zinc-500 text-xs mt-1">
-              Configure parameters to manually trigger the blog post pipeline. The system writes 2000+ words, integrates images, optimizes SEO, and schedules email blasts.
+              Configure parameters to manually trigger the blog post pipeline.
+              The system writes 2000+ words, integrates images, optimizes SEO,
+              and schedules email blasts.
             </p>
           </div>
 
@@ -264,20 +292,21 @@ export function AdminBlogs() {
                   onChange={(e) => handleDaySelect(e.target.value)}
                   className="h-9 w-full rounded-lg border border-white/10 bg-zinc-900 px-3 py-1 text-xs text-white outline-none focus:border-red-500/50"
                 >
-                  <option value="">-- Direct Generation (No Day Template) --</option>
-                  {configs && configs.length > 0 ? (
-                    configs.map((config) => (
-                      <option key={config.id} value={config.day_index}>
-                        Day {config.day_index} ({config.day_name}) — {config.topic.slice(0, 45)}...
-                      </option>
-                    ))
-                  ) : (
-                    DAYS_OF_WEEK.map((day) => (
-                      <option key={day.index} value={day.index}>
-                        Day {day.index} ({day.name})
-                      </option>
-                    ))
-                  )}
+                  <option value="">
+                    -- Direct Generation (No Day Template) --
+                  </option>
+                  {configs && configs.length > 0
+                    ? configs.map((config) => (
+                        <option key={config.id} value={config.day_index}>
+                          Day {config.day_index} ({config.day_name}) —{" "}
+                          {config.topic.slice(0, 45)}...
+                        </option>
+                      ))
+                    : DAYS_OF_WEEK.map((day) => (
+                        <option key={day.index} value={day.index}>
+                          Day {day.index} ({day.name})
+                        </option>
+                      ))}
                 </select>
               )}
             </div>
@@ -362,7 +391,9 @@ export function AdminBlogs() {
                   <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
                     Force Generate
                   </span>
-                  <span className="text-[9px] text-zinc-600">Bypass duplicate guard</span>
+                  <span className="text-[9px] text-zinc-600">
+                    Bypass duplicate guard
+                  </span>
                 </div>
                 <Switch
                   checked={forceGenerate}
@@ -376,7 +407,11 @@ export function AdminBlogs() {
             <div className="mt-2 bg-red-500/[0.04] border border-red-500/10 rounded-xl p-3 flex gap-2">
               <AlertTriangle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
               <div className="text-[10px] text-zinc-500 leading-normal">
-                <strong className="text-red-400">SEO Safeguard Enabled:</strong> Every manual pass automatically executes an AI cliché filtering parser. Terms like <em>delve, tapestry, landscape, holistic,</em> and <em>game-changing</em> are deleted or heavily rewritten.
+                <strong className="text-red-400">SEO Safeguard Enabled:</strong>{" "}
+                Every manual pass automatically executes an AI cliché filtering
+                parser. Terms like{" "}
+                <em>delve, tapestry, landscape, holistic,</em> and{" "}
+                <em>game-changing</em> are deleted or heavily rewritten.
               </div>
             </div>
 
@@ -408,7 +443,8 @@ export function AdminBlogs() {
                   Live Log Tracker
                 </span>
                 <span className="text-[10px] text-zinc-500 font-mono">
-                  {Math.floor(genElapsedTime / 60)}m {genElapsedTime % 60}s elapsed
+                  {Math.floor(genElapsedTime / 60)}m {genElapsedTime % 60}s
+                  elapsed
                 </span>
               </div>
               <div className="flex items-center gap-2">
@@ -418,13 +454,16 @@ export function AdminBlogs() {
                 </span>
               </div>
               <div className="w-full bg-white/[0.04] h-1 rounded-full overflow-hidden">
-                <div 
-                  className="bg-red-500 h-full transition-all duration-1000" 
-                  style={{ width: `${Math.min(100, (genElapsedTime / 130) * 100)}%` }} 
+                <div
+                  className="bg-red-500 h-full transition-all duration-1000"
+                  style={{
+                    width: `${Math.min(100, (genElapsedTime / 130) * 100)}%`,
+                  }}
                 />
               </div>
               <span className="text-[9px] text-zinc-600">
-                Note: Generation utilizes multiple recursive LLM verification loops (usually takes ~90-120 seconds).
+                Note: Generation utilizes multiple recursive LLM verification
+                loops (usually takes ~90-120 seconds).
               </span>
             </div>
           )}
@@ -438,20 +477,25 @@ export function AdminBlogs() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-xl font-bold text-white tracking-tight">Blog Analytics</h2>
-                <Badge 
-                  variant="outline" 
+                <h2 className="text-xl font-bold text-white tracking-tight">
+                  Blog Analytics
+                </h2>
+                <Badge
+                  variant="outline"
                   className={`text-[9px] font-mono font-bold tracking-tight rounded-md px-1.5 py-0.5 border ${
-                    source === "cache" 
-                      ? "text-purple-400 bg-purple-500/10 border-purple-500/20" 
+                    source === "cache"
+                      ? "text-purple-400 bg-purple-500/10 border-purple-500/20"
                       : "text-zinc-400 bg-zinc-500/10 border-zinc-500/20"
                   }`}
                 >
-                  {source === "cache" ? "RE-ROUTED: REDIS CACHED" : "SOURCE: DB LIVE"}
+                  {source === "cache"
+                    ? "RE-ROUTED: REDIS CACHED"
+                    : "SOURCE: DB LIVE"}
                 </Badge>
               </div>
               <p className="text-zinc-500 text-xs mt-1">
-                Overview of published posts, word counts, and cumulative reader reactions (Likes).
+                Overview of published posts, word counts, and cumulative reader
+                reactions (Likes).
               </p>
             </div>
 
@@ -470,7 +514,7 @@ export function AdminBlogs() {
                 )}
                 Flush Cache
               </Button>
-              
+
               <Button
                 variant="ghost"
                 size="sm"
@@ -528,18 +572,24 @@ export function AdminBlogs() {
           {loadingBlogs ? (
             <div className="flex flex-col items-center justify-center py-16 gap-3">
               <Loader2 className="w-8 h-8 animate-spin text-red-500" />
-              <span className="text-xs text-zinc-500 font-medium">Reloading analytics stream...</span>
+              <span className="text-xs text-zinc-500 font-medium">
+                Reloading analytics stream...
+              </span>
             </div>
           ) : blogs.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 border border-dashed border-white/5 rounded-2xl bg-zinc-950/10">
               <BookOpen className="w-8 h-8 text-zinc-700 mb-2" />
-              <span className="text-xs text-zinc-400 font-bold">No published blogs found</span>
-              <span className="text-[10px] text-zinc-600 mt-1">Try resetting search filter or triggering new generation.</span>
+              <span className="text-xs text-zinc-400 font-bold">
+                No published blogs found
+              </span>
+              <span className="text-[10px] text-zinc-600 mt-1">
+                Try resetting search filter or triggering new generation.
+              </span>
             </div>
           ) : (
             <div className="flex flex-col gap-3 max-h-[500px] overflow-y-auto pr-1">
               {blogs.map((post) => (
-                <div 
+                <div
                   key={post.id}
                   className="flex items-center justify-between p-3 rounded-xl border border-white/[0.04] bg-white/[0.01] hover:bg-white/[0.03] transition-all group"
                 >
@@ -547,9 +597,9 @@ export function AdminBlogs() {
                     {/* Cover Photo Preview */}
                     <div className="w-12 h-12 rounded-lg bg-zinc-900 border border-white/10 overflow-hidden shrink-0 relative flex items-center justify-center">
                       {post.image_url ? (
-                        <img 
-                          src={post.image_url} 
-                          alt={post.image_alt || post.title} 
+                        <img
+                          src={post.image_url}
+                          alt={post.image_alt || post.title}
                           className="w-full h-full object-cover group-hover:scale-105 transition-all duration-300"
                         />
                       ) : (
@@ -561,8 +611,8 @@ export function AdminBlogs() {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
                         {post.topic && (
-                          <Badge 
-                            variant="outline" 
+                          <Badge
+                            variant="outline"
                             className="text-[9px] font-extrabold tracking-wider bg-white/[0.04] text-zinc-300 border-white/10 rounded px-1.5 py-0"
                           >
                             {post.topic}
@@ -583,7 +633,9 @@ export function AdminBlogs() {
                       </h3>
                       <div className="flex items-center gap-1 text-[10px] text-zinc-500 mt-1">
                         <User className="w-2.5 h-2.5 shrink-0" />
-                        <span className="truncate">{post.author || "Beseekr Editorial"}</span>
+                        <span className="truncate">
+                          {post.author || "Beseekr Editorial"}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -599,9 +651,9 @@ export function AdminBlogs() {
                     </div>
 
                     {/* Link out button */}
-                    <a 
-                      href={`/blogs/${post.slug}`} 
-                      target="_blank" 
+                    <a
+                      href={`/blogs/${post.slug}`}
+                      target="_blank"
                       rel="noopener noreferrer"
                       className="p-1.5 rounded-lg border border-white/5 hover:border-white/20 bg-zinc-950 text-zinc-500 hover:text-white transition-all"
                     >
@@ -621,13 +673,15 @@ export function AdminBlogs() {
               </span>
               <div className="flex gap-4 text-xs font-medium">
                 <div className="flex items-center gap-1.5 text-zinc-400">
-                  <span className="text-white font-bold">{blogs.length}</span> Published Posts
+                  <span className="text-white font-bold">{blogs.length}</span>{" "}
+                  Published Posts
                 </div>
                 <div className="flex items-center gap-1.5 text-zinc-400">
                   <Heart className="w-3 h-3 text-red-500 fill-red-500" />
                   <span className="text-red-400 font-extrabold font-mono">
                     {blogs.reduce((acc, b) => acc + (b.likes_count || 0), 0)}
-                  </span> Likes Cumulative
+                  </span>{" "}
+                  Likes Cumulative
                 </div>
               </div>
             </div>

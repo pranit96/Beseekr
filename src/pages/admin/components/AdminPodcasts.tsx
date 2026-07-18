@@ -102,11 +102,15 @@ export function AdminPodcasts() {
 
   // Generation job state
   const [jobId, setJobId] = useState<string | null>(null);
-  const [jobStatus, setJobStatus] = useState<"idle" | "running" | "completed" | "failed">("idle");
+  const [jobStatus, setJobStatus] = useState<
+    "idle" | "running" | "completed" | "failed"
+  >("idle");
   const [jobError, setJobError] = useState<string>("");
   const elapsedRef = useRef(0);
   const [displayedElapsed, setDisplayedElapsed] = useState(0);
-  const elapsedIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const elapsedIntervalRef = useRef<ReturnType<typeof setInterval> | null>(
+    null,
+  );
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Audio player state
@@ -114,7 +118,8 @@ export function AdminPodcasts() {
   const [activeAudioUrl, setActiveAudioUrl] = useState<string | null>(null);
   const [audioPlaying, setAudioPlaying] = useState(false);
 
-  const [viewingTranscript, setViewingTranscript] = useState<PodcastEpisode | null>(null);
+  const [viewingTranscript, setViewingTranscript] =
+    useState<PodcastEpisode | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // Cleanup on unmount
@@ -127,7 +132,9 @@ export function AdminPodcasts() {
   }, []);
 
   // Fetch configs
-  const { data: configs = [], isLoading: loadingConfigs } = useQuery<PodcastConfig[]>({
+  const { data: configs = [], isLoading: loadingConfigs } = useQuery<
+    PodcastConfig[]
+  >({
     queryKey: ["admin", "podcastConfigs"],
     queryFn: async () => {
       const response = await apiClient.getPodcastConfigs();
@@ -136,7 +143,11 @@ export function AdminPodcasts() {
   });
 
   // Fetch DB space usage metrics
-  const { data: dbSpace, isLoading: loadingDbSpace, refetch: refetchDbSpace } = useQuery({
+  const {
+    data: dbSpace,
+    isLoading: loadingDbSpace,
+    refetch: refetchDbSpace,
+  } = useQuery({
     queryKey: ["admin", "dbSpaceStats"],
     queryFn: async () => {
       const response = await apiClient.getDbSpaceStats();
@@ -145,7 +156,11 @@ export function AdminPodcasts() {
   });
 
   // Fetch episodes
-  const { data: episodes = [], isLoading: loadingEpisodes, refetch: refetchEpisodes } = useQuery<PodcastEpisode[]>({
+  const {
+    data: episodes = [],
+    isLoading: loadingEpisodes,
+    refetch: refetchEpisodes,
+  } = useQuery<PodcastEpisode[]>({
     queryKey: ["admin", "podcastsList"],
     queryFn: async () => {
       const response = await apiClient.getPodcasts(1, 50);
@@ -205,49 +220,54 @@ export function AdminPodcasts() {
     }
   }, []);
 
-  const startPolling = useCallback((id: string) => {
-    // Reset elapsed using ref (avoids stale closure)
-    elapsedRef.current = 0;
-    setDisplayedElapsed(0);
+  const startPolling = useCallback(
+    (id: string) => {
+      // Reset elapsed using ref (avoids stale closure)
+      elapsedRef.current = 0;
+      setDisplayedElapsed(0);
 
-    // Tick elapsed timer every second using ref
-    elapsedIntervalRef.current = setInterval(() => {
-      elapsedRef.current += 1;
-      setDisplayedElapsed(elapsedRef.current);
-    }, 1000);
+      // Tick elapsed timer every second using ref
+      elapsedIntervalRef.current = setInterval(() => {
+        elapsedRef.current += 1;
+        setDisplayedElapsed(elapsedRef.current);
+      }, 1000);
 
-    // Poll job status every 3 seconds
-    pollIntervalRef.current = setInterval(async () => {
-      try {
-        const res = await apiClient.getPodcastJobStatus(id) as any;
-        if (!res.success) return;
+      // Poll job status every 3 seconds
+      pollIntervalRef.current = setInterval(async () => {
+        try {
+          const res = (await apiClient.getPodcastJobStatus(id)) as any;
+          if (!res.success) return;
 
-        if (res.status === "completed") {
-          stopPolling();
-          setJobStatus("completed");
-          queryClient.invalidateQueries({ queryKey: ["admin", "podcastsList"] });
-          toast({
-            title: "🎙️ Roundtable Published!",
-            description: `"${res.data?.title}" is now live.`,
-          });
-          setCustomTitle("");
-          setCustomDescription("");
-          setSourceUrl("");
-        } else if (res.status === "failed") {
-          stopPolling();
-          setJobStatus("failed");
-          setJobError(res.error || "Unknown error during synthesis.");
-          toast({
-            variant: "destructive",
-            title: "Generation Failed",
-            description: res.error || "Unknown error during synthesis.",
-          });
+          if (res.status === "completed") {
+            stopPolling();
+            setJobStatus("completed");
+            queryClient.invalidateQueries({
+              queryKey: ["admin", "podcastsList"],
+            });
+            toast({
+              title: "🎙️ Roundtable Published!",
+              description: `"${res.data?.title}" is now live.`,
+            });
+            setCustomTitle("");
+            setCustomDescription("");
+            setSourceUrl("");
+          } else if (res.status === "failed") {
+            stopPolling();
+            setJobStatus("failed");
+            setJobError(res.error || "Unknown error during synthesis.");
+            toast({
+              variant: "destructive",
+              title: "Generation Failed",
+              description: res.error || "Unknown error during synthesis.",
+            });
+          }
+        } catch {
+          // Network blip — keep polling
         }
-      } catch {
-        // Network blip — keep polling
-      }
-    }, 3000);
-  }, [queryClient, stopPolling]);
+      }, 3000);
+    },
+    [queryClient, stopPolling],
+  );
 
   const handleGenerate = async () => {
     if (!customTopic.trim()) return;
@@ -258,7 +278,7 @@ export function AdminPodcasts() {
     stopPolling();
 
     try {
-      const res = await apiClient.triggerPodcastGeneration({
+      const res = (await apiClient.triggerPodcastGeneration({
         dayIndex: selectedDayIndex ? parseInt(selectedDayIndex) : undefined,
         topic: customTopic.trim() || undefined,
         keyword: customKeyword.trim() || undefined,
@@ -266,8 +286,7 @@ export function AdminPodcasts() {
         sourceUrl: sourceUrl.trim() || undefined,
         title: customTitle.trim() || undefined,
         description: customDescription.trim() || undefined,
-      }) as any;
-
+      })) as any;
 
       if (res.success && res.jobId) {
         setJobId(res.jobId);
@@ -285,7 +304,7 @@ export function AdminPodcasts() {
       });
     }
   };
-  
+
   const handleCancel = async () => {
     stopPolling();
     const activeJobId = jobId;
@@ -309,17 +328,22 @@ export function AdminPodcasts() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm("Are you absolutely sure you want to eradicate this podcast episode? This will delete the database record and delete its audio file from Supabase storage permanently.")) {
+    if (
+      !window.confirm(
+        "Are you absolutely sure you want to eradicate this podcast episode? This will delete the database record and delete its audio file from Supabase storage permanently.",
+      )
+    ) {
       return;
     }
-    
+
     setDeletingId(id);
     try {
       const res = await apiClient.deletePodcast(id);
       if (res.success) {
         toast({
           title: "🗑️ Podcast Eradicated",
-          description: "The episode was permanently deleted from DB and storage.",
+          description:
+            "The episode was permanently deleted from DB and storage.",
         });
         refetchEpisodes();
         refetchDbSpace();
@@ -362,7 +386,10 @@ export function AdminPodcasts() {
     const limitBytes = 500 * 1024 * 1024; // 500 MB Supabase Free Tier limit
     const usedMB = (usedBytes / 1024 / 1024).toFixed(2);
     const limitMB = (limitBytes / 1024 / 1024).toFixed(0);
-    const usedPercentage = Math.min(100, Math.max(0.1, (usedBytes / limitBytes) * 100));
+    const usedPercentage = Math.min(
+      100,
+      Math.max(0.1, (usedBytes / limitBytes) * 100),
+    );
 
     // Progress bar color based on usage
     let progressColor = "bg-[#22c55e]";
@@ -382,13 +409,18 @@ export function AdminPodcasts() {
         </div>
 
         <div className="w-full bg-[#18181b] h-1.5 rounded-full overflow-hidden border border-white/[0.02]">
-          <div className={`h-full ${progressColor} transition-all duration-500`} style={{ width: `${usedPercentage}%` }} />
+          <div
+            className={`h-full ${progressColor} transition-all duration-500`}
+            style={{ width: `${usedPercentage}%` }}
+          />
         </div>
 
         {dbSpace.rpc_missing ? (
           <div className="text-[10px] leading-relaxed text-zinc-500 bg-amber-500/5 border border-amber-500/10 rounded-lg p-3 space-y-2">
             <p>
-              💡 <strong>Direct size metrics locked:</strong> Run the helper SQL script on your Supabase dashboard to enable database disk analytics.
+              💡 <strong>Direct size metrics locked:</strong> Run the helper SQL
+              script on your Supabase dashboard to enable database disk
+              analytics.
             </p>
             <details className="cursor-pointer group">
               <summary className="text-[10px] text-amber-400 font-bold hover:underline select-none">
@@ -401,15 +433,26 @@ export function AdminPodcasts() {
           </div>
         ) : (
           <div className="pt-1.5 space-y-2">
-            <p className="text-[10px] text-zinc-500">Top tables by disk usage:</p>
+            <p className="text-[10px] text-zinc-500">
+              Top tables by disk usage:
+            </p>
             <div className="grid grid-cols-1 gap-1 max-h-[140px] overflow-y-auto pr-1">
               {dbSpace.tables?.slice(0, 5).map((table: any, idx: number) => {
                 const tableSizeMB = (table.size_bytes / 1024 / 1024).toFixed(2);
                 return (
-                  <div key={idx} className="flex items-center justify-between text-[10px] font-mono py-1 px-2 rounded bg-white/[0.02] hover:bg-white/[0.04] text-zinc-400">
-                    <span className="truncate flex-1 font-bold text-zinc-300">{table.name}</span>
-                    <span className="shrink-0 text-zinc-500 mr-3">({table.rows?.toLocaleString() || 0} rows)</span>
-                    <span className="shrink-0 text-zinc-400">{tableSizeMB} MB</span>
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between text-[10px] font-mono py-1 px-2 rounded bg-white/[0.02] hover:bg-white/[0.04] text-zinc-400"
+                  >
+                    <span className="truncate flex-1 font-bold text-zinc-300">
+                      {table.name}
+                    </span>
+                    <span className="shrink-0 text-zinc-500 mr-3">
+                      ({table.rows?.toLocaleString() || 0} rows)
+                    </span>
+                    <span className="shrink-0 text-zinc-400">
+                      {tableSizeMB} MB
+                    </span>
                   </div>
                 );
               })}
@@ -430,7 +473,8 @@ export function AdminPodcasts() {
             Podcast Roundtable Builder
           </h2>
           <p className="text-zinc-500 text-xs mt-1">
-            Orchestrate weekly automated dialogues or generate custom 3-4 agent debate briefs in real-time.
+            Orchestrate weekly automated dialogues or generate custom 3-4 agent
+            debate briefs in real-time.
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
@@ -441,7 +485,9 @@ export function AdminPodcasts() {
             disabled={loadingEpisodes}
             className="border-white/[0.08] hover:bg-white/[0.04] text-zinc-300 rounded-lg text-xs"
           >
-            <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${loadingEpisodes ? "animate-spin" : ""}`} />
+            <RefreshCw
+              className={`w-3.5 h-3.5 mr-1.5 ${loadingEpisodes ? "animate-spin" : ""}`}
+            />
             Refresh
           </Button>
         </div>
@@ -457,7 +503,8 @@ export function AdminPodcasts() {
                 Generate Roundtable Episode
               </h3>
               <p className="text-zinc-500 text-[11px] mt-0.5">
-                Provide theme details or a URL source. Sequential TTS will construct a unified dialogue MP3.
+                Provide theme details or a URL source. Sequential TTS will
+                construct a unified dialogue MP3.
               </p>
             </div>
 
@@ -474,7 +521,10 @@ export function AdminPodcasts() {
               >
                 {DAYS_OF_WEEK.map((d) => (
                   <option key={d.index} value={d.index}>
-                    {d.name} Config {configs.find((c) => c.day_index === d.index) ? "✓" : "(Default fallback)"}
+                    {d.name} Config{" "}
+                    {configs.find((c) => c.day_index === d.index)
+                      ? "✓"
+                      : "(Default fallback)"}
                   </option>
                 ))}
               </select>
@@ -512,7 +562,8 @@ export function AdminPodcasts() {
                 className="bg-[#18181b] border-white/[0.08] text-xs h-9 text-white focus-visible:ring-red-500/50"
               />
               <p className="text-[9px] text-zinc-600">
-                Agents will debate the article content directly to prevent hallucinations.
+                Agents will debate the article content directly to prevent
+                hallucinations.
               </p>
             </div>
 
@@ -595,7 +646,9 @@ export function AdminPodcasts() {
                 <div className="w-full bg-[#27272a] h-1.5 rounded-full overflow-hidden">
                   <div
                     className="bg-red-500 h-full transition-all duration-1000 ease-out"
-                    style={{ width: `${Math.min(97, (displayedElapsed / ESTIMATED_TOTAL_SECONDS) * 100)}%` }}
+                    style={{
+                      width: `${Math.min(97, (displayedElapsed / ESTIMATED_TOTAL_SECONDS) * 100)}%`,
+                    }}
                   />
                 </div>
                 <div className="flex items-center justify-between gap-4 pt-1">
@@ -629,7 +682,9 @@ export function AdminPodcasts() {
             {jobStatus === "failed" && (
               <div className="flex items-start gap-2 bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-red-400 text-xs">
                 <XCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                <span>{jobError || "Synthesis failed. Check backend logs."}</span>
+                <span>
+                  {jobError || "Synthesis failed. Check backend logs."}
+                </span>
               </div>
             )}
           </div>
@@ -652,15 +707,19 @@ export function AdminPodcasts() {
           ) : episodes.length === 0 ? (
             <div className="bg-[#0c0c0e] border border-dashed border-white/[0.06] rounded-xl py-12 flex flex-col items-center justify-center text-zinc-500 text-center px-6">
               <Radio className="w-8 h-8 text-zinc-700 mb-3" />
-              <span className="text-xs font-bold text-zinc-400">No episodes published yet</span>
+              <span className="text-xs font-bold text-zinc-400">
+                No episodes published yet
+              </span>
               <p className="text-[10px] text-zinc-600 mt-1 max-w-[280px]">
-                Pre-configure themes or type in a topic outline on the left to trigger your first agent roundtable.
+                Pre-configure themes or type in a topic outline on the left to
+                trigger your first agent roundtable.
               </p>
             </div>
           ) : (
             <div className="space-y-3.5 max-h-[75vh] overflow-y-auto pr-1">
               {episodes.map((ep) => {
-                const isCurrentPlaying = activeAudioUrl === ep.audio_url && audioPlaying;
+                const isCurrentPlaying =
+                  activeAudioUrl === ep.audio_url && audioPlaying;
                 return (
                   <div
                     key={ep.id}
@@ -688,7 +747,10 @@ export function AdminPodcasts() {
                         <h4 className="text-xs font-bold text-white leading-snug truncate">
                           {ep.title}
                         </h4>
-                        <Badge variant="secondary" className="bg-[#18181b] border-white/[0.04] text-zinc-400 text-[9px] hover:bg-[#18181b] shrink-0 font-normal">
+                        <Badge
+                          variant="secondary"
+                          className="bg-[#18181b] border-white/[0.04] text-zinc-400 text-[9px] hover:bg-[#18181b] shrink-0 font-normal"
+                        >
                           {ep.topic}
                         </Badge>
                       </div>
@@ -770,7 +832,8 @@ export function AdminPodcasts() {
                   Dialogue Script — {viewingTranscript.title}
                 </h3>
                 <span className="text-[10px] text-zinc-500">
-                  Synthesized alternating voices: George (Host), Bella (Tech), Alice (Pragmatic), Fenrir (Philosophy)
+                  Synthesized alternating voices: George (Host), Bella (Tech),
+                  Alice (Pragmatic), Fenrir (Philosophy)
                 </span>
               </div>
               <button
@@ -790,8 +853,13 @@ export function AdminPodcasts() {
                 if (turn.speaker === "Fenrir") speakerColor = "text-amber-400";
 
                 return (
-                  <div key={i} className="border-l-2 border-white/[0.04] pl-3.5 py-1">
-                    <span className={`font-bold ${speakerColor} uppercase text-[10px]`}>
+                  <div
+                    key={i}
+                    className="border-l-2 border-white/[0.04] pl-3.5 py-1"
+                  >
+                    <span
+                      className={`font-bold ${speakerColor} uppercase text-[10px]`}
+                    >
                       {turn.speaker} ({turn.voice || "Kokoro"}):
                     </span>
                     <p className="text-zinc-300 mt-1">{turn.text}</p>

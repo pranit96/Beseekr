@@ -1446,9 +1446,9 @@ class ApiClient {
       {
         headers: {
           "Cache-Control": "no-cache, no-store, must-revalidate",
-          "Pragma": "no-cache",
+          Pragma: "no-cache",
         },
-      }
+      },
     );
   }
 
@@ -1625,15 +1625,28 @@ class ApiClient {
   // ─── Second Brain API ────────────────────────────────────────────────────────
 
   async brainSaveUrl(url: string, title?: string) {
-    return this.post<{ id: string; title: string; chunk_count: number }>("/api/brain/save", { type: "url", url, title });
+    return this.post<{ id: string; title: string; chunk_count: number }>(
+      "/api/brain/save",
+      { type: "url", url, title },
+    );
   }
 
-  async brainSaveText(text: string, title?: string, type: "text" | "note" = "text") {
-    return this.post<{ id: string; title: string; chunk_count: number }>("/api/brain/save", { type, text, title });
+  async brainSaveText(
+    text: string,
+    title?: string,
+    type: "text" | "note" = "text",
+  ) {
+    return this.post<{ id: string; title: string; chunk_count: number }>(
+      "/api/brain/save",
+      { type, text, title },
+    );
   }
 
   async brainQuery(question: string) {
-    return this.post<{ answer: string; sources: { id: string; title: string; url: string | null }[] }>("/api/brain/query", { question });
+    return this.post<{
+      answer: string;
+      sources: { id: string; title: string; url: string | null }[];
+    }>("/api/brain/query", { question });
   }
 
   async brainListItems() {
@@ -1649,7 +1662,9 @@ class ApiClient {
   }
 
   async brainGetInsights() {
-    return this.get<{ summary: string; themes: string[]; stats: any }>("/api/brain/insights");
+    return this.get<{ summary: string; themes: string[]; stats: any }>(
+      "/api/brain/insights",
+    );
   }
 
   // ─── Weekly Digest API ───────────────────────────────────────────────────────
@@ -1683,11 +1698,18 @@ class ApiClient {
   }
 
   async previewDigest(style: "bullets" | "narrative" | "eli5") {
-    return this.post<{ html: string | null; sectionCount: number; itemCount: number; message?: string }>("/api/digest/preview", { style });
+    return this.post<{
+      html: string | null;
+      sectionCount: number;
+      itemCount: number;
+      message?: string;
+    }>("/api/digest/preview", { style });
   }
 
   async sendMeDigest() {
-    return this.post<{ sent: boolean; itemCount: number; reason?: string }>("/api/digest/send-me");
+    return this.post<{ sent: boolean; itemCount: number; reason?: string }>(
+      "/api/digest/send-me",
+    );
   }
 
   async getFeatureFlags() {
