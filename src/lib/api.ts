@@ -1697,6 +1697,19 @@ class ApiClient {
     return this.delete<void>(`/api/digest/feeds/${id}`);
   }
 
+  async digestDiscoverCatalog() {
+    return this.get<{
+      categories: { id: string; label: string; icon: string; color: string }[];
+      countries: { id: string; label: string; color: string }[];
+    }>("/api/digest/discover/catalog");
+  }
+
+  async digestDiscoverFeeds(type: "category" | "country", name: string) {
+    return this.get<{ name: string; url: string; category?: string }[]>(
+      `/api/digest/discover/feeds?type=${encodeURIComponent(type)}&name=${encodeURIComponent(name)}`,
+    );
+  }
+
   async previewDigest(style: "bullets" | "narrative" | "eli5") {
     return this.post<{
       html: string | null;

@@ -15,6 +15,7 @@ import {
   useSendDigest,
   queryKeys,
 } from "@/hooks/use-api-queries";
+import { DiscoverPanel } from "@/components/DiscoverPanel";
 import {
   Rss,
   Loader2,
@@ -29,6 +30,7 @@ import {
   Clock,
   BookOpen,
   Filter,
+  Compass,
 } from "lucide-react";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -112,6 +114,7 @@ export default function Digest() {
 
   // UI state only (no fetch state needed)
   const [showSidebar, setShowSidebar] = useState(false);
+  const [sidebarMode, setSidebarMode] = useState<"manage" | "discover">("manage");
   const [newFeedUrl, setNewFeedUrl] = useState("");
   const [newFeedLabel, setNewFeedLabel] = useState("");
   const [selectedSource, setSelectedSource] = useState<string | null>(null);
@@ -149,6 +152,11 @@ export default function Digest() {
   });
 
   // ── Handlers ──────────────────────────────────────────────────────────────
+  const openSidebar = (mode: "manage" | "discover" = "manage") => {
+    setSidebarMode(mode);
+    setShowSidebar(true);
+  };
+
   const handleAddFeed = (url?: string, label?: string) => {
     const feedUrl = url || newFeedUrl.trim();
     const feedLabel = label || newFeedLabel.trim();
@@ -254,7 +262,17 @@ export default function Digest() {
             </Button>
 
             <Button
-              onClick={() => setShowSidebar(true)}
+              onClick={() => openSidebar("discover")}
+              variant="outline"
+              size="sm"
+              className="h-9 gap-2 border-white/10 hover:bg-white/5 rounded-xl text-xs font-semibold text-indigo-300 border-indigo-500/20"
+            >
+              <Compass className="h-3.5 w-3.5" />
+              Discover
+            </Button>
+
+            <Button
+              onClick={() => openSidebar("manage")}
               variant="outline"
               size="sm"
               className="h-9 gap-2 border-white/10 hover:bg-white/5 rounded-xl text-xs font-semibold"
@@ -371,7 +389,7 @@ export default function Digest() {
               stream.
             </p>
             <Button
-              onClick={() => setShowSidebar(true)}
+              onClick={() => openSidebar("manage")}
               className="bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl gap-2 font-bold"
             >
               <Plus className="h-4 w-4" />
@@ -466,220 +484,228 @@ export default function Digest() {
 
                       {item.summary && (
                         <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3 flex-1">
-                          {item.summary}
-                        </p>
-                      )}
-
-                      <div className="flex items-center justify-between mt-4 pt-3 border-t border-white/5">
-                        <span className="text-[11px] text-muted-foreground/50 font-mono truncate max-w-[60%]">
-                          {domain}
-                        </span>
-                        <div className="flex items-center gap-1 text-[11px] text-muted-foreground group-hover:text-indigo-400 transition-colors">
-                          Read article <ExternalLink className="h-3 w-3" />
-                        </div>
-                      </div>
-                    </div>
-                  </motion.article>
-                );
-              })}
-            </AnimatePresence>
-          </div>
-        )}
-      </main>
-
-      {/* ── Manage Feeds Sidebar ─────────────────────────── */}
-      <AnimatePresence>
-        {showSidebar && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
-              onClick={() => setShowSidebar(false)}
-            />
-
-            <motion.aside
+                      <motion.aside
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 28, stiffness: 260 }}
               className="fixed top-0 right-0 z-50 h-full w-full max-w-sm bg-[#0d0f18] border-l border-white/[0.08] shadow-2xl flex flex-col overflow-hidden"
             >
-              {/* Header */}
+              {/* Sidebar Header */}
               <div className="flex items-center justify-between px-5 py-4 border-b border-white/5">
                 <div className="flex items-center gap-2.5">
                   <div className="h-8 w-8 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
-                    <Rss className="h-4 w-4 text-indigo-400" />
+                    {sidebarMode === "discover" ? (
+                      <Compass className="h-4 w-4 text-indigo-400" />
+                    ) : (
+                      <Rss className="h-4 w-4 text-indigo-400" />
+                    )}
                   </div>
                   <div>
                     <h2 className="text-sm font-bold text-white">
-                      Feed Manager
+                      {sidebarMode === "discover" ? "Discover Feeds" : "Feed Manager"}
                     </h2>
                     <p className="text-[10px] text-muted-foreground">
-                      {feeds.length} active sources
+                      {sidebarMode === "discover" ? "Browse curated RSS sources" : `${feeds.length} active sources`}
                     </p>
                   </div>
                 </div>
-                <button
-                  onClick={() => setShowSidebar(false)}
-                  className="h-8 w-8 rounded-xl flex items-center justify-center text-muted-foreground hover:text-white hover:bg-white/5 transition-colors"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-
-              {/* Add Feed Form */}
-              <div className="p-5 border-b border-white/5 space-y-3">
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                  Add New Feed
-                </p>
-                <Input
-                  placeholder="https://feed.example.com/rss"
-                  value={newFeedUrl}
-                  onChange={(e) => setNewFeedUrl(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleAddFeed()}
-                  className="text-xs font-mono rounded-xl bg-white/5 border-white/10 h-9 text-white placeholder:text-muted-foreground/60"
-                />
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Label (optional)"
-                    value={newFeedLabel}
-                    onChange={(e) => setNewFeedLabel(e.target.value)}
-                    className="text-xs rounded-xl bg-white/5 border-white/10 h-9 text-white"
-                  />
-                  <Button
-                    onClick={() => handleAddFeed()}
-                    disabled={addFeed.isPending || !newFeedUrl.trim()}
-                    className="h-9 px-4 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-white gap-1.5 text-xs font-bold shrink-0"
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setSidebarMode(sidebarMode === "manage" ? "discover" : "manage")}
+                    className="text-[10px] font-bold text-indigo-400 hover:text-indigo-300 transition-colors mr-1"
                   >
-                    {addFeed.isPending ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Plus className="h-3.5 w-3.5" />
-                    )}
-                    Add
-                  </Button>
+                    {sidebarMode === "manage" ? "Discover →" : "← My Feeds"}
+                  </button>
+                  <button
+                    onClick={() => setShowSidebar(false)}
+                    className="h-8 w-8 rounded-xl flex items-center justify-center text-muted-foreground hover:text-white hover:bg-white/5 transition-colors"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
                 </div>
-
-                {/* Quick suggestions */}
-                {SUGGESTED_FEEDS.filter(
-                  (s) => !feeds.some((f: any) => f.feed_url === s.url),
-                ).length > 0 && (
-                  <div>
-                    <p className="text-[9px] text-muted-foreground/60 uppercase tracking-widest mb-1.5">
-                      Quick add
-                    </p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {SUGGESTED_FEEDS.filter(
-                        (s) => !feeds.some((f: any) => f.feed_url === s.url),
-                      ).map((s) => (
-                        <button
-                          key={s.url}
-                          onClick={() => handleAddFeed(s.url, s.label)}
-                          disabled={addFeed.isPending}
-                          className="inline-flex items-center gap-1.5 rounded-full border border-white/10 px-2.5 py-1 text-[10px] text-muted-foreground hover:text-white hover:border-white/20 transition-all disabled:opacity-40"
-                        >
-                          <span
-                            className="h-1.5 w-1.5 rounded-full"
-                            style={{ backgroundColor: s.color }}
-                          />
-                          {s.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
 
-              {/* Feed List */}
-              <div className="flex-1 overflow-y-auto p-5 space-y-2">
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3">
-                  Your Sources
-                </p>
-                <AnimatePresence>
-                  {feeds.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-12 text-center border border-dashed border-white/[0.08] rounded-2xl">
-                      <Globe className="h-8 w-8 text-muted-foreground/20 mb-2" />
-                      <p className="text-xs text-muted-foreground">
-                        No feeds added yet
-                      </p>
-                    </div>
+              {/* Sidebar Body */}
+              <div className="flex-1 overflow-hidden flex flex-col">
+                <AnimatePresence mode="wait">
+                  {sidebarMode === "discover" ? (
+                    <motion.div
+                      key="discover"
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: 20 }}
+                      transition={{ duration: 0.2 }}
+                      className="flex-1 overflow-hidden flex flex-col"
+                    >
+                      <DiscoverPanel
+                        existingFeedUrls={(feeds as any[]).map((f) => f.feed_url)}
+                        onClose={() => setShowSidebar(false)}
+                      />
+                    </motion.div>
                   ) : (
-                    (feeds as any[]).map((feed) => {
-                      const color = getDomainColor(feed.label || "");
-                      return (
-                        <motion.div
-                          key={feed.id}
-                          layout
-                          initial={{ opacity: 0, x: 10 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          exit={{ opacity: 0, x: 10 }}
-                          className="flex items-center gap-3 rounded-xl border border-white/5 bg-white/[0.02] px-3.5 py-2.5 group hover:border-white/10 hover:bg-white/[0.04] transition-all"
-                        >
-                          <div
-                            className="h-7 w-7 rounded-lg flex items-center justify-center text-xs font-bold shrink-0"
-                            style={{
-                              backgroundColor: `${color}20`,
-                              border: `1px solid ${color}30`,
-                              color,
-                            }}
+                    <motion.div
+                      key="manage"
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      transition={{ duration: 0.2 }}
+                      className="flex-1 overflow-hidden flex flex-col"
+                    >
+                      <div className="p-5 border-b border-white/5 space-y-3 shrink-0">
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                          Add New Feed
+                        </p>
+                        <Input
+                          placeholder="https://feed.example.com/rss"
+                          value={newFeedUrl}
+                          onChange={(e) => setNewFeedUrl(e.target.value)}
+                          onKeyDown={(e) => e.key === "Enter" && handleAddFeed()}
+                          className="text-xs font-mono rounded-xl bg-white/5 border-white/10 h-9 text-white placeholder:text-muted-foreground/60"
+                        />
+                        <div className="flex gap-2">
+                          <Input
+                            placeholder="Label (optional)"
+                            value={newFeedLabel}
+                            onChange={(e) => setNewFeedLabel(e.target.value)}
+                            className="text-xs rounded-xl bg-white/5 border-white/10 h-9 text-white"
+                          />
+                          <Button
+                            onClick={() => handleAddFeed()}
+                            disabled={addFeed.isPending || !newFeedUrl.trim()}
+                            className="h-9 px-4 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-white gap-1.5 text-xs font-bold shrink-0"
                           >
-                            {(feed.label || "?").charAt(0).toUpperCase()}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs font-bold text-white truncate">
-                              {feed.label || "Untitled"}
+                            {addFeed.isPending ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <Plus className="h-3.5 w-3.5" />
+                            )}
+                            Add
+                          </Button>
+                        </div>
+
+                        {/* Quick suggestions */}
+                        {SUGGESTED_FEEDS.filter(
+                          (s) => !feeds.some((f: any) => f.feed_url === s.url),
+                        ).length > 0 && (
+                          <div>
+                            <p className="text-[9px] text-muted-foreground/60 uppercase tracking-widest mb-1.5">
+                              Quick add
                             </p>
-                            <p className="text-[10px] text-muted-foreground truncate font-mono mt-0.5">
-                              {feed.feed_url}
-                            </p>
+                            <div className="flex flex-wrap gap-1.5">
+                              {SUGGESTED_FEEDS.filter(
+                                (s) => !feeds.some((f: any) => f.feed_url === s.url),
+                              ).map((s) => (
+                                <button
+                                  key={s.url}
+                                  onClick={() => handleAddFeed(s.url, s.label)}
+                                  disabled={addFeed.isPending}
+                                  className="inline-flex items-center gap-1.5 rounded-full border border-white/10 px-2.5 py-1 text-[10px] text-muted-foreground hover:text-white hover:border-white/20 transition-all disabled:opacity-40"
+                                >
+                                  <span
+                                    className="h-1.5 w-1.5 rounded-full"
+                                    style={{ backgroundColor: s.color }}
+                                  />
+                                  {s.label}
+                                </button>
+                              ))}
+                            </div>
                           </div>
-                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <a
-                              href={feed.feed_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              onClick={(e) => e.stopPropagation()}
-                              className="p-1 text-muted-foreground hover:text-white transition-colors"
-                            >
-                              <ExternalLink className="h-3.5 w-3.5" />
-                            </a>
-                            <button
-                              onClick={() => removeFeed.mutate(feed.id)}
-                              disabled={
-                                removeFeed.isPending &&
-                                removeFeed.variables === feed.id
-                              }
-                              className="p-1 text-muted-foreground hover:text-red-400 transition-colors"
-                            >
-                              {removeFeed.isPending &&
-                              removeFeed.variables === feed.id ? (
-                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                              ) : (
-                                <Trash2 className="h-3.5 w-3.5" />
-                              )}
-                            </button>
-                          </div>
-                        </motion.div>
-                      );
-                    })
+                        )}
+                      </div>
+
+                      {/* Feed List */}
+                      <div className="flex-1 overflow-y-auto p-5 space-y-2">
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3">
+                          Your Sources
+                        </p>
+                        <AnimatePresence>
+                          {feeds.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center py-12 text-center border border-dashed border-white/[0.08] rounded-2xl">
+                              <Globe className="h-8 w-8 text-muted-foreground/20 mb-2" />
+                              <p className="text-xs text-muted-foreground">
+                                No feeds added yet
+                              </p>
+                            </div>
+                          ) : (
+                            (feeds as any[]).map((feed) => {
+                              const color = getDomainColor(feed.label || "");
+                              return (
+                                <motion.div
+                                  key={feed.id}
+                                  layout
+                                  initial={{ opacity: 0, x: 10 }}
+                                  animate={{ opacity: 1, x: 0 }}
+                                  exit={{ opacity: 0, x: 10 }}
+                                  className="flex items-center gap-3 rounded-xl border border-white/5 bg-white/[0.02] px-3.5 py-2.5 group hover:border-white/10 hover:bg-white/[0.04] transition-all"
+                                >
+                                  <div
+                                    className="h-7 w-7 rounded-lg flex items-center justify-center text-xs font-bold shrink-0"
+                                    style={{
+                                      backgroundColor: `${color}20`,
+                                      border: `1px solid ${color}30`,
+                                      color,
+                                    }}
+                                  >
+                                    {(feed.label || "?").charAt(0).toUpperCase()}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-xs font-bold text-white truncate">
+                                      {feed.label || "Untitled"}
+                                    </p>
+                                    <p className="text-[10px] text-muted-foreground truncate font-mono mt-0.5">
+                                      {feed.feed_url}
+                                    </p>
+                                  </div>
+                                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <a
+                                      href={feed.feed_url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="p-1 text-muted-foreground hover:text-white transition-colors"
+                                    >
+                                      <ExternalLink className="h-3.5 w-3.5" />
+                                    </a>
+                                    <button
+                                      onClick={() => removeFeed.mutate(feed.id)}
+                                      disabled={
+                                        removeFeed.isPending &&
+                                        removeFeed.variables === feed.id
+                                      }
+                                      className="p-1 text-muted-foreground hover:text-red-400 transition-colors"
+                                    >
+                                      {removeFeed.isPending &&
+                                      removeFeed.variables === feed.id ? (
+                                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                      ) : (
+                                        <Trash2 className="h-3.5 w-3.5" />
+                                      )}
+                                    </button>
+                                  </div>
+                                </motion.div>
+                              );
+                            })
+                          )}
+                        </AnimatePresence>
+                      </div>
+
+                      {/* Footer Info */}
+                      <div className="px-5 py-3 border-t border-white/5 shrink-0">
+                        <p className="text-[10px] text-muted-foreground/60 text-center leading-relaxed">
+                          Weekly email digest settings are in your{" "}
+                          <button
+                            onClick={() => navigate("/profile")}
+                            className="text-indigo-400 hover:text-indigo-300 transition-colors underline underline-offset-2"
+                          >
+                            Profile
+                          </button>{" "}
+                          page.
+                        </p>
+                      </div>
+                    </motion.div>
                   )}
                 </AnimatePresence>
-              </div>
-
-              {/* Footer */}
-              <div className="px-5 py-3 border-t border-white/5">
-                <p className="text-[10px] text-muted-foreground/60 text-center leading-relaxed">
-                  Weekly email digest settings are in your{" "}
-                  <button
-                    onClick={() => navigate("/profile")}
-                    className="text-indigo-400 hover:text-indigo-300 transition-colors underline underline-offset-2"
-                  >
-                    Profile
-                  </button>{" "}
-                  page.
-                </p>
               </div>
             </motion.aside>
           </>
