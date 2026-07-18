@@ -50,6 +50,10 @@ export const queryKeys = {
   digestFeeds: ["digest", "feeds"] as const,
   digestFeedItems: ["digest", "feedItems"] as const,
   digestPreferences: ["digest", "preferences"] as const,
+  // Second Brain
+  brainItems: ["brain", "items"] as const,
+  brainMindMap: ["brain", "mindmap"] as const,
+  brainInsights: ["brain", "insights"] as const,
 };
 
 // ============= AGENTS =============
@@ -1049,6 +1053,133 @@ export function useSendDigest() {
         description: err.message,
         variant: "destructive",
       });
+    },
+  });
+}
+
+// ============= SECOND BRAIN =============
+
+/**
+ * Cached list of all items saved to the user's brain (library).
+ * staleTime: 2 min — short window because the user may save items and
+ * expect the library to reflect them quickly.
+ * gcTime: 15 min — stays in memory while navigating between tabs.
+ */
+export function useBrainItems(enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.brainItems,
+    queryFn: () => apiClient.brainListItems(),
+    staleTime: 2 * 60 * 1000,
+    gcTime: 15 * 60 * 1000,
+    enabled,
+    select: (res) => res.data ?? [],
+  });
+}
+
+/**
+ * Cached mind map graph (nodes + edges).
+ * staleTime: 30 min — expensive LLM call; doesn't change unless the
+ * user adds new items. User can force-refresh via "Regenerate".
+ * refetchOnWindowFocus: false — don't burn LLM tokens on every tab switch.
+ */
+export function useBrainMindMap(enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.brainMindMap,
+    queryFn: () => apiClient.brainGetMindMap(),
+    staleTime: 30 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
+    enabled,
+    select: (res) => res.data,
+    refetchOnWindowFocus: false,
+  });
+}
+
+/**
+ * Cached brain insights (AI summary + themes + stats).
+ * staleTime: 30 min — same as mind map; LLM-heavy, user triggers refresh.
+ */
+export function useBrainInsights(enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.brainInsights,
+    queryFn: () => apiClient.brainGetInsights(),
+    staleTime: 30 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
+    enabled,
+    select: (res) => res.data,
+    refetchOnWindowFocus: false,
+  });
+}
+
+/**
+ * Save URL or text/note content to the brain.
+ * On success:
+ *   - Invalidates items cache → library shows new item immediately.
+ *   - Stale-marks mindmap + insights → next visit to those tabs refetches
+ *     so they reflect the new content.
+ */
+export function useSaveBrainContent() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: (
+      payload:
+        | { type: "url"; url: string; title?: string }
+        | { type: "text" | "note"; text: string; title?: string },
+    ) => {
+      if (payload.type === "url") {
+        return apiClient.brainSaveUrl(payload.url, payload.title);
+      }
+      return apiClient.brainSaveText(payload.text, payload.title, payload.type);
+    },
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.brainItems });
+      queryClient.invalidateQueries({ queryKey: queryKeys.brainMindMap });
+      queryClient.invalidateQueries({ queryKey: queryKeys.brainInsights });
+      toast({
+        title: "Saved to Brain",
+        description: `"${res.data?.title}" — ${res.data?.chunk_count} chunks indexed`,
+      });
+    },
+    onError: (err: Error) => {
+      toast({
+        title: "Save failed",
+        description: err.message,
+        variant: "destructive",
+      });
+    },
+  });
+}
+
+/**
+ * Delete a brain item with optimistic cache removal.
+ * Immediately removes it from the UI; rolls back if the delete fails.
+ * Also stale-marks map + insights so they rebuild on next view.
+ */
+export function useDeleteBrainItem() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: (id: string) => apiClient.brainDeleteItem(id),
+    onMutate: async (id: string) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.brainItems });
+      const previous = queryClient.getQueryData(queryKeys.brainItems);
+      queryClient.setQueryData<any>(queryKeys.brainItems, (old: any) => {
+        if (!old?.data) return old;
+        return { ...old, data: old.data.filter((item: any) => item.id !== id) };
+      });
+      return { previous };
+    },
+    onError: (_err: Error, _id: string, ctx: any) => {
+      if (ctx?.previous)
+        queryClient.setQueryData(queryKeys.brainItems, ctx.previous);
+      toast({ title: "Delete failed", variant: "destructive" });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.brainItems });
+      queryClient.invalidateQueries({ queryKey: queryKeys.brainMindMap });
+      queryClient.invalidateQueries({ queryKey: queryKeys.brainInsights });
     },
   });
 }
