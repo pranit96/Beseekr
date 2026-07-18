@@ -1658,6 +1658,10 @@ class ApiClient {
     return this.get<any | null>("/api/digest/preferences");
   }
 
+  async digestGetFeedItems() {
+    return this.get<any[]>("/api/digest/feed-items");
+  }
+
   async upsertDigestPreferences(prefs: {
     email?: string;
     style?: "bullets" | "narrative" | "eli5";

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import { GlobalHeader } from "@/components/GlobalHeader";
@@ -8,86 +8,128 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Mail,
   Rss,
   Loader2,
   Plus,
-  Eye,
   Send,
   ExternalLink,
-  X,
   Trash2,
-  Inbox,
-  Settings2,
   Globe,
+  RefreshCw,
+  SlidersHorizontal,
+  X,
+  Sparkles,
+  Clock,
+  BookOpen,
+  Filter,
 } from "lucide-react";
 
 const SUGGESTED_FEEDS = [
-  { label: "Hacker News", url: "https://news.ycombinator.com/rss" },
-  { label: "TechCrunch", url: "https://techcrunch.com/feed/" },
-  { label: "The Verge", url: "https://www.theverge.com/rss/index.xml" },
-  { label: "MIT News", url: "https://news.mit.edu/rss/feed" },
-  { label: "arXiv AI", url: "https://arxiv.org/rss/cs.AI" },
+  { label: "Hacker News", url: "https://news.ycombinator.com/rss", color: "#f97316" },
+  { label: "TechCrunch", url: "https://techcrunch.com/feed/", color: "#22c55e" },
+  { label: "The Verge", url: "https://www.theverge.com/rss/index.xml", color: "#8b5cf6" },
+  { label: "MIT News", url: "https://news.mit.edu/rss/feed", color: "#3b82f6" },
+  { label: "arXiv AI", url: "https://arxiv.org/rss/cs.AI", color: "#ec4899" },
 ];
+
+const DOMAIN_COLORS: Record<string, string> = {
+  "ycombinator": "#f97316",
+  "techcrunch": "#22c55e",
+  "theverge": "#8b5cf6",
+  "mit.edu": "#3b82f6",
+  "arxiv": "#ec4899",
+  "wired": "#a855f7",
+  "arstechnica": "#06b6d4",
+};
+
+function getDomainColor(label: string): string {
+  const lower = label.toLowerCase();
+  for (const [key, color] of Object.entries(DOMAIN_COLORS)) {
+    if (lower.includes(key)) return color;
+  }
+  // Deterministic color from label
+  const colors = ["#6366f1", "#8b5cf6", "#ec4899", "#f97316", "#14b8a6", "#3b82f6", "#10b981"];
+  let hash = 0;
+  for (let i = 0; i < label.length; i++) hash = label.charCodeAt(i) + ((hash << 5) - hash);
+  return colors[Math.abs(hash) % colors.length];
+}
+
+function timeAgo(date: Date): string {
+  const now = Date.now();
+  const diff = now - date.getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
+
+interface FeedItem {
+  title: string;
+  url: string;
+  pubDate: string;
+  summary: string;
+  feedLabel: string;
+}
 
 export default function Digest() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const [prefs, setPrefs] = useState<any | null>(null);
   const [feeds, setFeeds] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
+  const [isLoadingItems, setIsLoadingItems] = useState(false);
+  const [isLoadingFeeds, setIsLoadingFeeds] = useState(true);
+  const [isSending, setIsSending] = useState(false);
 
-  // Feed add state
+  const [showSidebar, setShowSidebar] = useState(false);
   const [newFeedUrl, setNewFeedUrl] = useState("");
   const [newFeedLabel, setNewFeedLabel] = useState("");
   const [isAddingFeed, setIsAddingFeed] = useState(false);
   const [deletingFeedId, setDeletingFeedId] = useState<string | null>(null);
 
-  // Preview state
-  const [previewHtml, setPreviewHtml] = useState<string | null>(null);
-  const [isGeneratingPreview, setIsGeneratingPreview] = useState(false);
-  const [isSending, setIsSending] = useState(false);
-
-  // Layout state
-  const [activeMobileTab, setActiveMobileTab] = useState<"configure" | "preview">("configure");
+  const [selectedSource, setSelectedSource] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    if (!loading && !user) {
-      navigate("/auth");
-    }
+    if (!loading && !user) navigate("/auth");
   }, [user, loading, navigate]);
 
-  const loadAll = useCallback(async () => {
-    setIsLoading(true);
+  const loadFeeds = useCallback(async () => {
+    setIsLoadingFeeds(true);
     try {
-      const [pRes, fRes] = await Promise.all([
-        apiClient.getDigestPreferences(),
-        apiClient.listDigestFeeds(),
-      ]);
+      const res = await apiClient.listDigestFeeds();
+      if (res.success && res.data) setFeeds(res.data);
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setIsLoadingFeeds(false);
+    }
+  }, [toast]);
 
-      if (pRes.success && pRes.data) {
-        setPrefs(pRes.data);
-      }
-
-      if (fRes.success && fRes.data) {
-        setFeeds(fRes.data);
+  const loadFeedItems = useCallback(async () => {
+    setIsLoadingItems(true);
+    try {
+      const res = await apiClient.digestGetFeedItems();
+      if (res.success && res.data) {
+        setFeedItems(res.data);
       }
     } catch (err: any) {
-      toast({
-        title: "Error",
-        description: err.message || "Failed to load digest settings",
-        variant: "destructive",
-      });
+      toast({ title: "Error loading feed", description: err.message, variant: "destructive" });
     } finally {
-      setIsLoading(false);
+      setIsLoadingItems(false);
     }
   }, [toast]);
 
   useEffect(() => {
-    if (user) loadAll();
-  }, [user, loadAll]);
+    if (user) {
+      loadFeeds();
+      loadFeedItems();
+    }
+  }, [user, loadFeeds, loadFeedItems]);
 
   const handleAddFeed = async (url?: string, label?: string) => {
     const feedUrl = url || newFeedUrl.trim();
@@ -101,12 +143,14 @@ export default function Digest() {
         setFeeds((prev) => [res.data, ...prev]);
         setNewFeedUrl("");
         setNewFeedLabel("");
-        toast({ title: "Success", description: `Feed added: ${feedLabel || feedUrl}` });
+        toast({ title: "Feed added!", description: feedLabel || feedUrl });
+        // Reload items to include the new feed
+        loadFeedItems();
       } else {
         toast({ title: "Failed", description: res.error || "Failed to add feed", variant: "destructive" });
       }
     } catch (err: any) {
-      toast({ title: "Error", description: err.message || "Failed to add feed", variant: "destructive" });
+      toast({ title: "Error", description: err.message, variant: "destructive" });
     } finally {
       setIsAddingFeed(false);
     }
@@ -118,428 +162,479 @@ export default function Digest() {
       const res = await apiClient.removeDigestFeed(id);
       if (res.success) {
         setFeeds((prev) => prev.filter((f) => f.id !== id));
-        toast({ title: "Removed", description: "Feed removed successfully" });
-      } else {
-        toast({ title: "Failed", description: res.error || "Failed to remove feed", variant: "destructive" });
+        toast({ title: "Removed", description: "Feed removed" });
       }
     } catch (err: any) {
-      toast({ title: "Error", description: err.message || "Failed to remove feed", variant: "destructive" });
+      toast({ title: "Error", description: err.message, variant: "destructive" });
     } finally {
       setDeletingFeedId(null);
     }
   };
 
-  const handlePreview = async () => {
-    if (!feeds.length) return toast({ title: "Error", description: "Add at least one feed first", variant: "destructive" });
-    setIsGeneratingPreview(true);
-    setPreviewHtml(null);
-    try {
-      const res = await apiClient.previewDigest(prefs?.style || "bullets");
-      if (res.success && res.data) {
-        if (!res.data.html) {
-          toast({ title: "Information", description: res.data.message || "No new articles found this week" });
-        } else {
-          setPreviewHtml(res.data.html);
-          setActiveMobileTab("preview"); // Switch to preview tab on mobile
-          toast({
-            title: "Success",
-            description: `Preview ready — ${res.data.itemCount} articles from ${res.data.sectionCount} topics`,
-          });
-        }
-      } else {
-        toast({ title: "Failed", description: res.error || "Preview generation failed", variant: "destructive" });
-      }
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message || "Preview failed", variant: "destructive" });
-    } finally {
-      setIsGeneratingPreview(false);
-    }
-  };
-
   const handleSendNow = async () => {
-    if (!prefs?.email) return toast({ title: "Error", description: "Save your email preferences in Profile settings first", variant: "destructive" });
     setIsSending(true);
     try {
       const res = await apiClient.sendMeDigest();
       if (res.success && res.data) {
         if (res.data.sent) {
-          toast({ title: "Success", description: `Digest sent to ${prefs.email} — ${res.data.itemCount} articles` });
+          toast({ title: "Digest sent! 🎉", description: `${res.data.itemCount} articles delivered to your inbox` });
         } else {
-          toast({ title: "Information", description: res.data.reason || "Nothing to send right now" });
+          toast({ title: "Nothing to send", description: res.data.reason || "No new articles this week" });
         }
-      } else {
-        toast({ title: "Failed", description: res.error || "Failed to send digest", variant: "destructive" });
       }
     } catch (err: any) {
-      toast({ title: "Error", description: err.message || "Send failed", variant: "destructive" });
+      toast({ title: "Error", description: err.message, variant: "destructive" });
     } finally {
       setIsSending(false);
     }
   };
 
-  if (loading || isLoading) {
+  // Unique source labels
+  const sources = Array.from(new Set(feedItems.map((i) => i.feedLabel)));
+
+  const filteredItems = feedItems.filter((item) => {
+    const matchSource = !selectedSource || item.feedLabel === selectedSource;
+    const matchSearch = !searchQuery || item.title.toLowerCase().includes(searchQuery.toLowerCase()) || item.summary.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchSource && matchSearch;
+  });
+
+  if (loading || isLoadingFeeds) {
     return (
-      <div className="min-h-screen flex flex-col bg-[#0b0c10] text-[#c5c6c7] overflow-hidden">
+      <div className="min-h-screen flex flex-col bg-[#080a10] text-foreground">
         <GlobalHeader />
-        <div className="flex-1 flex flex-col items-center justify-center gap-4">
-          <Loader2 className="h-10 w-10 animate-spin text-indigo-400" />
-          <p className="text-sm text-muted-foreground animate-pulse">Loading weekly digest streams...</p>
+        <div className="flex-1 flex items-center justify-center gap-4">
+          <Loader2 className="h-8 w-8 animate-spin text-indigo-400" />
+          <p className="text-sm text-muted-foreground animate-pulse">Loading your feeds...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#08090d] text-foreground overflow-x-hidden relative">
-      {/* Background Decorative Blur Nodes */}
-      <div className="absolute top-1/4 left-1/10 w-96 h-96 bg-indigo-500/5 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/10 w-[500px] h-[500px] bg-violet-500/5 rounded-full blur-[160px] pointer-events-none" />
+    <div className="min-h-screen flex flex-col bg-[#080a10] text-foreground overflow-x-hidden">
+      {/* Ambient BG */}
+      <div className="fixed top-0 left-0 w-full h-full pointer-events-none overflow-hidden -z-0">
+        <div className="absolute top-[-10%] left-[-5%] w-[600px] h-[600px] bg-indigo-500/[0.04] rounded-full blur-[130px]" />
+        <div className="absolute bottom-[-10%] right-[-5%] w-[500px] h-[500px] bg-violet-500/[0.04] rounded-full blur-[130px]" />
+      </div>
 
       <GlobalHeader />
 
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-6 relative z-10">
-        
-        {/* Main Title Banner */}
-        <motion.div 
-          initial={{ opacity: 0, y: -10 }} 
-          animate={{ opacity: 1, y: 0 }} 
-          transition={{ duration: 0.5 }}
-          className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/5 pb-6"
+      <main className="relative z-10 flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 py-6 flex flex-col gap-5">
+
+        {/* ── Top Bar ─────────────────────────────────────── */}
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="flex items-center justify-between gap-4"
         >
-          <div>
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 shadow-lg shadow-indigo-500/5">
-                <Mail className="h-6 w-6" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-3">
-                  Weekly Personal Digest
-                  {prefs?.enabled && (
-                    <span className="inline-flex items-center gap-1 rounded-full border border-green-500/30 bg-green-500/10 px-2.5 py-0.5 text-[10px] font-bold text-green-400 uppercase tracking-widest">
-                      <span className="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse" /> Active
-                    </span>
-                  )}
-                </h1>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Synthesize your customized news feeds into a beautiful weekly brief generated directly on Sundays.
-                </p>
-              </div>
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center shadow-lg shadow-indigo-500/5">
+              <Rss className="h-5 w-5 text-indigo-400" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold tracking-tight text-white">Feed Stream</h1>
+              <p className="text-xs text-muted-foreground">
+                {feedItems.length > 0
+                  ? `${feedItems.length} articles from ${sources.length} sources`
+                  : "Your personalized news stream"}
+              </p>
             </div>
           </div>
+
           <div className="flex items-center gap-2">
             <Button
-              variant="outline"
-              onClick={loadAll}
-              className="border-white/10 hover:bg-white/5 text-xs rounded-xl h-9"
+              variant="ghost"
+              size="sm"
+              onClick={loadFeedItems}
+              disabled={isLoadingItems}
+              className="h-9 w-9 p-0 rounded-xl border border-white/5 hover:bg-white/5"
             >
-              Refresh Feeds
+              <RefreshCw className={`h-4 w-4 text-muted-foreground ${isLoadingItems ? "animate-spin" : ""}`} />
+            </Button>
+            <Button
+              onClick={handleSendNow}
+              disabled={isSending || !feeds.length}
+              size="sm"
+              className="h-9 gap-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold px-4"
+            >
+              {isSending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+              Send digest
+            </Button>
+            <Button
+              onClick={() => setShowSidebar(true)}
+              variant="outline"
+              size="sm"
+              className="h-9 gap-2 border-white/10 hover:bg-white/5 rounded-xl text-xs font-semibold"
+            >
+              <SlidersHorizontal className="h-3.5 w-3.5 text-indigo-400" />
+              Manage feeds
+              {feeds.length > 0 && (
+                <span className="ml-1 rounded-full bg-indigo-500/20 text-indigo-400 text-[10px] font-bold px-1.5 py-0.5">
+                  {feeds.length}
+                </span>
+              )}
             </Button>
           </div>
         </motion.div>
 
-        {/* Mobile Tab Selectors (hides on desktop) */}
-        <div className="flex lg:hidden bg-muted/20 border border-white/5 p-1 rounded-xl">
-          <button
-            onClick={() => setActiveMobileTab("configure")}
-            className={`flex-1 py-2 text-xs font-semibold rounded-lg flex items-center justify-center gap-2 transition-all ${
-              activeMobileTab === "configure"
-                ? "bg-indigo-500/10 border border-indigo-500/20 text-indigo-400"
-                : "text-muted-foreground hover:text-white"
-            }`}
+        {/* ── Filter Bar ──────────────────────────────────── */}
+        {sources.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.15, duration: 0.4 }}
+            className="flex items-center gap-3 overflow-x-auto pb-1 scrollbar-none"
           >
-            <Rss className="w-4 h-4" />
-            Manage Feeds
-          </button>
-          <button
-            onClick={() => setActiveMobileTab("preview")}
-            className={`flex-1 py-2 text-xs font-semibold rounded-lg flex items-center justify-center gap-2 transition-all ${
-              activeMobileTab === "preview"
-                ? "bg-indigo-500/10 border border-indigo-500/20 text-indigo-400"
-                : "text-muted-foreground hover:text-white"
-            }`}
-          >
-            <Eye className="w-4 h-4" />
-            Live Preview
-          </button>
-        </div>
+            <div className="relative shrink-0">
+              <input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search articles..."
+                className="h-8 bg-white/5 border border-white/8 rounded-xl text-xs text-white placeholder:text-muted-foreground focus:outline-none focus:border-indigo-500/50 px-3 w-48"
+              />
+            </div>
 
-        {/* Content Layout Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          
-          {/* LEFT PANEL: RSS Feed Management */}
-          <div className={`lg:col-span-5 space-y-6 ${activeMobileTab === "configure" ? "block" : "hidden lg:block"}`}>
-            <motion.section
-              initial={{ opacity: 0, x: -15 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.4 }}
-              className="rounded-3xl border border-white/5 bg-slate-950/40 backdrop-blur-md p-6 shadow-xl relative overflow-hidden"
+            <div className="h-4 w-px bg-white/10 shrink-0" />
+
+            <div className="flex items-center gap-1.5 shrink-0">
+              <Filter className="h-3.5 w-3.5 text-muted-foreground" />
+            </div>
+
+            <button
+              onClick={() => setSelectedSource(null)}
+              className={`shrink-0 flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold border transition-all duration-200 ${
+                selectedSource === null
+                  ? "bg-indigo-500/20 border-indigo-500/40 text-indigo-300"
+                  : "bg-transparent border-white/10 text-muted-foreground hover:text-white hover:border-white/20"
+              }`}
             >
-              <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none" />
+              All
+            </button>
 
-              <h2 className="text-sm font-bold text-white uppercase tracking-wider mb-4 flex items-center justify-between">
-                <span className="flex items-center gap-2">
-                  <Rss className="w-4 h-4 text-indigo-400" />
-                  Feed Streams
-                </span>
-                {feeds.length > 0 && (
-                  <span className="rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-2 py-0.5 text-[10px] font-bold">
-                    {feeds.length} Streams
-                  </span>
-                )}
-              </h2>
+            {sources.map((source) => {
+              const color = getDomainColor(source);
+              const isActive = selectedSource === source;
+              return (
+                <button
+                  key={source}
+                  onClick={() => setSelectedSource(isActive ? null : source)}
+                  className={`shrink-0 flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold border transition-all duration-200 ${
+                    isActive
+                      ? "border-opacity-60 text-white"
+                      : "bg-transparent border-white/10 text-muted-foreground hover:text-white hover:border-white/20"
+                  }`}
+                  style={isActive ? { borderColor: `${color}60`, backgroundColor: `${color}18`, color } : {}}
+                >
+                  <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: color }} />
+                  {source}
+                </button>
+              );
+            })}
+          </motion.div>
+        )}
 
-              <div className="space-y-4">
-                {/* Inputs for adding feeds */}
-                <div className="space-y-2 border-b border-white/5 pb-4">
-                  <Input
-                    placeholder="Feed URL (RSS or Atom link)"
-                    value={newFeedUrl}
-                    onChange={(e) => setNewFeedUrl(e.target.value)}
-                    className="text-xs font-mono rounded-xl bg-white/5 border-white/10 text-white h-10 placeholder:text-muted-foreground/60"
-                    onKeyDown={(e) => e.key === "Enter" && handleAddFeed()}
-                  />
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="Stream Name (e.g. HN)"
-                      value={newFeedLabel}
-                      onChange={(e) => setNewFeedLabel(e.target.value)}
-                      className="text-xs rounded-xl bg-white/5 border-white/10 text-white h-10"
+        {/* ── Feed Grid ───────────────────────────────────── */}
+        {isLoadingItems ? (
+          <div className="flex-1 flex flex-col items-center justify-center py-20 gap-4">
+            <div className="relative">
+              <div className="h-16 w-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
+                <Loader2 className="h-7 w-7 animate-spin text-indigo-400" />
+              </div>
+              <div className="absolute -inset-3 rounded-3xl border border-indigo-500/10 animate-ping opacity-30" />
+            </div>
+            <div className="text-center">
+              <p className="text-sm font-semibold text-white">Fetching your feeds...</p>
+              <p className="text-xs text-muted-foreground mt-1">Scanning {feeds.length} sources for fresh articles</p>
+            </div>
+          </div>
+        ) : feeds.length === 0 ? (
+          /* Empty state — no feeds added yet */
+          <motion.div
+            initial={{ opacity: 0, scale: 0.97 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="flex-1 flex flex-col items-center justify-center py-24 text-center"
+          >
+            <motion.div
+              animate={{ y: [0, -8, 0] }}
+              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+              className="h-20 w-20 rounded-3xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mb-6 shadow-2xl shadow-indigo-500/10"
+            >
+              <Rss className="h-10 w-10 text-indigo-400" />
+            </motion.div>
+            <h2 className="text-xl font-bold text-white mb-2">Your feed is empty</h2>
+            <p className="text-sm text-muted-foreground max-w-sm leading-relaxed mb-8">
+              Add RSS or Atom feeds to start building your personalized news stream. We'll pull fresh articles every time you visit.
+            </p>
+            <Button
+              onClick={() => setShowSidebar(true)}
+              className="bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl gap-2 font-bold"
+            >
+              <Plus className="h-4 w-4" />
+              Add your first feed
+            </Button>
+          </motion.div>
+        ) : filteredItems.length === 0 ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex-1 flex flex-col items-center justify-center py-20 text-center"
+          >
+            <BookOpen className="h-12 w-12 text-muted-foreground/30 mb-4" />
+            <p className="text-sm font-semibold text-white mb-1">No articles found</p>
+            <p className="text-xs text-muted-foreground">
+              {searchQuery ? "Try a different search term" : "No articles from the last 7 days in this source"}
+            </p>
+          </motion.div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            <AnimatePresence>
+              {filteredItems.map((item, i) => {
+                const color = getDomainColor(item.feedLabel);
+                const pub = new Date(item.pubDate);
+                const domain = (() => {
+                  try { return new URL(item.url).hostname.replace("www.", ""); } catch { return ""; }
+                })();
+                return (
+                  <motion.article
+                    key={`${item.url}-${i}`}
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.97 }}
+                    transition={{ duration: 0.3, delay: Math.min(i * 0.04, 0.5) }}
+                    className="group relative flex flex-col rounded-2xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/10 transition-all duration-300 overflow-hidden cursor-pointer"
+                    onClick={() => window.open(item.url, "_blank", "noopener,noreferrer")}
+                  >
+                    {/* Top accent bar */}
+                    <div
+                      className="h-0.5 w-full shrink-0 opacity-70"
+                      style={{ backgroundColor: color }}
                     />
-                    <Button
-                      onClick={() => handleAddFeed()}
-                      disabled={isAddingFeed || !newFeedUrl.trim()}
-                      className="bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl h-10 px-4 flex items-center gap-1.5 text-xs font-bold"
-                    >
-                      {isAddingFeed ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-4 w-4" />}
-                      Add Stream
-                    </Button>
+
+                    {/* Glow on hover */}
+                    <div
+                      className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none rounded-2xl"
+                      style={{ background: `radial-gradient(circle at 20% 20%, ${color}08 0%, transparent 70%)` }}
+                    />
+
+                    <div className="flex flex-col flex-1 p-5">
+                      {/* Source + time */}
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <div
+                            className="h-5 w-5 rounded-md flex items-center justify-center text-[9px] font-bold text-white shrink-0"
+                            style={{ backgroundColor: `${color}30`, border: `1px solid ${color}40` }}
+                          >
+                            <span style={{ color }}>{item.feedLabel.charAt(0).toUpperCase()}</span>
+                          </div>
+                          <span
+                            className="text-[11px] font-bold truncate max-w-[120px]"
+                            style={{ color }}
+                          >
+                            {item.feedLabel}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1 text-[11px] text-muted-foreground/60 shrink-0">
+                          <Clock className="h-3 w-3" />
+                          {timeAgo(pub)}
+                        </div>
+                      </div>
+
+                      {/* Title */}
+                      <h3 className="text-sm font-bold text-white leading-snug mb-2 group-hover:text-indigo-100 transition-colors line-clamp-3">
+                        {item.title}
+                      </h3>
+
+                      {/* Summary */}
+                      {item.summary && (
+                        <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3 flex-1">
+                          {item.summary}
+                        </p>
+                      )}
+
+                      {/* Footer */}
+                      <div className="flex items-center justify-between mt-4 pt-3 border-t border-white/5">
+                        <span className="text-[11px] text-muted-foreground/50 font-mono truncate max-w-[60%]">
+                          {domain}
+                        </span>
+                        <div className="flex items-center gap-1 text-[11px] text-muted-foreground group-hover:text-indigo-400 transition-colors">
+                          Read article
+                          <ExternalLink className="h-3 w-3" />
+                        </div>
+                      </div>
+                    </div>
+                  </motion.article>
+                );
+              })}
+            </AnimatePresence>
+          </div>
+        )}
+      </main>
+
+      {/* ── Manage Feeds Sidebar ─────────────────────────── */}
+      <AnimatePresence>
+        {showSidebar && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+              onClick={() => setShowSidebar(false)}
+            />
+
+            {/* Drawer */}
+            <motion.aside
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 28, stiffness: 260 }}
+              className="fixed top-0 right-0 z-50 h-full w-full max-w-sm bg-[#0d0f18] border-l border-white/8 shadow-2xl flex flex-col overflow-hidden"
+            >
+              {/* Sidebar Header */}
+              <div className="flex items-center justify-between px-5 py-4 border-b border-white/5">
+                <div className="flex items-center gap-2.5">
+                  <div className="h-8 w-8 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
+                    <Rss className="h-4 w-4 text-indigo-400" />
+                  </div>
+                  <div>
+                    <h2 className="text-sm font-bold text-white">Feed Manager</h2>
+                    <p className="text-[10px] text-muted-foreground">{feeds.length} active sources</p>
                   </div>
                 </div>
+                <button
+                  onClick={() => setShowSidebar(false)}
+                  className="h-8 w-8 rounded-xl flex items-center justify-center text-muted-foreground hover:text-white hover:bg-white/5 transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
 
-                {/* Suggested feeds helper */}
+              {/* Add Feed Form */}
+              <div className="p-5 border-b border-white/5 space-y-3">
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Add New Feed</p>
+                <Input
+                  placeholder="https://feed.example.com/rss"
+                  value={newFeedUrl}
+                  onChange={(e) => setNewFeedUrl(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleAddFeed()}
+                  className="text-xs font-mono rounded-xl bg-white/5 border-white/10 h-9 text-white placeholder:text-muted-foreground/60"
+                />
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Label (optional)"
+                    value={newFeedLabel}
+                    onChange={(e) => setNewFeedLabel(e.target.value)}
+                    className="text-xs rounded-xl bg-white/5 border-white/10 h-9 text-white"
+                  />
+                  <Button
+                    onClick={() => handleAddFeed()}
+                    disabled={isAddingFeed || !newFeedUrl.trim()}
+                    className="h-9 px-4 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-white gap-1.5 text-xs font-bold shrink-0"
+                  >
+                    {isAddingFeed ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
+                    Add
+                  </Button>
+                </div>
+
+                {/* Quick suggestions */}
                 {SUGGESTED_FEEDS.filter((s) => !feeds.some((f) => f.feed_url === s.url)).length > 0 && (
                   <div>
-                    <p className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground mb-2">Recommended feeds:</p>
+                    <p className="text-[9px] text-muted-foreground/60 uppercase tracking-widest mb-1.5">Quick add</p>
                     <div className="flex flex-wrap gap-1.5">
                       {SUGGESTED_FEEDS.filter((s) => !feeds.some((f) => f.feed_url === s.url)).map((s) => (
                         <button
                           key={s.url}
                           onClick={() => handleAddFeed(s.url, s.label)}
                           disabled={isAddingFeed}
-                          className="inline-flex items-center gap-1.5 rounded-full border border-white/10 px-3 py-1 text-[11px] text-muted-foreground bg-white/[0.01] hover:text-white hover:border-indigo-500/40 hover:bg-indigo-500/5 transition-all duration-300 disabled:opacity-40"
+                          className="inline-flex items-center gap-1.5 rounded-full border border-white/10 px-2.5 py-1 text-[10px] text-muted-foreground hover:text-white hover:border-white/20 transition-all disabled:opacity-40"
                         >
-                          <Rss className="h-3 w-3" />
+                          <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: s.color }} />
                           {s.label}
                         </button>
                       ))}
                     </div>
                   </div>
                 )}
+              </div>
 
-                {/* Feed item list */}
-                <div className="max-h-96 overflow-y-auto pr-1 space-y-2">
-                  <AnimatePresence>
-                    {feeds.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center py-8 text-center border border-dashed border-white/5 rounded-2xl bg-white/[0.01]">
-                        <Rss className="w-8 h-8 text-muted-foreground/30 mb-2" />
-                        <p className="text-xs text-muted-foreground">Add RSS/Atom feeds to start compiling your digest.</p>
-                      </div>
-                    ) : (
-                      feeds.map((feed) => (
+              {/* Feed List */}
+              <div className="flex-1 overflow-y-auto p-5 space-y-2">
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3">Your Sources</p>
+                <AnimatePresence>
+                  {feeds.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-12 text-center border border-dashed border-white/8 rounded-2xl">
+                      <Globe className="h-8 w-8 text-muted-foreground/20 mb-2" />
+                      <p className="text-xs text-muted-foreground">No feeds added yet</p>
+                    </div>
+                  ) : (
+                    feeds.map((feed) => {
+                      const color = getDomainColor(feed.label || "");
+                      return (
                         <motion.div
                           key={feed.id}
                           layout
-                          initial={{ opacity: 0, scale: 0.98 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          exit={{ opacity: 0, scale: 0.98 }}
-                          className="flex items-center gap-3 rounded-xl border border-white/5 bg-white/[0.02] px-3.5 py-2.5 group hover:border-indigo-500/20 hover:bg-indigo-500/[0.01] transition-all duration-300"
+                          initial={{ opacity: 0, x: 10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: 10 }}
+                          className="flex items-center gap-3 rounded-xl border border-white/5 bg-white/[0.02] px-3.5 py-2.5 group hover:border-white/10 hover:bg-white/[0.04] transition-all"
                         >
-                          <div className="h-7 w-7 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-400 shrink-0">
-                            <Globe className="h-3.5 w-3.5" />
+                          <div
+                            className="h-7 w-7 rounded-lg flex items-center justify-center text-xs font-bold shrink-0"
+                            style={{ backgroundColor: `${color}20`, border: `1px solid ${color}30`, color }}
+                          >
+                            {(feed.label || "?").charAt(0).toUpperCase()}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-xs font-bold text-white truncate">
-                              {feed.label || "Untitled Stream"}
-                            </p>
+                            <p className="text-xs font-bold text-white truncate">{feed.label || "Untitled"}</p>
                             <p className="text-[10px] text-muted-foreground truncate font-mono mt-0.5">{feed.feed_url}</p>
                           </div>
-                          <div className="flex items-center gap-1.5">
+                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                             <a
                               href={feed.feed_url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-muted-foreground hover:text-white transition-colors p-1"
-                              title="Open original feed"
+                              onClick={(e) => e.stopPropagation()}
+                              className="p-1 text-muted-foreground hover:text-white transition-colors"
                             >
                               <ExternalLink className="h-3.5 w-3.5" />
                             </a>
                             <button
                               onClick={() => handleRemoveFeed(feed.id)}
                               disabled={deletingFeedId === feed.id}
-                              className="text-muted-foreground hover:text-red-400 transition-colors p-1 focus:outline-none"
-                              title="Delete stream"
+                              className="p-1 text-muted-foreground hover:text-red-400 transition-colors"
                             >
-                              {deletingFeedId === feed.id ? (
-                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                              ) : (
-                                <Trash2 className="h-3.5 w-3.5" />
-                              )}
+                              {deletingFeedId === feed.id
+                                ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                : <Trash2 className="h-3.5 w-3.5" />}
                             </button>
                           </div>
                         </motion.div>
-                      ))
-                    )}
-                  </AnimatePresence>
-                </div>
-              </div>
-            </motion.section>
-          </div>
-
-          {/* RIGHT PANEL: LIVE PREVIEW & INTERACTIVE MOCK INBOX */}
-          <div className={`lg:col-span-7 space-y-6 ${activeMobileTab === "preview" ? "block" : "hidden lg:block"}`}>
-            
-            {/* Quick Actions Panel */}
-            <motion.section
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="rounded-3xl border border-white/5 bg-slate-950/40 backdrop-blur-md p-5 shadow-xl flex flex-col sm:flex-row gap-4 items-center justify-between"
-            >
-              <div>
-                <h2 className="text-sm font-bold text-white">Compile & Dispatch</h2>
-                <p className="text-[11px] text-muted-foreground mt-0.5">Generate a preview instantly or test delivery to your inbox.</p>
-              </div>
-              <div className="flex gap-2.5 w-full sm:w-auto shrink-0">
-                <Button
-                  variant="outline"
-                  className="flex-1 sm:flex-initial gap-2 border-white/10 hover:bg-white/5 rounded-xl h-10 text-xs font-semibold"
-                  onClick={handlePreview}
-                  disabled={isGeneratingPreview || !feeds.length}
-                >
-                  {isGeneratingPreview ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin text-indigo-400" />
-                  ) : (
-                    <Eye className="h-3.5 w-3.5 text-indigo-400" />
-                  )}
-                  Preview
-                </Button>
-                <Button
-                  className="flex-1 sm:flex-initial gap-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl h-10 text-xs font-bold transition-all"
-                  onClick={handleSendNow}
-                  disabled={isSending || !prefs}
-                >
-                  {isSending ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <Send className="h-3.5 w-3.5" />
-                  )}
-                  Send test email
-                </Button>
-              </div>
-            </motion.section>
-
-            {/* High-Fidelity Mock Inbox Container */}
-            <motion.section
-              initial={{ opacity: 0, scale: 0.99 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.4 }}
-              className="rounded-3xl border border-white/5 bg-slate-950/60 shadow-2xl relative overflow-hidden"
-            >
-              {/* Browser mockup controls */}
-              <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/5 bg-[#0f1118]">
-                <div className="flex items-center gap-1.5">
-                  <span className="h-3 w-3 rounded-full bg-red-500/70" />
-                  <span className="h-3 w-3 rounded-full bg-yellow-500/70" />
-                  <span className="h-3 w-3 rounded-full bg-green-500/70" />
-                </div>
-                <span className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest font-mono">
-                  Weekly Brief Viewer
-                </span>
-                <div className="w-12" /> {/* alignment spacer */}
-              </div>
-
-              {/* Email Client Metadata Header */}
-              {previewHtml && (
-                <div className="px-6 py-4 bg-[#11131c] border-b border-white/5 flex flex-col gap-1.5 text-xs text-muted-foreground">
-                  <p><span className="font-semibold text-white/50">From:</span> Beseekr AI Digest &lt;noreply@support.beseekr.com&gt;</p>
-                  <p><span className="font-semibold text-white/50">To:</span> {prefs?.email || "you@example.com"}</p>
-                  <p><span className="font-semibold text-white/50">Subject:</span> 🧠 Your Weekly Digest — {new Date().toLocaleDateString("en-US", { month: "long", day: "numeric" })}</p>
-                </div>
-              )}
-
-              {/* Live Preview Display Box */}
-              <div className="p-1 min-h-[460px] bg-slate-900/10 flex flex-col justify-center">
-                <AnimatePresence mode="wait">
-                  {previewHtml ? (
-                    <motion.div
-                      key="preview-content"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      className="w-full flex flex-col"
-                    >
-                      <iframe
-                        srcDoc={previewHtml}
-                        title="Digest email preview"
-                        className="w-full rounded-2xl bg-white"
-                        style={{ height: "550px", border: "none" }}
-                        sandbox="allow-same-origin"
-                      />
-                    </motion.div>
-                  ) : (
-                    <motion.div
-                      key="empty-state"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      className="flex flex-col items-center justify-center text-center p-8 py-14"
-                    >
-                      {/* Premium Asset Illustration */}
-                      <motion.div 
-                        animate={{ y: [0, -10, 0] }}
-                        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-                        className="relative w-56 h-56 rounded-3xl overflow-hidden mb-8 shadow-2xl border border-white/5 shadow-indigo-500/5 group"
-                      >
-                        <img 
-                          src="/images/weekly_digest_illustration.png" 
-                          alt="Futuristic Digest Illustration" 
-                          className="object-cover w-full h-full transform scale-105 group-hover:scale-110 transition-transform duration-1000"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-80" />
-                      </motion.div>
-
-                      <div className="max-w-sm">
-                        <h3 className="text-lg font-bold text-white flex items-center justify-center gap-2">
-                          <Inbox className="w-5 h-5 text-indigo-400" />
-                          No digest generated
-                        </h3>
-                        <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
-                          Once you add your feed streams above, click <strong>"Preview"</strong> to see how your weekly synthesized newsletter compiles.
-                        </p>
-                      </div>
-                    </motion.div>
+                      );
+                    })
                   )}
                 </AnimatePresence>
               </div>
 
-              {/* Close Button / Bottom control if preview active */}
-              {previewHtml && (
-                <div className="flex justify-end p-3 border-t border-white/5 bg-[#0f1118]">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setPreviewHtml(null)}
-                    className="text-xs font-semibold text-muted-foreground hover:text-white gap-1.5"
+              {/* Footer note */}
+              <div className="px-5 py-3 border-t border-white/5">
+                <p className="text-[10px] text-muted-foreground/60 text-center leading-relaxed">
+                  Weekly email digest settings are in your{" "}
+                  <button
+                    onClick={() => navigate("/profile")}
+                    className="text-indigo-400 hover:text-indigo-300 transition-colors underline underline-offset-2"
                   >
-                    Clear Preview
-                    <X className="w-3.5 h-3.5" />
-                  </Button>
-                </div>
-              )}
-            </motion.section>
-          </div>
-
-        </div>
-      </main>
+                    Profile
+                  </button>
+                  {" "}page.
+                </p>
+              </div>
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
