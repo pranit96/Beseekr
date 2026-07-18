@@ -6,14 +6,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useQueryClient } from "@tanstack/react-query";
 import {
   useDigestFeeds,
   useDigestFeedItems,
   useAddDigestFeed,
   useRemoveDigestFeed,
   useSendDigest,
-  queryKeys,
 } from "@/hooks/use-api-queries";
 import { DiscoverPanel } from "@/components/DiscoverPanel";
 import {
@@ -110,11 +108,13 @@ interface FeedItem {
 export default function Digest() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   // UI state only (no fetch state needed)
   const [showSidebar, setShowSidebar] = useState(false);
-  const [sidebarMode, setSidebarMode] = useState<"manage" | "discover">("manage");
+  const [sidebarMode, setSidebarMode] = useState<"manage" | "discover">(
+    "manage",
+  );
   const [newFeedUrl, setNewFeedUrl] = useState("");
   const [newFeedLabel, setNewFeedLabel] = useState("");
   const [selectedSource, setSelectedSource] = useState<string | null>(null);
@@ -265,7 +265,7 @@ export default function Digest() {
               onClick={() => openSidebar("discover")}
               variant="outline"
               size="sm"
-              className="h-9 gap-2 border-white/10 hover:bg-white/5 rounded-xl text-xs font-semibold text-indigo-300 border-indigo-500/20"
+              className="h-9 gap-2 border border-indigo-500/20 hover:bg-white/5 rounded-xl text-xs font-semibold text-indigo-300"
             >
               <Compass className="h-3.5 w-3.5" />
               Discover
@@ -484,7 +484,40 @@ export default function Digest() {
 
                       {item.summary && (
                         <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3 flex-1">
-                      <motion.aside
+                          {item.summary}
+                        </p>
+                      )}
+
+                      <div className="flex items-center justify-between mt-4 pt-3 border-t border-white/5">
+                        <span className="text-[11px] text-muted-foreground/50 font-mono truncate max-w-[60%]">
+                          {domain}
+                        </span>
+                        <div className="flex items-center gap-1 text-[11px] text-muted-foreground group-hover:text-indigo-400 transition-colors">
+                          Read article <ExternalLink className="h-3 w-3" />
+                        </div>
+                      </div>
+                    </div>
+                  </motion.article>
+                );
+              })}
+            </AnimatePresence>
+          </div>
+        )}
+      </main>
+
+      {/* ── Manage Feeds Sidebar ─────────────────────────── */}
+      <AnimatePresence>
+        {showSidebar && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+              onClick={() => setShowSidebar(false)}
+            />
+
+            <motion.aside
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
@@ -503,16 +536,24 @@ export default function Digest() {
                   </div>
                   <div>
                     <h2 className="text-sm font-bold text-white">
-                      {sidebarMode === "discover" ? "Discover Feeds" : "Feed Manager"}
+                      {sidebarMode === "discover"
+                        ? "Discover Feeds"
+                        : "Feed Manager"}
                     </h2>
                     <p className="text-[10px] text-muted-foreground">
-                      {sidebarMode === "discover" ? "Browse curated RSS sources" : `${feeds.length} active sources`}
+                      {sidebarMode === "discover"
+                        ? "Browse curated RSS sources"
+                        : `${feeds.length} active sources`}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={() => setSidebarMode(sidebarMode === "manage" ? "discover" : "manage")}
+                    onClick={() =>
+                      setSidebarMode(
+                        sidebarMode === "manage" ? "discover" : "manage",
+                      )
+                    }
                     className="text-[10px] font-bold text-indigo-400 hover:text-indigo-300 transition-colors mr-1"
                   >
                     {sidebarMode === "manage" ? "Discover →" : "← My Feeds"}
@@ -539,7 +580,9 @@ export default function Digest() {
                       className="flex-1 overflow-hidden flex flex-col"
                     >
                       <DiscoverPanel
-                        existingFeedUrls={(feeds as any[]).map((f) => f.feed_url)}
+                        existingFeedUrls={(feeds as any[]).map(
+                          (f) => f.feed_url,
+                        )}
                         onClose={() => setShowSidebar(false)}
                       />
                     </motion.div>
@@ -560,7 +603,9 @@ export default function Digest() {
                           placeholder="https://feed.example.com/rss"
                           value={newFeedUrl}
                           onChange={(e) => setNewFeedUrl(e.target.value)}
-                          onKeyDown={(e) => e.key === "Enter" && handleAddFeed()}
+                          onKeyDown={(e) =>
+                            e.key === "Enter" && handleAddFeed()
+                          }
                           className="text-xs font-mono rounded-xl bg-white/5 border-white/10 h-9 text-white placeholder:text-muted-foreground/60"
                         />
                         <div className="flex gap-2">
@@ -594,7 +639,8 @@ export default function Digest() {
                             </p>
                             <div className="flex flex-wrap gap-1.5">
                               {SUGGESTED_FEEDS.filter(
-                                (s) => !feeds.some((f: any) => f.feed_url === s.url),
+                                (s) =>
+                                  !feeds.some((f: any) => f.feed_url === s.url),
                               ).map((s) => (
                                 <button
                                   key={s.url}
@@ -647,7 +693,9 @@ export default function Digest() {
                                       color,
                                     }}
                                   >
-                                    {(feed.label || "?").charAt(0).toUpperCase()}
+                                    {(feed.label || "?")
+                                      .charAt(0)
+                                      .toUpperCase()}
                                   </div>
                                   <div className="flex-1 min-w-0">
                                     <p className="text-xs font-bold text-white truncate">
