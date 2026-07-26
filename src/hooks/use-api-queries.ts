@@ -1057,6 +1057,37 @@ export function useSendDigest() {
   });
 }
 
+/** Update only the digest cadence (daily | weekly). Invalidates preferences cache. */
+export function useUpdateDigestCadence() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: (cadence: "daily" | "weekly") =>
+      apiClient.upsertDigestPreferences({ cadence }),
+    onSuccess: (_res, cadence) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.digestPreferences });
+      toast({
+        title:
+          cadence === "daily"
+            ? "Daily digest enabled"
+            : "Weekly digest enabled",
+        description:
+          cadence === "daily"
+            ? "You'll receive a briefing every morning."
+            : "You'll receive a briefing every Sunday.",
+      });
+    },
+    onError: (err: Error) => {
+      toast({
+        title: "Failed to update cadence",
+        description: err.message,
+        variant: "destructive",
+      });
+    },
+  });
+}
+
 // ============= SECOND BRAIN =============
 
 /**

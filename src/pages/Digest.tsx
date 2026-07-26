@@ -9,9 +9,11 @@ import { Input } from "@/components/ui/input";
 import {
   useDigestFeeds,
   useDigestFeedItems,
+  useDigestPreferences,
   useAddDigestFeed,
   useRemoveDigestFeed,
   useSendDigest,
+  useUpdateDigestCadence,
 } from "@/hooks/use-api-queries";
 import { DiscoverPanel } from "@/components/DiscoverPanel";
 import {
@@ -136,6 +138,9 @@ export default function Digest() {
   const addFeed = useAddDigestFeed();
   const removeFeed = useRemoveDigestFeed();
   const sendDigest = useSendDigest();
+  const { data: digestPrefs } = useDigestPreferences(isAuthed);
+  const updateCadence = useUpdateDigestCadence();
+  const currentCadence = (digestPrefs as any)?.cadence ?? "weekly";
 
   // ── Derived state ─────────────────────────────────────────────────────────
   const sources = Array.from(
@@ -738,17 +743,45 @@ export default function Digest() {
                         </AnimatePresence>
                       </div>
 
-                      {/* Footer Info */}
-                      <div className="px-5 py-3 border-t border-white/5 shrink-0">
-                        <p className="text-[10px] text-muted-foreground/60 text-center leading-relaxed">
-                          Weekly email digest settings are in your{" "}
+                      {/* Delivery Cadence */}
+                      <div className="px-5 py-4 border-t border-white/5 shrink-0 space-y-2.5">
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                          Delivery Cadence
+                        </p>
+                        <div className="flex gap-2">
                           <button
-                            onClick={() => navigate("/profile")}
-                            className="text-indigo-400 hover:text-indigo-300 transition-colors underline underline-offset-2"
+                            onClick={() =>
+                              currentCadence !== "daily" &&
+                              updateCadence.mutate("daily")
+                            }
+                            disabled={updateCadence.isPending}
+                            className={`flex-1 rounded-xl border px-3 py-2.5 text-xs font-semibold transition-all ${
+                              currentCadence === "daily"
+                                ? "bg-indigo-500/20 border-indigo-500/40 text-indigo-300"
+                                : "border-white/10 text-muted-foreground hover:border-white/20 hover:text-white"
+                            }`}
                           >
-                            Profile
-                          </button>{" "}
-                          page.
+                            ☀️ Daily
+                          </button>
+                          <button
+                            onClick={() =>
+                              currentCadence !== "weekly" &&
+                              updateCadence.mutate("weekly")
+                            }
+                            disabled={updateCadence.isPending}
+                            className={`flex-1 rounded-xl border px-3 py-2.5 text-xs font-semibold transition-all ${
+                              currentCadence === "weekly"
+                                ? "bg-indigo-500/20 border-indigo-500/40 text-indigo-300"
+                                : "border-white/10 text-muted-foreground hover:border-white/20 hover:text-white"
+                            }`}
+                          >
+                            📅 Weekly
+                          </button>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground/50 leading-relaxed">
+                          {currentCadence === "daily"
+                            ? "Sent every morning at 10:00 AM IST."
+                            : "Sent every Sunday at 10:00 AM IST."}
                         </p>
                       </div>
                     </motion.div>

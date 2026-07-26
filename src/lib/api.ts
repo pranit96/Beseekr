@@ -1681,6 +1681,7 @@ class ApiClient {
     email?: string;
     style?: "bullets" | "narrative" | "eli5";
     enabled?: boolean;
+    cadence?: "daily" | "weekly";
   }) {
     return this.put<any>("/api/digest/preferences", prefs);
   }
