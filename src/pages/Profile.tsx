@@ -187,6 +187,9 @@ export default function Profile() {
     "bullets" | "narrative" | "eli5"
   >("bullets");
   const [digestEnabled, setDigestEnabled] = useState(false);
+  const [digestCadence, setDigestCadence] = useState<"daily" | "weekly">(
+    "weekly",
+  );
   const [loadingDigestPrefs, setLoadingDigestPrefs] = useState(false);
   const [savingDigestPrefs, setSavingDigestPrefs] = useState(false);
 
@@ -200,6 +203,7 @@ export default function Profile() {
           setDigestEmail(res.data.email || user?.email || "");
           setDigestStyle(res.data.style || "bullets");
           setDigestEnabled(res.data.enabled ?? false);
+          setDigestCadence(res.data.cadence || "weekly");
         } else {
           setDigestEmail(user?.email || "");
         }
@@ -231,6 +235,7 @@ export default function Profile() {
         email: digestEmail.trim(),
         style: digestStyle,
         enabled: digestEnabled,
+        cadence: digestCadence,
       });
 
       if (res.success && res.data) {
@@ -378,6 +383,7 @@ export default function Profile() {
                 email: digestEmail || user?.email || "",
                 style: digestStyle,
                 enabled: newValue,
+                cadence: digestCadence,
               })
               .catch((err) =>
                 console.error("Failed to sync digest preference:", err),
@@ -737,11 +743,11 @@ export default function Profile() {
 
             <div className="pt-6 border-t border-border/40">
               <h2 className="text-lg font-medium text-foreground">
-                Weekly Personal Digest Configurations
+                Personal Digest Configurations
               </h2>
               <p className="text-sm text-muted-foreground mt-1">
-                Configure your newsletter delivery email, layout design, and
-                summary style.
+                Configure your digest delivery email, cadence, layout design,
+                and summary style.
               </p>
             </div>
 
@@ -755,10 +761,10 @@ export default function Profile() {
                 <div className="flex items-center justify-between pb-4 border-b border-border/40">
                   <div>
                     <div className="font-medium text-sm">
-                      Weekly Digest Dispatch
+                      Digest Dispatch
                     </div>
                     <div className="text-xs text-muted-foreground mt-0.5">
-                      Check this to receive compiled briefs on Sundays.
+                      Enable to receive compiled briefs on your chosen cadence.
                     </div>
                   </div>
                   <Switch
@@ -816,6 +822,41 @@ export default function Profile() {
                         </button>
                       ),
                     )}
+                  </div>
+                </div>
+
+                {/* Cadence Picker */}
+                <div>
+                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-3">
+                    Delivery Cadence
+                  </label>
+                  <div className="grid grid-cols-2 gap-3 max-w-xs">
+                    <button
+                      onClick={() => setDigestCadence("daily")}
+                      className={`rounded-xl border p-3 text-left text-xs font-semibold transition-all ${
+                        digestCadence === "daily"
+                          ? "bg-indigo-500/10 border-indigo-500/40 text-indigo-400"
+                          : "border-border bg-white/[0.01] hover:bg-muted/40 text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      ☀️ Daily
+                      <p className="text-[10px] font-normal mt-1 text-muted-foreground">
+                        Every morning
+                      </p>
+                    </button>
+                    <button
+                      onClick={() => setDigestCadence("weekly")}
+                      className={`rounded-xl border p-3 text-left text-xs font-semibold transition-all ${
+                        digestCadence === "weekly"
+                          ? "bg-indigo-500/10 border-indigo-500/40 text-indigo-400"
+                          : "border-border bg-white/[0.01] hover:bg-muted/40 text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      📅 Weekly
+                      <p className="text-[10px] font-normal mt-1 text-muted-foreground">
+                        Every Sunday
+                      </p>
+                    </button>
                   </div>
                 </div>
 
