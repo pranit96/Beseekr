@@ -84,6 +84,7 @@ import {
 import { useTheme } from "@/hooks/use-theme";
 import { apiClient } from "@/lib/api";
 import { useTranslation } from "react-i18next";
+import { GlobalHeader } from "@/components/GlobalHeader";
 import { ChangePasswordDialog } from "@/components/profile/ChangePasswordDialog";
 import { TwoFactorSection } from "@/components/profile/TwoFactorSection";
 import { SessionsSection } from "@/components/profile/SessionsSection";
@@ -110,6 +111,17 @@ export default function Profile() {
     const hash = window.location.hash.replace("#", "");
     return SIDEBAR_NAV.some((item) => item.id === hash) ? hash : "general";
   });
+
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.replace("#", "");
+      if (SIDEBAR_NAV.some((item) => item.id === hash)) {
+        setActiveTab(hash);
+      }
+    };
+    window.addEventListener("hashchange", handleHashChange);
+    return () => window.removeEventListener("hashchange", handleHashChange);
+  }, []);
 
   // States
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -1067,99 +1079,102 @@ export default function Profile() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-4 sm:py-8 h-[calc(100vh-8rem)] flex flex-col">
-      <div className="mb-6 flex-shrink-0">
-        <h1 className="text-3xl font-semibold tracking-tight text-foreground">
-          {t("profile.settings")}
-        </h1>
-        <p className="text-muted-foreground mt-2">
-          {t("profile.manageAccount")}
-        </p>
+    <div className="min-h-screen flex flex-col bg-background text-foreground">
+      <GlobalHeader />
+      <div className="max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-4 sm:py-8 flex-1 flex flex-col min-h-0">
+        <div className="mb-6 flex-shrink-0">
+          <h1 className="text-3xl font-semibold tracking-tight text-foreground">
+            {t("profile.settings")}
+          </h1>
+          <p className="text-muted-foreground mt-2">
+            {t("profile.manageAccount")}
+          </p>
+        </div>
+
+        <div className="flex flex-col md:flex-row gap-8 lg:gap-12 flex-1 min-h-0">
+          {/* Sidebar Navigation */}
+          <aside className="md:w-64 flex-shrink-0">
+            <nav className="flex md:flex-col gap-1 overflow-x-auto md:overflow-visible pb-4 md:pb-0 hide-scrollbar">
+              {SIDEBAR_NAV.map((item) => {
+                const Icon = item.icon;
+                const isActive = activeTab === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => {
+                      setActiveTab(item.id);
+                      window.location.hash = item.id;
+                    }}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+                      isActive
+                        ? "bg-primary/10 text-primary"
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                    }`}
+                  >
+                    <Icon
+                      className={`w-4 h-4 ${isActive ? "text-primary" : "opacity-70"}`}
+                    />
+                    {t(`profile.${item.id}`, item.label)}
+                  </button>
+                );
+              })}
+            </nav>
+          </aside>
+
+          {/* Main Content Area */}
+          <main className="flex-1 min-w-0 overflow-y-auto pr-2 pb-8">
+            {renderContent()}
+          </main>
+        </div>
+
+        <AlertDialog
+          open={isDeleteDialogOpen}
+          onOpenChange={setIsDeleteDialogOpen}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-destructive flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5" />
+                Delete Account
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. All your data, settings, and history
+                will be permanently deleted from our servers.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="py-4 space-y-3">
+              <Label htmlFor="confirm-email">
+                Please type your email to confirm
+              </Label>
+              <Input
+                id="confirm-email"
+                type="email"
+                placeholder={user?.email}
+                value={confirmEmail}
+                onChange={(e) => setConfirmEmail(e.target.value)}
+                className="font-mono"
+              />
+            </div>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setConfirmEmail("")}>
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeleteAccount}
+                disabled={confirmEmail !== user?.email}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Confirm Deletion
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        <ChangePasswordDialog
+          open={showChangePassword}
+          onOpenChange={setShowChangePassword}
+        />
       </div>
-
-      <div className="flex flex-col md:flex-row gap-8 lg:gap-12 flex-1 min-h-0">
-        {/* Sidebar Navigation */}
-        <aside className="md:w-64 flex-shrink-0">
-          <nav className="flex md:flex-col gap-1 overflow-x-auto md:overflow-visible pb-4 md:pb-0 hide-scrollbar">
-            {SIDEBAR_NAV.map((item) => {
-              const Icon = item.icon;
-              const isActive = activeTab === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => {
-                    setActiveTab(item.id);
-                    window.location.hash = item.id;
-                  }}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
-                    isActive
-                      ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                  }`}
-                >
-                  <Icon
-                    className={`w-4 h-4 ${isActive ? "text-primary" : "opacity-70"}`}
-                  />
-                  {t(`profile.${item.id}`, item.label)}
-                </button>
-              );
-            })}
-          </nav>
-        </aside>
-
-        {/* Main Content Area */}
-        <main className="flex-1 min-w-0 overflow-y-auto pr-2 pb-8">
-          {renderContent()}
-        </main>
-      </div>
-
-      <AlertDialog
-        open={isDeleteDialogOpen}
-        onOpenChange={setIsDeleteDialogOpen}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-destructive flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5" />
-              Delete Account
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. All your data, settings, and history
-              will be permanently deleted from our servers.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <div className="py-4 space-y-3">
-            <Label htmlFor="confirm-email">
-              Please type your email to confirm
-            </Label>
-            <Input
-              id="confirm-email"
-              type="email"
-              placeholder={user?.email}
-              value={confirmEmail}
-              onChange={(e) => setConfirmEmail(e.target.value)}
-              className="font-mono"
-            />
-          </div>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setConfirmEmail("")}>
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteAccount}
-              disabled={confirmEmail !== user?.email}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Confirm Deletion
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <ChangePasswordDialog
-        open={showChangePassword}
-        onOpenChange={setShowChangePassword}
-      />
     </div>
   );
 }
