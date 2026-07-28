@@ -200,10 +200,11 @@ export function VisionCollage({
     setSearchingUnsplash(true);
     try {
       const res = await visionBoardApi.searchUnsplash(q);
-      if (res?.data && Array.isArray(res.data)) {
-        setUnsplashPhotos(res.data);
-        if (res.data.length > 0 && !selectedUnsplashUrl) {
-          setSelectedUnsplashUrl(res.data[0].url);
+      const photos = (res as any)?.data?.data || (Array.isArray((res as any)?.data) ? (res as any).data : []);
+      if (Array.isArray(photos) && photos.length > 0) {
+        setUnsplashPhotos(photos);
+        if (!selectedUnsplashUrl) {
+          setSelectedUnsplashUrl(photos[0].url);
         }
       }
     } catch (err: any) {
@@ -212,6 +213,7 @@ export function VisionCollage({
       setSearchingUnsplash(false);
     }
   };
+
 
   useEffect(() => {
     if (showForm && mode === "unsplash" && unsplashPhotos.length === 0) {
@@ -379,17 +381,18 @@ export function VisionCollage({
               {mode === "unsplash" ? (
                 <div className="mb-4">
                   <div className="flex items-center gap-2 mb-2">
-                    <div className="relative flex-1">
+                    <div className="relative flex-1 flex items-center">
+                      <Search size={14} className="absolute left-3 text-amber-600/80 pointer-events-none z-10" />
                       <input
                         type="text"
-                        placeholder="Search Unsplash (e.g. sunset, workspace, nature)..."
+                        placeholder="Search Unsplash (e.g. sunset, workspace)..."
                         value={unsplashQuery}
                         onChange={(e) => setUnsplashQuery(e.target.value)}
                         onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleSearchUnsplash())}
-                        className="vb-form-input !mb-0 text-xs pl-8"
+                        className="vb-form-input !mb-0 text-xs !pl-9 w-full"
                       />
-                      <Search size={13} className="absolute left-2.5 top-3 text-muted-foreground" />
                     </div>
+
                     <button
                       type="button"
                       onClick={() => handleSearchUnsplash()}
