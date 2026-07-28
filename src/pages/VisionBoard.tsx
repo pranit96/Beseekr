@@ -17,6 +17,7 @@ import type {
   HabitLog, BoardNotes, BoardMonth, WeatherData,
 } from "@/api/visionboard";
 
+import { GlobalHeader }     from "@/components/GlobalHeader";
 import { BoardHeader }     from "@/components/visionboard/BoardHeader";
 import { WeatherStrip }    from "@/components/visionboard/WeatherStrip";
 import { VisionCollage }   from "@/components/visionboard/VisionCollage";
@@ -367,15 +368,18 @@ export default function VisionBoard() {
   // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
-    <div className="vb-page">
-      {/* Google Fonts */}
-      <link
-        href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Caveat:wght@400;600&family=Lora:ital,wght@0,400;0,500;1,400&display=swap"
-        rel="stylesheet"
-      />
+    <div className="min-h-screen bg-background text-foreground flex flex-col selection:bg-amber-500/30">
+      <GlobalHeader />
+      <main className="flex-1 w-full max-w-[1550px] mx-auto px-4 sm:px-8 py-8">
+        <div className="vb-page">
+          {/* Google Fonts */}
+          <link
+            href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Caveat:wght@400;600&family=Lora:ital,wght@0,400;0,500;1,400&display=swap"
+            rel="stylesheet"
+          />
 
-      {/* CSS Variables + Styles */}
-      <style>{BOARD_STYLES}</style>
+          {/* CSS Variables + Styles */}
+          <style>{BOARD_STYLES}</style>
 
       {/* ── Loading ── */}
       {isLoading && (
@@ -494,6 +498,8 @@ export default function VisionBoard() {
           </motion.div>
         )}
       </AnimatePresence>
+        </div>
+      </main>
     </div>
   );
 }
@@ -503,7 +509,7 @@ export default function VisionBoard() {
 // Warm beige palette, paper texture, artistic fonts.
 
 const BOARD_STYLES = `
-  /* ── Fonts ─────────────────────────────── */
+  /* ── Fonts & Light/Dark Theme Tokens ─────────────────────────────── */
   .vb-page {
     --vb-parchment:   #F5ECD7;
     --vb-linen:       #EDE0C4;
@@ -515,13 +521,30 @@ const BOARD_STYLES = `
     --vb-muted-ink:   #6B5A4E;
     --vb-blush:       #D4A09A;
     --vb-cream:       #FAF5EB;
-    --vb-border:      rgba(59,47,47,0.12);
+    --vb-border:      rgba(59,47,47,0.14);
     --vb-shadow:      rgba(59,47,47,0.08);
     font-family: 'Lora', Georgia, serif;
     color: var(--vb-ink);
-    max-width: 1100px;
+    max-width: 1500px;
     margin: 0 auto;
     padding: 0 0 64px;
+  }
+
+  /* Dark mode Cork & Leather Scrapbook Theme */
+  .dark .vb-page,
+  :root[class~="dark"] .vb-page {
+    --vb-parchment:   #231F1C;
+    --vb-linen:       #2D2622;
+    --vb-aged:        #423933;
+    --vb-terracotta:  #E07A4F;
+    --vb-sage:        #9DB497;
+    --vb-taupe:       #C2A888;
+    --vb-ink:         #F5ECD7;
+    --vb-muted-ink:   #D4C4B5;
+    --vb-blush:       #E2A9A3;
+    --vb-cream:       #1A1614;
+    --vb-border:      rgba(245,236,215,0.15);
+    --vb-shadow:      rgba(0,0,0,0.4);
   }
 
   /* ── Loading ─────────────────────────────── */
@@ -735,9 +758,15 @@ const BOARD_STYLES = `
   /* ── Three-column layout ─────────────────── */
   .vb-three-col {
     display: grid;
-    grid-template-columns: 180px 1fr 180px;
-    gap: 14px;
-    margin-bottom: 16px;
+    grid-template-columns: 240px 1fr 260px;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+  @media (max-width: 1024px) {
+    .vb-three-col {
+      grid-template-columns: 200px 1fr 200px;
+      gap: 12px;
+    }
   }
   @media (max-width: 768px) {
     .vb-three-col {
@@ -854,22 +883,23 @@ const BOARD_STYLES = `
   /* ── Vision Collage ──────────────────────── */
   .vb-collage-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-    gap: 12px;
-    min-height: 140px;
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    gap: 16px;
+    min-height: 160px;
   }
   .vb-vision-card {
     position: relative;
-    border-radius: 10px;
-    padding: 16px 14px;
+    border-radius: 12px;
+    padding: 18px 14px;
     display: flex; flex-direction: column;
     align-items: center; justify-content: center;
-    gap: 8px;
+    gap: 10px;
     border: 1px solid var(--vb-border);
-    min-height: 110px;
+    min-height: 130px;
+    aspect-ratio: 4 / 3;
     cursor: default;
     text-align: center;
-    transition: box-shadow 0.2s;
+    transition: box-shadow 0.25s, transform 0.2s;
   }
   .vb-vision-card:hover { box-shadow: 0 4px 16px var(--vb-shadow); }
   .vb-card-terracotta { background: rgba(201,113,74,0.12); border-color: rgba(201,113,74,0.25); }
@@ -1409,4 +1439,80 @@ const BOARD_STYLES = `
     background: var(--vb-terracotta);
     border-radius: 4px;
   }
+
+  /* ── Weather Strip ─────────────────────────────── */
+  .vb-weather-strip {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--vb-parchment);
+    border: 1px solid var(--vb-border);
+    border-radius: 12px;
+    padding: 12px 20px;
+    margin-bottom: 16px;
+    font-family: 'Caveat', cursive;
+    font-size: 16px;
+    color: var(--vb-ink);
+    box-shadow: 0 2px 12px var(--vb-shadow);
+    flex-wrap: wrap;
+    position: relative;
+    overflow: hidden;
+  }
+  .vb-weather-seg {
+    display: flex; align-items: center; gap: 8px;
+    flex-wrap: wrap;
+  }
+  .vb-weather-real {
+    display: flex; align-items: center; gap: 6px;
+    color: var(--vb-ink);
+  }
+  .vb-weather-icon { font-size: 18px; }
+  .vb-weather-city {
+    display: flex; align-items: center; gap: 2px;
+    font-size: 13px; color: var(--vb-taupe);
+  }
+  .vb-weather-temp { font-weight: 600; color: var(--vb-terracotta); font-size: 16px; }
+  .vb-weather-desc { font-size: 14px; color: var(--vb-muted-ink); }
+  .vb-weather-empty {
+    display: flex; align-items: center; gap: 6px;
+    color: var(--vb-taupe); font-style: italic; font-size: 14px;
+  }
+  .vb-weather-fetch-btn {
+    display: flex; align-items: center; gap: 5px;
+    background: rgba(201,113,74,0.1);
+    border: 1px solid rgba(201,113,74,0.3);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-family: 'Lora', serif;
+    font-size: 12px;
+    color: var(--vb-terracotta);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .vb-weather-fetch-btn:hover:not(:disabled) {
+    background: var(--vb-terracotta); color: white;
+  }
+  .vb-weather-fetch-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+  .vb-weather-sep { color: var(--vb-aged); font-size: 18px; }
+  .vb-mood-display {
+    display: flex; align-items: center; gap: 5px;
+    background: none; border: none;
+    font-family: 'Caveat', cursive; font-size: 16px;
+    color: var(--vb-muted-ink); cursor: pointer;
+    padding: 0; transition: color 0.2s;
+  }
+  .vb-mood-display:hover { color: var(--vb-terracotta); }
+  .vb-mood-strip-input {
+    width: 180px !important;
+    padding: 3px 10px !important;
+    font-size: 15px !important;
+    background: var(--vb-linen) !important;
+    color: var(--vb-ink) !important;
+    border: 1px solid var(--vb-border) !important;
+    border-radius: 6px !important;
+  }
+  .vb-mood-prefix { font-size: 16px; }
+  .vb-spin { animation: vb-rotate 1s linear infinite; }
+  @keyframes vb-rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 `;
+
