@@ -327,7 +327,7 @@ export const visionBoardApi = {
   aiAssistant: (
     year: number,
     month: number,
-    action: "ask" | "define" | "analyse" | "expand_horizon",
+    action: "create" | "ask" | "analyse",
     query?: string
   ) =>
     apiClient.post<{
@@ -338,6 +338,12 @@ export const visionBoardApi = {
         timestamp: string;
       };
     }>(`/api/visionboard/${year}/${month}/ai-assistant`, { action, query }),
+
+  // Reset / Clear Board Month
+  resetBoard: (year: number, month: number) =>
+    apiClient.delete<{ success: boolean; data: { reset: boolean } }>(
+      `/api/visionboard/${year}/${month}/reset`
+    ),
 
   // Unsplash Search
   searchUnsplash: (query: string) =>
@@ -353,5 +359,6 @@ export const visionBoardApi = {
       }>;
     }>(`/api/visionboard/unsplash/search?query=${encodeURIComponent(query)}`),
 };
+
 
 
