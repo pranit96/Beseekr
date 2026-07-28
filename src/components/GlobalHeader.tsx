@@ -34,6 +34,7 @@ import {
   Target,
   LayoutGrid,
   Wallet,
+  ScrollText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -200,6 +201,14 @@ const NAV_ITEMS = {
     color: "from-purple-500 to-pink-500",
     exact: false,
   },
+  visionboard: {
+    key: "visionboard",
+    name: "Board",
+    href: "/board",
+    icon: ScrollText,
+    color: "from-amber-600 to-orange-400",
+    exact: false,
+  },
 };
 
 function isPathActive(pathname: string, href: string, exact?: boolean) {
@@ -216,9 +225,15 @@ function getNavigationContext(
     pathname.startsWith("/chat") ||
     pathname.startsWith("/agents") ||
     pathname.startsWith("/canvas");
-  const isResumeContext = pathname.startsWith("/dashboard/resume");
-  const isBudgetContext = pathname.startsWith("/dashboard/budget");
+  const isResumeContext  = pathname.startsWith("/dashboard/resume");
+  const isBudgetContext  = pathname.startsWith("/dashboard/budget");
+  const isBoardContext   = pathname.startsWith("/board");
   const isDiscoverContext = pathname.startsWith("/dashboard");
+
+  // Vision Board gets its own minimal strip
+  if (isBoardContext) {
+    return [NAV_ITEMS.home, NAV_ITEMS.visionboard];
+  }
 
   if (isBudgetContext) {
     return [
@@ -250,11 +265,13 @@ function getNavigationContext(
     if (isBudgetEnabled) {
       items.push(NAV_ITEMS.budget);
     }
+    items.push(NAV_ITEMS.visionboard);
     if (!isPremium) items.push(NAV_ITEMS.pricing);
     return items;
   }
 
   const items = [
+    NAV_ITEMS.visionboard,  // Board first
     NAV_ITEMS.home,
     NAV_ITEMS.chat,
     NAV_ITEMS.discover,

@@ -10,6 +10,7 @@ import {
   Wallet,
   Brain,
   Mail,
+  ScrollText,
 } from "lucide-react";
 import { GlobalHeader } from "@/components/GlobalHeader";
 import { motion } from "framer-motion";
@@ -55,8 +56,37 @@ export default function Home() {
         </section>
 
         {/* LAYOUT */}
-        {/* LAYOUT */}
         <section className="max-w-5xl mx-auto px-6 pb-20 grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+          {/* CARD 0: VISION BOARD */}
+          <motion.div
+            onClick={() => go("/board")}
+            whileHover={{ y: -4 }}
+            transition={{ type: "spring", stiffness: 220, damping: 20 }}
+            className="border border-border/30 rounded-2xl p-8 cursor-pointer transition
+                                bg-amber-500/10 backdrop-blur-md
+                                hover:bg-amber-500/15
+                                hover:border-amber-500/40 group shadow-2xl shadow-black/5"
+          >
+            <div className="h-10 w-10 rounded-xl bg-amber-500/20 flex items-center justify-center text-amber-500 mb-4 group-hover:scale-110 transition-transform">
+              <ScrollText className="w-5 h-5" />
+            </div>
+
+            <h3 className="text-xl font-bold mb-2 tracking-tight text-foreground">
+              {t("home.boardTitle", "Vision Board")}
+            </h3>
+
+            <p className="text-muted-foreground/80 mb-6 text-sm leading-relaxed">
+              {t(
+                "home.boardDesc",
+                "Scrapbook monthly vision, track goals, habit garden, life scores, and mood reflections.",
+              )}
+            </p>
+
+            <div className="text-xs font-bold tracking-wider uppercase flex items-center gap-1 text-amber-600 dark:text-amber-400 group-hover:translate-x-1 transition-all">
+              {t("home.openBoard", "Open Board")}
+              <ArrowRight className="w-3 h-3" />
+            </div>
+          </motion.div>
           {/* CARD 1: DISCOVER */}
           <motion.div
             onClick={() => go("/dashboard/problems")}
@@ -254,6 +284,38 @@ export default function Home() {
 
           {/* CARDS LAYOUT - SYMMETRICAL GRID */}
           <section className="grid gap-6 animate-in fade-in slide-in-from-bottom-6 duration-700 delay-150 fill-mode-both grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+            {/* CARD 0: VISION BOARD */}
+            <motion.div
+              onClick={() => go("/board")}
+              whileHover={{ y: -6 }}
+              transition={{ type: "spring", stiffness: 220, damping: 20 }}
+              className="border border-border/30 rounded-3xl p-10 cursor-pointer transition
+                               bg-card/5 backdrop-blur-xl
+                               hover:bg-amber-500/[0.05]
+                               hover:border-amber-500/30 group shadow-2xl shadow-black/20 relative overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 w-40 h-40 bg-amber-500/10 rounded-full blur-[60px] -mr-10 -mt-10 pointer-events-none" />
+
+              <div className="h-14 w-14 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-500 mb-8 group-hover:scale-110 transition-transform duration-500 shadow-lg shadow-amber-500/10">
+                <ScrollText className="w-6 h-6" />
+              </div>
+
+              <h3 className="text-xl font-bold mb-2 tracking-tight text-foreground">
+                {t("home.boardTitle", "Vision Board")}
+              </h3>
+
+              <p className="text-muted-foreground/80 mb-8 leading-relaxed text-sm">
+                {t(
+                  "home.boardDesc",
+                  "Scrapbook monthly vision, track goals, habit garden, life scores, and mood reflections.",
+                )}
+              </p>
+
+              <div className="text-xs font-bold tracking-widest uppercase flex items-center gap-1.5 text-amber-500 group-hover:translate-x-1 transition-all">
+                {t("home.openBoard", "Open Vision Board")}
+                <ArrowRight className="w-3.5 h-3.5" />
+              </div>
+            </motion.div>
             {/* CARD 1: DISCOVER */}
             <motion.div
               onClick={() => go("/dashboard/problems")}

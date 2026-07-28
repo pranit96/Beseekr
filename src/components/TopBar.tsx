@@ -53,6 +53,7 @@ export const TopBar = ({
   const isWeeklyDigestEnabled = getIsWeeklyDigestEnabled();
 
   const navigation = [
+    { key: "board", name: "Vision Board", href: "/board" },
     { key: "home", name: "Home", href: "/" },
     { key: "chat", name: "Chat", href: "/chat" },
     { key: "agents", name: "Agents", href: "/agents" },

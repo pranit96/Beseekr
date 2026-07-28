@@ -83,8 +83,8 @@ const lazyRetry = <T extends React.ComponentType<any>>(
 // Lazy loaded pages with retry logic for chunk loading failures
 const Chat = lazyRetry(() => import("./pages/Chat"), "Chat");
 const Agents = lazyRetry(() => import("./pages/Agents"), "Agents");
-const Brain = lazyRetry(() => import("./pages/Brain"), "Brain");
-const Digest = lazyRetry(() => import("./pages/Digest"), "Digest");
+const Brain = lazyRetry(() => import("@/pages/Brain"), "Brain");
+const Digest = lazyRetry(() => import("@/pages/Digest"), "Digest");
 const AgentShare = lazyRetry(() => import("./pages/AgentShare"), "AgentShare");
 const Analytics = lazyRetry(() => import("./pages/Analytics"), "Analytics");
 const Profile = lazyRetry(() => import("./pages/Profile"), "Profile");
@@ -152,6 +152,10 @@ const BudgetGoals = lazyRetry(
 const BudgetInsights = lazyRetry(
   () => import("./pages/budget/BudgetInsights"),
   "BudgetInsights",
+);
+const VisionBoard = lazyRetry(
+  () => import("./pages/VisionBoard"),
+  "VisionBoard",
 );
 
 // Loading fallback for lazy components
@@ -451,6 +455,11 @@ const App = () => {
                         path="stocks/*"
                         element={<Navigate to="/trading/overview" replace />}
                       />
+                      {/* Board moved to /board (standalone) */}
+                      <Route
+                        path="board"
+                        element={<Navigate to="/board" replace />}
+                      />
                     </Route>
 
                     {/* =============================================
@@ -549,6 +558,17 @@ const App = () => {
                         <ProtectedRoute>
                           <Suspense fallback={<PageLoader />}>
                             <Analytics />
+                          </Suspense>
+                        </ProtectedRoute>
+                      }
+                    />
+                    {/* Vision Board — standalone full-page like /brain */}
+                    <Route
+                      path="/board"
+                      element={
+                        <ProtectedRoute>
+                          <Suspense fallback={<PageLoader />}>
+                            <VisionBoard />
                           </Suspense>
                         </ProtectedRoute>
                       }
