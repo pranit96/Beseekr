@@ -264,7 +264,15 @@ export function CalendarHeatmap({ habits, year, month }: CalendarHeatmapProps) {
   };
 
   const handleOpenAddModal = (dateStr?: string) => {
-    setSelectedDate(dateStr || today);
+    const targetDate = dateStr || today;
+    if (targetDate < today) {
+      toast({
+        title: "Cannot schedule for past date",
+        description: "Please select today or a future date for new events.",
+      });
+      return;
+    }
+    setSelectedDate(targetDate);
     setEventTitle("");
     setEventTime("09:00");
     setEventColor("terracotta");
@@ -272,6 +280,7 @@ export function CalendarHeatmap({ habits, year, month }: CalendarHeatmapProps) {
     setEventNotify(true);
     setIsModalOpen(true);
   };
+
 
   const handleAddEvent = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -366,12 +375,17 @@ export function CalendarHeatmap({ habits, year, month }: CalendarHeatmapProps) {
                 const dayStatus = getDayStatus(habits, cell.date, today);
                 const dayEvents = getEventsForDate(cell.date);
                 const isToday = cell.date === today;
+                const isPast = cell.date < today;
 
                 return (
                   <div
                     key={cell.date}
-                    className={`vb-cal-cell ${isToday ? "vb-cal-cell-today" : ""}`}
-                    onClick={() => handleOpenAddModal(cell.date!)}
+                    className={`vb-cal-cell ${isToday ? "vb-cal-cell-today" : ""} ${isPast ? "opacity-60 cursor-not-allowed" : ""}`}
+                    onClick={() => {
+                      if (isPast) return;
+                      handleOpenAddModal(cell.date!);
+                    }}
+                    title={isPast ? "Past date — event creation disabled" : "Click to add event"}
                   >
                     <div className="vb-cal-cell-top">
                       <span
@@ -443,8 +457,6 @@ export function CalendarHeatmap({ habits, year, month }: CalendarHeatmapProps) {
         </div>
         <div className="flex items-center gap-2 text-muted-foreground font-mono">
           <Mail className="w-3.5 h-3.5 text-amber-600" />
-          <span>Backend Email Service Connected</span>
-          <span>·</span>
           <span>
             {combinedEvents.length} event
             {combinedEvents.length === 1 ? "" : "s"}
@@ -500,11 +512,17 @@ export function CalendarHeatmap({ habits, year, month }: CalendarHeatmapProps) {
                     <input
                       type="date"
                       required
+                      min={today}
                       value={selectedDate || ""}
-                      onChange={(e) => setSelectedDate(e.target.value)}
+                      onChange={(e) => {
+                        if (e.target.value >= today) {
+                          setSelectedDate(e.target.value);
+                        }
+                      }}
                       className="vb-form-input"
                     />
                   </div>
+
 
                   <div>
                     <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">

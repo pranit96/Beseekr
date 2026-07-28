@@ -322,4 +322,21 @@ export const visionBoardApi = {
     apiClient.delete<{ success: boolean; data: { deleted: boolean } }>(
       `/api/visionboard/${year}/${month}/events/${eventId}`,
     ),
+
+  // AI Assistant
+  aiAssistant: (
+    year: number,
+    month: number,
+    action: "ask" | "define" | "analyse" | "expand_horizon",
+    query?: string
+  ) =>
+    apiClient.post<{
+      success: boolean;
+      data: {
+        action: string;
+        result: string;
+        timestamp: string;
+      };
+    }>(`/api/visionboard/${year}/${month}/ai-assistant`, { action, query }),
 };
+

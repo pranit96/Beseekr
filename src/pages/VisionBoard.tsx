@@ -43,6 +43,8 @@ import { QuickNotes } from "@/components/visionboard/QuickNotes";
 import { CalendarHeatmap } from "@/components/visionboard/CalendarHeatmap";
 import { MonthReflection } from "@/components/visionboard/MonthReflection";
 import { YearJourney } from "@/components/visionboard/YearJourney";
+import { VisionBoardAI } from "@/components/visionboard/VisionBoardAI";
+
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -615,6 +617,14 @@ export default function VisionBoard() {
                   onUpdate={(u) => updateMeta.mutateAsync(u)}
                   isCurrentMonth={isCurrentMonth}
                 />
+
+                {/* 1a. AI Copilot */}
+                <VisionBoardAI
+                  year={year}
+                  month={month}
+                  onRefreshBoard={invalidateBoard}
+                />
+
 
                 {/* 1a. Month at a glance */}
                 {glance && (
