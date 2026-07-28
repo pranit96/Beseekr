@@ -104,8 +104,25 @@ export default function VisionBoard() {
   const updateMeta = useMutation({
     mutationFn: (updates: Partial<Pick<BoardMonth, "quote"|"mood_tag"|"theme_words"|"focus_items">>) =>
       visionBoardApi.updateBoardMonth(year, month, updates),
-    onSuccess: invalidateBoard,
-    onError: (e) => onError("updateMeta", e),
+    onMutate: async (updates) => {
+      await qc.cancelQueries({ queryKey: boardKey });
+      const previousBoard = qc.getQueryData<{ success: boolean; data: FullBoardData }>(boardKey);
+      if (previousBoard?.data) {
+        qc.setQueryData(boardKey, {
+          ...previousBoard,
+          data: {
+            ...previousBoard.data,
+            month: { ...previousBoard.data.month, ...updates },
+          },
+        });
+      }
+      return { previousBoard };
+    },
+    onError: (err, _vars, context) => {
+      if (context?.previousBoard) qc.setQueryData(boardKey, context.previousBoard);
+      onError("updateMeta", err);
+    },
+    onSettled: invalidateBoard,
   });
 
   // Goals
@@ -142,16 +159,53 @@ export default function VisionBoard() {
 
   const deleteGoal = useMutation({
     mutationFn: (goalId: string) => visionBoardApi.deleteGoal(year, month, goalId),
-    onSuccess: invalidateBoard,
-    onError: (e) => onError("deleteGoal", e),
+    onMutate: async (goalId) => {
+      await qc.cancelQueries({ queryKey: boardKey });
+      const previousBoard = qc.getQueryData<{ success: boolean; data: FullBoardData }>(boardKey);
+      if (previousBoard?.data) {
+        qc.setQueryData(boardKey, {
+          ...previousBoard,
+          data: {
+            ...previousBoard.data,
+            goals: previousBoard.data.goals.filter((g) => g.id !== goalId),
+          },
+        });
+      }
+      return { previousBoard };
+    },
+    onError: (err, _vars, context) => {
+      if (context?.previousBoard) qc.setQueryData(boardKey, context.previousBoard);
+      onError("deleteGoal", err);
+    },
+    onSettled: invalidateBoard,
   });
 
   // Life areas
   const upsertAreas = useMutation({
     mutationFn: (areas: Array<{ area: string; score: number }>) =>
       visionBoardApi.upsertLifeAreas(year, month, areas),
-    onSuccess: invalidateBoard,
-    onError: (e) => onError("upsertAreas", e),
+    onMutate: async (areas) => {
+      await qc.cancelQueries({ queryKey: boardKey });
+      const previousBoard = qc.getQueryData<{ success: boolean; data: FullBoardData }>(boardKey);
+      if (previousBoard?.data) {
+        const areaMap = new Map(areas.map((a) => [a.area, a.score]));
+        qc.setQueryData(boardKey, {
+          ...previousBoard,
+          data: {
+            ...previousBoard.data,
+            lifeAreas: previousBoard.data.lifeAreas.map((la) =>
+              areaMap.has(la.area) ? { ...la, score: areaMap.get(la.area)! } : la
+            ),
+          },
+        });
+      }
+      return { previousBoard };
+    },
+    onError: (err, _vars, context) => {
+      if (context?.previousBoard) qc.setQueryData(boardKey, context.previousBoard);
+      onError("upsertAreas", err);
+    },
+    onSettled: invalidateBoard,
   });
 
   // Habits
@@ -164,8 +218,25 @@ export default function VisionBoard() {
 
   const deleteHabit = useMutation({
     mutationFn: (habitId: string) => visionBoardApi.deleteHabit(year, month, habitId),
-    onSuccess: invalidateBoard,
-    onError: (e) => onError("deleteHabit", e),
+    onMutate: async (habitId) => {
+      await qc.cancelQueries({ queryKey: boardKey });
+      const previousBoard = qc.getQueryData<{ success: boolean; data: FullBoardData }>(boardKey);
+      if (previousBoard?.data) {
+        qc.setQueryData(boardKey, {
+          ...previousBoard,
+          data: {
+            ...previousBoard.data,
+            habits: previousBoard.data.habits.filter((h) => h.id !== habitId),
+          },
+        });
+      }
+      return { previousBoard };
+    },
+    onError: (err, _vars, context) => {
+      if (context?.previousBoard) qc.setQueryData(boardKey, context.previousBoard);
+      onError("deleteHabit", err);
+    },
+    onSettled: invalidateBoard,
   });
 
   const logHabit = useMutation({
@@ -206,8 +277,30 @@ export default function VisionBoard() {
   const upsertNotes = useMutation({
     mutationFn: (updates: Partial<BoardNotes>) =>
       visionBoardApi.upsertNotes(year, month, updates),
-    onSuccess: invalidateBoard,
-    onError: (e) => onError("upsertNotes", e),
+    onMutate: async (updates) => {
+      await qc.cancelQueries({ queryKey: boardKey });
+      const previousBoard = qc.getQueryData<{ success: boolean; data: FullBoardData }>(boardKey);
+      if (previousBoard?.data) {
+        const currentNotes = previousBoard.data.notes || {
+          id: "temp", user_id: "", year, month,
+          quick_notes: null, win: null, challenge: null, gratitude: null, improve: null,
+          updated_at: new Date().toISOString(),
+        };
+        qc.setQueryData(boardKey, {
+          ...previousBoard,
+          data: {
+            ...previousBoard.data,
+            notes: { ...currentNotes, ...updates },
+          },
+        });
+      }
+      return { previousBoard };
+    },
+    onError: (err, _vars, context) => {
+      if (context?.previousBoard) qc.setQueryData(boardKey, context.previousBoard);
+      onError("upsertNotes", err);
+    },
+    onSettled: invalidateBoard,
   });
 
   // Vision cards
@@ -220,8 +313,25 @@ export default function VisionBoard() {
 
   const deleteCard = useMutation({
     mutationFn: (cardId: string) => visionBoardApi.deleteVisionCard(year, month, cardId),
-    onSuccess: invalidateBoard,
-    onError: (e) => onError("deleteCard", e),
+    onMutate: async (cardId) => {
+      await qc.cancelQueries({ queryKey: boardKey });
+      const previousBoard = qc.getQueryData<{ success: boolean; data: FullBoardData }>(boardKey);
+      if (previousBoard?.data) {
+        qc.setQueryData(boardKey, {
+          ...previousBoard,
+          data: {
+            ...previousBoard.data,
+            visionCards: previousBoard.data.visionCards.filter((c) => c.id !== cardId),
+          },
+        });
+      }
+      return { previousBoard };
+    },
+    onError: (err, _vars, context) => {
+      if (context?.previousBoard) qc.setQueryData(boardKey, context.previousBoard);
+      onError("deleteCard", err);
+    },
+    onSettled: invalidateBoard,
   });
 
   const uploadCardFile = useMutation({
@@ -235,8 +345,23 @@ export default function VisionBoard() {
   const upsertWeather = useMutation({
     mutationFn: (payload: Partial<WeatherData>) =>
       visionBoardApi.upsertWeather(year, month, payload),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["visionboard-weather", year, month] }),
-    onError: (e) => onError("upsertWeather", e),
+    onMutate: async (payload) => {
+      const weatherKey = ["visionboard-weather", year, month];
+      await qc.cancelQueries({ queryKey: weatherKey });
+      const previousWeather = qc.getQueryData<{ success: boolean; data: WeatherData | null }>(weatherKey);
+      if (previousWeather) {
+        qc.setQueryData(weatherKey, {
+          ...previousWeather,
+          data: previousWeather.data ? { ...previousWeather.data, ...payload } : (payload as WeatherData),
+        });
+      }
+      return { previousWeather };
+    },
+    onError: (err, _vars, context) => {
+      if (context?.previousWeather) qc.setQueryData(["visionboard-weather", year, month], context.previousWeather);
+      onError("upsertWeather", err);
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: ["visionboard-weather", year, month] }),
   });
 
   // ── Render ──────────────────────────────────────────────────────────────────
