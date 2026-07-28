@@ -119,8 +119,25 @@ export default function VisionBoard() {
   const updateGoal = useMutation({
     mutationFn: ({ goalId, updates }: { goalId: string; updates: any }) =>
       visionBoardApi.updateGoal(year, month, goalId, updates),
-    onSuccess: invalidateBoard,
-    onError: (e) => onError("updateGoal", e),
+    onMutate: async ({ goalId, updates }) => {
+      await qc.cancelQueries({ queryKey: boardKey });
+      const previousBoard = qc.getQueryData<{ success: boolean; data: FullBoardData }>(boardKey);
+      if (previousBoard?.data) {
+        qc.setQueryData(boardKey, {
+          ...previousBoard,
+          data: {
+            ...previousBoard.data,
+            goals: previousBoard.data.goals.map((g) => (g.id === goalId ? { ...g, ...updates } : g)),
+          },
+        });
+      }
+      return { previousBoard };
+    },
+    onError: (err, _vars, context) => {
+      if (context?.previousBoard) qc.setQueryData(boardKey, context.previousBoard);
+      onError("updateGoal", err);
+    },
+    onSettled: invalidateBoard,
   });
 
   const deleteGoal = useMutation({
@@ -154,8 +171,35 @@ export default function VisionBoard() {
   const logHabit = useMutation({
     mutationFn: ({ habitId, payload }: { habitId: string; payload: { logDate: string; status: HabitLog["status"] } }) =>
       visionBoardApi.logHabit(year, month, habitId, payload),
-    onSuccess: invalidateBoard,
-    onError: (e) => onError("logHabit", e),
+    onMutate: async ({ habitId, payload }) => {
+      await qc.cancelQueries({ queryKey: boardKey });
+      const previousBoard = qc.getQueryData<{ success: boolean; data: FullBoardData }>(boardKey);
+      if (previousBoard?.data) {
+        qc.setQueryData(boardKey, {
+          ...previousBoard,
+          data: {
+            ...previousBoard.data,
+            habits: previousBoard.data.habits.map((h) => {
+              if (h.id !== habitId) return h;
+              const filteredLogs = h.logs.filter((l) => l.log_date !== payload.logDate);
+              return {
+                ...h,
+                logs: [
+                  ...filteredLogs,
+                  { id: "temp", habit_id: habitId, user_id: "", log_date: payload.logDate, status: payload.status },
+                ],
+              };
+            }),
+          },
+        });
+      }
+      return { previousBoard };
+    },
+    onError: (err, _vars, context) => {
+      if (context?.previousBoard) qc.setQueryData(boardKey, context.previousBoard);
+      onError("logHabit", err);
+    },
+    onSettled: invalidateBoard,
   });
 
   // Notes
