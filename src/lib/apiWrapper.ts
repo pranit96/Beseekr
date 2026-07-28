@@ -44,6 +44,19 @@ export const api = {
     }) as unknown as Promise<T>;
   },
 
+  patch: async <T = any>(
+    endpoint: string,
+    data?: any,
+    customOptions?: any,
+  ): Promise<T> => {
+    const isFormData = data instanceof FormData;
+    return apiClient["request"]<any>(endpoint, {
+      method: "PATCH",
+      body: data ? (isFormData ? data : JSON.stringify(data)) : undefined,
+      ...customOptions,
+    }) as unknown as Promise<T>;
+  },
+
   delete: async <T = any>(
     endpoint: string,
     customOptions?: any,

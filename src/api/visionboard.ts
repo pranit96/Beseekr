@@ -130,7 +130,7 @@ export const visionBoardApi = {
   // Board month
   getBoardData: (year: number, month: number) =>
     apiClient.get<{ success: boolean; data: FullBoardData }>(
-      `/visionboard/${year}/${month}`
+      `/api/visionboard/${year}/${month}`
     ),
 
   updateBoardMonth: (
@@ -139,13 +139,13 @@ export const visionBoardApi = {
     payload: Partial<Pick<BoardMonth, "quote" | "mood_tag" | "theme_words" | "focus_items">>
   ) =>
     apiClient.put<{ success: boolean; data: BoardMonth }>(
-      `/visionboard/${year}/${month}`,
+      `/api/visionboard/${year}/${month}`,
       payload
     ),
 
   getYearSummary: (year: number) =>
     apiClient.get<{ success: boolean; data: MonthSummary[] }>(
-      `/visionboard/${year}/summary`
+      `/api/visionboard/${year}/summary`
     ),
 
   // Goals
@@ -161,7 +161,7 @@ export const visionBoardApi = {
     }
   ) =>
     apiClient.post<{ success: boolean; data: VisionGoal }>(
-      `/visionboard/${year}/${month}/goals`,
+      `/api/visionboard/${year}/${month}/goals`,
       payload
     ),
 
@@ -178,13 +178,13 @@ export const visionBoardApi = {
     }>
   ) =>
     apiClient.patch<{ success: boolean; data: VisionGoal }>(
-      `/visionboard/${year}/${month}/goals/${goalId}`,
+      `/api/visionboard/${year}/${month}/goals/${goalId}`,
       updates
     ),
 
   deleteGoal: (year: number, month: number, goalId: string) =>
     apiClient.delete<{ success: boolean; data: { deleted: boolean } }>(
-      `/visionboard/${year}/${month}/goals/${goalId}`
+      `/api/visionboard/${year}/${month}/goals/${goalId}`
     ),
 
   // Life areas
@@ -194,20 +194,20 @@ export const visionBoardApi = {
     areas: Array<{ area: string; score: number; icon?: string }>
   ) =>
     apiClient.put<{ success: boolean; data: LifeArea[] }>(
-      `/visionboard/${year}/${month}/life-areas`,
+      `/api/visionboard/${year}/${month}/life-areas`,
       { areas }
     ),
 
   // Habits
   addHabit: (year: number, month: number, payload: { name: string; icon?: string }) =>
     apiClient.post<{ success: boolean; data: Habit }>(
-      `/visionboard/${year}/${month}/habits`,
+      `/api/visionboard/${year}/${month}/habits`,
       payload
     ),
 
   deleteHabit: (year: number, month: number, habitId: string) =>
     apiClient.delete<{ success: boolean; data: { deleted: boolean } }>(
-      `/visionboard/${year}/${month}/habits/${habitId}`
+      `/api/visionboard/${year}/${month}/habits/${habitId}`
     ),
 
   logHabit: (
@@ -217,7 +217,7 @@ export const visionBoardApi = {
     payload: { logDate: string; status: HabitLog["status"] }
   ) =>
     apiClient.post<{ success: boolean; data: HabitLog }>(
-      `/visionboard/${year}/${month}/habits/${habitId}/log`,
+      `/api/visionboard/${year}/${month}/habits/${habitId}/log`,
       payload
     ),
 
@@ -228,7 +228,7 @@ export const visionBoardApi = {
     payload: Partial<Pick<BoardNotes, "quick_notes" | "win" | "challenge" | "gratitude" | "improve">>
   ) =>
     apiClient.put<{ success: boolean; data: BoardNotes }>(
-      `/visionboard/${year}/${month}/notes`,
+      `/api/visionboard/${year}/${month}/notes`,
       payload
     ),
 
@@ -244,7 +244,7 @@ export const visionBoardApi = {
     }
   ) =>
     apiClient.post<{ success: boolean; data: VisionCard }>(
-      `/visionboard/${year}/${month}/vision-cards`,
+      `/api/visionboard/${year}/${month}/vision-cards`,
       payload
     ),
 
@@ -253,25 +253,25 @@ export const visionBoardApi = {
     const form = new FormData();
     form.append("file", file);
     return apiClient.post<{ success: boolean; data: VisionCard }>(
-      `/visionboard/${year}/${month}/vision-cards/${cardId}/upload`,
+      `/api/visionboard/${year}/${month}/vision-cards/${cardId}/upload`,
       form
     );
   },
 
   deleteVisionCard: (year: number, month: number, cardId: string) =>
     apiClient.delete<{ success: boolean; data: { deleted: boolean } }>(
-      `/visionboard/${year}/${month}/vision-cards/${cardId}`
+      `/api/visionboard/${year}/${month}/vision-cards/${cardId}`
     ),
 
   // Weather
   getWeather: (year: number, month: number) =>
     apiClient.get<{ success: boolean; data: WeatherData | null }>(
-      `/visionboard/${year}/${month}/weather`
+      `/api/visionboard/${year}/${month}/weather`
     ),
 
   upsertWeather: (year: number, month: number, payload: Partial<WeatherData>) =>
     apiClient.put<{ success: boolean; data: WeatherData }>(
-      `/visionboard/${year}/${month}/weather`,
+      `/api/visionboard/${year}/${month}/weather`,
       payload
     ),
 };
