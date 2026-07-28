@@ -338,5 +338,20 @@ export const visionBoardApi = {
         timestamp: string;
       };
     }>(`/api/visionboard/${year}/${month}/ai-assistant`, { action, query }),
+
+  // Unsplash Search
+  searchUnsplash: (query: string) =>
+    apiClient.get<{
+      success: boolean;
+      data: Array<{
+        id: string;
+        url: string;
+        thumb: string;
+        alt: string;
+        credit: string;
+        credit_url: string;
+      }>;
+    }>(`/api/visionboard/unsplash/search?query=${encodeURIComponent(query)}`),
 };
+
 
