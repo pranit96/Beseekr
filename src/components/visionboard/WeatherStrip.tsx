@@ -16,20 +16,20 @@ import type { WeatherData } from "@/api/visionboard";
 
 // ── Open-Meteo WMO code → emoji + label map (subset) ──────────────────────────
 const WMO_MAP: Record<number, { emoji: string; label: string }> = {
-  0:  { emoji: "☀️",  label: "Clear Sky"       },
-  1:  { emoji: "🌤",  label: "Mainly Clear"     },
-  2:  { emoji: "⛅",  label: "Partly Cloudy"    },
-  3:  { emoji: "☁️",  label: "Overcast"         },
-  45: { emoji: "🌫",  label: "Foggy"            },
-  48: { emoji: "🌫",  label: "Icy Fog"          },
-  51: { emoji: "🌦",  label: "Light Drizzle"    },
-  61: { emoji: "🌧",  label: "Light Rain"       },
-  63: { emoji: "🌧",  label: "Moderate Rain"    },
-  65: { emoji: "🌧",  label: "Heavy Rain"       },
-  71: { emoji: "🌨",  label: "Light Snow"       },
-  73: { emoji: "❄️",  label: "Moderate Snow"    },
-  80: { emoji: "🌦",  label: "Rain Showers"     },
-  95: { emoji: "⛈",  label: "Thunderstorm"     },
+  0: { emoji: "☀️", label: "Clear Sky" },
+  1: { emoji: "🌤", label: "Mainly Clear" },
+  2: { emoji: "⛅", label: "Partly Cloudy" },
+  3: { emoji: "☁️", label: "Overcast" },
+  45: { emoji: "🌫", label: "Foggy" },
+  48: { emoji: "🌫", label: "Icy Fog" },
+  51: { emoji: "🌦", label: "Light Drizzle" },
+  61: { emoji: "🌧", label: "Light Rain" },
+  63: { emoji: "🌧", label: "Moderate Rain" },
+  65: { emoji: "🌧", label: "Heavy Rain" },
+  71: { emoji: "🌨", label: "Light Snow" },
+  73: { emoji: "❄️", label: "Moderate Snow" },
+  80: { emoji: "🌦", label: "Rain Showers" },
+  95: { emoji: "⛈", label: "Thunderstorm" },
 };
 
 function wmo(code: number) {
@@ -45,12 +45,17 @@ interface WeatherStripProps {
 
 type Phase = "idle" | "fetching" | "error";
 
-export function WeatherStrip({ year, month, cached, onSave }: WeatherStripProps) {
-  const [weather, setWeather]     = useState<Partial<WeatherData>>(cached ?? {});
-  const [phase, setPhase]         = useState<Phase>("idle");
+export function WeatherStrip({
+  year,
+  month,
+  cached,
+  onSave,
+}: WeatherStripProps) {
+  const [weather, setWeather] = useState<Partial<WeatherData>>(cached ?? {});
+  const [phase, setPhase] = useState<Phase>("idle");
   const [editingMood, setEditMood] = useState(false);
-  const [moodDraft, setMoodDraft]  = useState(cached?.mood_tag ?? "");
-  const [saving, setSaving]        = useState(false);
+  const [moodDraft, setMoodDraft] = useState(cached?.mood_tag ?? "");
+  const [saving, setSaving] = useState(false);
 
   // Sync cached → local when month changes
   useEffect(() => {
@@ -63,41 +68,41 @@ export function WeatherStrip({ year, month, cached, onSave }: WeatherStripProps)
     setPhase("fetching");
     try {
       // 1. Geolocation
-      const { latitude: lat, longitude: lon } = await new Promise<GeolocationCoordinates>(
-        (res, rej) =>
+      const { latitude: lat, longitude: lon } =
+        await new Promise<GeolocationCoordinates>((res, rej) =>
           navigator.geolocation.getCurrentPosition(
             (pos) => res(pos.coords),
             (err) => rej(new Error(`Geo denied: ${err.message}`)),
-            { timeout: 8000 }
-          )
-      );
+            { timeout: 8000 },
+          ),
+        );
 
       // 2. Open-Meteo (no key, free forever)
-      const meteoUrl =
-        `https://api.open-meteo.com/v1/forecast?latitude=${lat.toFixed(4)}&longitude=${lon.toFixed(4)}&current_weather=true&temperature_unit=celsius`;
+      const meteoUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat.toFixed(4)}&longitude=${lon.toFixed(4)}&current_weather=true&temperature_unit=celsius`;
       const meteoRes = await fetch(meteoUrl);
       if (!meteoRes.ok) throw new Error("Open-Meteo request failed");
       const meteoJson = await meteoRes.json();
-      const cw   = meteoJson.current_weather;
+      const cw = meteoJson.current_weather;
       const info = wmo(cw.weathercode);
 
       // 3. Reverse geocode (Nominatim — no key required for reasonable usage)
-      const geoRes  = await fetch(
+      const geoRes = await fetch(
         `https://nominatim.openstreetmap.org/reverse?lat=${lat.toFixed(4)}&lon=${lon.toFixed(4)}&format=json`,
-        { headers: { "Accept-Language": "en" } }
+        { headers: { "Accept-Language": "en" } },
       );
       const geoJson = await geoRes.json();
-      const city    = geoJson.address?.city
-                   || geoJson.address?.town
-                   || geoJson.address?.village
-                   || geoJson.address?.county
-                   || "Unknown";
+      const city =
+        geoJson.address?.city ||
+        geoJson.address?.town ||
+        geoJson.address?.village ||
+        geoJson.address?.county ||
+        "Unknown";
 
       const update: Partial<WeatherData> = {
-        lat:          lat,
-        lon:          lon,
+        lat: lat,
+        lon: lon,
         city,
-        temperature:  parseFloat(cw.temperature.toFixed(1)),
+        temperature: parseFloat(cw.temperature.toFixed(1)),
         weather_desc: info.label,
         weather_icon: info.emoji,
       };
@@ -120,8 +125,8 @@ export function WeatherStrip({ year, month, cached, onSave }: WeatherStripProps)
     setEditMood(false);
   }
 
-  const hasReal  = !!weather.temperature;
-  const hasMood  = !!weather.mood_tag;
+  const hasReal = !!weather.temperature;
+  const hasMood = !!weather.mood_tag;
   const showFetch = !hasReal || phase === "error";
 
   return (
@@ -161,8 +166,17 @@ export function WeatherStrip({ year, month, cached, onSave }: WeatherStripProps)
           whileTap={{ scale: 0.95 }}
           title="Fetch real weather (uses your location)"
         >
-          <RefreshCw size={11} className={phase === "fetching" ? "vb-spin" : ""} />
-          {phase === "fetching" ? "Fetching…" : phase === "error" ? "Failed — retry" : hasReal ? "Refresh" : "Get Weather"}
+          <RefreshCw
+            size={11}
+            className={phase === "fetching" ? "vb-spin" : ""}
+          />
+          {phase === "fetching"
+            ? "Fetching…"
+            : phase === "error"
+              ? "Failed — retry"
+              : hasReal
+                ? "Refresh"
+                : "Get Weather"}
         </motion.button>
       </div>
 
@@ -184,12 +198,19 @@ export function WeatherStrip({ year, month, cached, onSave }: WeatherStripProps)
                 className="vb-mood-input vb-mood-strip-input"
                 value={moodDraft}
                 onChange={(e) => setMoodDraft(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") saveMood(); if (e.key === "Escape") setEditMood(false); }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") saveMood();
+                  if (e.key === "Escape") setEditMood(false);
+                }}
                 placeholder="e.g. Productive, Calm…"
                 autoFocus
                 maxLength={40}
               />
-              <button className="vb-save-btn" onClick={saveMood} disabled={saving}>
+              <button
+                className="vb-save-btn"
+                onClick={saveMood}
+                disabled={saving}
+              >
                 <Check size={12} />
               </button>
             </motion.div>
@@ -204,7 +225,11 @@ export function WeatherStrip({ year, month, cached, onSave }: WeatherStripProps)
             >
               <span>☁</span>
               <span>{hasMood ? weather.mood_tag : "Set mood vibe"}</span>
-              <Pencil size={10} className="vb-inline-pencil" style={{ opacity: 0.5 }} />
+              <Pencil
+                size={10}
+                className="vb-inline-pencil"
+                style={{ opacity: 0.5 }}
+              />
             </motion.button>
           )}
         </AnimatePresence>

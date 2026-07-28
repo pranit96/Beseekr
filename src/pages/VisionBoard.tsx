@@ -20,23 +20,29 @@ import { useToast } from "@/hooks/use-toast";
 
 import { visionBoardApi } from "@/api/visionboard";
 import type {
-  FullBoardData, VisionGoal, VisionCard, LifeArea,
-  HabitLog, BoardNotes, BoardMonth, WeatherData,
+  FullBoardData,
+  VisionGoal,
+  VisionCard,
+  LifeArea,
+  HabitLog,
+  BoardNotes,
+  BoardMonth,
+  WeatherData,
 } from "@/api/visionboard";
 
-import { GlobalHeader }     from "@/components/GlobalHeader";
-import { BoardHeader }     from "@/components/visionboard/BoardHeader";
-import { WeatherStrip }    from "@/components/visionboard/WeatherStrip";
-import { VisionCollage }   from "@/components/visionboard/VisionCollage";
-import { ThemeSidebar }    from "@/components/visionboard/ThemeSidebar";
-import { FocusToday }      from "@/components/visionboard/FocusToday";
-import { MonthGoals }      from "@/components/visionboard/MonthGoals";
-import { LifeAreas }       from "@/components/visionboard/LifeAreas";
-import { HabitGarden }     from "@/components/visionboard/HabitGarden";
-import { QuickNotes }      from "@/components/visionboard/QuickNotes";
+import { GlobalHeader } from "@/components/GlobalHeader";
+import { BoardHeader } from "@/components/visionboard/BoardHeader";
+import { WeatherStrip } from "@/components/visionboard/WeatherStrip";
+import { VisionCollage } from "@/components/visionboard/VisionCollage";
+import { ThemeSidebar } from "@/components/visionboard/ThemeSidebar";
+import { FocusToday } from "@/components/visionboard/FocusToday";
+import { MonthGoals } from "@/components/visionboard/MonthGoals";
+import { LifeAreas } from "@/components/visionboard/LifeAreas";
+import { HabitGarden } from "@/components/visionboard/HabitGarden";
+import { QuickNotes } from "@/components/visionboard/QuickNotes";
 import { CalendarHeatmap } from "@/components/visionboard/CalendarHeatmap";
 import { MonthReflection } from "@/components/visionboard/MonthReflection";
-import { YearJourney }     from "@/components/visionboard/YearJourney";
+import { YearJourney } from "@/components/visionboard/YearJourney";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -46,8 +52,18 @@ function currentYearMonth() {
 }
 
 const MONTH_NAMES = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
 ];
 
 /** Respects the OS-level "reduce motion" preference so animation is opt-out, not forced. */
@@ -72,34 +88,34 @@ export default function VisionBoard() {
   const now = currentYearMonth();
   const prefersReducedMotion = usePrefersReducedMotion();
 
-  const [year,  setYear]  = useState(now.year);
+  const [year, setYear] = useState(now.year);
   const [month, setMonth] = useState(now.month);
   const isCurrentMonth = year === now.year && month === now.month;
 
   const boardKey = ["visionboard", year, month];
-  const yearKey  = ["visionboard-year", year];
+  const yearKey = ["visionboard-year", year];
 
   // ── Queries ─────────────────────────────────────────────────────────────────
 
   const { data: boardRes, isLoading } = useQuery({
     queryKey: boardKey,
-    queryFn:  () => visionBoardApi.getBoardData(year, month),
+    queryFn: () => visionBoardApi.getBoardData(year, month),
     staleTime: 2 * 60 * 1000,
   });
 
   const { data: yearRes } = useQuery({
     queryKey: yearKey,
-    queryFn:  () => visionBoardApi.getYearSummary(year),
+    queryFn: () => visionBoardApi.getYearSummary(year),
     staleTime: 5 * 60 * 1000,
   });
 
   const { data: weatherRes } = useQuery({
     queryKey: ["visionboard-weather", year, month],
-    queryFn:  () => visionBoardApi.getWeather(year, month),
+    queryFn: () => visionBoardApi.getWeather(year, month),
     staleTime: 30 * 60 * 1000, // 30 min — weather rarely needs instant refresh
   });
 
-  const board       = boardRes?.data;
+  const board = boardRes?.data;
   const yearSummary = yearRes?.data ?? [];
   const cachedWeather = weatherRes?.data ?? null;
 
@@ -108,9 +124,16 @@ export default function VisionBoard() {
   function navigate(direction: -1 | 1) {
     let m = month + direction;
     let y = year;
-    if (m < 1)  { m = 12; y--; }
-    if (m > 12) { m = 1;  y++; }
-    setMonth(m); setYear(y);
+    if (m < 1) {
+      m = 12;
+      y--;
+    }
+    if (m > 12) {
+      m = 1;
+      y++;
+    }
+    setMonth(m);
+    setYear(y);
   }
 
   function goToMonth(m: number) {
@@ -121,20 +144,30 @@ export default function VisionBoard() {
 
   function invalidateBoard() {
     qc.invalidateQueries({ queryKey: boardKey });
-    qc.invalidateQueries({ queryKey: yearKey  });
+    qc.invalidateQueries({ queryKey: yearKey });
   }
 
   function onError(ctx: string, err: any) {
-    toast({ title: "Something went wrong", description: err?.message, variant: "destructive" });
+    toast({
+      title: "Something went wrong",
+      description: err?.message,
+      variant: "destructive",
+    });
   }
 
   // Board metadata
   const updateMeta = useMutation({
-    mutationFn: (updates: Partial<Pick<BoardMonth, "quote"|"mood_tag"|"theme_words"|"focus_items">>) =>
-      visionBoardApi.updateBoardMonth(year, month, updates),
+    mutationFn: (
+      updates: Partial<
+        Pick<BoardMonth, "quote" | "mood_tag" | "theme_words" | "focus_items">
+      >,
+    ) => visionBoardApi.updateBoardMonth(year, month, updates),
     onMutate: async (updates) => {
       await qc.cancelQueries({ queryKey: boardKey });
-      const previousBoard = qc.getQueryData<{ success: boolean; data: FullBoardData }>(boardKey);
+      const previousBoard = qc.getQueryData<{
+        success: boolean;
+        data: FullBoardData;
+      }>(boardKey);
       if (previousBoard?.data) {
         qc.setQueryData(boardKey, {
           ...previousBoard,
@@ -147,7 +180,8 @@ export default function VisionBoard() {
       return { previousBoard };
     },
     onError: (err, _vars, context) => {
-      if (context?.previousBoard) qc.setQueryData(boardKey, context.previousBoard);
+      if (context?.previousBoard)
+        qc.setQueryData(boardKey, context.previousBoard);
       onError("updateMeta", err);
     },
     onSettled: invalidateBoard,
@@ -155,8 +189,11 @@ export default function VisionBoard() {
 
   // Goals
   const addGoal = useMutation({
-    mutationFn: (payload: { title: string; progressTarget: number; progressUnit: string }) =>
-      visionBoardApi.addGoal(year, month, payload),
+    mutationFn: (payload: {
+      title: string;
+      progressTarget: number;
+      progressUnit: string;
+    }) => visionBoardApi.addGoal(year, month, payload),
     onSuccess: invalidateBoard,
     onError: (e) => onError("addGoal", e),
   });
@@ -166,30 +203,40 @@ export default function VisionBoard() {
       visionBoardApi.updateGoal(year, month, goalId, updates),
     onMutate: async ({ goalId, updates }) => {
       await qc.cancelQueries({ queryKey: boardKey });
-      const previousBoard = qc.getQueryData<{ success: boolean; data: FullBoardData }>(boardKey);
+      const previousBoard = qc.getQueryData<{
+        success: boolean;
+        data: FullBoardData;
+      }>(boardKey);
       if (previousBoard?.data) {
         qc.setQueryData(boardKey, {
           ...previousBoard,
           data: {
             ...previousBoard.data,
-            goals: previousBoard.data.goals.map((g) => (g.id === goalId ? { ...g, ...updates } : g)),
+            goals: previousBoard.data.goals.map((g) =>
+              g.id === goalId ? { ...g, ...updates } : g,
+            ),
           },
         });
       }
       return { previousBoard };
     },
     onError: (err, _vars, context) => {
-      if (context?.previousBoard) qc.setQueryData(boardKey, context.previousBoard);
+      if (context?.previousBoard)
+        qc.setQueryData(boardKey, context.previousBoard);
       onError("updateGoal", err);
     },
     onSettled: invalidateBoard,
   });
 
   const deleteGoal = useMutation({
-    mutationFn: (goalId: string) => visionBoardApi.deleteGoal(year, month, goalId),
+    mutationFn: (goalId: string) =>
+      visionBoardApi.deleteGoal(year, month, goalId),
     onMutate: async (goalId) => {
       await qc.cancelQueries({ queryKey: boardKey });
-      const previousBoard = qc.getQueryData<{ success: boolean; data: FullBoardData }>(boardKey);
+      const previousBoard = qc.getQueryData<{
+        success: boolean;
+        data: FullBoardData;
+      }>(boardKey);
       if (previousBoard?.data) {
         qc.setQueryData(boardKey, {
           ...previousBoard,
@@ -202,7 +249,8 @@ export default function VisionBoard() {
       return { previousBoard };
     },
     onError: (err, _vars, context) => {
-      if (context?.previousBoard) qc.setQueryData(boardKey, context.previousBoard);
+      if (context?.previousBoard)
+        qc.setQueryData(boardKey, context.previousBoard);
       onError("deleteGoal", err);
     },
     onSettled: invalidateBoard,
@@ -214,7 +262,10 @@ export default function VisionBoard() {
       visionBoardApi.upsertLifeAreas(year, month, areas),
     onMutate: async (areas) => {
       await qc.cancelQueries({ queryKey: boardKey });
-      const previousBoard = qc.getQueryData<{ success: boolean; data: FullBoardData }>(boardKey);
+      const previousBoard = qc.getQueryData<{
+        success: boolean;
+        data: FullBoardData;
+      }>(boardKey);
       if (previousBoard?.data) {
         const areaMap = new Map(areas.map((a) => [a.area, a.score]));
         qc.setQueryData(boardKey, {
@@ -222,7 +273,9 @@ export default function VisionBoard() {
           data: {
             ...previousBoard.data,
             lifeAreas: previousBoard.data.lifeAreas.map((la) =>
-              areaMap.has(la.area) ? { ...la, score: areaMap.get(la.area)! } : la
+              areaMap.has(la.area)
+                ? { ...la, score: areaMap.get(la.area)! }
+                : la,
             ),
           },
         });
@@ -230,7 +283,8 @@ export default function VisionBoard() {
       return { previousBoard };
     },
     onError: (err, _vars, context) => {
-      if (context?.previousBoard) qc.setQueryData(boardKey, context.previousBoard);
+      if (context?.previousBoard)
+        qc.setQueryData(boardKey, context.previousBoard);
       onError("upsertAreas", err);
     },
     onSettled: invalidateBoard,
@@ -245,10 +299,14 @@ export default function VisionBoard() {
   });
 
   const deleteHabit = useMutation({
-    mutationFn: (habitId: string) => visionBoardApi.deleteHabit(year, month, habitId),
+    mutationFn: (habitId: string) =>
+      visionBoardApi.deleteHabit(year, month, habitId),
     onMutate: async (habitId) => {
       await qc.cancelQueries({ queryKey: boardKey });
-      const previousBoard = qc.getQueryData<{ success: boolean; data: FullBoardData }>(boardKey);
+      const previousBoard = qc.getQueryData<{
+        success: boolean;
+        data: FullBoardData;
+      }>(boardKey);
       if (previousBoard?.data) {
         qc.setQueryData(boardKey, {
           ...previousBoard,
@@ -261,18 +319,27 @@ export default function VisionBoard() {
       return { previousBoard };
     },
     onError: (err, _vars, context) => {
-      if (context?.previousBoard) qc.setQueryData(boardKey, context.previousBoard);
+      if (context?.previousBoard)
+        qc.setQueryData(boardKey, context.previousBoard);
       onError("deleteHabit", err);
     },
     onSettled: invalidateBoard,
   });
 
   const logHabit = useMutation({
-    mutationFn: ({ habitId, payload }: { habitId: string; payload: { logDate: string; status: HabitLog["status"] } }) =>
-      visionBoardApi.logHabit(year, month, habitId, payload),
+    mutationFn: ({
+      habitId,
+      payload,
+    }: {
+      habitId: string;
+      payload: { logDate: string; status: HabitLog["status"] };
+    }) => visionBoardApi.logHabit(year, month, habitId, payload),
     onMutate: async ({ habitId, payload }) => {
       await qc.cancelQueries({ queryKey: boardKey });
-      const previousBoard = qc.getQueryData<{ success: boolean; data: FullBoardData }>(boardKey);
+      const previousBoard = qc.getQueryData<{
+        success: boolean;
+        data: FullBoardData;
+      }>(boardKey);
       if (previousBoard?.data) {
         qc.setQueryData(boardKey, {
           ...previousBoard,
@@ -280,12 +347,20 @@ export default function VisionBoard() {
             ...previousBoard.data,
             habits: previousBoard.data.habits.map((h) => {
               if (h.id !== habitId) return h;
-              const filteredLogs = h.logs.filter((l) => l.log_date !== payload.logDate);
+              const filteredLogs = h.logs.filter(
+                (l) => l.log_date !== payload.logDate,
+              );
               return {
                 ...h,
                 logs: [
                   ...filteredLogs,
-                  { id: "temp", habit_id: habitId, user_id: "", log_date: payload.logDate, status: payload.status },
+                  {
+                    id: "temp",
+                    habit_id: habitId,
+                    user_id: "",
+                    log_date: payload.logDate,
+                    status: payload.status,
+                  },
                 ],
               };
             }),
@@ -295,7 +370,8 @@ export default function VisionBoard() {
       return { previousBoard };
     },
     onError: (err, _vars, context) => {
-      if (context?.previousBoard) qc.setQueryData(boardKey, context.previousBoard);
+      if (context?.previousBoard)
+        qc.setQueryData(boardKey, context.previousBoard);
       onError("logHabit", err);
     },
     onSettled: invalidateBoard,
@@ -307,11 +383,21 @@ export default function VisionBoard() {
       visionBoardApi.upsertNotes(year, month, updates),
     onMutate: async (updates) => {
       await qc.cancelQueries({ queryKey: boardKey });
-      const previousBoard = qc.getQueryData<{ success: boolean; data: FullBoardData }>(boardKey);
+      const previousBoard = qc.getQueryData<{
+        success: boolean;
+        data: FullBoardData;
+      }>(boardKey);
       if (previousBoard?.data) {
         const currentNotes = previousBoard.data.notes || {
-          id: "temp", user_id: "", year, month,
-          quick_notes: null, win: null, challenge: null, gratitude: null, improve: null,
+          id: "temp",
+          user_id: "",
+          year,
+          month,
+          quick_notes: null,
+          win: null,
+          challenge: null,
+          gratitude: null,
+          improve: null,
           updated_at: new Date().toISOString(),
         };
         qc.setQueryData(boardKey, {
@@ -325,7 +411,8 @@ export default function VisionBoard() {
       return { previousBoard };
     },
     onError: (err, _vars, context) => {
-      if (context?.previousBoard) qc.setQueryData(boardKey, context.previousBoard);
+      if (context?.previousBoard)
+        qc.setQueryData(boardKey, context.previousBoard);
       onError("upsertNotes", err);
     },
     onSettled: invalidateBoard,
@@ -333,30 +420,41 @@ export default function VisionBoard() {
 
   // Vision cards
   const addCard = useMutation({
-    mutationFn: (payload: { title: string; emoji: string; colorAccent: VisionCard["color_accent"]; cardType: VisionCard["card_type"] }) =>
-      visionBoardApi.addVisionCard(year, month, payload),
+    mutationFn: (payload: {
+      title: string;
+      emoji: string;
+      colorAccent: VisionCard["color_accent"];
+      cardType: VisionCard["card_type"];
+    }) => visionBoardApi.addVisionCard(year, month, payload),
     onSuccess: invalidateBoard,
     onError: (e) => onError("addCard", e),
   });
 
   const deleteCard = useMutation({
-    mutationFn: (cardId: string) => visionBoardApi.deleteVisionCard(year, month, cardId),
+    mutationFn: (cardId: string) =>
+      visionBoardApi.deleteVisionCard(year, month, cardId),
     onMutate: async (cardId) => {
       await qc.cancelQueries({ queryKey: boardKey });
-      const previousBoard = qc.getQueryData<{ success: boolean; data: FullBoardData }>(boardKey);
+      const previousBoard = qc.getQueryData<{
+        success: boolean;
+        data: FullBoardData;
+      }>(boardKey);
       if (previousBoard?.data) {
         qc.setQueryData(boardKey, {
           ...previousBoard,
           data: {
             ...previousBoard.data,
-            visionCards: previousBoard.data.visionCards.filter((c) => c.id !== cardId),
+            visionCards: previousBoard.data.visionCards.filter(
+              (c) => c.id !== cardId,
+            ),
           },
         });
       }
       return { previousBoard };
     },
     onError: (err, _vars, context) => {
-      if (context?.previousBoard) qc.setQueryData(boardKey, context.previousBoard);
+      if (context?.previousBoard)
+        qc.setQueryData(boardKey, context.previousBoard);
       onError("deleteCard", err);
     },
     onSettled: invalidateBoard,
@@ -376,44 +474,60 @@ export default function VisionBoard() {
     onMutate: async (payload) => {
       const weatherKey = ["visionboard-weather", year, month];
       await qc.cancelQueries({ queryKey: weatherKey });
-      const previousWeather = qc.getQueryData<{ success: boolean; data: WeatherData | null }>(weatherKey);
+      const previousWeather = qc.getQueryData<{
+        success: boolean;
+        data: WeatherData | null;
+      }>(weatherKey);
       if (previousWeather) {
         qc.setQueryData(weatherKey, {
           ...previousWeather,
-          data: previousWeather.data ? { ...previousWeather.data, ...payload } : (payload as WeatherData),
+          data: previousWeather.data
+            ? { ...previousWeather.data, ...payload }
+            : (payload as WeatherData),
         });
       }
       return { previousWeather };
     },
     onError: (err, _vars, context) => {
-      if (context?.previousWeather) qc.setQueryData(["visionboard-weather", year, month], context.previousWeather);
+      if (context?.previousWeather)
+        qc.setQueryData(
+          ["visionboard-weather", year, month],
+          context.previousWeather,
+        );
       onError("upsertWeather", err);
     },
-    onSettled: () => qc.invalidateQueries({ queryKey: ["visionboard-weather", year, month] }),
+    onSettled: () =>
+      qc.invalidateQueries({ queryKey: ["visionboard-weather", year, month] }),
   });
 
   // ── Derived "at a glance" stats (client-side only, from data already fetched) ──
 
   const glance = useMemo(() => {
     if (!board) return null;
-    const totalGoals   = board.goals.length;
-    const totalHabits  = board.habits.length;
-    const totalAreas   = board.lifeAreas.length;
-    const totalCards   = board.visionCards.length;
+    const totalGoals = board.goals.length;
+    const totalHabits = board.habits.length;
+    const totalAreas = board.lifeAreas.length;
+    const totalCards = board.visionCards.length;
 
     const checkIns = board.habits.reduce(
       (sum, h) => sum + h.logs.filter((l) => l.status === "done").length,
-      0
+      0,
     );
 
     const avgAreaScore = totalAreas
-      ? Math.round((board.lifeAreas.reduce((sum, la) => sum + (la.score ?? 0), 0) / totalAreas) * 10) / 10
+      ? Math.round(
+          (board.lifeAreas.reduce((sum, la) => sum + (la.score ?? 0), 0) /
+            totalAreas) *
+            10,
+        ) / 10
       : null;
 
     // Longest current streak of consecutive "done" days across all habits (simple, safe heuristic)
     let bestStreak = 0;
     for (const h of board.habits) {
-      const doneDates = new Set(h.logs.filter((l) => l.status === "done").map((l) => l.log_date));
+      const doneDates = new Set(
+        h.logs.filter((l) => l.status === "done").map((l) => l.log_date),
+      );
       let streak = 0;
       let cursor = new Date();
       while (doneDates.has(cursor.toISOString().slice(0, 10))) {
@@ -423,7 +537,15 @@ export default function VisionBoard() {
       bestStreak = Math.max(bestStreak, streak);
     }
 
-    return { totalGoals, totalHabits, totalAreas, totalCards, checkIns, avgAreaScore, bestStreak };
+    return {
+      totalGoals,
+      totalHabits,
+      totalAreas,
+      totalCards,
+      checkIns,
+      avgAreaScore,
+      bestStreak,
+    };
   }, [board]);
 
   // ── Render ──────────────────────────────────────────────────────────────────
@@ -433,9 +555,14 @@ export default function VisionBoard() {
       className="min-h-screen bg-background text-foreground flex flex-col"
       data-reduced-motion={prefersReducedMotion ? "true" : "false"}
     >
-      <a href="#vb-main-content" className="vb-skip-link">Skip to your board</a>
+      <a href="#vb-main-content" className="vb-skip-link">
+        Skip to your board
+      </a>
       <GlobalHeader />
-      <main id="vb-main-content" className="flex-1 w-full max-w-[1280px] mx-auto px-5 sm:px-8 py-8">
+      <main
+        id="vb-main-content"
+        className="flex-1 w-full max-w-[1280px] mx-auto px-5 sm:px-8 py-8"
+      >
         <div className="vb-page">
           {/* Google Fonts */}
           <link
@@ -446,171 +573,215 @@ export default function VisionBoard() {
           {/* CSS Variables + Styles */}
           <style>{BOARD_STYLES}</style>
 
-      {/* ── Loading ── */}
-      {isLoading && (
-        <div className="vb-loading" role="status" aria-live="polite">
-          <div className="vb-loading-card">
-            <motion.div
-              animate={prefersReducedMotion ? {} : { rotate: 360 }}
-              transition={prefersReducedMotion ? {} : { duration: 2.2, repeat: Infinity, ease: "linear" }}
-              className="vb-spinner"
-              aria-hidden="true"
-            >✦</motion.div>
-            <p>Preparing your board…</p>
-          </div>
-        </div>
-      )}
-
-      {/* ── Board ── */}
-      <AnimatePresence mode="wait">
-        {board && (
-          <motion.div
-            key={`${year}-${month}`}
-            initial={{ opacity: 0, y: prefersReducedMotion ? 0 : 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{    opacity: 0, y: prefersReducedMotion ? 0 : -16 }}
-            transition={{ duration: prefersReducedMotion ? 0.01 : 0.4, ease: [0.22, 1, 0.36, 1] }}
-          >
-            {/* 1. Header */}
-            <BoardHeader
-              boardMonth={board.month}
-              onPrev={() => navigate(-1)}
-              onNext={() => navigate(1)}
-              onUpdate={(u) => updateMeta.mutateAsync(u)}
-              isCurrentMonth={isCurrentMonth}
-            />
-
-            {/* 1a. Month at a glance */}
-            {glance && (
-              <section className="vb-glance-strip" aria-label={`${MONTH_NAMES[month - 1]} ${year} at a glance`}>
-                <div className="vb-glance-item">
-                  <span className="vb-glance-icon" aria-hidden="true">🎯</span>
-                  <span className="vb-glance-num">{glance.totalGoals}</span>
-                  <span className="vb-glance-label">goal{glance.totalGoals === 1 ? "" : "s"}</span>
-                </div>
-                <span className="vb-glance-sep" aria-hidden="true">·</span>
-                <div className="vb-glance-item">
-                  <span className="vb-glance-icon" aria-hidden="true">🌱</span>
-                  <span className="vb-glance-num">{glance.checkIns}</span>
-                  <span className="vb-glance-label">check-in{glance.checkIns === 1 ? "" : "s"}</span>
-                </div>
-                {glance.bestStreak > 0 && (
-                  <>
-                    <span className="vb-glance-sep" aria-hidden="true">·</span>
-                    <div className="vb-glance-item">
-                      <span className="vb-glance-icon" aria-hidden="true">🔥</span>
-                      <span className="vb-glance-num">{glance.bestStreak}</span>
-                      <span className="vb-glance-label">day streak</span>
-                    </div>
-                  </>
-                )}
-                {glance.avgAreaScore !== null && (
-                  <>
-                    <span className="vb-glance-sep" aria-hidden="true">·</span>
-                    <div className="vb-glance-item">
-                      <span className="vb-glance-icon" aria-hidden="true">💫</span>
-                      <span className="vb-glance-num">{glance.avgAreaScore}</span>
-                      <span className="vb-glance-label">avg. balance</span>
-                    </div>
-                  </>
-                )}
-                <span className="vb-glance-sep" aria-hidden="true">·</span>
-                <div className="vb-glance-item">
-                  <span className="vb-glance-icon" aria-hidden="true">📌</span>
-                  <span className="vb-glance-num">{glance.totalCards}</span>
-                  <span className="vb-glance-label">on the board</span>
-                </div>
-              </section>
-            )}
-
-            {/* 1b. Weather Strip */}
-            <WeatherStrip
-              year={year}
-              month={month}
-              cached={cachedWeather}
-              onSave={(p) => upsertWeather.mutateAsync(p)}
-            />
-
-            {/* 2. Bento: Theme + Focus | Collage */}
-            <div className="vb-three-col">
-              <div className="vb-sidebar-stack">
-                <ThemeSidebar
-                  themeWords={board.month.theme_words}
-                  focusItems={board.month.focus_items}
-                  onUpdate={(u) => updateMeta.mutateAsync(u)}
-                />
-                <FocusToday
-                  focusItems={board.month.focus_items}
-                  month={month}
-                  year={year}
-                  onUpdate={(u) => updateMeta.mutateAsync(u)}
-                />
+          {/* ── Loading ── */}
+          {isLoading && (
+            <div className="vb-loading" role="status" aria-live="polite">
+              <div className="vb-loading-card">
+                <motion.div
+                  animate={prefersReducedMotion ? {} : { rotate: 360 }}
+                  transition={
+                    prefersReducedMotion
+                      ? {}
+                      : { duration: 2.2, repeat: Infinity, ease: "linear" }
+                  }
+                  className="vb-spinner"
+                  aria-hidden="true"
+                >
+                  ✦
+                </motion.div>
+                <p>Preparing your board…</p>
               </div>
-              <VisionCollage
-                cards={board.visionCards}
-                onAdd={(p) => addCard.mutateAsync(p)}
-                onDelete={(id) => deleteCard.mutateAsync(id)}
-                onUpload={(cardId, file) => uploadCardFile.mutateAsync({ cardId, file })}
-              />
             </div>
+          )}
 
-            {/* 3. Month Goals */}
-            <MonthGoals
-              goals={board.goals}
-              onAdd={(p) => addGoal.mutateAsync(p)}
-              onUpdate={(goalId, updates) => updateGoal.mutateAsync({ goalId, updates })}
-              onDelete={(goalId) => deleteGoal.mutateAsync(goalId)}
-            />
-
-            {/* 4. Life Areas + Habit Garden */}
-            <div className="vb-two-col">
-              {board.lifeAreas.length > 0 && (
-                <LifeAreas
-                  areas={board.lifeAreas}
-                  onUpdate={(areas) => upsertAreas.mutateAsync(areas)}
+          {/* ── Board ── */}
+          <AnimatePresence mode="wait">
+            {board && (
+              <motion.div
+                key={`${year}-${month}`}
+                initial={{ opacity: 0, y: prefersReducedMotion ? 0 : 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: prefersReducedMotion ? 0 : -16 }}
+                transition={{
+                  duration: prefersReducedMotion ? 0.01 : 0.4,
+                  ease: [0.22, 1, 0.36, 1],
+                }}
+              >
+                {/* 1. Header */}
+                <BoardHeader
+                  boardMonth={board.month}
+                  onPrev={() => navigate(-1)}
+                  onNext={() => navigate(1)}
+                  onUpdate={(u) => updateMeta.mutateAsync(u)}
+                  isCurrentMonth={isCurrentMonth}
                 />
-              )}
-              <HabitGarden
-                habits={board.habits}
-                year={year}
-                month={month}
-                onAddHabit={(p) => addHabit.mutateAsync(p)}
-                onDeleteHabit={(id) => deleteHabit.mutateAsync(id)}
-                onLogHabit={(habitId, p) => logHabit.mutateAsync({ habitId, payload: p })}
-              />
-            </div>
 
-            {/* 5. Calendar Heatmap */}
-            <CalendarHeatmap
-              habits={board.habits}
-              year={year}
-              month={month}
-            />
+                {/* 1a. Month at a glance */}
+                {glance && (
+                  <section
+                    className="vb-glance-strip"
+                    aria-label={`${MONTH_NAMES[month - 1]} ${year} at a glance`}
+                  >
+                    <div className="vb-glance-item">
+                      <span className="vb-glance-icon" aria-hidden="true">
+                        🎯
+                      </span>
+                      <span className="vb-glance-num">{glance.totalGoals}</span>
+                      <span className="vb-glance-label">
+                        goal{glance.totalGoals === 1 ? "" : "s"}
+                      </span>
+                    </div>
+                    <span className="vb-glance-sep" aria-hidden="true">
+                      ·
+                    </span>
+                    <div className="vb-glance-item">
+                      <span className="vb-glance-icon" aria-hidden="true">
+                        🌱
+                      </span>
+                      <span className="vb-glance-num">{glance.checkIns}</span>
+                      <span className="vb-glance-label">
+                        check-in{glance.checkIns === 1 ? "" : "s"}
+                      </span>
+                    </div>
+                    {glance.bestStreak > 0 && (
+                      <>
+                        <span className="vb-glance-sep" aria-hidden="true">
+                          ·
+                        </span>
+                        <div className="vb-glance-item">
+                          <span className="vb-glance-icon" aria-hidden="true">
+                            🔥
+                          </span>
+                          <span className="vb-glance-num">
+                            {glance.bestStreak}
+                          </span>
+                          <span className="vb-glance-label">day streak</span>
+                        </div>
+                      </>
+                    )}
+                    {glance.avgAreaScore !== null && (
+                      <>
+                        <span className="vb-glance-sep" aria-hidden="true">
+                          ·
+                        </span>
+                        <div className="vb-glance-item">
+                          <span className="vb-glance-icon" aria-hidden="true">
+                            💫
+                          </span>
+                          <span className="vb-glance-num">
+                            {glance.avgAreaScore}
+                          </span>
+                          <span className="vb-glance-label">avg. balance</span>
+                        </div>
+                      </>
+                    )}
+                    <span className="vb-glance-sep" aria-hidden="true">
+                      ·
+                    </span>
+                    <div className="vb-glance-item">
+                      <span className="vb-glance-icon" aria-hidden="true">
+                        📌
+                      </span>
+                      <span className="vb-glance-num">{glance.totalCards}</span>
+                      <span className="vb-glance-label">on the board</span>
+                    </div>
+                  </section>
+                )}
 
-            {/* 6. Notes + Reflection */}
-            <div className="vb-two-col">
-              <QuickNotes
-                notes={board.notes}
-                onSave={(u) => upsertNotes.mutateAsync(u)}
-              />
-              <MonthReflection
-                notes={board.notes}
-                onSave={(u) => upsertNotes.mutateAsync(u)}
-              />
-            </div>
+                {/* 1b. Weather Strip */}
+                <WeatherStrip
+                  year={year}
+                  month={month}
+                  cached={cachedWeather}
+                  onSave={(p) => upsertWeather.mutateAsync(p)}
+                />
 
-            {/* 7. Year Journey */}
-            {yearSummary.length > 0 && (
-              <YearJourney
-                summary={yearSummary}
-                currentYear={year}
-                activeMonth={month}
-                onNavigate={goToMonth}
-              />
+                {/* 2. Bento: Theme + Focus | Collage */}
+                <div className="vb-three-col">
+                  <div className="vb-sidebar-stack">
+                    <ThemeSidebar
+                      themeWords={board.month.theme_words}
+                      focusItems={board.month.focus_items}
+                      onUpdate={(u) => updateMeta.mutateAsync(u)}
+                    />
+                    <FocusToday
+                      focusItems={board.month.focus_items}
+                      month={month}
+                      year={year}
+                      onUpdate={(u) => updateMeta.mutateAsync(u)}
+                    />
+                  </div>
+                  <VisionCollage
+                    cards={board.visionCards}
+                    onAdd={(p) => addCard.mutateAsync(p)}
+                    onDelete={(id) => deleteCard.mutateAsync(id)}
+                    onUpload={(cardId, file) =>
+                      uploadCardFile.mutateAsync({ cardId, file })
+                    }
+                  />
+                </div>
+
+                {/* 3. Month Goals */}
+                <MonthGoals
+                  goals={board.goals}
+                  onAdd={(p) => addGoal.mutateAsync(p)}
+                  onUpdate={(goalId, updates) =>
+                    updateGoal.mutateAsync({ goalId, updates })
+                  }
+                  onDelete={(goalId) => deleteGoal.mutateAsync(goalId)}
+                />
+
+                {/* 4. Life Areas + Habit Garden */}
+                <div className="vb-two-col">
+                  {board.lifeAreas.length > 0 && (
+                    <LifeAreas
+                      areas={board.lifeAreas}
+                      onUpdate={(areas) => upsertAreas.mutateAsync(areas)}
+                    />
+                  )}
+                  <HabitGarden
+                    habits={board.habits}
+                    year={year}
+                    month={month}
+                    onAddHabit={(p) => addHabit.mutateAsync(p)}
+                    onDeleteHabit={(id) => deleteHabit.mutateAsync(id)}
+                    onLogHabit={(habitId, p) =>
+                      logHabit.mutateAsync({ habitId, payload: p })
+                    }
+                  />
+                </div>
+
+                {/* 5. Calendar Heatmap */}
+                <CalendarHeatmap
+                  habits={board.habits}
+                  year={year}
+                  month={month}
+                />
+
+                {/* 6. Notes + Reflection */}
+                <div className="vb-two-col">
+                  <QuickNotes
+                    notes={board.notes}
+                    onSave={(u) => upsertNotes.mutateAsync(u)}
+                  />
+                  <MonthReflection
+                    notes={board.notes}
+                    onSave={(u) => upsertNotes.mutateAsync(u)}
+                  />
+                </div>
+
+                {/* 7. Year Journey */}
+                {yearSummary.length > 0 && (
+                  <YearJourney
+                    summary={yearSummary}
+                    currentYear={year}
+                    activeMonth={month}
+                    onNavigate={goToMonth}
+                  />
+                )}
+              </motion.div>
             )}
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </AnimatePresence>
         </div>
       </main>
     </div>
@@ -1511,33 +1682,113 @@ const BOARD_STYLES = `
   /* ══════════════════════════════════════════════════════════════════════
      CALENDAR HEATMAP
      ══════════════════════════════════════════════════════════════════════ */
-  .vb-heatmap-grid { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
-  .vb-heatmap-row  { display: flex; gap: 8px; }
-  .vb-heat-day-label {
-    width: 24px; text-align: center;
-    font-size: 11px; color: var(--vb-taupe);
-    font-family: 'JetBrains Mono', monospace; font-weight: 600;
+  /* ══════════════════════════════════════════════════════════════════════
+     CALENDAR & EVENTS GRID
+     ══════════════════════════════════════════════════════════════════════ */
+  .vb-cal-grid-wrapper {
+    display: flex; flex-direction: column; gap: 4px;
+    background: var(--vb-linen);
+    border: 1px solid var(--vb-border);
+    border-radius: 14px; padding: 12px;
+    overflow-x: auto;
   }
-  .vb-heat-cell {
-    width: 24px; text-align: center; font-size: 16px;
-    cursor: default; border-radius: 6px;
-    transition: transform 0.15s;
+  .vb-cal-header-row {
+    display: grid; grid-template-columns: repeat(7, 1fr);
+    gap: 4px; text-align: center; margin-bottom: 6px;
+  }
+  .vb-cal-header-cell {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px; font-weight: 700;
+    color: var(--vb-taupe); text-transform: uppercase;
+    letter-spacing: 0.05em; padding: 4px 0;
+  }
+  .vb-cal-body {
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .vb-cal-week-row {
+    display: grid; grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+  }
+  .vb-cal-cell {
+    min-height: 84px; background: var(--vb-parchment);
+    border: 1px solid var(--vb-border);
+    border-radius: 10px; padding: 6px;
+    display: flex; flex-direction: column; gap: 4px;
+    cursor: pointer; transition: all 0.2s ease;
+    position: relative; overflow: hidden;
+  }
+  .vb-cal-cell:hover {
+    border-color: var(--vb-terracotta);
+    box-shadow: 0 4px 12px var(--vb-shadow);
+  }
+  .vb-cal-cell-empty {
+    background: transparent; border-color: transparent;
+    cursor: default; pointer-events: none; opacity: 0.3;
+  }
+  .vb-cal-cell-today {
+    border-color: var(--vb-terracotta) !important;
+    background: color-mix(in srgb, var(--vb-terracotta) 4%, var(--vb-parchment));
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--vb-terracotta) 30%, transparent) inset;
+  }
+  .vb-cal-cell-top {
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .vb-cal-day-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px; font-weight: 600; color: var(--vb-muted-ink);
+  }
+  .vb-cal-num-today {
+    background: var(--vb-terracotta); color: white;
+    width: 20px; height: 20px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+  }
+  .vb-cal-habit-indicator {
+    font-size: 10px; line-height: 1;
   }
   .vb-heat-full    { color: var(--vb-sage); }
   .vb-heat-partial { color: var(--vb-terracotta); }
   .vb-heat-missed  { color: var(--vb-taupe); }
   .vb-heat-empty   { color: var(--vb-aged); opacity: 0.3; }
   .vb-heat-future  { color: var(--vb-aged); opacity: 0.15; }
-  .vb-heat-today   {
-    background: color-mix(in srgb, var(--vb-terracotta) 12%, transparent);
-    border-radius: 50%;
-    box-shadow: 0 0 0 1px color-mix(in srgb, var(--vb-terracotta) 30%, transparent) inset;
+
+  .vb-cal-events-list {
+    display: flex; flex-direction: column; gap: 3px;
+    flex: 1; overflow: hidden;
   }
+  .vb-cal-event-pill {
+    display: flex; align-items: center; justify-content: space-between; gap: 4px;
+    padding: 3px 6px; border-radius: 6px;
+    font-family: 'Inter', sans-serif; font-size: 10.5px; font-weight: 500;
+    line-height: 1.2; overflow: hidden;
+    transition: transform 0.15s;
+  }
+  .vb-cal-event-pill:hover { transform: scale(1.02); }
+  .vb-cal-event-title {
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1;
+  }
+  .vb-cal-event-time {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9.5px; opacity: 0.85; flex-shrink: 0;
+  }
+  .vb-cal-event-del {
+    background: none; border: none; padding: 1px;
+    color: currentColor; opacity: 0; cursor: pointer;
+    border-radius: 4px; display: flex; align-items: center;
+  }
+  .vb-cal-event-pill:hover .vb-cal-event-del { opacity: 0.8; }
+  .vb-cal-event-del:hover { opacity: 1; background: rgba(0,0,0,0.15); }
+
+  .vb-cal-more-pill {
+    font-family: 'Inter', sans-serif; font-size: 10px;
+    color: var(--vb-taupe); text-align: right; padding-right: 2px;
+  }
+
   .vb-heatmap-legend {
     font-size: 12px; color: var(--vb-taupe);
     font-family: 'Inter', sans-serif;
-    text-align: center;
   }
+
 
   /* ══════════════════════════════════════════════════════════════════════
      REFLECTION

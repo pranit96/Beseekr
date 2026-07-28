@@ -11,33 +11,79 @@
 
 import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, X, Sparkles, Upload, FileText, FileJson, FileImage, File } from "lucide-react";
+import {
+  Plus,
+  X,
+  Sparkles,
+  Upload,
+  FileText,
+  FileJson,
+  FileImage,
+  File,
+} from "lucide-react";
 import type { VisionCard } from "@/api/visionboard";
 
 const ACCENT_CLASSES: Record<string, string> = {
   terracotta: "vb-card-terracotta",
-  sage:       "vb-card-sage",
-  taupe:      "vb-card-taupe",
-  ink:        "vb-card-ink",
-  blush:      "vb-card-blush",
+  sage: "vb-card-sage",
+  taupe: "vb-card-taupe",
+  ink: "vb-card-ink",
+  blush: "vb-card-blush",
 };
 
 const CARD_TEMPLATES = [
-  { emoji: "🌙", title: "Dream Life",   colorAccent: "terracotta" as const, cardType: "dream"      as const },
-  { emoji: "💪", title: "Motivation",   colorAccent: "sage"       as const, cardType: "motivation" as const },
-  { emoji: "💼", title: "Career Goal",  colorAccent: "ink"        as const, cardType: "career"     as const },
-  { emoji: "🏡", title: "Future Home",  colorAccent: "taupe"      as const, cardType: "home"       as const },
+  {
+    emoji: "🌙",
+    title: "Dream Life",
+    colorAccent: "terracotta" as const,
+    cardType: "dream" as const,
+  },
+  {
+    emoji: "💪",
+    title: "Motivation",
+    colorAccent: "sage" as const,
+    cardType: "motivation" as const,
+  },
+  {
+    emoji: "💼",
+    title: "Career Goal",
+    colorAccent: "ink" as const,
+    cardType: "career" as const,
+  },
+  {
+    emoji: "🏡",
+    title: "Future Home",
+    colorAccent: "taupe" as const,
+    cardType: "home" as const,
+  },
 ];
 
-const EMOJI_OPTIONS = ["✨","🌙","💪","🎯","💼","🏡","🌿","📚","🎨","🚀","❤️","💰","🌸","⭐","🦋"];
+const EMOJI_OPTIONS = [
+  "✨",
+  "🌙",
+  "💪",
+  "🎯",
+  "💼",
+  "🏡",
+  "🌿",
+  "📚",
+  "🎨",
+  "🚀",
+  "❤️",
+  "💰",
+  "🌸",
+  "⭐",
+  "🦋",
+];
 
-const ACCEPTED_TYPES = "image/jpeg,image/png,image/webp,image/gif,application/pdf,application/json,text/plain,text/markdown,.md,.json,.txt";
+const ACCEPTED_TYPES =
+  "image/jpeg,image/png,image/webp,image/gif,application/pdf,application/json,text/plain,text/markdown,.md,.json,.txt";
 
 function FileTypeIcon({ type }: { type: string | null }) {
   if (!type) return null;
-  if (type === "image")  return <FileImage size={13} />;
-  if (type === "pdf")    return <FileText  size={13} />;
-  if (type === "json")   return <FileJson  size={13} />;
+  if (type === "image") return <FileImage size={13} />;
+  if (type === "pdf") return <FileText size={13} />;
+  if (type === "json") return <FileJson size={13} />;
   return <File size={13} />;
 }
 
@@ -83,7 +129,7 @@ interface CardTileProps {
 }
 
 function CardTile({ card, onDelete, onUpload }: CardTileProps) {
-  const fileRef   = useRef<HTMLInputElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
 
@@ -98,11 +144,14 @@ function CardTile({ card, onDelete, onUpload }: CardTileProps) {
     <motion.div
       className={`vb-vision-card ${ACCENT_CLASSES[card.color_accent] ?? "vb-card-terracotta"} ${dragging ? "vb-card-drag-over" : ""}`}
       initial={{ scale: 0.85, opacity: 0 }}
-      animate={{ scale: 1,    opacity: 1 }}
-      exit={{    scale: 0.85, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      exit={{ scale: 0.85, opacity: 0 }}
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
       whileHover={{ scale: 1.03, rotate: 0.4 }}
-      onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+      onDragOver={(e) => {
+        e.preventDefault();
+        setDragging(true);
+      }}
       onDragLeave={() => setDragging(false)}
       onDrop={async (e) => {
         e.preventDefault();
@@ -112,7 +161,11 @@ function CardTile({ card, onDelete, onUpload }: CardTileProps) {
       }}
     >
       {/* Delete */}
-      <button className="vb-card-delete" onClick={() => onDelete(card.id)} aria-label="Remove card">
+      <button
+        className="vb-card-delete"
+        onClick={() => onDelete(card.id)}
+        aria-label="Remove card"
+      >
         <X size={11} />
       </button>
 
@@ -161,7 +214,12 @@ function CardTile({ card, onDelete, onUpload }: CardTileProps) {
         title={card.file_url ? "Replace file" : "Upload image / PDF / text"}
       >
         {uploading ? (
-          <motion.span animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}>✦</motion.span>
+          <motion.span
+            animate={{ rotate: 360 }}
+            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+          >
+            ✦
+          </motion.span>
         ) : (
           <Upload size={11} />
         )}
@@ -169,9 +227,7 @@ function CardTile({ card, onDelete, onUpload }: CardTileProps) {
       </button>
 
       {/* Drag hint */}
-      {dragging && (
-        <div className="vb-card-drop-hint">Drop to attach</div>
-      )}
+      {dragging && <div className="vb-card-drop-hint">Drop to attach</div>}
 
       {/* Hidden file input */}
       <input
@@ -189,29 +245,51 @@ function CardTile({ card, onDelete, onUpload }: CardTileProps) {
 
 interface VisionCollageProps {
   cards: VisionCard[];
-  onAdd:    (payload: { title: string; emoji: string; colorAccent: VisionCard["color_accent"]; cardType: VisionCard["card_type"] }) => Promise<VisionCard | any>;
+  onAdd: (payload: {
+    title: string;
+    emoji: string;
+    colorAccent: VisionCard["color_accent"];
+    cardType: VisionCard["card_type"];
+  }) => Promise<VisionCard | any>;
   onDelete: (cardId: string) => Promise<any>;
   onUpload: (cardId: string, file: File) => Promise<any>;
 }
 
-export function VisionCollage({ cards, onAdd, onDelete, onUpload }: VisionCollageProps) {
+export function VisionCollage({
+  cards,
+  onAdd,
+  onDelete,
+  onUpload,
+}: VisionCollageProps) {
   const [showForm, setShowForm] = useState(false);
-  const [title, setTitle]       = useState("");
-  const [emoji, setEmoji]       = useState("✨");
-  const [color, setColor]       = useState<VisionCard["color_accent"]>("terracotta");
-  const [saving, setSaving]     = useState(false);
+  const [title, setTitle] = useState("");
+  const [emoji, setEmoji] = useState("✨");
+  const [color, setColor] = useState<VisionCard["color_accent"]>("terracotta");
+  const [saving, setSaving] = useState(false);
 
   async function handleAdd() {
     if (!title.trim()) return;
     setSaving(true);
-    await onAdd({ title: title.trim(), emoji, colorAccent: color, cardType: "custom" });
-    setTitle(""); setEmoji("✨"); setColor("terracotta");
+    await onAdd({
+      title: title.trim(),
+      emoji,
+      colorAccent: color,
+      cardType: "custom",
+    });
+    setTitle("");
+    setEmoji("✨");
+    setColor("terracotta");
     setShowForm(false);
     setSaving(false);
   }
 
-  async function useTemplate(t: typeof CARD_TEMPLATES[number]) {
-    await onAdd({ title: t.title, emoji: t.emoji, colorAccent: t.colorAccent, cardType: t.cardType });
+  async function useTemplate(t: (typeof CARD_TEMPLATES)[number]) {
+    await onAdd({
+      title: t.title,
+      emoji: t.emoji,
+      colorAccent: t.colorAccent,
+      cardType: t.cardType,
+    });
   }
 
   return (
@@ -259,7 +337,11 @@ export function VisionCollage({ cards, onAdd, onDelete, onUpload }: VisionCollag
           <p className="vb-templates-label">Quick start:</p>
           <div className="vb-templates-row">
             {CARD_TEMPLATES.map((t) => (
-              <button key={t.title} className="vb-template-chip" onClick={() => useTemplate(t)}>
+              <button
+                key={t.title}
+                className="vb-template-chip"
+                onClick={() => useTemplate(t)}
+              >
                 {t.emoji} {t.title}
               </button>
             ))}
@@ -280,12 +362,14 @@ export function VisionCollage({ cards, onAdd, onDelete, onUpload }: VisionCollag
             <motion.div
               className="vb-add-form"
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
-              animate={{ scale: 1,   opacity: 1, y: 0 }}
-              exit={{    scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
               onClick={(e) => e.stopPropagation()}
             >
               <h3 className="vb-form-title">New Vision Card</h3>
-              <p className="vb-form-hint">You can upload a file after creating the card.</p>
+              <p className="vb-form-hint">
+                You can upload a file after creating the card.
+              </p>
 
               {/* Emoji picker */}
               <div className="vb-emoji-grid">
@@ -294,7 +378,9 @@ export function VisionCollage({ cards, onAdd, onDelete, onUpload }: VisionCollag
                     key={em}
                     className={`vb-emoji-btn ${emoji === em ? "vb-emoji-selected" : ""}`}
                     onClick={() => setEmoji(em)}
-                  >{em}</button>
+                  >
+                    {em}
+                  </button>
                 ))}
               </div>
 
@@ -308,19 +394,30 @@ export function VisionCollage({ cards, onAdd, onDelete, onUpload }: VisionCollag
               />
 
               <div className="vb-color-row">
-                {(["terracotta","sage","taupe","ink","blush"] as const).map((c) => (
-                  <button
-                    key={c}
-                    className={`vb-color-dot vb-dot-${c} ${color === c ? "vb-dot-selected" : ""}`}
-                    onClick={() => setColor(c)}
-                    aria-label={c}
-                  />
-                ))}
+                {(["terracotta", "sage", "taupe", "ink", "blush"] as const).map(
+                  (c) => (
+                    <button
+                      key={c}
+                      className={`vb-color-dot vb-dot-${c} ${color === c ? "vb-dot-selected" : ""}`}
+                      onClick={() => setColor(c)}
+                      aria-label={c}
+                    />
+                  ),
+                )}
               </div>
 
               <div className="vb-form-actions">
-                <button className="vb-btn-ghost" onClick={() => setShowForm(false)}>Cancel</button>
-                <button className="vb-btn-primary" onClick={handleAdd} disabled={saving || !title.trim()}>
+                <button
+                  className="vb-btn-ghost"
+                  onClick={() => setShowForm(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="vb-btn-primary"
+                  onClick={handleAdd}
+                  disabled={saving || !title.trim()}
+                >
                   {saving ? "Creating…" : "Create Card"}
                 </button>
               </div>

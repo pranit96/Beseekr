@@ -10,23 +10,30 @@ interface FocusTodayProps {
   onUpdate: (updates: Partial<Pick<BoardMonth, "focus_items">>) => void;
 }
 
-export function FocusToday({ focusItems, month, year, onUpdate }: FocusTodayProps) {
+export function FocusToday({
+  focusItems,
+  month,
+  year,
+  onUpdate,
+}: FocusTodayProps) {
   const [addingItem, setAddingItem] = useState(false);
-  const [newItem, setNewItem]       = useState("");
+  const [newItem, setNewItem] = useState("");
 
   // % of month elapsed
-  const now       = new Date();
+  const now = new Date();
   const totalDays = new Date(year, month, 0).getDate();
-  const elapsed   = now.getFullYear() === year && now.getMonth() + 1 === month
-    ? now.getDate()
-    : totalDays;
+  const elapsed =
+    now.getFullYear() === year && now.getMonth() + 1 === month
+      ? now.getDate()
+      : totalDays;
   const pct = Math.round((elapsed / totalDays) * 100);
 
   function addItem() {
     const trimmed = newItem.trim();
     if (!trimmed) return;
     onUpdate({ focus_items: [...focusItems, trimmed] });
-    setNewItem(""); setAddingItem(false);
+    setNewItem("");
+    setAddingItem(false);
   }
 
   function removeItem(item: string) {
@@ -47,8 +54,8 @@ export function FocusToday({ focusItems, month, year, onUpdate }: FocusTodayProp
               key={item}
               className="vb-focus-item"
               initial={{ x: 20, opacity: 0 }}
-              animate={{ x: 0,  opacity: 1 }}
-              exit={{    x: 20, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: 20, opacity: 0 }}
               transition={{ type: "spring", stiffness: 300, damping: 22 }}
             >
               <span className="vb-focus-dot">▸</span>
@@ -70,13 +77,22 @@ export function FocusToday({ focusItems, month, year, onUpdate }: FocusTodayProp
           className="vb-chip-input vb-mt-2"
           value={newItem}
           onChange={(e) => setNewItem(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter") addItem(); if (e.key === "Escape") setAddingItem(false); }}
-          onBlur={() => { if (newItem.trim()) addItem(); else setAddingItem(false); }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") addItem();
+            if (e.key === "Escape") setAddingItem(false);
+          }}
+          onBlur={() => {
+            if (newItem.trim()) addItem();
+            else setAddingItem(false);
+          }}
           placeholder="e.g. Finish onboarding"
           autoFocus
         />
       ) : (
-        <button className="vb-chip-add vb-mt-2" onClick={() => setAddingItem(true)}>
+        <button
+          className="vb-chip-add vb-mt-2"
+          onClick={() => setAddingItem(true)}
+        >
           <Plus size={11} /> Add Focus
         </button>
       )}

@@ -3,11 +3,11 @@ import { motion } from "framer-motion";
 import type { LifeArea } from "@/api/visionboard";
 
 const AREA_META: Record<string, { label: string; icon: string }> = {
-  career:        { label: "Career",        icon: "💼" },
-  learning:      { label: "Learning",      icon: "🧠" },
-  health:        { label: "Health",        icon: "💪" },
+  career: { label: "Career", icon: "💼" },
+  learning: { label: "Learning", icon: "🧠" },
+  health: { label: "Health", icon: "💪" },
   relationships: { label: "Relationships", icon: "❤️" },
-  finance:       { label: "Finance",       icon: "💰" },
+  finance: { label: "Finance", icon: "💰" },
 };
 
 interface LifeAreasProps {
@@ -15,13 +15,21 @@ interface LifeAreasProps {
   onUpdate: (areas: Array<{ area: string; score: number }>) => Promise<any>;
 }
 
-function ScoreBar({ area, score, onScoreChange }: { area: string; score: number; onScoreChange: (s: number) => void }) {
+function ScoreBar({
+  area,
+  score,
+  onScoreChange,
+}: {
+  area: string;
+  score: number;
+  onScoreChange: (s: number) => void;
+}) {
   const [dragging, setDragging] = useState(false);
   const meta = AREA_META[area] || { label: area, icon: "⭐" };
 
   function handleClick(e: React.MouseEvent<HTMLDivElement>) {
     const rect = e.currentTarget.getBoundingClientRect();
-    const pct  = Math.round(((e.clientX - rect.left) / rect.width) * 100);
+    const pct = Math.round(((e.clientX - rect.left) / rect.width) * 100);
     onScoreChange(Math.min(100, Math.max(0, pct)));
   }
 
@@ -31,7 +39,11 @@ function ScoreBar({ area, score, onScoreChange }: { area: string; score: number;
     <div className="vb-area-row">
       <span className="vb-area-icon">{meta.icon}</span>
       <span className="vb-area-label">{meta.label}</span>
-      <div className="vb-bar-track" onClick={handleClick} title="Click to set score">
+      <div
+        className="vb-bar-track"
+        onClick={handleClick}
+        title="Click to set score"
+      >
         <motion.div
           className="vb-bar-fill"
           style={{ backgroundColor: color }}
@@ -47,10 +59,12 @@ function ScoreBar({ area, score, onScoreChange }: { area: string; score: number;
 
 export function LifeAreas({ areas, onUpdate }: LifeAreasProps) {
   const [localAreas, setLocalAreas] = useState<LifeArea[]>(areas);
-  const [dirty, setDirty]           = useState(false);
+  const [dirty, setDirty] = useState(false);
 
   function handleChange(areaKey: string, score: number) {
-    setLocalAreas((prev) => prev.map((a) => a.area === areaKey ? { ...a, score } : a));
+    setLocalAreas((prev) =>
+      prev.map((a) => (a.area === areaKey ? { ...a, score } : a)),
+    );
     setDirty(true);
   }
 
@@ -59,8 +73,10 @@ export function LifeAreas({ areas, onUpdate }: LifeAreasProps) {
     setDirty(false);
   }
 
-  const ORDER = ["career","learning","health","relationships","finance"];
-  const sorted = [...localAreas].sort((a, b) => ORDER.indexOf(a.area) - ORDER.indexOf(b.area));
+  const ORDER = ["career", "learning", "health", "relationships", "finance"];
+  const sorted = [...localAreas].sort(
+    (a, b) => ORDER.indexOf(a.area) - ORDER.indexOf(b.area),
+  );
 
   return (
     <div className="vb-section vb-life-areas">

@@ -772,9 +772,7 @@ export default function Profile() {
                 {/* Enable Switch */}
                 <div className="flex items-center justify-between pb-4 border-b border-border/40">
                   <div>
-                    <div className="font-medium text-sm">
-                      Digest Dispatch
-                    </div>
+                    <div className="font-medium text-sm">Digest Dispatch</div>
                     <div className="text-xs text-muted-foreground mt-0.5">
                       Enable to receive compiled briefs on your chosen cadence.
                     </div>
@@ -1138,8 +1136,8 @@ export default function Profile() {
                 Delete Account
               </AlertDialogTitle>
               <AlertDialogDescription>
-                This action cannot be undone. All your data, settings, and history
-                will be permanently deleted from our servers.
+                This action cannot be undone. All your data, settings, and
+                history will be permanently deleted from our servers.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <div className="py-4 space-y-3">

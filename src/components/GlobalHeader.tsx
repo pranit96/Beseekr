@@ -225,9 +225,9 @@ function getNavigationContext(
     pathname.startsWith("/chat") ||
     pathname.startsWith("/agents") ||
     pathname.startsWith("/canvas");
-  const isResumeContext  = pathname.startsWith("/dashboard/resume");
-  const isBudgetContext  = pathname.startsWith("/dashboard/budget");
-  const isBoardContext   = pathname.startsWith("/board");
+  const isResumeContext = pathname.startsWith("/dashboard/resume");
+  const isBudgetContext = pathname.startsWith("/dashboard/budget");
+  const isBoardContext = pathname.startsWith("/board");
   const isDiscoverContext = pathname.startsWith("/dashboard");
 
   // Vision Board gets its own minimal strip
@@ -271,7 +271,7 @@ function getNavigationContext(
   }
 
   const items = [
-    NAV_ITEMS.visionboard,  // Board first
+    NAV_ITEMS.visionboard, // Board first
     NAV_ITEMS.home,
     NAV_ITEMS.chat,
     NAV_ITEMS.discover,

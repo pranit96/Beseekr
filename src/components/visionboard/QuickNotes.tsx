@@ -11,7 +11,7 @@ interface QuickNotesProps {
 export function QuickNotes({ notes, onSave }: QuickNotesProps) {
   const [value, setValue] = useState(notes?.quick_notes || "");
   const [saving, setSaving] = useState(false);
-  const [saved,  setSaved]  = useState(false);
+  const [saved, setSaved] = useState(false);
 
   async function handleSave(val: string) {
     setSaving(true);
@@ -38,7 +38,9 @@ export function QuickNotes({ notes, onSave }: QuickNotesProps) {
         value={value}
         onChange={(e) => setValue(e.target.value)}
         onBlur={() => handleSave(value)}
-        placeholder={"• Build before consuming\n• Don't compare\n• Sleep before midnight…"}
+        placeholder={
+          "• Build before consuming\n• Don't compare\n• Sleep before midnight…"
+        }
         rows={6}
       />
     </div>

@@ -7,25 +7,28 @@ interface HabitGardenProps {
   habits: Habit[];
   year: number;
   month: number;
-  onAddHabit:  (payload: { name: string; icon?: string }) => Promise<any>;
+  onAddHabit: (payload: { name: string; icon?: string }) => Promise<any>;
   onDeleteHabit: (habitId: string) => Promise<any>;
-  onLogHabit:  (habitId: string, payload: { logDate: string; status: HabitLog["status"] }) => Promise<any>;
+  onLogHabit: (
+    habitId: string,
+    payload: { logDate: string; status: HabitLog["status"] },
+  ) => Promise<any>;
 }
 
 const STATUS_DOT: Record<HabitLog["status"], string> = {
-  done:    "●",
+  done: "●",
   partial: "◐",
-  missed:  "○",
+  missed: "○",
 };
 
 const STATUS_CLASS: Record<HabitLog["status"], string> = {
-  done:    "vb-dot-done",
+  done: "vb-dot-done",
   partial: "vb-dot-partial",
-  missed:  "vb-dot-missed",
+  missed: "vb-dot-missed",
 };
 
 const CYCLE: HabitLog["status"][] = ["done", "partial", "missed"];
-const ICONS = ["🌱","🌿","🌼","🌸","☀","💧","📚","🏃","🧘","🎯"];
+const ICONS = ["🌱", "🌿", "🌼", "🌸", "☀", "💧", "📚", "🏃", "🧘", "🎯"];
 
 function getLogForDay(logs: HabitLog[], date: string): HabitLog | undefined {
   return logs.find((l) => l.log_date === date);
@@ -35,36 +38,49 @@ function getDaysInMonth(year: number, month: number): string[] {
   const count = new Date(year, month, 0).getDate();
   return Array.from({ length: count }, (_, i) => {
     const d = i + 1;
-    return `${year}-${String(month).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+    return `${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
   });
 }
 
-export function HabitGarden({ habits, year, month, onAddHabit, onDeleteHabit, onLogHabit }: HabitGardenProps) {
-  const [showForm, setShowForm]   = useState(false);
+export function HabitGarden({
+  habits,
+  year,
+  month,
+  onAddHabit,
+  onDeleteHabit,
+  onLogHabit,
+}: HabitGardenProps) {
+  const [showForm, setShowForm] = useState(false);
   const [habitName, setHabitName] = useState("");
   const [habitIcon, setHabitIcon] = useState("🌱");
-  const [saving, setSaving]       = useState(false);
+  const [saving, setSaving] = useState(false);
 
-  const days  = getDaysInMonth(year, month);
+  const days = getDaysInMonth(year, month);
   const today = new Date().toISOString().split("T")[0];
 
   async function handleAdd() {
     if (!habitName.trim()) return;
     setSaving(true);
     await onAddHabit({ name: habitName.trim(), icon: habitIcon });
-    setHabitName(""); setHabitIcon("🌱"); setShowForm(false);
+    setHabitName("");
+    setHabitIcon("🌱");
+    setShowForm(false);
     setSaving(false);
   }
 
-  async function handleDotClick(habitId: string, date: string, currentLog?: HabitLog) {
+  async function handleDotClick(
+    habitId: string,
+    date: string,
+    currentLog?: HabitLog,
+  ) {
     // Only allow logging today or past days
     if (date > today) return;
     const currentStatus = currentLog?.status || null;
     // cycle: null → done → partial → missed → null (remove)
     let nextStatus: HabitLog["status"] | null = "done";
-    if (currentStatus === "done")    nextStatus = "partial";
+    if (currentStatus === "done") nextStatus = "partial";
     if (currentStatus === "partial") nextStatus = "missed";
-    if (currentStatus === "missed")  nextStatus = "done";
+    if (currentStatus === "missed") nextStatus = "done";
     await onLogHabit(habitId, { logDate: date, status: nextStatus || "done" });
   }
 
@@ -90,7 +106,7 @@ export function HabitGarden({ habits, year, month, onAddHabit, onDeleteHabit, on
             className="vb-goals-form"
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
-            exit={{    height: 0, opacity: 0 }}
+            exit={{ height: 0, opacity: 0 }}
           >
             <div className="vb-emoji-grid">
               {ICONS.map((ic) => (
@@ -98,7 +114,9 @@ export function HabitGarden({ habits, year, month, onAddHabit, onDeleteHabit, on
                   key={ic}
                   className={`vb-emoji-btn ${habitIcon === ic ? "vb-emoji-selected" : ""}`}
                   onClick={() => setHabitIcon(ic)}
-                >{ic}</button>
+                >
+                  {ic}
+                </button>
               ))}
             </div>
             <input
@@ -110,8 +128,17 @@ export function HabitGarden({ habits, year, month, onAddHabit, onDeleteHabit, on
               autoFocus
             />
             <div className="vb-form-actions">
-              <button className="vb-btn-ghost" onClick={() => setShowForm(false)}>Cancel</button>
-              <button className="vb-btn-primary" onClick={handleAdd} disabled={saving || !habitName.trim()}>
+              <button
+                className="vb-btn-ghost"
+                onClick={() => setShowForm(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="vb-btn-primary"
+                onClick={handleAdd}
+                disabled={saving || !habitName.trim()}
+              >
                 {saving ? "Adding…" : "Plant"}
               </button>
             </div>
@@ -126,7 +153,10 @@ export function HabitGarden({ habits, year, month, onAddHabit, onDeleteHabit, on
           {showDays.map((d) => {
             const dayNum = parseInt(d.split("-")[2], 10);
             return (
-              <span key={d} className={`vb-dot-col vb-day-label ${d === today ? "vb-today-label" : ""}`}>
+              <span
+                key={d}
+                className={`vb-dot-col vb-day-label ${d === today ? "vb-today-label" : ""}`}
+              >
                 {dayNum}
               </span>
             );
@@ -137,7 +167,11 @@ export function HabitGarden({ habits, year, month, onAddHabit, onDeleteHabit, on
       {/* Habit rows */}
       <AnimatePresence>
         {habits.length === 0 && !showForm && (
-          <motion.p className="vb-empty-hint" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+          <motion.p
+            className="vb-empty-hint"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+          >
             Plant your first habit for the month…
           </motion.p>
         )}
@@ -154,7 +188,10 @@ export function HabitGarden({ habits, year, month, onAddHabit, onDeleteHabit, on
             <div className="vb-habit-name-col">
               <span className="vb-habit-icon">{habit.icon}</span>
               <span className="vb-habit-name">{habit.name}</span>
-              <button className="vb-goal-del" onClick={() => onDeleteHabit(habit.id)}>
+              <button
+                className="vb-goal-del"
+                onClick={() => onDeleteHabit(habit.id)}
+              >
                 <Trash2 size={10} />
               </button>
             </div>
@@ -169,7 +206,7 @@ export function HabitGarden({ habits, year, month, onAddHabit, onDeleteHabit, on
                   onClick={() => handleDotClick(habit.id, d, log)}
                   disabled={isFuture}
                   whileHover={!isFuture ? { scale: 1.3 } : {}}
-                  whileTap={!isFuture  ? { scale: 0.9 } : {}}
+                  whileTap={!isFuture ? { scale: 0.9 } : {}}
                   title={d}
                 >
                   {log ? STATUS_DOT[log.status] : "·"}
@@ -180,7 +217,9 @@ export function HabitGarden({ habits, year, month, onAddHabit, onDeleteHabit, on
         ))}
       </AnimatePresence>
 
-      <p className="vb-area-hint">● done &nbsp; ◐ partial &nbsp; ○ missed — click a dot to log</p>
+      <p className="vb-area-hint">
+        ● done &nbsp; ◐ partial &nbsp; ○ missed — click a dot to log
+      </p>
     </div>
   );
 }

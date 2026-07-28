@@ -4,8 +4,18 @@ import { useState } from "react";
 import type { BoardMonth } from "@/api/visionboard";
 
 const MONTHS = [
-  "January","February","March","April","May","June",
-  "July","August","September","October","November","December",
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
 ];
 
 interface BoardHeaderProps {
@@ -16,13 +26,23 @@ interface BoardHeaderProps {
   isCurrentMonth: boolean;
 }
 
-export function BoardHeader({ boardMonth, onPrev, onNext, onUpdate, isCurrentMonth }: BoardHeaderProps) {
+export function BoardHeader({
+  boardMonth,
+  onPrev,
+  onNext,
+  onUpdate,
+  isCurrentMonth,
+}: BoardHeaderProps) {
   const [editingQuote, setEditingQuote] = useState(false);
-  const [editingMood, setEditingMood]   = useState(false);
-  const [quoteVal, setQuoteVal]         = useState(boardMonth.quote || "");
-  const [moodVal, setMoodVal]           = useState(boardMonth.mood_tag || "");
+  const [editingMood, setEditingMood] = useState(false);
+  const [quoteVal, setQuoteVal] = useState(boardMonth.quote || "");
+  const [moodVal, setMoodVal] = useState(boardMonth.mood_tag || "");
   const now = new Date();
-  const timeStr = now.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true });
+  const timeStr = now.toLocaleTimeString("en-IN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
 
   function saveQuote() {
     onUpdate({ quote: quoteVal });
@@ -46,7 +66,11 @@ export function BoardHeader({ boardMonth, onPrev, onNext, onUpdate, isCurrentMon
 
       {/* Month nav */}
       <div className="vb-header-inner">
-        <button onClick={onPrev} className="vb-nav-btn" aria-label="Previous month">
+        <button
+          onClick={onPrev}
+          className="vb-nav-btn"
+          aria-label="Previous month"
+        >
           <ChevronLeft size={18} />
         </button>
 
@@ -54,7 +78,9 @@ export function BoardHeader({ boardMonth, onPrev, onNext, onUpdate, isCurrentMon
           {/* Month + Year */}
           <div className="vb-month-title">
             <span className="vb-ornament">✿</span>
-            <span>{MONTHS[boardMonth.month - 1].toUpperCase()} • {boardMonth.year}</span>
+            <span>
+              {MONTHS[boardMonth.month - 1].toUpperCase()} • {boardMonth.year}
+            </span>
             <span className="vb-ornament">✿</span>
           </div>
 
@@ -65,11 +91,13 @@ export function BoardHeader({ boardMonth, onPrev, onNext, onUpdate, isCurrentMon
                 <input
                   className="vb-quote-input"
                   value={quoteVal}
-                  onChange={e => setQuoteVal(e.target.value)}
-                  onKeyDown={e => e.key === "Enter" && saveQuote()}
+                  onChange={(e) => setQuoteVal(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && saveQuote()}
                   autoFocus
                 />
-                <button onClick={saveQuote} className="vb-save-btn"><Check size={14} /></button>
+                <button onClick={saveQuote} className="vb-save-btn">
+                  <Check size={14} />
+                </button>
               </div>
             ) : (
               <p className="vb-quote" onClick={() => setEditingQuote(true)}>
@@ -87,15 +115,20 @@ export function BoardHeader({ boardMonth, onPrev, onNext, onUpdate, isCurrentMon
                 <input
                   className="vb-mood-input"
                   value={moodVal}
-                  onChange={e => setMoodVal(e.target.value)}
-                  onKeyDown={e => e.key === "Enter" && saveMood()}
+                  onChange={(e) => setMoodVal(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && saveMood()}
                   autoFocus
                   placeholder="e.g. Calm Morning"
                 />
-                <button onClick={saveMood} className="vb-save-btn"><Check size={14} /></button>
+                <button onClick={saveMood} className="vb-save-btn">
+                  <Check size={14} />
+                </button>
               </div>
             ) : (
-              <span className="vb-mood-tag" onClick={() => setEditingMood(true)}>
+              <span
+                className="vb-mood-tag"
+                onClick={() => setEditingMood(true)}
+              >
                 ☁ {boardMonth.mood_tag || "Set mood"}
                 <Pencil size={10} className="vb-inline-pencil" />
               </span>
