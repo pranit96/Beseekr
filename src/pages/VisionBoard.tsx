@@ -14,7 +14,7 @@
  */
 
 import { useState, useCallback, useEffect, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, Reorder } from "framer-motion";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 
@@ -43,7 +43,11 @@ import { QuickNotes } from "@/components/visionboard/QuickNotes";
 import { CalendarHeatmap } from "@/components/visionboard/CalendarHeatmap";
 import { MonthReflection } from "@/components/visionboard/MonthReflection";
 import { YearJourney } from "@/components/visionboard/YearJourney";
+import { GripVertical } from "lucide-react";
 import { VisionBoardAI } from "@/components/visionboard/VisionBoardAI";
+import { ManifestationBanner } from "@/components/visionboard/ManifestationBanner";
+
+
 
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -550,6 +554,207 @@ export default function VisionBoard() {
     };
   }, [board]);
 
+  const [moduleOrder, setModuleOrder] = useState<string[]>(() => {
+    try {
+      const raw = localStorage.getItem("vb_module_order_v1");
+      if (raw) return JSON.parse(raw);
+    } catch (e) {}
+    return [
+      "manifestation",
+      "ai_copilot",
+      "glance",
+      "weather",
+      "bento",
+      "goals",
+      "life_habits",
+      "calendar",
+      "notes_reflection",
+      "year_journey",
+    ];
+  });
+
+  const handleModuleReorder = (newOrder: string[]) => {
+    setModuleOrder(newOrder);
+    try {
+      localStorage.setItem("vb_module_order_v1", JSON.stringify(newOrder));
+    } catch (e) {}
+  };
+
+  const renderModuleComponent = (modId: string) => {
+    if (!board) return null;
+    switch (modId) {
+      case "manifestation":
+        return (
+          <ManifestationBanner
+            boardMonth={board.month}
+            year={year}
+            month={month}
+            onUpdate={(u) => updateMeta.mutateAsync(u)}
+          />
+        );
+      case "ai_copilot":
+        return (
+          <VisionBoardAI
+            year={year}
+            month={month}
+            onRefreshBoard={invalidateBoard}
+          />
+        );
+      case "glance":
+        return glance ? (
+          <section
+            className="vb-glance-strip mb-6"
+            aria-label={`${MONTH_NAMES[month - 1]} ${year} at a glance`}
+          >
+            <div className="vb-glance-item">
+              <span className="vb-glance-icon" aria-hidden="true">🎯</span>
+              <span className="vb-glance-num">{glance.totalGoals}</span>
+              <span className="vb-glance-label">goal{glance.totalGoals === 1 ? "" : "s"}</span>
+            </div>
+            <span className="vb-glance-sep" aria-hidden="true">·</span>
+            <div className="vb-glance-item">
+              <span className="vb-glance-icon" aria-hidden="true">🌱</span>
+              <span className="vb-glance-num">{glance.checkIns}</span>
+              <span className="vb-glance-label">check-in{glance.checkIns === 1 ? "" : "s"}</span>
+            </div>
+            {glance.bestStreak > 0 && (
+              <>
+                <span className="vb-glance-sep" aria-hidden="true">·</span>
+                <div className="vb-glance-item">
+                  <span className="vb-glance-icon" aria-hidden="true">🔥</span>
+                  <span className="vb-glance-num">{glance.bestStreak}</span>
+                  <span className="vb-glance-label">day streak</span>
+                </div>
+              </>
+            )}
+            {glance.avgAreaScore !== null && (
+              <>
+                <span className="vb-glance-sep" aria-hidden="true">·</span>
+                <div className="vb-glance-item">
+                  <span className="vb-glance-icon" aria-hidden="true">💫</span>
+                  <span className="vb-glance-num">{glance.avgAreaScore}</span>
+                  <span className="vb-glance-label">avg. balance</span>
+                </div>
+              </>
+            )}
+            <span className="vb-glance-sep" aria-hidden="true">·</span>
+            <div className="vb-glance-item">
+              <span className="vb-glance-icon" aria-hidden="true">📌</span>
+              <span className="vb-glance-num">{glance.totalCards}</span>
+              <span className="vb-glance-label">on the board</span>
+            </div>
+          </section>
+        ) : null;
+      case "weather":
+        return (
+          <div className="mb-6">
+            <WeatherStrip
+              year={year}
+              month={month}
+              cached={cachedWeather}
+              onSave={(p) => upsertWeather.mutateAsync(p)}
+            />
+          </div>
+        );
+      case "bento":
+        return (
+          <div className="vb-three-col mb-6">
+            <div className="vb-sidebar-stack">
+              <ThemeSidebar
+                themeWords={board.month.theme_words}
+                focusItems={board.month.focus_items}
+                onUpdate={(u) => updateMeta.mutateAsync(u)}
+              />
+              <FocusToday
+                focusItems={board.month.focus_items}
+                month={month}
+                year={year}
+                onUpdate={(u) => updateMeta.mutateAsync(u)}
+              />
+            </div>
+            <VisionCollage
+              cards={board.visionCards}
+              onAdd={(p) => addCard.mutateAsync(p)}
+              onDelete={(id) => deleteCard.mutateAsync(id)}
+              onUpload={(cardId, file) =>
+                uploadCardFile.mutateAsync({ cardId, file })
+              }
+            />
+          </div>
+        );
+      case "goals":
+        return (
+          <div className="mb-6">
+            <MonthGoals
+              goals={board.goals}
+              onAdd={(p) => addGoal.mutateAsync(p)}
+              onUpdate={(goalId, updates) =>
+                updateGoal.mutateAsync({ goalId, updates })
+              }
+              onDelete={(goalId) => deleteGoal.mutateAsync(goalId)}
+            />
+          </div>
+        );
+      case "life_habits":
+        return (
+          <div className="vb-two-col mb-6">
+            {board.lifeAreas.length > 0 && (
+              <LifeAreas
+                areas={board.lifeAreas}
+                onUpdate={(areas) => upsertAreas.mutateAsync(areas)}
+              />
+            )}
+            <HabitGarden
+              habits={board.habits}
+              year={year}
+              month={month}
+              onAddHabit={(p) => addHabit.mutateAsync(p)}
+              onDeleteHabit={(id) => deleteHabit.mutateAsync(id)}
+              onLogHabit={(habitId, p) =>
+                logHabit.mutateAsync({ habitId, payload: p })
+              }
+            />
+          </div>
+        );
+      case "calendar":
+        return (
+          <div className="mb-6">
+            <CalendarHeatmap
+              habits={board.habits}
+              year={year}
+              month={month}
+            />
+          </div>
+        );
+      case "notes_reflection":
+        return (
+          <div className="vb-two-col mb-6">
+            <QuickNotes
+              notes={board.notes}
+              onSave={(u) => upsertNotes.mutateAsync(u)}
+            />
+            <MonthReflection
+              notes={board.notes}
+              onSave={(u) => upsertNotes.mutateAsync(u)}
+            />
+          </div>
+        );
+      case "year_journey":
+        return yearSummary.length > 0 ? (
+          <div className="mb-6">
+            <YearJourney
+              summary={yearSummary}
+              currentYear={year}
+              activeMonth={month}
+              onNavigate={goToMonth}
+            />
+          </div>
+        ) : null;
+      default:
+        return null;
+    }
+  };
+
   // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
@@ -618,177 +823,34 @@ export default function VisionBoard() {
                   isCurrentMonth={isCurrentMonth}
                 />
 
-                {/* 1a. AI Copilot */}
-                <VisionBoardAI
-                  year={year}
-                  month={month}
-                  onRefreshBoard={invalidateBoard}
-                />
-
-
-                {/* 1a. Month at a glance */}
-                {glance && (
-                  <section
-                    className="vb-glance-strip"
-                    aria-label={`${MONTH_NAMES[month - 1]} ${year} at a glance`}
-                  >
-                    <div className="vb-glance-item">
-                      <span className="vb-glance-icon" aria-hidden="true">
-                        🎯
-                      </span>
-                      <span className="vb-glance-num">{glance.totalGoals}</span>
-                      <span className="vb-glance-label">
-                        goal{glance.totalGoals === 1 ? "" : "s"}
-                      </span>
-                    </div>
-                    <span className="vb-glance-sep" aria-hidden="true">
-                      ·
-                    </span>
-                    <div className="vb-glance-item">
-                      <span className="vb-glance-icon" aria-hidden="true">
-                        🌱
-                      </span>
-                      <span className="vb-glance-num">{glance.checkIns}</span>
-                      <span className="vb-glance-label">
-                        check-in{glance.checkIns === 1 ? "" : "s"}
-                      </span>
-                    </div>
-                    {glance.bestStreak > 0 && (
-                      <>
-                        <span className="vb-glance-sep" aria-hidden="true">
-                          ·
-                        </span>
-                        <div className="vb-glance-item">
-                          <span className="vb-glance-icon" aria-hidden="true">
-                            🔥
-                          </span>
-                          <span className="vb-glance-num">
-                            {glance.bestStreak}
-                          </span>
-                          <span className="vb-glance-label">day streak</span>
+                {/* Reorderable Modules */}
+                <Reorder.Group
+                  axis="y"
+                  values={moduleOrder}
+                  onReorder={handleModuleReorder}
+                  className="space-y-2 mt-4"
+                >
+                  {moduleOrder.map((modId) => {
+                    const content = renderModuleComponent(modId);
+                    if (!content) return null;
+                    return (
+                      <Reorder.Item
+                        key={modId}
+                        value={modId}
+                        className="relative group focus:outline-none"
+                        whileDrag={{ scale: 1.01, zIndex: 40, cursor: "grabbing" }}
+                      >
+                        <div
+                          className="absolute -left-5 top-4 opacity-0 group-hover:opacity-100 transition-opacity text-amber-600 cursor-grab active:cursor-grabbing p-1 bg-background/80 rounded border border-border shadow-sm z-30"
+                          title="Drag to reorder section"
+                        >
+                          <GripVertical size={14} />
                         </div>
-                      </>
-                    )}
-                    {glance.avgAreaScore !== null && (
-                      <>
-                        <span className="vb-glance-sep" aria-hidden="true">
-                          ·
-                        </span>
-                        <div className="vb-glance-item">
-                          <span className="vb-glance-icon" aria-hidden="true">
-                            💫
-                          </span>
-                          <span className="vb-glance-num">
-                            {glance.avgAreaScore}
-                          </span>
-                          <span className="vb-glance-label">avg. balance</span>
-                        </div>
-                      </>
-                    )}
-                    <span className="vb-glance-sep" aria-hidden="true">
-                      ·
-                    </span>
-                    <div className="vb-glance-item">
-                      <span className="vb-glance-icon" aria-hidden="true">
-                        📌
-                      </span>
-                      <span className="vb-glance-num">{glance.totalCards}</span>
-                      <span className="vb-glance-label">on the board</span>
-                    </div>
-                  </section>
-                )}
-
-                {/* 1b. Weather Strip */}
-                <WeatherStrip
-                  year={year}
-                  month={month}
-                  cached={cachedWeather}
-                  onSave={(p) => upsertWeather.mutateAsync(p)}
-                />
-
-                {/* 2. Bento: Theme + Focus | Collage */}
-                <div className="vb-three-col">
-                  <div className="vb-sidebar-stack">
-                    <ThemeSidebar
-                      themeWords={board.month.theme_words}
-                      focusItems={board.month.focus_items}
-                      onUpdate={(u) => updateMeta.mutateAsync(u)}
-                    />
-                    <FocusToday
-                      focusItems={board.month.focus_items}
-                      month={month}
-                      year={year}
-                      onUpdate={(u) => updateMeta.mutateAsync(u)}
-                    />
-                  </div>
-                  <VisionCollage
-                    cards={board.visionCards}
-                    onAdd={(p) => addCard.mutateAsync(p)}
-                    onDelete={(id) => deleteCard.mutateAsync(id)}
-                    onUpload={(cardId, file) =>
-                      uploadCardFile.mutateAsync({ cardId, file })
-                    }
-                  />
-                </div>
-
-                {/* 3. Month Goals */}
-                <MonthGoals
-                  goals={board.goals}
-                  onAdd={(p) => addGoal.mutateAsync(p)}
-                  onUpdate={(goalId, updates) =>
-                    updateGoal.mutateAsync({ goalId, updates })
-                  }
-                  onDelete={(goalId) => deleteGoal.mutateAsync(goalId)}
-                />
-
-                {/* 4. Life Areas + Habit Garden */}
-                <div className="vb-two-col">
-                  {board.lifeAreas.length > 0 && (
-                    <LifeAreas
-                      areas={board.lifeAreas}
-                      onUpdate={(areas) => upsertAreas.mutateAsync(areas)}
-                    />
-                  )}
-                  <HabitGarden
-                    habits={board.habits}
-                    year={year}
-                    month={month}
-                    onAddHabit={(p) => addHabit.mutateAsync(p)}
-                    onDeleteHabit={(id) => deleteHabit.mutateAsync(id)}
-                    onLogHabit={(habitId, p) =>
-                      logHabit.mutateAsync({ habitId, payload: p })
-                    }
-                  />
-                </div>
-
-                {/* 5. Calendar Heatmap */}
-                <CalendarHeatmap
-                  habits={board.habits}
-                  year={year}
-                  month={month}
-                />
-
-                {/* 6. Notes + Reflection */}
-                <div className="vb-two-col">
-                  <QuickNotes
-                    notes={board.notes}
-                    onSave={(u) => upsertNotes.mutateAsync(u)}
-                  />
-                  <MonthReflection
-                    notes={board.notes}
-                    onSave={(u) => upsertNotes.mutateAsync(u)}
-                  />
-                </div>
-
-                {/* 7. Year Journey */}
-                {yearSummary.length > 0 && (
-                  <YearJourney
-                    summary={yearSummary}
-                    currentYear={year}
-                    activeMonth={month}
-                    onNavigate={goToMonth}
-                  />
-                )}
+                        {content}
+                      </Reorder.Item>
+                    );
+                  })}
+                </Reorder.Group>
               </motion.div>
             )}
           </AnimatePresence>
@@ -797,6 +859,7 @@ export default function VisionBoard() {
     </div>
   );
 }
+
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 // Glass Journal design system — clean editorial aesthetic, frosted glass cards,

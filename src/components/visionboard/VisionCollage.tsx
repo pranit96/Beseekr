@@ -92,6 +92,11 @@ function CardTile({ card, onDelete, onUpload }: CardTileProps) {
       exit={{ scale: 0.85, opacity: 0 }}
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
       whileHover={{ scale: 1.03, rotate: 0.4 }}
+      drag
+      dragConstraints={{ left: -150, right: 150, top: -150, bottom: 150 }}
+      dragSnapToOrigin
+      whileDrag={{ scale: 1.08, zIndex: 50, cursor: "grabbing" }}
+
       onDragOver={(e) => {
         e.preventDefault();
         setDragging(true);
