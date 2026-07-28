@@ -21,12 +21,20 @@ export function FocusToday({
 
   // % of month elapsed
   const now = new Date();
+  const currentY = now.getFullYear();
+  const currentM = now.getMonth() + 1;
   const totalDays = new Date(year, month, 0).getDate();
-  const elapsed =
-    now.getFullYear() === year && now.getMonth() + 1 === month
-      ? now.getDate()
-      : totalDays;
+
+  let elapsed = 0;
+  if (year < currentY || (year === currentY && month < currentM)) {
+    elapsed = totalDays; // Past month: 100% complete
+  } else if (year === currentY && month === currentM) {
+    elapsed = now.getDate(); // Current month: actual days passed
+  } else {
+    elapsed = 0; // Future month: 0% (month has not started yet)
+  }
   const pct = Math.round((elapsed / totalDays) * 100);
+
 
   function addItem() {
     const trimmed = newItem.trim();

@@ -1,5 +1,5 @@
 /**
- * VisionCollage.tsx — Vision card grid with Unsplash photo search & file upload
+ * VisionCollage.tsx — Vision card grid with Notice Board Pinning, Photo Zoom Lightbox & Slideshow Presentation
  */
 
 import { useState, useRef, useEffect } from "react";
@@ -9,13 +9,19 @@ import {
   X,
   Sparkles,
   Upload,
-  FileText,
-  FileJson,
-  FileImage,
-  File,
   Image as ImageIcon,
   Search,
   Check,
+  ZoomIn,
+  ZoomOut,
+  RotateCcw,
+  Play,
+  Pause,
+  ChevronLeft,
+  ChevronRight,
+  Maximize2,
+  Pin,
+  Eye,
 } from "lucide-react";
 import { visionBoardApi, type VisionCard } from "@/api/visionboard";
 import { useToast } from "@/components/ui/use-toast";
@@ -64,15 +70,16 @@ const QUICK_UNSPLASH_TERMS = [
   "Minimal", "Mountains", "Workspace", "Sunset", "Mindfulness", "Travel", "Architecture"
 ];
 
-// ── Single Vision Card ─────────────────────────────────────────────────────────
+// ── Single Vision Card (Notice Board Pinned Card) ──────────────────────────────
 
 interface CardTileProps {
   card: VisionCard;
   onDelete: (id: string) => void;
   onUpload: (id: string, file: File) => Promise<void>;
+  onInspect: (card: VisionCard) => void;
 }
 
-function CardTile({ card, onDelete, onUpload }: CardTileProps) {
+function CardTile({ card, onDelete, onUpload, onInspect }: CardTileProps) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -84,19 +91,21 @@ function CardTile({ card, onDelete, onUpload }: CardTileProps) {
     setUploading(false);
   }
 
+  const hasPhoto = Boolean(card.file_url && card.file_url.trim().length > 0);
+
+
   return (
     <motion.div
-      className={`vb-vision-card ${ACCENT_CLASSES[card.color_accent] ?? "vb-card-terracotta"} ${dragging ? "vb-card-drag-over" : ""}`}
+      className={`vb-vision-card relative group overflow-visible ${ACCENT_CLASSES[card.color_accent] ?? "vb-card-terracotta"} ${dragging ? "vb-card-drag-over" : ""}`}
       initial={{ scale: 0.85, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
       exit={{ scale: 0.85, opacity: 0 }}
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
-      whileHover={{ scale: 1.03, rotate: 0.4 }}
+      whileHover={{ scale: 1.03, y: -4 }}
       drag
       dragConstraints={{ left: -150, right: 150, top: -150, bottom: 150 }}
       dragSnapToOrigin
       whileDrag={{ scale: 1.08, zIndex: 50, cursor: "grabbing" }}
-
       onDragOver={(e) => {
         e.preventDefault();
         setDragging(true);
@@ -109,42 +118,78 @@ function CardTile({ card, onDelete, onUpload }: CardTileProps) {
         await handleFile(file);
       }}
     >
-      {/* Delete */}
+      {/* Notice Board Metallic Pushpin */}
+      <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 z-20 flex items-center justify-center w-5 h-5 rounded-full bg-gradient-to-br from-amber-400 via-amber-500 to-amber-700 text-white shadow-md shadow-amber-950/40 border border-amber-300/60 pointer-events-none">
+        <Pin size={11} className="rotate-45 fill-white" />
+      </div>
+
+      {/* Delete button */}
       <button
-        className="vb-card-delete"
-        onClick={() => onDelete(card.id)}
+        className="vb-card-delete z-20"
+        onClick={(e) => {
+          e.stopPropagation();
+          onDelete(card.id);
+        }}
         aria-label="Remove card"
       >
         <X size={11} />
       </button>
 
-      {/* Image preview (either uploaded file or selected Unsplash photo) */}
-      {(card.file_type === "image" || card.file_url?.includes("unsplash")) && card.file_url ? (
-        <div className="vb-card-img-wrap">
-          <img
-            src={card.file_url}
-            alt={card.file_name ?? card.title ?? "vision photo"}
-            className="vb-card-img"
-            loading="lazy"
-            decoding="async"
-          />
-          <div className="vb-card-img-overlay">
-            <span className="vb-card-title">{card.title}</span>
-          </div>
-        </div>
-      ) : (
-        <>
-          <span className="vb-card-emoji">{card.emoji}</span>
-          <span className="vb-card-title">{card.title}</span>
-        </>
-      )}
-
-      {/* Upload hover action */}
+      {/* Inspect Zoom Trigger */}
       <button
-        className="vb-card-upload-replace"
-        onClick={() => fileRef.current?.click()}
+        className="absolute top-2 left-2 z-20 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-md bg-black/60 text-white hover:bg-black/80"
+        onClick={(e) => {
+          e.stopPropagation();
+          onInspect(card);
+        }}
+        title="Inspect & Zoom photo"
+      >
+        <Eye size={12} />
+      </button>
+
+      {/* Card Content & Polaroid Framing */}
+      <div
+        className="w-full h-full flex flex-col cursor-pointer"
+        onClick={() => onInspect(card)}
+      >
+        {hasPhoto ? (
+          <div className="vb-card-img-wrap relative flex-1 overflow-hidden rounded-t-lg">
+            <img
+              src={card.file_url}
+              alt={card.file_name ?? card.title ?? "vision photo"}
+              className="vb-card-img w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              loading="lazy"
+              decoding="async"
+            />
+            <div className="vb-card-img-overlay bg-gradient-to-t from-black/80 via-black/30 to-transparent p-3 flex flex-col justify-end">
+              <span className="vb-card-title text-white font-medium text-sm flex items-center gap-1">
+                <span>{card.emoji}</span> {card.title}
+              </span>
+              <span className="text-[10px] text-amber-200/90 font-serif italic truncate">
+                {card.card_type ? `Vision: ${card.card_type}` : "Added to manifest vision"}
+              </span>
+            </div>
+          </div>
+        ) : (
+          <div className="flex-1 flex flex-col items-center justify-center p-4 text-center">
+            <span className="vb-card-emoji text-3xl mb-2">{card.emoji}</span>
+            <span className="vb-card-title font-semibold text-sm leading-tight text-foreground">{card.title}</span>
+            <span className="text-[11px] text-muted-foreground font-serif italic mt-1">
+              {card.card_type ? `Focus: ${card.card_type}` : "Core Manifestation Goal"}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Upload replace button */}
+      <button
+        className="vb-card-upload-replace z-20"
+        onClick={(e) => {
+          e.stopPropagation();
+          fileRef.current?.click();
+        }}
         disabled={uploading}
-        title="Upload custom image/file"
+        title="Upload custom photo or file"
       >
         <Upload size={12} />
       </button>
@@ -168,9 +213,9 @@ interface VisionCollageProps {
     title: string;
     emoji: string;
     colorAccent: VisionCard["color_accent"];
-    cardType: VisionCard["card_type"];
-  }) => Promise<VisionCard | any>;
-  onDelete: (cardId: string) => Promise<any>;
+    cardType?: VisionCard["card_type"];
+  }) => Promise<any>;
+  onDelete: (id: string) => Promise<any>;
   onUpload: (cardId: string, file: File) => Promise<any>;
 }
 
@@ -182,21 +227,29 @@ export function VisionCollage({
 }: VisionCollageProps) {
   const { toast } = useToast();
   const [showForm, setShowForm] = useState(false);
-  const [mode, setMode] = useState<"emoji" | "unsplash">("unsplash");
+  const [mode, setMode] = useState<"unsplash" | "emoji">("unsplash");
   const [title, setTitle] = useState("");
   const [emoji, setEmoji] = useState("✨");
   const [color, setColor] = useState<VisionCard["color_accent"]>("terracotta");
   const [saving, setSaving] = useState(false);
 
-  // Unsplash search state
+  // Unsplash states
   const [unsplashQuery, setUnsplashQuery] = useState("inspiration");
   const [unsplashPhotos, setUnsplashPhotos] = useState<Array<{ id: string; url: string; thumb: string; alt: string }>>([]);
   const [selectedUnsplashUrl, setSelectedUnsplashUrl] = useState<string | null>(null);
   const [searchingUnsplash, setSearchingUnsplash] = useState(false);
 
-  // Fetch Unsplash photos
-  const handleSearchUnsplash = async (term?: string) => {
-    const q = term || unsplashQuery || "nature";
+  // Zoom Lightbox states
+  const [zoomCard, setZoomCard] = useState<VisionCard | null>(null);
+  const [zoomScale, setZoomScale] = useState(1);
+
+  // Slideshow states
+  const [isSlideshowOpen, setIsSlideshowOpen] = useState(false);
+  const [slideshowIndex, setSlideshowIndex] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(true);
+
+  const handleSearchUnsplash = async (queryOverride?: string) => {
+    const q = queryOverride || unsplashQuery || "inspiration";
     setSearchingUnsplash(true);
     try {
       const res = await visionBoardApi.searchUnsplash(q);
@@ -214,12 +267,38 @@ export function VisionCollage({
     }
   };
 
-
   useEffect(() => {
     if (showForm && mode === "unsplash" && unsplashPhotos.length === 0) {
       handleSearchUnsplash("inspiration");
     }
   }, [showForm, mode]);
+
+  // Slideshow auto-advance timer
+  useEffect(() => {
+    let timer: any;
+    if (isSlideshowOpen && isPlaying && cards.length > 0) {
+      timer = setInterval(() => {
+        setSlideshowIndex((prev) => (prev + 1) % cards.length);
+      }, 4000);
+    }
+    return () => clearInterval(timer);
+  }, [isSlideshowOpen, isPlaying, cards.length]);
+
+  // Keyboard navigation for slideshow & lightbox
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (isSlideshowOpen) {
+        if (e.key === "ArrowRight") setSlideshowIndex((prev) => (prev + 1) % cards.length);
+        if (e.key === "ArrowLeft") setSlideshowIndex((prev) => (prev - 1 + cards.length) % cards.length);
+        if (e.key === " ") { e.preventDefault(); setIsPlaying((prev) => !prev); }
+        if (e.key === "Escape") setIsSlideshowOpen(false);
+      } else if (zoomCard) {
+        if (e.key === "Escape") setZoomCard(null);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isSlideshowOpen, zoomCard, cards.length]);
 
   async function handleAdd() {
     if (!title.trim()) return;
@@ -232,13 +311,10 @@ export function VisionCollage({
         cardType: "custom",
       });
 
-      // If an Unsplash photo was selected, attach it as an image to the newly created card!
       if (mode === "unsplash" && selectedUnsplashUrl && createdCard?.id) {
         try {
-          // Convert Unsplash image URL to a File object or attach url via helper
           const imgBlob = await fetch(selectedUnsplashUrl).then((r) => r.blob());
           const file = new (window as any).File([imgBlob], `unsplash_${Date.now()}.jpg`, { type: "image/jpeg" }) as File;
-
           await onUpload(createdCard.id, file);
         } catch (imgErr) {
           console.warn("Error attaching Unsplash image:", imgErr);
@@ -261,22 +337,45 @@ export function VisionCollage({
     }
   }
 
-  async function useTemplate(t: (typeof CARD_TEMPLATES)[number]) {
-    await onAdd({
-      title: t.title,
-      emoji: t.emoji,
-      colorAccent: t.colorAccent,
-      cardType: t.cardType,
-    });
-  }
+  const useTemplate = (tpl: typeof CARD_TEMPLATES[number]) => {
+    onAdd(tpl);
+  };
 
   return (
-    <div className="vb-section vb-collage">
-      <div className="vb-section-label">
-        <Sparkles size={13} />
-        <span>Your Vision Collage & Photos</span>
+    <div className="vb-section vb-collage-section relative">
+      {/* Section Header with Slideshow & Add buttons */}
+      <div className="vb-section-header flex items-center justify-between mb-4">
+        <div className="vb-section-label">
+          <span>📌</span>
+          <span>Notice Board & Vision Collage</span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {cards.length > 0 && (
+            <button
+              onClick={() => {
+                setSlideshowIndex(0);
+                setIsPlaying(true);
+                setIsSlideshowOpen(true);
+              }}
+              className="vb-chip-add text-xs flex items-center gap-1.5 bg-amber-500/15 border-amber-500/40 text-amber-700 dark:text-amber-300 font-medium hover:bg-amber-500/25"
+              title="Play fullscreen vision slideshow"
+            >
+              <Play size={12} /> Play Slideshow
+            </button>
+          )}
+          {cards.length < 12 && (
+            <button
+              onClick={() => setShowForm(true)}
+              className="vb-chip-add text-xs flex items-center gap-1"
+            >
+              <Plus size={12} /> Add Vision
+            </button>
+          )}
+        </div>
       </div>
 
+      {/* Notice Board Cards Grid */}
       <div className="vb-collage-grid">
         <AnimatePresence>
           {cards.map((card) => (
@@ -285,6 +384,10 @@ export function VisionCollage({
               card={card}
               onDelete={onDelete}
               onUpload={onUpload}
+              onInspect={(c) => {
+                setZoomCard(c);
+                setZoomScale(1);
+              }}
             />
           ))}
 
@@ -292,7 +395,7 @@ export function VisionCollage({
           {cards.length < 12 && (
             <motion.button
               key="add-slot"
-              className="vb-vision-card vb-card-add"
+              className="vb-vision-card vb-card-add min-h-[160px]"
               onClick={() => setShowForm(true)}
               whileHover={{ scale: 1.04 }}
               whileTap={{ scale: 0.97 }}
@@ -306,7 +409,7 @@ export function VisionCollage({
 
       {/* Upload hint */}
       <p className="vb-area-hint" style={{ marginTop: 10 }}>
-        Pick photos from Unsplash, or drop custom files (JPG, PNG, PDF, JSON, MD)
+        Click any card to inspect & zoom. Drag cards to reorder on your notice board.
       </p>
 
       {/* Quick templates when empty */}
@@ -327,6 +430,182 @@ export function VisionCollage({
         </div>
       )}
 
+      {/* ── Zoom Lightbox Modal ── */}
+      <AnimatePresence>
+        {zoomCard && (
+          <motion.div
+            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setZoomCard(null)}
+          >
+            <motion.div
+              className="relative max-w-4xl w-full bg-card border border-amber-500/30 rounded-2xl p-6 shadow-2xl overflow-hidden"
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Lightbox Header & Controls */}
+              <div className="flex items-center justify-between border-b border-border pb-3 mb-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">{zoomCard.emoji}</span>
+                  <div>
+                    <h3 className="font-serif font-bold text-lg text-foreground">{zoomCard.title}</h3>
+                    <p className="text-xs text-muted-foreground italic">
+                      {zoomCard.file_name ? `File: ${zoomCard.file_name}` : "Vision Board Card"}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setZoomScale((s) => Math.min(3, s + 0.25))}
+                    className="p-1.5 rounded-lg bg-muted hover:bg-amber-500/20 text-foreground"
+                    title="Zoom In"
+                  >
+                    <ZoomIn size={16} />
+                  </button>
+                  <button
+                    onClick={() => setZoomScale((s) => Math.max(0.5, s - 0.25))}
+                    className="p-1.5 rounded-lg bg-muted hover:bg-amber-500/20 text-foreground"
+                    title="Zoom Out"
+                  >
+                    <ZoomOut size={16} />
+                  </button>
+                  <button
+                    onClick={() => setZoomScale(1)}
+                    className="p-1.5 rounded-lg bg-muted hover:bg-amber-500/20 text-foreground"
+                    title="Reset Zoom"
+                  >
+                    <RotateCcw size={16} />
+                  </button>
+                  <button
+                    onClick={() => setZoomCard(null)}
+                    className="p-1.5 rounded-lg bg-muted hover:bg-red-500/20 text-red-500"
+                    title="Close (Esc)"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Lightbox Photo Preview */}
+              <div className="relative overflow-auto max-h-[70vh] flex items-center justify-center rounded-xl bg-black/40 p-4">
+                {zoomCard.file_url ? (
+                  <motion.img
+                    src={zoomCard.file_url}
+                    alt={zoomCard.title}
+                    className="max-h-[65vh] object-contain rounded-lg shadow-xl"
+                    style={{ transform: `scale(${zoomScale})`, transition: "transform 0.2s ease-out" }}
+                  />
+                ) : (
+                  <div className="text-center py-16">
+                    <span className="text-6xl mb-4 block">{zoomCard.emoji}</span>
+                    <h4 className="text-xl font-bold font-serif text-foreground">{zoomCard.title}</h4>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Fullscreen Slideshow Presentation Modal ── */}
+      <AnimatePresence>
+        {isSlideshowOpen && cards.length > 0 && (
+          <motion.div
+            className="fixed inset-0 z-50 bg-black/95 backdrop-blur-xl flex flex-col justify-between p-6 text-white"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            {/* Top Toolbar */}
+            <div className="flex items-center justify-between z-10">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-amber-400 animate-spin-slow" />
+                <span className="font-serif font-bold text-base tracking-wide">Vision Board Slideshow Presentation</span>
+                <span className="text-xs px-2.5 py-0.5 rounded-full bg-white/10 text-amber-300 font-mono">
+                  {slideshowIndex + 1} / {cards.length}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setIsPlaying((p) => !p)}
+                  className="px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 text-xs font-semibold flex items-center gap-1.5"
+                >
+                  {isPlaying ? <Pause size={14} /> : <Play size={14} />} {isPlaying ? "Pause" : "Play"}
+                </button>
+                <button
+                  onClick={() => setIsSlideshowOpen(false)}
+                  className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+
+            {/* Slide Viewer */}
+            <div className="relative flex-1 flex items-center justify-center my-4 overflow-hidden">
+              <button
+                onClick={() => setSlideshowIndex((prev) => (prev - 1 + cards.length) % cards.length)}
+                className="absolute left-4 z-20 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-md"
+              >
+                <ChevronLeft size={24} />
+              </button>
+
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={cards[slideshowIndex].id}
+                  initial={{ opacity: 0, scale: 0.92 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 1.05 }}
+                  transition={{ duration: 0.5 }}
+                  className="max-w-4xl w-full h-[70vh] flex flex-col items-center justify-center relative rounded-2xl overflow-hidden bg-white/5 border border-white/10 p-6 backdrop-blur-lg"
+                >
+                  {cards[slideshowIndex].file_url ? (
+                    <img
+                      src={cards[slideshowIndex].file_url}
+                      alt={cards[slideshowIndex].title}
+                      className="max-h-[55vh] w-auto object-contain rounded-xl shadow-2xl mb-4"
+                    />
+                  ) : (
+                    <div className="text-7xl mb-6">{cards[slideshowIndex].emoji}</div>
+                  )}
+
+                  <div className="text-center">
+                    <h2 className="text-2xl md:text-3xl font-serif font-bold tracking-tight text-white mb-1 flex items-center justify-center gap-2">
+                      <span>{cards[slideshowIndex].emoji}</span> {cards[slideshowIndex].title}
+                    </h2>
+                    <p className="text-sm text-amber-300/90 font-serif italic">
+                      {cards[slideshowIndex].card_type ? `Vision Category: ${cards[slideshowIndex].card_type}` : "Core Manifestation Intention"}
+                    </p>
+                  </div>
+                </motion.div>
+              </AnimatePresence>
+
+              <button
+                onClick={() => setSlideshowIndex((prev) => (prev + 1) % cards.length)}
+                className="absolute right-4 z-20 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-md"
+              >
+                <ChevronRight size={24} />
+              </button>
+            </div>
+
+            {/* Bottom Progress Bar */}
+            <div className="w-full max-w-xl mx-auto bg-white/10 h-1 rounded-full overflow-hidden">
+              <motion.div
+                className="bg-amber-400 h-full"
+                animate={{ width: `${((slideshowIndex + 1) / cards.length) * 100}%` }}
+                transition={{ duration: 0.3 }}
+              />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Add form modal */}
       <AnimatePresence>
         {showForm && (
@@ -345,9 +624,15 @@ export function VisionCollage({
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between mb-3">
-                <h3 className="vb-form-title text-lg font-semibold m-0">New Vision Card</h3>
-                <button className="vb-chip-x" onClick={() => setShowForm(false)}>
-                  <X size={16} />
+                <h3 className="vb-form-title flex items-center gap-2">
+                  <Sparkles size={16} className="text-amber-500" /> New Vision Card
+                </h3>
+                <button
+                  type="button"
+                  className="vb-chip-x"
+                  onClick={() => setShowForm(false)}
+                >
+                  <X size={12} />
                 </button>
               </div>
 
@@ -486,7 +771,7 @@ export function VisionCollage({
                   onClick={handleAdd}
                   disabled={saving || !title.trim()}
                 >
-                  {saving ? "Creating..." : "Add to Collage"}
+                  {saving ? "Saving…" : "Create Vision"}
                 </button>
               </div>
             </motion.div>
