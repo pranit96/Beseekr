@@ -375,6 +375,90 @@ export function VisionCollage({
         </div>
       </div>
 
+      {/* Default Inline Slideshow Banner */}
+      {cards.length > 0 && (
+        <div className="relative mb-5 overflow-hidden rounded-2xl border border-amber-500/30 bg-black/60 shadow-xl group">
+          <div className="relative h-48 md:h-56 w-full flex items-center justify-center overflow-hidden">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={cards[slideshowIndex]?.id || slideshowIndex}
+                initial={{ opacity: 0, scale: 1.05 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.6 }}
+                className="absolute inset-0 flex items-center justify-center cursor-pointer"
+                onClick={() => {
+                  if (cards[slideshowIndex]) {
+                    setZoomCard(cards[slideshowIndex]);
+                    setZoomScale(1);
+                  }
+                }}
+              >
+                {cards[slideshowIndex]?.file_url ? (
+                  <img
+                    src={cards[slideshowIndex].file_url}
+                    alt={cards[slideshowIndex]?.title}
+                    className="w-full h-full object-cover opacity-80 group-hover:opacity-95 transition-opacity"
+                  />
+                ) : (
+                  <div className="flex flex-col items-center justify-center p-6 text-center">
+                    <span className="text-5xl mb-2">{cards[slideshowIndex]?.emoji}</span>
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent p-4 flex flex-col justify-end">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-amber-500/30 text-amber-300 font-mono mb-1 inline-block">
+                        Slide {slideshowIndex + 1} of {cards.length}
+                      </span>
+                      <h3 className="text-lg font-serif font-bold text-white flex items-center gap-1.5">
+                        <span>{cards[slideshowIndex]?.emoji}</span> {cards[slideshowIndex]?.title}
+                      </h3>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsSlideshowOpen(true);
+                      }}
+                      className="p-2 rounded-xl bg-white/20 hover:bg-white/30 text-white backdrop-blur-md transition-colors"
+                      title="Fullscreen Slideshow"
+                    >
+                      <Maximize2 size={16} />
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            </AnimatePresence>
+
+            {/* Prev / Next Banner Buttons */}
+            <button
+              type="button"
+              onClick={() => setSlideshowIndex((prev) => (prev - 1 + cards.length) % cards.length)}
+              className="absolute left-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/40 hover:bg-black/70 text-white opacity-0 group-hover:opacity-100 transition-opacity z-20"
+            >
+              <ChevronLeft size={18} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setSlideshowIndex((prev) => (prev + 1) % cards.length)}
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/40 hover:bg-black/70 text-white opacity-0 group-hover:opacity-100 transition-opacity z-20"
+            >
+              <ChevronRight size={18} />
+            </button>
+          </div>
+
+          {/* Progress bar */}
+          <div className="w-full bg-white/10 h-1">
+            <motion.div
+              className="bg-amber-400 h-full"
+              animate={{ width: `${((slideshowIndex + 1) / cards.length) * 100}%` }}
+              transition={{ duration: 0.3 }}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Notice Board Cards Grid */}
       <div className="vb-collage-grid">
         <AnimatePresence>
@@ -406,6 +490,7 @@ export function VisionCollage({
           )}
         </AnimatePresence>
       </div>
+
 
       {/* Upload hint */}
       <p className="vb-area-hint" style={{ marginTop: 10 }}>
