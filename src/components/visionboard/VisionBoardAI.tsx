@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Send, CheckCircle2, RefreshCw, BarChart2, Calendar, Trash2, Wand2, MessageSquare, AlertTriangle } from "lucide-react";
 import { visionBoardApi } from "@/api/visionboard";
@@ -331,44 +332,48 @@ export function VisionBoardAI({ year, month, onRefreshBoard }: VisionBoardAIProp
       )}
 
       {/* Reset Confirmation Modal */}
-      <AnimatePresence>
-        {showResetConfirm && (
-          <div className="vb-form-overlay">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="vb-add-form"
-            >
-              <div className="flex items-center gap-2 mb-3 text-red-600 font-semibold text-base">
-                <AlertTriangle className="w-5 h-5" />
-                Reset Month Board ({month}/{year})
-              </div>
-              <p className="text-xs text-muted-foreground mb-5 leading-relaxed">
-                Are you sure you want to clear all goals, habits, cards, events, and notes for this month? This action cannot be undone.
-              </p>
-              <div className="vb-form-actions">
-                <button
-                  type="button"
-                  onClick={() => setShowResetConfirm(false)}
-                  className="vb-btn-ghost text-xs"
+      {typeof document !== "undefined" &&
+        createPortal(
+          <AnimatePresence>
+            {showResetConfirm && (
+              <div className="vb-form-overlay">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  className="vb-add-form !w-[420px] !max-w-[92vw]"
                 >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={handleResetBoard}
-                  disabled={resetting}
-                  className="vb-btn-primary !bg-red-600 text-xs flex items-center gap-1.5"
-                >
-                  {resetting ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
-                  Confirm Reset Board
-                </button>
+                  <div className="flex items-center gap-2 mb-3 text-red-600 font-semibold text-base">
+                    <AlertTriangle className="w-5 h-5" />
+                    Reset Month Board ({month}/{year})
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-5 leading-relaxed">
+                    Are you sure you want to clear all goals, habits, cards, events, and notes for this month? This action cannot be undone.
+                  </p>
+                  <div className="vb-form-actions">
+                    <button
+                      type="button"
+                      onClick={() => setShowResetConfirm(false)}
+                      className="vb-btn-ghost text-xs"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleResetBoard}
+                      disabled={resetting}
+                      className="vb-btn-primary !bg-red-600 text-xs flex items-center gap-1.5"
+                    >
+                      {resetting ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                      Confirm Reset Board
+                    </button>
+                  </div>
+                </motion.div>
               </div>
-            </motion.div>
-          </div>
+            )}
+          </AnimatePresence>,
+          document.body
         )}
-      </AnimatePresence>
     </div>
   );
 }

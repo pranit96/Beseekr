@@ -430,7 +430,7 @@ export default function VisionBoard() {
       title: string;
       emoji: string;
       colorAccent: VisionCard["color_accent"];
-      cardType: VisionCard["card_type"];
+      cardType?: VisionCard["card_type"];
     }) => visionBoardApi.addVisionCard(year, month, payload),
     onSuccess: invalidateBoard,
     onError: (e) => onError("addCard", e),
@@ -1460,18 +1460,20 @@ const BOARD_STYLES = `
      ══════════════════════════════════════════════════════════════════════ */
   .vb-form-overlay {
     position: fixed; inset: 0;
-    background: rgba(0,0,0,0.4);
+    background: rgba(0,0,0,0.55);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     display: flex; align-items: center; justify-content: center;
-    z-index: 100; padding: 16px;
+    z-index: 99999; padding: 16px;
   }
   .vb-add-form {
     background: var(--vb-parchment);
     border: 1px solid var(--vb-border);
-    border-radius: 20px; padding: 32px;
-    width: min(420px, 100%);
-    box-shadow: 0 24px 64px rgba(0,0,0,0.2);
+    border-radius: 20px; padding: 28px;
+    width: min(480px, 92vw);
+    max-height: 88vh;
+    overflow-y: auto;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.25);
   }
   .vb-form-title {
     font-family: 'Source Serif 4', serif;

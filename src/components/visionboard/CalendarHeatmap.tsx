@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus,
@@ -465,151 +466,155 @@ export function CalendarHeatmap({ habits, year, month }: CalendarHeatmapProps) {
       </div>
 
       {/* Event Creation Modal */}
-      <AnimatePresence>
-        {isModalOpen && (
-          <div className="vb-form-overlay">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="vb-add-form"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="vb-form-title text-lg font-semibold flex items-center gap-2">
-                  <CalendarIcon className="w-4 h-4 text-amber-600" />
-                  Add Event
-                </h3>
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="vb-chip-x"
+      {typeof document !== "undefined" &&
+        createPortal(
+          <AnimatePresence>
+            {isModalOpen && (
+              <div className="vb-form-overlay">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  className="vb-add-form !w-[440px] !max-w-[92vw] max-h-[85vh] overflow-y-auto"
                 >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-
-              <form onSubmit={handleAddEvent}>
-                <div className="mb-3">
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">
-                    Event Title
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Design review, Doctor appointment"
-                    value={eventTitle}
-                    onChange={(e) => setEventTitle(e.target.value)}
-                    className="vb-form-input"
-                    autoFocus
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3 mb-3">
-                  <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">
-                      Date
-                    </label>
-                    <input
-                      type="date"
-                      required
-                      min={today}
-                      value={selectedDate || ""}
-                      onChange={(e) => {
-                        if (e.target.value >= today) {
-                          setSelectedDate(e.target.value);
-                        }
-                      }}
-                      className="vb-form-input"
-                    />
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="vb-form-title text-lg font-semibold flex items-center gap-2">
+                      <CalendarIcon className="w-4 h-4 text-amber-600" />
+                      Add Event
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={() => setIsModalOpen(false)}
+                      className="vb-chip-x"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
                   </div>
 
-
-                  <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">
-                      Time
-                    </label>
-                    <input
-                      type="time"
-                      value={eventTime}
-                      onChange={(e) => setEventTime(e.target.value)}
-                      className="vb-form-input"
-                    />
-                  </div>
-                </div>
-
-                <div className="mb-3">
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">
-                    Recurrence
-                  </label>
-                  <select
-                    value={eventRecurrence}
-                    onChange={(e) => setEventRecurrence(e.target.value as any)}
-                    className="vb-form-input"
-                  >
-                    <option value="none">One-time event</option>
-                    <option value="daily">Every day</option>
-                    <option value="weekly">Every week</option>
-                    <option value="monthly">Every month</option>
-                  </select>
-                </div>
-
-                <div className="mb-4">
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">
-                    Color Tag
-                  </label>
-                  <div className="vb-color-row">
-                    {(
-                      [
-                        "terracotta",
-                        "sage",
-                        "slate",
-                        "mustard",
-                        "blush",
-                      ] as const
-                    ).map((c) => (
-                      <div
-                        key={c}
-                        className={`vb-color-dot vb-dot-${c} ${eventColor === c ? "vb-dot-selected" : ""}`}
-                        onClick={() => setEventColor(c)}
+                  <form onSubmit={handleAddEvent}>
+                    <div className="mb-3">
+                      <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+                        Event Title
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. Design review, Doctor appointment"
+                        value={eventTitle}
+                        onChange={(e) => setEventTitle(e.target.value)}
+                        className="vb-form-input"
+                        autoFocus
                       />
-                    ))}
-                  </div>
-                </div>
+                    </div>
 
-                <div className="flex items-center gap-2 mb-5">
-                  <input
-                    type="checkbox"
-                    id="event-notify"
-                    checked={eventNotify}
-                    onChange={(e) => setEventNotify(e.target.checked)}
-                    className="rounded border-gray-300 text-amber-600 focus:ring-amber-500"
-                  />
-                  <label
-                    htmlFor="event-notify"
-                    className="text-xs font-medium text-muted-foreground flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <Mail className="w-3.5 h-3.5 text-amber-600" />
-                    Send email notification via Email Service & desktop reminder
-                  </label>
-                </div>
+                    <div className="grid grid-cols-2 gap-3 mb-3">
+                      <div>
+                        <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+                          Date
+                        </label>
+                        <input
+                          type="date"
+                          required
+                          min={today}
+                          value={selectedDate || ""}
+                          onChange={(e) => {
+                            if (e.target.value >= today) {
+                              setSelectedDate(e.target.value);
+                            }
+                          }}
+                          className="vb-form-input"
+                        />
+                      </div>
 
-                <div className="vb-form-actions">
-                  <button
-                    type="button"
-                    onClick={() => setIsModalOpen(false)}
-                    className="vb-btn-ghost"
-                  >
-                    Cancel
-                  </button>
-                  <button type="submit" className="vb-btn-primary">
-                    Save Event
-                  </button>
-                </div>
-              </form>
-            </motion.div>
-          </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+                          Time
+                        </label>
+                        <input
+                          type="time"
+                          value={eventTime}
+                          onChange={(e) => setEventTime(e.target.value)}
+                          className="vb-form-input"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="mb-3">
+                      <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+                        Recurrence
+                      </label>
+                      <select
+                        value={eventRecurrence}
+                        onChange={(e) => setEventRecurrence(e.target.value as any)}
+                        className="vb-form-input"
+                      >
+                        <option value="none">One-time event</option>
+                        <option value="daily">Every day</option>
+                        <option value="weekly">Every week</option>
+                        <option value="monthly">Every month</option>
+                      </select>
+                    </div>
+
+                    <div className="mb-4">
+                      <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+                        Color Tag
+                      </label>
+                      <div className="vb-color-row">
+                        {(
+                          [
+                            "terracotta",
+                            "sage",
+                            "slate",
+                            "mustard",
+                            "blush",
+                          ] as const
+                        ).map((c) => (
+                          <div
+                            key={c}
+                            className={`vb-color-dot vb-dot-${c} ${eventColor === c ? "vb-dot-selected" : ""}`}
+                            onClick={() => setEventColor(c)}
+                          />
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 mb-5">
+                      <input
+                        type="checkbox"
+                        id="event-notify"
+                        checked={eventNotify}
+                        onChange={(e) => setEventNotify(e.target.checked)}
+                        className="rounded border-gray-300 text-amber-600 focus:ring-amber-500"
+                      />
+                      <label
+                        htmlFor="event-notify"
+                        className="text-xs font-medium text-muted-foreground flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <Mail className="w-3.5 h-3.5 text-amber-600" />
+                        Send email notification via Email Service & desktop reminder
+                      </label>
+                    </div>
+
+                    <div className="vb-form-actions">
+                      <button
+                        type="button"
+                        onClick={() => setIsModalOpen(false)}
+                        className="vb-btn-ghost"
+                      >
+                        Cancel
+                      </button>
+                      <button type="submit" className="vb-btn-primary">
+                        Save Event
+                      </button>
+                    </div>
+                  </form>
+                </motion.div>
+              </div>
+            )}
+          </AnimatePresence>,
+          document.body
         )}
-      </AnimatePresence>
     </div>
   );
 }
