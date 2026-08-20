@@ -241,7 +241,7 @@ export function JsonImportZone({ onValidImport, className }: JsonImportZoneProps
   const [successInfo, setSuccessInfo] = useState<string | null>(null);
   const [pastedJson, setPastedJson] = useState("");
   const [copied, setCopied] = useState(false);
-  const [showSchemaGuide, setShowSchemaGuide] = useState(false);
+  const [showSchemaGuide, setShowSchemaGuide] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
