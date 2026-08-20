@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { TopBar } from "@/components/TopBar";
+import { Button } from "@/components/ui/button";
 import { PlanDashboard } from "@/components/learn/PlanDashboard";
 import { CreatePlanForm } from "@/components/learn/CreatePlanForm";
 import { PlanDetailView } from "@/components/learn/PlanDetailView";
