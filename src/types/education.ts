@@ -178,6 +178,7 @@ export interface ImportPlanPayload {
   title: string;
   subject: string;
   exam_date?: string;
+  target_score?: string;
   daily_study_hours?: number;
   topics: Array<{
     topic_name: string;
