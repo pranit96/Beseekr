@@ -7,6 +7,19 @@ import {
 } from "@/types/auth";
 import { Agent, AgentTemplate, AgentStats } from "@/types/agent";
 import { Conversation, Message } from "@/types/conversation";
+import type {
+  LearningPlan,
+  PlanWithTopics,
+  PlanTopic,
+  PlanResumePoint,
+  PlanInsights,
+  TopicStatus,
+  FlashcardRating,
+  ImportPlanPayload,
+  Exam,
+  ExamAnswer,
+  ExamSubmission,
+} from "@/types/education";
 
 const logger = createLogger("APIClient");
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -1730,7 +1743,87 @@ class ApiClient {
     return this.request<{
       second_brain: boolean;
       weekly_digest: boolean;
+      learn_by_doing: boolean;
     }>("/api/system/features");
+  }
+
+  // ─── Education / Learn By Doing API ──────────────────────────────────────────
+
+  async createLearningPlan(data: {
+    title: string;
+    subject: string;
+    exam_date?: string;
+    target_score?: string;
+    daily_study_hours?: number;
+    syllabus_topics?: string[];
+  }) {
+    return this.post<PlanWithTopics>("/api/education/plans", data);
+  }
+
+  async importLearningPlan(data: ImportPlanPayload) {
+    return this.post<PlanWithTopics>("/api/education/plans/import", data);
+  }
+
+  async getLearningPlans() {
+    return this.request<LearningPlan[]>("/api/education/plans");
+  }
+
+  async getLearningPlan(planId: string) {
+    return this.request<PlanWithTopics>(`/api/education/plans/${planId}`);
+  }
+
+  async getLearningPlanResume(planId: string) {
+    return this.request<PlanResumePoint>(`/api/education/plans/${planId}/resume`);
+  }
+
+  async getLearningPlanInsights(planId: string) {
+    return this.request<PlanInsights>(`/api/education/plans/${planId}/insights`);
+  }
+
+  async updateTopicStatus(planId: string, topicId: string, status: TopicStatus) {
+    return this.patch<PlanTopic>(`/api/education/plans/${planId}/topics/${topicId}`, { status });
+  }
+
+  async generateTopicPrep(planId: string, topicId: string) {
+    return this.post<PlanTopic>(`/api/education/plans/${planId}/topics/${topicId}/generate-prep`);
+  }
+
+  async elaborateTopic(planId: string, topicId: string, data: { prompt: string; format?: "simple" | "detailed" | "examples" }) {
+    return this.post<{ topic_id: string; explanation: string; format: string }>(
+      `/api/education/plans/${planId}/topics/${topicId}/elaborate`, data
+    );
+  }
+
+  async generateHandsOn(planId: string, topicId: string) {
+    return this.post<PlanTopic>(`/api/education/plans/${planId}/topics/${topicId}/generate-handson`);
+  }
+
+  async reviewFlashcard(planId: string, topicId: string, data: { questionIndex: number; rating: FlashcardRating }) {
+    return this.post<PlanTopic>(`/api/education/plans/${planId}/topics/${topicId}/flashcards/review`, data);
+  }
+
+  async generateExam(data: {
+    plan_id?: string;
+    title: string;
+    subject: string;
+    type?: "practice" | "mock" | "topic_test";
+    difficulty?: "easy" | "medium" | "hard";
+    question_count?: number;
+    topics?: string[];
+  }) {
+    return this.post<Exam>("/api/education/exams/generate", data);
+  }
+
+  async getExam(examId: string, solutions?: boolean) {
+    return this.request<Exam>(`/api/education/exams/${examId}${solutions ? "?solutions=true" : ""}`);
+  }
+
+  async submitExam(examId: string, answers: ExamAnswer[]) {
+    return this.post<ExamSubmission>(`/api/education/exams/${examId}/submit`, { answers });
+  }
+
+  async getExamSubmissions(examId?: string) {
+    return this.request<ExamSubmission[]>(`/api/education/submissions${examId ? `?exam_id=${examId}` : ""}`);
   }
 }
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getIsNewMode, getIsBudgetEnabled } from "@/utils/envFlags";
+import { getIsNewMode, getIsBudgetEnabled, getIsLearnByDoingEnabled } from "@/utils/envFlags";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -11,6 +11,7 @@ import {
   Brain,
   Mail,
   ScrollText,
+  GraduationCap,
 } from "lucide-react";
 import { GlobalHeader } from "@/components/GlobalHeader";
 import { motion } from "framer-motion";
@@ -36,6 +37,7 @@ export default function Home() {
   };
 
   const isBudgetEnabled = getIsBudgetEnabled();
+  const isLearnByDoingEnabled = getIsLearnByDoingEnabled() || user?.feature_flags?.learn_by_doing;
 
   if (!isNewMode) {
     return (
@@ -204,7 +206,37 @@ export default function Home() {
             </div>
           </motion.div>
 
-          {/* CARD 5: BUDGET */}
+          {/* CARD 5: LEARN BY DOING */}
+          {isLearnByDoingEnabled && (
+            <motion.div
+              onClick={() => go("/learn")}
+              whileHover={{ y: -4 }}
+              transition={{ type: "spring", stiffness: 200, damping: 22 }}
+              className="border border-border/30 rounded-2xl p-8 cursor-pointer transition bg-muted/10 backdrop-blur-md hover:bg-teal-500/5 hover:border-teal-500/30 group shadow-2xl shadow-black/5"
+            >
+              <div className="h-10 w-10 rounded-xl bg-teal-500/10 flex items-center justify-center text-teal-400 mb-4 group-hover:scale-110 transition-transform">
+                <GraduationCap className="w-5 h-5" />
+              </div>
+
+              <h3 className="text-xl font-bold mb-2 tracking-tight text-foreground">
+                {t("home.learnTitle", "Learn by Doing")}
+              </h3>
+
+              <p className="text-muted-foreground/80 mb-6 text-sm leading-relaxed">
+                {t(
+                  "home.learnDesc",
+                  "AI-guided mastery through structured plans, generated hands-on projects, and dynamic flashcards.",
+                )}
+              </p>
+
+              <div className="text-xs font-bold tracking-wider uppercase flex items-center gap-1 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all">
+                {t("home.openLearn", "Start Learning")}
+                <ArrowRight className="w-3 h-3" />
+              </div>
+            </motion.div>
+          )}
+
+          {/* CARD 6: BUDGET */}
           {isBudgetEnabled && (
             <motion.div
               onClick={() => go("/dashboard/budget")}
@@ -441,7 +473,39 @@ export default function Home() {
               </div>
             </motion.div>
 
-            {/* CARD 5: BUDGET */}
+            {/* CARD 5: LEARN BY DOING */}
+            {isLearnByDoingEnabled && (
+              <motion.div
+                onClick={() => go("/learn")}
+                whileHover={{ y: -6 }}
+                transition={{ type: "spring", stiffness: 200, damping: 22 }}
+                className="border border-border/30 rounded-3xl p-10 cursor-pointer transition bg-card/5 backdrop-blur-xl hover:bg-teal-500/[0.03] hover:border-teal-500/20 group shadow-2xl shadow-black/20 relative overflow-hidden"
+              >
+                <div className="absolute top-0 right-0 w-40 h-40 bg-teal-500/5 rounded-full blur-[60px] -mr-10 -mt-10 pointer-events-none" />
+
+                <div className="h-14 w-14 rounded-2xl bg-teal-500/10 border border-teal-500/20 flex items-center justify-center text-teal-400 mb-8 group-hover:scale-110 transition-transform duration-500 shadow-lg shadow-teal-500/5">
+                  <GraduationCap className="w-6 h-6" />
+                </div>
+
+                <h3 className="text-xl font-bold mb-2 tracking-tight text-foreground">
+                  {t("home.learnTitle", "Learn by Doing")}
+                </h3>
+
+                <p className="text-muted-foreground/80 text-sm mb-8 leading-relaxed">
+                  {t(
+                    "home.learnDesc",
+                    "AI-guided mastery through structured plans, generated hands-on projects, and dynamic flashcards.",
+                  )}
+                </p>
+
+                <div className="text-xs font-bold tracking-widest uppercase flex items-center gap-2 text-teal-400 group-hover:translate-x-1 transition-transform">
+                  {t("home.openLearn", "Start Learning")}
+                  <ArrowRight className="w-4 h-4" />
+                </div>
+              </motion.div>
+            )}
+
+            {/* CARD 6: BUDGET */}
             {isBudgetEnabled && (
               <motion.div
                 onClick={() => go("/dashboard/budget")}

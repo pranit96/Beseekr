@@ -19,6 +19,8 @@ export interface User {
   feature_flags?: {
     second_brain: boolean;
     weekly_digest: boolean;
+    learn_by_doing?: boolean;
+    enable_auto_job_apply?: boolean;
   };
 }
 

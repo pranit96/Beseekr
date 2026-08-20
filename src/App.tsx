@@ -24,6 +24,7 @@ import { Loader2 } from "lucide-react";
 import {
   getIsSecondBrainEnabled,
   getIsWeeklyDigestEnabled,
+  getIsLearnByDoingEnabled,
 } from "@/utils/envFlags";
 
 // Critical page imports (loaded immediately)
@@ -84,6 +85,7 @@ const lazyRetry = <T extends React.ComponentType<any>>(
 const Chat = lazyRetry(() => import("./pages/Chat"), "Chat");
 const Agents = lazyRetry(() => import("./pages/Agents"), "Agents");
 const Brain = lazyRetry(() => import("@/pages/Brain"), "Brain");
+const LearnByDoing = lazyRetry(() => import("@/pages/LearnByDoing"), "LearnByDoing");
 const Digest = lazyRetry(() => import("@/pages/Digest"), "Digest");
 const AgentShare = lazyRetry(() => import("./pages/AgentShare"), "AgentShare");
 const Analytics = lazyRetry(() => import("./pages/Analytics"), "Analytics");
@@ -206,6 +208,36 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+const FeatureGuard = ({
+  children,
+  featureKey,
+}: {
+  children: React.ReactNode;
+  featureKey: "learn_by_doing" | "second_brain" | "weekly_digest";
+}) => {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-pulse text-muted-foreground">Loading...</div>
+      </div>
+    );
+  }
+
+  if (user?.feature_flags?.[featureKey]) {
+    return <>{children}</>;
+  }
+
+  // Fallback to envFlags if we are specifically checking learn_by_doing 
+  // (to support unauthenticated global marketing state)
+  if (featureKey === "learn_by_doing" && getIsLearnByDoingEnabled()) {
+    return <>{children}</>;
+  }
+
+  return <Navigate to="/" replace />;
+};
+
 const App = () => {
   useEffect(() => {
     // Performance monitoring
@@ -228,9 +260,10 @@ const App = () => {
           .getFeatureFlags()
           .then((res) => {
             if (res.success && res.data) {
-              const { second_brain, weekly_digest } = res.data;
+              const { second_brain, weekly_digest, learn_by_doing } = res.data;
               document.cookie = `EnableSecondBrain=${second_brain}; path=/; max-age=86400; SameSite=Lax`;
               document.cookie = `EnableWeeklyDigest=${weekly_digest}; path=/; max-age=86400; SameSite=Lax`;
+              document.cookie = `EnableLearnByDoing=${learn_by_doing}; path=/; max-age=86400; SameSite=Lax`;
             }
           })
           .catch((err) => {
@@ -570,6 +603,19 @@ const App = () => {
                           <Suspense fallback={<PageLoader />}>
                             <VisionBoard />
                           </Suspense>
+                        </ProtectedRoute>
+                      }
+                    />
+                    {/* Learn By Doing — standalone full-page like /brain */}
+                    <Route
+                      path="/learn"
+                      element={
+                        <ProtectedRoute>
+                          <FeatureGuard featureKey="learn_by_doing">
+                            <Suspense fallback={<PageLoader />}>
+                              <LearnByDoing />
+                            </Suspense>
+                          </FeatureGuard>
                         </ProtectedRoute>
                       }
                     />

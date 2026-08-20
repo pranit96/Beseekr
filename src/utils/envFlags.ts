@@ -69,3 +69,20 @@ export function getIsWeeklyDigestEnabled(): boolean {
 
   return envFlag;
 }
+
+export function getIsLearnByDoingEnabled(): boolean {
+  // Active by default unless VITE_ENABLE_LEARN_BY_DOING is false
+  const envFlag = import.meta.env.VITE_ENABLE_LEARN_BY_DOING !== "false";
+
+  if (typeof document !== "undefined") {
+    const cookieMatch = document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("EnableLearnByDoing="))
+      ?.split("=")[1];
+
+    if (cookieMatch === "true") return true;
+    if (cookieMatch === "false") return false;
+  }
+
+  return envFlag;
+}

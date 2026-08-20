@@ -29,6 +29,7 @@ import {
   getIsBudgetEnabled,
   getIsSecondBrainEnabled,
   getIsWeeklyDigestEnabled,
+  getIsLearnByDoingEnabled,
 } from "@/utils/envFlags";
 
 interface TopBarProps {
@@ -51,6 +52,7 @@ export const TopBar = ({
   const isBudgetEnabled = getIsBudgetEnabled();
   const isSecondBrainEnabled = getIsSecondBrainEnabled();
   const isWeeklyDigestEnabled = getIsWeeklyDigestEnabled();
+  const isLearnByDoingEnabled = getIsLearnByDoingEnabled() || user?.feature_flags?.learn_by_doing;
 
   const navigation = [
     { key: "board", name: "Vision Board", href: "/board" },
@@ -62,6 +64,9 @@ export const TopBar = ({
       : []),
     ...(isWeeklyDigestEnabled
       ? [{ key: "digest", name: "Weekly Digest", href: "/digest" }]
+      : []),
+    ...(isLearnByDoingEnabled
+      ? [{ key: "learn", name: "Learn", href: "/learn" }]
       : []),
     { key: "analytics", name: "Analytics", href: "/analytics" },
     ...(isBudgetEnabled
