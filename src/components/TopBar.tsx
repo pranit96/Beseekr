@@ -56,7 +56,7 @@ export const TopBar = ({
 
   const navigation = [
     { key: "home", name: "Home", href: "/" },
-    { key: "chat", name: "Chat", href: "/chat" },
+    { key: "chat", name: "AI Chat", href: "/chat" },
     { key: "agents", name: "Agents", href: "/agents" },
     { key: "board", name: "Vision Board", href: "/board" },
     ...(isSecondBrainEnabled
