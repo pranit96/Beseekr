@@ -48,27 +48,36 @@ export function useJobStatus(
     elapsed: 0,
   });
 
+  const onCompleteRef = useRef(onComplete);
+  onCompleteRef.current = onComplete;
+
   const startedAt = useRef<number | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const elapsedRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isMounted = useRef(true);
 
   const stopPolling = useCallback(() => {
-    if (intervalRef.current) clearInterval(intervalRef.current);
-    if (elapsedRef.current) clearInterval(elapsedRef.current);
-    intervalRef.current = null;
-    elapsedRef.current = null;
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+    if (elapsedRef.current) {
+      clearInterval(elapsedRef.current);
+      elapsedRef.current = null;
+    }
   }, []);
 
   useEffect(() => {
     isMounted.current = true;
     return () => {
       isMounted.current = false;
+      stopPolling();
     };
-  }, []);
+  }, [stopPolling]);
 
   useEffect(() => {
     if (!jobId) {
+      stopPolling();
       setState({
         status: null,
         result: null,
@@ -80,6 +89,13 @@ export function useJobStatus(
     }
 
     startedAt.current = Date.now();
+    setState({
+      status: "pending",
+      result: null,
+      error: null,
+      isLoading: true,
+      elapsed: 0,
+    });
 
     // Elapsed counter
     elapsedRef.current = setInterval(() => {
@@ -120,7 +136,7 @@ export function useJobStatus(
             result: job.result ?? null,
             isLoading: false,
           }));
-          onComplete?.(job.result ?? {});
+          onCompleteRef.current?.(job.result ?? {});
         } else if (job.status === "failed") {
           stopPolling();
           setState((s) => ({
@@ -143,8 +159,10 @@ export function useJobStatus(
     poll();
     intervalRef.current = setInterval(poll, POLL_INTERVAL_MS);
 
-    return () => stopPolling();
-  }, [jobId, timeoutMs, onComplete, stopPolling]);
+    return () => {
+      stopPolling();
+    };
+  }, [jobId, timeoutMs, stopPolling]);
 
   return state;
 }

@@ -1,5 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,6 +27,7 @@ import { PricingDialog } from "@/components/PricingDialog";
 import { useJobStatus } from "@/hooks/useJobStatus";
 import { useAuth } from "@/contexts/AuthContext";
 import {
+  educationKeys,
   useGeneratePrep,
   useGenerateHandsOn,
   useReviewFlashcard,
@@ -68,24 +70,27 @@ export function TopicStudyView({
   const queueHandsOnMutation = useQueueHandsOn?.(planId);
   const resumePlanQuery = useResumePlan?.(planId);
 
+  const queryClient = useQueryClient();
+
   // Track background job IDs for polling
   const [prepJobId, setPrepJobId] = React.useState<string | null>(null);
   const [handsOnJobId, setHandsOnJobId] = React.useState<string | null>(null);
 
-  // Poll job status while pending
-  const prepJob = useJobStatus(prepJobId, {
-    onComplete: () => {
-      setPrepJobId(null);
-      // Refresh the topic data so the study guide appears
-      resumePlanQuery?.refetch?.();
-    },
-  });
-  const handsOnJob = useJobStatus(handsOnJobId, {
-    onComplete: () => {
-      setHandsOnJobId(null);
-      resumePlanQuery?.refetch?.();
-    },
-  });
+  // Poll job status while pending (stabilized callbacks)
+  const onPrepComplete = React.useCallback(() => {
+    setPrepJobId(null);
+    queryClient.invalidateQueries({ queryKey: educationKeys.plan(planId) });
+    queryClient.invalidateQueries({ queryKey: educationKeys.planResume(planId) });
+  }, [queryClient, planId]);
+
+  const onHandsOnComplete = React.useCallback(() => {
+    setHandsOnJobId(null);
+    queryClient.invalidateQueries({ queryKey: educationKeys.plan(planId) });
+    queryClient.invalidateQueries({ queryKey: educationKeys.planResume(planId) });
+  }, [queryClient, planId]);
+
+  const prepJob = useJobStatus(prepJobId, { onComplete: onPrepComplete });
+  const handsOnJob = useJobStatus(handsOnJobId, { onComplete: onHandsOnComplete });
 
   const [examId, setExamId] = React.useState<string | undefined>();
   const { data: examRes, isLoading: isExamLoading } = useExam(examId);
@@ -96,7 +101,19 @@ export function TopicStudyView({
   const [isPricingOpen, setIsPricingOpen] = React.useState(false);
   const [pricingTier, setPricingTier] = React.useState<"pro" | "ultra">("ultra");
 
-  if (!topic) return null;
+  if (!topic) {
+    return (
+      <div className="max-w-6xl mx-auto p-8 space-y-6">
+        <Button variant="ghost" onClick={onBack} className="gap-2 -ml-2">
+          <ArrowLeft className="w-4 h-4" /> Back to Topics
+        </Button>
+        <div className="p-12 text-center border border-border/40 rounded-3xl bg-card/10 space-y-4">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto text-teal-400" />
+          <p className="text-muted-foreground text-sm">Loading topic details...</p>
+        </div>
+      </div>
+    );
+  }
 
   const currentIdx = allTopics.findIndex((t) => t.id === topic.id);
   const nextTopic =

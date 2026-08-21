@@ -11,9 +11,12 @@ import {
   useUpdateTopicStatus,
 } from "@/hooks/use-education";
 
+import { useToast } from "@/hooks/use-toast";
+
 type ViewState = "dashboard" | "create" | "detail" | "study";
 
 export default function LearnByDoing() {
+  const { toast } = useToast();
   const [view, setView] = useState<ViewState>("dashboard");
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [selectedTopicId, setSelectedTopicId] = useState<string | null>(null);
@@ -48,11 +51,16 @@ export default function LearnByDoing() {
 
     // Lock guard: Topic can only be opened if it's the first topic, already completed, or all prior topics are completed
     if (topicIdx > 0) {
-      const isCompleted = topics[topicIdx].status === "completed";
+      const isCompleted = topics[topicIdx]?.status === "completed";
       const isUnlocked = topics
         .slice(0, topicIdx)
         .every((t) => t.status === "completed");
       if (!isCompleted && !isUnlocked) {
+        toast({
+          title: "Topic Locked",
+          description: "Complete the preceding topics first to unlock this topic.",
+          variant: "destructive",
+        });
         return;
       }
     }
