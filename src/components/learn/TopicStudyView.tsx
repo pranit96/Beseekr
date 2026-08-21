@@ -22,6 +22,7 @@ import { FlashcardsTab } from "./FlashcardsTab";
 import { HandsOnTab } from "./HandsOnTab";
 import { QuizTab } from "./QuizTab";
 import { TopicStatusBadge } from "./TopicStatusBadge";
+import { PricingDialog } from "@/components/PricingDialog";
 import { useJobStatus } from "@/hooks/useJobStatus";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -92,6 +93,8 @@ export function TopicStudyView({
   const updateStatusMutation = useUpdateTopicStatus(planId);
 
   const [submission, setSubmission] = React.useState<any>(null);
+  const [isPricingOpen, setIsPricingOpen] = React.useState(false);
+  const [pricingTier, setPricingTier] = React.useState<"pro" | "ultra">("ultra");
 
   if (!topic) return null;
 
@@ -247,7 +250,10 @@ export function TopicStudyView({
           </div>
           <Button
             size="sm"
-            onClick={() => navigate("/pricing")}
+            onClick={() => {
+              setPricingTier("ultra");
+              setIsPricingOpen(true);
+            }}
             className="bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white font-semibold gap-1.5 shrink-0 shadow-lg shadow-teal-500/20"
           >
             <Crown className="w-4 h-4 text-amber-300" />
@@ -268,7 +274,10 @@ export function TopicStudyView({
           <Button
             size="sm"
             variant="ghost"
-            onClick={() => navigate("/pricing")}
+            onClick={() => {
+              setPricingTier("ultra");
+              setIsPricingOpen(true);
+            }}
             className="text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 font-semibold gap-1 h-8 px-3"
           >
             <Crown className="w-3.5 h-3.5" />
@@ -411,6 +420,13 @@ export function TopicStudyView({
           </TabsContent>
         </div>
       </Tabs>
+
+      {/* Instant In-Place Pricing Dialog */}
+      <PricingDialog
+        open={isPricingOpen}
+        onOpenChange={setIsPricingOpen}
+        defaultTier={pricingTier}
+      />
     </div>
   );
 }
