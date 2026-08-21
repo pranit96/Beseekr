@@ -59,7 +59,37 @@ export default function Home() {
 
         {/* LAYOUT */}
         <section className="max-w-5xl mx-auto px-6 pb-20 grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-          {/* CARD 0: VISION BOARD */}
+          {/* CARD 0: AI CHAT */}
+          <motion.div
+            onClick={() => go("/chat")}
+            whileHover={{ y: -4 }}
+            transition={{ type: "spring", stiffness: 200, damping: 22 }}
+            className="border border-border/30 rounded-2xl p-8 cursor-pointer transition bg-muted/10 backdrop-blur-md hover:bg-primary/5 hover:border-primary/30 group shadow-2xl shadow-black/5"
+          >
+            <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary mb-4 group-hover:scale-110 transition-transform">
+              <MessageSquare className="w-5 h-5" />
+            </div>
+
+            <h3 className="text-xl font-bold mb-2 tracking-tight text-foreground">
+              {t("home.chatTitle", "AI Chat")}
+            </h3>
+
+            <p className="text-muted-foreground/80 mb-6 text-sm leading-relaxed">
+              {t(
+                "home.chatDesc",
+                "Brainstorm, prototype, and draft your systems inside a context-rich, high-focus AI workspace.",
+              )}
+            </p>
+
+            <div className="text-xs font-bold tracking-wider uppercase flex items-center gap-1 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all">
+              {user
+                ? t("home.enterWorkspace", "Open Workspace")
+                : t("home.signInNow", "Sign In")}
+              <ArrowRight className="w-3 h-3" />
+            </div>
+          </motion.div>
+
+          {/* CARD 1: VISION BOARD */}
           <motion.div
             onClick={() => go("/board")}
             whileHover={{ y: -4 }}
@@ -89,7 +119,8 @@ export default function Home() {
               <ArrowRight className="w-3 h-3" />
             </div>
           </motion.div>
-          {/* CARD 1: DISCOVER */}
+
+          {/* CARD 2: DISCOVER */}
           <motion.div
             onClick={() => go("/dashboard/problems")}
             whileHover={{ y: -4 }}
@@ -104,7 +135,7 @@ export default function Home() {
             </div>
 
             <h3 className="text-xl font-bold mb-2 tracking-tight text-foreground">
-              {t("home.discoverTitle", "1. Uncover Problems")}
+              {t("home.discoverTitle", "Uncover Problems")}
             </h3>
 
             <p className="text-muted-foreground/80 mb-6 text-sm leading-relaxed">
@@ -116,36 +147,6 @@ export default function Home() {
 
             <div className="text-xs font-bold tracking-wider uppercase flex items-center gap-1 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all">
               {t("home.explore", "Explore Problems")}
-              <ArrowRight className="w-3 h-3" />
-            </div>
-          </motion.div>
-
-          {/* CARD 2: AI CHAT */}
-          <motion.div
-            onClick={() => go("/chat")}
-            whileHover={{ y: -4 }}
-            transition={{ type: "spring", stiffness: 200, damping: 22 }}
-            className="border border-border/30 rounded-2xl p-8 cursor-pointer transition bg-muted/10 backdrop-blur-md hover:bg-primary/5 hover:border-primary/30 group shadow-2xl shadow-black/5"
-          >
-            <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary mb-4 group-hover:scale-110 transition-transform">
-              <MessageSquare className="w-5 h-5" />
-            </div>
-
-            <h3 className="text-xl font-bold mb-2 tracking-tight text-foreground">
-              {t("home.chatTitle", "2. Execute Solutions")}
-            </h3>
-
-            <p className="text-muted-foreground/80 mb-6 text-sm leading-relaxed">
-              {t(
-                "home.chatDesc",
-                "Brainstorm, prototype, and draft your systems inside a context-rich, high-focus AI workspace.",
-              )}
-            </p>
-
-            <div className="text-xs font-bold tracking-wider uppercase flex items-center gap-1 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all">
-              {user
-                ? t("home.enterWorkspace", "Open Workspace")
-                : t("home.signInNow", "Sign In")}
               <ArrowRight className="w-3 h-3" />
             </div>
           </motion.div>
@@ -186,7 +187,7 @@ export default function Home() {
             className="border border-border/30 rounded-2xl p-8 cursor-pointer transition bg-muted/10 backdrop-blur-md hover:bg-indigo-500/5 hover:border-indigo-500/30 group shadow-2xl shadow-black/5"
           >
             <div className="h-10 w-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 mb-4 group-hover:scale-110 transition-transform">
-              <Mail className="w-5 h-5" />
+              <Mail className="w-6 h-6" />
             </div>
 
             <h3 className="text-xl font-bold mb-2 tracking-tight text-foreground">
@@ -316,7 +317,39 @@ export default function Home() {
 
           {/* CARDS LAYOUT - SYMMETRICAL GRID */}
           <section className="grid gap-6 animate-in fade-in slide-in-from-bottom-6 duration-700 delay-150 fill-mode-both grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-            {/* CARD 0: VISION BOARD */}
+            {/* CARD 0: AI CHAT */}
+            <motion.div
+              onClick={() => go("/chat")}
+              whileHover={{ y: -6 }}
+              transition={{ type: "spring", stiffness: 200, damping: 22 }}
+              className="border border-border/30 rounded-3xl p-10 cursor-pointer transition bg-card/5 backdrop-blur-xl hover:bg-primary/[0.03] hover:border-primary/20 group shadow-2xl shadow-black/20 relative overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 w-40 h-40 bg-primary/5 rounded-full blur-[60px] -mr-10 -mt-10 pointer-events-none" />
+
+              <div className="h-14 w-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary mb-8 group-hover:scale-110 transition-transform duration-500 shadow-lg shadow-primary/5">
+                <MessageSquare className="w-6 h-6" />
+              </div>
+
+              <h3 className="text-xl font-bold mb-2 tracking-tight text-foreground">
+                {t("home.chatTitle", "AI Chat")}
+              </h3>
+
+              <p className="text-muted-foreground/80 text-sm mb-8 leading-relaxed">
+                {t(
+                  "home.chatDesc",
+                  "Brainstorm, prototype, and draft your systems inside a context-rich, high-focus AI workspace.",
+                )}
+              </p>
+
+              <div className="text-xs font-bold tracking-widest uppercase flex items-center gap-2 text-primary group-hover:translate-x-1 transition-transform">
+                {user
+                  ? t("home.enterWorkspace", "Open Workspace")
+                  : t("home.signInNow", "Sign In Now")}
+                <ArrowRight className="w-4 h-4" />
+              </div>
+            </motion.div>
+
+            {/* CARD 1: VISION BOARD */}
             <motion.div
               onClick={() => go("/board")}
               whileHover={{ y: -6 }}
@@ -348,7 +381,8 @@ export default function Home() {
                 <ArrowRight className="w-3.5 h-3.5" />
               </div>
             </motion.div>
-            {/* CARD 1: DISCOVER */}
+
+            {/* CARD 2: DISCOVER */}
             <motion.div
               onClick={() => go("/dashboard/problems")}
               whileHover={{ y: -6 }}
@@ -378,38 +412,6 @@ export default function Home() {
               <div className="text-xs font-bold tracking-widest uppercase flex items-center gap-1.5 text-blue-400 group-hover:translate-x-1 transition-all">
                 {t("home.explore", "Explore Problems")}
                 <ArrowRight className="w-3.5 h-3.5" />
-              </div>
-            </motion.div>
-
-            {/* CARD 2: AI CHAT */}
-            <motion.div
-              onClick={() => go("/chat")}
-              whileHover={{ y: -6 }}
-              transition={{ type: "spring", stiffness: 200, damping: 22 }}
-              className="border border-border/30 rounded-3xl p-10 cursor-pointer transition bg-card/5 backdrop-blur-xl hover:bg-primary/[0.03] hover:border-primary/20 group shadow-2xl shadow-black/20 relative overflow-hidden"
-            >
-              <div className="absolute top-0 right-0 w-40 h-40 bg-primary/5 rounded-full blur-[60px] -mr-10 -mt-10 pointer-events-none" />
-
-              <div className="h-14 w-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary mb-8 group-hover:scale-110 transition-transform duration-500 shadow-lg shadow-primary/5">
-                <MessageSquare className="w-6 h-6" />
-              </div>
-
-              <h3 className="text-xl font-bold mb-2 tracking-tight text-foreground">
-                {t("home.chatTitle", "AI Chat")}
-              </h3>
-
-              <p className="text-muted-foreground/80 text-sm mb-8 leading-relaxed">
-                {t(
-                  "home.chatDesc",
-                  "Brainstorm, prototype, and draft your systems inside a context-rich, high-focus AI workspace.",
-                )}
-              </p>
-
-              <div className="text-xs font-bold tracking-widest uppercase flex items-center gap-2 text-primary group-hover:translate-x-1 transition-transform">
-                {user
-                  ? t("home.enterWorkspace", "Open Workspace")
-                  : t("home.signInNow", "Sign In Now")}
-                <ArrowRight className="w-4 h-4" />
               </div>
             </motion.div>
 

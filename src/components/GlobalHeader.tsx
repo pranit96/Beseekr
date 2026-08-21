@@ -35,6 +35,7 @@ import {
   LayoutGrid,
   Wallet,
   ScrollText,
+  GraduationCap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -209,6 +210,14 @@ const NAV_ITEMS = {
     color: "from-amber-600 to-orange-400",
     exact: false,
   },
+  learn: {
+    key: "learn",
+    name: "Learn",
+    href: "/learn",
+    icon: GraduationCap,
+    color: "from-teal-500 to-cyan-500",
+    exact: false,
+  },
 };
 
 function isPathActive(pathname: string, href: string, exact?: boolean) {
@@ -229,6 +238,8 @@ function getNavigationContext(
   const isBudgetContext = pathname.startsWith("/dashboard/budget");
   const isBoardContext = pathname.startsWith("/board");
   const isDiscoverContext = pathname.startsWith("/dashboard");
+
+  const isLearnContext = pathname.startsWith("/learn");
 
   // Vision Board gets its own minimal strip
   if (isBoardContext) {
@@ -255,6 +266,8 @@ function getNavigationContext(
       items.push(NAV_ITEMS.budget);
     }
     return items;
+  } else if (isLearnContext) {
+    return [NAV_ITEMS.home, NAV_ITEMS.chat, NAV_ITEMS.learn];
   } else if (isDiscoverContext) {
     const items = [
       NAV_ITEMS.home,

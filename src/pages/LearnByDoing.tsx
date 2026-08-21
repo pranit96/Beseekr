@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { TopBar } from "@/components/TopBar";
+import React, { useState } from "react";
+import { GlobalHeader } from "@/components/GlobalHeader";
 import { Button } from "@/components/ui/button";
 import { PlanDashboard } from "@/components/learn/PlanDashboard";
 import { CreatePlanForm } from "@/components/learn/CreatePlanForm";
@@ -72,7 +72,7 @@ export default function LearnByDoing() {
   return (
     <div className="flex h-screen bg-background overflow-hidden">
       <div className="flex-1 flex flex-col h-screen w-full transition-all duration-300">
-        <TopBar showSidebarToggle={false} />
+        <GlobalHeader />
         
         <main className="flex-1 overflow-y-auto custom-scrollbar relative bg-background">
           {/* Subtle background glow effect */}
