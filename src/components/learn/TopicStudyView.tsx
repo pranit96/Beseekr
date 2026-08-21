@@ -38,6 +38,7 @@ import {
   useQueuePrepContent,
   useQueueHandsOn,
   useResumePlan,
+  type QueueJobResponse,
 } from "@/hooks/use-education";
 
 interface TopicStudyViewProps {
@@ -145,20 +146,21 @@ export function TopicStudyView({
   const handleGeneratePrep = () => {
     if (queuePrepMutation) {
       queuePrepMutation.mutate(topic.id, {
-        onSuccess: (res: any) => {
-          const tier = res?.data?.tier || userTier;
-          const isSync = res?.data?.sync || res?.status === 200;
-          if (isSync) {
+        onSuccess: (res: QueueJobResponse) => {
+          if (res.sync) {
+            // Ultra tier: content already saved, just refresh the plan
             queryClient.invalidateQueries({ queryKey: educationKeys.plan(planId) });
             queryClient.invalidateQueries({ queryKey: educationKeys.planResume(planId) });
-          } else if (tier === "free") {
+          } else if (res.tier === "free") {
+            // Free tier: scheduled for 4 AM IST batch — show off-peak card
             setIsPrepQueuedOffPeak(true);
-          } else {
-            const jobId = res?.data?.job_id;
-            if (jobId) setPrepJobId(jobId);
+          } else if (res.job_id) {
+            // Pro tier: start polling
+            setPrepJobId(res.job_id);
           }
         },
         onError: () => {
+          // Fallback to direct (synchronous) generation
           generatePrepMutation.mutate(topic.id);
         },
       });
@@ -170,17 +172,14 @@ export function TopicStudyView({
   const handleGenerateHandsOn = () => {
     if (queueHandsOnMutation) {
       queueHandsOnMutation.mutate(topic.id, {
-        onSuccess: (res: any) => {
-          const tier = res?.data?.tier || userTier;
-          const isSync = res?.data?.sync || res?.status === 200;
-          if (isSync) {
+        onSuccess: (res: QueueJobResponse) => {
+          if (res.sync) {
             queryClient.invalidateQueries({ queryKey: educationKeys.plan(planId) });
             queryClient.invalidateQueries({ queryKey: educationKeys.planResume(planId) });
-          } else if (tier === "free") {
+          } else if (res.tier === "free") {
             setIsHandsOnQueuedOffPeak(true);
-          } else {
-            const jobId = res?.data?.job_id;
-            if (jobId) setHandsOnJobId(jobId);
+          } else if (res.job_id) {
+            setHandsOnJobId(res.job_id);
           }
         },
         onError: () => {

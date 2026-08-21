@@ -27,6 +27,20 @@ export const educationKeys = {
     ["education", "submissions", examId] as const,
 };
 
+// ============= SHARED TYPES =============
+
+/** Shape of a queued (202) or sync (200) generation response */
+export interface QueueJobResponse {
+  /** Present when async (pro/free tier) — poll this with useJobStatus */
+  job_id?: string;
+  /** Which tier processed the request */
+  tier?: "free" | "pro" | "ultra";
+  /** true when ultra tier returned synchronously */
+  sync?: boolean;
+  /** HTTP status of the response (200 = sync, 202 = queued) */
+  httpStatus?: number;
+}
+
 // ============= QUERIES =============
 
 /** List all learning plans */
@@ -305,13 +319,30 @@ export function useSubmitExam(examId: string) {
 
 /**
  * Queue prep content generation (study guide + flashcards) as a background job.
- * Returns 202 immediately with { job_id, status }.
- * The caller should poll GET /education/jobs/:jobId via useJobStatus.
+ *
+ * Response semantics:
+ *   - Ultra:  HTTP 200 → { success, data: <job.result> }  — content already in DB, refetch plan.
+ *   - Pro:    HTTP 202 → { success, data: { job_id, status, tier: "pro" } }
+ *   - Free:   HTTP 202 → { success, data: { job_id, status, tier: "free" } }  — cron at 4 AM IST
  */
 export function useQueuePrepContent(planId: string) {
   return useMutation({
-    mutationFn: (topicId: string) =>
-      apiClient.post(`/education/plans/${planId}/topics/${topicId}/queue-prep`),
+    mutationFn: async (topicId: string): Promise<QueueJobResponse> => {
+      const res = await apiClient.post<any>(
+        `/education/plans/${planId}/topics/${topicId}/queue-prep`,
+      );
+      // Ultra sync: backend returns 200 with no job_id — data is the result payload
+      const isSyncResponse = !res.data?.job_id && res.success;
+      if (isSyncResponse) {
+        return { sync: true, tier: "ultra" };
+      }
+      // Async (pro/free): res.data = { job_id, status, tier }
+      return {
+        job_id: res.data?.job_id,
+        tier: res.data?.tier,
+        sync: false,
+      };
+    },
   });
 }
 
@@ -320,10 +351,20 @@ export function useQueuePrepContent(planId: string) {
  */
 export function useQueueHandsOn(planId: string) {
   return useMutation({
-    mutationFn: (topicId: string) =>
-      apiClient.post(
+    mutationFn: async (topicId: string): Promise<QueueJobResponse> => {
+      const res = await apiClient.post<any>(
         `/education/plans/${planId}/topics/${topicId}/queue-hands-on`,
-      ),
+      );
+      const isSyncResponse = !res.data?.job_id && res.success;
+      if (isSyncResponse) {
+        return { sync: true, tier: "ultra" };
+      }
+      return {
+        job_id: res.data?.job_id,
+        tier: res.data?.tier,
+        sync: false,
+      };
+    },
   });
 }
 
