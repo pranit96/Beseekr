@@ -27,9 +27,10 @@ interface JsonImportZoneProps {
 const MAX_JSON_SIZE = 500 * 1024; // 500KB
 const MAX_TOPICS = 50;
 const MAX_TITLE_LENGTH = 200;
-const MAX_SUBJECT_LENGTH = 200;
+const MAX_SUBJECT_LENGTH = 100;
+const MAX_TARGET_SCORE_LENGTH = 50;
 const MAX_DESCRIPTION_LENGTH = 2000;
-const MAX_TOPIC_NAME_LENGTH = 300;
+const MAX_TOPIC_NAME_LENGTH = 255;
 const MAX_NESTING_DEPTH = 5;
 
 // Sample JSON template for user reference
@@ -159,8 +160,8 @@ function validateImportJson(raw: string): {
 
   // 7. Optional fields validation
   if (parsed.target_score !== undefined && parsed.target_score !== null) {
-    if (typeof parsed.target_score !== "string" || parsed.target_score.length > 100) {
-      return { valid: false, error: `"target_score" must be a string up to 100 characters.` };
+    if (typeof parsed.target_score !== "string" || parsed.target_score.length > MAX_TARGET_SCORE_LENGTH) {
+      return { valid: false, error: `"target_score" must be a string up to ${MAX_TARGET_SCORE_LENGTH} characters.` };
     }
   }
 
@@ -433,7 +434,7 @@ export function JsonImportZone({ onValidImport, className }: JsonImportZoneProps
                     <td className="py-1.5 px-2 text-teal-400 font-semibold">subject</td>
                     <td className="py-1.5 px-2">string</td>
                     <td className="py-1.5 px-2 text-red-400">Yes</td>
-                    <td className="py-1.5 px-2">Max 200 chars</td>
+                    <td className="py-1.5 px-2">Max 100 chars</td>
                     <td className="py-1.5 px-2 font-sans">Core subject or domain</td>
                   </tr>
                   <tr>
@@ -454,7 +455,7 @@ export function JsonImportZone({ onValidImport, className }: JsonImportZoneProps
                     <td className="py-1.5 px-2 text-teal-400 font-semibold">target_score</td>
                     <td className="py-1.5 px-2">string</td>
                     <td className="py-1.5 px-2 text-muted-foreground">No</td>
-                    <td className="py-1.5 px-2">Max 100 chars</td>
+                    <td className="py-1.5 px-2">Max 50 chars</td>
                     <td className="py-1.5 px-2 font-sans">Goal (e.g., "Pass", "Score 95+")</td>
                   </tr>
                   <tr>
@@ -468,7 +469,7 @@ export function JsonImportZone({ onValidImport, className }: JsonImportZoneProps
                     <td className="py-1.5 px-2 text-teal-400 font-semibold pl-4">└ topic_name</td>
                     <td className="py-1.5 px-2">string</td>
                     <td className="py-1.5 px-2 text-red-400">Yes</td>
-                    <td className="py-1.5 px-2">Max 300 chars</td>
+                    <td className="py-1.5 px-2">Max 255 chars</td>
                     <td className="py-1.5 px-2 font-sans">Specific concept or topic title</td>
                   </tr>
                   <tr>
