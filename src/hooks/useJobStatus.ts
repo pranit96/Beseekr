@@ -1,14 +1,15 @@
 /**
  * useJobStatus.ts
  *
- * Polls GET /api/education/jobs/:jobId every 5 seconds until the job
- * is completed or failed. Stops polling after `timeoutMs` (default 10 min).
+ * Uses TanStack React Query for reliable, leak-free polling of
+ * GET /api/education/jobs/:jobId until the job completes or fails.
  *
  * Usage:
- *   const { status, result, error, isLoading } = useJobStatus(jobId);
+ *   const { status, result, error, isLoading, elapsed } = useJobStatus(jobId, { onComplete });
  */
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api";
 
 export type AiJobStatus =
@@ -23,148 +24,81 @@ export interface AiJobState {
   result: Record<string, unknown> | null;
   error: string | null;
   isLoading: boolean;
-  /** Elapsed seconds since polling started */
   elapsed: number;
 }
-
-const POLL_INTERVAL_MS = 5_000;
-const DEFAULT_TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes
 
 export function useJobStatus(
   jobId: string | null | undefined,
   {
-    timeoutMs = DEFAULT_TIMEOUT_MS,
     onComplete,
   }: {
     timeoutMs?: number;
     onComplete?: (result: Record<string, unknown>) => void;
   } = {},
 ): AiJobState {
-  const [state, setState] = useState<AiJobState>({
-    status: jobId ? "pending" : null,
-    result: null,
-    error: null,
-    isLoading: !!jobId,
-    elapsed: 0,
-  });
-
   const onCompleteRef = useRef(onComplete);
   onCompleteRef.current = onComplete;
 
-  const startedAt = useRef<number | null>(null);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const elapsedRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const isMounted = useRef(true);
+  const [elapsed, setElapsed] = useState(0);
+  const startedAtRef = useRef<number | null>(null);
 
-  const stopPolling = useCallback(() => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-    if (elapsedRef.current) {
-      clearInterval(elapsedRef.current);
-      elapsedRef.current = null;
-    }
-  }, []);
-
-  useEffect(() => {
-    isMounted.current = true;
-    return () => {
-      isMounted.current = false;
-      stopPolling();
-    };
-  }, [stopPolling]);
-
+  // Track elapsed seconds
   useEffect(() => {
     if (!jobId) {
-      stopPolling();
-      setState({
-        status: null,
-        result: null,
-        error: null,
-        isLoading: false,
-        elapsed: 0,
-      });
+      startedAtRef.current = null;
+      setElapsed(0);
       return;
     }
 
-    startedAt.current = Date.now();
-    setState({
-      status: "pending",
-      result: null,
-      error: null,
-      isLoading: true,
-      elapsed: 0,
-    });
-
-    // Elapsed counter
-    elapsedRef.current = setInterval(() => {
-      if (isMounted.current && startedAt.current) {
-        setState((s) => ({
-          ...s,
-          elapsed: Math.floor((Date.now() - startedAt.current!) / 1000),
-        }));
+    startedAtRef.current = Date.now();
+    const interval = setInterval(() => {
+      if (startedAtRef.current) {
+        setElapsed(Math.floor((Date.now() - startedAtRef.current) / 1000));
       }
     }, 1000);
 
-    const poll = async () => {
-      // Timeout guard
-      if (startedAt.current && Date.now() - startedAt.current > timeoutMs) {
-        stopPolling();
-        if (isMounted.current) {
-          setState((s) => ({
-            ...s,
-            status: "failed",
-            error: "Job timed out. Please try again.",
-            isLoading: false,
-          }));
-        }
-        return;
+    return () => clearInterval(interval);
+  }, [jobId]);
+
+  // React Query with dynamic refetchInterval
+  const { data: job, isPending, error: queryError } = useQuery({
+    queryKey: ["education-ai-job", jobId],
+    queryFn: async () => {
+      const res = await apiClient.get(`/education/jobs/${jobId}`);
+      return res.data?.data;
+    },
+    enabled: !!jobId,
+    refetchInterval: (query) => {
+      const currentJob = query.state.data;
+      if (!currentJob) return 3000;
+      // Stop polling once finished
+      if (currentJob.status === "completed" || currentJob.status === "failed") {
+        return false;
       }
+      return 3000; // Poll every 3s while pending/processing
+    },
+    refetchIntervalInBackground: false,
+    staleTime: 0,
+    gcTime: 5 * 60 * 1000,
+  });
 
-      try {
-        const res = await apiClient.get(`/education/jobs/${jobId}`);
-        const job = res.data?.data;
+  // Call onComplete callback when job status becomes 'completed'
+  useEffect(() => {
+    if (job?.status === "completed") {
+      onCompleteRef.current?.(job.result ?? {});
+    }
+  }, [job?.status, job?.result]);
 
-        if (!job || !isMounted.current) return;
+  const status: AiJobStatus = job?.status || (jobId && isPending ? "pending" : null);
+  const isLoading = !!jobId && (isPending || status === "pending" || status === "processing");
 
-        if (job.status === "completed") {
-          stopPolling();
-          setState((s) => ({
-            ...s,
-            status: "completed",
-            result: job.result ?? null,
-            isLoading: false,
-          }));
-          onCompleteRef.current?.(job.result ?? {});
-        } else if (job.status === "failed") {
-          stopPolling();
-          setState((s) => ({
-            ...s,
-            status: "failed",
-            error: job.error_msg || "AI generation failed. Please try again.",
-            isLoading: false,
-          }));
-        } else {
-          // pending or processing — keep polling
-          setState((s) => ({ ...s, status: job.status as AiJobStatus }));
-        }
-      } catch (err: unknown) {
-        // Network error — don't stop, retry on next tick
-        console.warn("[useJobStatus] Poll error:", err);
-      }
-    };
-
-    // Poll immediately, then every POLL_INTERVAL_MS
-    poll();
-    intervalRef.current = setInterval(poll, POLL_INTERVAL_MS);
-
-    return () => {
-      stopPolling();
-    };
-  }, [jobId, timeoutMs, stopPolling]);
-
-  return state;
+  return {
+    status,
+    result: job?.result ?? null,
+    error: job?.error_msg || (queryError ? "Failed to check generation status" : null),
+    isLoading,
+    elapsed,
+  };
 }
 
 export default useJobStatus;
