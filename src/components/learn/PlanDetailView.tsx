@@ -1,12 +1,43 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Clock, Calendar, BookOpen, AlertCircle, Lock, ChevronRight, CheckCircle2 } from "lucide-react";
+import { 
+  ArrowLeft, Clock, Calendar, BookOpen, AlertCircle, Lock, 
+  ChevronRight, CheckCircle2, MoreVertical, Edit3, Trash2, Loader2, Sparkles 
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { PlanTopic, PlanResumePoint } from "@/types/education";
+import { PlanTopic, PlanResumePoint, LearningPlan } from "@/types/education";
 import { TopicStatusBadge } from "./TopicStatusBadge";
 import { PlanProgressRing } from "./PlanProgressRing";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useDeletePlan, useUpdatePlan } from "@/hooks/use-education";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface PlanDetailViewProps {
   planId: string;
@@ -24,6 +55,55 @@ export function PlanDetailView({
   onTopicSelect 
 }: PlanDetailViewProps) {
   const [lockedNoticeTopic, setLockedNoticeTopic] = useState<string | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
+  const deletePlanMutation = useDeletePlan();
+  const updatePlanMutation = useUpdatePlan(planId);
+
+  // Edit form state
+  const [editTitle, setEditTitle] = useState("");
+  const [editSubject, setEditSubject] = useState("");
+  const [editTargetScore, setEditTargetScore] = useState("");
+  const [editHours, setEditHours] = useState(2);
+  const [editExamDate, setEditExamDate] = useState("");
+
+  const handleOpenEdit = () => {
+    if (resumeData) {
+      setEditTitle(resumeData.plan_title || "");
+      setEditSubject(resumeData.subject || "");
+      setEditTargetScore("");
+      setEditHours(2);
+      setEditExamDate("");
+    }
+    setIsEditDialogOpen(true);
+  };
+
+  const handleSaveEdit = () => {
+    updatePlanMutation.mutate(
+      {
+        title: editTitle,
+        subject: editSubject,
+        ...(editTargetScore ? { target_score: editTargetScore } : {}),
+        ...(editHours ? { daily_study_hours: Number(editHours) } : {}),
+        ...(editExamDate ? { exam_date: editExamDate } : {}),
+      },
+      {
+        onSuccess: () => {
+          setIsEditDialogOpen(false);
+        },
+      }
+    );
+  };
+
+  const handleDeletePlan = () => {
+    deletePlanMutation.mutate(planId, {
+      onSuccess: () => {
+        setIsDeleteDialogOpen(false);
+        onBack();
+      },
+    });
+  };
 
   if (isLoading) {
     return (
@@ -52,13 +132,42 @@ export function PlanDetailView({
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={onBack}>
-          <ArrowLeft className="w-5 h-5" />
-        </Button>
-        <div>
-          <div className="text-sm font-semibold text-teal-500 uppercase tracking-wider">{subject}</div>
-          <h1 className="text-2xl font-bold">{plan_title}</h1>
+      {/* Header with back button, subject, title, and action menu */}
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" onClick={onBack}>
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <div>
+            <div className="text-sm font-semibold text-teal-500 uppercase tracking-wider">{subject}</div>
+            <h1 className="text-2xl font-bold text-foreground">{plan_title}</h1>
+          </div>
+        </div>
+
+        {/* Options Menu */}
+        <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-1.5 border-border/50 bg-card/10">
+                <MoreVertical className="w-4 h-4" />
+                <span className="hidden sm:inline">Options</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48 bg-popover/95 backdrop-blur-xl border-border/50">
+              <DropdownMenuItem onClick={handleOpenEdit} className="gap-2 cursor-pointer">
+                <Edit3 className="w-4 h-4 text-teal-400" />
+                <span>Edit Plan Details</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator className="bg-border/30" />
+              <DropdownMenuItem 
+                onClick={() => setIsDeleteDialogOpen(true)} 
+                className="gap-2 text-red-400 focus:text-red-300 focus:bg-red-500/10 cursor-pointer"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>Delete Plan</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
@@ -90,7 +199,6 @@ export function PlanDetailView({
 
           {topics_overview.map((topic, idx) => {
             const isCompleted = topic.status === "completed";
-            // A topic is unlocked if it's the 1st topic or all prior topics are completed
             const isUnlocked = idx === 0 || topics_overview.slice(0, idx).every(t => t.status === "completed");
             const isLocked = !isCompleted && !isUnlocked;
             const isNext = isUnlocked && !isCompleted;
@@ -203,6 +311,102 @@ export function PlanDetailView({
           </div>
         </div>
       </div>
+
+      {/* Edit Plan Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-md bg-popover/95 backdrop-blur-xl border-border/50">
+          <DialogHeader>
+            <DialogTitle>Edit Plan Details</DialogTitle>
+            <DialogDescription>
+              Update your study plan title and target parameters.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="plan-title">Plan Title</Label>
+              <Input
+                id="plan-title"
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                placeholder="e.g. Master Data Structures"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="plan-subject">Subject / Domain</Label>
+              <Input
+                id="plan-subject"
+                value={editSubject}
+                onChange={(e) => setEditSubject(e.target.value)}
+                placeholder="e.g. Computer Science"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="plan-hours">Daily Hours</Label>
+                <Input
+                  id="plan-hours"
+                  type="number"
+                  min={0.5}
+                  max={16}
+                  step={0.5}
+                  value={editHours}
+                  onChange={(e) => setEditHours(parseFloat(e.target.value) || 1)}
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="plan-target">Target Score</Label>
+                <Input
+                  id="plan-target"
+                  value={editTargetScore}
+                  onChange={(e) => setEditTargetScore(e.target.value)}
+                  placeholder="e.g. 99th percentile"
+                />
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="ghost" onClick={() => setIsEditDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSaveEdit}
+              disabled={updatePlanMutation.isPending || !editTitle.trim()}
+              className="bg-teal-500 hover:bg-teal-600 text-white"
+            >
+              {updatePlanMutation.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Plan Alert Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent className="bg-popover/95 backdrop-blur-xl border-border/50">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-red-400">Delete Learning Plan?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete <strong>"{plan_title}"</strong>, all its scheduled topics, study guides, flashcards, generated exams, and active background AI jobs. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeletePlan}
+              disabled={deletePlanMutation.isPending}
+              className="bg-red-500 hover:bg-red-600 text-white"
+            >
+              {deletePlanMutation.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+              Delete Plan
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

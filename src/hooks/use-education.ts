@@ -119,6 +119,50 @@ export function useImportPlan() {
   });
 }
 
+/** Delete a plan (and cascade-delete topics, exams, jobs) */
+export function useDeletePlan() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: (planId: string) => apiClient.deleteLearningPlan(planId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: educationKeys.plans });
+      toast({ title: "Plan deleted", description: "Learning plan has been deleted." });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to delete plan",
+        description: error?.message || "Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+}
+
+/** Update plan metadata (title, target_score, daily_study_hours, exam_date) */
+export function useUpdatePlan(planId: string) {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: (data: Partial<LearningPlan>) => apiClient.updateLearningPlan(planId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: educationKeys.plans });
+      queryClient.invalidateQueries({ queryKey: educationKeys.plan(planId) });
+      queryClient.invalidateQueries({ queryKey: educationKeys.planResume(planId) });
+      toast({ title: "Plan updated", description: "Plan details saved successfully." });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to update plan",
+        description: error?.message || "Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+}
+
 /** Update topic status — with optimistic update */
 export function useUpdateTopicStatus(planId: string) {
   const queryClient = useQueryClient();
@@ -218,4 +262,36 @@ export function useSubmitExam(examId: string) {
       queryClient.invalidateQueries({ queryKey: educationKeys.submissions() });
     },
   });
+}
+
+// ============= BACKGROUND JOB QUEUE MUTATIONS =============
+
+/**
+ * Queue prep content generation (study guide + flashcards) as a background job.
+ * Returns 202 immediately with { job_id, status }.
+ * The caller should poll GET /education/jobs/:jobId via useJobStatus.
+ */
+export function useQueuePrepContent(planId: string) {
+  return useMutation({
+    mutationFn: (topicId: string) =>
+      apiClient.post(`/education/plans/${planId}/topics/${topicId}/queue-prep`),
+  });
+}
+
+/**
+ * Queue hands-on exercise generation as a background job.
+ */
+export function useQueueHandsOn(planId: string) {
+  return useMutation({
+    mutationFn: (topicId: string) =>
+      apiClient.post(`/education/plans/${planId}/topics/${topicId}/queue-hands-on`),
+  });
+}
+
+/**
+ * Re-export usePlanResume as useResumePlan for convenience in components
+ * that need to trigger a refetch after a background job completes.
+ */
+export function useResumePlan(planId: string | undefined) {
+  return usePlanResume(planId);
 }

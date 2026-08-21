@@ -1,13 +1,14 @@
 import React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ArrowRight, BookOpen, Layers, Terminal, CheckSquare, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, BookOpen, Layers, Terminal, CheckSquare, CheckCircle2, Clock, Loader2 } from "lucide-react";
 import { PlanTopic } from "@/types/education";
 import { LearnTab } from "./LearnTab";
 import { FlashcardsTab } from "./FlashcardsTab";
 import { HandsOnTab } from "./HandsOnTab";
 import { QuizTab } from "./QuizTab";
 import { TopicStatusBadge } from "./TopicStatusBadge";
+import { useJobStatus } from "@/hooks/useJobStatus";
 import { 
   useGeneratePrep, 
   useGenerateHandsOn, 
@@ -15,7 +16,10 @@ import {
   useGenerateExam,
   useSubmitExam,
   useExam,
-  useUpdateTopicStatus
+  useUpdateTopicStatus,
+  useQueuePrepContent,
+  useQueueHandsOn,
+  useResumePlan,
 } from "@/hooks/use-education";
 
 interface TopicStudyViewProps {
@@ -33,12 +37,36 @@ export function TopicStudyView({
   onBack, 
   onTopicSelect 
 }: TopicStudyViewProps) {
+  // Direct (synchronous) mutations — kept as fallback
   const generatePrepMutation = useGeneratePrep(planId);
   const generateHandsOnMutation = useGenerateHandsOn(planId);
   const reviewFlashcardMutation = useReviewFlashcard(planId);
   const generateExamMutation = useGenerateExam();
   
-  // Find if there's an exam for this topic
+  // Background queue mutations
+  const queuePrepMutation = useQueuePrepContent?.(planId);
+  const queueHandsOnMutation = useQueueHandsOn?.(planId);
+  const resumePlanQuery = useResumePlan?.(planId);
+
+  // Track background job IDs for polling
+  const [prepJobId, setPrepJobId] = React.useState<string | null>(null);
+  const [handsOnJobId, setHandsOnJobId] = React.useState<string | null>(null);
+
+  // Poll job status while pending
+  const prepJob = useJobStatus(prepJobId, {
+    onComplete: () => {
+      setPrepJobId(null);
+      // Refresh the topic data so the study guide appears
+      resumePlanQuery?.refetch?.();
+    },
+  });
+  const handsOnJob = useJobStatus(handsOnJobId, {
+    onComplete: () => {
+      setHandsOnJobId(null);
+      resumePlanQuery?.refetch?.();
+    },
+  });
+
   const [examId, setExamId] = React.useState<string | undefined>();
   const { data: examRes, isLoading: isExamLoading } = useExam(examId);
   const submitExamMutation = useSubmitExam(examId || "");
@@ -52,12 +80,41 @@ export function TopicStudyView({
   const nextTopic = currentIdx >= 0 && currentIdx < allTopics.length - 1 ? allTopics[currentIdx + 1] : null;
   const isCompleted = topic.status === "completed";
 
+  const isPrepGenerating = generatePrepMutation.isPending || prepJob.isLoading;
+  const isHandsOnGenerating = generateHandsOnMutation.isPending || handsOnJob.isLoading;
+
   const handleGeneratePrep = () => {
-    generatePrepMutation.mutate(topic.id);
+    // Prefer queue endpoint; fall back to sync if queue hooks unavailable
+    if (queuePrepMutation) {
+      queuePrepMutation.mutate(topic.id, {
+        onSuccess: (res: any) => {
+          const jobId = res?.data?.job_id;
+          if (jobId) setPrepJobId(jobId);
+        },
+        onError: () => {
+          // Fallback to synchronous if queue fails
+          generatePrepMutation.mutate(topic.id);
+        },
+      });
+    } else {
+      generatePrepMutation.mutate(topic.id);
+    }
   };
 
   const handleGenerateHandsOn = () => {
-    generateHandsOnMutation.mutate(topic.id);
+    if (queueHandsOnMutation) {
+      queueHandsOnMutation.mutate(topic.id, {
+        onSuccess: (res: any) => {
+          const jobId = res?.data?.job_id;
+          if (jobId) setHandsOnJobId(jobId);
+        },
+        onError: () => {
+          generateHandsOnMutation.mutate(topic.id);
+        },
+      });
+    } else {
+      generateHandsOnMutation.mutate(topic.id);
+    }
   };
 
   const handleGenerateQuiz = () => {
@@ -137,9 +194,25 @@ export function TopicStudyView({
         
         <div className="min-h-[500px]">
           <TabsContent value="learn" className="mt-0 outline-none">
+            {prepJob.isLoading && prepJobId && (
+              <div className="flex items-center gap-3 mb-4 px-4 py-3 rounded-xl bg-teal-500/10 border border-teal-500/20 text-sm text-teal-300">
+                <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+                <span>
+                  Generating your study guide in the background
+                  {prepJob.elapsed > 0 && <span className="text-teal-400/70 ml-1">({prepJob.elapsed}s)</span>}
+                  {prepJob.status === "pending" && <span className="ml-1 text-teal-400/60">· queued</span>}
+                  {prepJob.status === "processing" && <span className="ml-1 text-teal-400/60">· AI is writing…</span>}
+                </span>
+              </div>
+            )}
+            {prepJob.error && (
+              <div className="flex items-center gap-2 mb-4 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-sm text-red-300">
+                Generation failed: {prepJob.error} — try again.
+              </div>
+            )}
             <LearnTab 
               content={topic.prep_summary} 
-              isLoading={generatePrepMutation.isPending} 
+              isLoading={isPrepGenerating} 
               onGenerate={handleGeneratePrep} 
             />
           </TabsContent>
@@ -152,9 +225,25 @@ export function TopicStudyView({
           </TabsContent>
           
           <TabsContent value="build" className="mt-0 outline-none">
+            {handsOnJob.isLoading && handsOnJobId && (
+              <div className="flex items-center gap-3 mb-4 px-4 py-3 rounded-xl bg-teal-500/10 border border-teal-500/20 text-sm text-teal-300">
+                <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+                <span>
+                  Building exercises in the background
+                  {handsOnJob.elapsed > 0 && <span className="text-teal-400/70 ml-1">({handsOnJob.elapsed}s)</span>}
+                  {handsOnJob.status === "pending" && <span className="ml-1 text-teal-400/60">· queued</span>}
+                  {handsOnJob.status === "processing" && <span className="ml-1 text-teal-400/60">· AI is writing…</span>}
+                </span>
+              </div>
+            )}
+            {handsOnJob.error && (
+              <div className="flex items-center gap-2 mb-4 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-sm text-red-300">
+                Generation failed: {handsOnJob.error} — try again.
+              </div>
+            )}
             <HandsOnTab 
               exercises={topic.hands_on_exercises}
-              isLoading={generateHandsOnMutation.isPending}
+              isLoading={isHandsOnGenerating}
               onGenerate={handleGenerateHandsOn}
             />
           </TabsContent>

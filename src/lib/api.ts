@@ -1772,6 +1772,14 @@ class ApiClient {
     return this.request<PlanWithTopics>(`/api/education/plans/${planId}`);
   }
 
+  async deleteLearningPlan(planId: string) {
+    return this.delete<{ message: string }>(`/api/education/plans/${planId}`);
+  }
+
+  async updateLearningPlan(planId: string, data: Partial<LearningPlan>) {
+    return this.patch<LearningPlan>(`/api/education/plans/${planId}`, data);
+  }
+
   async getLearningPlanResume(planId: string) {
     return this.request<PlanResumePoint>(`/api/education/plans/${planId}/resume`);
   }
