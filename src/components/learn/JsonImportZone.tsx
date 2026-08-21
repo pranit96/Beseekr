@@ -1,17 +1,17 @@
 import React, { useState, useRef, DragEvent, ChangeEvent } from "react";
-import { 
-  UploadCloud, 
-  FileJson, 
-  AlertTriangle, 
-  CheckCircle2, 
-  Copy, 
-  Check, 
-  Download, 
-  Info, 
-  ChevronDown, 
-  ChevronUp, 
-  ShieldCheck, 
-  Sparkles 
+import {
+  UploadCloud,
+  FileJson,
+  AlertTriangle,
+  CheckCircle2,
+  Copy,
+  Check,
+  Download,
+  Info,
+  ChevronDown,
+  ChevronUp,
+  ShieldCheck,
+  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -43,25 +43,29 @@ const SAMPLE_PLAN_JSON = {
   topics: [
     {
       topic_name: "Advanced React & State Management",
-      description: "Master React concurrency, custom hooks, and state management architectures with Redux Toolkit and Zustand.",
-      days_to_allocate: 3
+      description:
+        "Master React concurrency, custom hooks, and state management architectures with Redux Toolkit and Zustand.",
+      days_to_allocate: 3,
     },
     {
       topic_name: "Node.js Architecture & High-Performance APIs",
-      description: "Deep dive into the Node.js event loop, streams, clustering, and building resilient REST/GraphQL APIs with Express.",
-      days_to_allocate: 4
+      description:
+        "Deep dive into the Node.js event loop, streams, clustering, and building resilient REST/GraphQL APIs with Express.",
+      days_to_allocate: 4,
     },
     {
       topic_name: "Database Design & Query Optimization",
-      description: "Design relational PostgreSQL schemas, optimize complex indexes, and handle connection pooling with Prisma.",
-      days_to_allocate: 3
+      description:
+        "Design relational PostgreSQL schemas, optimize complex indexes, and handle connection pooling with Prisma.",
+      days_to_allocate: 3,
     },
     {
       topic_name: "System Design & Distributed Caching",
-      description: "Architect scalable microservices, implement Redis caching strategies, and design rate-limiting and message queues.",
-      days_to_allocate: 5
-    }
-  ]
+      description:
+        "Architect scalable microservices, implement Redis caching strategies, and design rate-limiting and message queues.",
+      days_to_allocate: 5,
+    },
+  ],
 };
 
 // Check maximum object/array depth to prevent JSON recursion DoS
@@ -88,9 +92,9 @@ function sanitizeString(str: string): string {
     .trim();
 }
 
-function validateImportJson(raw: string): { 
-  valid: boolean; 
-  data?: ImportPlanPayload; 
+function validateImportJson(raw: string): {
+  valid: boolean;
+  data?: ImportPlanPayload;
   error?: string;
   topicCount?: number;
 } {
@@ -100,25 +104,26 @@ function validateImportJson(raw: string): {
 
   // 1. Payload size guard (DoS prevention)
   if (raw.length > MAX_JSON_SIZE) {
-    return { 
-      valid: false, 
-      error: `File size (${(raw.length / 1024).toFixed(1)}KB) exceeds the maximum allowed limit of ${MAX_JSON_SIZE / 1024}KB.` 
+    return {
+      valid: false,
+      error: `File size (${(raw.length / 1024).toFixed(1)}KB) exceeds the maximum allowed limit of ${MAX_JSON_SIZE / 1024}KB.`,
     };
   }
 
   // 2. Prototype pollution prevention (check raw text first)
   const rawLower = raw.toLowerCase();
   if (
-    rawLower.includes("__proto__") || 
-    rawLower.includes("constructor") || 
+    rawLower.includes("__proto__") ||
+    rawLower.includes("constructor") ||
     rawLower.includes("prototype") ||
     rawLower.includes("<script") ||
     rawLower.includes("javascript:") ||
     rawLower.includes("data:text/html")
   ) {
-    return { 
-      valid: false, 
-      error: "Security Check Failed: Potentially unsafe content or malicious scripts detected." 
+    return {
+      valid: false,
+      error:
+        "Security Check Failed: Potentially unsafe content or malicious scripts detected.",
     };
   }
 
@@ -127,63 +132,117 @@ function validateImportJson(raw: string): {
   try {
     parsed = JSON.parse(raw);
   } catch (err: any) {
-    return { 
-      valid: false, 
-      error: `Invalid JSON syntax: ${err.message || "Please check formatting, commas, and quotes."}` 
+    return {
+      valid: false,
+      error: `Invalid JSON syntax: ${err.message || "Please check formatting, commas, and quotes."}`,
     };
   }
 
   // 4. Object type check & Nesting depth
   if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-    return { valid: false, error: "Root JSON must be a valid object (not an array or primitive)." };
+    return {
+      valid: false,
+      error: "Root JSON must be a valid object (not an array or primitive).",
+    };
   }
 
   if (getJsonDepth(parsed) > MAX_NESTING_DEPTH) {
-    return { valid: false, error: `JSON exceeds maximum nesting depth (${MAX_NESTING_DEPTH} levels).` };
+    return {
+      valid: false,
+      error: `JSON exceeds maximum nesting depth (${MAX_NESTING_DEPTH} levels).`,
+    };
   }
 
   // 5. Title validation
-  if (!parsed.title || typeof parsed.title !== "string" || !parsed.title.trim()) {
-    return { valid: false, error: `"title" is required and must be a non-empty string.` };
+  if (
+    !parsed.title ||
+    typeof parsed.title !== "string" ||
+    !parsed.title.trim()
+  ) {
+    return {
+      valid: false,
+      error: `"title" is required and must be a non-empty string.`,
+    };
   }
   if (parsed.title.trim().length > MAX_TITLE_LENGTH) {
-    return { valid: false, error: `"title" cannot exceed ${MAX_TITLE_LENGTH} characters.` };
+    return {
+      valid: false,
+      error: `"title" cannot exceed ${MAX_TITLE_LENGTH} characters.`,
+    };
   }
 
   // 6. Subject validation
-  if (!parsed.subject || typeof parsed.subject !== "string" || !parsed.subject.trim()) {
-    return { valid: false, error: `"subject" is required and must be a non-empty string.` };
+  if (
+    !parsed.subject ||
+    typeof parsed.subject !== "string" ||
+    !parsed.subject.trim()
+  ) {
+    return {
+      valid: false,
+      error: `"subject" is required and must be a non-empty string.`,
+    };
   }
   if (parsed.subject.trim().length > MAX_SUBJECT_LENGTH) {
-    return { valid: false, error: `"subject" cannot exceed ${MAX_SUBJECT_LENGTH} characters.` };
+    return {
+      valid: false,
+      error: `"subject" cannot exceed ${MAX_SUBJECT_LENGTH} characters.`,
+    };
   }
 
   // 7. Optional fields validation
   if (parsed.target_score !== undefined && parsed.target_score !== null) {
-    if (typeof parsed.target_score !== "string" || parsed.target_score.length > MAX_TARGET_SCORE_LENGTH) {
-      return { valid: false, error: `"target_score" must be a string up to ${MAX_TARGET_SCORE_LENGTH} characters.` };
+    if (
+      typeof parsed.target_score !== "string" ||
+      parsed.target_score.length > MAX_TARGET_SCORE_LENGTH
+    ) {
+      return {
+        valid: false,
+        error: `"target_score" must be a string up to ${MAX_TARGET_SCORE_LENGTH} characters.`,
+      };
     }
   }
 
-  if (parsed.daily_study_hours !== undefined && parsed.daily_study_hours !== null) {
+  if (
+    parsed.daily_study_hours !== undefined &&
+    parsed.daily_study_hours !== null
+  ) {
     const hours = Number(parsed.daily_study_hours);
     if (isNaN(hours) || hours < 0.1 || hours > 24.0) {
-      return { valid: false, error: `"daily_study_hours" must be a number between 0.1 and 24.0.` };
+      return {
+        valid: false,
+        error: `"daily_study_hours" must be a number between 0.1 and 24.0.`,
+      };
     }
   }
 
-  if (parsed.exam_date !== undefined && parsed.exam_date !== null && parsed.exam_date !== "") {
-    if (typeof parsed.exam_date !== "string" || isNaN(Date.parse(parsed.exam_date))) {
-      return { valid: false, error: `"exam_date" must be a valid date format (e.g. YYYY-MM-DD).` };
+  if (
+    parsed.exam_date !== undefined &&
+    parsed.exam_date !== null &&
+    parsed.exam_date !== ""
+  ) {
+    if (
+      typeof parsed.exam_date !== "string" ||
+      isNaN(Date.parse(parsed.exam_date))
+    ) {
+      return {
+        valid: false,
+        error: `"exam_date" must be a valid date format (e.g. YYYY-MM-DD).`,
+      };
     }
   }
 
   // 8. Topics array validation
   if (!Array.isArray(parsed.topics) || parsed.topics.length === 0) {
-    return { valid: false, error: `"topics" must be a non-empty array containing at least 1 topic.` };
+    return {
+      valid: false,
+      error: `"topics" must be a non-empty array containing at least 1 topic.`,
+    };
   }
   if (parsed.topics.length > MAX_TOPICS) {
-    return { valid: false, error: `Maximum ${MAX_TOPICS} topics allowed per plan (found ${parsed.topics.length}).` };
+    return {
+      valid: false,
+      error: `Maximum ${MAX_TOPICS} topics allowed per plan (found ${parsed.topics.length}).`,
+    };
   }
 
   // 9. Topic item validation
@@ -193,24 +252,47 @@ function validateImportJson(raw: string): {
       return { valid: false, error: `Topic ${i + 1}: Must be an object.` };
     }
 
-    if (!t.topic_name || typeof t.topic_name !== "string" || !t.topic_name.trim()) {
-      return { valid: false, error: `Topic ${i + 1}: "topic_name" is required.` };
+    if (
+      !t.topic_name ||
+      typeof t.topic_name !== "string" ||
+      !t.topic_name.trim()
+    ) {
+      return {
+        valid: false,
+        error: `Topic ${i + 1}: "topic_name" is required.`,
+      };
     }
     if (t.topic_name.trim().length > MAX_TOPIC_NAME_LENGTH) {
-      return { valid: false, error: `Topic ${i + 1}: "topic_name" exceeds ${MAX_TOPIC_NAME_LENGTH} characters.` };
+      return {
+        valid: false,
+        error: `Topic ${i + 1}: "topic_name" exceeds ${MAX_TOPIC_NAME_LENGTH} characters.`,
+      };
     }
 
-    if (!t.description || typeof t.description !== "string" || !t.description.trim()) {
-      return { valid: false, error: `Topic ${i + 1} ("${t.topic_name}"): "description" is required.` };
+    if (
+      !t.description ||
+      typeof t.description !== "string" ||
+      !t.description.trim()
+    ) {
+      return {
+        valid: false,
+        error: `Topic ${i + 1} ("${t.topic_name}"): "description" is required.`,
+      };
     }
     if (t.description.trim().length > MAX_DESCRIPTION_LENGTH) {
-      return { valid: false, error: `Topic ${i + 1}: "description" exceeds ${MAX_DESCRIPTION_LENGTH} characters.` };
+      return {
+        valid: false,
+        error: `Topic ${i + 1}: "description" exceeds ${MAX_DESCRIPTION_LENGTH} characters.`,
+      };
     }
 
     if (t.days_to_allocate !== undefined && t.days_to_allocate !== null) {
       const days = Number(t.days_to_allocate);
       if (!Number.isInteger(days) || days < 1 || days > 90) {
-        return { valid: false, error: `Topic ${i + 1}: "days_to_allocate" must be an integer between 1 and 90.` };
+        return {
+          valid: false,
+          error: `Topic ${i + 1}: "days_to_allocate" must be an integer between 1 and 90.`,
+        };
       }
     }
   }
@@ -220,8 +302,12 @@ function validateImportJson(raw: string): {
     title: sanitizeString(parsed.title),
     subject: sanitizeString(parsed.subject),
     exam_date: parsed.exam_date ? sanitizeString(parsed.exam_date) : undefined,
-    target_score: parsed.target_score ? sanitizeString(parsed.target_score) : undefined,
-    daily_study_hours: parsed.daily_study_hours ? Number(parsed.daily_study_hours) : undefined,
+    target_score: parsed.target_score
+      ? sanitizeString(parsed.target_score)
+      : undefined,
+    daily_study_hours: parsed.daily_study_hours
+      ? Number(parsed.daily_study_hours)
+      : undefined,
     topics: parsed.topics.map((t: any) => ({
       topic_name: sanitizeString(t.topic_name),
       description: sanitizeString(t.description),
@@ -236,7 +322,10 @@ function validateImportJson(raw: string): {
   };
 }
 
-export function JsonImportZone({ onValidImport, className }: JsonImportZoneProps) {
+export function JsonImportZone({
+  onValidImport,
+  className,
+}: JsonImportZoneProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successInfo, setSuccessInfo] = useState<string | null>(null);
@@ -261,7 +350,9 @@ export function JsonImportZone({ onValidImport, className }: JsonImportZoneProps
 
     const result = validateImportJson(rawContent);
     if (result.valid && result.data) {
-      setSuccessInfo(`✓ Validated successfully: "${result.data.title}" with ${result.topicCount} topics.`);
+      setSuccessInfo(
+        `✓ Validated successfully: "${result.data.title}" with ${result.topicCount} topics.`,
+      );
       onValidImport(result.data);
       setPastedJson(""); // Clear on success
     } else {
@@ -272,7 +363,7 @@ export function JsonImportZone({ onValidImport, className }: JsonImportZoneProps
   const handleDrop = (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragging(false);
-    
+
     const file = e.dataTransfer.files[0];
     if (file) {
       processFile(file);
@@ -290,16 +381,21 @@ export function JsonImportZone({ onValidImport, className }: JsonImportZoneProps
   };
 
   const processFile = (file: File) => {
-    if (!file.name.toLowerCase().endsWith('.json') && file.type !== 'application/json') {
+    if (
+      !file.name.toLowerCase().endsWith(".json") &&
+      file.type !== "application/json"
+    ) {
       setError("Please upload a valid .json file.");
       return;
     }
 
     if (file.size > MAX_JSON_SIZE) {
-      setError(`File size (${(file.size / 1024).toFixed(1)}KB) exceeds the maximum limit of ${MAX_JSON_SIZE / 1024}KB.`);
+      setError(
+        `File size (${(file.size / 1024).toFixed(1)}KB) exceeds the maximum limit of ${MAX_JSON_SIZE / 1024}KB.`,
+      );
       return;
     }
-    
+
     const reader = new FileReader();
     reader.onload = (e) => {
       const content = e.target?.result as string;
@@ -368,7 +464,7 @@ export function JsonImportZone({ onValidImport, className }: JsonImportZoneProps
               <ChevronDown className="w-4 h-4 text-muted-foreground" />
             )}
           </button>
-          
+
           <div className="flex items-center gap-2">
             <Button
               type="button"
@@ -387,7 +483,11 @@ export function JsonImportZone({ onValidImport, className }: JsonImportZoneProps
               onClick={handleCopySample}
               className="text-xs h-7 gap-1"
             >
-              {copied ? <Check className="w-3 h-3 text-green-400" /> : <Copy className="w-3 h-3" />}
+              {copied ? (
+                <Check className="w-3 h-3 text-green-400" />
+              ) : (
+                <Copy className="w-3 h-3" />
+              )}
               {copied ? "Copied!" : "Copy Sample"}
             </Button>
             <Button
@@ -408,7 +508,8 @@ export function JsonImportZone({ onValidImport, className }: JsonImportZoneProps
         {showSchemaGuide && (
           <div className="mt-4 pt-3 border-t border-border/30 space-y-3 text-xs text-muted-foreground">
             <p className="leading-relaxed">
-              Import custom learning plans directly. All submissions are strictly validated against the following schema:
+              Import custom learning plans directly. All submissions are
+              strictly validated against the following schema:
             </p>
 
             <div className="overflow-x-auto">
@@ -424,67 +525,103 @@ export function JsonImportZone({ onValidImport, className }: JsonImportZoneProps
                 </thead>
                 <tbody className="divide-y divide-border/20 text-muted-foreground">
                   <tr>
-                    <td className="py-1.5 px-2 text-teal-400 font-semibold">title</td>
+                    <td className="py-1.5 px-2 text-teal-400 font-semibold">
+                      title
+                    </td>
                     <td className="py-1.5 px-2">string</td>
                     <td className="py-1.5 px-2 text-red-400">Yes</td>
                     <td className="py-1.5 px-2">Max 200 chars</td>
-                    <td className="py-1.5 px-2 font-sans">Title of your study plan</td>
+                    <td className="py-1.5 px-2 font-sans">
+                      Title of your study plan
+                    </td>
                   </tr>
                   <tr>
-                    <td className="py-1.5 px-2 text-teal-400 font-semibold">subject</td>
+                    <td className="py-1.5 px-2 text-teal-400 font-semibold">
+                      subject
+                    </td>
                     <td className="py-1.5 px-2">string</td>
                     <td className="py-1.5 px-2 text-red-400">Yes</td>
                     <td className="py-1.5 px-2">Max 100 chars</td>
-                    <td className="py-1.5 px-2 font-sans">Core subject or domain</td>
+                    <td className="py-1.5 px-2 font-sans">
+                      Core subject or domain
+                    </td>
                   </tr>
                   <tr>
-                    <td className="py-1.5 px-2 text-teal-400 font-semibold">exam_date</td>
+                    <td className="py-1.5 px-2 text-teal-400 font-semibold">
+                      exam_date
+                    </td>
                     <td className="py-1.5 px-2">string</td>
                     <td className="py-1.5 px-2 text-muted-foreground">No</td>
                     <td className="py-1.5 px-2">YYYY-MM-DD</td>
-                    <td className="py-1.5 px-2 font-sans">Target completion date</td>
+                    <td className="py-1.5 px-2 font-sans">
+                      Target completion date
+                    </td>
                   </tr>
                   <tr>
-                    <td className="py-1.5 px-2 text-teal-400 font-semibold">daily_study_hours</td>
+                    <td className="py-1.5 px-2 text-teal-400 font-semibold">
+                      daily_study_hours
+                    </td>
                     <td className="py-1.5 px-2">number</td>
                     <td className="py-1.5 px-2 text-muted-foreground">No</td>
                     <td className="py-1.5 px-2">0.1 - 24.0</td>
-                    <td className="py-1.5 px-2 font-sans">Dedicated daily hours (default 1.0)</td>
+                    <td className="py-1.5 px-2 font-sans">
+                      Dedicated daily hours (default 1.0)
+                    </td>
                   </tr>
                   <tr>
-                    <td className="py-1.5 px-2 text-teal-400 font-semibold">target_score</td>
+                    <td className="py-1.5 px-2 text-teal-400 font-semibold">
+                      target_score
+                    </td>
                     <td className="py-1.5 px-2">string</td>
                     <td className="py-1.5 px-2 text-muted-foreground">No</td>
                     <td className="py-1.5 px-2">Max 50 chars</td>
-                    <td className="py-1.5 px-2 font-sans">Goal (e.g., "Pass", "Score 95+")</td>
+                    <td className="py-1.5 px-2 font-sans">
+                      Goal (e.g., "Pass", "Score 95+")
+                    </td>
                   </tr>
                   <tr>
-                    <td className="py-1.5 px-2 text-teal-400 font-semibold">topics</td>
+                    <td className="py-1.5 px-2 text-teal-400 font-semibold">
+                      topics
+                    </td>
                     <td className="py-1.5 px-2">array</td>
                     <td className="py-1.5 px-2 text-red-400">Yes</td>
                     <td className="py-1.5 px-2">1 to 50 items</td>
-                    <td className="py-1.5 px-2 font-sans">Sequential syllabus topic list</td>
+                    <td className="py-1.5 px-2 font-sans">
+                      Sequential syllabus topic list
+                    </td>
                   </tr>
                   <tr>
-                    <td className="py-1.5 px-2 text-teal-400 font-semibold pl-4">└ topic_name</td>
+                    <td className="py-1.5 px-2 text-teal-400 font-semibold pl-4">
+                      └ topic_name
+                    </td>
                     <td className="py-1.5 px-2">string</td>
                     <td className="py-1.5 px-2 text-red-400">Yes</td>
                     <td className="py-1.5 px-2">Max 255 chars</td>
-                    <td className="py-1.5 px-2 font-sans">Specific concept or topic title</td>
+                    <td className="py-1.5 px-2 font-sans">
+                      Specific concept or topic title
+                    </td>
                   </tr>
                   <tr>
-                    <td className="py-1.5 px-2 text-teal-400 font-semibold pl-4">└ description</td>
+                    <td className="py-1.5 px-2 text-teal-400 font-semibold pl-4">
+                      └ description
+                    </td>
                     <td className="py-1.5 px-2">string</td>
                     <td className="py-1.5 px-2 text-red-400">Yes</td>
                     <td className="py-1.5 px-2">Max 2000 chars</td>
-                    <td className="py-1.5 px-2 font-sans">Overview & learning objectives</td>
+                    <td className="py-1.5 px-2 font-sans">
+                      Overview & learning objectives
+                    </td>
                   </tr>
                   <tr>
-                    <td className="py-1.5 px-2 text-teal-400 font-semibold pl-4">└ days_to_allocate</td>
+                    <td className="py-1.5 px-2 text-teal-400 font-semibold pl-4">
+                      └ days_to_allocate
+                    </td>
                     <td className="py-1.5 px-2">integer</td>
                     <td className="py-1.5 px-2 text-muted-foreground">No</td>
                     <td className="py-1.5 px-2">1 to 90</td>
-                    <td className="py-1.5 px-2 font-sans">Estimated study days (default 1)</td>
+                    <td className="py-1.5 px-2 font-sans">
+                      Estimated study days (default 1)
+                    </td>
                   </tr>
                 </tbody>
               </table>
@@ -492,7 +629,10 @@ export function JsonImportZone({ onValidImport, className }: JsonImportZoneProps
 
             <div className="flex items-center gap-2 text-[11px] text-teal-400/90 pt-1">
               <ShieldCheck className="w-3.5 h-3.5" />
-              <span>Hardened Security: Payload size capped at 500KB with automatic script stripping and prototype pollution safeguards.</span>
+              <span>
+                Hardened Security: Payload size capped at 500KB with automatic
+                script stripping and prototype pollution safeguards.
+              </span>
             </div>
           </div>
         )}
@@ -500,10 +640,19 @@ export function JsonImportZone({ onValidImport, className }: JsonImportZoneProps
 
       {/* Validation Feedback Alerts */}
       {error && (
-        <Alert variant="destructive" role="status" aria-live="polite" className="border-red-500/40 bg-red-500/10">
+        <Alert
+          variant="destructive"
+          role="status"
+          aria-live="polite"
+          className="border-red-500/40 bg-red-500/10"
+        >
           <AlertTriangle className="h-4 w-4 text-red-400" />
-          <AlertTitle className="text-red-300 font-semibold">Validation Error</AlertTitle>
-          <AlertDescription className="text-red-200/90 text-xs mt-1">{error}</AlertDescription>
+          <AlertTitle className="text-red-300 font-semibold">
+            Validation Error
+          </AlertTitle>
+          <AlertDescription className="text-red-200/90 text-xs mt-1">
+            {error}
+          </AlertDescription>
         </Alert>
       )}
 
@@ -511,7 +660,9 @@ export function JsonImportZone({ onValidImport, className }: JsonImportZoneProps
         <Alert className="border-teal-500/40 bg-teal-500/10 text-teal-300">
           <CheckCircle2 className="h-4 w-4 text-teal-400" />
           <AlertTitle className="font-semibold">Ready to Import</AlertTitle>
-          <AlertDescription className="text-xs mt-1 text-teal-200/90">{successInfo}</AlertDescription>
+          <AlertDescription className="text-xs mt-1 text-teal-200/90">
+            {successInfo}
+          </AlertDescription>
         </Alert>
       )}
 
@@ -524,9 +675,9 @@ export function JsonImportZone({ onValidImport, className }: JsonImportZoneProps
         aria-label="Upload JSON learning plan"
         className={cn(
           "border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all duration-200",
-          isDragging 
-            ? "border-teal-400 bg-teal-500/15 scale-[0.99]" 
-            : "border-border/50 hover:border-teal-500/50 hover:bg-teal-500/5"
+          isDragging
+            ? "border-teal-400 bg-teal-500/15 scale-[0.99]"
+            : "border-border/50 hover:border-teal-500/50 hover:bg-teal-500/5",
         )}
       >
         <div className="flex flex-col items-center justify-center gap-3">
@@ -534,9 +685,12 @@ export function JsonImportZone({ onValidImport, className }: JsonImportZoneProps
             <UploadCloud className="w-6 h-6" />
           </div>
           <div>
-            <p className="text-sm font-medium text-foreground">Click to upload or drag & drop a .json file</p>
+            <p className="text-sm font-medium text-foreground">
+              Click to upload or drag & drop a .json file
+            </p>
             <p className="text-xs text-muted-foreground mt-1">
-              JSON files only (max {MAX_JSON_SIZE / 1024}KB, max {MAX_TOPICS} topics)
+              JSON files only (max {MAX_JSON_SIZE / 1024}KB, max {MAX_TOPICS}{" "}
+              topics)
             </p>
           </div>
         </div>
@@ -555,7 +709,9 @@ export function JsonImportZone({ onValidImport, className }: JsonImportZoneProps
           <span className="w-full border-t border-border/40" />
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-card px-3 text-muted-foreground font-medium">Or paste JSON content</span>
+          <span className="bg-card px-3 text-muted-foreground font-medium">
+            Or paste JSON content
+          </span>
         </div>
       </div>
 
@@ -569,10 +725,12 @@ export function JsonImportZone({ onValidImport, className }: JsonImportZoneProps
         />
         <div className="flex items-center justify-between pt-1">
           <span className="text-[11px] text-muted-foreground">
-            {pastedJson.length > 0 ? `${(pastedJson.length / 1024).toFixed(1)} KB / ${MAX_JSON_SIZE / 1024} KB` : ""}
+            {pastedJson.length > 0
+              ? `${(pastedJson.length / 1024).toFixed(1)} KB / ${MAX_JSON_SIZE / 1024} KB`
+              : ""}
           </span>
-          <Button 
-            onClick={handlePasteSubmit} 
+          <Button
+            onClick={handlePasteSubmit}
             disabled={!pastedJson.trim()}
             className="bg-teal-500 hover:bg-teal-600 text-white shadow-lg shadow-teal-500/10 font-medium"
           >

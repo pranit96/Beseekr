@@ -47,9 +47,6 @@ import { GripVertical } from "lucide-react";
 import { VisionBoardAI } from "@/components/visionboard/VisionBoardAI";
 import { ManifestationBanner } from "@/components/visionboard/ManifestationBanner";
 
-
-
-
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function currentYearMonth() {
@@ -607,21 +604,35 @@ export default function VisionBoard() {
             aria-label={`${MONTH_NAMES[month - 1]} ${year} at a glance`}
           >
             <div className="vb-glance-item">
-              <span className="vb-glance-icon" aria-hidden="true">🎯</span>
+              <span className="vb-glance-icon" aria-hidden="true">
+                🎯
+              </span>
               <span className="vb-glance-num">{glance.totalGoals}</span>
-              <span className="vb-glance-label">goal{glance.totalGoals === 1 ? "" : "s"}</span>
+              <span className="vb-glance-label">
+                goal{glance.totalGoals === 1 ? "" : "s"}
+              </span>
             </div>
-            <span className="vb-glance-sep" aria-hidden="true">·</span>
+            <span className="vb-glance-sep" aria-hidden="true">
+              ·
+            </span>
             <div className="vb-glance-item">
-              <span className="vb-glance-icon" aria-hidden="true">🌱</span>
+              <span className="vb-glance-icon" aria-hidden="true">
+                🌱
+              </span>
               <span className="vb-glance-num">{glance.checkIns}</span>
-              <span className="vb-glance-label">check-in{glance.checkIns === 1 ? "" : "s"}</span>
+              <span className="vb-glance-label">
+                check-in{glance.checkIns === 1 ? "" : "s"}
+              </span>
             </div>
             {glance.bestStreak > 0 && (
               <>
-                <span className="vb-glance-sep" aria-hidden="true">·</span>
+                <span className="vb-glance-sep" aria-hidden="true">
+                  ·
+                </span>
                 <div className="vb-glance-item">
-                  <span className="vb-glance-icon" aria-hidden="true">🔥</span>
+                  <span className="vb-glance-icon" aria-hidden="true">
+                    🔥
+                  </span>
                   <span className="vb-glance-num">{glance.bestStreak}</span>
                   <span className="vb-glance-label">day streak</span>
                 </div>
@@ -629,17 +640,25 @@ export default function VisionBoard() {
             )}
             {glance.avgAreaScore !== null && (
               <>
-                <span className="vb-glance-sep" aria-hidden="true">·</span>
+                <span className="vb-glance-sep" aria-hidden="true">
+                  ·
+                </span>
                 <div className="vb-glance-item">
-                  <span className="vb-glance-icon" aria-hidden="true">💫</span>
+                  <span className="vb-glance-icon" aria-hidden="true">
+                    💫
+                  </span>
                   <span className="vb-glance-num">{glance.avgAreaScore}</span>
                   <span className="vb-glance-label">avg. balance</span>
                 </div>
               </>
             )}
-            <span className="vb-glance-sep" aria-hidden="true">·</span>
+            <span className="vb-glance-sep" aria-hidden="true">
+              ·
+            </span>
             <div className="vb-glance-item">
-              <span className="vb-glance-icon" aria-hidden="true">📌</span>
+              <span className="vb-glance-icon" aria-hidden="true">
+                📌
+              </span>
               <span className="vb-glance-num">{glance.totalCards}</span>
               <span className="vb-glance-label">on the board</span>
             </div>
@@ -719,11 +738,7 @@ export default function VisionBoard() {
       case "calendar":
         return (
           <div className="mb-6">
-            <CalendarHeatmap
-              habits={board.habits}
-              year={year}
-              month={month}
-            />
+            <CalendarHeatmap habits={board.habits} year={year} month={month} />
           </div>
         );
       case "notes_reflection":
@@ -838,7 +853,11 @@ export default function VisionBoard() {
                         key={modId}
                         value={modId}
                         className="relative group focus:outline-none"
-                        whileDrag={{ scale: 1.01, zIndex: 40, cursor: "grabbing" }}
+                        whileDrag={{
+                          scale: 1.01,
+                          zIndex: 40,
+                          cursor: "grabbing",
+                        }}
                       >
                         <div
                           className="absolute -left-5 top-4 opacity-0 group-hover:opacity-100 transition-opacity text-amber-600 cursor-grab active:cursor-grabbing p-1 bg-background/80 rounded border border-border shadow-sm z-30"
@@ -859,7 +878,6 @@ export default function VisionBoard() {
     </div>
   );
 }
-
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 // Glass Journal design system — clean editorial aesthetic, frosted glass cards,

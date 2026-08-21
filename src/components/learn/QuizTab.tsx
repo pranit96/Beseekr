@@ -4,7 +4,14 @@ import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ClipboardList, Sparkles, Loader2, AlertCircle, ArrowRight, ArrowLeft } from "lucide-react";
+import {
+  ClipboardList,
+  Sparkles,
+  Loader2,
+  AlertCircle,
+  ArrowRight,
+  ArrowLeft,
+} from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ExamResultsView } from "./ExamResultsView";
 
@@ -18,14 +25,14 @@ interface QuizTabProps {
   onSubmit: (answers: ExamAnswer[]) => void;
 }
 
-export function QuizTab({ 
-  exam, 
-  submission, 
-  isLoading, 
+export function QuizTab({
+  exam,
+  submission,
+  isLoading,
   isGenerating,
   isSubmitting,
-  onGenerate, 
-  onSubmit 
+  onGenerate,
+  onSubmit,
 }: QuizTabProps) {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0);
@@ -45,7 +52,9 @@ export function QuizTab({
           <Skeleton className="h-6 w-full" />
           <Skeleton className="h-6 w-5/6 mb-8" />
           <div className="space-y-4">
-            {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-14 w-full rounded-xl" />)}
+            {[1, 2, 3, 4].map((i) => (
+              <Skeleton key={i} className="h-14 w-full rounded-xl" />
+            ))}
           </div>
         </div>
       </div>
@@ -61,11 +70,12 @@ export function QuizTab({
         </div>
         <h3 className="text-xl font-bold mb-2">Test Your Knowledge</h3>
         <p className="text-muted-foreground mb-8 max-w-md">
-          Generate an AI-powered topic quiz to verify your understanding. The AI will grade your answers and provide feedback.
+          Generate an AI-powered topic quiz to verify your understanding. The AI
+          will grade your answers and provide feedback.
         </p>
-        <Button 
+        <Button
           onClick={onGenerate}
-          size="lg" 
+          size="lg"
           className="bg-teal-500 hover:bg-teal-600 text-white"
         >
           <Sparkles className="w-5 h-5 mr-2" />
@@ -78,25 +88,27 @@ export function QuizTab({
   const question = exam.questions[currentQuestionIdx];
   const isLastQuestion = currentQuestionIdx === exam.questions.length - 1;
   const isFirstQuestion = currentQuestionIdx === 0;
-  const allAnswered = exam.questions.every(q => !!answers[q.id]);
+  const allAnswered = exam.questions.every((q) => !!answers[q.id]);
 
   const handleNext = () => {
-    if (!isLastQuestion) setCurrentQuestionIdx(prev => prev + 1);
+    if (!isLastQuestion) setCurrentQuestionIdx((prev) => prev + 1);
   };
 
   const handlePrev = () => {
-    if (!isFirstQuestion) setCurrentQuestionIdx(prev => prev - 1);
+    if (!isFirstQuestion) setCurrentQuestionIdx((prev) => prev - 1);
   };
 
   const handleSubmit = () => {
-    const formattedAnswers: ExamAnswer[] = Object.entries(answers).map(([qId, ans]) => {
-      const q = exam.questions.find(x => x.id === qId);
-      if (q?.type === 'mcq') {
-        return { question_id: qId, selected_option: ans };
-      }
-      return { question_id: qId, text_answer: ans };
-    });
-    
+    const formattedAnswers: ExamAnswer[] = Object.entries(answers).map(
+      ([qId, ans]) => {
+        const q = exam.questions.find((x) => x.id === qId);
+        if (q?.type === "mcq") {
+          return { question_id: qId, selected_option: ans };
+        }
+        return { question_id: qId, text_answer: ans };
+      },
+    );
+
     onSubmit(formattedAnswers);
   };
 
@@ -107,12 +119,14 @@ export function QuizTab({
         <p className="text-muted-foreground text-sm uppercase tracking-wider">
           Question {currentQuestionIdx + 1} of {exam.questions.length}
         </p>
-        
+
         {/* Progress Bar */}
         <div className="w-full bg-muted/50 rounded-full h-2 mt-6 overflow-hidden">
-          <div 
+          <div
             className="bg-teal-500 h-full transition-all duration-300"
-            style={{ width: `${((currentQuestionIdx + 1) / exam.questions.length) * 100}%` }}
+            style={{
+              width: `${((currentQuestionIdx + 1) / exam.questions.length) * 100}%`,
+            }}
           />
         </div>
       </div>
@@ -124,19 +138,21 @@ export function QuizTab({
 
         <div className="flex-1 mb-8">
           {question.type === "mcq" && question.options ? (
-            <RadioGroup 
+            <RadioGroup
               value={answers[question.id] || ""}
-              onValueChange={(val) => setAnswers(prev => ({ ...prev, [question.id]: val }))}
+              onValueChange={(val) =>
+                setAnswers((prev) => ({ ...prev, [question.id]: val }))
+              }
               className="space-y-4"
             >
               {question.options.map((option, idx) => (
                 <div key={idx} className="flex items-center space-x-3">
-                  <RadioGroupItem 
-                    value={option} 
-                    id={`q${question.id}-opt${idx}`} 
+                  <RadioGroupItem
+                    value={option}
+                    id={`q${question.id}-opt${idx}`}
                     className="border-teal-500/50 text-teal-500"
                   />
-                  <Label 
+                  <Label
                     htmlFor={`q${question.id}-opt${idx}`}
                     className="text-base font-normal cursor-pointer leading-relaxed flex-1 p-4 rounded-xl border border-border/30 hover:bg-card/30 transition-colors"
                   >
@@ -146,10 +162,15 @@ export function QuizTab({
               ))}
             </RadioGroup>
           ) : (
-            <Textarea 
+            <Textarea
               placeholder="Type your answer here..."
               value={answers[question.id] || ""}
-              onChange={(e) => setAnswers(prev => ({ ...prev, [question.id]: e.target.value }))}
+              onChange={(e) =>
+                setAnswers((prev) => ({
+                  ...prev,
+                  [question.id]: e.target.value,
+                }))
+              }
               className="min-h-[200px] text-base resize-y bg-background/50 border-border/50 p-4 rounded-xl"
             />
           )}
@@ -157,9 +178,9 @@ export function QuizTab({
 
         {/* Navigation */}
         <div className="flex justify-between items-center mt-auto pt-6 border-t border-border/30">
-          <Button 
-            variant="ghost" 
-            onClick={handlePrev} 
+          <Button
+            variant="ghost"
+            onClick={handlePrev}
             disabled={isFirstQuestion || isSubmitting}
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
@@ -167,19 +188,23 @@ export function QuizTab({
           </Button>
 
           {isLastQuestion ? (
-            <Button 
+            <Button
               className="bg-teal-500 hover:bg-teal-600 text-white"
               onClick={handleSubmit}
               disabled={!allAnswered || isSubmitting}
             >
               {isSubmitting ? (
-                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Grading...</>
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Grading...
+                </>
               ) : (
-                <><Check className="w-4 h-4 mr-2" /> Submit Quiz</>
+                <>
+                  <Check className="w-4 h-4 mr-2" /> Submit Quiz
+                </>
               )}
             </Button>
           ) : (
-            <Button 
+            <Button
               className="bg-teal-500/10 text-teal-500 hover:bg-teal-500/20"
               onClick={handleNext}
               disabled={!answers[question.id]}
@@ -190,10 +215,11 @@ export function QuizTab({
           )}
         </div>
       </div>
-      
+
       {!allAnswered && isLastQuestion && (
         <p className="text-center text-sm text-amber-500 mt-4 flex items-center justify-center gap-2">
-          <AlertCircle className="w-4 h-4" /> Please answer all questions before submitting.
+          <AlertCircle className="w-4 h-4" /> Please answer all questions before
+          submitting.
         </p>
       )}
     </div>

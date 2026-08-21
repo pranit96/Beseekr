@@ -85,7 +85,10 @@ const lazyRetry = <T extends React.ComponentType<any>>(
 const Chat = lazyRetry(() => import("./pages/Chat"), "Chat");
 const Agents = lazyRetry(() => import("./pages/Agents"), "Agents");
 const Brain = lazyRetry(() => import("@/pages/Brain"), "Brain");
-const LearnByDoing = lazyRetry(() => import("@/pages/LearnByDoing"), "LearnByDoing");
+const LearnByDoing = lazyRetry(
+  () => import("@/pages/LearnByDoing"),
+  "LearnByDoing",
+);
 const Digest = lazyRetry(() => import("@/pages/Digest"), "Digest");
 const AgentShare = lazyRetry(() => import("./pages/AgentShare"), "AgentShare");
 const Analytics = lazyRetry(() => import("./pages/Analytics"), "Analytics");
@@ -229,7 +232,7 @@ const FeatureGuard = ({
     return <>{children}</>;
   }
 
-  // Fallback to envFlags if we are specifically checking learn_by_doing 
+  // Fallback to envFlags if we are specifically checking learn_by_doing
   // (to support unauthenticated global marketing state)
   if (featureKey === "learn_by_doing" && getIsLearnByDoingEnabled()) {
     return <>{children}</>;

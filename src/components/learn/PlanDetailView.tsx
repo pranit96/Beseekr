@@ -1,8 +1,19 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  ArrowLeft, Clock, Calendar, BookOpen, AlertCircle, Lock, 
-  ChevronRight, CheckCircle2, MoreVertical, Edit3, Trash2, Loader2, Sparkles 
+import {
+  ArrowLeft,
+  Clock,
+  Calendar,
+  BookOpen,
+  AlertCircle,
+  Lock,
+  ChevronRight,
+  CheckCircle2,
+  MoreVertical,
+  Edit3,
+  Trash2,
+  Loader2,
+  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PlanTopic, PlanResumePoint, LearningPlan } from "@/types/education";
@@ -47,14 +58,16 @@ interface PlanDetailViewProps {
   onTopicSelect: (topicId: string) => void;
 }
 
-export function PlanDetailView({ 
-  planId, 
-  resumeData, 
-  isLoading, 
-  onBack, 
-  onTopicSelect 
+export function PlanDetailView({
+  planId,
+  resumeData,
+  isLoading,
+  onBack,
+  onTopicSelect,
 }: PlanDetailViewProps) {
-  const [lockedNoticeTopic, setLockedNoticeTopic] = useState<string | null>(null);
+  const [lockedNoticeTopic, setLockedNoticeTopic] = useState<string | null>(
+    null,
+  );
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
@@ -92,7 +105,7 @@ export function PlanDetailView({
         onSuccess: () => {
           setIsEditDialogOpen(false);
         },
-      }
+      },
     );
   };
 
@@ -111,9 +124,13 @@ export function PlanDetailView({
         <Skeleton className="h-8 w-64" />
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-4">
-            {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-24 rounded-2xl" />)}
+            {[1, 2, 3, 4].map((i) => (
+              <Skeleton key={i} className="h-24 rounded-2xl" />
+            ))}
           </div>
-          <div><Skeleton className="h-[400px] rounded-3xl" /></div>
+          <div>
+            <Skeleton className="h-[400px] rounded-3xl" />
+          </div>
         </div>
       </div>
     );
@@ -139,7 +156,9 @@ export function PlanDetailView({
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div>
-            <div className="text-sm font-semibold text-teal-500 uppercase tracking-wider">{subject}</div>
+            <div className="text-sm font-semibold text-teal-500 uppercase tracking-wider">
+              {subject}
+            </div>
             <h1 className="text-2xl font-bold text-foreground">{plan_title}</h1>
           </div>
         </div>
@@ -148,19 +167,29 @@ export function PlanDetailView({
         <div className="flex items-center gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-1.5 border-border/50 bg-card/10">
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5 border-border/50 bg-card/10"
+              >
                 <MoreVertical className="w-4 h-4" />
                 <span className="hidden sm:inline">Options</span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48 bg-popover/95 backdrop-blur-xl border-border/50">
-              <DropdownMenuItem onClick={handleOpenEdit} className="gap-2 cursor-pointer">
+            <DropdownMenuContent
+              align="end"
+              className="w-48 bg-popover/95 backdrop-blur-xl border-border/50"
+            >
+              <DropdownMenuItem
+                onClick={handleOpenEdit}
+                className="gap-2 cursor-pointer"
+              >
                 <Edit3 className="w-4 h-4 text-teal-400" />
                 <span>Edit Plan Details</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator className="bg-border/30" />
-              <DropdownMenuItem 
-                onClick={() => setIsDeleteDialogOpen(true)} 
+              <DropdownMenuItem
+                onClick={() => setIsDeleteDialogOpen(true)}
                 className="gap-2 text-red-400 focus:text-red-300 focus:bg-red-500/10 cursor-pointer"
               >
                 <Trash2 className="w-4 h-4" />
@@ -191,7 +220,8 @@ export function PlanDetailView({
               >
                 <Lock className="w-4 h-4 shrink-0 text-amber-400" />
                 <span>
-                  <strong>Topic Locked:</strong> Complete preceding topics to unlock <em>"{lockedNoticeTopic}"</em>.
+                  <strong>Topic Locked:</strong> Complete preceding topics to
+                  unlock <em>"{lockedNoticeTopic}"</em>.
                 </span>
               </motion.div>
             )}
@@ -199,11 +229,16 @@ export function PlanDetailView({
 
           {topics_overview.map((topic, idx) => {
             const isCompleted = topic.status === "completed";
-            const isUnlocked = idx === 0 || topics_overview.slice(0, idx).every(t => t.status === "completed");
+            const isUnlocked =
+              idx === 0 ||
+              topics_overview
+                .slice(0, idx)
+                .every((t) => t.status === "completed");
             const isLocked = !isCompleted && !isUnlocked;
             const isNext = isUnlocked && !isCompleted;
-            const previousTopicName = idx > 0 ? topics_overview[idx - 1].topic_name : "";
-            
+            const previousTopicName =
+              idx > 0 ? topics_overview[idx - 1].topic_name : "";
+
             return (
               <motion.div
                 key={topic.id}
@@ -219,13 +254,14 @@ export function PlanDetailView({
                   onTopicSelect(topic.id);
                 }}
                 className={`p-5 rounded-2xl border transition-all duration-200 relative group
-                  ${isLocked 
-                    ? "bg-card/5 border-border/20 opacity-55 cursor-not-allowed select-none hover:border-border/40" 
-                    : isCompleted 
-                      ? "bg-card/5 border-border/30 opacity-80 hover:opacity-100 hover:bg-card/20 cursor-pointer" 
-                      : isNext || topic.status === "in_progress" 
-                        ? "bg-teal-500/10 border-teal-500/40 ring-1 ring-teal-500/20 shadow-lg shadow-teal-500/5 cursor-pointer hover:bg-teal-500/15" 
-                        : "bg-card/10 border-border/50 hover:border-teal-500/30 hover:bg-card/30 cursor-pointer"
+                  ${
+                    isLocked
+                      ? "bg-card/5 border-border/20 opacity-55 cursor-not-allowed select-none hover:border-border/40"
+                      : isCompleted
+                        ? "bg-card/5 border-border/30 opacity-80 hover:opacity-100 hover:bg-card/20 cursor-pointer"
+                        : isNext || topic.status === "in_progress"
+                          ? "bg-teal-500/10 border-teal-500/40 ring-1 ring-teal-500/20 shadow-lg shadow-teal-500/5 cursor-pointer hover:bg-teal-500/15"
+                          : "bg-card/10 border-border/50 hover:border-teal-500/30 hover:bg-card/30 cursor-pointer"
                   }`}
               >
                 <div className="flex justify-between items-start gap-4">
@@ -237,10 +273,12 @@ export function PlanDetailView({
                         ) : isCompleted ? (
                           <CheckCircle2 className="w-3.5 h-3.5 text-teal-400" />
                         ) : (
-                          (idx + 1).toString().padStart(2, '0')
+                          (idx + 1).toString().padStart(2, "0")
                         )}
                       </span>
-                      <h3 className={`font-bold text-lg leading-tight truncate ${isLocked ? "text-muted-foreground" : "text-foreground"}`}>
+                      <h3
+                        className={`font-bold text-lg leading-tight truncate ${isLocked ? "text-muted-foreground" : "text-foreground"}`}
+                      >
                         {topic.topic_name}
                       </h3>
                       {isNext && (
@@ -249,26 +287,33 @@ export function PlanDetailView({
                         </span>
                       )}
                     </div>
-                    
+
                     <div className="flex items-center flex-wrap gap-4 text-xs text-muted-foreground ml-8">
                       <span className="flex items-center gap-1">
                         <Calendar className="w-3.5 h-3.5" />
-                        {new Date(topic.scheduled_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                        {new Date(topic.scheduled_date).toLocaleDateString(
+                          undefined,
+                          { month: "short", day: "numeric" },
+                        )}
                       </span>
                       {isLocked ? (
                         <span className="flex items-center gap-1 text-amber-500/80 text-[11px] font-medium">
-                          <Lock className="w-3 h-3" /> Clear "{previousTopicName}" to unlock
+                          <Lock className="w-3 h-3" /> Clear "
+                          {previousTopicName}" to unlock
                         </span>
                       ) : topic.has_prep ? (
                         <span className="flex items-center gap-1 text-teal-500/70">
-                          <BookOpen className="w-3.5 h-3.5" /> Study materials ready
+                          <BookOpen className="w-3.5 h-3.5" /> Study materials
+                          ready
                         </span>
                       ) : null}
                     </div>
                   </div>
 
                   <div className="flex items-center gap-2 shrink-0">
-                    <TopicStatusBadge status={isLocked ? "locked" : topic.status} />
+                    <TopicStatusBadge
+                      status={isLocked ? "locked" : topic.status}
+                    />
                     {!isLocked && (
                       <ChevronRight className="w-4 h-4 text-muted-foreground/50 group-hover:text-teal-400 transition-colors" />
                     )}
@@ -283,29 +328,41 @@ export function PlanDetailView({
         <div className="lg:sticky lg:top-8 space-y-6">
           <div className="p-6 bg-card/5 backdrop-blur-xl border border-border/30 rounded-3xl text-center shadow-sm">
             <h3 className="font-bold text-lg mb-6 text-left">Your Progress</h3>
-            
+
             <div className="flex justify-center mb-6">
-              <PlanProgressRing percentage={progress.percentage} size={140} strokeWidth={12} />
+              <PlanProgressRing
+                percentage={progress.percentage}
+                size={140}
+                strokeWidth={12}
+              />
             </div>
-            
+
             <div className="grid grid-cols-2 gap-4 mt-6">
               <div className="bg-background/50 p-3 rounded-xl border border-border/50">
-                <div className="text-2xl font-bold text-teal-500">{progress.completed}</div>
-                <div className="text-xs text-muted-foreground uppercase tracking-wider mt-1">Completed</div>
+                <div className="text-2xl font-bold text-teal-500">
+                  {progress.completed}
+                </div>
+                <div className="text-xs text-muted-foreground uppercase tracking-wider mt-1">
+                  Completed
+                </div>
               </div>
               <div className="bg-background/50 p-3 rounded-xl border border-border/50">
                 <div className="text-2xl font-bold">{progress.total}</div>
-                <div className="text-xs text-muted-foreground uppercase tracking-wider mt-1">Total Topics</div>
+                <div className="text-xs text-muted-foreground uppercase tracking-wider mt-1">
+                  Total Topics
+                </div>
               </div>
             </div>
-            
+
             {resumeData.resume_topic && (
-              <Button 
-                className="w-full mt-6 bg-teal-500 hover:bg-teal-600 text-white shadow-lg shadow-teal-500/10" 
+              <Button
+                className="w-full mt-6 bg-teal-500 hover:bg-teal-600 text-white shadow-lg shadow-teal-500/10"
                 size="lg"
                 onClick={() => onTopicSelect(resumeData.resume_topic!.id)}
               >
-                {progress.percentage === 0 ? "Start Learning" : "Continue Learning"}
+                {progress.percentage === 0
+                  ? "Start Learning"
+                  : "Continue Learning"}
               </Button>
             )}
           </div>
@@ -353,7 +410,9 @@ export function PlanDetailView({
                   max={16}
                   step={0.5}
                   value={editHours}
-                  onChange={(e) => setEditHours(parseFloat(e.target.value) || 1)}
+                  onChange={(e) =>
+                    setEditHours(parseFloat(e.target.value) || 1)
+                  }
                 />
               </div>
 
@@ -378,7 +437,9 @@ export function PlanDetailView({
               disabled={updatePlanMutation.isPending || !editTitle.trim()}
               className="bg-teal-500 hover:bg-teal-600 text-white"
             >
-              {updatePlanMutation.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+              {updatePlanMutation.isPending && (
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              )}
               Save Changes
             </Button>
           </DialogFooter>
@@ -386,12 +447,19 @@ export function PlanDetailView({
       </Dialog>
 
       {/* Delete Plan Alert Dialog */}
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+      <AlertDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+      >
         <AlertDialogContent className="bg-popover/95 backdrop-blur-xl border-border/50">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-red-400">Delete Learning Plan?</AlertDialogTitle>
+            <AlertDialogTitle className="text-red-400">
+              Delete Learning Plan?
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete <strong>"{plan_title}"</strong>, all its scheduled topics, study guides, flashcards, generated exams, and active background AI jobs. This action cannot be undone.
+              This will permanently delete <strong>"{plan_title}"</strong>, all
+              its scheduled topics, study guides, flashcards, generated exams,
+              and active background AI jobs. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -401,7 +469,9 @@ export function PlanDetailView({
               disabled={deletePlanMutation.isPending}
               className="bg-red-500 hover:bg-red-600 text-white"
             >
-              {deletePlanMutation.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+              {deletePlanMutation.isPending && (
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              )}
               Delete Plan
             </AlertDialogAction>
           </AlertDialogFooter>

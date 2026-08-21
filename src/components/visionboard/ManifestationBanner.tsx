@@ -18,13 +18,22 @@ const MANIFESTATION_PRESETS = [
   "🔥 I attract high-impact opportunities and embrace continuous growth.",
 ];
 
-export function ManifestationBanner({ boardMonth, year, month, onUpdate }: ManifestationBannerProps) {
+export function ManifestationBanner({
+  boardMonth,
+  year,
+  month,
+  onUpdate,
+}: ManifestationBannerProps) {
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const storageKey = `vb_manifestation_${year}_${month}`;
 
   const [statement, setStatement] = useState<string>(() => {
-    return boardMonth.quote || localStorage.getItem(storageKey) || MANIFESTATION_PRESETS[0];
+    return (
+      boardMonth.quote ||
+      localStorage.getItem(storageKey) ||
+      MANIFESTATION_PRESETS[0]
+    );
   });
 
   useEffect(() => {
@@ -63,7 +72,8 @@ export function ManifestationBanner({ boardMonth, year, month, onUpdate }: Manif
         <div className="flex-1 space-y-2">
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-widest bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30">
-              <Sparkles className="w-3.5 h-3.5 animate-spin-slow" /> Monthly Manifestation
+              <Sparkles className="w-3.5 h-3.5 animate-spin-slow" /> Monthly
+              Manifestation
             </span>
             <span className="text-xs text-muted-foreground font-mono">
               {month}/{year}
@@ -81,7 +91,9 @@ export function ManifestationBanner({ boardMonth, year, month, onUpdate }: Manif
               />
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-xs text-muted-foreground font-medium mr-1">Presets:</span>
+                  <span className="text-xs text-muted-foreground font-medium mr-1">
+                    Presets:
+                  </span>
                   {MANIFESTATION_PRESETS.map((preset, idx) => (
                     <button
                       key={idx}
@@ -112,7 +124,10 @@ export function ManifestationBanner({ boardMonth, year, month, onUpdate }: Manif
               </div>
             </div>
           ) : (
-            <div className="group cursor-pointer pt-1" onClick={() => setIsEditing(true)}>
+            <div
+              className="group cursor-pointer pt-1"
+              onClick={() => setIsEditing(true)}
+            >
               <h2 className="text-lg md:text-xl font-serif italic text-foreground tracking-tight leading-snug flex items-start gap-2">
                 <span>"{statement}"</span>
                 <Edit3 className="w-4 h-4 text-amber-600 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 mt-1" />

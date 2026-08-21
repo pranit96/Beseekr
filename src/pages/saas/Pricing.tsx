@@ -58,7 +58,8 @@ export function Pricing() {
     setCurrency(detected);
 
     // SEO - Update page meta tags
-    document.title = "Pricing Plans - Affordable AI Learning & Market Research | beseekr";
+    document.title =
+      "Pricing Plans - Affordable AI Learning & Market Research | beseekr";
     const metaDesc = document.querySelector('meta[name="description"]');
     if (metaDesc) {
       metaDesc.setAttribute(
@@ -82,16 +83,20 @@ export function Pricing() {
   const plans = plansData?.plans;
 
   // Get active plans
-  const proPlan = plans?.find(
-    (p) => p.tier === "pro" && p.plan_type === billingCycle,
-  ) || plans?.find((p) => p.tier === "pro");
+  const proPlan =
+    plans?.find((p) => p.tier === "pro" && p.plan_type === billingCycle) ||
+    plans?.find((p) => p.tier === "pro");
 
-  const ultraPlan = plans?.find(
-    (p) => p.tier === "ultra" && p.plan_type === billingCycle,
-  ) || plans?.find((p) => p.tier === "ultra");
+  const ultraPlan =
+    plans?.find((p) => p.tier === "ultra" && p.plan_type === billingCycle) ||
+    plans?.find((p) => p.tier === "ultra");
 
   // Format price based on currency
-  const formatPrice = (plan: Plan | undefined, fallbackInr: number, fallbackUsd: number): string => {
+  const formatPrice = (
+    plan: Plan | undefined,
+    fallbackInr: number,
+    fallbackUsd: number,
+  ): string => {
     if (!plan) {
       return currency === "USD" ? `$${fallbackUsd}` : `₹${fallbackInr}`;
     }
@@ -153,7 +158,8 @@ export function Pricing() {
           Unlock Your Full Potential
         </h1>
         <p className="text-muted-foreground text-base sm:text-lg max-w-2xl mx-auto">
-          Instant AI learning powered by Claude Sonnet, deep market intelligence, and comprehensive career tools.
+          Instant AI learning powered by Claude Sonnet, deep market
+          intelligence, and comprehensive career tools.
         </p>
 
         {/* Trust Badges */}
@@ -311,7 +317,9 @@ export function Pricing() {
               <ul className="space-y-3 mb-8">
                 <li className="flex items-start gap-3">
                   <Check className="h-5 w-5 text-teal-400 shrink-0 mt-0.5" />
-                  <span className="text-sm"><strong>Priority 1 Queue</strong> for AI Study Guides</span>
+                  <span className="text-sm">
+                    <strong>Priority 1 Queue</strong> for AI Study Guides
+                  </span>
                 </li>
                 <li className="flex items-start gap-3">
                   <Check className="h-5 w-5 text-teal-400 shrink-0 mt-0.5" />
@@ -341,7 +349,9 @@ export function Pricing() {
               variant={selectedTier === "pro" ? "default" : "outline"}
               className={cn(
                 "w-full rounded-xl h-12",
-                selectedTier === "pro" ? "bg-teal-500 hover:bg-teal-600 text-white" : ""
+                selectedTier === "pro"
+                  ? "bg-teal-500 hover:bg-teal-600 text-white"
+                  : "",
               )}
             >
               {isCreatingLink && selectedTier === "pro" ? (
@@ -415,19 +425,28 @@ export function Pricing() {
                 </li>
                 <li className="flex items-start gap-3">
                   <Check className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
-                  <span className="text-sm"><strong>Zero wait time</strong> — instant study guides & quizzes</span>
+                  <span className="text-sm">
+                    <strong>Zero wait time</strong> — instant study guides &
+                    quizzes
+                  </span>
                 </li>
                 <li className="flex items-start gap-3">
                   <Check className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
-                  <span className="text-sm">Generous 8,000-token ceiling with automated fallback</span>
+                  <span className="text-sm">
+                    Generous 8,000-token ceiling with automated fallback
+                  </span>
                 </li>
                 <li className="flex items-start gap-3">
                   <Check className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
-                  <span className="text-sm"><strong>100 Resume Tailor runs</strong> / month</span>
+                  <span className="text-sm">
+                    <strong>100 Resume Tailor runs</strong> / month
+                  </span>
                 </li>
                 <li className="flex items-start gap-3">
                   <Check className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
-                  <span className="text-sm">Full Market Intelligence, Exports & Alerting</span>
+                  <span className="text-sm">
+                    Full Market Intelligence, Exports & Alerting
+                  </span>
                 </li>
               </ul>
             </div>

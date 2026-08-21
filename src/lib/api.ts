@@ -1781,33 +1781,60 @@ class ApiClient {
   }
 
   async getLearningPlanResume(planId: string) {
-    return this.request<PlanResumePoint>(`/api/education/plans/${planId}/resume`);
+    return this.request<PlanResumePoint>(
+      `/api/education/plans/${planId}/resume`,
+    );
   }
 
   async getLearningPlanInsights(planId: string) {
-    return this.request<PlanInsights>(`/api/education/plans/${planId}/insights`);
+    return this.request<PlanInsights>(
+      `/api/education/plans/${planId}/insights`,
+    );
   }
 
-  async updateTopicStatus(planId: string, topicId: string, status: TopicStatus) {
-    return this.patch<PlanTopic>(`/api/education/plans/${planId}/topics/${topicId}`, { status });
+  async updateTopicStatus(
+    planId: string,
+    topicId: string,
+    status: TopicStatus,
+  ) {
+    return this.patch<PlanTopic>(
+      `/api/education/plans/${planId}/topics/${topicId}`,
+      { status },
+    );
   }
 
   async generateTopicPrep(planId: string, topicId: string) {
-    return this.post<PlanTopic>(`/api/education/plans/${planId}/topics/${topicId}/generate-prep`);
+    return this.post<PlanTopic>(
+      `/api/education/plans/${planId}/topics/${topicId}/generate-prep`,
+    );
   }
 
-  async elaborateTopic(planId: string, topicId: string, data: { prompt: string; format?: "simple" | "detailed" | "examples" }) {
+  async elaborateTopic(
+    planId: string,
+    topicId: string,
+    data: { prompt: string; format?: "simple" | "detailed" | "examples" },
+  ) {
     return this.post<{ topic_id: string; explanation: string; format: string }>(
-      `/api/education/plans/${planId}/topics/${topicId}/elaborate`, data
+      `/api/education/plans/${planId}/topics/${topicId}/elaborate`,
+      data,
     );
   }
 
   async generateHandsOn(planId: string, topicId: string) {
-    return this.post<PlanTopic>(`/api/education/plans/${planId}/topics/${topicId}/generate-handson`);
+    return this.post<PlanTopic>(
+      `/api/education/plans/${planId}/topics/${topicId}/generate-handson`,
+    );
   }
 
-  async reviewFlashcard(planId: string, topicId: string, data: { questionIndex: number; rating: FlashcardRating }) {
-    return this.post<PlanTopic>(`/api/education/plans/${planId}/topics/${topicId}/flashcards/review`, data);
+  async reviewFlashcard(
+    planId: string,
+    topicId: string,
+    data: { questionIndex: number; rating: FlashcardRating },
+  ) {
+    return this.post<PlanTopic>(
+      `/api/education/plans/${planId}/topics/${topicId}/flashcards/review`,
+      data,
+    );
   }
 
   async generateExam(data: {
@@ -1823,15 +1850,21 @@ class ApiClient {
   }
 
   async getExam(examId: string, solutions?: boolean) {
-    return this.request<Exam>(`/api/education/exams/${examId}${solutions ? "?solutions=true" : ""}`);
+    return this.request<Exam>(
+      `/api/education/exams/${examId}${solutions ? "?solutions=true" : ""}`,
+    );
   }
 
   async submitExam(examId: string, answers: ExamAnswer[]) {
-    return this.post<ExamSubmission>(`/api/education/exams/${examId}/submit`, { answers });
+    return this.post<ExamSubmission>(`/api/education/exams/${examId}/submit`, {
+      answers,
+    });
   }
 
   async getExamSubmissions(examId?: string) {
-    return this.request<ExamSubmission[]>(`/api/education/submissions${examId ? `?exam_id=${examId}` : ""}`);
+    return this.request<ExamSubmission[]>(
+      `/api/education/submissions${examId ? `?exam_id=${examId}` : ""}`,
+    );
   }
 }
 

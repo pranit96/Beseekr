@@ -63,12 +63,32 @@ const CARD_TEMPLATES = [
 ];
 
 const EMOJI_OPTIONS = [
-  "✨", "🌙", "💪", "🎯", "💼", "🏡", "🌿", "📚",
-  "🎨", "🚀", "❤️", "💰", "🌸", "⭐", "🦋", "🧘",
+  "✨",
+  "🌙",
+  "💪",
+  "🎯",
+  "💼",
+  "🏡",
+  "🌿",
+  "📚",
+  "🎨",
+  "🚀",
+  "❤️",
+  "💰",
+  "🌸",
+  "⭐",
+  "🦋",
+  "🧘",
 ];
 
 const QUICK_UNSPLASH_TERMS = [
-  "Minimal", "Mountains", "Workspace", "Sunset", "Mindfulness", "Travel", "Architecture"
+  "Minimal",
+  "Mountains",
+  "Workspace",
+  "Sunset",
+  "Mindfulness",
+  "Travel",
+  "Architecture",
 ];
 
 // ── Single Vision Card (Notice Board Pinned Card) ──────────────────────────────
@@ -93,7 +113,6 @@ function CardTile({ card, onDelete, onUpload, onInspect }: CardTileProps) {
   }
 
   const hasPhoto = Boolean(card.file_url && card.file_url.trim().length > 0);
-
 
   return (
     <motion.div
@@ -167,16 +186,22 @@ function CardTile({ card, onDelete, onUpload, onInspect }: CardTileProps) {
                 <span>{card.emoji}</span> {card.title}
               </span>
               <span className="text-[10px] text-amber-200/90 font-serif italic truncate">
-                {card.card_type ? `Vision: ${card.card_type}` : "Added to manifest vision"}
+                {card.card_type
+                  ? `Vision: ${card.card_type}`
+                  : "Added to manifest vision"}
               </span>
             </div>
           </div>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center p-4 text-center">
             <span className="vb-card-emoji text-3xl mb-2">{card.emoji}</span>
-            <span className="vb-card-title font-semibold text-sm leading-tight text-foreground">{card.title}</span>
+            <span className="vb-card-title font-semibold text-sm leading-tight text-foreground">
+              {card.title}
+            </span>
             <span className="text-[11px] text-muted-foreground font-serif italic mt-1">
-              {card.card_type ? `Focus: ${card.card_type}` : "Core Manifestation Goal"}
+              {card.card_type
+                ? `Focus: ${card.card_type}`
+                : "Core Manifestation Goal"}
             </span>
           </div>
         )}
@@ -236,8 +261,12 @@ export function VisionCollage({
 
   // Unsplash states
   const [unsplashQuery, setUnsplashQuery] = useState("inspiration");
-  const [unsplashPhotos, setUnsplashPhotos] = useState<Array<{ id: string; url: string; thumb: string; alt: string }>>([]);
-  const [selectedUnsplashUrl, setSelectedUnsplashUrl] = useState<string | null>(null);
+  const [unsplashPhotos, setUnsplashPhotos] = useState<
+    Array<{ id: string; url: string; thumb: string; alt: string }>
+  >([]);
+  const [selectedUnsplashUrl, setSelectedUnsplashUrl] = useState<string | null>(
+    null,
+  );
   const [searchingUnsplash, setSearchingUnsplash] = useState(false);
 
   // Zoom Lightbox states
@@ -254,7 +283,9 @@ export function VisionCollage({
     setSearchingUnsplash(true);
     try {
       const res = await visionBoardApi.searchUnsplash(q);
-      const photos = (res as any)?.data?.data || (Array.isArray((res as any)?.data) ? (res as any).data : []);
+      const photos =
+        (res as any)?.data?.data ||
+        (Array.isArray((res as any)?.data) ? (res as any).data : []);
       if (Array.isArray(photos) && photos.length > 0) {
         setUnsplashPhotos(photos);
         if (!selectedUnsplashUrl) {
@@ -289,9 +320,14 @@ export function VisionCollage({
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (isSlideshowOpen) {
-        if (e.key === "ArrowRight") setSlideshowIndex((prev) => (prev + 1) % cards.length);
-        if (e.key === "ArrowLeft") setSlideshowIndex((prev) => (prev - 1 + cards.length) % cards.length);
-        if (e.key === " ") { e.preventDefault(); setIsPlaying((prev) => !prev); }
+        if (e.key === "ArrowRight")
+          setSlideshowIndex((prev) => (prev + 1) % cards.length);
+        if (e.key === "ArrowLeft")
+          setSlideshowIndex((prev) => (prev - 1 + cards.length) % cards.length);
+        if (e.key === " ") {
+          e.preventDefault();
+          setIsPlaying((prev) => !prev);
+        }
         if (e.key === "Escape") setIsSlideshowOpen(false);
       } else if (zoomCard) {
         if (e.key === "Escape") setZoomCard(null);
@@ -314,8 +350,14 @@ export function VisionCollage({
 
       if (mode === "unsplash" && selectedUnsplashUrl && createdCard?.id) {
         try {
-          const imgBlob = await fetch(selectedUnsplashUrl).then((r) => r.blob());
-          const file = new (window as any).File([imgBlob], `unsplash_${Date.now()}.jpg`, { type: "image/jpeg" }) as File;
+          const imgBlob = await fetch(selectedUnsplashUrl).then((r) =>
+            r.blob(),
+          );
+          const file = new (window as any).File(
+            [imgBlob],
+            `unsplash_${Date.now()}.jpg`,
+            { type: "image/jpeg" },
+          ) as File;
           await onUpload(createdCard.id, file);
         } catch (imgErr) {
           console.warn("Error attaching Unsplash image:", imgErr);
@@ -338,7 +380,7 @@ export function VisionCollage({
     }
   }
 
-  const useTemplate = (tpl: typeof CARD_TEMPLATES[number]) => {
+  const useTemplate = (tpl: (typeof CARD_TEMPLATES)[number]) => {
     onAdd(tpl);
   };
 
@@ -403,7 +445,9 @@ export function VisionCollage({
                   />
                 ) : (
                   <div className="flex flex-col items-center justify-center p-6 text-center">
-                    <span className="text-5xl mb-2">{cards[slideshowIndex]?.emoji}</span>
+                    <span className="text-5xl mb-2">
+                      {cards[slideshowIndex]?.emoji}
+                    </span>
                   </div>
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent p-4 flex flex-col justify-end">
@@ -413,7 +457,8 @@ export function VisionCollage({
                         Slide {slideshowIndex + 1} of {cards.length}
                       </span>
                       <h3 className="text-lg font-serif font-bold text-white flex items-center gap-1.5">
-                        <span>{cards[slideshowIndex]?.emoji}</span> {cards[slideshowIndex]?.title}
+                        <span>{cards[slideshowIndex]?.emoji}</span>{" "}
+                        {cards[slideshowIndex]?.title}
                       </h3>
                     </div>
                     <button
@@ -435,14 +480,20 @@ export function VisionCollage({
             {/* Prev / Next Banner Buttons */}
             <button
               type="button"
-              onClick={() => setSlideshowIndex((prev) => (prev - 1 + cards.length) % cards.length)}
+              onClick={() =>
+                setSlideshowIndex(
+                  (prev) => (prev - 1 + cards.length) % cards.length,
+                )
+              }
               className="absolute left-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/40 hover:bg-black/70 text-white opacity-0 group-hover:opacity-100 transition-opacity z-20"
             >
               <ChevronLeft size={18} />
             </button>
             <button
               type="button"
-              onClick={() => setSlideshowIndex((prev) => (prev + 1) % cards.length)}
+              onClick={() =>
+                setSlideshowIndex((prev) => (prev + 1) % cards.length)
+              }
               className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/40 hover:bg-black/70 text-white opacity-0 group-hover:opacity-100 transition-opacity z-20"
             >
               <ChevronRight size={18} />
@@ -453,7 +504,9 @@ export function VisionCollage({
           <div className="w-full bg-white/10 h-1">
             <motion.div
               className="bg-amber-400 h-full"
-              animate={{ width: `${((slideshowIndex + 1) / cards.length) * 100}%` }}
+              animate={{
+                width: `${((slideshowIndex + 1) / cards.length) * 100}%`,
+              }}
               transition={{ duration: 0.3 }}
             />
           </div>
@@ -492,10 +545,10 @@ export function VisionCollage({
         </AnimatePresence>
       </div>
 
-
       {/* Upload hint */}
       <p className="vb-area-hint" style={{ marginTop: 10 }}>
-        Click any card to inspect & zoom. Drag cards to reorder on your notice board.
+        Click any card to inspect & zoom. Drag cards to reorder on your notice
+        board.
       </p>
 
       {/* Quick templates when empty */}
@@ -540,23 +593,31 @@ export function VisionCollage({
                     <div className="flex items-center gap-2">
                       <span className="text-xl">{zoomCard.emoji}</span>
                       <div>
-                        <h3 className="font-serif font-bold text-lg text-foreground">{zoomCard.title}</h3>
+                        <h3 className="font-serif font-bold text-lg text-foreground">
+                          {zoomCard.title}
+                        </h3>
                         <p className="text-xs text-muted-foreground italic">
-                          {zoomCard.file_name ? `File: ${zoomCard.file_name}` : "Vision Board Card"}
+                          {zoomCard.file_name
+                            ? `File: ${zoomCard.file_name}`
+                            : "Vision Board Card"}
                         </p>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-2">
                       <button
-                        onClick={() => setZoomScale((s) => Math.min(3, s + 0.25))}
+                        onClick={() =>
+                          setZoomScale((s) => Math.min(3, s + 0.25))
+                        }
                         className="p-1.5 rounded-lg bg-muted hover:bg-amber-500/20 text-foreground"
                         title="Zoom In"
                       >
                         <ZoomIn size={16} />
                       </button>
                       <button
-                        onClick={() => setZoomScale((s) => Math.max(0.5, s - 0.25))}
+                        onClick={() =>
+                          setZoomScale((s) => Math.max(0.5, s - 0.25))
+                        }
                         className="p-1.5 rounded-lg bg-muted hover:bg-amber-500/20 text-foreground"
                         title="Zoom Out"
                       >
@@ -586,12 +647,19 @@ export function VisionCollage({
                         src={zoomCard.file_url}
                         alt={zoomCard.title}
                         className="max-h-[65vh] object-contain rounded-lg shadow-xl"
-                        style={{ transform: `scale(${zoomScale})`, transition: "transform 0.2s ease-out" }}
+                        style={{
+                          transform: `scale(${zoomScale})`,
+                          transition: "transform 0.2s ease-out",
+                        }}
                       />
                     ) : (
                       <div className="text-center py-16">
-                        <span className="text-6xl mb-4 block">{zoomCard.emoji}</span>
-                        <h4 className="text-xl font-bold font-serif text-foreground">{zoomCard.title}</h4>
+                        <span className="text-6xl mb-4 block">
+                          {zoomCard.emoji}
+                        </span>
+                        <h4 className="text-xl font-bold font-serif text-foreground">
+                          {zoomCard.title}
+                        </h4>
                       </div>
                     )}
                   </div>
@@ -599,7 +667,7 @@ export function VisionCollage({
               </motion.div>
             )}
           </AnimatePresence>,
-          document.body
+          document.body,
         )}
 
       {/* ── Fullscreen Slideshow Presentation Modal ── */}
@@ -617,7 +685,9 @@ export function VisionCollage({
                 <div className="flex items-center justify-between z-10">
                   <div className="flex items-center gap-2">
                     <Sparkles className="w-5 h-5 text-amber-400 animate-spin-slow" />
-                    <span className="font-serif font-bold text-base tracking-wide">Vision Board Slideshow Presentation</span>
+                    <span className="font-serif font-bold text-base tracking-wide">
+                      Vision Board Slideshow Presentation
+                    </span>
                     <span className="text-xs px-2.5 py-0.5 rounded-full bg-white/10 text-amber-300 font-mono">
                       {slideshowIndex + 1} / {cards.length}
                     </span>
@@ -628,7 +698,8 @@ export function VisionCollage({
                       onClick={() => setIsPlaying((p) => !p)}
                       className="px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 text-xs font-semibold flex items-center gap-1.5"
                     >
-                      {isPlaying ? <Pause size={14} /> : <Play size={14} />} {isPlaying ? "Pause" : "Play"}
+                      {isPlaying ? <Pause size={14} /> : <Play size={14} />}{" "}
+                      {isPlaying ? "Pause" : "Play"}
                     </button>
                     <button
                       onClick={() => setIsSlideshowOpen(false)}
@@ -642,7 +713,11 @@ export function VisionCollage({
                 {/* Slide Viewer */}
                 <div className="relative flex-1 flex items-center justify-center my-4 overflow-hidden">
                   <button
-                    onClick={() => setSlideshowIndex((prev) => (prev - 1 + cards.length) % cards.length)}
+                    onClick={() =>
+                      setSlideshowIndex(
+                        (prev) => (prev - 1 + cards.length) % cards.length,
+                      )
+                    }
                     className="absolute left-4 z-20 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-md"
                   >
                     <ChevronLeft size={24} />
@@ -664,22 +739,29 @@ export function VisionCollage({
                           className="max-h-[55vh] w-auto object-contain rounded-xl shadow-2xl mb-4"
                         />
                       ) : (
-                        <div className="text-7xl mb-6">{cards[slideshowIndex].emoji}</div>
+                        <div className="text-7xl mb-6">
+                          {cards[slideshowIndex].emoji}
+                        </div>
                       )}
 
                       <div className="text-center">
                         <h2 className="text-2xl md:text-3xl font-serif font-bold tracking-tight text-white mb-1 flex items-center justify-center gap-2">
-                          <span>{cards[slideshowIndex].emoji}</span> {cards[slideshowIndex].title}
+                          <span>{cards[slideshowIndex].emoji}</span>{" "}
+                          {cards[slideshowIndex].title}
                         </h2>
                         <p className="text-sm text-amber-300/90 font-serif italic">
-                          {cards[slideshowIndex].card_type ? `Vision Category: ${cards[slideshowIndex].card_type}` : "Core Manifestation Intention"}
+                          {cards[slideshowIndex].card_type
+                            ? `Vision Category: ${cards[slideshowIndex].card_type}`
+                            : "Core Manifestation Intention"}
                         </p>
                       </div>
                     </motion.div>
                   </AnimatePresence>
 
                   <button
-                    onClick={() => setSlideshowIndex((prev) => (prev + 1) % cards.length)}
+                    onClick={() =>
+                      setSlideshowIndex((prev) => (prev + 1) % cards.length)
+                    }
                     className="absolute right-4 z-20 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-md"
                   >
                     <ChevronRight size={24} />
@@ -690,14 +772,16 @@ export function VisionCollage({
                 <div className="w-full max-w-xl mx-auto bg-white/10 h-1 rounded-full overflow-hidden">
                   <motion.div
                     className="bg-amber-400 h-full"
-                    animate={{ width: `${((slideshowIndex + 1) / cards.length) * 100}%` }}
+                    animate={{
+                      width: `${((slideshowIndex + 1) / cards.length) * 100}%`,
+                    }}
                     transition={{ duration: 0.3 }}
                   />
                 </div>
               </motion.div>
             )}
           </AnimatePresence>,
-          document.body
+          document.body,
         )}
 
       {/* Add form modal */}
@@ -721,7 +805,8 @@ export function VisionCollage({
                 >
                   <div className="flex items-center justify-between mb-3">
                     <h3 className="vb-form-title flex items-center gap-2">
-                      <Sparkles size={16} className="text-amber-500" /> New Vision Card
+                      <Sparkles size={16} className="text-amber-500" /> New
+                      Vision Card
                     </h3>
                     <button
                       type="button"
@@ -763,13 +848,19 @@ export function VisionCollage({
                     <div className="mb-4">
                       <div className="flex items-center gap-2 mb-2">
                         <div className="relative flex-1 flex items-center">
-                          <Search size={14} className="absolute left-3 text-amber-600/80 pointer-events-none z-10" />
+                          <Search
+                            size={14}
+                            className="absolute left-3 text-amber-600/80 pointer-events-none z-10"
+                          />
                           <input
                             type="text"
                             placeholder="Search Unsplash (e.g. sunset, workspace)..."
                             value={unsplashQuery}
                             onChange={(e) => setUnsplashQuery(e.target.value)}
-                            onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleSearchUnsplash())}
+                            onKeyDown={(e) =>
+                              e.key === "Enter" &&
+                              (e.preventDefault(), handleSearchUnsplash())
+                            }
                             className="vb-form-input !mb-0 text-xs !pl-9 w-full"
                           />
                         </div>
@@ -802,7 +893,9 @@ export function VisionCollage({
 
                       {/* Unsplash Thumbnails Grid */}
                       {searchingUnsplash ? (
-                        <div className="text-center py-6 text-xs text-muted-foreground">Searching Unsplash...</div>
+                        <div className="text-center py-6 text-xs text-muted-foreground">
+                          Searching Unsplash...
+                        </div>
                       ) : (
                         <div className="grid grid-cols-3 gap-2 max-h-[180px] overflow-y-auto pr-1">
                           {unsplashPhotos.map((img) => (
@@ -811,7 +904,11 @@ export function VisionCollage({
                               className={`relative aspect-video rounded-lg overflow-hidden border-2 cursor-pointer transition-all ${selectedUnsplashUrl === img.url ? "border-amber-500 scale-95 shadow-md" : "border-transparent opacity-80 hover:opacity-100"}`}
                               onClick={() => setSelectedUnsplashUrl(img.url)}
                             >
-                              <img src={img.thumb} alt={img.alt} className="w-full h-full object-cover" />
+                              <img
+                                src={img.thumb}
+                                alt={img.alt}
+                                className="w-full h-full object-cover"
+                              />
                               {selectedUnsplashUrl === img.url && (
                                 <div className="absolute top-1 right-1 bg-amber-500 text-white rounded-full p-0.5">
                                   <Check size={10} />
@@ -840,16 +937,16 @@ export function VisionCollage({
 
                   {/* Color dots */}
                   <div className="vb-color-row mb-4">
-                    {(["terracotta", "sage", "taupe", "ink", "blush"] as const).map(
-                      (c) => (
-                        <button
-                          key={c}
-                          type="button"
-                          className={`vb-color-dot vb-dot-${c} ${color === c ? "vb-dot-selected" : ""}`}
-                          onClick={() => setColor(c)}
-                        />
-                      ),
-                    )}
+                    {(
+                      ["terracotta", "sage", "taupe", "ink", "blush"] as const
+                    ).map((c) => (
+                      <button
+                        key={c}
+                        type="button"
+                        className={`vb-color-dot vb-dot-${c} ${color === c ? "vb-dot-selected" : ""}`}
+                        onClick={() => setColor(c)}
+                      />
+                    ))}
                   </div>
 
                   {/* Form actions */}
@@ -874,7 +971,7 @@ export function VisionCollage({
               </motion.div>
             )}
           </AnimatePresence>,
-          document.body
+          document.body,
         )}
     </div>
   );

@@ -1,9 +1,24 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { BookOpen, Plus, ChevronRight, Calendar, Clock, MoreVertical, Edit3, Trash2, Loader2 } from "lucide-react";
+import {
+  BookOpen,
+  Plus,
+  ChevronRight,
+  Calendar,
+  Clock,
+  MoreVertical,
+  Edit3,
+  Trash2,
+  Loader2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PlanProgressRing } from "./PlanProgressRing";
-import { useLearningPlans, usePlanResume, useDeletePlan, useUpdatePlan } from "@/hooks/use-education";
+import {
+  useLearningPlans,
+  usePlanResume,
+  useDeletePlan,
+  useUpdatePlan,
+} from "@/hooks/use-education";
 import { LearningPlan } from "@/types/education";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -38,11 +53,11 @@ interface PlanDashboardProps {
   onPlanSelect: (planId: string, topicId?: string) => void;
 }
 
-function PlanCard({ 
-  plan, 
-  onSelect 
-}: { 
-  plan: LearningPlan; 
+function PlanCard({
+  plan,
+  onSelect,
+}: {
+  plan: LearningPlan;
   onSelect: (planId: string, topicId?: string) => void;
 }) {
   const { data: resumeData, isLoading } = usePlanResume(plan.id);
@@ -55,7 +70,9 @@ function PlanCard({
   // Edit form state
   const [editTitle, setEditTitle] = useState(plan.title);
   const [editSubject, setEditSubject] = useState(plan.subject);
-  const [editTargetScore, setEditTargetScore] = useState(plan.target_score || "");
+  const [editTargetScore, setEditTargetScore] = useState(
+    plan.target_score || "",
+  );
   const [editHours, setEditHours] = useState(plan.daily_study_hours || 2);
   const [editExamDate, setEditExamDate] = useState(plan.exam_date || "");
 
@@ -86,7 +103,7 @@ function PlanCard({
         onSuccess: () => {
           setIsEditDialogOpen(false);
         },
-      }
+      },
     );
   };
 
@@ -129,7 +146,7 @@ function PlanCard({
               </div>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-2 flex-shrink-0">
             <PlanProgressRing percentage={progress} size={50} strokeWidth={4} />
 
@@ -137,25 +154,31 @@ function PlanCard({
             <div onClick={(e) => e.stopPropagation()}>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     className="h-8 w-8 text-muted-foreground hover:text-foreground opacity-60 group-hover:opacity-100 transition-opacity"
                   >
                     <MoreVertical className="w-4 h-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48 bg-popover/95 backdrop-blur-xl border-border/50">
-                  <DropdownMenuItem onClick={handleOpenEdit} className="gap-2 cursor-pointer">
+                <DropdownMenuContent
+                  align="end"
+                  className="w-48 bg-popover/95 backdrop-blur-xl border-border/50"
+                >
+                  <DropdownMenuItem
+                    onClick={handleOpenEdit}
+                    className="gap-2 cursor-pointer"
+                  >
                     <Edit3 className="w-4 h-4 text-teal-400" />
                     <span>Edit Plan Details</span>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator className="bg-border/30" />
-                  <DropdownMenuItem 
+                  <DropdownMenuItem
                     onClick={(e) => {
                       e.stopPropagation();
                       setIsDeleteDialogOpen(true);
-                    }} 
+                    }}
                     className="gap-2 text-red-400 focus:text-red-300 focus:bg-red-500/10 cursor-pointer"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -172,17 +195,19 @@ function PlanCard({
             {isLoading ? (
               <Skeleton className="h-4 w-32" />
             ) : resumeTopic ? (
-              <span className="truncate">Up next: {resumeTopic.topic_name}</span>
+              <span className="truncate">
+                Up next: {resumeTopic.topic_name}
+              </span>
             ) : progress === 100 ? (
               <span className="text-teal-500 font-medium">Plan completed!</span>
             ) : (
               <span>Ready to start</span>
             )}
           </div>
-          
-          <Button 
-            variant="ghost" 
-            size="sm" 
+
+          <Button
+            variant="ghost"
+            size="sm"
             className="text-teal-500 hover:text-teal-400 hover:bg-teal-500/10 -mr-2"
             onClick={(e) => {
               e.stopPropagation();
@@ -197,8 +222,8 @@ function PlanCard({
 
       {/* Edit Plan Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent 
-          onClick={(e) => e.stopPropagation()} 
+        <DialogContent
+          onClick={(e) => e.stopPropagation()}
           className="sm:max-w-md bg-card/95 backdrop-blur-2xl border-border/50 text-card-foreground shadow-2xl"
         >
           <DialogHeader>
@@ -210,7 +235,10 @@ function PlanCard({
 
           <div className="space-y-4 py-2">
             <div className="space-y-1.5">
-              <Label htmlFor="plan-title" className="text-xs font-semibold text-muted-foreground uppercase">
+              <Label
+                htmlFor="plan-title"
+                className="text-xs font-semibold text-muted-foreground uppercase"
+              >
                 Plan Title
               </Label>
               <Input
@@ -223,7 +251,10 @@ function PlanCard({
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="plan-subject" className="text-xs font-semibold text-muted-foreground uppercase">
+              <Label
+                htmlFor="plan-subject"
+                className="text-xs font-semibold text-muted-foreground uppercase"
+              >
                 Subject / Domain
               </Label>
               <Input
@@ -237,7 +268,10 @@ function PlanCard({
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label htmlFor="plan-hours" className="text-xs font-semibold text-muted-foreground uppercase">
+                <Label
+                  htmlFor="plan-hours"
+                  className="text-xs font-semibold text-muted-foreground uppercase"
+                >
                   Daily Study Hours
                 </Label>
                 <Input
@@ -253,7 +287,10 @@ function PlanCard({
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="plan-date" className="text-xs font-semibold text-muted-foreground uppercase">
+                <Label
+                  htmlFor="plan-date"
+                  className="text-xs font-semibold text-muted-foreground uppercase"
+                >
                   Target Exam Date
                 </Label>
                 <Input
@@ -267,7 +304,10 @@ function PlanCard({
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="plan-score" className="text-xs font-semibold text-muted-foreground uppercase">
+              <Label
+                htmlFor="plan-score"
+                className="text-xs font-semibold text-muted-foreground uppercase"
+              >
                 Target Score / Objective
               </Label>
               <Input
@@ -286,10 +326,16 @@ function PlanCard({
             </Button>
             <Button
               onClick={handleSaveEdit}
-              disabled={updatePlanMutation.isPending || !editTitle.trim() || !editSubject.trim()}
+              disabled={
+                updatePlanMutation.isPending ||
+                !editTitle.trim() ||
+                !editSubject.trim()
+              }
               className="bg-teal-500 hover:bg-teal-600 text-white font-semibold"
             >
-              {updatePlanMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              {updatePlanMutation.isPending && (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              )}
               Save Changes
             </Button>
           </DialogFooter>
@@ -297,9 +343,12 @@ function PlanCard({
       </Dialog>
 
       {/* Delete Plan Alert Dialog */}
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent 
-          onClick={(e) => e.stopPropagation()} 
+      <AlertDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+      >
+        <AlertDialogContent
+          onClick={(e) => e.stopPropagation()}
           className="bg-card/95 backdrop-blur-2xl border-border/50 text-card-foreground shadow-2xl"
         >
           <AlertDialogHeader>
@@ -308,7 +357,10 @@ function PlanCard({
               Delete Learning Plan?
             </AlertDialogTitle>
             <AlertDialogDescription className="text-muted-foreground">
-              This action cannot be undone. All syllabus topics, study guides, flashcards, and practice exams linked to <strong className="text-foreground">"{plan.title}"</strong> will be permanently removed.
+              This action cannot be undone. All syllabus topics, study guides,
+              flashcards, and practice exams linked to{" "}
+              <strong className="text-foreground">"{plan.title}"</strong> will
+              be permanently removed.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -318,7 +370,9 @@ function PlanCard({
               disabled={deletePlanMutation.isPending}
               className="bg-red-500 hover:bg-red-600 text-white font-semibold"
             >
-              {deletePlanMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              {deletePlanMutation.isPending && (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              )}
               Delete Plan
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -328,7 +382,10 @@ function PlanCard({
   );
 }
 
-export function PlanDashboard({ onCreateClick, onPlanSelect }: PlanDashboardProps) {
+export function PlanDashboard({
+  onCreateClick,
+  onPlanSelect,
+}: PlanDashboardProps) {
   const { data: plansRes, isLoading, error } = useLearningPlans();
   const plans = plansRes?.data || [];
 
@@ -355,11 +412,16 @@ export function PlanDashboard({ onCreateClick, onPlanSelect }: PlanDashboardProp
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold">Your Learning Plans</h2>
-          <p className="text-muted-foreground mt-1">Pick up where you left off or start something new.</p>
+          <p className="text-muted-foreground mt-1">
+            Pick up where you left off or start something new.
+          </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" role="list">
+      <div
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+        role="list"
+      >
         <motion.div
           whileHover={{ y: -4 }}
           onClick={onCreateClick}
@@ -376,11 +438,7 @@ export function PlanDashboard({ onCreateClick, onPlanSelect }: PlanDashboardProp
         </motion.div>
 
         {plans.map((plan) => (
-          <PlanCard 
-            key={plan.id} 
-            plan={plan} 
-            onSelect={onPlanSelect} 
-          />
+          <PlanCard key={plan.id} plan={plan} onSelect={onPlanSelect} />
         ))}
       </div>
     </div>

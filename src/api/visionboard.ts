@@ -328,7 +328,7 @@ export const visionBoardApi = {
     year: number,
     month: number,
     action: "create" | "ask" | "analyse",
-    query?: string
+    query?: string,
   ) =>
     apiClient.post<{
       success: boolean;
@@ -342,7 +342,7 @@ export const visionBoardApi = {
   // Reset / Clear Board Month
   resetBoard: (year: number, month: number) =>
     apiClient.delete<{ success: boolean; data: { reset: boolean } }>(
-      `/api/visionboard/${year}/${month}/reset`
+      `/api/visionboard/${year}/${month}/reset`,
     ),
 
   // Unsplash Search
@@ -359,6 +359,3 @@ export const visionBoardApi = {
       }>;
     }>(`/api/visionboard/unsplash/search?query=${encodeURIComponent(query)}`),
 };
-
-
-

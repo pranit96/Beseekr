@@ -52,7 +52,8 @@ export const TopBar = ({
   const isBudgetEnabled = getIsBudgetEnabled();
   const isSecondBrainEnabled = getIsSecondBrainEnabled();
   const isWeeklyDigestEnabled = getIsWeeklyDigestEnabled();
-  const isLearnByDoingEnabled = getIsLearnByDoingEnabled() || user?.feature_flags?.learn_by_doing;
+  const isLearnByDoingEnabled =
+    getIsLearnByDoingEnabled() || user?.feature_flags?.learn_by_doing;
 
   const navigation = [
     { key: "home", name: "Home", href: "/" },

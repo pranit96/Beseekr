@@ -38,11 +38,12 @@ export function LearnTab({ content, isLoading, onGenerate }: LearnTabProps) {
         </div>
         <h3 className="text-xl font-bold mb-2">No study materials yet</h3>
         <p className="text-muted-foreground mb-8 max-w-md">
-          Generate a comprehensive AI study guide for this topic, including summaries, key concepts, and actionable insights.
+          Generate a comprehensive AI study guide for this topic, including
+          summaries, key concepts, and actionable insights.
         </p>
-        <Button 
+        <Button
           onClick={onGenerate}
-          size="lg" 
+          size="lg"
           className="bg-teal-500 hover:bg-teal-600 text-white"
         >
           <Sparkles className="w-5 h-5 mr-2" />
@@ -55,29 +56,62 @@ export function LearnTab({ content, isLoading, onGenerate }: LearnTabProps) {
   return (
     <div className="p-6 md:p-8 bg-card/5 rounded-3xl border border-border/30">
       <div className="prose prose-invert prose-teal max-w-none">
-        <ReactMarkdown 
+        <ReactMarkdown
           remarkPlugins={[remarkGfm]}
           components={{
-            h1: ({node, ...props}) => <h1 className="text-3xl font-bold text-teal-400 border-b border-border/50 pb-2 mb-6" {...props} />,
-            h2: ({node, ...props}) => <h2 className="text-2xl font-bold text-foreground mt-8 mb-4" {...props} />,
-            h3: ({node, ...props}) => <h3 className="text-xl font-bold text-foreground/90 mt-6 mb-3" {...props} />,
-            strong: ({node, ...props}) => <strong className="font-bold text-teal-300" {...props} />,
-            a: ({node, ...props}) => <a className="text-teal-400 hover:text-teal-300 underline underline-offset-4" {...props} />,
-            blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-teal-500 pl-4 italic text-muted-foreground bg-teal-500/5 py-1 pr-4 rounded-r-lg my-4" {...props} />,
-            code: ({node, inline, className, children, ...props}: any) => {
+            h1: ({ node, ...props }) => (
+              <h1
+                className="text-3xl font-bold text-teal-400 border-b border-border/50 pb-2 mb-6"
+                {...props}
+              />
+            ),
+            h2: ({ node, ...props }) => (
+              <h2
+                className="text-2xl font-bold text-foreground mt-8 mb-4"
+                {...props}
+              />
+            ),
+            h3: ({ node, ...props }) => (
+              <h3
+                className="text-xl font-bold text-foreground/90 mt-6 mb-3"
+                {...props}
+              />
+            ),
+            strong: ({ node, ...props }) => (
+              <strong className="font-bold text-teal-300" {...props} />
+            ),
+            a: ({ node, ...props }) => (
+              <a
+                className="text-teal-400 hover:text-teal-300 underline underline-offset-4"
+                {...props}
+              />
+            ),
+            blockquote: ({ node, ...props }) => (
+              <blockquote
+                className="border-l-4 border-teal-500 pl-4 italic text-muted-foreground bg-teal-500/5 py-1 pr-4 rounded-r-lg my-4"
+                {...props}
+              />
+            ),
+            code: ({ node, inline, className, children, ...props }: any) => {
               const codeContent = String(children || "").replace(/\n$/, "");
               const match = /language-(\w+)/.exec(className || "");
               const language = match ? match[1] : "";
-              const isMermaid = language === "mermaid" || 
+              const isMermaid =
+                language === "mermaid" ||
                 className?.includes("mermaid") ||
-                /^(flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|gantt|pie|gitGraph|journey|graph\s+(TD|TB|BT|RL|LR))/im.test(codeContent.trim());
+                /^(flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|gantt|pie|gitGraph|journey|graph\s+(TD|TB|BT|RL|LR))/im.test(
+                  codeContent.trim(),
+                );
 
               if (!inline && isMermaid) {
                 return <MermaidDiagram chart={codeContent} />;
               }
 
               return inline ? (
-                <code className="bg-muted px-1.5 py-0.5 rounded text-sm text-teal-200 font-mono" {...props}>
+                <code
+                  className="bg-muted px-1.5 py-0.5 rounded text-sm text-teal-200 font-mono"
+                  {...props}
+                >
                   {children}
                 </code>
               ) : (
@@ -88,10 +122,27 @@ export function LearnTab({ content, isLoading, onGenerate }: LearnTabProps) {
                 </pre>
               );
             },
-            ul: ({node, ...props}) => <ul className="list-disc pl-6 space-y-2 my-4 marker:text-teal-500" {...props} />,
-            ol: ({node, ...props}) => <ol className="list-decimal pl-6 space-y-2 my-4 marker:text-teal-500" {...props} />,
-            li: ({node, ...props}) => <li className="text-foreground/90 leading-relaxed" {...props} />,
-            p: ({node, ...props}) => <p className="text-foreground/90 leading-relaxed my-4" {...props} />,
+            ul: ({ node, ...props }) => (
+              <ul
+                className="list-disc pl-6 space-y-2 my-4 marker:text-teal-500"
+                {...props}
+              />
+            ),
+            ol: ({ node, ...props }) => (
+              <ol
+                className="list-decimal pl-6 space-y-2 my-4 marker:text-teal-500"
+                {...props}
+              />
+            ),
+            li: ({ node, ...props }) => (
+              <li className="text-foreground/90 leading-relaxed" {...props} />
+            ),
+            p: ({ node, ...props }) => (
+              <p
+                className="text-foreground/90 leading-relaxed my-4"
+                {...props}
+              />
+            ),
           }}
         >
           {content}

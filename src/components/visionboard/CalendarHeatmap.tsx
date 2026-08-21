@@ -282,7 +282,6 @@ export function CalendarHeatmap({ habits, year, month }: CalendarHeatmapProps) {
     setIsModalOpen(true);
   };
 
-
   const handleAddEvent = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!eventTitle.trim() || !selectedDate) return;
@@ -386,7 +385,11 @@ export function CalendarHeatmap({ habits, year, month }: CalendarHeatmapProps) {
                       if (isPast) return;
                       handleOpenAddModal(cell.date!);
                     }}
-                    title={isPast ? "Past date — event creation disabled" : "Click to add event"}
+                    title={
+                      isPast
+                        ? "Past date — event creation disabled"
+                        : "Click to add event"
+                    }
                   >
                     <div className="vb-cal-cell-top">
                       <span
@@ -526,7 +529,6 @@ export function CalendarHeatmap({ habits, year, month }: CalendarHeatmapProps) {
                         />
                       </div>
 
-
                       <div>
                         <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">
                           Time
@@ -546,7 +548,9 @@ export function CalendarHeatmap({ habits, year, month }: CalendarHeatmapProps) {
                       </label>
                       <select
                         value={eventRecurrence}
-                        onChange={(e) => setEventRecurrence(e.target.value as any)}
+                        onChange={(e) =>
+                          setEventRecurrence(e.target.value as any)
+                        }
                         className="vb-form-input"
                       >
                         <option value="none">One-time event</option>
@@ -592,7 +596,8 @@ export function CalendarHeatmap({ habits, year, month }: CalendarHeatmapProps) {
                         className="text-xs font-medium text-muted-foreground flex items-center gap-1.5 cursor-pointer"
                       >
                         <Mail className="w-3.5 h-3.5 text-amber-600" />
-                        Send email notification via Email Service & desktop reminder
+                        Send email notification via Email Service & desktop
+                        reminder
                       </label>
                     </div>
 
@@ -613,7 +618,7 @@ export function CalendarHeatmap({ habits, year, month }: CalendarHeatmapProps) {
               </div>
             )}
           </AnimatePresence>,
-          document.body
+          document.body,
         )}
     </div>
   );

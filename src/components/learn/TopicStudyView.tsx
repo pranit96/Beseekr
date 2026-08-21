@@ -2,7 +2,20 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ArrowRight, BookOpen, Layers, Terminal, CheckSquare, CheckCircle2, Clock, Loader2, Crown, Sparkles, Zap } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  BookOpen,
+  Layers,
+  Terminal,
+  CheckSquare,
+  CheckCircle2,
+  Clock,
+  Loader2,
+  Crown,
+  Sparkles,
+  Zap,
+} from "lucide-react";
 import { PlanTopic } from "@/types/education";
 import { LearnTab } from "./LearnTab";
 import { FlashcardsTab } from "./FlashcardsTab";
@@ -11,9 +24,9 @@ import { QuizTab } from "./QuizTab";
 import { TopicStatusBadge } from "./TopicStatusBadge";
 import { useJobStatus } from "@/hooks/useJobStatus";
 import { useAuth } from "@/contexts/AuthContext";
-import { 
-  useGeneratePrep, 
-  useGenerateHandsOn, 
+import {
+  useGeneratePrep,
+  useGenerateHandsOn,
   useReviewFlashcard,
   useGenerateExam,
   useSubmitExam,
@@ -32,12 +45,12 @@ interface TopicStudyViewProps {
   onTopicSelect?: (topicId: string) => void;
 }
 
-export function TopicStudyView({ 
-  planId, 
-  topic, 
-  allTopics = [], 
-  onBack, 
-  onTopicSelect 
+export function TopicStudyView({
+  planId,
+  topic,
+  allTopics = [],
+  onBack,
+  onTopicSelect,
 }: TopicStudyViewProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -48,7 +61,7 @@ export function TopicStudyView({
   const generateHandsOnMutation = useGenerateHandsOn(planId);
   const reviewFlashcardMutation = useReviewFlashcard(planId);
   const generateExamMutation = useGenerateExam();
-  
+
   // Background queue mutations
   const queuePrepMutation = useQueuePrepContent?.(planId);
   const queueHandsOnMutation = useQueueHandsOn?.(planId);
@@ -83,11 +96,15 @@ export function TopicStudyView({
   if (!topic) return null;
 
   const currentIdx = allTopics.findIndex((t) => t.id === topic.id);
-  const nextTopic = currentIdx >= 0 && currentIdx < allTopics.length - 1 ? allTopics[currentIdx + 1] : null;
+  const nextTopic =
+    currentIdx >= 0 && currentIdx < allTopics.length - 1
+      ? allTopics[currentIdx + 1]
+      : null;
   const isCompleted = topic.status === "completed";
 
   const isPrepGenerating = generatePrepMutation.isPending || prepJob.isLoading;
-  const isHandsOnGenerating = generateHandsOnMutation.isPending || handsOnJob.isLoading;
+  const isHandsOnGenerating =
+    generateHandsOnMutation.isPending || handsOnJob.isLoading;
 
   const handleGeneratePrep = () => {
     if (queuePrepMutation) {
@@ -122,18 +139,21 @@ export function TopicStudyView({
   };
 
   const handleGenerateQuiz = () => {
-    generateExamMutation.mutate({
-      plan_id: planId,
-      title: `${topic.topic_name} Quiz`,
-      subject: topic.topic_name,
-      type: "topic_test",
-      topics: [topic.topic_name],
-      question_count: 5
-    }, {
-      onSuccess: (res) => {
-        if (res.data) setExamId(res.data.id);
-      }
-    });
+    generateExamMutation.mutate(
+      {
+        plan_id: planId,
+        title: `${topic.topic_name} Quiz`,
+        subject: topic.topic_name,
+        type: "topic_test",
+        topics: [topic.topic_name],
+        question_count: 5,
+      },
+      {
+        onSuccess: (res) => {
+          if (res.data) setExamId(res.data.id);
+        },
+      },
+    );
   };
 
   const handleMarkComplete = () => {
@@ -165,13 +185,15 @@ export function TopicStudyView({
                 </span>
               )}
             </div>
-            <p className="text-muted-foreground line-clamp-1 max-w-2xl text-sm mt-1">{topic.description}</p>
+            <p className="text-muted-foreground line-clamp-1 max-w-2xl text-sm mt-1">
+              {topic.description}
+            </p>
           </div>
         </div>
-        
+
         <div className="flex items-center gap-2">
           {!isCompleted ? (
-            <Button 
+            <Button
               className="bg-teal-500 hover:bg-teal-600 text-white gap-1.5 shadow-lg shadow-teal-500/10"
               onClick={handleMarkComplete}
               disabled={updateStatusMutation.isPending}
@@ -180,7 +202,8 @@ export function TopicStudyView({
               Mark Complete & Unlock Next
             </Button>
           ) : (
-            nextTopic && onTopicSelect && (
+            nextTopic &&
+            onTopicSelect && (
               <Button
                 onClick={() => onTopicSelect(nextTopic.id)}
                 className="bg-teal-500 hover:bg-teal-600 text-white gap-1.5 shadow-lg shadow-teal-500/10"
@@ -205,12 +228,13 @@ export function TopicStudyView({
                 Upgrade to Ultra for Instant Generation with Claude Sonnet
               </div>
               <div className="text-xs text-muted-foreground">
-                Free tier runs off-peak (4:00 AM IST). Get instant 8,000-token study guides & priority coding challenges.
+                Free tier runs off-peak (4:00 AM IST). Get instant 8,000-token
+                study guides & priority coding challenges.
               </div>
             </div>
           </div>
-          <Button 
-            size="sm" 
+          <Button
+            size="sm"
             onClick={() => navigate("/pricing")}
             className="bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white font-semibold gap-1.5 shrink-0 shadow-lg shadow-teal-500/20"
           >
@@ -224,10 +248,13 @@ export function TopicStudyView({
         <div className="flex items-center justify-between gap-4 p-3.5 rounded-2xl bg-card/40 border border-border/50 flex-wrap text-sm">
           <div className="flex items-center gap-2.5 text-muted-foreground">
             <Zap className="w-4 h-4 text-teal-400 shrink-0" />
-            <span>You're on <strong>Pro Tier</strong> (Priority 1 Queue). Want zero wait time?</span>
+            <span>
+              You're on <strong>Pro Tier</strong> (Priority 1 Queue). Want zero
+              wait time?
+            </span>
           </div>
-          <Button 
-            size="sm" 
+          <Button
+            size="sm"
             variant="ghost"
             onClick={() => navigate("/pricing")}
             className="text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 font-semibold gap-1 h-8 px-3"
@@ -240,20 +267,32 @@ export function TopicStudyView({
 
       <Tabs defaultValue="learn" className="w-full">
         <TabsList className="grid w-full grid-cols-4 max-w-2xl mx-auto mb-8 bg-card/10 border border-border/30 p-1 rounded-2xl h-14">
-          <TabsTrigger value="learn" className="rounded-xl h-full data-[state=active]:bg-teal-500/20 data-[state=active]:text-teal-400">
+          <TabsTrigger
+            value="learn"
+            className="rounded-xl h-full data-[state=active]:bg-teal-500/20 data-[state=active]:text-teal-400"
+          >
             <BookOpen className="w-4 h-4 mr-2 hidden sm:block" /> Learn
           </TabsTrigger>
-          <TabsTrigger value="cards" className="rounded-xl h-full data-[state=active]:bg-teal-500/20 data-[state=active]:text-teal-400">
+          <TabsTrigger
+            value="cards"
+            className="rounded-xl h-full data-[state=active]:bg-teal-500/20 data-[state=active]:text-teal-400"
+          >
             <Layers className="w-4 h-4 mr-2 hidden sm:block" /> Cards
           </TabsTrigger>
-          <TabsTrigger value="build" className="rounded-xl h-full data-[state=active]:bg-teal-500/20 data-[state=active]:text-teal-400">
+          <TabsTrigger
+            value="build"
+            className="rounded-xl h-full data-[state=active]:bg-teal-500/20 data-[state=active]:text-teal-400"
+          >
             <Terminal className="w-4 h-4 mr-2 hidden sm:block" /> Build
           </TabsTrigger>
-          <TabsTrigger value="quiz" className="rounded-xl h-full data-[state=active]:bg-teal-500/20 data-[state=active]:text-teal-400">
+          <TabsTrigger
+            value="quiz"
+            className="rounded-xl h-full data-[state=active]:bg-teal-500/20 data-[state=active]:text-teal-400"
+          >
             <CheckSquare className="w-4 h-4 mr-2 hidden sm:block" /> Quiz
           </TabsTrigger>
         </TabsList>
-        
+
         <div className="min-h-[500px]">
           <TabsContent value="learn" className="mt-0 outline-none">
             {prepJob.isLoading && prepJobId && (
@@ -261,9 +300,19 @@ export function TopicStudyView({
                 <Loader2 className="w-4 h-4 animate-spin shrink-0" />
                 <span>
                   Generating your study guide in the background
-                  {prepJob.elapsed > 0 && <span className="text-teal-400/70 ml-1">({prepJob.elapsed}s)</span>}
-                  {prepJob.status === "pending" && <span className="ml-1 text-teal-400/60">· queued</span>}
-                  {prepJob.status === "processing" && <span className="ml-1 text-teal-400/60">· AI is writing…</span>}
+                  {prepJob.elapsed > 0 && (
+                    <span className="text-teal-400/70 ml-1">
+                      ({prepJob.elapsed}s)
+                    </span>
+                  )}
+                  {prepJob.status === "pending" && (
+                    <span className="ml-1 text-teal-400/60">· queued</span>
+                  )}
+                  {prepJob.status === "processing" && (
+                    <span className="ml-1 text-teal-400/60">
+                      · AI is writing…
+                    </span>
+                  )}
                 </span>
               </div>
             )}
@@ -272,29 +321,45 @@ export function TopicStudyView({
                 Generation failed: {prepJob.error} — try again.
               </div>
             )}
-            <LearnTab 
-              content={topic.prep_summary} 
-              isLoading={isPrepGenerating} 
-              onGenerate={handleGeneratePrep} 
+            <LearnTab
+              content={topic.prep_summary}
+              isLoading={isPrepGenerating}
+              onGenerate={handleGeneratePrep}
             />
           </TabsContent>
-          
+
           <TabsContent value="cards" className="mt-0 outline-none">
-            <FlashcardsTab 
-              flashcards={topic.flashcards} 
-              onRate={(index, rating) => reviewFlashcardMutation.mutate({ topicId: topic.id, questionIndex: index, rating })}
+            <FlashcardsTab
+              flashcards={topic.flashcards}
+              onRate={(index, rating) =>
+                reviewFlashcardMutation.mutate({
+                  topicId: topic.id,
+                  questionIndex: index,
+                  rating,
+                })
+              }
             />
           </TabsContent>
-          
+
           <TabsContent value="build" className="mt-0 outline-none">
             {handsOnJob.isLoading && handsOnJobId && (
               <div className="flex items-center gap-3 mb-4 px-4 py-3 rounded-xl bg-teal-500/10 border border-teal-500/20 text-sm text-teal-300">
                 <Loader2 className="w-4 h-4 animate-spin shrink-0" />
                 <span>
                   Building exercises in the background
-                  {handsOnJob.elapsed > 0 && <span className="text-teal-400/70 ml-1">({handsOnJob.elapsed}s)</span>}
-                  {handsOnJob.status === "pending" && <span className="ml-1 text-teal-400/60">· queued</span>}
-                  {handsOnJob.status === "processing" && <span className="ml-1 text-teal-400/60">· AI is writing…</span>}
+                  {handsOnJob.elapsed > 0 && (
+                    <span className="text-teal-400/70 ml-1">
+                      ({handsOnJob.elapsed}s)
+                    </span>
+                  )}
+                  {handsOnJob.status === "pending" && (
+                    <span className="ml-1 text-teal-400/60">· queued</span>
+                  )}
+                  {handsOnJob.status === "processing" && (
+                    <span className="ml-1 text-teal-400/60">
+                      · AI is writing…
+                    </span>
+                  )}
                 </span>
               </div>
             )}
@@ -303,15 +368,15 @@ export function TopicStudyView({
                 Generation failed: {handsOnJob.error} — try again.
               </div>
             )}
-            <HandsOnTab 
+            <HandsOnTab
               exercises={topic.hands_on_exercises}
               isLoading={isHandsOnGenerating}
               onGenerate={handleGenerateHandsOn}
             />
           </TabsContent>
-          
+
           <TabsContent value="quiz" className="mt-0 outline-none">
-            <QuizTab 
+            <QuizTab
               exam={examRes?.data || null}
               submission={submission}
               isLoading={isExamLoading}
@@ -322,7 +387,7 @@ export function TopicStudyView({
                 submitExamMutation.mutate(answers, {
                   onSuccess: (res) => {
                     if (res.data) setSubmission(res.data);
-                  }
+                  },
                 });
               }}
             />

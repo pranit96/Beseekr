@@ -35,7 +35,6 @@ export function FocusToday({
   }
   const pct = Math.round((elapsed / totalDays) * 100);
 
-
   function addItem() {
     const trimmed = newItem.trim();
     if (!trimmed) return;

@@ -5,7 +5,11 @@ import { PlanDashboard } from "@/components/learn/PlanDashboard";
 import { CreatePlanForm } from "@/components/learn/CreatePlanForm";
 import { PlanDetailView } from "@/components/learn/PlanDetailView";
 import { TopicStudyView } from "@/components/learn/TopicStudyView";
-import { useLearningPlan, usePlanResume, useUpdateTopicStatus } from "@/hooks/use-education";
+import {
+  useLearningPlan,
+  usePlanResume,
+  useUpdateTopicStatus,
+} from "@/hooks/use-education";
 
 type ViewState = "dashboard" | "create" | "detail" | "study";
 
@@ -15,8 +19,12 @@ export default function LearnByDoing() {
   const [selectedTopicId, setSelectedTopicId] = useState<string | null>(null);
 
   // Queries for detail/study views
-  const { data: planData, isLoading: isPlanLoading } = useLearningPlan(selectedPlanId || undefined);
-  const { data: resumeData, isLoading: isResumeLoading } = usePlanResume(selectedPlanId || undefined);
+  const { data: planData, isLoading: isPlanLoading } = useLearningPlan(
+    selectedPlanId || undefined,
+  );
+  const { data: resumeData, isLoading: isResumeLoading } = usePlanResume(
+    selectedPlanId || undefined,
+  );
   const updateStatusMutation = useUpdateTopicStatus(selectedPlanId || "");
 
   const handleCreatePlanSuccess = (planId: string) => {
@@ -37,24 +45,26 @@ export default function LearnByDoing() {
   const handleTopicSelect = (topicId: string) => {
     const topics = planData?.data?.topics || [];
     const topicIdx = topics.findIndex((t) => t.id === topicId);
-    
+
     // Lock guard: Topic can only be opened if it's the first topic, already completed, or all prior topics are completed
     if (topicIdx > 0) {
       const isCompleted = topics[topicIdx].status === "completed";
-      const isUnlocked = topics.slice(0, topicIdx).every((t) => t.status === "completed");
+      const isUnlocked = topics
+        .slice(0, topicIdx)
+        .every((t) => t.status === "completed");
       if (!isCompleted && !isUnlocked) {
         return;
       }
     }
 
     setSelectedTopicId(topicId);
-    
+
     // Auto-mark as in_progress when starting a pending topic
     const topic = topics[topicIdx];
     if (topic && topic.status === "pending") {
       updateStatusMutation.mutate({ topicId, status: "in_progress" });
     }
-    
+
     setView("study");
   };
 
@@ -73,7 +83,7 @@ export default function LearnByDoing() {
     <div className="flex h-screen bg-background overflow-hidden">
       <div className="flex-1 flex flex-col h-screen w-full transition-all duration-300">
         <GlobalHeader />
-        
+
         <main className="flex-1 overflow-y-auto custom-scrollbar relative bg-background">
           {/* Subtle background glow effect */}
           <div className="absolute inset-0 pointer-events-none overflow-hidden">
@@ -83,24 +93,28 @@ export default function LearnByDoing() {
 
           <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 pb-32">
             {view === "dashboard" && (
-              <PlanDashboard 
-                onCreateClick={() => setView("create")} 
-                onPlanSelect={handlePlanSelect} 
+              <PlanDashboard
+                onCreateClick={() => setView("create")}
+                onPlanSelect={handlePlanSelect}
               />
             )}
-            
+
             {view === "create" && (
               <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <Button variant="ghost" onClick={handleBackToDashboard} className="mb-6 -ml-4">
+                <Button
+                  variant="ghost"
+                  onClick={handleBackToDashboard}
+                  className="mb-6 -ml-4"
+                >
                   &larr; Back to Dashboard
                 </Button>
                 <CreatePlanForm onSuccess={handleCreatePlanSuccess} />
               </div>
             )}
-            
+
             {view === "detail" && selectedPlanId && (
               <div className="animate-in fade-in duration-300">
-                <PlanDetailView 
+                <PlanDetailView
                   planId={selectedPlanId}
                   resumeData={resumeData?.data || null}
                   isLoading={isResumeLoading || isPlanLoading}
@@ -109,12 +123,16 @@ export default function LearnByDoing() {
                 />
               </div>
             )}
-            
+
             {view === "study" && selectedPlanId && selectedTopicId && (
               <div className="animate-in fade-in duration-300 h-full">
-                <TopicStudyView 
+                <TopicStudyView
                   planId={selectedPlanId}
-                  topic={planData?.data?.topics.find(t => t.id === selectedTopicId) || null}
+                  topic={
+                    planData?.data?.topics.find(
+                      (t) => t.id === selectedTopicId,
+                    ) || null
+                  }
                   allTopics={planData?.data?.topics || []}
                   onBack={handleBackToDetail}
                   onTopicSelect={handleTopicSelect}

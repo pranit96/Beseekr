@@ -2,9 +2,17 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import type {
-  LearningPlan, PlanWithTopics, PlanTopic, PlanResumePoint,
-  PlanInsights, TopicStatus, FlashcardRating, ImportPlanPayload,
-  Exam, ExamAnswer, ExamSubmission,
+  LearningPlan,
+  PlanWithTopics,
+  PlanTopic,
+  PlanResumePoint,
+  PlanInsights,
+  TopicStatus,
+  FlashcardRating,
+  ImportPlanPayload,
+  Exam,
+  ExamAnswer,
+  ExamSubmission,
 } from "@/types/education";
 
 // ============= QUERY KEYS =============
@@ -15,7 +23,8 @@ export const educationKeys = {
   planInsights: (id: string) => ["education", "plan", id, "insights"] as const,
   exams: (planId?: string) => ["education", "exams", planId] as const,
   exam: (id: string) => ["education", "exam", id] as const,
-  submissions: (examId?: string) => ["education", "submissions", examId] as const,
+  submissions: (examId?: string) =>
+    ["education", "submissions", examId] as const,
 };
 
 // ============= QUERIES =============
@@ -25,8 +34,8 @@ export function useLearningPlans() {
   return useQuery({
     queryKey: educationKeys.plans,
     queryFn: () => apiClient.getLearningPlans(),
-    staleTime: 5 * 60 * 1000,     // 5 min — plans don't change often
-    gcTime: 15 * 60 * 1000,       // 15 min garbage collection
+    staleTime: 5 * 60 * 1000, // 5 min — plans don't change often
+    gcTime: 15 * 60 * 1000, // 15 min garbage collection
   });
 }
 
@@ -36,7 +45,7 @@ export function useLearningPlan(planId: string | undefined) {
     queryKey: educationKeys.plan(planId!),
     queryFn: () => apiClient.getLearningPlan(planId!),
     enabled: !!planId,
-    staleTime: 2 * 60 * 1000,     // 2 min — topic status may change
+    staleTime: 2 * 60 * 1000, // 2 min — topic status may change
     gcTime: 10 * 60 * 1000,
   });
 }
@@ -47,7 +56,7 @@ export function usePlanResume(planId: string | undefined) {
     queryKey: educationKeys.planResume(planId!),
     queryFn: () => apiClient.getLearningPlanResume(planId!),
     enabled: !!planId,
-    staleTime: 30 * 1000,         // 30 sec — progress changes frequently
+    staleTime: 30 * 1000, // 30 sec — progress changes frequently
     gcTime: 5 * 60 * 1000,
   });
 }
@@ -69,7 +78,7 @@ export function useExam(examId: string | undefined, solutions = false) {
     queryKey: educationKeys.exam(examId!),
     queryFn: () => apiClient.getExam(examId!, solutions),
     enabled: !!examId,
-    staleTime: 10 * 60 * 1000,   // 10 min — exams are static
+    staleTime: 10 * 60 * 1000, // 10 min — exams are static
     gcTime: 30 * 60 * 1000,
   });
 }
@@ -86,7 +95,10 @@ export function useCreatePlan() {
       apiClient.createLearningPlan(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: educationKeys.plans });
-      toast({ title: "Plan created!", description: "Your learning plan has been generated." });
+      toast({
+        title: "Plan created!",
+        description: "Your learning plan has been generated.",
+      });
     },
     onError: (error: any) => {
       toast({
@@ -107,7 +119,10 @@ export function useImportPlan() {
     mutationFn: (data: ImportPlanPayload) => apiClient.importLearningPlan(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: educationKeys.plans });
-      toast({ title: "Plan imported!", description: "Your learning plan has been imported." });
+      toast({
+        title: "Plan imported!",
+        description: "Your learning plan has been imported.",
+      });
     },
     onError: (error: any) => {
       toast({
@@ -128,7 +143,10 @@ export function useDeletePlan() {
     mutationFn: (planId: string) => apiClient.deleteLearningPlan(planId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: educationKeys.plans });
-      toast({ title: "Plan deleted", description: "Learning plan has been deleted." });
+      toast({
+        title: "Plan deleted",
+        description: "Learning plan has been deleted.",
+      });
     },
     onError: (error: any) => {
       toast({
@@ -146,12 +164,18 @@ export function useUpdatePlan(planId: string) {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: (data: Partial<LearningPlan>) => apiClient.updateLearningPlan(planId, data),
+    mutationFn: (data: Partial<LearningPlan>) =>
+      apiClient.updateLearningPlan(planId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: educationKeys.plans });
       queryClient.invalidateQueries({ queryKey: educationKeys.plan(planId) });
-      queryClient.invalidateQueries({ queryKey: educationKeys.planResume(planId) });
-      toast({ title: "Plan updated", description: "Plan details saved successfully." });
+      queryClient.invalidateQueries({
+        queryKey: educationKeys.planResume(planId),
+      });
+      toast({
+        title: "Plan updated",
+        description: "Plan details saved successfully.",
+      });
     },
     onError: (error: any) => {
       toast({
@@ -168,8 +192,13 @@ export function useUpdateTopicStatus(planId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ topicId, status }: { topicId: string; status: TopicStatus }) =>
-      apiClient.updateTopicStatus(planId, topicId, status),
+    mutationFn: ({
+      topicId,
+      status,
+    }: {
+      topicId: string;
+      status: TopicStatus;
+    }) => apiClient.updateTopicStatus(planId, topicId, status),
 
     // Optimistic update: immediately reflect status change in UI
     onMutate: async ({ topicId, status }) => {
@@ -183,7 +212,7 @@ export function useUpdateTopicStatus(planId: string) {
           data: {
             ...old.data,
             topics: old.data.topics.map((t: PlanTopic) =>
-              t.id === topicId ? { ...t, status } : t
+              t.id === topicId ? { ...t, status } : t,
             ),
           },
         };
@@ -198,7 +227,9 @@ export function useUpdateTopicStatus(planId: string) {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: educationKeys.plan(planId) });
-      queryClient.invalidateQueries({ queryKey: educationKeys.planResume(planId) });
+      queryClient.invalidateQueries({
+        queryKey: educationKeys.planResume(planId),
+      });
     },
   });
 }
@@ -207,7 +238,8 @@ export function useUpdateTopicStatus(planId: string) {
 export function useGeneratePrep(planId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (topicId: string) => apiClient.generateTopicPrep(planId, topicId),
+    mutationFn: (topicId: string) =>
+      apiClient.generateTopicPrep(planId, topicId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: educationKeys.plan(planId) });
     },
@@ -229,7 +261,11 @@ export function useGenerateHandsOn(planId: string) {
 export function useReviewFlashcard(planId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: { topicId: string; questionIndex: number; rating: FlashcardRating }) =>
+    mutationFn: (data: {
+      topicId: string;
+      questionIndex: number;
+      rating: FlashcardRating;
+    }) =>
       apiClient.reviewFlashcard(planId, data.topicId, {
         questionIndex: data.questionIndex,
         rating: data.rating,
@@ -256,7 +292,8 @@ export function useGenerateExam() {
 export function useSubmitExam(examId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (answers: ExamAnswer[]) => apiClient.submitExam(examId, answers),
+    mutationFn: (answers: ExamAnswer[]) =>
+      apiClient.submitExam(examId, answers),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: educationKeys.exam(examId) });
       queryClient.invalidateQueries({ queryKey: educationKeys.submissions() });
@@ -284,7 +321,9 @@ export function useQueuePrepContent(planId: string) {
 export function useQueueHandsOn(planId: string) {
   return useMutation({
     mutationFn: (topicId: string) =>
-      apiClient.post(`/education/plans/${planId}/topics/${topicId}/queue-hands-on`),
+      apiClient.post(
+        `/education/plans/${planId}/topics/${topicId}/queue-hands-on`,
+      ),
   });
 }
 

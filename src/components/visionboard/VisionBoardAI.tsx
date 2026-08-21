@@ -1,7 +1,18 @@
 import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Send, CheckCircle2, RefreshCw, BarChart2, Calendar, Trash2, Wand2, MessageSquare, AlertTriangle } from "lucide-react";
+import {
+  Sparkles,
+  Send,
+  CheckCircle2,
+  RefreshCw,
+  BarChart2,
+  Calendar,
+  Trash2,
+  Wand2,
+  MessageSquare,
+  AlertTriangle,
+} from "lucide-react";
 import { visionBoardApi } from "@/api/visionboard";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -13,7 +24,11 @@ interface VisionBoardAIProps {
 
 type AIAction = "create" | "ask" | "analyse";
 
-export function VisionBoardAI({ year, month, onRefreshBoard }: VisionBoardAIProps) {
+export function VisionBoardAI({
+  year,
+  month,
+  onRefreshBoard,
+}: VisionBoardAIProps) {
   const { toast } = useToast();
   const [activeAction, setActiveAction] = useState<AIAction>("create");
   const [promptInput, setPromptInput] = useState("");
@@ -29,13 +44,20 @@ export function VisionBoardAI({ year, month, onRefreshBoard }: VisionBoardAIProp
     setParsedSetup(null);
 
     try {
-      const res = await visionBoardApi.aiAssistant(year, month, actionToRun, promptInput);
+      const res = await visionBoardApi.aiAssistant(
+        year,
+        month,
+        actionToRun,
+        promptInput,
+      );
       if (res?.data?.result) {
         setAiResult(res.data.result);
 
         if (actionToRun === "create") {
           try {
-            const cleanJson = res.data.result.replace(/```json\n?|\n?```/g, "").trim();
+            const cleanJson = res.data.result
+              .replace(/```json\n?|\n?```/g, "")
+              .trim();
             const parsed = JSON.parse(cleanJson);
             setParsedSetup(parsed);
           } catch (e) {
@@ -68,7 +90,11 @@ export function VisionBoardAI({ year, month, onRefreshBoard }: VisionBoardAIProp
 
       // 2. Life Areas
       if (Array.isArray(parsedSetup.life_areas)) {
-        await visionBoardApi.upsertLifeAreas(year, month, parsedSetup.life_areas);
+        await visionBoardApi.upsertLifeAreas(
+          year,
+          month,
+          parsedSetup.life_areas,
+        );
       }
 
       // 3. Goals
@@ -124,7 +150,8 @@ export function VisionBoardAI({ year, month, onRefreshBoard }: VisionBoardAIProp
 
       toast({
         title: "Whole Month Generated & Applied! 🎉",
-        description: "Manifestation, goals, habits, cards, and calendar events created successfully.",
+        description:
+          "Manifestation, goals, habits, cards, and calendar events created successfully.",
       });
 
       setParsedSetup(null);
@@ -147,7 +174,8 @@ export function VisionBoardAI({ year, month, onRefreshBoard }: VisionBoardAIProp
       await visionBoardApi.resetBoard(year, month);
       toast({
         title: "Month Board Reset",
-        description: "All goals, habits, cards, events, and notes for this month have been cleared.",
+        description:
+          "All goals, habits, cards, events, and notes for this month have been cleared.",
       });
       setShowResetConfirm(false);
       if (onRefreshBoard) onRefreshBoard();
@@ -195,7 +223,10 @@ export function VisionBoardAI({ year, month, onRefreshBoard }: VisionBoardAIProp
             <MessageSquare className="w-3.5 h-3.5" /> 💬 Ask
           </button>
           <button
-            onClick={() => { setActiveAction("analyse"); handleRunAI("analyse"); }}
+            onClick={() => {
+              setActiveAction("analyse");
+              handleRunAI("analyse");
+            }}
             className={`vb-chip-add text-xs flex items-center gap-1.5 ${activeAction === "analyse" ? "bg-amber-500/20 border-amber-500 text-amber-700 dark:text-amber-300 font-semibold" : ""}`}
           >
             <BarChart2 className="w-3.5 h-3.5" /> 📊 Analyse
@@ -231,7 +262,11 @@ export function VisionBoardAI({ year, month, onRefreshBoard }: VisionBoardAIProp
               disabled={loading}
               className="vb-btn-primary text-xs flex items-center gap-1.5"
             >
-              {loading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
+              {loading ? (
+                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Wand2 className="w-3.5 h-3.5" />
+              )}
               Generate Whole Month Setup
             </button>
           </div>
@@ -259,7 +294,11 @@ export function VisionBoardAI({ year, month, onRefreshBoard }: VisionBoardAIProp
             disabled={loading}
             className="vb-btn-primary text-xs flex items-center gap-1.5 whitespace-nowrap"
           >
-            {loading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+            {loading ? (
+              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Send className="w-3.5 h-3.5" />
+            )}
             Ask AI
           </button>
         </form>
@@ -283,11 +322,17 @@ export function VisionBoardAI({ year, month, onRefreshBoard }: VisionBoardAIProp
           {parsedSetup ? (
             <div className="space-y-4">
               <div className="border-b border-border/60 pb-2">
-                <span className="text-[10px] uppercase font-bold tracking-widest text-amber-600">Generated Manifestation Statement</span>
-                <p className="text-sm font-serif italic text-foreground mt-1">"{parsedSetup.quote}"</p>
+                <span className="text-[10px] uppercase font-bold tracking-widest text-amber-600">
+                  Generated Manifestation Statement
+                </span>
+                <p className="text-sm font-serif italic text-foreground mt-1">
+                  "{parsedSetup.quote}"
+                </p>
                 <div className="flex items-center gap-2 mt-2 flex-wrap">
                   {parsedSetup.theme_words?.map((w: string, idx: number) => (
-                    <span key={idx} className="vb-theme-chip text-[11px]">{w}</span>
+                    <span key={idx} className="vb-theme-chip text-[11px]">
+                      {w}
+                    </span>
                   ))}
                 </div>
               </div>
@@ -295,10 +340,14 @@ export function VisionBoardAI({ year, month, onRefreshBoard }: VisionBoardAIProp
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {parsedSetup.goals?.length > 0 && (
                   <div className="bg-muted/50 p-2.5 rounded-lg">
-                    <span className="font-semibold text-foreground block mb-1">🎯 Goals ({parsedSetup.goals.length})</span>
+                    <span className="font-semibold text-foreground block mb-1">
+                      🎯 Goals ({parsedSetup.goals.length})
+                    </span>
                     <ul className="list-disc list-inside space-y-0.5 text-muted-foreground">
                       {parsedSetup.goals.map((g: any, i: number) => (
-                        <li key={i}>{g.title} ({g.progress_target} {g.progress_unit})</li>
+                        <li key={i}>
+                          {g.title} ({g.progress_target} {g.progress_unit})
+                        </li>
                       ))}
                     </ul>
                   </div>
@@ -306,10 +355,14 @@ export function VisionBoardAI({ year, month, onRefreshBoard }: VisionBoardAIProp
 
                 {parsedSetup.habits?.length > 0 && (
                   <div className="bg-muted/50 p-2.5 rounded-lg">
-                    <span className="font-semibold text-foreground block mb-1">🌱 Daily Habits ({parsedSetup.habits.length})</span>
+                    <span className="font-semibold text-foreground block mb-1">
+                      🌱 Daily Habits ({parsedSetup.habits.length})
+                    </span>
                     <ul className="list-disc list-inside space-y-0.5 text-muted-foreground">
                       {parsedSetup.habits.map((h: any, i: number) => (
-                        <li key={i}>{h.icon} {h.name}</li>
+                        <li key={i}>
+                          {h.icon} {h.name}
+                        </li>
                       ))}
                     </ul>
                   </div>
@@ -320,7 +373,8 @@ export function VisionBoardAI({ year, month, onRefreshBoard }: VisionBoardAIProp
                 onClick={handleApplyFullBoard}
                 className="vb-btn-primary text-xs w-full justify-center py-2.5"
               >
-                <CheckCircle2 className="w-4 h-4" /> Apply Full Month Setup to Board
+                <CheckCircle2 className="w-4 h-4" /> Apply Full Month Setup to
+                Board
               </button>
             </div>
           ) : (
@@ -348,7 +402,9 @@ export function VisionBoardAI({ year, month, onRefreshBoard }: VisionBoardAIProp
                     Reset Month Board ({month}/{year})
                   </div>
                   <p className="text-xs text-muted-foreground mb-5 leading-relaxed">
-                    Are you sure you want to clear all goals, habits, cards, events, and notes for this month? This action cannot be undone.
+                    Are you sure you want to clear all goals, habits, cards,
+                    events, and notes for this month? This action cannot be
+                    undone.
                   </p>
                   <div className="vb-form-actions">
                     <button
@@ -364,7 +420,11 @@ export function VisionBoardAI({ year, month, onRefreshBoard }: VisionBoardAIProp
                       disabled={resetting}
                       className="vb-btn-primary !bg-red-600 text-xs flex items-center gap-1.5"
                     >
-                      {resetting ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                      {resetting ? (
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Trash2 className="w-3.5 h-3.5" />
+                      )}
                       Confirm Reset Board
                     </button>
                   </div>
@@ -372,7 +432,7 @@ export function VisionBoardAI({ year, month, onRefreshBoard }: VisionBoardAIProp
               </div>
             )}
           </AnimatePresence>,
-          document.body
+          document.body,
         )}
     </div>
   );

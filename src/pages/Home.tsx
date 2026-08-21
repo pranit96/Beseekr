@@ -1,5 +1,9 @@
 import { useEffect, useState } from "react";
-import { getIsNewMode, getIsBudgetEnabled, getIsLearnByDoingEnabled } from "@/utils/envFlags";
+import {
+  getIsNewMode,
+  getIsBudgetEnabled,
+  getIsLearnByDoingEnabled,
+} from "@/utils/envFlags";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -37,7 +41,8 @@ export default function Home() {
   };
 
   const isBudgetEnabled = getIsBudgetEnabled();
-  const isLearnByDoingEnabled = getIsLearnByDoingEnabled() || user?.feature_flags?.learn_by_doing;
+  const isLearnByDoingEnabled =
+    getIsLearnByDoingEnabled() || user?.feature_flags?.learn_by_doing;
 
   if (!isNewMode) {
     return (

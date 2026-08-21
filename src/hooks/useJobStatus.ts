@@ -11,7 +11,12 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { apiClient } from "@/lib/api";
 
-export type AiJobStatus = "pending" | "processing" | "completed" | "failed" | null;
+export type AiJobStatus =
+  | "pending"
+  | "processing"
+  | "completed"
+  | "failed"
+  | null;
 
 export interface AiJobState {
   status: AiJobStatus;
@@ -27,7 +32,10 @@ const DEFAULT_TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes
 
 export function useJobStatus(
   jobId: string | null | undefined,
-  { timeoutMs = DEFAULT_TIMEOUT_MS, onComplete }: {
+  {
+    timeoutMs = DEFAULT_TIMEOUT_MS,
+    onComplete,
+  }: {
     timeoutMs?: number;
     onComplete?: (result: Record<string, unknown>) => void;
   } = {},
@@ -54,12 +62,20 @@ export function useJobStatus(
 
   useEffect(() => {
     isMounted.current = true;
-    return () => { isMounted.current = false; };
+    return () => {
+      isMounted.current = false;
+    };
   }, []);
 
   useEffect(() => {
     if (!jobId) {
-      setState({ status: null, result: null, error: null, isLoading: false, elapsed: 0 });
+      setState({
+        status: null,
+        result: null,
+        error: null,
+        isLoading: false,
+        elapsed: 0,
+      });
       return;
     }
 
@@ -68,7 +84,10 @@ export function useJobStatus(
     // Elapsed counter
     elapsedRef.current = setInterval(() => {
       if (isMounted.current && startedAt.current) {
-        setState((s) => ({ ...s, elapsed: Math.floor((Date.now() - startedAt.current!) / 1000) }));
+        setState((s) => ({
+          ...s,
+          elapsed: Math.floor((Date.now() - startedAt.current!) / 1000),
+        }));
       }
     }, 1000);
 

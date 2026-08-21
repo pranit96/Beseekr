@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useMemo,
+  useCallback,
+} from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import { GlobalHeader } from "@/components/GlobalHeader";
@@ -119,7 +125,13 @@ function nextQueryId(): string {
 
 const TYPE_ACCENTS: Record<
   string,
-  { gradient: string; icon: React.ReactNode; label: string; textClass: string; bgClass: string }
+  {
+    gradient: string;
+    icon: React.ReactNode;
+    label: string;
+    textClass: string;
+    bgClass: string;
+  }
 > = {
   url: {
     gradient: "from-blue-500 to-indigo-500",
@@ -170,16 +182,43 @@ const IntentIndicator = ({
   }
   if (!intent) return null;
 
-  const options: { id: DetectedIntent; icon: React.ReactNode; label: string; activeColor: string }[] = [
-    { id: "note", icon: <PenLine className="h-3 w-3" />, label: "Note", activeColor: "text-amber-600 bg-amber-500/10 border-amber-500/30" },
-    { id: "url", icon: <Globe className="h-3 w-3" />, label: "URL", activeColor: "text-blue-500 bg-blue-500/10 border-blue-500/30" },
-    { id: "text", icon: <FileText className="h-3 w-3" />, label: "Text", activeColor: "text-teal-600 bg-teal-500/10 border-teal-500/30" },
-    { id: "query", icon: <Search className="h-3 w-3" />, label: "Query Brain", activeColor: "text-primary bg-primary/10 border-primary/30" },
+  const options: {
+    id: DetectedIntent;
+    icon: React.ReactNode;
+    label: string;
+    activeColor: string;
+  }[] = [
+    {
+      id: "note",
+      icon: <PenLine className="h-3 w-3" />,
+      label: "Note",
+      activeColor: "text-amber-600 bg-amber-500/10 border-amber-500/30",
+    },
+    {
+      id: "url",
+      icon: <Globe className="h-3 w-3" />,
+      label: "URL",
+      activeColor: "text-blue-500 bg-blue-500/10 border-blue-500/30",
+    },
+    {
+      id: "text",
+      icon: <FileText className="h-3 w-3" />,
+      label: "Text",
+      activeColor: "text-teal-600 bg-teal-500/10 border-teal-500/30",
+    },
+    {
+      id: "query",
+      icon: <Search className="h-3 w-3" />,
+      label: "Query Brain",
+      activeColor: "text-primary bg-primary/10 border-primary/30",
+    },
   ];
 
   return (
     <div className="flex items-center gap-1.5 flex-wrap">
-      <span className="text-[10px] text-muted-foreground/60 font-medium mr-1">Intent:</span>
+      <span className="text-[10px] text-muted-foreground/60 font-medium mr-1">
+        Intent:
+      </span>
       {options.map((opt) => {
         const isActive = intent === opt.id;
         return (
@@ -402,10 +441,8 @@ export default function Brain() {
   const isAuthed = !loading && !!user;
 
   // ── React Query hooks ─────────────────────────────────────────────────────
-  const {
-    data: items = [],
-    isLoading: isLoadingItems,
-  } = useBrainItems(isAuthed);
+  const { data: items = [], isLoading: isLoadingItems } =
+    useBrainItems(isAuthed);
 
   const {
     data: mindMapData,
@@ -655,15 +692,43 @@ export default function Brain() {
   // ── Sidebar config ────────────────────────────────────────────────────────
 
   const FOLDERS = [
-    { id: "all" as const, icon: <Layers className="h-3.5 w-3.5" />, label: "All Items", count: typeCounts.all },
-    { id: "url" as const, icon: <Globe className="h-3.5 w-3.5" />, label: "URLs", count: typeCounts.url },
-    { id: "note" as const, icon: <PenLine className="h-3.5 w-3.5" />, label: "Notes", count: typeCounts.note },
-    { id: "text" as const, icon: <FileText className="h-3.5 w-3.5" />, label: "Text", count: typeCounts.text },
+    {
+      id: "all" as const,
+      icon: <Layers className="h-3.5 w-3.5" />,
+      label: "All Items",
+      count: typeCounts.all,
+    },
+    {
+      id: "url" as const,
+      icon: <Globe className="h-3.5 w-3.5" />,
+      label: "URLs",
+      count: typeCounts.url,
+    },
+    {
+      id: "note" as const,
+      icon: <PenLine className="h-3.5 w-3.5" />,
+      label: "Notes",
+      count: typeCounts.note,
+    },
+    {
+      id: "text" as const,
+      icon: <FileText className="h-3.5 w-3.5" />,
+      label: "Text",
+      count: typeCounts.text,
+    },
   ];
 
   const VIEWS = [
-    { id: "map" as const, icon: <MapIcon className="h-3.5 w-3.5" />, label: "Mind Map" },
-    { id: "insights" as const, icon: <Lightbulb className="h-3.5 w-3.5" />, label: "Insights" },
+    {
+      id: "map" as const,
+      icon: <MapIcon className="h-3.5 w-3.5" />,
+      label: "Mind Map",
+    },
+    {
+      id: "insights" as const,
+      icon: <Lightbulb className="h-3.5 w-3.5" />,
+      label: "Insights",
+    },
   ];
 
   if (loading) return null;
@@ -697,7 +762,11 @@ export default function Brain() {
             <div className="relative">
               <motion.div
                 animate={{ scale: [1, 1.15, 1], opacity: [0.4, 0.8, 0.4] }}
-                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                transition={{
+                  duration: 3,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                }}
                 className="absolute inset-0 rounded-xl bg-primary/20 blur-md"
               />
               <div className="relative h-10 w-10 rounded-xl bg-primary/10 border border-primary/25 flex items-center justify-center">
@@ -733,18 +802,30 @@ export default function Brain() {
                         : "text-muted-foreground hover:text-foreground hover:bg-muted/50 border border-transparent"
                     }`}
                   >
-                    <span className={active ? "text-primary" : "text-muted-foreground group-hover:text-foreground transition-colors"}>
+                    <span
+                      className={
+                        active
+                          ? "text-primary"
+                          : "text-muted-foreground group-hover:text-foreground transition-colors"
+                      }
+                    >
                       {f.icon}
                     </span>
                     {f.label}
-                    <span className={`ml-auto text-[10px] font-bold tabular-nums ${active ? "text-primary" : "text-muted-foreground/40"}`}>
+                    <span
+                      className={`ml-auto text-[10px] font-bold tabular-nums ${active ? "text-primary" : "text-muted-foreground/40"}`}
+                    >
                       {f.count}
                     </span>
                     {active && (
                       <motion.div
                         layoutId="sidebar-active"
                         className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 bg-primary rounded-full"
-                        transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
+                        transition={{
+                          type: "spring",
+                          bounce: 0.2,
+                          duration: 0.4,
+                        }}
                       />
                     )}
                   </button>
@@ -774,7 +855,13 @@ export default function Brain() {
                         : "text-muted-foreground hover:text-foreground hover:bg-muted/50 border border-transparent"
                     }`}
                   >
-                    <span className={active ? "text-primary" : "text-muted-foreground group-hover:text-foreground transition-colors"}>
+                    <span
+                      className={
+                        active
+                          ? "text-primary"
+                          : "text-muted-foreground group-hover:text-foreground transition-colors"
+                      }
+                    >
                       {v.icon}
                     </span>
                     {v.label}
@@ -782,7 +869,11 @@ export default function Brain() {
                       <motion.div
                         layoutId="sidebar-active"
                         className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 bg-primary rounded-full"
-                        transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
+                        transition={{
+                          type: "spring",
+                          bounce: 0.2,
+                          duration: 0.4,
+                        }}
                       />
                     )}
                   </button>
@@ -905,7 +996,11 @@ export default function Brain() {
                         />
                         <motion.div
                           animate={{ rotate: [0, 5, -5, 0] }}
-                          transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+                          transition={{
+                            duration: 6,
+                            repeat: Infinity,
+                            ease: "easeInOut",
+                          }}
                           className="relative h-24 w-24 rounded-3xl bg-gradient-to-br from-primary/10 to-accent/10 border border-primary/20 flex items-center justify-center shadow-2xl shadow-primary/10"
                         >
                           <BrainIcon className="h-12 w-12 text-primary" />
@@ -925,7 +1020,8 @@ export default function Brain() {
                           {
                             emoji: "📝",
                             label: "Capture a thought",
-                            example: "I should look into vector databases for the app...",
+                            example:
+                              "I should look into vector databases for the app...",
                           },
                           {
                             emoji: "🌐",
@@ -1023,7 +1119,11 @@ export default function Brain() {
                       {showTitle && (
                         <motion.div
                           initial={{ height: 0, opacity: 0, marginBottom: 0 }}
-                          animate={{ height: "auto", opacity: 1, marginBottom: 8 }}
+                          animate={{
+                            height: "auto",
+                            opacity: 1,
+                            marginBottom: 8,
+                          }}
                           exit={{ height: 0, opacity: 0, marginBottom: 0 }}
                           transition={{ duration: 0.2 }}
                           className="overflow-hidden"
@@ -1061,7 +1161,7 @@ export default function Brain() {
                         disabled={saveContent.isPending || isQuerying}
                       />
                       <div className="flex items-center gap-1.5 shrink-0 pb-0.5">
-                        {(saveContent.isPending || isQuerying) ? (
+                        {saveContent.isPending || isQuerying ? (
                           <div className="h-9 w-9 rounded-xl bg-primary/15 flex items-center justify-center">
                             <Loader2 className="h-4 w-4 animate-spin text-primary" />
                           </div>
@@ -1070,7 +1170,11 @@ export default function Brain() {
                             initial={{ scale: 0, rotate: -90 }}
                             animate={{ scale: 1, rotate: 0 }}
                             exit={{ scale: 0 }}
-                            transition={{ type: "spring", damping: 15, stiffness: 300 }}
+                            transition={{
+                              type: "spring",
+                              damping: 15,
+                              stiffness: 300,
+                            }}
                             onClick={handleSubmit}
                             className={`h-9 w-9 rounded-xl flex items-center justify-center text-white transition-colors shadow-sm ${
                               intent === "query"
@@ -1148,7 +1252,9 @@ export default function Brain() {
                   disabled={isFetchingMap}
                   className="absolute top-4 right-4 z-10 h-8 gap-1.5 bg-card/80 border-border backdrop-blur-sm rounded-xl text-xs font-semibold hover:bg-muted"
                 >
-                  <RefreshCw className={`h-3.5 w-3.5 ${isFetchingMap ? "animate-spin" : ""}`} />
+                  <RefreshCw
+                    className={`h-3.5 w-3.5 ${isFetchingMap ? "animate-spin" : ""}`}
+                  />
                   Regenerate
                 </Button>
 
@@ -1178,7 +1284,11 @@ export default function Brain() {
                     className="w-full h-full"
                     proOptions={{ hideAttribution: true }}
                   >
-                    <Background color="hsl(var(--muted-foreground) / 0.15)" gap={24} size={1} />
+                    <Background
+                      color="hsl(var(--muted-foreground) / 0.15)"
+                      gap={24}
+                      size={1}
+                    />
                     <Controls className="!bg-card/80 !border-border !rounded-xl !shadow-xl" />
                   </ReactFlow>
                 ) : (
@@ -1225,7 +1335,9 @@ export default function Brain() {
                       disabled={isFetchingInsights}
                       className="h-8 gap-1.5 border-border rounded-xl text-xs font-semibold hover:bg-muted bg-transparent"
                     >
-                      <RefreshCw className={`h-3.5 w-3.5 ${isFetchingInsights ? "animate-spin" : ""}`} />
+                      <RefreshCw
+                        className={`h-3.5 w-3.5 ${isFetchingInsights ? "animate-spin" : ""}`}
+                      />
                       Refresh
                     </Button>
                   </div>
@@ -1250,10 +1362,26 @@ export default function Brain() {
                     <div className="space-y-5">
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                         {[
-                          { label: "Total Items", value: insightsData.stats?.total || 0, icon: <Library className="h-4 w-4" /> },
-                          { label: "Web URLs", value: insightsData.stats?.urls || 0, icon: <Globe className="h-4 w-4" /> },
-                          { label: "Notes", value: insightsData.stats?.notes || 0, icon: <StickyNote className="h-4 w-4" /> },
-                          { label: "Data Chunks", value: insightsData.stats?.chunks || 0, icon: <Activity className="h-4 w-4" /> },
+                          {
+                            label: "Total Items",
+                            value: insightsData.stats?.total || 0,
+                            icon: <Library className="h-4 w-4" />,
+                          },
+                          {
+                            label: "Web URLs",
+                            value: insightsData.stats?.urls || 0,
+                            icon: <Globe className="h-4 w-4" />,
+                          },
+                          {
+                            label: "Notes",
+                            value: insightsData.stats?.notes || 0,
+                            icon: <StickyNote className="h-4 w-4" />,
+                          },
+                          {
+                            label: "Data Chunks",
+                            value: insightsData.stats?.chunks || 0,
+                            icon: <Activity className="h-4 w-4" />,
+                          },
                         ].map((stat, i) => (
                           <motion.div
                             key={stat.label}

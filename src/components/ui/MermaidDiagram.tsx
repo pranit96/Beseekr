@@ -1,6 +1,17 @@
 import React, { useEffect, useRef, useState, useId } from "react";
 import mermaid from "mermaid";
-import { Check, Copy, Code, Eye, ZoomIn, ZoomOut, RotateCcw, AlertTriangle, Download, RefreshCw } from "lucide-react";
+import {
+  Check,
+  Copy,
+  Code,
+  Eye,
+  ZoomIn,
+  ZoomOut,
+  RotateCcw,
+  AlertTriangle,
+  Download,
+  RefreshCw,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -58,7 +69,11 @@ interface MermaidDiagramProps {
   title?: string;
 }
 
-export function MermaidDiagram({ chart, className, title }: MermaidDiagramProps) {
+export function MermaidDiagram({
+  chart,
+  className,
+  title,
+}: MermaidDiagramProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [svgHtml, setSvgHtml] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
@@ -76,9 +91,15 @@ export function MermaidDiagram({ chart, className, title }: MermaidDiagramProps)
     let code = chart.trim();
     // Remove markdown code fences if present
     if (code.startsWith("```mermaid")) {
-      code = code.replace(/^```mermaid\s*\n?/, "").replace(/```$/, "").trim();
+      code = code
+        .replace(/^```mermaid\s*\n?/, "")
+        .replace(/```$/, "")
+        .trim();
     } else if (code.startsWith("```")) {
-      code = code.replace(/^```\w*\s*\n?/, "").replace(/```$/, "").trim();
+      code = code
+        .replace(/^```\w*\s*\n?/, "")
+        .replace(/```$/, "")
+        .trim();
     }
     return code;
   }, [chart]);
@@ -97,7 +118,7 @@ export function MermaidDiagram({ chart, className, title }: MermaidDiagramProps)
 
         // Render to SVG
         const { svg } = await mermaid.render(diagramId, cleanChart);
-        
+
         if (isMounted) {
           setSvgHtml(svg);
           setError(null);
@@ -148,11 +169,21 @@ export function MermaidDiagram({ chart, className, title }: MermaidDiagramProps)
   const handleRetry = () => setRetryCount((c) => c + 1);
 
   return (
-    <div className={cn("my-6 rounded-2xl border border-teal-500/20 bg-card/10 backdrop-blur-xl overflow-hidden shadow-2xl transition-all duration-300", className)}>
+    <div
+      className={cn(
+        "my-6 rounded-2xl border border-teal-500/20 bg-card/10 backdrop-blur-xl overflow-hidden shadow-2xl transition-all duration-300",
+        className,
+      )}
+    >
       {/* Header Bar */}
       <div className="flex items-center justify-between px-4 py-2.5 bg-card/40 border-b border-border/40 text-xs text-muted-foreground flex-wrap gap-2">
         <div className="flex items-center gap-2 font-medium text-foreground">
-          <span className={cn("w-2 h-2 rounded-full", error ? "bg-amber-400" : "bg-teal-400 animate-pulse")} />
+          <span
+            className={cn(
+              "w-2 h-2 rounded-full",
+              error ? "bg-amber-400" : "bg-teal-400 animate-pulse",
+            )}
+          />
           <span>{title || "Architecture / Flow Diagram"}</span>
         </div>
 
@@ -168,7 +199,9 @@ export function MermaidDiagram({ chart, className, title }: MermaidDiagramProps)
               >
                 <ZoomOut className="w-3.5 h-3.5" />
               </Button>
-              <span className="text-[11px] font-mono w-10 text-center">{Math.round(zoom * 100)}%</span>
+              <span className="text-[11px] font-mono w-10 text-center">
+                {Math.round(zoom * 100)}%
+              </span>
               <Button
                 variant="ghost"
                 size="icon"
@@ -208,7 +241,11 @@ export function MermaidDiagram({ chart, className, title }: MermaidDiagramProps)
             onClick={() => setShowCode(!showCode)}
             className="h-7 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground"
           >
-            {showCode ? <Eye className="w-3.5 h-3.5" /> : <Code className="w-3.5 h-3.5" />}
+            {showCode ? (
+              <Eye className="w-3.5 h-3.5" />
+            ) : (
+              <Code className="w-3.5 h-3.5" />
+            )}
             <span>{showCode ? "Diagram" : "Code"}</span>
           </Button>
 
@@ -219,7 +256,11 @@ export function MermaidDiagram({ chart, className, title }: MermaidDiagramProps)
             className="h-7 w-7 text-muted-foreground hover:text-foreground"
             title="Copy Mermaid Code"
           >
-            {copied ? <Check className="w-3.5 h-3.5 text-teal-400" /> : <Copy className="w-3.5 h-3.5" />}
+            {copied ? (
+              <Check className="w-3.5 h-3.5 text-teal-400" />
+            ) : (
+              <Copy className="w-3.5 h-3.5" />
+            )}
           </Button>
         </div>
       </div>
@@ -234,10 +275,14 @@ export function MermaidDiagram({ chart, className, title }: MermaidDiagramProps)
           <div className="flex flex-col items-center justify-center p-6 text-center space-y-3 max-w-lg">
             <div className="flex items-center gap-2 text-amber-400 font-semibold text-sm">
               <AlertTriangle className="w-4 h-4" />
-              <span>Due to some technical issue unable to render diagram. Please try again.</span>
+              <span>
+                Due to some technical issue unable to render diagram. Please try
+                again.
+              </span>
             </div>
             <p className="text-xs text-muted-foreground">
-              The diagram syntax was malformed or could not be compiled. You can retry rendering or inspect the source code.
+              The diagram syntax was malformed or could not be compiled. You can
+              retry rendering or inspect the source code.
             </p>
             <div className="flex items-center gap-2 pt-1">
               <Button
@@ -263,7 +308,11 @@ export function MermaidDiagram({ chart, className, title }: MermaidDiagramProps)
         ) : (
           <div
             ref={containerRef}
-            style={{ transform: `scale(${zoom})`, transformOrigin: "center center", transition: "transform 0.15s ease-out" }}
+            style={{
+              transform: `scale(${zoom})`,
+              transformOrigin: "center center",
+              transition: "transform 0.15s ease-out",
+            }}
             className="w-full flex justify-center items-center select-none [&>svg]:max-w-full [&>svg]:h-auto [&>svg]:drop-shadow-lg"
             dangerouslySetInnerHTML={{ __html: svgHtml }}
           />

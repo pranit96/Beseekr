@@ -276,12 +276,7 @@ function getNavigationContext(
     ];
   } else if (isChatContext) {
     // Chat/Agents/Canvas: Home + Chat sub-pages only (no Wallet)
-    return [
-      NAV_ITEMS.home,
-      NAV_ITEMS.chat,
-      NAV_ITEMS.agents,
-      NAV_ITEMS.canvas,
-    ];
+    return [NAV_ITEMS.home, NAV_ITEMS.chat, NAV_ITEMS.agents, NAV_ITEMS.canvas];
   } else if (isLearnContext) {
     return [NAV_ITEMS.home, NAV_ITEMS.chat, NAV_ITEMS.learn];
   } else if (isBrainContext) {
@@ -299,11 +294,7 @@ function getNavigationContext(
   }
 
   // Default (home page): no Home link, Board last
-  const items = [
-    NAV_ITEMS.chat,
-    NAV_ITEMS.discover,
-    NAV_ITEMS.blog,
-  ];
+  const items = [NAV_ITEMS.chat, NAV_ITEMS.discover, NAV_ITEMS.blog];
   if (isBudgetEnabled) {
     items.push(NAV_ITEMS.budget);
   }
