@@ -6,7 +6,7 @@ const API_BASE =
 // Types for payment API responses
 export interface Plan {
   key: string;
-  tier: "standard" | "pro";
+  tier: "standard" | "pro" | "ultra";
   plan_type: "monthly" | "yearly";
   // INR pricing
   amount_inr: number;
@@ -25,7 +25,7 @@ export interface Plan {
 // User subscription info returned with plans
 export interface UserSubscription {
   is_premium: boolean;
-  tier: "free" | "standard" | "pro";
+  tier: "free" | "standard" | "pro" | "ultra";
   validity: string | null;
   days_remaining: number | null;
 }
@@ -47,7 +47,7 @@ export interface PaymentLink {
 
 export interface SubscriptionStatus {
   is_premium: boolean;
-  tier: "free" | "standard" | "pro";
+  tier: "free" | "standard" | "pro" | "ultra";
   expires_at: string | null;
   days_remaining?: number;
 }

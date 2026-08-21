@@ -16,6 +16,7 @@ import {
   Globe,
   IndianRupee,
   DollarSign,
+  Zap,
 } from "lucide-react";
 
 type Currency = "INR" | "USD";
@@ -47,7 +48,7 @@ export function Pricing() {
   const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">(
     "monthly",
   );
-  const [selectedTier, setSelectedTier] = useState<"standard" | "pro">("pro");
+  const [selectedTier, setSelectedTier] = useState<"pro" | "ultra">("ultra");
   const [isCreatingLink, setIsCreatingLink] = useState(false);
   const [currency, setCurrency] = useState<Currency>("INR");
 
@@ -57,12 +58,12 @@ export function Pricing() {
     setCurrency(detected);
 
     // SEO - Update page meta tags
-    document.title = "Pricing Plans - Affordable Market Research | beseekr";
+    document.title = "Pricing Plans - Affordable AI Learning & Market Research | beseekr";
     const metaDesc = document.querySelector('meta[name="description"]');
     if (metaDesc) {
       metaDesc.setAttribute(
         "content",
-        "Choose the perfect plan to discover validated startup problems. Free tier available. Premium plans from ₹299/month or $3.99/month.",
+        "Choose the perfect plan for AI-guided learning, instant Claude Sonnet generation, validated startup problems, and resume optimization. Plans from ₹99/month or $5/month.",
       );
     }
     return () => {
@@ -80,17 +81,20 @@ export function Pricing() {
 
   const plans = plansData?.plans;
 
-  // Get plans by billing cycle
-  const standardPlan = plans?.find(
-    (p) => p.tier === "standard" && p.plan_type === billingCycle,
-  );
+  // Get active plans
   const proPlan = plans?.find(
     (p) => p.tier === "pro" && p.plan_type === billingCycle,
-  );
+  ) || plans?.find((p) => p.tier === "pro");
+
+  const ultraPlan = plans?.find(
+    (p) => p.tier === "ultra" && p.plan_type === billingCycle,
+  ) || plans?.find((p) => p.tier === "ultra");
 
   // Format price based on currency
-  const formatPrice = (plan: Plan | undefined): string => {
-    if (!plan) return currency === "INR" ? "₹--" : "$--";
+  const formatPrice = (plan: Plan | undefined, fallbackInr: number, fallbackUsd: number): string => {
+    if (!plan) {
+      return currency === "USD" ? `$${fallbackUsd}` : `₹${fallbackInr}`;
+    }
     if (currency === "USD") {
       return plan.amount_usd_display || `$${plan.amount_usd}`;
     }
@@ -107,15 +111,16 @@ export function Pricing() {
   };
 
   // Handle plan selection and payment
-  const handleSelectPlan = async () => {
+  const handleSelectPlan = async (tier: "pro" | "ultra") => {
     if (!user) {
       navigate("/auth");
       return;
     }
 
+    setSelectedTier(tier);
     setIsCreatingLink(true);
     try {
-      const planKey = `${selectedTier}_${billingCycle}`;
+      const planKey = `${tier}_${billingCycle}`;
       // Pass currency for international payments
       const paymentLink = await paymentsApi.createPaymentLink(
         planKey,
@@ -148,8 +153,7 @@ export function Pricing() {
           Unlock Your Full Potential
         </h1>
         <p className="text-muted-foreground text-base sm:text-lg max-w-2xl mx-auto">
-          Get access to premium problems, unlimited validations, and powerful
-          insights to build your next successful product.
+          Instant AI learning powered by Claude Sonnet, deep market intelligence, and comprehensive career tools.
         </p>
 
         {/* Trust Badges */}
@@ -160,7 +164,7 @@ export function Pricing() {
           </div>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Check className="h-4 w-4 text-green-500" />
-            <span>Secure payments</span>
+            <span>Secure payments (Razorpay & PayPal)</span>
           </div>
         </div>
       </motion.div>
@@ -247,8 +251,8 @@ export function Pricing() {
       {/* Pricing Cards */}
       {isLoading ? (
         <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-          <Skeleton className="h-[450px] rounded-3xl" />
-          <Skeleton className="h-[450px] rounded-3xl" />
+          <Skeleton className="h-[520px] rounded-3xl" />
+          <Skeleton className="h-[520px] rounded-3xl" />
         </div>
       ) : (
         <motion.div
@@ -257,121 +261,115 @@ export function Pricing() {
           transition={{ delay: 0.2 }}
           className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto px-4"
         >
-          {/* Standard Plan */}
+          {/* Pro Plan */}
           <div
-            onClick={() => setSelectedTier("standard")}
+            onClick={() => setSelectedTier("pro")}
             className={cn(
-              "relative p-6 sm:p-8 rounded-3xl border-2 cursor-pointer transition-all duration-300",
-              selectedTier === "standard"
-                ? "border-primary bg-primary/5 shadow-xl shadow-primary/10"
-                : "border-border/50 hover:border-primary/50 hover:shadow-lg",
+              "relative p-6 sm:p-8 rounded-3xl border-2 cursor-pointer transition-all duration-300 flex flex-col justify-between",
+              selectedTier === "pro"
+                ? "border-teal-500 bg-teal-500/5 shadow-xl shadow-teal-500/10"
+                : "border-border/50 hover:border-teal-500/50 hover:shadow-lg",
             )}
           >
-            {selectedTier === "standard" && (
+            {selectedTier === "pro" && (
               <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
-                className="absolute top-4 right-4 w-6 h-6 rounded-full bg-primary flex items-center justify-center"
+                className="absolute top-4 right-4 w-6 h-6 rounded-full bg-teal-500 flex items-center justify-center"
               >
                 <Check className="h-4 w-4 text-white" />
               </motion.div>
             )}
 
-            <div className="mb-6">
-              <h2 className="text-xl font-bold mb-2">Standard</h2>
-              <p className="text-sm text-muted-foreground">
-                Perfect for indie hackers and solopreneurs
-              </p>
-            </div>
-
-            <div className="mb-6">
-              <div className="flex items-baseline gap-1">
-                <span className="text-4xl sm:text-5xl font-bold">
-                  {formatPrice(standardPlan)}
-                </span>
-                <span className="text-muted-foreground">
-                  /{billingCycle === "yearly" ? "year" : "month"}
-                </span>
-              </div>
-              {getPerMonth(standardPlan) && (
-                <p className="text-sm text-muted-foreground mt-1">
-                  {getPerMonth(standardPlan)}/month billed annually
+            <div>
+              <div className="mb-6">
+                <h2 className="text-xl font-bold mb-2 flex items-center gap-2 text-foreground">
+                  Pro
+                  <Zap className="h-5 w-5 text-teal-400" />
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  For active learners and builders
                 </p>
-              )}
-            </div>
+              </div>
 
-            <ul className="space-y-3 mb-8">
-              {standardPlan?.features?.length ? (
-                standardPlan.features.map((feature, idx) => (
-                  <li key={idx} className="flex items-start gap-3">
-                    <Check className="h-5 w-5 text-green-500 shrink-0 mt-0.5" />
-                    <span className="text-sm">{feature}</span>
-                  </li>
-                ))
-              ) : (
-                <>
-                  <li className="flex items-start gap-3">
-                    <Check className="h-5 w-5 text-green-500 shrink-0" />
-                    <span className="text-sm">All premium problems access</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <Check className="h-5 w-5 text-green-500 shrink-0" />
-                    <span className="text-sm">
-                      10 idea validations per month
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <Check className="h-5 w-5 text-green-500 shrink-0" />
-                    <span className="text-sm">
-                      Opportunity scores & insights
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <Check className="h-5 w-5 text-green-500 shrink-0" />
-                    <span className="text-sm">
-                      Email alerts for new problems
-                    </span>
-                  </li>
-                </>
-              )}
-            </ul>
+              <div className="mb-6">
+                <div className="flex items-baseline gap-1">
+                  <span className="text-4xl sm:text-5xl font-bold text-foreground">
+                    {formatPrice(proPlan, 99, 5)}
+                  </span>
+                  <span className="text-muted-foreground">
+                    /{billingCycle === "yearly" ? "year" : "month"}
+                  </span>
+                </div>
+                {getPerMonth(proPlan) && (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {getPerMonth(proPlan)}/month billed annually
+                  </p>
+                )}
+              </div>
+
+              <ul className="space-y-3 mb-8">
+                <li className="flex items-start gap-3">
+                  <Check className="h-5 w-5 text-teal-400 shrink-0 mt-0.5" />
+                  <span className="text-sm"><strong>Priority 1 Queue</strong> for AI Study Guides</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <Check className="h-5 w-5 text-teal-400 shrink-0 mt-0.5" />
+                  <span className="text-sm">Groq 120B reasoning model</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <Check className="h-5 w-5 text-teal-400 shrink-0 mt-0.5" />
+                  <span className="text-sm">10 Resume Tailor runs / month</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <Check className="h-5 w-5 text-teal-400 shrink-0 mt-0.5" />
+                  <span className="text-sm">All validated problems access</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <Check className="h-5 w-5 text-teal-400 shrink-0 mt-0.5" />
+                  <span className="text-sm">Unlimited idea validations</span>
+                </li>
+              </ul>
+            </div>
 
             <Button
               onClick={(e) => {
                 e.stopPropagation();
-                setSelectedTier("standard");
-                handleSelectPlan();
+                handleSelectPlan("pro");
               }}
               disabled={isCreatingLink}
-              variant={selectedTier === "standard" ? "default" : "outline"}
-              className="w-full rounded-xl h-12"
+              variant={selectedTier === "pro" ? "default" : "outline"}
+              className={cn(
+                "w-full rounded-xl h-12",
+                selectedTier === "pro" ? "bg-teal-500 hover:bg-teal-600 text-white" : ""
+              )}
             >
-              {isCreatingLink && selectedTier === "standard" ? (
+              {isCreatingLink && selectedTier === "pro" ? (
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
               ) : null}
-              Get Standard
+              Get Pro
             </Button>
           </div>
 
-          {/* Pro Plan */}
+          {/* Ultra Plan (Flagship) */}
           <div
-            onClick={() => setSelectedTier("pro")}
+            onClick={() => setSelectedTier("ultra")}
             className={cn(
-              "relative p-6 sm:p-8 rounded-3xl border-2 cursor-pointer transition-all duration-300",
-              selectedTier === "pro"
-                ? "border-amber-500 bg-gradient-to-br from-amber-500/10 to-orange-500/10 shadow-xl shadow-amber-500/10"
+              "relative p-6 sm:p-8 rounded-3xl border-2 cursor-pointer transition-all duration-300 flex flex-col justify-between",
+              selectedTier === "ultra"
+                ? "border-amber-500 bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-teal-500/10 shadow-xl shadow-amber-500/10"
                 : "border-border/50 hover:border-amber-500/50 hover:shadow-lg",
             )}
           >
-            {/* Popular Badge */}
+            {/* Popular / Ultimate Badge */}
             <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-              <div className="px-4 py-1 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-semibold flex items-center gap-1">
+              <div className="px-4 py-1 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-semibold flex items-center gap-1 shadow-md">
                 <Sparkles className="h-3 w-3" />
-                Most Popular
+                Ultra · Claude Sonnet Included
               </div>
             </div>
 
-            {selectedTier === "pro" && (
+            {selectedTier === "ultra" && (
               <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
@@ -381,87 +379,77 @@ export function Pricing() {
               </motion.div>
             )}
 
-            <div className="mb-6 pt-2">
-              <h2 className="text-xl font-bold mb-2 flex items-center gap-2">
-                Pro
-                <Crown className="h-5 w-5 text-amber-500" />
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                For serious entrepreneurs and teams
-              </p>
-            </div>
-
-            <div className="mb-6">
-              <div className="flex items-baseline gap-1">
-                <span className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-amber-500 to-orange-500 bg-clip-text text-transparent">
-                  {formatPrice(proPlan)}
-                </span>
-                <span className="text-muted-foreground">
-                  /{billingCycle === "yearly" ? "year" : "month"}
-                </span>
-              </div>
-              {getPerMonth(proPlan) && (
-                <p className="text-sm text-muted-foreground mt-1">
-                  {getPerMonth(proPlan)}/month billed annually
+            <div>
+              <div className="mb-6 pt-2">
+                <h2 className="text-xl font-bold mb-2 flex items-center gap-2 text-foreground">
+                  Ultra
+                  <Crown className="h-5 w-5 text-amber-500" />
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  Ultimate AI power & zero-wait experience
                 </p>
-              )}
-            </div>
+              </div>
 
-            <ul className="space-y-3 mb-8">
-              {proPlan?.features?.length ? (
-                proPlan.features.map((feature, idx) => (
-                  <li key={idx} className="flex items-start gap-3">
-                    <Check className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
-                    <span className="text-sm">{feature}</span>
-                  </li>
-                ))
-              ) : (
-                <>
-                  <li className="flex items-start gap-3">
-                    <Check className="h-5 w-5 text-amber-500 shrink-0" />
-                    <span className="text-sm">Everything in Standard</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <Check className="h-5 w-5 text-amber-500 shrink-0" />
-                    <span className="text-sm">Unlimited idea validations</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <Check className="h-5 w-5 text-amber-500 shrink-0" />
-                    <span className="text-sm">
-                      Priority access to new problems
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <Check className="h-5 w-5 text-amber-500 shrink-0" />
-                    <span className="text-sm">Advanced market analysis</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <Check className="h-5 w-5 text-amber-500 shrink-0" />
-                    <span className="text-sm">Export reports & data</span>
-                  </li>
-                </>
-              )}
-            </ul>
+              <div className="mb-6">
+                <div className="flex items-baseline gap-1">
+                  <span className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-amber-500 to-orange-500 bg-clip-text text-transparent">
+                    {formatPrice(ultraPlan, 299, 10)}
+                  </span>
+                  <span className="text-muted-foreground">
+                    /{billingCycle === "yearly" ? "year" : "month"}
+                  </span>
+                </div>
+                {getPerMonth(ultraPlan) && (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {getPerMonth(ultraPlan)}/month billed annually
+                  </p>
+                )}
+              </div>
+
+              <ul className="space-y-3 mb-8">
+                <li className="flex items-start gap-3">
+                  <Check className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
+                  <span className="text-sm font-semibold text-amber-300">
+                    Instant Synchronous Claude Sonnet AI
+                  </span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <Check className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
+                  <span className="text-sm"><strong>Zero wait time</strong> — instant study guides & quizzes</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <Check className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
+                  <span className="text-sm">Generous 8,000-token ceiling with automated fallback</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <Check className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
+                  <span className="text-sm"><strong>100 Resume Tailor runs</strong> / month</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <Check className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
+                  <span className="text-sm">Full Market Intelligence, Exports & Alerting</span>
+                </li>
+              </ul>
+            </div>
 
             <Button
               onClick={(e) => {
                 e.stopPropagation();
-                setSelectedTier("pro");
-                handleSelectPlan();
+                handleSelectPlan("ultra");
               }}
               disabled={isCreatingLink}
               className={cn(
-                "w-full rounded-xl h-12",
-                selectedTier === "pro"
-                  ? "bg-gradient-to-r from-amber-500 to-orange-500 hover:opacity-90"
+                "w-full rounded-xl h-12 font-semibold shadow-lg shadow-amber-500/20",
+                selectedTier === "ultra"
+                  ? "bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white"
                   : "",
               )}
-              variant={selectedTier === "pro" ? "default" : "outline"}
+              variant={selectedTier === "ultra" ? "default" : "outline"}
             >
-              {isCreatingLink && selectedTier === "pro" ? (
+              {isCreatingLink && selectedTier === "ultra" ? (
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
               ) : null}
-              Get Pro
+              Get Ultra
               <ArrowRight className="h-4 w-4 ml-2" />
             </Button>
           </div>

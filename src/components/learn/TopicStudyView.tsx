@@ -1,7 +1,8 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ArrowRight, BookOpen, Layers, Terminal, CheckSquare, CheckCircle2, Clock, Loader2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, BookOpen, Layers, Terminal, CheckSquare, CheckCircle2, Clock, Loader2, Crown, Sparkles, Zap } from "lucide-react";
 import { PlanTopic } from "@/types/education";
 import { LearnTab } from "./LearnTab";
 import { FlashcardsTab } from "./FlashcardsTab";
@@ -9,6 +10,7 @@ import { HandsOnTab } from "./HandsOnTab";
 import { QuizTab } from "./QuizTab";
 import { TopicStatusBadge } from "./TopicStatusBadge";
 import { useJobStatus } from "@/hooks/useJobStatus";
+import { useAuth } from "@/contexts/AuthContext";
 import { 
   useGeneratePrep, 
   useGenerateHandsOn, 
@@ -37,6 +39,10 @@ export function TopicStudyView({
   onBack, 
   onTopicSelect 
 }: TopicStudyViewProps) {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const userTier = user?.tier || "free";
+
   // Direct (synchronous) mutations — kept as fallback
   const generatePrepMutation = useGeneratePrep(planId);
   const generateHandsOnMutation = useGenerateHandsOn(planId);
@@ -84,7 +90,6 @@ export function TopicStudyView({
   const isHandsOnGenerating = generateHandsOnMutation.isPending || handsOnJob.isLoading;
 
   const handleGeneratePrep = () => {
-    // Prefer queue endpoint; fall back to sync if queue hooks unavailable
     if (queuePrepMutation) {
       queuePrepMutation.mutate(topic.id, {
         onSuccess: (res: any) => {
@@ -92,7 +97,6 @@ export function TopicStudyView({
           if (jobId) setPrepJobId(jobId);
         },
         onError: () => {
-          // Fallback to synchronous if queue fails
           generatePrepMutation.mutate(topic.id);
         },
       });
@@ -144,9 +148,22 @@ export function TopicStudyView({
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-2xl font-bold">{topic.topic_name}</h1>
               <TopicStatusBadge status={topic.status} />
+              {userTier === "ultra" ? (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/30">
+                  <Crown className="w-3 h-3" /> Ultra (Claude Sonnet)
+                </span>
+              ) : userTier === "pro" ? (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-teal-500/10 text-teal-400 border border-teal-500/30">
+                  <Zap className="w-3 h-3" /> Pro Priority Queue
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-zinc-500/10 text-zinc-400 border border-zinc-500/30">
+                  Free Tier
+                </span>
+              )}
             </div>
             <p className="text-muted-foreground line-clamp-1 max-w-2xl text-sm mt-1">{topic.description}</p>
           </div>
@@ -175,6 +192,51 @@ export function TopicStudyView({
           )}
         </div>
       </div>
+
+      {/* Upgrade Callout for Free & Pro Tiers */}
+      {userTier === "free" && (
+        <div className="flex items-center justify-between gap-4 p-4 rounded-2xl bg-gradient-to-r from-teal-500/10 via-cyan-500/10 to-amber-500/10 border border-teal-500/30 flex-wrap">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="text-sm font-bold text-foreground">
+                Upgrade to Ultra for Instant Generation with Claude Sonnet
+              </div>
+              <div className="text-xs text-muted-foreground">
+                Free tier runs off-peak (4:00 AM IST). Get instant 8,000-token study guides & priority coding challenges.
+              </div>
+            </div>
+          </div>
+          <Button 
+            size="sm" 
+            onClick={() => navigate("/pricing")}
+            className="bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white font-semibold gap-1.5 shrink-0 shadow-lg shadow-teal-500/20"
+          >
+            <Crown className="w-4 h-4 text-amber-300" />
+            Upgrade Plan
+          </Button>
+        </div>
+      )}
+
+      {userTier === "pro" && (
+        <div className="flex items-center justify-between gap-4 p-3.5 rounded-2xl bg-card/40 border border-border/50 flex-wrap text-sm">
+          <div className="flex items-center gap-2.5 text-muted-foreground">
+            <Zap className="w-4 h-4 text-teal-400 shrink-0" />
+            <span>You're on <strong>Pro Tier</strong> (Priority 1 Queue). Want zero wait time?</span>
+          </div>
+          <Button 
+            size="sm" 
+            variant="ghost"
+            onClick={() => navigate("/pricing")}
+            className="text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 font-semibold gap-1 h-8 px-3"
+          >
+            <Crown className="w-3.5 h-3.5" />
+            Upgrade to Ultra
+          </Button>
+        </div>
+      )}
 
       <Tabs defaultValue="learn" className="w-full">
         <TabsList className="grid w-full grid-cols-4 max-w-2xl mx-auto mb-8 bg-card/10 border border-border/30 p-1 rounded-2xl h-14">
