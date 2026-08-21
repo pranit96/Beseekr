@@ -3,7 +3,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Sparkles, AlertCircle, Loader2, Clock, Zap } from "lucide-react";
+import { BookOpen, Sparkles, AlertCircle, Loader2, Clock, Zap, Moon, Crown } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { MermaidDiagram } from "@/components/ui/MermaidDiagram";
 
@@ -13,6 +13,8 @@ interface LearnTabProps {
   onGenerate: () => void;
   jobStatus?: string | null;
   elapsedSeconds?: number;
+  isQueuedForOffPeak?: boolean;
+  onUpgradeClick?: () => void;
 }
 
 export function LearnTab({
@@ -21,7 +23,47 @@ export function LearnTab({
   onGenerate,
   jobStatus,
   elapsedSeconds = 0,
+  isQueuedForOffPeak = false,
+  onUpgradeClick,
 }: LearnTabProps) {
+  // Off-Peak Scheduled Queue State for Free Tier
+  if (isQueuedForOffPeak && !content) {
+    return (
+      <div className="flex flex-col items-center justify-center p-6 sm:p-12 text-center min-h-[420px]">
+        <div className="p-8 max-w-xl w-full rounded-3xl bg-gradient-to-b from-teal-500/10 via-card/40 to-card/20 border border-teal-500/30 shadow-2xl backdrop-blur-sm space-y-6">
+          <div className="w-16 h-16 rounded-3xl bg-teal-500/20 text-teal-400 flex items-center justify-center mx-auto border border-teal-500/30 shadow-lg shadow-teal-500/10">
+            <Moon className="w-8 h-8 text-teal-300" />
+          </div>
+
+          <div className="space-y-2">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-500/15 border border-teal-500/30 text-xs font-semibold text-teal-300">
+              <Clock className="w-3.5 h-3.5" />
+              Off-Peak Batch Queued
+            </div>
+            <h3 className="text-xl sm:text-2xl font-bold text-foreground">
+              Queued for Off-Peak Generation at 4:00 AM IST
+            </h3>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Your comprehensive study guide & flashcards are scheduled in our nightly off-peak batch. You'll find them ready when you log in tomorrow morning!
+            </p>
+          </div>
+
+          <div className="pt-2 border-t border-border/40 space-y-3">
+            <p className="text-xs text-amber-400/90 font-medium">
+              Want instant generation right now with Claude Sonnet?
+            </p>
+            <Button
+              onClick={onUpgradeClick}
+              className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold shadow-lg shadow-amber-500/20 h-11 rounded-xl gap-2"
+            >
+              <Crown className="w-4 h-4 text-amber-200" />
+              Upgrade to Ultra for Instant Generation
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
   if (isLoading) {
     return (
       <div className="space-y-6 p-6">

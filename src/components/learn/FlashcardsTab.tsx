@@ -2,22 +2,65 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Flashcard, FlashcardRating } from "@/types/education";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Check, X, RotateCcw, Loader2 } from "lucide-react";
+import { RefreshCw, Check, X, RotateCcw, Loader2, Moon, Crown, Clock } from "lucide-react";
 
 interface FlashcardsTabProps {
   flashcards: Flashcard[] | null;
   onRate: (index: number, rating: FlashcardRating) => void;
   isGenerating?: boolean;
+  isQueuedForOffPeak?: boolean;
+  onUpgradeClick?: () => void;
 }
 
 export function FlashcardsTab({
   flashcards,
   onRate,
   isGenerating = false,
+  isQueuedForOffPeak = false,
+  onUpgradeClick,
 }: FlashcardsTabProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [sessionCompleted, setSessionCompleted] = useState(false);
+
+  // Off-Peak Scheduled Queue State for Free Tier
+  if (isQueuedForOffPeak && (!flashcards || flashcards.length === 0)) {
+    return (
+      <div className="flex flex-col items-center justify-center p-6 sm:p-12 text-center min-h-[420px]">
+        <div className="p-8 max-w-xl w-full rounded-3xl bg-gradient-to-b from-teal-500/10 via-card/40 to-card/20 border border-teal-500/30 shadow-2xl backdrop-blur-sm space-y-6">
+          <div className="w-16 h-16 rounded-3xl bg-teal-500/20 text-teal-400 flex items-center justify-center mx-auto border border-teal-500/30 shadow-lg shadow-teal-500/10">
+            <Moon className="w-8 h-8 text-teal-300" />
+          </div>
+
+          <div className="space-y-2">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-500/15 border border-teal-500/30 text-xs font-semibold text-teal-300">
+              <Clock className="w-3.5 h-3.5" />
+              Off-Peak Batch Queued
+            </div>
+            <h3 className="text-xl sm:text-2xl font-bold text-foreground">
+              Flashcards Queued for 4:00 AM IST
+            </h3>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Flashcards are scheduled in our nightly off-peak batch alongside your study guide. They'll be ready tomorrow morning!
+            </p>
+          </div>
+
+          <div className="pt-2 border-t border-border/40 space-y-3">
+            <p className="text-xs text-amber-400/90 font-medium">
+              Want instant flashcards right now with Claude Sonnet?
+            </p>
+            <Button
+              onClick={onUpgradeClick}
+              className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold shadow-lg shadow-amber-500/20 h-11 rounded-xl gap-2"
+            >
+              <Crown className="w-4 h-4 text-amber-200" />
+              Upgrade to Ultra for Instant Generation
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (isGenerating && (!flashcards || flashcards.length === 0)) {
     return (

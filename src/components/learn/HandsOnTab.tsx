@@ -10,6 +10,8 @@ import {
   Lightbulb,
   Loader2,
   Clock,
+  Moon,
+  Crown,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import ReactMarkdown from "react-markdown";
@@ -22,6 +24,8 @@ interface HandsOnTabProps {
   onGenerate: () => void;
   jobStatus?: string | null;
   elapsedSeconds?: number;
+  isQueuedForOffPeak?: boolean;
+  onUpgradeClick?: () => void;
 }
 
 export function HandsOnTab({
@@ -30,9 +34,50 @@ export function HandsOnTab({
   onGenerate,
   jobStatus,
   elapsedSeconds = 0,
+  isQueuedForOffPeak = false,
+  onUpgradeClick,
 }: HandsOnTabProps) {
   const [activeSolution, setActiveSolution] = useState<string | null>(null);
   const [visibleHints, setVisibleHints] = useState<Record<string, number>>({});
+
+  // Off-Peak Scheduled Queue State for Free Tier
+  if (isQueuedForOffPeak && (!exercises || exercises.length === 0)) {
+    return (
+      <div className="flex flex-col items-center justify-center p-6 sm:p-12 text-center min-h-[420px]">
+        <div className="p-8 max-w-xl w-full rounded-3xl bg-gradient-to-b from-teal-500/10 via-card/40 to-card/20 border border-teal-500/30 shadow-2xl backdrop-blur-sm space-y-6">
+          <div className="w-16 h-16 rounded-3xl bg-teal-500/20 text-teal-400 flex items-center justify-center mx-auto border border-teal-500/30 shadow-lg shadow-teal-500/10">
+            <Moon className="w-8 h-8 text-teal-300" />
+          </div>
+
+          <div className="space-y-2">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-500/15 border border-teal-500/30 text-xs font-semibold text-teal-300">
+              <Clock className="w-3.5 h-3.5" />
+              Off-Peak Batch Queued
+            </div>
+            <h3 className="text-xl sm:text-2xl font-bold text-foreground">
+              Queued for Off-Peak Generation at 4:00 AM IST
+            </h3>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Your interactive coding exercises, debugging scenarios, and architecture challenges are scheduled in our nightly batch. They will be ready tomorrow morning!
+            </p>
+          </div>
+
+          <div className="pt-2 border-t border-border/40 space-y-3">
+            <p className="text-xs text-amber-400/90 font-medium">
+              Want instant code challenges right now with Claude Sonnet?
+            </p>
+            <Button
+              onClick={onUpgradeClick}
+              className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold shadow-lg shadow-amber-500/20 h-11 rounded-xl gap-2"
+            >
+              <Crown className="w-4 h-4 text-amber-200" />
+              Upgrade to Ultra for Instant Generation
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (

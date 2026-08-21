@@ -100,6 +100,8 @@ export function TopicStudyView({
   const [submission, setSubmission] = React.useState<any>(null);
   const [isPricingOpen, setIsPricingOpen] = React.useState(false);
   const [pricingTier, setPricingTier] = React.useState<"pro" | "ultra">("ultra");
+  const [isPrepQueuedOffPeak, setIsPrepQueuedOffPeak] = React.useState(false);
+  const [isHandsOnQueuedOffPeak, setIsHandsOnQueuedOffPeak] = React.useState(false);
 
   if (!topic) {
     return (
@@ -144,8 +146,17 @@ export function TopicStudyView({
     if (queuePrepMutation) {
       queuePrepMutation.mutate(topic.id, {
         onSuccess: (res: any) => {
-          const jobId = res?.data?.job_id;
-          if (jobId) setPrepJobId(jobId);
+          const tier = res?.data?.tier || userTier;
+          const isSync = res?.data?.sync || res?.status === 200;
+          if (isSync) {
+            queryClient.invalidateQueries({ queryKey: educationKeys.plan(planId) });
+            queryClient.invalidateQueries({ queryKey: educationKeys.planResume(planId) });
+          } else if (tier === "free") {
+            setIsPrepQueuedOffPeak(true);
+          } else {
+            const jobId = res?.data?.job_id;
+            if (jobId) setPrepJobId(jobId);
+          }
         },
         onError: () => {
           generatePrepMutation.mutate(topic.id);
@@ -160,8 +171,17 @@ export function TopicStudyView({
     if (queueHandsOnMutation) {
       queueHandsOnMutation.mutate(topic.id, {
         onSuccess: (res: any) => {
-          const jobId = res?.data?.job_id;
-          if (jobId) setHandsOnJobId(jobId);
+          const tier = res?.data?.tier || userTier;
+          const isSync = res?.data?.sync || res?.status === 200;
+          if (isSync) {
+            queryClient.invalidateQueries({ queryKey: educationKeys.plan(planId) });
+            queryClient.invalidateQueries({ queryKey: educationKeys.planResume(planId) });
+          } else if (tier === "free") {
+            setIsHandsOnQueuedOffPeak(true);
+          } else {
+            const jobId = res?.data?.job_id;
+            if (jobId) setHandsOnJobId(jobId);
+          }
         },
         onError: () => {
           generateHandsOnMutation.mutate(topic.id);
@@ -365,6 +385,11 @@ export function TopicStudyView({
               onGenerate={handleGeneratePrep}
               jobStatus={prepJob.status}
               elapsedSeconds={prepJob.elapsed}
+              isQueuedForOffPeak={isPrepQueuedOffPeak}
+              onUpgradeClick={() => {
+                setPricingTier("ultra");
+                setIsPricingOpen(true);
+              }}
             />
           </TabsContent>
 
@@ -372,6 +397,11 @@ export function TopicStudyView({
             <FlashcardsTab
               flashcards={topic.flashcards}
               isGenerating={isPrepGenerating}
+              isQueuedForOffPeak={isPrepQueuedOffPeak}
+              onUpgradeClick={() => {
+                setPricingTier("ultra");
+                setIsPricingOpen(true);
+              }}
               onRate={(index, rating) =>
                 reviewFlashcardMutation.mutate({
                   topicId: topic.id,
@@ -415,6 +445,11 @@ export function TopicStudyView({
               onGenerate={handleGenerateHandsOn}
               jobStatus={handsOnJob.status}
               elapsedSeconds={handsOnJob.elapsed}
+              isQueuedForOffPeak={isHandsOnQueuedOffPeak}
+              onUpgradeClick={() => {
+                setPricingTier("ultra");
+                setIsPricingOpen(true);
+              }}
             />
           </TabsContent>
 
