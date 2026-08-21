@@ -1,15 +1,20 @@
 import React from "react";
 import { TopicStatus } from "@/types/education";
-import { CheckCircle2, Clock, PlayCircle } from "lucide-react";
+import { CheckCircle2, Clock, PlayCircle, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface TopicStatusBadgeProps {
-  status: TopicStatus;
+  status: TopicStatus | "locked";
   className?: string;
 }
 
 export function TopicStatusBadge({ status, className }: TopicStatusBadgeProps) {
   const config = {
+    locked: {
+      label: "Locked",
+      icon: Lock,
+      classes: "bg-muted/30 text-muted-foreground/60 border-border/40",
+    },
     pending: {
       label: "Pending",
       icon: Clock,

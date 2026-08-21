@@ -1,6 +1,6 @@
-import React from "react";
-import { motion } from "framer-motion";
-import { ArrowLeft, Clock, Calendar, BookOpen, AlertCircle } from "lucide-react";
+import React, { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ArrowLeft, Clock, Calendar, BookOpen, AlertCircle, Lock, ChevronRight, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PlanTopic, PlanResumePoint } from "@/types/education";
 import { TopicStatusBadge } from "./TopicStatusBadge";
@@ -23,6 +23,7 @@ export function PlanDetailView({
   onBack, 
   onTopicSelect 
 }: PlanDetailViewProps) {
+  const [lockedNoticeTopic, setLockedNoticeTopic] = useState<string | null>(null);
 
   if (isLoading) {
     return (
@@ -64,42 +65,106 @@ export function PlanDetailView({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         {/* Topics List */}
         <div className="lg:col-span-2 space-y-4">
-          <h2 className="text-xl font-bold mb-4">Syllabus</h2>
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-xl font-bold">Syllabus Sequence</h2>
+            <span className="text-xs text-muted-foreground">
+              Clear each topic in sequence to unlock the next
+            </span>
+          </div>
+
+          <AnimatePresence>
+            {lockedNoticeTopic && (
+              <motion.div
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                className="p-3.5 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-300 text-xs flex items-center gap-2 shadow-sm"
+              >
+                <Lock className="w-4 h-4 shrink-0 text-amber-400" />
+                <span>
+                  <strong>Topic Locked:</strong> Complete preceding topics to unlock <em>"{lockedNoticeTopic}"</em>.
+                </span>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           {topics_overview.map((topic, idx) => {
-            const isNext = topic.status === "pending" && topics_overview.slice(0, idx).every(t => t.status === "completed");
+            const isCompleted = topic.status === "completed";
+            // A topic is unlocked if it's the 1st topic or all prior topics are completed
+            const isUnlocked = idx === 0 || topics_overview.slice(0, idx).every(t => t.status === "completed");
+            const isLocked = !isCompleted && !isUnlocked;
+            const isNext = isUnlocked && !isCompleted;
+            const previousTopicName = idx > 0 ? topics_overview[idx - 1].topic_name : "";
             
             return (
               <motion.div
                 key={topic.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.05 }}
-                onClick={() => onTopicSelect(topic.id)}
-                className={`p-5 rounded-2xl border cursor-pointer transition-all duration-200 
-                  ${topic.status === "completed" ? "bg-card/5 border-border/30 opacity-75 hover:opacity-100 hover:bg-card/20" : 
-                    isNext || topic.status === "in_progress" ? "bg-teal-500/10 border-teal-500/30 ring-1 ring-teal-500/20 shadow-lg shadow-teal-500/5" :
-                    "bg-card/10 border-border/50 hover:border-teal-500/30 hover:bg-card/30"
+                transition={{ delay: idx * 0.03 }}
+                onClick={() => {
+                  if (isLocked) {
+                    setLockedNoticeTopic(topic.topic_name);
+                    setTimeout(() => setLockedNoticeTopic(null), 3500);
+                    return;
+                  }
+                  onTopicSelect(topic.id);
+                }}
+                className={`p-5 rounded-2xl border transition-all duration-200 relative group
+                  ${isLocked 
+                    ? "bg-card/5 border-border/20 opacity-55 cursor-not-allowed select-none hover:border-border/40" 
+                    : isCompleted 
+                      ? "bg-card/5 border-border/30 opacity-80 hover:opacity-100 hover:bg-card/20 cursor-pointer" 
+                      : isNext || topic.status === "in_progress" 
+                        ? "bg-teal-500/10 border-teal-500/40 ring-1 ring-teal-500/20 shadow-lg shadow-teal-500/5 cursor-pointer hover:bg-teal-500/15" 
+                        : "bg-card/10 border-border/50 hover:border-teal-500/30 hover:bg-card/30 cursor-pointer"
                   }`}
               >
                 <div className="flex justify-between items-start gap-4">
-                  <div className="space-y-1.5 flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-mono text-muted-foreground w-6">{(idx + 1).toString().padStart(2, '0')}</span>
-                      <h3 className="font-bold text-lg leading-tight">{topic.topic_name}</h3>
+                  <div className="space-y-1.5 flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs font-mono text-muted-foreground w-6 flex items-center justify-center">
+                        {isLocked ? (
+                          <Lock className="w-3.5 h-3.5 text-muted-foreground/60" />
+                        ) : isCompleted ? (
+                          <CheckCircle2 className="w-3.5 h-3.5 text-teal-400" />
+                        ) : (
+                          (idx + 1).toString().padStart(2, '0')
+                        )}
+                      </span>
+                      <h3 className={`font-bold text-lg leading-tight truncate ${isLocked ? "text-muted-foreground" : "text-foreground"}`}>
+                        {topic.topic_name}
+                      </h3>
+                      {isNext && (
+                        <span className="text-[10px] font-semibold bg-teal-500/20 text-teal-400 border border-teal-500/30 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                          Next Up
+                        </span>
+                      )}
                     </div>
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground ml-8">
+                    
+                    <div className="flex items-center flex-wrap gap-4 text-xs text-muted-foreground ml-8">
                       <span className="flex items-center gap-1">
                         <Calendar className="w-3.5 h-3.5" />
                         {new Date(topic.scheduled_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                       </span>
-                      {topic.has_prep && (
+                      {isLocked ? (
+                        <span className="flex items-center gap-1 text-amber-500/80 text-[11px] font-medium">
+                          <Lock className="w-3 h-3" /> Clear "{previousTopicName}" to unlock
+                        </span>
+                      ) : topic.has_prep ? (
                         <span className="flex items-center gap-1 text-teal-500/70">
                           <BookOpen className="w-3.5 h-3.5" /> Study materials ready
                         </span>
-                      )}
+                      ) : null}
                     </div>
                   </div>
-                  <TopicStatusBadge status={topic.status} />
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <TopicStatusBadge status={isLocked ? "locked" : topic.status} />
+                    {!isLocked && (
+                      <ChevronRight className="w-4 h-4 text-muted-foreground/50 group-hover:text-teal-400 transition-colors" />
+                    )}
+                  </div>
                 </div>
               </motion.div>
             );
@@ -128,7 +193,7 @@ export function PlanDetailView({
             
             {resumeData.resume_topic && (
               <Button 
-                className="w-full mt-6 bg-teal-500 hover:bg-teal-600 text-white" 
+                className="w-full mt-6 bg-teal-500 hover:bg-teal-600 text-white shadow-lg shadow-teal-500/10" 
                 size="lg"
                 onClick={() => onTopicSelect(resumeData.resume_topic!.id)}
               >

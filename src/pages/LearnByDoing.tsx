@@ -35,10 +35,22 @@ export default function LearnByDoing() {
   };
 
   const handleTopicSelect = (topicId: string) => {
+    const topics = planData?.data?.topics || [];
+    const topicIdx = topics.findIndex((t) => t.id === topicId);
+    
+    // Lock guard: Topic can only be opened if it's the first topic, already completed, or all prior topics are completed
+    if (topicIdx > 0) {
+      const isCompleted = topics[topicIdx].status === "completed";
+      const isUnlocked = topics.slice(0, topicIdx).every((t) => t.status === "completed");
+      if (!isCompleted && !isUnlocked) {
+        return;
+      }
+    }
+
     setSelectedTopicId(topicId);
     
     // Auto-mark as in_progress when starting a pending topic
-    const topic = planData?.data?.topics.find(t => t.id === topicId);
+    const topic = topics[topicIdx];
     if (topic && topic.status === "pending") {
       updateStatusMutation.mutate({ topicId, status: "in_progress" });
     }
@@ -103,7 +115,9 @@ export default function LearnByDoing() {
                 <TopicStudyView 
                   planId={selectedPlanId}
                   topic={planData?.data?.topics.find(t => t.id === selectedTopicId) || null}
+                  allTopics={planData?.data?.topics || []}
                   onBack={handleBackToDetail}
+                  onTopicSelect={handleTopicSelect}
                 />
               </div>
             )}

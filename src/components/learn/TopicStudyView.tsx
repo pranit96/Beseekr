@@ -1,12 +1,13 @@
 import React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, BookOpen, Layers, Terminal, CheckSquare } from "lucide-react";
+import { ArrowLeft, ArrowRight, BookOpen, Layers, Terminal, CheckSquare, CheckCircle2 } from "lucide-react";
 import { PlanTopic } from "@/types/education";
 import { LearnTab } from "./LearnTab";
 import { FlashcardsTab } from "./FlashcardsTab";
 import { HandsOnTab } from "./HandsOnTab";
 import { QuizTab } from "./QuizTab";
+import { TopicStatusBadge } from "./TopicStatusBadge";
 import { 
   useGeneratePrep, 
   useGenerateHandsOn, 
@@ -20,30 +21,36 @@ import {
 interface TopicStudyViewProps {
   planId: string;
   topic: PlanTopic | null;
+  allTopics?: PlanTopic[];
   onBack: () => void;
+  onTopicSelect?: (topicId: string) => void;
 }
 
-export function TopicStudyView({ planId, topic, onBack }: TopicStudyViewProps) {
+export function TopicStudyView({ 
+  planId, 
+  topic, 
+  allTopics = [], 
+  onBack, 
+  onTopicSelect 
+}: TopicStudyViewProps) {
   const generatePrepMutation = useGeneratePrep(planId);
   const generateHandsOnMutation = useGenerateHandsOn(planId);
   const reviewFlashcardMutation = useReviewFlashcard(planId);
   const generateExamMutation = useGenerateExam();
   
-  // Find if there's an exam for this topic (assuming we store the exam ID somewhere or query it)
-  // For simplicity, we assume we fetch the latest exam for this plan/topic
-  // In a real app, you might want to fetch exams filtered by topic ID
-  // Here we just use a placeholder mechanism or require the exam to be created first
+  // Find if there's an exam for this topic
   const [examId, setExamId] = React.useState<string | undefined>();
   const { data: examRes, isLoading: isExamLoading } = useExam(examId);
   const submitExamMutation = useSubmitExam(examId || "");
   const updateStatusMutation = useUpdateTopicStatus(planId);
 
-  // Determine submission logic
-  // A robust implementation would query submissions for this exam
-  // Here we just use a basic state for the demo
   const [submission, setSubmission] = React.useState<any>(null);
 
   if (!topic) return null;
+
+  const currentIdx = allTopics.findIndex((t) => t.id === topic.id);
+  const nextTopic = currentIdx >= 0 && currentIdx < allTopics.length - 1 ? allTopics[currentIdx + 1] : null;
+  const isCompleted = topic.status === "completed";
 
   const handleGeneratePrep = () => {
     generatePrepMutation.mutate(topic.id);
@@ -70,32 +77,46 @@ export function TopicStudyView({ planId, topic, onBack }: TopicStudyViewProps) {
 
   const handleMarkComplete = () => {
     updateStatusMutation.mutate({ topicId: topic.id, status: "completed" });
-    onBack();
   };
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={onBack}>
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold">{topic.topic_name}</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-bold">{topic.topic_name}</h1>
+              <TopicStatusBadge status={topic.status} />
+            </div>
             <p className="text-muted-foreground line-clamp-1 max-w-2xl text-sm mt-1">{topic.description}</p>
           </div>
         </div>
         
-        {topic.status !== "completed" && (
-          <Button 
-            variant="outline" 
-            className="border-teal-500/50 text-teal-500 hover:bg-teal-500/10"
-            onClick={handleMarkComplete}
-            disabled={updateStatusMutation.isPending}
-          >
-            Mark Complete
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {!isCompleted ? (
+            <Button 
+              className="bg-teal-500 hover:bg-teal-600 text-white gap-1.5 shadow-lg shadow-teal-500/10"
+              onClick={handleMarkComplete}
+              disabled={updateStatusMutation.isPending}
+            >
+              <CheckCircle2 className="w-4 h-4" />
+              Mark Complete & Unlock Next
+            </Button>
+          ) : (
+            nextTopic && onTopicSelect && (
+              <Button
+                onClick={() => onTopicSelect(nextTopic.id)}
+                className="bg-teal-500 hover:bg-teal-600 text-white gap-1.5 shadow-lg shadow-teal-500/10"
+              >
+                <span>Next Topic: {nextTopic.topic_name}</span>
+                <ArrowRight className="w-4 h-4" />
+              </Button>
+            )
+          )}
+        </div>
       </div>
 
       <Tabs defaultValue="learn" className="w-full">

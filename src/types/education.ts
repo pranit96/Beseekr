@@ -166,6 +166,7 @@ export interface PlanResumePoint {
     id: string;
     topic_name: string;
     status: TopicStatus;
+    is_locked?: boolean;
     scheduled_date: string;
     has_prep: boolean;
     has_hands_on: boolean;
