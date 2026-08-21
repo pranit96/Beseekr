@@ -55,10 +55,10 @@ export const TopBar = ({
   const isLearnByDoingEnabled = getIsLearnByDoingEnabled() || user?.feature_flags?.learn_by_doing;
 
   const navigation = [
-    { key: "board", name: "Vision Board", href: "/board" },
     { key: "home", name: "Home", href: "/" },
     { key: "chat", name: "Chat", href: "/chat" },
     { key: "agents", name: "Agents", href: "/agents" },
+    { key: "board", name: "Vision Board", href: "/board" },
     ...(isSecondBrainEnabled
       ? [{ key: "brain", name: "Second Brain", href: "/brain" }]
       : []),
