@@ -103,6 +103,7 @@ export function TopicStudyView({
   const [pricingTier, setPricingTier] = React.useState<"pro" | "ultra">("ultra");
   const [isPrepQueuedOffPeak, setIsPrepQueuedOffPeak] = React.useState(false);
   const [isHandsOnQueuedOffPeak, setIsHandsOnQueuedOffPeak] = React.useState(false);
+  const [isQuizQueuedOffPeak, setIsQuizQueuedOffPeak] = React.useState(false);
 
   if (!topic) {
     return (
@@ -192,6 +193,11 @@ export function TopicStudyView({
   };
 
   const handleGenerateQuiz = () => {
+    if (userTier === "free") {
+      setIsQuizQueuedOffPeak(true);
+      return;
+    }
+
     generateExamMutation.mutate(
       {
         plan_id: planId,
@@ -460,6 +466,11 @@ export function TopicStudyView({
               isGenerating={generateExamMutation.isPending}
               isSubmitting={submitExamMutation.isPending}
               onGenerate={handleGenerateQuiz}
+              isQueuedForOffPeak={isQuizQueuedOffPeak}
+              onUpgradeClick={() => {
+                setPricingTier("ultra");
+                setIsPricingOpen(true);
+              }}
               onSubmit={(answers) => {
                 submitExamMutation.mutate(answers, {
                   onSuccess: (res) => {
