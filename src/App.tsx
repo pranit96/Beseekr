@@ -37,6 +37,8 @@ import Contact from "./pages/Contact";
 import About from "./pages/About";
 import Home from "./pages/Home";
 import VerifyEmail from "./pages/VerifyEmail";
+import { GlobalHeader } from "./components/GlobalHeader";
+import { GlobalFooter } from "./components/GlobalFooter";
 
 /**
  * Wrapper for lazy imports that handles chunk loading failures after deployments.
@@ -423,13 +425,10 @@ const App = () => {
                           </Suspense>
                         }
                       />
+                      {/* /dashboard/pricing → /pricing backward compat redirect */}
                       <Route
                         path="pricing"
-                        element={
-                          <Suspense fallback={<PageLoader />}>
-                            <Pricing />
-                          </Suspense>
-                        }
+                        element={<Navigate to="/pricing" replace />}
                       />
                       {/* /dashboard/profile → /profile (backward compat redirect) */}
                       <Route
@@ -640,10 +639,28 @@ const App = () => {
                         </ProtectedRoute>
                       }
                     />
-                    {/* Top-level pricing redirect */}
+                    {/* =============================================
+                      PRICING - Generic top-level public/authenticated route
+                      ============================================= */}
                     <Route
                       path="/pricing"
-                      element={<Navigate to="/dashboard/pricing" replace />}
+                      element={
+                        <Suspense fallback={<PageLoader />}>
+                          <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex flex-col">
+                            <div className="fixed inset-0 overflow-hidden pointer-events-none">
+                              <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-primary/5 rounded-full blur-3xl" />
+                              <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-accent/5 rounded-full blur-3xl" />
+                            </div>
+                            <GlobalHeader />
+                            <main className="relative z-10 px-2 sm:px-4 py-4 sm:py-8 flex-1">
+                              <div className="mx-auto max-w-6xl">
+                                <Pricing />
+                              </div>
+                            </main>
+                            <GlobalFooter />
+                          </div>
+                        </Suspense>
+                      }
                     />
 
                     {/* =============================================

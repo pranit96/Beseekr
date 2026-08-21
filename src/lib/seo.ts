@@ -136,7 +136,7 @@ export const PAGE_SEO = {
       "Choose the perfect plan to discover validated startup problems. Free tier available. Premium plans from ₹299/month.",
     keywords:
       "pricing, plans, subscription, market research pricing, startup tools",
-    canonical: "/dashboard/pricing",
+    canonical: "/pricing",
   },
   validate: {
     title: "AI-Powered Idea Validation & Market Research",

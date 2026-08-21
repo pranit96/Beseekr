@@ -247,7 +247,7 @@ export function TopicStudyView({
           </div>
           <Button
             size="sm"
-            onClick={() => navigate("/dashboard/pricing")}
+            onClick={() => navigate("/pricing")}
             className="bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white font-semibold gap-1.5 shrink-0 shadow-lg shadow-teal-500/20"
           >
             <Crown className="w-4 h-4 text-amber-300" />
@@ -268,7 +268,7 @@ export function TopicStudyView({
           <Button
             size="sm"
             variant="ghost"
-            onClick={() => navigate("/dashboard/pricing")}
+            onClick={() => navigate("/pricing")}
             className="text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 font-semibold gap-1 h-8 px-3"
           >
             <Crown className="w-3.5 h-3.5" />

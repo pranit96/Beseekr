@@ -85,7 +85,7 @@ export function PaymentFailed() {
 
             {/* Action Buttons */}
             <div className="space-y-3">
-              <Link to="/dashboard/pricing">
+              <Link to="/pricing">
                 <Button
                   size="lg"
                   className="w-full rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:opacity-90 h-12 text-base"

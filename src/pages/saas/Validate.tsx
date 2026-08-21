@@ -2576,7 +2576,7 @@ export function Validate() {
                 >
                   Maybe Later
                 </Button>
-                <Link to="/dashboard/pricing" className="flex-1">
+                <Link to="/pricing" className="flex-1">
                   <Button className="w-full rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:opacity-90">
                     <Crown className="mr-2 h-4 w-4" />
                     Upgrade Now

@@ -735,7 +735,7 @@ export function ProblemDetails() {
                     </div>
                     <Button
                       size="sm"
-                      onClick={() => navigate("/dashboard/pricing")}
+                      onClick={() => navigate("/pricing")}
                       className="w-full bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white"
                     >
                       <Zap className="h-4 w-4 mr-2" />

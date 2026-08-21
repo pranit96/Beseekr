@@ -159,7 +159,7 @@ const NAV_ITEMS = {
   pricing: {
     key: "pricing",
     name: "Pricing",
-    href: "/dashboard/pricing",
+    href: "/pricing",
     icon: CreditCard,
     color: "from-amber-500 to-orange-500",
     exact: false,
