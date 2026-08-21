@@ -7,6 +7,7 @@ import rehypeRaw from "rehype-raw";
 import rehypeSanitize from "rehype-sanitize";
 import { createLogger } from "@/services/logging";
 import { X, ArrowUp, Check, Copy, ExternalLink } from "lucide-react";
+import { MermaidDiagram } from "@/components/ui/MermaidDiagram";
 
 // Import remark-toc ONLY if you plan to use TOC
 import remarkToc from "remark-toc";
@@ -375,7 +376,18 @@ export default function MarkdownRenderer({
       const isBlock =
         node?.tagName === "code" && node?.parent?.tagName === "pre";
 
+      const isMermaid =
+        language === "mermaid" ||
+        className?.includes("mermaid") ||
+        /^(flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|gantt|pie|gitGraph|journey|graph\s+(TD|TB|BT|RL|LR))/im.test(
+          code.trim(),
+        );
+
       if (isBlock) {
+        if (isMermaid) {
+          return <MermaidDiagram chart={code} />;
+        }
+
         return (
           <div className="relative my-4 rounded-lg overflow-hidden border border-border/40 bg-background">
             <div className="flex justify-between items-center px-4 py-2 bg-muted/40 border-b border-border/30">

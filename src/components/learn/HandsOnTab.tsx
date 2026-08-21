@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Code2, Terminal, HelpCircle, Eye, Sparkles, Lightbulb } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { MermaidDiagram } from "@/components/ui/MermaidDiagram";
 
 interface HandsOnTabProps {
   exercises: HandsOnExercise[] | null;
@@ -38,7 +40,7 @@ export function HandsOnTab({ exercises, isLoading, onGenerate }: HandsOnTabProps
         </div>
         <h3 className="text-xl font-bold mb-2">No Exercises Generated</h3>
         <p className="text-muted-foreground mb-8 max-w-md">
-          Generate practical, progressive hands-on challenges to apply what you've learned.
+          Generate interactive code challenges, distributed architecture design problems, and debugging tasks.
         </p>
         <Button 
           onClick={onGenerate}
@@ -46,7 +48,7 @@ export function HandsOnTab({ exercises, isLoading, onGenerate }: HandsOnTabProps
           className="bg-teal-500 hover:bg-teal-600 text-white"
         >
           <Sparkles className="w-5 h-5 mr-2" />
-          Generate Challenges
+          Generate Hands-On Tasks
         </Button>
       </div>
     );
@@ -54,29 +56,32 @@ export function HandsOnTab({ exercises, isLoading, onGenerate }: HandsOnTabProps
 
   const getIcon = (type: string) => {
     switch(type) {
-      case 'coding_challenge': return <Code2 className="w-5 h-5" />;
-      case 'scenario': return <HelpCircle className="w-5 h-5" />;
-      case 'mini_project': return <Terminal className="w-5 h-5" />;
-      default: return <Code2 className="w-5 h-5" />;
+      case 'code_sandbox': return <Code2 className="w-5 h-5 text-teal-400" />;
+      case 'debugging': return <Terminal className="w-5 h-5 text-amber-400" />;
+      case 'architecture_design': return <Sparkles className="w-5 h-5 text-cyan-400" />;
+      default: return <Code2 className="w-5 h-5 text-teal-400" />;
     }
   };
 
-  const showHint = (title: string) => {
-    setVisibleHints(prev => ({
-      ...prev,
-      [title]: (prev[title] || 0) + 1
-    }));
+  const toggleHint = (exId: string, maxHints: number) => {
+    setVisibleHints(prev => {
+      const current = prev[exId] || 0;
+      return {
+        ...prev,
+        [exId]: current < maxHints ? current + 1 : current
+      };
+    });
   };
 
   return (
-    <div className="space-y-8 max-w-4xl mx-auto py-4">
+    <div className="space-y-8">
       {exercises.map((ex, idx) => (
-        <div key={idx} className="bg-card/5 border border-border/30 rounded-3xl overflow-hidden">
-          {/* Header */}
+        <div key={ex.title || idx} className="bg-card/5 border border-border/30 rounded-3xl overflow-hidden backdrop-blur-xl">
+          {/* Exercise Header */}
           <div className="p-6 border-b border-border/30 flex justify-between items-start gap-4">
             <div>
-              <div className="flex items-center gap-3 mb-2">
-                <span className="p-1.5 rounded-md bg-background/50 text-teal-500 border border-border/50">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="p-1.5 rounded-lg bg-card/20 border border-border/40">
                   {getIcon(ex.type)}
                 </span>
                 <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -90,7 +95,37 @@ export function HandsOnTab({ exercises, isLoading, onGenerate }: HandsOnTabProps
 
           {/* Description */}
           <div className="p-6 prose prose-invert prose-teal max-w-none">
-            <ReactMarkdown>{ex.description}</ReactMarkdown>
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              components={{
+                code: ({node, inline, className, children, ...props}: any) => {
+                  const codeContent = String(children || "").replace(/\n$/, "");
+                  const match = /language-(\w+)/.exec(className || "");
+                  const language = match ? match[1] : "";
+                  const isMermaid = language === "mermaid" || 
+                    className?.includes("mermaid") ||
+                    /^(flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|gantt|pie|gitGraph|journey|graph\s+(TD|TB|BT|RL|LR))/im.test(codeContent.trim());
+
+                  if (!inline && isMermaid) {
+                    return <MermaidDiagram chart={codeContent} />;
+                  }
+
+                  return inline ? (
+                    <code className="bg-muted px-1.5 py-0.5 rounded text-sm text-teal-200 font-mono" {...props}>
+                      {children}
+                    </code>
+                  ) : (
+                    <pre className="bg-muted/50 p-4 rounded-xl border border-border/50 overflow-x-auto my-4 custom-scrollbar">
+                      <code className={className || "text-sm font-mono"} {...props}>
+                        {children}
+                      </code>
+                    </pre>
+                  );
+                }
+              }}
+            >
+              {ex.description}
+            </ReactMarkdown>
           </div>
 
           {/* Starter Code */}
@@ -121,7 +156,7 @@ export function HandsOnTab({ exercises, isLoading, onGenerate }: HandsOnTabProps
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      onClick={() => showHint(ex.title)}
+                      onClick={() => toggleHint(ex.title, ex.hints.length)}
                       className="w-fit border-amber-500/30 text-amber-500 hover:bg-amber-500/10 hover:text-amber-400"
                     >
                       <Lightbulb className="w-4 h-4 mr-2" /> 

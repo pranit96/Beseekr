@@ -5,6 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { BookOpen, Sparkles, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { MermaidDiagram } from "@/components/ui/MermaidDiagram";
 
 interface LearnTabProps {
   content: string | null;
@@ -63,14 +64,30 @@ export function LearnTab({ content, isLoading, onGenerate }: LearnTabProps) {
             strong: ({node, ...props}) => <strong className="font-bold text-teal-300" {...props} />,
             a: ({node, ...props}) => <a className="text-teal-400 hover:text-teal-300 underline underline-offset-4" {...props} />,
             blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-teal-500 pl-4 italic text-muted-foreground bg-teal-500/5 py-1 pr-4 rounded-r-lg my-4" {...props} />,
-            code: ({node, inline, ...props}: any) => 
-              inline ? (
-                <code className="bg-muted px-1.5 py-0.5 rounded text-sm text-teal-200 font-mono" {...props} />
+            code: ({node, inline, className, children, ...props}: any) => {
+              const codeContent = String(children || "").replace(/\n$/, "");
+              const match = /language-(\w+)/.exec(className || "");
+              const language = match ? match[1] : "";
+              const isMermaid = language === "mermaid" || 
+                className?.includes("mermaid") ||
+                /^(flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|gantt|pie|gitGraph|journey|graph\s+(TD|TB|BT|RL|LR))/im.test(codeContent.trim());
+
+              if (!inline && isMermaid) {
+                return <MermaidDiagram chart={codeContent} />;
+              }
+
+              return inline ? (
+                <code className="bg-muted px-1.5 py-0.5 rounded text-sm text-teal-200 font-mono" {...props}>
+                  {children}
+                </code>
               ) : (
                 <pre className="bg-muted/50 p-4 rounded-xl border border-border/50 overflow-x-auto my-4 custom-scrollbar">
-                  <code className="text-sm font-mono" {...props} />
+                  <code className={className || "text-sm font-mono"} {...props}>
+                    {children}
+                  </code>
                 </pre>
-              ),
+              );
+            },
             ul: ({node, ...props}) => <ul className="list-disc pl-6 space-y-2 my-4 marker:text-teal-500" {...props} />,
             ol: ({node, ...props}) => <ol className="list-decimal pl-6 space-y-2 my-4 marker:text-teal-500" {...props} />,
             li: ({node, ...props}) => <li className="text-foreground/90 leading-relaxed" {...props} />,
