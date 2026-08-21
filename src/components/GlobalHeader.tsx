@@ -36,6 +36,8 @@ import {
   Wallet,
   ScrollText,
   GraduationCap,
+  Brain,
+  Mail,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -218,6 +220,22 @@ const NAV_ITEMS = {
     color: "from-teal-500 to-cyan-500",
     exact: false,
   },
+  brain: {
+    key: "brain",
+    name: "Mind",
+    href: "/brain",
+    icon: Brain,
+    color: "from-violet-500 to-purple-600",
+    exact: false,
+  },
+  digest: {
+    key: "digest",
+    name: "Digest",
+    href: "/digest",
+    icon: Mail,
+    color: "from-indigo-500 to-blue-500",
+    exact: false,
+  },
 };
 
 function isPathActive(pathname: string, href: string, exact?: boolean) {
@@ -238,54 +256,50 @@ function getNavigationContext(
   const isBudgetContext = pathname.startsWith("/dashboard/budget");
   const isBoardContext = pathname.startsWith("/board");
   const isDiscoverContext = pathname.startsWith("/dashboard");
-
   const isLearnContext = pathname.startsWith("/learn");
+  const isBrainContext = pathname.startsWith("/brain");
+  const isDigestContext = pathname.startsWith("/digest");
 
-  // Vision Board gets its own minimal strip
+  // Vision Board: Home + Board only
   if (isBoardContext) {
     return [NAV_ITEMS.home, NAV_ITEMS.visionboard];
   }
 
+  // Budget: Home + budget sub-pages only (no Discover)
   if (isBudgetContext) {
     return [
       NAV_ITEMS.home,
-      NAV_ITEMS.discover,
       NAV_ITEMS.budgetOverview,
       NAV_ITEMS.budgetLedger,
       NAV_ITEMS.budgetGoals,
       NAV_ITEMS.budgetInsights,
     ];
   } else if (isChatContext) {
-    const items = [
+    // Chat/Agents/Canvas: Home + Chat sub-pages only (no Wallet)
+    return [
       NAV_ITEMS.home,
       NAV_ITEMS.chat,
       NAV_ITEMS.agents,
       NAV_ITEMS.canvas,
     ];
-    if (isBudgetEnabled) {
-      items.push(NAV_ITEMS.budget);
-    }
-    return items;
   } else if (isLearnContext) {
     return [NAV_ITEMS.home, NAV_ITEMS.chat, NAV_ITEMS.learn];
+  } else if (isBrainContext) {
+    return [NAV_ITEMS.home, NAV_ITEMS.chat, NAV_ITEMS.brain];
+  } else if (isDigestContext) {
+    return [NAV_ITEMS.home, NAV_ITEMS.chat, NAV_ITEMS.digest];
   } else if (isDiscoverContext) {
-    const items = [
+    // Discover: Home + discover sub-pages only (no Wallet, no Board)
+    return [
       NAV_ITEMS.home,
       NAV_ITEMS.discover,
       NAV_ITEMS.research,
       NAV_ITEMS.watchlist,
     ];
-    if (isBudgetEnabled) {
-      items.push(NAV_ITEMS.budget);
-    }
-    items.push(NAV_ITEMS.visionboard);
-    if (!isPremium) items.push(NAV_ITEMS.pricing);
-    return items;
   }
 
+  // Default (home page): no Home link, Board last
   const items = [
-    NAV_ITEMS.visionboard, // Board first
-    NAV_ITEMS.home,
     NAV_ITEMS.chat,
     NAV_ITEMS.discover,
     NAV_ITEMS.blog,
@@ -293,6 +307,7 @@ function getNavigationContext(
   if (isBudgetEnabled) {
     items.push(NAV_ITEMS.budget);
   }
+  items.push(NAV_ITEMS.visionboard);
   return items;
 }
 
