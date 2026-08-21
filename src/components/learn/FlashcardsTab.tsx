@@ -2,17 +2,36 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Flashcard, FlashcardRating } from "@/types/education";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Check, X, RotateCcw } from "lucide-react";
+import { RefreshCw, Check, X, RotateCcw, Loader2 } from "lucide-react";
 
 interface FlashcardsTabProps {
   flashcards: Flashcard[] | null;
   onRate: (index: number, rating: FlashcardRating) => void;
+  isGenerating?: boolean;
 }
 
-export function FlashcardsTab({ flashcards, onRate }: FlashcardsTabProps) {
+export function FlashcardsTab({
+  flashcards,
+  onRate,
+  isGenerating = false,
+}: FlashcardsTabProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [sessionCompleted, setSessionCompleted] = useState(false);
+
+  if (isGenerating && (!flashcards || flashcards.length === 0)) {
+    return (
+      <div className="flex flex-col items-center justify-center p-12 text-center min-h-[400px]">
+        <div className="w-16 h-16 bg-teal-500/10 text-teal-400 rounded-full flex items-center justify-center mb-6 border border-teal-500/20">
+          <Loader2 className="w-8 h-8 animate-spin" />
+        </div>
+        <h3 className="text-xl font-bold mb-2">Generating Flashcards...</h3>
+        <p className="text-muted-foreground max-w-md">
+          Flashcards are being synthesized alongside your study guide in the background.
+        </p>
+      </div>
+    );
+  }
 
   if (!flashcards || flashcards.length === 0) {
     return (

@@ -102,9 +102,23 @@ export function TopicStudyView({
       : null;
   const isCompleted = topic.status === "completed";
 
-  const isPrepGenerating = generatePrepMutation.isPending || prepJob.isLoading;
+  const isPrepGenerating =
+    generatePrepMutation.isPending ||
+    Boolean(queuePrepMutation?.isPending) ||
+    prepJob.isLoading ||
+    Boolean(prepJobId);
   const isHandsOnGenerating =
-    generateHandsOnMutation.isPending || handsOnJob.isLoading;
+    generateHandsOnMutation.isPending ||
+    Boolean(queueHandsOnMutation?.isPending) ||
+    handsOnJob.isLoading ||
+    Boolean(handsOnJobId);
+
+  const hasActualContent = Boolean(
+    (topic.prep_summary && topic.prep_summary.trim().length > 0) ||
+    (topic.hands_on_exercises && topic.hands_on_exercises.length > 0) ||
+    (topic.flashcards && topic.flashcards.length > 0) ||
+    (topic.key_concepts && topic.key_concepts.length > 0),
+  );
 
   const handleGeneratePrep = () => {
     if (queuePrepMutation) {
@@ -192,7 +206,7 @@ export function TopicStudyView({
         </div>
 
         <div className="flex items-center gap-2">
-          {!isCompleted ? (
+          {hasActualContent && !isCompleted && (
             <Button
               className="bg-teal-500 hover:bg-teal-600 text-white gap-1.5 shadow-lg shadow-teal-500/10"
               onClick={handleMarkComplete}
@@ -201,17 +215,15 @@ export function TopicStudyView({
               <CheckCircle2 className="w-4 h-4" />
               Mark Complete & Unlock Next
             </Button>
-          ) : (
-            nextTopic &&
-            onTopicSelect && (
-              <Button
-                onClick={() => onTopicSelect(nextTopic.id)}
-                className="bg-teal-500 hover:bg-teal-600 text-white gap-1.5 shadow-lg shadow-teal-500/10"
-              >
-                <span>Next Topic: {nextTopic.topic_name}</span>
-                <ArrowRight className="w-4 h-4" />
-              </Button>
-            )
+          )}
+          {isCompleted && nextTopic && onTopicSelect && (
+            <Button
+              onClick={() => onTopicSelect(nextTopic.id)}
+              className="bg-teal-500 hover:bg-teal-600 text-white gap-1.5 shadow-lg shadow-teal-500/10"
+            >
+              <span>Next Topic: {nextTopic.topic_name}</span>
+              <ArrowRight className="w-4 h-4" />
+            </Button>
           )}
         </div>
       </div>
@@ -235,7 +247,7 @@ export function TopicStudyView({
           </div>
           <Button
             size="sm"
-            onClick={() => navigate("/pricing")}
+            onClick={() => navigate("/dashboard/pricing")}
             className="bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white font-semibold gap-1.5 shrink-0 shadow-lg shadow-teal-500/20"
           >
             <Crown className="w-4 h-4 text-amber-300" />
@@ -256,7 +268,7 @@ export function TopicStudyView({
           <Button
             size="sm"
             variant="ghost"
-            onClick={() => navigate("/pricing")}
+            onClick={() => navigate("/dashboard/pricing")}
             className="text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 font-semibold gap-1 h-8 px-3"
           >
             <Crown className="w-3.5 h-3.5" />
@@ -325,12 +337,15 @@ export function TopicStudyView({
               content={topic.prep_summary}
               isLoading={isPrepGenerating}
               onGenerate={handleGeneratePrep}
+              jobStatus={prepJob.status}
+              elapsedSeconds={prepJob.elapsed}
             />
           </TabsContent>
 
           <TabsContent value="cards" className="mt-0 outline-none">
             <FlashcardsTab
               flashcards={topic.flashcards}
+              isGenerating={isPrepGenerating}
               onRate={(index, rating) =>
                 reviewFlashcardMutation.mutate({
                   topicId: topic.id,
@@ -372,6 +387,8 @@ export function TopicStudyView({
               exercises={topic.hands_on_exercises}
               isLoading={isHandsOnGenerating}
               onGenerate={handleGenerateHandsOn}
+              jobStatus={handsOnJob.status}
+              elapsedSeconds={handsOnJob.elapsed}
             />
           </TabsContent>
 

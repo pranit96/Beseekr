@@ -640,6 +640,11 @@ const App = () => {
                         </ProtectedRoute>
                       }
                     />
+                    {/* Top-level pricing redirect */}
+                    <Route
+                      path="/pricing"
+                      element={<Navigate to="/dashboard/pricing" replace />}
+                    />
 
                     {/* =============================================
                       ADMIN CONSOLE - SECURE ACCESS

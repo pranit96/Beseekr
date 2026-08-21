@@ -42,12 +42,34 @@ export function QuizTab({
     return <ExamResultsView submission={submission} />;
   }
 
-  // Loading state (fetching exam)
+  // Loading state (fetching exam or generating)
   if (isLoading || isGenerating) {
     return (
-      <div className="space-y-8 p-4 max-w-3xl mx-auto">
+      <div className="space-y-6 p-4 max-w-3xl mx-auto">
+        {/* Active Generation Card */}
+        <div className="p-6 rounded-3xl bg-gradient-to-r from-teal-500/10 via-cyan-500/10 to-card/20 border border-teal-500/30 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl shadow-teal-500/5">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-teal-500/20 text-teal-400 flex items-center justify-center shrink-0">
+              <Loader2 className="w-6 h-6 animate-spin text-teal-400" />
+            </div>
+            <div>
+              <h4 className="text-base font-bold text-foreground">
+                Generating Topic Quiz
+              </h4>
+              <p className="text-xs text-muted-foreground mt-1">
+                Creating AI multiple-choice and conceptual assessment questions...
+              </p>
+            </div>
+          </div>
+
+          <Button disabled className="bg-teal-500/30 text-teal-300 border border-teal-500/40 cursor-not-allowed shrink-0">
+            <Loader2 className="w-4 h-4 animate-spin mr-2" />
+            Generating...
+          </Button>
+        </div>
+
         <Skeleton className="h-10 w-1/2 mx-auto" />
-        <Skeleton className="h-4 w-1/4 mx-auto mb-12" />
+        <Skeleton className="h-4 w-1/4 mx-auto mb-6" />
         <div className="border border-border/50 p-8 rounded-3xl space-y-6 bg-card/5">
           <Skeleton className="h-6 w-full" />
           <Skeleton className="h-6 w-5/6 mb-8" />
@@ -75,11 +97,21 @@ export function QuizTab({
         </p>
         <Button
           onClick={onGenerate}
+          disabled={isLoading || isGenerating}
           size="lg"
-          className="bg-teal-500 hover:bg-teal-600 text-white"
+          className="bg-teal-500 hover:bg-teal-600 text-white shadow-lg shadow-teal-500/20"
         >
-          <Sparkles className="w-5 h-5 mr-2" />
-          Generate Topic Quiz
+          {isGenerating ? (
+            <>
+              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+              Generating Quiz...
+            </>
+          ) : (
+            <>
+              <Sparkles className="w-5 h-5 mr-2" />
+              Generate Topic Quiz
+            </>
+          )}
         </Button>
       </div>
     );

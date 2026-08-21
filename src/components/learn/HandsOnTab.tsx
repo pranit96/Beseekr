@@ -8,6 +8,8 @@ import {
   Eye,
   Sparkles,
   Lightbulb,
+  Loader2,
+  Clock,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import ReactMarkdown from "react-markdown";
@@ -18,12 +20,16 @@ interface HandsOnTabProps {
   exercises: HandsOnExercise[] | null;
   isLoading: boolean;
   onGenerate: () => void;
+  jobStatus?: string | null;
+  elapsedSeconds?: number;
 }
 
 export function HandsOnTab({
   exercises,
   isLoading,
   onGenerate,
+  jobStatus,
+  elapsedSeconds = 0,
 }: HandsOnTabProps) {
   const [activeSolution, setActiveSolution] = useState<string | null>(null);
   const [visibleHints, setVisibleHints] = useState<Record<string, number>>({});
@@ -31,6 +37,38 @@ export function HandsOnTab({
   if (isLoading) {
     return (
       <div className="space-y-6 p-4">
+        {/* Active Generation Card */}
+        <div className="p-6 rounded-3xl bg-gradient-to-r from-teal-500/10 via-amber-500/10 to-card/20 border border-teal-500/30 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl shadow-teal-500/5">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-teal-500/20 text-teal-400 flex items-center justify-center shrink-0">
+              <Loader2 className="w-6 h-6 animate-spin text-teal-400" />
+            </div>
+            <div>
+              <h4 className="text-base font-bold text-foreground flex items-center gap-2">
+                <span>Building Exercises & Code Challenges</span>
+                {elapsedSeconds > 0 && (
+                  <span className="inline-flex items-center gap-1 text-xs font-mono px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300">
+                    <Clock className="w-3 h-3" /> {elapsedSeconds}s
+                  </span>
+                )}
+              </h4>
+              <p className="text-xs text-muted-foreground mt-1">
+                {jobStatus === "pending"
+                  ? "Queued in priority worker queue · Designing problem statements..."
+                  : jobStatus === "processing"
+                    ? "Generating code starter templates, debugging scenarios, and architecture tasks..."
+                    : "Finalizing solution blueprints, hints, and test cases..."}
+              </p>
+            </div>
+          </div>
+
+          <Button disabled className="bg-teal-500/30 text-teal-300 border border-teal-500/40 cursor-not-allowed shrink-0">
+            <Loader2 className="w-4 h-4 animate-spin mr-2" />
+            Building...
+          </Button>
+        </div>
+
+        {/* Skeleton Preview */}
         {[1, 2, 3].map((i) => (
           <div key={i} className="border border-border/50 p-6 rounded-3xl">
             <Skeleton className="h-6 w-1/3 mb-4" />
@@ -56,11 +94,21 @@ export function HandsOnTab({
         </p>
         <Button
           onClick={onGenerate}
+          disabled={isLoading}
           size="lg"
-          className="bg-teal-500 hover:bg-teal-600 text-white"
+          className="bg-teal-500 hover:bg-teal-600 text-white shadow-lg shadow-teal-500/20"
         >
-          <Sparkles className="w-5 h-5 mr-2" />
-          Generate Hands-On Tasks
+          {isLoading ? (
+            <>
+              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+              Queuing Exercises...
+            </>
+          ) : (
+            <>
+              <Sparkles className="w-5 h-5 mr-2" />
+              Generate Hands-On Tasks
+            </>
+          )}
         </Button>
       </div>
     );

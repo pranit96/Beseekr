@@ -3,7 +3,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Sparkles, AlertCircle } from "lucide-react";
+import { BookOpen, Sparkles, AlertCircle, Loader2, Clock, Zap } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { MermaidDiagram } from "@/components/ui/MermaidDiagram";
 
@@ -11,20 +11,62 @@ interface LearnTabProps {
   content: string | null;
   isLoading: boolean;
   onGenerate: () => void;
+  jobStatus?: string | null;
+  elapsedSeconds?: number;
 }
 
-export function LearnTab({ content, isLoading, onGenerate }: LearnTabProps) {
+export function LearnTab({
+  content,
+  isLoading,
+  onGenerate,
+  jobStatus,
+  elapsedSeconds = 0,
+}: LearnTabProps) {
   if (isLoading) {
     return (
-      <div className="space-y-4 p-6">
-        <Skeleton className="h-8 w-1/3" />
-        <Skeleton className="h-4 w-full" />
-        <Skeleton className="h-4 w-full" />
-        <Skeleton className="h-4 w-5/6" />
-        <div className="pt-6">
-          <Skeleton className="h-8 w-1/4" />
-          <Skeleton className="h-4 w-full mt-4" />
-          <Skeleton className="h-4 w-4/5" />
+      <div className="space-y-6 p-6">
+        {/* Active Generation Card */}
+        <div className="p-6 rounded-3xl bg-gradient-to-r from-teal-500/10 via-cyan-500/10 to-card/20 border border-teal-500/30 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl shadow-teal-500/5">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-teal-500/20 text-teal-400 flex items-center justify-center shrink-0">
+              <Loader2 className="w-6 h-6 animate-spin text-teal-400" />
+            </div>
+            <div>
+              <h4 className="text-base font-bold text-foreground flex items-center gap-2">
+                <span>AI Study Guide Generation in Progress</span>
+                {elapsedSeconds > 0 && (
+                  <span className="inline-flex items-center gap-1 text-xs font-mono px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300">
+                    <Clock className="w-3 h-3" /> {elapsedSeconds}s
+                  </span>
+                )}
+              </h4>
+              <p className="text-xs text-muted-foreground mt-1">
+                {jobStatus === "pending"
+                  ? "Queued in priority worker queue · Synthesizing topic outline..."
+                  : jobStatus === "processing"
+                    ? "Writing in-depth study summary, key concepts, and actionable insights..."
+                    : "Structuring lessons, syntax highlights, and architecture diagrams..."}
+              </p>
+            </div>
+          </div>
+
+          <Button disabled className="bg-teal-500/30 text-teal-300 border border-teal-500/40 cursor-not-allowed shrink-0">
+            <Loader2 className="w-4 h-4 animate-spin mr-2" />
+            Generating...
+          </Button>
+        </div>
+
+        {/* Skeleton Preview */}
+        <div className="space-y-4 pt-2">
+          <Skeleton className="h-8 w-1/3" />
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-5/6" />
+          <div className="pt-4">
+            <Skeleton className="h-8 w-1/4" />
+            <Skeleton className="h-4 w-full mt-4" />
+            <Skeleton className="h-4 w-4/5" />
+          </div>
         </div>
       </div>
     );
@@ -43,11 +85,21 @@ export function LearnTab({ content, isLoading, onGenerate }: LearnTabProps) {
         </p>
         <Button
           onClick={onGenerate}
+          disabled={isLoading}
           size="lg"
-          className="bg-teal-500 hover:bg-teal-600 text-white"
+          className="bg-teal-500 hover:bg-teal-600 text-white shadow-lg shadow-teal-500/20"
         >
-          <Sparkles className="w-5 h-5 mr-2" />
-          Generate Study Guide
+          {isLoading ? (
+            <>
+              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+              Queuing Generation...
+            </>
+          ) : (
+            <>
+              <Sparkles className="w-5 h-5 mr-2" />
+              Generate Study Guide
+            </>
+          )}
         </Button>
       </div>
     );
