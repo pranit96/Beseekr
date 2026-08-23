@@ -69,6 +69,91 @@ interface MermaidDiagramProps {
   title?: string;
 }
 
+// Automatic Mermaid Syntax Repair Helper
+function repairMermaidSyntax(rawCode: string): string {
+  if (!rawCode || typeof rawCode !== "string") return rawCode;
+
+  let code = rawCode.trim();
+  // Strip markdown code fences if present
+  if (code.startsWith("```mermaid")) {
+    code = code
+      .replace(/^```mermaid\s*\n?/, "")
+      .replace(/```$/, "")
+      .trim();
+  } else if (code.startsWith("```")) {
+    code = code
+      .replace(/^```\w*\s*\n?/, "")
+      .replace(/```$/, "")
+      .trim();
+  }
+
+  // 1. Normalize unicode characters (non-breaking spaces, unicode hyphens/dashes, smart quotes)
+  code = code
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/[\u201C\u201D]/g, '"')
+    .replace(/[\u2010\u2011\u2012\u2013\u2014\u2015\u2212]/g, "-")
+    .replace(/[\u00A0\u2000-\u200B\u202F\uFEFF]/g, " ");
+
+  // 2. Fix broken arrow syntax
+  code = code
+    .replace(/-->\s*>/g, "-->")
+    .replace(/--\s*>/g, "-->")
+    .replace(/->\s*>/g, "-->");
+
+  // 3. Process line-by-line to safely quote unquoted node labels containing special chars
+  const lines = code.split("\n");
+  const repairedLines = lines.map((line) => {
+    let l = line;
+    // Don't modify diagram declaration header
+    if (
+      /^\s*(flowchart|graph|sequenceDiagram|classDiagram|stateDiagram|erDiagram|gantt|pie|gitGraph|journey|C4Context|mindmap|timeline|quadrantChart)\b/i.test(
+        l,
+      )
+    ) {
+      return l;
+    }
+
+    // Match node definitions with square brackets: id[content]
+    // e.g. A[Start: Define Goal (Weight loss, etc.)] -> A["Start: Define Goal (Weight loss, etc.)"]
+    l = l.replace(
+      /\b([A-Za-z0-9_]+)\[(?!\s*")([^\]]+)\]/g,
+      (_match, id, text) => {
+        const safeText = text.replace(/"/g, '\\"');
+        return `${id}["${safeText.trim()}"]`;
+      },
+    );
+
+    // Match node definitions with curly braces: id{content}
+    // e.g. B{Choose IF Protocol} -> B{"Choose IF Protocol"}
+    l = l.replace(
+      /\b([A-Za-z0-9_]+)\{(?!\s*")([^\}]+)\}/g,
+      (_match, id, text) => {
+        const safeText = text.replace(/"/g, '\\"');
+        return `${id}{"${safeText.trim()}"}`;
+      },
+    );
+
+    // Match node definitions with round parens: id(content)
+    l = l.replace(
+      /\b([A-Za-z0-9_]+)\((?!\s*[\("])([^\)]+)\)/g,
+      (_match, id, text) => {
+        const safeText = text.replace(/"/g, '\\"');
+        return `${id}("${safeText.trim()}")`;
+      },
+    );
+
+    // Match edge labels: -->|text| e.g. -->|16/8| or -->|label with (parens)|
+    l = l.replace(/-->\|(?!\s*")([^\|]+)\|/g, (_match, text) => {
+      const safeText = text.replace(/"/g, '\\"');
+      return `-->|"${safeText.trim()}"|`;
+    });
+
+    return l;
+  });
+
+  return repairedLines.join("\n");
+}
+
 export function MermaidDiagram({
   chart,
   className,
@@ -88,20 +173,7 @@ export function MermaidDiagram({
   const diagramId = `mermaid-${rawId.replace(/[^a-zA-Z0-9_-]/g, "")}-${Math.random().toString(36).substring(2, 7)}`;
 
   const cleanChart = React.useMemo(() => {
-    let code = chart.trim();
-    // Remove markdown code fences if present
-    if (code.startsWith("```mermaid")) {
-      code = code
-        .replace(/^```mermaid\s*\n?/, "")
-        .replace(/```$/, "")
-        .trim();
-    } else if (code.startsWith("```")) {
-      code = code
-        .replace(/^```\w*\s*\n?/, "")
-        .replace(/```$/, "")
-        .trim();
-    }
-    return code;
+    return repairMermaidSyntax(chart);
   }, [chart]);
 
   useEffect(() => {
