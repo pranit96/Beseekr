@@ -118,13 +118,30 @@ export function TopicStudyView({
       </div>
     );
   }
-
   const currentIdx = allTopics.findIndex((t) => t.id === topic.id);
   const nextTopic =
     currentIdx >= 0 && currentIdx < allTopics.length - 1
       ? allTopics[currentIdx + 1]
       : null;
   const isCompleted = topic.status === "completed";
+
+  // Auto-connect to active background jobs if topic is already queued/processing
+  React.useEffect(() => {
+    if (topic?.active_jobs && topic.active_jobs.length > 0) {
+      const activePrep = topic.active_jobs.find(
+        (j: any) => j.job_type === "prep_content",
+      );
+      if (activePrep && !prepJobId && userTier !== "free") {
+        setPrepJobId(activePrep.id);
+      }
+      const activeHandsOn = topic.active_jobs.find(
+        (j: any) => j.job_type === "hands_on",
+      );
+      if (activeHandsOn && !handsOnJobId && userTier !== "free") {
+        setHandsOnJobId(activeHandsOn.id);
+      }
+    }
+  }, [topic?.active_jobs, userTier]);
 
   const isPrepGenerating =
     generatePrepMutation.isPending ||
@@ -139,10 +156,48 @@ export function TopicStudyView({
 
   const hasActualContent = Boolean(
     (topic.prep_summary && topic.prep_summary.trim().length > 0) ||
-    (topic.hands_on_exercises && topic.hands_on_exercises.length > 0) ||
-    (topic.flashcards && topic.flashcards.length > 0) ||
-    (topic.key_concepts && topic.key_concepts.length > 0),
+      (topic.hands_on_exercises && topic.hands_on_exercises.length > 0) ||
+      (topic.flashcards && topic.flashcards.length > 0) ||
+      (topic.key_concepts && topic.key_concepts.length > 0),
   );
+
+  const hasPrepContent = Boolean(
+    topic.prep_summary && topic.prep_summary.trim().length > 0,
+  );
+  const hasHandsOnContent = Boolean(
+    topic.hands_on_exercises && topic.hands_on_exercises.length > 0,
+  );
+  const hasFlashcardsContent = Boolean(
+    topic.flashcards && topic.flashcards.length > 0,
+  );
+  const hasQuizContent = Boolean(
+    examRes?.data?.questions && examRes.data.questions.length > 0,
+  );
+
+  // Auto-display off-peak queued state across all tabs on free tier when content is pending
+  const isPrepQueued =
+    isPrepQueuedOffPeak ||
+    (userTier === "free" &&
+      !hasPrepContent &&
+      (topic.is_queued || topic.status !== "completed"));
+
+  const isFlashcardsQueued =
+    isPrepQueuedOffPeak ||
+    (userTier === "free" &&
+      !hasFlashcardsContent &&
+      (topic.is_queued || topic.status !== "completed"));
+
+  const isHandsOnQueued =
+    isHandsOnQueuedOffPeak ||
+    (userTier === "free" &&
+      !hasHandsOnContent &&
+      (topic.is_queued || topic.status !== "completed"));
+
+  const isQuizQueued =
+    isQuizQueuedOffPeak ||
+    (userTier === "free" &&
+      !hasQuizContent &&
+      (topic.is_queued || topic.status !== "completed"));
 
   const handleGeneratePrep = () => {
     if (queuePrepMutation) {
@@ -150,8 +205,12 @@ export function TopicStudyView({
         onSuccess: (res: QueueJobResponse) => {
           if (res.sync) {
             // Ultra tier: content already saved, just refresh the plan
-            queryClient.invalidateQueries({ queryKey: educationKeys.plan(planId) });
-            queryClient.invalidateQueries({ queryKey: educationKeys.planResume(planId) });
+            queryClient.invalidateQueries({
+              queryKey: educationKeys.plan(planId),
+            });
+            queryClient.invalidateQueries({
+              queryKey: educationKeys.planResume(planId),
+            });
           } else if (res.tier === "free") {
             // Free tier: scheduled for 4 AM IST batch — show off-peak card
             setIsPrepQueuedOffPeak(true);
@@ -175,8 +234,12 @@ export function TopicStudyView({
       queueHandsOnMutation.mutate(topic.id, {
         onSuccess: (res: QueueJobResponse) => {
           if (res.sync) {
-            queryClient.invalidateQueries({ queryKey: educationKeys.plan(planId) });
-            queryClient.invalidateQueries({ queryKey: educationKeys.planResume(planId) });
+            queryClient.invalidateQueries({
+              queryKey: educationKeys.plan(planId),
+            });
+            queryClient.invalidateQueries({
+              queryKey: educationKeys.planResume(planId),
+            });
           } else if (res.tier === "free") {
             setIsHandsOnQueuedOffPeak(true);
           } else if (res.job_id) {
@@ -390,7 +453,7 @@ export function TopicStudyView({
               onGenerate={handleGeneratePrep}
               jobStatus={prepJob.status}
               elapsedSeconds={prepJob.elapsed}
-              isQueuedForOffPeak={isPrepQueuedOffPeak}
+              isQueuedForOffPeak={isPrepQueued}
               onUpgradeClick={() => {
                 setPricingTier("ultra");
                 setIsPricingOpen(true);
@@ -402,7 +465,7 @@ export function TopicStudyView({
             <FlashcardsTab
               flashcards={topic.flashcards}
               isGenerating={isPrepGenerating}
-              isQueuedForOffPeak={isPrepQueuedOffPeak}
+              isQueuedForOffPeak={isFlashcardsQueued}
               onUpgradeClick={() => {
                 setPricingTier("ultra");
                 setIsPricingOpen(true);
@@ -450,7 +513,7 @@ export function TopicStudyView({
               onGenerate={handleGenerateHandsOn}
               jobStatus={handsOnJob.status}
               elapsedSeconds={handsOnJob.elapsed}
-              isQueuedForOffPeak={isHandsOnQueuedOffPeak}
+              isQueuedForOffPeak={isHandsOnQueued}
               onUpgradeClick={() => {
                 setPricingTier("ultra");
                 setIsPricingOpen(true);
@@ -466,7 +529,7 @@ export function TopicStudyView({
               isGenerating={generateExamMutation.isPending}
               isSubmitting={submitExamMutation.isPending}
               onGenerate={handleGenerateQuiz}
-              isQueuedForOffPeak={isQuizQueuedOffPeak}
+              isQueuedForOffPeak={isQuizQueued}
               onUpgradeClick={() => {
                 setPricingTier("ultra");
                 setIsPricingOpen(true);

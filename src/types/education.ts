@@ -29,6 +29,13 @@ export interface PlanTopic {
   key_concepts: string[] | null;
   flashcards: Flashcard[] | null;
   hands_on_exercises: HandsOnExercise[] | null;
+  is_queued?: boolean;
+  active_jobs?: Array<{
+    id: string;
+    job_type: string;
+    status: string;
+    priority?: number;
+  }>;
   created_at: string;
   updated_at: string;
 }
