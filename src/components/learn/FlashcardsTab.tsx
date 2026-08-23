@@ -142,39 +142,54 @@ export function FlashcardsTab({
       </div>
 
       <div
-        className="w-full aspect-[4/3] md:aspect-[16/9] perspective-1000 cursor-pointer"
+        className="w-full aspect-[4/3] md:aspect-[16/9] cursor-pointer"
+        style={{ perspective: 1200 }}
         onClick={handleFlip}
       >
         <motion.div
-          className="w-full h-full relative preserve-3d"
-          animate={{ rotateX: isFlipped ? 180 : 0 }}
+          className="w-full h-full relative"
+          style={{ transformStyle: "preserve-3d" }}
+          animate={{ rotateY: isFlipped ? 180 : 0 }}
           transition={{
-            duration: 0.6,
-            type: "spring",
-            stiffness: 260,
-            damping: 20,
+            duration: 0.5,
+            ease: [0.23, 1, 0.32, 1],
           }}
         >
-          {/* Front */}
-          <div className="absolute inset-0 backface-hidden w-full h-full p-8 md:p-12 flex flex-col justify-center items-center text-center bg-card/5 border border-border/30 rounded-3xl shadow-lg backdrop-blur-sm">
-            <h3 className="text-2xl md:text-3xl font-bold leading-tight">
+          {/* Front Face (Question) */}
+          <div
+            className="absolute inset-0 w-full h-full p-8 md:p-12 flex flex-col justify-center items-center text-center bg-card/60 border border-border/40 rounded-3xl shadow-xl backdrop-blur-md transition-all select-none"
+            style={{
+              backfaceVisibility: "hidden",
+              WebkitBackfaceVisibility: "hidden",
+              transform: "rotateY(0deg)",
+            }}
+          >
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider bg-primary/10 text-primary mb-4">
+              {currentCard.tier || "Recall"}
+            </div>
+            <h3 className="text-2xl md:text-3xl font-bold leading-tight max-w-xl">
               {currentCard.question}
             </h3>
-            <p className="mt-8 text-sm text-muted-foreground flex items-center gap-2">
-              <RefreshCw className="w-4 h-4" /> Click to reveal answer
+            <p className="mt-8 text-xs md:text-sm text-muted-foreground flex items-center gap-2">
+              <RefreshCw className="w-3.5 h-3.5" /> Click to flip & reveal answer
             </p>
           </div>
 
-          {/* Back */}
+          {/* Back Face (Answer) */}
           <div
-            className="absolute inset-0 backface-hidden w-full h-full p-8 md:p-12 flex flex-col justify-center text-left bg-teal-500/[0.03] border border-teal-500/20 rounded-3xl shadow-lg backdrop-blur-sm"
-            style={{ transform: "rotateX(180deg)" }}
+            className="absolute inset-0 w-full h-full p-8 md:p-12 flex flex-col justify-center text-left bg-teal-500/[0.06] border border-teal-500/30 rounded-3xl shadow-xl backdrop-blur-md select-none"
+            style={{
+              backfaceVisibility: "hidden",
+              WebkitBackfaceVisibility: "hidden",
+              transform: "rotateY(180deg)",
+            }}
           >
             <div className="prose prose-invert prose-teal max-w-none overflow-y-auto custom-scrollbar">
-              <h4 className="text-teal-500 font-semibold mb-4 uppercase tracking-wider text-sm">
+              <h4 className="text-teal-500 font-bold mb-3 uppercase tracking-wider text-xs flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-teal-500" />
                 Answer
               </h4>
-              <p className="text-lg md:text-xl leading-relaxed">
+              <p className="text-lg md:text-xl leading-relaxed text-foreground/90 font-medium">
                 {currentCard.answer}
               </p>
             </div>
