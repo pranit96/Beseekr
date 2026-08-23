@@ -142,7 +142,7 @@ export function FlashcardsTab({
       </div>
 
       <div
-        className="w-full aspect-[4/3] md:aspect-[16/9] cursor-pointer"
+        className="w-full aspect-[4/3] md:aspect-[16/9] cursor-pointer relative"
         style={{ perspective: 1200 }}
         onClick={handleFlip}
       >
@@ -157,11 +157,12 @@ export function FlashcardsTab({
         >
           {/* Front Face (Question) */}
           <div
-            className="absolute inset-0 w-full h-full p-8 md:p-12 flex flex-col justify-center items-center text-center bg-card/60 border border-border/40 rounded-3xl shadow-xl backdrop-blur-md transition-all select-none"
+            className="absolute inset-0 w-full h-full p-8 md:p-12 flex flex-col justify-center items-center text-center bg-card/90 border border-border/50 rounded-3xl shadow-2xl backdrop-blur-md select-none"
             style={{
               backfaceVisibility: "hidden",
               WebkitBackfaceVisibility: "hidden",
               transform: "rotateY(0deg)",
+              pointerEvents: isFlipped ? "none" : "auto",
             }}
           >
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider bg-primary/10 text-primary mb-4">
@@ -177,19 +178,20 @@ export function FlashcardsTab({
 
           {/* Back Face (Answer) */}
           <div
-            className="absolute inset-0 w-full h-full p-8 md:p-12 flex flex-col justify-center text-left bg-teal-500/[0.06] border border-teal-500/30 rounded-3xl shadow-xl backdrop-blur-md select-none"
+            className="absolute inset-0 w-full h-full p-8 md:p-12 flex flex-col justify-center text-left bg-card/95 border border-teal-500/40 rounded-3xl shadow-2xl backdrop-blur-md select-none"
             style={{
               backfaceVisibility: "hidden",
               WebkitBackfaceVisibility: "hidden",
               transform: "rotateY(180deg)",
+              pointerEvents: isFlipped ? "auto" : "none",
             }}
           >
             <div className="prose prose-invert prose-teal max-w-none overflow-y-auto custom-scrollbar">
-              <h4 className="text-teal-500 font-bold mb-3 uppercase tracking-wider text-xs flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-teal-500" />
+              <h4 className="text-teal-400 font-bold mb-3 uppercase tracking-wider text-xs flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-teal-400" />
                 Answer
               </h4>
-              <p className="text-lg md:text-xl leading-relaxed text-foreground/90 font-medium">
+              <p className="text-lg md:text-xl leading-relaxed text-foreground font-medium">
                 {currentCard.answer}
               </p>
             </div>
