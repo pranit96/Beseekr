@@ -8,6 +8,20 @@ export interface LearningPlan {
   target_score: string | null;
   daily_study_hours: number;
   current_topic_id: string | null;
+  topics_count?: number;
+  progress?: {
+    percentage: number;
+    total: number;
+    completed: number;
+    in_progress: number;
+    pending: number;
+  };
+  resume_topic?: {
+    id: string;
+    topic_name: string;
+    status: string;
+    scheduled_date?: string;
+  } | null;
   created_at: string;
   updated_at: string;
 }
