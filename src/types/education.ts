@@ -30,6 +30,8 @@ export interface PlanTopic {
   flashcards: Flashcard[] | null;
   hands_on_exercises: HandsOnExercise[] | null;
   is_queued?: boolean;
+  exam_id?: string | null;
+  exam?: Exam | null;
   active_jobs?: Array<{
     id: string;
     job_type: string;

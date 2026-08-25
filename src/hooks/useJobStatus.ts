@@ -82,12 +82,19 @@ export function useJobStatus(
     gcTime: 5 * 60 * 1000,
   });
 
-  // Call onComplete callback when job status becomes 'completed'
+  const completedJobIdRef = useRef<string | null>(null);
+
+  // Call onComplete callback when job status becomes 'completed' (strictly once per job)
   useEffect(() => {
-    if (job?.status === "completed") {
+    if (
+      job?.status === "completed" &&
+      jobId &&
+      completedJobIdRef.current !== jobId
+    ) {
+      completedJobIdRef.current = jobId;
       onCompleteRef.current?.(job.result ?? {});
     }
-  }, [job?.status, job?.result]);
+  }, [job?.status, job?.result, jobId]);
 
   const status: AiJobStatus = job?.status || (jobId && isPending ? "pending" : null);
   const isLoading = !!jobId && (isPending || status === "pending" || status === "processing");

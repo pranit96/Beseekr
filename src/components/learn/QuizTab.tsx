@@ -177,29 +177,52 @@ export function QuizTab({
   };
 
   const handleSubmit = () => {
-    const formattedAnswers: ExamAnswer[] = Object.entries(answers).map(
-      ([qId, ans]) => {
-        const q = exam.questions.find((x) => x.id === qId);
-        if (q?.type === "mcq") {
-          return { question_id: qId, selected_option: ans };
-        }
-        return { question_id: qId, text_answer: ans };
-      },
-    );
+    const formattedAnswers: ExamAnswer[] = exam.questions.map((q) => {
+      const ans = answers[q.id] || "";
+      if (q.type === "mcq") {
+        return { question_id: q.id, selected_option: ans };
+      }
+      return { question_id: q.id, text_answer: ans };
+    });
 
     onSubmit(formattedAnswers);
   };
 
   return (
     <div className="max-w-3xl mx-auto py-6 px-4">
-      <div className="text-center mb-8">
+      <div className="text-center mb-6">
         <h2 className="text-2xl font-bold mb-2">{exam.title}</h2>
         <p className="text-muted-foreground text-sm uppercase tracking-wider">
           Question {currentQuestionIdx + 1} of {exam.questions.length}
         </p>
 
+        {/* Question Selector Pills */}
+        <div className="flex items-center justify-center gap-2 mt-4 flex-wrap">
+          {exam.questions.map((q, idx) => {
+            const isAnswered = Boolean(answers[q.id]?.trim());
+            const isCurrent = idx === currentQuestionIdx;
+            return (
+              <button
+                key={q.id || idx}
+                type="button"
+                onClick={() => setCurrentQuestionIdx(idx)}
+                className={`w-8 h-8 rounded-full text-xs font-semibold transition-all ${
+                  isCurrent
+                    ? "bg-teal-500 text-white shadow-md shadow-teal-500/30 scale-110 ring-2 ring-teal-400/50"
+                    : isAnswered
+                      ? "bg-teal-500/20 text-teal-300 border border-teal-500/40"
+                      : "bg-card/40 text-muted-foreground border border-border/40 hover:bg-card/60"
+                }`}
+                aria-label={`Jump to question ${idx + 1}`}
+              >
+                {idx + 1}
+              </button>
+            );
+          })}
+        </div>
+
         {/* Progress Bar */}
-        <div className="w-full bg-muted/50 rounded-full h-2 mt-6 overflow-hidden">
+        <div className="w-full bg-muted/50 rounded-full h-1.5 mt-5 overflow-hidden">
           <div
             className="bg-teal-500 h-full transition-all duration-300"
             style={{

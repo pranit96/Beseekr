@@ -125,23 +125,33 @@ export function TopicStudyView({
       : null;
   const isCompleted = topic.status === "completed";
 
-  // Auto-connect to active background jobs if topic is already queued/processing
+  // Auto-connect to active background jobs and attached exams; reset on topic switch
   React.useEffect(() => {
-    if (topic?.active_jobs && topic.active_jobs.length > 0) {
+    setExamId(topic?.exam_id || topic?.exam?.id || undefined);
+    setSubmission(null);
+    setIsPrepQueuedOffPeak(false);
+    setIsHandsOnQueuedOffPeak(false);
+    setIsQuizQueuedOffPeak(false);
+
+    if (topic?.active_jobs && topic.active_jobs.length > 0 && userTier !== "free") {
       const activePrep = topic.active_jobs.find(
-        (j: any) => j.job_type === "prep_content",
+        (j: any) =>
+          j.job_type === "prep_content" &&
+          (j.status === "pending" || j.status === "processing"),
       );
-      if (activePrep && !prepJobId && userTier !== "free") {
-        setPrepJobId(activePrep.id);
-      }
+      setPrepJobId(activePrep ? activePrep.id : null);
+
       const activeHandsOn = topic.active_jobs.find(
-        (j: any) => j.job_type === "hands_on",
+        (j: any) =>
+          j.job_type === "hands_on" &&
+          (j.status === "pending" || j.status === "processing"),
       );
-      if (activeHandsOn && !handsOnJobId && userTier !== "free") {
-        setHandsOnJobId(activeHandsOn.id);
-      }
+      setHandsOnJobId(activeHandsOn ? activeHandsOn.id : null);
+    } else {
+      setPrepJobId(null);
+      setHandsOnJobId(null);
     }
-  }, [topic?.active_jobs, userTier]);
+  }, [topic?.id, topic?.active_jobs, topic?.exam_id, topic?.exam?.id, userTier]);
 
   const isPrepGenerating =
     generatePrepMutation.isPending ||
@@ -158,7 +168,9 @@ export function TopicStudyView({
     (topic.prep_summary && topic.prep_summary.trim().length > 0) ||
       (topic.hands_on_exercises && topic.hands_on_exercises.length > 0) ||
       (topic.flashcards && topic.flashcards.length > 0) ||
-      (topic.key_concepts && topic.key_concepts.length > 0),
+      (topic.key_concepts && topic.key_concepts.length > 0) ||
+      topic.exam_id ||
+      topic.exam,
   );
 
   const hasPrepContent = Boolean(
@@ -171,7 +183,8 @@ export function TopicStudyView({
     topic.flashcards && topic.flashcards.length > 0,
   );
   const hasQuizContent = Boolean(
-    examRes?.data?.questions && examRes.data.questions.length > 0,
+    (examRes?.data?.questions && examRes.data.questions.length > 0) ||
+      (topic.exam?.questions && topic.exam.questions.length > 0),
   );
 
   // Auto-display off-peak queued state across all tabs on free tier when content is pending
@@ -523,7 +536,7 @@ export function TopicStudyView({
 
           <TabsContent value="quiz" className="mt-0 outline-none">
             <QuizTab
-              exam={examRes?.data || null}
+              exam={examRes?.data || topic.exam || null}
               submission={submission}
               isLoading={isExamLoading}
               isGenerating={generateExamMutation.isPending}
