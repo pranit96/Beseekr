@@ -16,12 +16,14 @@ import {
   Zap,
   BookOpen,
   Radio,
+  GraduationCap,
 } from "lucide-react";
 import {
   AdminMonitoring,
   AdminSettings,
   AdminBlogs,
   AdminPodcasts,
+  AdminEducation,
 } from "./components";
 
 const NAV = [
@@ -30,6 +32,12 @@ const NAV = [
     label: "Monitoring",
     icon: Activity,
     description: "Memory & system health",
+  },
+  {
+    id: "education",
+    label: "Education & Learn AI",
+    icon: GraduationCap,
+    description: "AI queue monitor, override generation, user plans & missing content inspector",
   },
   {
     id: "settings",
@@ -163,6 +171,7 @@ export default function AdminDashboard() {
               transition={{ duration: 0.15 }}
             >
               {activeTab === "overview" && <AdminMonitoring />}
+              {activeTab === "education" && <AdminEducation />}
               {activeTab === "settings" && <AdminSettings />}
               {activeTab === "blogs" && <AdminBlogs />}
               {activeTab === "podcasts" && <AdminPodcasts />}

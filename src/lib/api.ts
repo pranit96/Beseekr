@@ -1530,6 +1530,101 @@ class ApiClient {
     });
   }
 
+  // ─── Education & Learn AI Admin Control ──────────────────────────────────────
+  async getEducationQueueMetrics() {
+    return this.request<any>("/api/admin/education/queue/metrics");
+  }
+
+  async getEducationQueueJobs(params?: {
+    status?: string;
+    job_type?: string;
+    priority?: string | number;
+    plan_id?: string;
+    user_id?: string;
+    search?: string;
+    page?: number;
+    limit?: number;
+  }) {
+    const searchParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([k, v]) => {
+        if (v !== undefined && v !== null && v !== "") {
+          searchParams.append(k, String(v));
+        }
+      });
+    }
+    const query = searchParams.toString() ? `?${searchParams.toString()}` : "";
+    return this.request<any>(`/api/admin/education/queue/jobs${query}`);
+  }
+
+  async triggerEducationJob(jobId: string) {
+    return this.request<any>(`/api/admin/education/queue/trigger/${jobId}`, {
+      method: "POST",
+    });
+  }
+
+  async retryEducationJob(jobId: string) {
+    return this.request<any>(`/api/admin/education/queue/retry/${jobId}`, {
+      method: "POST",
+    });
+  }
+
+  async retryAllEducationJobs() {
+    return this.request<any>("/api/admin/education/queue/retry-all", {
+      method: "POST",
+    });
+  }
+
+  async deleteEducationJob(jobId: string) {
+    return this.request<any>(`/api/admin/education/queue/job/${jobId}`, {
+      method: "DELETE",
+    });
+  }
+
+  async cleanEducationJobs(daysToKeep: number = 0) {
+    return this.request<any>("/api/admin/education/queue/clean", {
+      method: "POST",
+      body: JSON.stringify({ daysToKeep }),
+    });
+  }
+
+  async getEducationAdminPlans(params?: {
+    search?: string;
+    page?: number;
+    limit?: number;
+  }) {
+    const searchParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([k, v]) => {
+        if (v !== undefined && v !== null && v !== "") {
+          searchParams.append(k, String(v));
+        }
+      });
+    }
+    const query = searchParams.toString() ? `?${searchParams.toString()}` : "";
+    return this.request<any>(`/api/admin/education/plans${query}`);
+  }
+
+  async getEducationAdminPlanDetails(planId: string) {
+    return this.request<any>(`/api/admin/education/plans/${planId}`);
+  }
+
+  async queueMissingEducationPlanContent(planId: string, priority: number = 1) {
+    return this.request<any>(
+      `/api/admin/education/plans/${planId}/queue-missing`,
+      {
+        method: "POST",
+        body: JSON.stringify({ priority }),
+      },
+    );
+  }
+
+  async deleteEducationAdminPlan(planId: string) {
+    return this.request<any>(`/api/admin/education/plans/${planId}`, {
+      method: "DELETE",
+    });
+  }
+
   async getSystemHealth() {
     return fetch(`${this.baseUrl}/api/health`).then((r) => r.json());
   }
