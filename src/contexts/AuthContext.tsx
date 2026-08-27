@@ -124,6 +124,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // ENHANCED: Track user activity with debouncing
   useEffect(() => {
     let debounceTimer: NodeJS.Timeout;
+    let lastStorageWrite = 0;
 
     const updateActivity = () => {
       clearTimeout(debounceTimer);
@@ -131,9 +132,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const now = Date.now();
         lastActivityRef.current = now;
         authErrorShownRef.current = false; // Reset error flag on activity
-        try {
-          localStorage.setItem("auth_activity", encryptActivityTime(now));
-        } catch (e) {}
+
+        // Throttle writing to localStorage to at most once per 60 seconds
+        if (now - lastStorageWrite > 60000) {
+          lastStorageWrite = now;
+          try {
+            localStorage.setItem("auth_activity", encryptActivityTime(now));
+          } catch (e) {}
+        }
       }, 500);
     };
 
@@ -350,7 +356,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Proactive token refresh timer (refreshes before the 15-minute token expiry)
     tokenRefreshIntervalRef.current = setInterval(() => {
       logger.info("Proactively refreshing token via scheduled interval");
-      refreshAuth(true); // Silent refresh
+      refreshAuthRef.current(true); // Silent refresh
     }, TOKEN_REFRESH_INTERVAL);
 
     return () => {
@@ -359,7 +365,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (tokenRefreshIntervalRef.current)
         clearInterval(tokenRefreshIntervalRef.current);
     };
-  }, [user, handleAuthError, refreshAuth]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   // Keep a stable ref to refreshAuth so handleTokensRefreshed never changes its
   // reference — preventing the socket useEffect from firing on every silent token refresh.
@@ -578,7 +585,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       window.removeEventListener("focus", handleFocus);
       window.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [handleAuthError, refreshAuth]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const fetchCurrentUser = async () => {
     try {
