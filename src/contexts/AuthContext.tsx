@@ -392,65 +392,53 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    // Skip re-initialization if socket is already connected for this user
-    if (socketService.isConnected()) {
-      // Just update the token refresh callback in case it changed
-      socketService.setTokenRefreshCallback(handleTokensRefreshedRef.current);
-      return;
-    }
+    socketService.setTokenRefreshCallback(handleTokensRefreshedRef.current);
 
-    const initializeSocket = async () => {
-      try {
-        logger.info("Initializing socket connection", { userId: user.id });
+    const onConnectionStatus = (data: any) => {
+      setSocketConnected(data.connected);
 
-        socketService.setTokenRefreshCallback(handleTokensRefreshedRef.current);
-
-        socketService.on("connection_status", (data: any) => {
-          setSocketConnected(data.connected);
-
-          if (data.connected) {
-            logger.info("Socket connected", { socketId: data.socketId });
-            lastActivityRef.current = Date.now();
-          } else {
-            logger.warn("Socket disconnected", { reason: data.reason });
-          }
-        });
-
-        socketService.on("auth_error", (data: any) => {
-          logger.error("Socket authentication failed", { error: data.error });
-          if (!authErrorShownRef.current) {
-            authErrorShownRef.current = true;
-            handleAuthError();
-          }
-        });
-
-        socketService.on("forced_disconnect", (data: any) => {
-          logger.warn("Socket force disconnected", { message: data.message });
-          toast({
-            title: "Connection Lost",
-            description: data.message || "Please refresh and log in again.",
-            variant: "destructive",
-          });
-          handleAuthError();
-        });
-
-        socketService.connect();
-        logger.info("Socket connection initiated");
-      } catch (error) {
-        logger.error("Socket initialization error", { error });
+      if (data.connected) {
+        logger.info("Socket connected", { socketId: data.socketId });
+        lastActivityRef.current = Date.now();
+      } else {
+        logger.warn("Socket disconnected", { reason: data.reason });
       }
     };
 
-    initializeSocket();
+    const onAuthError = (data: any) => {
+      logger.error("Socket authentication failed", { error: data.error });
+      if (!authErrorShownRef.current) {
+        authErrorShownRef.current = true;
+        handleAuthError();
+      }
+    };
+
+    const onForcedDisconnect = (data: any) => {
+      logger.warn("Socket force disconnected", { message: data.message });
+      toast({
+        title: "Connection Lost",
+        description: data.message || "Please refresh and log in again.",
+        variant: "destructive",
+      });
+      handleAuthError();
+    };
+
+    socketService.on("connection_status", onConnectionStatus);
+    socketService.on("auth_error", onAuthError);
+    socketService.on("forced_disconnect", onForcedDisconnect);
+
+    // Connect if not already connected
+    socketService.connect();
 
     return () => {
-      if (socketService.isConnected()) {
-        socketService.disconnect();
-        setSocketConnected(false);
-      }
+      // Clean up event listeners on unmount/re-render, but DO NOT disconnect the singleton socket
+      // while the user is still authenticated.
+      socketService.off("connection_status", onConnectionStatus);
+      socketService.off("auth_error", onAuthError);
+      socketService.off("forced_disconnect", onForcedDisconnect);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]); // Only react to actual login/logout — NOT reference changes in callbacks
+  }, [user?.id]); // Only react to actual login/logout
 
   // Initial auth check with retry
   // OPTIMISTIC AUTH: Cache user in localStorage for instant page loads

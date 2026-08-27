@@ -129,12 +129,18 @@ class SocketService {
    * Connect to socket server with enhanced security
    */
   connect(): Socket {
-    // Guard 1: Already fully connected
-    if (this.socket?.connected) return this.socket;
-    // Guard 2: Handshake in progress — socket exists but hasn't fired "connect" yet.
-    // Without this guard, concurrent callers each create a new io() instance
-    // during the brief window between io() call and the "connect" event.
-    if (this.connecting && this.socket) return this.socket;
+    // Guard 1: Already fully connected or in-flight handshake
+    if (this.socket?.connected || this.connecting) {
+      return this.socket!;
+    }
+
+    // Guard 2: Socket instance exists but is disconnected — reuse it!
+    if (this.socket) {
+      this.connecting = true;
+      this.socket.connect();
+      this.startHeartbeat();
+      return this.socket;
+    }
 
     const SOCKET_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -348,10 +354,25 @@ class SocketService {
     });
   }
 
-  /**
-   * Disconnect and cleanup
-   */
   disconnect(): void {
+    this.stopHeartbeat();
+    this.cancelAllRequests();
+
+    if (this.socket) {
+      try {
+        this.socket.disconnect();
+      } catch (e) {
+        logger.error("Error during disconnect", { error: e });
+      }
+      this.connected = false;
+      this.connecting = false;
+    }
+  }
+
+  /**
+   * Completely destroy socket instance and clear all listeners (e.g. on full logout)
+   */
+  destroy(): void {
     this.stopHeartbeat();
     this.cancelAllRequests();
 
@@ -360,7 +381,7 @@ class SocketService {
         this.socket.removeAllListeners();
         this.socket.disconnect();
       } catch (e) {
-        logger.error("Error during disconnect", { error: e });
+        logger.error("Error during destroy", { error: e });
       }
       this.socket = null;
       this.connected = false;
@@ -623,10 +644,12 @@ class SocketService {
     if (!this.listeners.has(event)) {
       this.listeners.set(event, []);
     }
-    this.listeners.get(event)!.push(cb);
-
-    if (this.socket) {
-      this.socket.on(event, cb as any);
+    const list = this.listeners.get(event)!;
+    if (!list.includes(cb)) {
+      list.push(cb);
+      if (this.socket) {
+        this.socket.on(event, cb as any);
+      }
     }
   }
 

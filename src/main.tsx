@@ -7,9 +7,6 @@ import "./i18n";
 // Console override in production
 import "./lib/console-override";
 
-// Socket initialization
-import { initSocketOnUserInteraction } from "./services/socketInit";
-
 // =============================================
 // SERVICE WORKER COMPLETELY DISABLED
 // =============================================
@@ -47,9 +44,6 @@ async function cleanupServiceWorkers() {
 
 // Run cleanup on startup
 cleanupServiceWorkers();
-
-// Initialize socket on user interaction
-initSocketOnUserInteraction();
 
 // Render app
 createRoot(document.getElementById("root")!).render(<App />);

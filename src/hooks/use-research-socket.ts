@@ -198,14 +198,10 @@ export function useResearchSocket(
     // Register connection listener
     socketService.on("connection_status", handleConnectionStatus);
 
-    // Try to connect if not already
-    if (!socketService.isConnected()) {
-      try {
-        socketService.connect();
-      } catch (error) {
-        logger.warn("Failed to connect socket", { error });
-      }
-    }
+    // DO NOT call socketService.connect() here.
+    // Connection lifecycle is owned exclusively by AuthContext.
+    // If the socket isn't connected yet, it will connect via AuthContext
+    // and this hook will receive the connection_status event.
 
     // Register research event handlers (only once)
     if (!handlersRegisteredRef.current) {

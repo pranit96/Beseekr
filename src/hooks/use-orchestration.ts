@@ -49,39 +49,14 @@ interface OrchestrationCallbacks {
 
 const useOrchestration = () => {
   /**
-   * Ensure socket is connected
+   * Ensure socket is connected (Connection lifecycle is managed by AuthContext)
    */
   const ensureConnected = useCallback(() => {
     if (!socketService.isConnected()) {
-      logger.warn("Socket not connected, attempting to reconnect");
-
-      // Try to get token from cookies
-      const getAccessToken = (): string | null => {
-        const cookies = document.cookie.split(";");
-        for (const cookie of cookies) {
-          const [name, value] = cookie.trim().split("=");
-          if (name === "access_token") {
-            return decodeURIComponent(value);
-          }
-        }
-        return null;
-      };
-
-      const token = getAccessToken();
-      if (token) {
-        try {
-          socketService.connect();
-          logger.info("Socket reconnected successfully");
-        } catch (error) {
-          logger.error("Failed to reconnect socket", { error });
-          throw new Error(
-            "Failed to establish connection. Please refresh the page.",
-          );
-        }
-      } else {
-        logger.error("No access token found for reconnection");
-        throw new Error("Authentication required. Please log in again.");
-      }
+      logger.warn("Socket not connected when executing orchestration");
+      throw new Error(
+        "Connection to server not established. Please wait a moment or log in again.",
+      );
     }
   }, []);
 
