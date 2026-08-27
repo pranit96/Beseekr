@@ -425,6 +425,7 @@ export function TopicStudyView({
     generateExamMutation.mutate(
       {
         plan_id: planId,
+        topic_id: topic.id,
         title: `${topic.topic_name} Quiz`,
         subject: topic.topic_name,
         type: "topic_test",
@@ -434,6 +435,33 @@ export function TopicStudyView({
       {
         onSuccess: (res) => {
           if (res.data) setExamId(res.data.id);
+        },
+      },
+    );
+  };
+
+  const handleRetakeQuiz = () => {
+    setSubmission(null);
+    generateExamMutation.mutate(
+      {
+        plan_id: planId,
+        topic_id: topic.id,
+        title: `${topic.topic_name} Quiz`,
+        subject: topic.topic_name,
+        type: "topic_test",
+        topics: [topic.topic_name],
+        question_count: 10,
+        forceNew: true,
+        retake: true,
+      },
+      {
+        onSuccess: (res) => {
+          if (res.data) {
+            setExamId(res.data.id);
+            queryClient.invalidateQueries({
+              queryKey: educationKeys.plan(planId),
+            });
+          }
         },
       },
     );
@@ -724,6 +752,7 @@ export function TopicStudyView({
               isGenerating={generateExamMutation.isPending}
               isSubmitting={submitExamMutation.isPending}
               onGenerate={handleGenerateQuiz}
+              onRetakeQuiz={handleRetakeQuiz}
               isQueuedForOffPeak={isQuizQueued}
               onUpgradeClick={() => {
                 setPricingTier("ultra");
@@ -740,20 +769,13 @@ export function TopicStudyView({
                   onSuccess: (res) => {
                     if (res.data) {
                       setSubmission(res.data);
-                      // Automatically mark topic as completed when quiz is submitted!
-                      updateStatusMutation.mutate(
-                        { topicId: topic.id, status: "completed" },
-                        {
-                          onSuccess: () => {
-                            queryClient.invalidateQueries({
-                              queryKey: educationKeys.plan(planId),
-                            });
-                            queryClient.invalidateQueries({
-                              queryKey: educationKeys.planResume(planId),
-                            });
-                          },
-                        },
-                      );
+                      // Invalidate query caches so plan status and unlocked topics sync with server
+                      queryClient.invalidateQueries({
+                        queryKey: educationKeys.plan(planId),
+                      });
+                      queryClient.invalidateQueries({
+                        queryKey: educationKeys.planResume(planId),
+                      });
                     }
                   },
                 });

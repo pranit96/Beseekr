@@ -121,6 +121,11 @@ export interface ExamSubmission {
   score: number;
   total_possible: number;
   percentage: number;
+  passed?: boolean;
+  attempt_status?: "success" | "failed";
+  retries_remaining?: number;
+  next_retry_available_at?: string | null;
+  passing_threshold?: number;
   ai_feedback: ExamFeedback;
   created_at: string;
 }
@@ -130,6 +135,11 @@ export interface ExamFeedback {
   strengths: string[];
   weaknesses: string[];
   graded_questions: GradedQuestion[];
+  passed?: boolean;
+  attempt_status?: "success" | "failed";
+  retries_remaining?: number;
+  next_retry_available_at?: string | null;
+  passing_threshold?: number;
 }
 
 export interface GradedQuestion {

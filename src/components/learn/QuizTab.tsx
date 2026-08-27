@@ -30,6 +30,7 @@ interface QuizTabProps {
   onUpgradeClick?: () => void;
   onNextChapter?: () => void;
   nextTopicName?: string;
+  onRetakeQuiz?: () => void;
 }
 
 export function QuizTab({
@@ -44,6 +45,7 @@ export function QuizTab({
   onUpgradeClick,
   onNextChapter,
   nextTopicName,
+  onRetakeQuiz,
 }: QuizTabProps) {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0);
@@ -55,6 +57,8 @@ export function QuizTab({
         submission={submission}
         onNextChapter={onNextChapter}
         nextTopicName={nextTopicName}
+        onRetakeQuiz={onRetakeQuiz}
+        isRetaking={isGenerating}
       />
     );
   }

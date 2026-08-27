@@ -1950,12 +1950,15 @@ class ApiClient {
 
   async generateExam(data: {
     plan_id?: string;
+    topic_id?: string;
     title: string;
     subject: string;
     type?: "practice" | "mock" | "topic_test";
     difficulty?: "easy" | "medium" | "hard";
     question_count?: number;
     topics?: string[];
+    forceNew?: boolean;
+    retake?: boolean;
   }) {
     return this.post<Exam>("/api/education/exams/generate", data);
   }
