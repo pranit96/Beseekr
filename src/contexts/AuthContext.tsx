@@ -225,7 +225,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const refreshAuth = useCallback(
     async (
       silent: boolean = false,
-      retries: number = 3,
+      retries: number = 1,
       force: boolean = false,
     ) => {
       if (!force && refreshingRef.current && refreshPromiseRef.current) {
@@ -285,14 +285,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             retries,
           });
 
-          // Retry logic for network errors
-          if (
-            retries > 0 &&
-            !error.message?.includes("401") &&
-            !error.message?.includes("Unauthorized")
-          ) {
-            logger.info("Retrying refresh", { retriesLeft: retries });
-            await new Promise((resolve) => setTimeout(resolve, 2000));
+          // Retry logic for transient network errors (NOT auth errors, NOT rate limits)
+          const isAuthError = error.message?.includes("401") || error.message?.includes("Unauthorized");
+          const isRateLimited = error.message?.includes("429") || error.message?.includes("Too Many");
+          if (retries > 0 && !isAuthError && !isRateLimited) {
+            // Exponential backoff: 2s for first retry, 4s for second, etc.
+            const backoffMs = 2000 * (2 - retries + 1);
+            logger.info("Retrying refresh", { retriesLeft: retries, backoffMs });
+            await new Promise((resolve) => setTimeout(resolve, backoffMs));
             refreshingRef.current = false;
             return refreshAuth(silent, retries - 1);
           }
