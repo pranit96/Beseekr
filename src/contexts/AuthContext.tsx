@@ -369,9 +369,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Socket token refresh callback — stable ref, safe to pass to socketService once
   const handleTokensRefreshed = useCallback(
     (_tokens: { access_token: string; refresh_token: string }) => {
-      logger.info("Socket tokens refreshed, updating auth state");
+      logger.info("Socket tokens refreshed by server handshake, updating activity");
       lastActivityRef.current = Date.now();
-      refreshAuthRef.current(true);
+      // Server has already updated the session cookies during handshake.
+      // Do NOT trigger an HTTP refreshAuth() call here to prevent recursive connect/disconnect loops.
     },
     [], // empty deps: this callback is intentionally stable for the component lifetime
   );
