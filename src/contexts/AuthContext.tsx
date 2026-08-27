@@ -107,9 +107,47 @@ const SESSION_CHECK_INTERVAL = 5 * 60 * 1000; // 5 minutes
 const TOKEN_REFRESH_INTERVAL = 8 * 60 * 1000; // 8 minutes (refresh before 15min expiry)
 const ACTIVITY_TIMEOUT = 25 * 60 * 1000; // 25 minutes inactivity
 
+// OPTIMISTIC AUTH: Cache user in localStorage for instant page loads
+const CACHED_USER_KEY = "beseekr_cached_user";
+const CACHE_EXPIRY_KEY = "beseekr_cache_expiry";
+const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
+
+const getCachedUser = (): User | null => {
+  try {
+    const expiry = localStorage.getItem(CACHE_EXPIRY_KEY);
+    if (expiry && Date.now() > parseInt(expiry, 10)) {
+      localStorage.removeItem(CACHED_USER_KEY);
+      localStorage.removeItem(CACHE_EXPIRY_KEY);
+      return null;
+    }
+    const cached = localStorage.getItem(CACHED_USER_KEY);
+    if (!cached) return null;
+    const parsed = JSON.parse(cached);
+    return parsed?.role ? parsed : null;
+  } catch {
+    return null;
+  }
+};
+
+const setCachedUser = (user: User | null) => {
+  try {
+    if (user) {
+      localStorage.setItem(CACHED_USER_KEY, JSON.stringify(user));
+      localStorage.setItem(CACHE_EXPIRY_KEY, String(Date.now() + CACHE_TTL));
+    } else {
+      localStorage.removeItem(CACHED_USER_KEY);
+      localStorage.removeItem(CACHE_EXPIRY_KEY);
+    }
+  } catch {
+    // localStorage might be full or disabled
+  }
+};
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  // Synchronous initialization from cache ensures user?.id is populated ON MOUNT,
+  // preventing the socket effect from observing a transient null and disconnecting!
+  const [user, setUser] = useState<User | null>(() => getCachedUser());
+  const [loading, setLoading] = useState(() => !getCachedUser());
   const [socketConnected, setSocketConnected] = useState(false);
   const navigate = useNavigate();
   const { i18n } = useTranslation();
@@ -464,41 +502,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]); // Only react to actual login/logout
 
-  // Initial auth check with retry
-  // OPTIMISTIC AUTH: Cache user in localStorage for instant page loads
-  const CACHED_USER_KEY = "beseekr_cached_user";
-  const CACHE_EXPIRY_KEY = "beseekr_cache_expiry";
-  const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
-
-  const getCachedUser = (): User | null => {
-    try {
-      const expiry = localStorage.getItem(CACHE_EXPIRY_KEY);
-      if (expiry && Date.now() > parseInt(expiry)) {
-        localStorage.removeItem(CACHED_USER_KEY);
-        localStorage.removeItem(CACHE_EXPIRY_KEY);
-        return null;
-      }
-      const cached = localStorage.getItem(CACHED_USER_KEY);
-      return cached ? JSON.parse(cached) : null;
-    } catch {
-      return null;
-    }
-  };
-
-  const setCachedUser = (user: User | null) => {
-    try {
-      if (user) {
-        localStorage.setItem(CACHED_USER_KEY, JSON.stringify(user));
-        localStorage.setItem(CACHE_EXPIRY_KEY, String(Date.now() + CACHE_TTL));
-      } else {
-        localStorage.removeItem(CACHED_USER_KEY);
-        localStorage.removeItem(CACHE_EXPIRY_KEY);
-      }
-    } catch {
-      // localStorage might be full or disabled
-    }
-  };
-
   // ENHANCED: Initial auth check with optimistic loading
   useEffect(() => {
     // 0. SELF-HEALING OAUTH REDIRECT: Catch Supabase oauth codes landing on non-callback pages
@@ -523,24 +526,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       try {
         logger.info("Checking initial authentication state");
 
-        // 1. OPTIMISTIC: Immediately show cached user (instant UI)
+        // Sync cached user language on startup
         const cachedUser = getCachedUser();
-        // Only use cache if it has a role field (means it's from the new auth version)
-        if (cachedUser && cachedUser.role) {
-          logger.info("Using cached user for instant load", {
-            userId: cachedUser.id,
-            role: cachedUser.role,
-          });
-          setUser(cachedUser);
-          setLoading(false); // Show content immediately
-
-          if (cachedUser.language && cachedUser.language !== i18n.language) {
-            i18n.changeLanguage(cachedUser.language);
-          }
-        } else if (cachedUser) {
-          logger.info(
-            "Cached user found but lacks role metadata, skipping optimistic load",
-          );
+        if (cachedUser?.language && cachedUser.language !== i18n.language) {
+          i18n.changeLanguage(cachedUser.language);
         }
 
         // Set up API client unauthorized handler

@@ -419,16 +419,11 @@ class ApiClient {
     });
   }
 
-  async getCurrentUser(): Promise<AuthResponse> {
-    // Don't cache this - always fetch fresh
-    // Using a timestamp ensures absolute immunity to external browser or intermediate CDN caches,
-    // while our cacheKey generation automatically strips it to allow concurrent request deduplication.
-    return this.request<any>(`/api/auth/me?t=${Date.now()}`, {
-      headers: {
-        "Cache-Control": "no-cache, no-store, must-revalidate",
-        Pragma: "no-cache",
-      },
-    }) as Promise<AuthResponse>;
+  async getCurrentUser(force: boolean = false): Promise<AuthResponse> {
+    if (force) {
+      this.invalidateCache("/api/auth/me");
+    }
+    return this.request<any>("/api/auth/me") as Promise<AuthResponse>;
   }
   async exportData() {
     return this.request<any>("/api/auth/export");

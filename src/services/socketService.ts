@@ -217,6 +217,7 @@ class SocketService {
 
     this.socket.on("disconnect", (reason: string) => {
       this.connected = false;
+      this.connecting = false;
       this.stopHeartbeat();
 
       this._emitLocal("connection_status", { connected: false, reason });
