@@ -324,6 +324,7 @@ export function TopicStudyView({
         generateExamMutation.mutate(
           {
             plan_id: planId,
+            topic_id: topic.id,
             title: `${topic.topic_name} Quiz`,
             subject: topic.topic_name,
             type: "topic_test",
