@@ -286,16 +286,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             throw new Error("Failed to refresh session");
           }
         } catch (error: any) {
+          const msg = error.message || "";
           logger.error("Session refresh failed", {
-            error: error.message,
+            error: msg,
             retries,
           });
 
-          // Retry logic for transient network errors (NOT auth errors, NOT rate limits)
-          const isAuthError = error.message?.includes("401") || error.message?.includes("Unauthorized");
-          const isRateLimited = error.message?.includes("429") || error.message?.includes("Too Many");
-          if (retries > 0 && !isAuthError && !isRateLimited) {
-            // Exponential backoff: 2s for first retry, 4s for second, etc.
+          // Classify the error — only genuine auth failures should trigger logout
+          const isDefiniteAuthError =
+            msg.includes("Session expired") ||
+            (msg.includes("401") && !msg.includes("non-JSON")) ||
+            msg === "Unauthorized";
+
+          // Transient errors that must NEVER trigger handleAuthError/logout
+          const isTransient =
+            msg.includes("Rate limited") ||
+            msg.includes("429") ||
+            msg.includes("Too Many") ||
+            msg.includes("non-JSON") ||
+            msg.includes("timeout") ||
+            msg.includes("Network error") ||
+            msg.includes("Failed to fetch") ||
+            msg.includes("Temporary connection");
+
+          // Retry only for transient errors, not for auth or rate-limit errors
+          if (retries > 0 && !isDefiniteAuthError && !isTransient) {
             const backoffMs = 2000 * (2 - retries + 1);
             logger.info("Retrying refresh", { retriesLeft: retries, backoffMs });
             await new Promise((resolve) => setTimeout(resolve, backoffMs));
@@ -303,12 +318,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             return refreshAuth(silent, retries - 1);
           }
 
-          if (
-            error.message?.includes("401") ||
-            error.message?.includes("Unauthorized")
-          ) {
+          // Only call handleAuthError for DEFINITE auth failures
+          // (never for rate limits, network errors, non-JSON responses, etc.)
+          if (isDefiniteAuthError && !isTransient) {
             handleAuthError();
           }
+          // else: silently swallow — user stays logged in, next scheduled
+          // refresh or focus event will try again later.
         } finally {
           refreshingRef.current = false;
           refreshPromiseRef.current = null;
@@ -560,13 +576,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     // Proactive background session sync on window focus/visibility
+    // Uses a 2-minute debounce to prevent rapid tab-switching from firing /api/auth/me storms.
     let lastFocusRefresh = Date.now();
     const handleFocus = () => {
       const now = Date.now();
-      if (now - lastFocusRefresh > 30000) {
+      // Only refresh if: 2+ minutes since last focus refresh AND not already refreshing
+      if (now - lastFocusRefresh > 120000 && !refreshingRef.current) {
         lastFocusRefresh = now;
         logger.info("Window focused, proactively refreshing auth state");
-        refreshAuth(true);
+        refreshAuthRef.current(true);
       }
     };
 

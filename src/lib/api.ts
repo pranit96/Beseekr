@@ -204,10 +204,26 @@ class ApiClient {
 
         clearTimeout(timeoutId);
 
+        // ── CRITICAL: Handle 429 FIRST, before content-type checks ──
+        // A 429 is NEVER an auth failure. It must never reach onUnauthorized().
+        // Rate-limit responses may lack application/json content-type (CDN, proxy, or
+        // express-rate-limit edge cases), so we check status before parsing.
+        if (response.status === 429) {
+          const retryAfter = response.headers.get("retry-after");
+          logger.warn("Rate limited", { endpoint, retryAfter });
+          throw new Error(
+            `Rate limited. ${retryAfter ? `Retry after ${retryAfter}s.` : "Please wait a moment."}`,
+          );
+        }
+
         // Check if response is JSON
         const contentType = response.headers.get("content-type");
         if (!contentType || !contentType.includes("application/json")) {
-          throw new Error("Server returned non-JSON response");
+          // Include status code in the error message so callers can distinguish
+          // transient server errors from real auth failures.
+          throw new Error(
+            `Server returned non-JSON response (status ${response.status})`,
+          );
         }
 
         const data = await response.json();
@@ -269,7 +285,7 @@ class ApiClient {
             throw new Error("Session expired. Please log in again.");
           }
 
-          // Handle other errors
+          // Handle other errors (NOT 429 — already handled above)
           logger.error("Request failed", {
             endpoint,
             status: response.status,
