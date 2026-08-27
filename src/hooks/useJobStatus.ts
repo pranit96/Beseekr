@@ -64,7 +64,7 @@ export function useJobStatus(
   const { data: job, isPending, error: queryError } = useQuery({
     queryKey: ["education-ai-job", jobId],
     queryFn: async () => {
-      const res = await apiClient.get(`/education/jobs/${jobId}`);
+      const res = await apiClient.get(`/api/education/jobs/${jobId}`);
       return res.data?.data;
     },
     enabled: !!jobId,

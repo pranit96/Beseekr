@@ -110,11 +110,21 @@ class SocketService {
   private activeRequests: Map<string, OrchestrationControl> = new Map();
   private heartbeatInterval: number | null = null;
   private connectionTimeout: number | null = null;
+  private missedHeartbeats: number = 0;
   private autoConnect: false;
   withCredentials: true;
   private onTokensRefreshed:
     | ((tokens: { access_token: string; refresh_token: string }) => void)
     | null = null;
+
+  // How often we ping the server for a liveness check.
+  private static readonly HEARTBEAT_PING_INTERVAL_MS = 30000;
+  // How many consecutive missed heartbeats we tolerate before forcing a
+  // reconnect. This gives real slack instead of racing the ping interval
+  // 1:1 with zero margin — a single heartbeat that arrives late (e.g.
+  // queued behind a burst of streaming tokens on a busy socket) should
+  // NOT tear down an otherwise-healthy connection.
+  private static readonly MAX_MISSED_HEARTBEATS = 3;
 
   /**
    * Set callback for when tokens are refreshed
@@ -180,6 +190,7 @@ class SocketService {
       this.connected = true;
       this.connecting = false; // Handshake complete — clear the in-progress flag
       this.reconnectAttempts = 0;
+      this.missedHeartbeats = 0;
       this.clearConnectionTimeout();
 
       this._emitLocal("connection_status", {
@@ -277,17 +288,26 @@ class SocketService {
   }
 
   /**
-   * Start heartbeat to detect stale connections
+   * Start heartbeat to detect stale connections.
+   *
+   * IMPORTANT: this is a liveness *hint*, not the primary disconnect
+   * detector — socket.io's own engine.io ping/pong already handles dead
+   * transports. This layer exists only to catch application-level
+   * deadlocks. It must tolerate several missed beats before acting, or
+   * it will fight with normal load (e.g. a socket busy streaming LLM
+   * tokens) and force spurious reconnects, which is what was happening
+   * before this fix (30s ping vs. 30s timeout, zero margin).
    */
   private startHeartbeat(): void {
     this.stopHeartbeat();
+    this.missedHeartbeats = 0;
 
     this.heartbeatInterval = window.setInterval(() => {
       if (this.socket?.connected) {
         this.socket.emit("orchestration:ping");
         this.setConnectionTimeout();
       }
-    }, 30000);
+    }, SocketService.HEARTBEAT_PING_INTERVAL_MS);
   }
 
   /**
@@ -298,21 +318,36 @@ class SocketService {
       window.clearInterval(this.heartbeatInterval);
       this.heartbeatInterval = null;
     }
+    this.missedHeartbeats = 0;
     this.clearConnectionTimeout();
   }
 
   /**
-   * Set connection timeout
+   * Arm the per-ping watchdog. Only forces a reconnect after
+   * MAX_MISSED_HEARTBEATS consecutive misses, not on the first one.
    */
   private setConnectionTimeout(): void {
     this.clearConnectionTimeout();
     this.connectionTimeout = window.setTimeout(() => {
-      if (this.socket?.connected) {
-        logger.warn("Heartbeat timeout - reconnecting");
+      if (!this.socket?.connected) return;
+
+      this.missedHeartbeats++;
+      logger.warn("Heartbeat missed", {
+        missedHeartbeats: this.missedHeartbeats,
+        max: SocketService.MAX_MISSED_HEARTBEATS,
+      });
+
+      if (this.missedHeartbeats >= SocketService.MAX_MISSED_HEARTBEATS) {
+        logger.warn("Heartbeat timeout - reconnecting", {
+          missedHeartbeats: this.missedHeartbeats,
+        });
+        this.missedHeartbeats = 0;
         this.socket.disconnect();
         this.socket.connect();
       }
-    }, 30000);
+      // else: wait for the next scheduled ping (startHeartbeat's interval)
+      // to try again rather than tearing down the connection immediately.
+    }, SocketService.HEARTBEAT_PING_INTERVAL_MS);
   }
 
   /**
@@ -326,9 +361,11 @@ class SocketService {
   }
 
   /**
-   * Reset connection timeout
+   * Reset connection timeout — called when a heartbeat response arrives.
+   * A successful heartbeat clears the missed-count entirely.
    */
   private resetConnectionTimeout(): void {
+    this.missedHeartbeats = 0;
     this.clearConnectionTimeout();
   }
 

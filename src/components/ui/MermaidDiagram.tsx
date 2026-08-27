@@ -154,7 +154,7 @@ function repairMermaidSyntax(rawCode: string): string {
   return repairedLines.join("\n");
 }
 
-export function MermaidDiagram({
+function MermaidDiagramBase({
   chart,
   className,
   title,
@@ -183,7 +183,9 @@ export function MermaidDiagram({
 
     async function renderChart() {
       if (!cleanChart) return;
-      setIsLoading(true);
+      if (!svgHtml) {
+        setIsLoading(true);
+      }
       setError(null);
 
       try {
@@ -398,4 +400,5 @@ export function MermaidDiagram({
   );
 }
 
+export const MermaidDiagram = React.memo(MermaidDiagramBase);
 export default MermaidDiagram;

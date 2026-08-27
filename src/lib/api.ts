@@ -190,7 +190,12 @@ class ApiClient {
         // Increased from 30s to 120s to support slow LLM generations (like Health Plan or Financial Models)
         const timeoutId = setTimeout(() => controller.abort(), 120000);
 
-        const response = await fetch(`${this.baseUrl}${endpoint}`, {
+        const normalizedEndpoint =
+          endpoint.startsWith("/api/") || endpoint.startsWith("http") || endpoint === "/api"
+            ? endpoint
+            : `/api${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`;
+
+        const response = await fetch(`${this.baseUrl}${normalizedEndpoint}`, {
           ...options,
           headers,
           credentials: "include", // CRITICAL: Send cookies with every request
