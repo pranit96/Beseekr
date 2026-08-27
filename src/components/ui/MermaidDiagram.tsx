@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useId } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import mermaid from "mermaid";
 import {
   Check,
@@ -168,9 +168,11 @@ export function MermaidDiagram({
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [retryCount, setRetryCount] = useState<number>(0);
 
-  // Generate unique valid ID for Mermaid render
-  const rawId = useId();
-  const diagramId = `mermaid-${rawId.replace(/[^a-zA-Z0-9_-]/g, "")}-${Math.random().toString(36).substring(2, 7)}`;
+  // Generate unique valid ID for Mermaid render — must be stable across renders
+  // Using useRef so Math.random() is only called once, preventing an infinite
+  // useEffect re-run loop (new id → effect fires → setIsLoading → re-render → repeat).
+  const diagramIdRef = useRef(`mermaid-${Math.random().toString(36).substring(2, 9)}-${Math.random().toString(36).substring(2, 7)}`);
+  const diagramId = diagramIdRef.current;
 
   const cleanChart = React.useMemo(() => {
     return repairMermaidSyntax(chart);
@@ -210,7 +212,9 @@ export function MermaidDiagram({
     return () => {
       isMounted = false;
     };
-  }, [cleanChart, diagramId, retryCount]);
+  // diagramId is intentionally omitted from deps — it's stable (from useRef)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cleanChart, retryCount]);
 
   const handleCopy = async () => {
     try {

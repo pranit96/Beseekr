@@ -361,17 +361,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [user, handleAuthError, refreshAuth]);
 
-  // Socket token refresh callback
+  // Keep a stable ref to refreshAuth so handleTokensRefreshed never changes its
+  // reference — preventing the socket useEffect from firing on every silent token refresh.
+  const refreshAuthRef = useRef(refreshAuth);
+  useEffect(() => { refreshAuthRef.current = refreshAuth; }, [refreshAuth]);
+
+  // Socket token refresh callback — stable ref, safe to pass to socketService once
   const handleTokensRefreshed = useCallback(
-    (tokens: { access_token: string; refresh_token: string }) => {
+    (_tokens: { access_token: string; refresh_token: string }) => {
       logger.info("Socket tokens refreshed, updating auth state");
       lastActivityRef.current = Date.now();
-      refreshAuth(true);
+      refreshAuthRef.current(true);
     },
-    [refreshAuth],
+    [], // empty deps: this callback is intentionally stable for the component lifetime
   );
 
   // ENHANCED: Socket initialization with better error handling
+  // Dependency is user?.id only — connect/disconnect on real login/logout events,
+  // NOT on every callback reference change (which caused the rapid reconnect loop).
+  const handleTokensRefreshedRef = useRef(handleTokensRefreshed);
+  useEffect(() => { handleTokensRefreshedRef.current = handleTokensRefreshed; }, [handleTokensRefreshed]);
+
   useEffect(() => {
     if (!user) {
       if (socketService.isConnected()) {
@@ -382,11 +392,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
+    // Skip re-initialization if socket is already connected for this user
+    if (socketService.isConnected()) {
+      // Just update the token refresh callback in case it changed
+      socketService.setTokenRefreshCallback(handleTokensRefreshedRef.current);
+      return;
+    }
+
     const initializeSocket = async () => {
       try {
         logger.info("Initializing socket connection", { userId: user.id });
 
-        socketService.setTokenRefreshCallback(handleTokensRefreshed);
+        socketService.setTokenRefreshCallback(handleTokensRefreshedRef.current);
 
         socketService.on("connection_status", (data: any) => {
           setSocketConnected(data.connected);
@@ -432,7 +449,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setSocketConnected(false);
       }
     };
-  }, [user, handleTokensRefreshed]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]); // Only react to actual login/logout — NOT reference changes in callbacks
 
   // Initial auth check with retry
   // OPTIMISTIC AUTH: Cache user in localStorage for instant page loads
