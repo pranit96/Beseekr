@@ -252,7 +252,12 @@ export function HandsOnTab({
                 },
               }}
             >
-              {ex.description}
+              {ex.description
+                ? ex.description
+                    .replace(/\\r\\n/g, "\n")
+                    .replace(/\\n/g, "\n")
+                    .replace(/\\t/g, "  ")
+                : ""}
             </ReactMarkdown>
           </div>
 

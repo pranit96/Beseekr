@@ -22,6 +22,7 @@ import { PlanProgressRing } from "./PlanProgressRing";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useDeletePlan, useUpdatePlan } from "@/hooks/use-education";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -65,6 +66,8 @@ export function PlanDetailView({
   onBack,
   onTopicSelect,
 }: PlanDetailViewProps) {
+  const { user } = useAuth();
+  const isUltra = user?.tier === "ultra";
   const [lockedNoticeTopic, setLockedNoticeTopic] = useState<string | null>(
     null,
   );
@@ -220,7 +223,7 @@ export function PlanDetailView({
               >
                 <Lock className="w-4 h-4 shrink-0 text-amber-400" />
                 <span>
-                  <strong>Topic Locked:</strong> Complete preceding topics to
+                  <strong>Chapter Locked:</strong> Complete the quiz for previous chapters to
                   unlock <em>"{lockedNoticeTopic}"</em>.
                 </span>
               </motion.div>
@@ -247,7 +250,7 @@ export function PlanDetailView({
                 transition={{ delay: idx * 0.03 }}
                 onClick={() => {
                   if (isLocked) {
-                    setLockedNoticeTopic(topic.topic_name);
+                    setLockedNoticeTopic(previousTopicName || topic.topic_name);
                     setTimeout(() => setLockedNoticeTopic(null), 3500);
                     return;
                   }
@@ -298,8 +301,7 @@ export function PlanDetailView({
                       </span>
                       {isLocked ? (
                         <span className="flex items-center gap-1 text-amber-500/80 text-[11px] font-medium">
-                          <Lock className="w-3 h-3" /> Clear "
-                          {previousTopicName}" to unlock
+                          <Lock className="w-3 h-3" /> Complete "{previousTopicName}" quiz to unlock
                         </span>
                       ) : topic.has_prep ? (
                         <span className="flex items-center gap-1 text-teal-500/70">

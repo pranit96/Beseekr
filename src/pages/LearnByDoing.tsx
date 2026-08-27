@@ -12,11 +12,15 @@ import {
 } from "@/hooks/use-education";
 
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 type ViewState = "dashboard" | "create" | "detail" | "study";
 
 export default function LearnByDoing() {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const isUltra = user?.tier === "ultra";
+
   const [view, setView] = useState<ViewState>("dashboard");
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [selectedTopicId, setSelectedTopicId] = useState<string | null>(null);
@@ -49,16 +53,17 @@ export default function LearnByDoing() {
     const topics = planData?.data?.topics || [];
     const topicIdx = topics.findIndex((t) => t.id === topicId);
 
-    // Lock guard: Topic can only be opened if it's the first topic, already completed, or all prior topics are completed
+    // Lock guard: Topic can only be opened if it's the first topic, already completed, or all prior topics are completed (quiz passed)
     if (topicIdx > 0) {
       const isCompleted = topics[topicIdx]?.status === "completed";
       const isUnlocked = topics
         .slice(0, topicIdx)
         .every((t) => t.status === "completed");
       if (!isCompleted && !isUnlocked) {
+        const prevTopic = topics[topicIdx - 1];
         toast({
-          title: "Topic Locked",
-          description: "Complete the preceding topics first to unlock this topic.",
+          title: "Chapter Locked 🔒",
+          description: `Complete the quiz for "${prevTopic?.topic_name || "previous chapter"}" to unlock this chapter.`,
           variant: "destructive",
         });
         return;

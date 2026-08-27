@@ -16,6 +16,7 @@ import {
   Crown,
   Sparkles,
   Zap,
+  Lock,
 } from "lucide-react";
 import { PlanTopic } from "@/types/education";
 import { LearnTab } from "./LearnTab";
@@ -123,6 +124,13 @@ export function TopicStudyView({
     currentIdx >= 0 && currentIdx < allTopics.length - 1
       ? allTopics[currentIdx + 1]
       : null;
+  const previousTopic = currentIdx > 0 ? allTopics[currentIdx - 1] : null;
+
+  // Chapter is unlocked only if it's the first chapter or all preceding chapters have status === "completed"
+  const isUnlocked =
+    currentIdx === 0 ||
+    allTopics.slice(0, currentIdx).every((t) => t.status === "completed");
+
   const isCompleted = topic.status === "completed";
 
   // Auto-connect to active background jobs and attached exams; reset on topic switch
@@ -152,6 +160,46 @@ export function TopicStudyView({
       setHandsOnJobId(null);
     }
   }, [topic?.id, topic?.active_jobs, topic?.exam_id, topic?.exam?.id, userTier]);
+
+  if (!isUnlocked && currentIdx > 0 && previousTopic) {
+    return (
+      <div className="max-w-4xl mx-auto p-6 sm:p-12 space-y-6">
+        <Button
+          variant="ghost"
+          onClick={onBack}
+          className="gap-2 -ml-2 text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="w-4 h-4" /> Back to Chapters
+        </Button>
+        <div className="p-8 sm:p-12 rounded-3xl bg-card/20 border border-border/40 text-center space-y-6 shadow-2xl backdrop-blur-md">
+          <div className="w-16 h-16 rounded-3xl bg-amber-500/15 text-amber-400 flex items-center justify-center mx-auto border border-amber-500/30 shadow-lg shadow-amber-500/10">
+            <Lock className="w-8 h-8 text-amber-300" />
+          </div>
+          <div className="space-y-2 max-w-lg mx-auto">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/25 text-xs font-semibold text-amber-300">
+              <Lock className="w-3.5 h-3.5" />
+              Chapter Locked
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-bold text-foreground">
+              Complete Quiz for Chapter {currentIdx}: "{previousTopic.topic_name}"
+            </h2>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              To ensure mastery before progressing, you must complete and submit the quiz for the previous chapter before unlocking this chapter.
+            </p>
+          </div>
+          <div className="pt-2">
+            <Button
+              onClick={() => onTopicSelect?.(previousTopic.id)}
+              className="bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white font-semibold shadow-lg shadow-teal-500/20 h-12 px-7 rounded-2xl gap-2 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <span>Go to Chapter {currentIdx} Quiz</span>
+              <ArrowRight className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const isPrepGenerating =
     generatePrepMutation.isPending ||
@@ -212,12 +260,115 @@ export function TopicStudyView({
       !hasQuizContent &&
       (topic.is_queued || topic.status !== "completed"));
 
+  // Unified multi-tab generation: on Ultra tier (or when generating missing tabs), trigger all components in parallel!
+  const handleGenerateAll = React.useCallback(() => {
+    // 1. Prep / Study Guide & Flashcards
+    if (!hasPrepContent) {
+      if (queuePrepMutation) {
+        queuePrepMutation.mutate(topic.id, {
+          onSuccess: (res: QueueJobResponse) => {
+            if (res.sync) {
+              queryClient.invalidateQueries({
+                queryKey: educationKeys.plan(planId),
+              });
+              queryClient.invalidateQueries({
+                queryKey: educationKeys.planResume(planId),
+              });
+            } else if (res.tier === "free") {
+              setIsPrepQueuedOffPeak(true);
+            } else if (res.job_id) {
+              setPrepJobId(res.job_id);
+            }
+          },
+          onError: () => {
+            generatePrepMutation.mutate(topic.id);
+          },
+        });
+      } else {
+        generatePrepMutation.mutate(topic.id);
+      }
+    }
+
+    // 2. Hands-on exercises
+    if (!hasHandsOnContent) {
+      if (queueHandsOnMutation) {
+        queueHandsOnMutation.mutate(topic.id, {
+          onSuccess: (res: QueueJobResponse) => {
+            if (res.sync) {
+              queryClient.invalidateQueries({
+                queryKey: educationKeys.plan(planId),
+              });
+              queryClient.invalidateQueries({
+                queryKey: educationKeys.planResume(planId),
+              });
+            } else if (res.tier === "free") {
+              setIsHandsOnQueuedOffPeak(true);
+            } else if (res.job_id) {
+              setHandsOnJobId(res.job_id);
+            }
+          },
+          onError: () => {
+            generateHandsOnMutation.mutate(topic.id);
+          },
+        });
+      } else {
+        generateHandsOnMutation.mutate(topic.id);
+      }
+    }
+
+    // 3. Quiz / Exam
+    if (!hasQuizContent) {
+      if (userTier === "free") {
+        setIsQuizQueuedOffPeak(true);
+      } else {
+        generateExamMutation.mutate(
+          {
+            plan_id: planId,
+            title: `${topic.topic_name} Quiz`,
+            subject: topic.topic_name,
+            type: "topic_test",
+            topics: [topic.topic_name],
+            question_count: 10,
+          },
+          {
+            onSuccess: (res) => {
+              if (res.data) {
+                setExamId(res.data.id);
+                queryClient.invalidateQueries({
+                  queryKey: educationKeys.plan(planId),
+                });
+              }
+            },
+          },
+        );
+      }
+    }
+  }, [
+    hasPrepContent,
+    hasHandsOnContent,
+    hasQuizContent,
+    queuePrepMutation,
+    generatePrepMutation,
+    queueHandsOnMutation,
+    generateHandsOnMutation,
+    generateExamMutation,
+    topic.id,
+    topic.topic_name,
+    planId,
+    userTier,
+    queryClient,
+  ]);
+
   const handleGeneratePrep = () => {
+    if (userTier === "ultra") {
+      handleGenerateAll();
+      return;
+    }
+
     if (queuePrepMutation) {
       queuePrepMutation.mutate(topic.id, {
         onSuccess: (res: QueueJobResponse) => {
           if (res.sync) {
-            // Ultra tier: content already saved, just refresh the plan
             queryClient.invalidateQueries({
               queryKey: educationKeys.plan(planId),
             });
@@ -225,15 +376,12 @@ export function TopicStudyView({
               queryKey: educationKeys.planResume(planId),
             });
           } else if (res.tier === "free") {
-            // Free tier: scheduled for 4 AM IST batch — show off-peak card
             setIsPrepQueuedOffPeak(true);
           } else if (res.job_id) {
-            // Pro tier: start polling
             setPrepJobId(res.job_id);
           }
         },
         onError: () => {
-          // Fallback to direct (synchronous) generation
           generatePrepMutation.mutate(topic.id);
         },
       });
@@ -281,7 +429,7 @@ export function TopicStudyView({
         subject: topic.topic_name,
         type: "topic_test",
         topics: [topic.topic_name],
-        question_count: 5,
+        question_count: 10,
       },
       {
         onSuccess: (res) => {
@@ -292,60 +440,93 @@ export function TopicStudyView({
   };
 
   const handleMarkComplete = () => {
-    updateStatusMutation.mutate({ topicId: topic.id, status: "completed" });
+    updateStatusMutation.mutate(
+      { topicId: topic.id, status: "completed" },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: educationKeys.plan(planId) });
+          queryClient.invalidateQueries({ queryKey: educationKeys.planResume(planId) });
+          if (nextTopic && onTopicSelect) {
+            onTopicSelect(nextTopic.id);
+          }
+        },
+      },
+    );
   };
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={onBack}>
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-2xl font-bold">{topic.topic_name}</h1>
-              <TopicStatusBadge status={topic.status} />
-              {userTier === "ultra" ? (
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/30">
-                  <Crown className="w-3 h-3" /> Ultra (Claude Sonnet)
+      {/* ── Fixed Anchored Glassmorphic Header ── */}
+      <div className="p-5 sm:p-6 rounded-3xl bg-card/25 backdrop-blur-xl border border-border/40 shadow-xl transition-all duration-300">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          {/* Left: Navigation, Badges, Title & Description */}
+          <div className="flex items-start gap-4 min-w-0 flex-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onBack}
+              className="rounded-2xl shrink-0 mt-0.5 hover:bg-card/40 border border-border/20 text-muted-foreground hover:text-foreground"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <div className="space-y-1.5 min-w-0 flex-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs font-mono font-semibold px-2.5 py-0.5 rounded-full bg-teal-500/15 border border-teal-500/30 text-teal-300">
+                  Chapter {currentIdx >= 0 ? currentIdx + 1 : 1} of {allTopics.length || 1}
                 </span>
-              ) : userTier === "pro" ? (
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-teal-500/10 text-teal-400 border border-teal-500/30">
-                  <Zap className="w-3 h-3" /> Pro Priority Queue
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-zinc-500/10 text-zinc-400 border border-zinc-500/30">
-                  Free Tier
-                </span>
-              )}
+                <TopicStatusBadge status={topic.status} />
+                {userTier === "ultra" ? (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-300 border border-amber-500/30 shadow-sm shadow-amber-500/10">
+                    <Crown className="w-3.5 h-3.5 text-amber-300" /> Ultra (Claude Sonnet)
+                  </span>
+                ) : userTier === "pro" ? (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-teal-500/10 text-teal-400 border border-teal-500/30">
+                    <Zap className="w-3 h-3" /> Pro Priority Queue
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-zinc-500/10 text-zinc-400 border border-zinc-500/30">
+                    Free Tier
+                  </span>
+                )}
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground truncate">
+                {topic.topic_name}
+              </h1>
+              <p className="text-muted-foreground text-sm line-clamp-2 max-w-3xl leading-relaxed">
+                {topic.description}
+              </p>
             </div>
-            <p className="text-muted-foreground line-clamp-1 max-w-2xl text-sm mt-1">
-              {topic.description}
-            </p>
           </div>
-        </div>
 
-        <div className="flex items-center gap-2">
-          {hasActualContent && !isCompleted && (
-            <Button
-              className="bg-teal-500 hover:bg-teal-600 text-white gap-1.5 shadow-lg shadow-teal-500/10"
-              onClick={handleMarkComplete}
-              disabled={updateStatusMutation.isPending}
-            >
-              <CheckCircle2 className="w-4 h-4" />
-              Mark Complete & Unlock Next
-            </Button>
-          )}
-          {isCompleted && nextTopic && onTopicSelect && (
-            <Button
-              onClick={() => onTopicSelect(nextTopic.id)}
-              className="bg-teal-500 hover:bg-teal-600 text-white gap-1.5 shadow-lg shadow-teal-500/10"
-            >
-              <span>Next Topic: {nextTopic.topic_name}</span>
-              <ArrowRight className="w-4 h-4" />
-            </Button>
-          )}
+          {/* Right: Anchored Action Hub */}
+          <div className="flex items-center gap-3 shrink-0 self-end lg:self-center">
+            {isCompleted ? (
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-sm font-semibold shadow-sm">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Completed
+                </span>
+                {nextTopic && onTopicSelect ? (
+                  <Button
+                    onClick={() => onTopicSelect(nextTopic.id)}
+                    className="bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white font-semibold gap-2 h-11 px-5 rounded-xl shadow-lg shadow-teal-500/20 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+                  >
+                    <span>Next Chapter</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </Button>
+                ) : (
+                  <span className="text-xs font-semibold px-3.5 py-2 rounded-xl bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                    🎉 All Chapters Done
+                  </span>
+                )}
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-300/90 text-xs font-medium">
+                  <CheckSquare className="w-3.5 h-3.5 text-amber-400" /> Complete Quiz to unlock next chapter
+                </span>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -467,6 +648,7 @@ export function TopicStudyView({
               jobStatus={prepJob.status}
               elapsedSeconds={prepJob.elapsed}
               isQueuedForOffPeak={isPrepQueued}
+              userTier={userTier}
               onUpgradeClick={() => {
                 setPricingTier("ultra");
                 setIsPricingOpen(true);
@@ -547,10 +729,32 @@ export function TopicStudyView({
                 setPricingTier("ultra");
                 setIsPricingOpen(true);
               }}
+              onNextChapter={
+                nextTopic && onTopicSelect
+                  ? () => onTopicSelect(nextTopic.id)
+                  : undefined
+              }
+              nextTopicName={nextTopic?.topic_name}
               onSubmit={(answers) => {
                 submitExamMutation.mutate(answers, {
                   onSuccess: (res) => {
-                    if (res.data) setSubmission(res.data);
+                    if (res.data) {
+                      setSubmission(res.data);
+                      // Automatically mark topic as completed when quiz is submitted!
+                      updateStatusMutation.mutate(
+                        { topicId: topic.id, status: "completed" },
+                        {
+                          onSuccess: () => {
+                            queryClient.invalidateQueries({
+                              queryKey: educationKeys.plan(planId),
+                            });
+                            queryClient.invalidateQueries({
+                              queryKey: educationKeys.planResume(planId),
+                            });
+                          },
+                        },
+                      );
+                    }
                   },
                 });
               }}

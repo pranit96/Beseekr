@@ -15,6 +15,7 @@ interface LearnTabProps {
   elapsedSeconds?: number;
   isQueuedForOffPeak?: boolean;
   onUpgradeClick?: () => void;
+  userTier?: string;
 }
 
 export function LearnTab({
@@ -25,6 +26,7 @@ export function LearnTab({
   elapsedSeconds = 0,
   isQueuedForOffPeak = false,
   onUpgradeClick,
+  userTier,
 }: LearnTabProps) {
   // Off-Peak Scheduled Queue State for Free Tier
   if (isQueuedForOffPeak && !content) {
@@ -64,10 +66,9 @@ export function LearnTab({
       </div>
     );
   }
-  if (isLoading) {
+  if (isLoading && !content) {
     return (
       <div className="space-y-6 p-6">
-        {/* Active Generation Card */}
         <div className="p-6 rounded-3xl bg-gradient-to-r from-teal-500/10 via-cyan-500/10 to-card/20 border border-teal-500/30 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl shadow-teal-500/5">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-2xl bg-teal-500/20 text-teal-400 flex items-center justify-center shrink-0">
@@ -75,7 +76,7 @@ export function LearnTab({
             </div>
             <div>
               <h4 className="text-base font-bold text-foreground flex items-center gap-2">
-                <span>AI Study Guide Generation in Progress</span>
+                <span>{userTier === "ultra" ? "Generating All Topic Materials (Claude Sonnet)..." : "AI Study Guide Generation in Progress"}</span>
                 {elapsedSeconds > 0 && (
                   <span className="inline-flex items-center gap-1 text-xs font-mono px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300">
                     <Clock className="w-3 h-3" /> {elapsedSeconds}s
@@ -85,9 +86,9 @@ export function LearnTab({
               <p className="text-xs text-muted-foreground mt-1">
                 {jobStatus === "pending"
                   ? "Queued in priority worker queue · Synthesizing topic outline..."
-                  : jobStatus === "processing"
-                    ? "Writing in-depth study summary, key concepts, and actionable insights..."
-                    : "Structuring lessons, syntax highlights, and architecture diagrams..."}
+                  : userTier === "ultra"
+                    ? "Generating study guide, flashcards, hands-on coding lab, and quiz in parallel..."
+                    : "Writing in-depth study summary, key concepts, and actionable insights..."}
               </p>
             </div>
           </div>
@@ -117,35 +118,64 @@ export function LearnTab({
   if (!content) {
     return (
       <div className="flex flex-col items-center justify-center p-12 text-center min-h-[400px]">
-        <div className="w-16 h-16 bg-teal-500/10 text-teal-500 rounded-full flex items-center justify-center mb-6">
+        <div className="w-16 h-16 bg-teal-500/10 text-teal-500 rounded-2xl flex items-center justify-center mb-6 border border-teal-500/20 shadow-lg shadow-teal-500/5">
           <BookOpen className="w-8 h-8" />
         </div>
         <h3 className="text-xl font-bold mb-2">No study materials yet</h3>
-        <p className="text-muted-foreground mb-8 max-w-md">
-          Generate a comprehensive AI study guide for this topic, including
-          summaries, key concepts, and actionable insights.
+        <p className="text-muted-foreground mb-8 max-w-md text-sm leading-relaxed">
+          {userTier === "ultra"
+            ? "Generate the full study guide, flashcards, interactive hands-on code exercises, and exam quiz in one click with Claude Sonnet."
+            : "Generate a comprehensive AI study guide for this topic, including summaries, key concepts, and actionable insights."}
         </p>
         <Button
           onClick={onGenerate}
           disabled={isLoading}
           size="lg"
-          className="bg-teal-500 hover:bg-teal-600 text-white shadow-lg shadow-teal-500/20"
+          className={
+            userTier === "ultra"
+              ? "bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-600 hover:to-orange-600 text-white font-semibold shadow-xl shadow-amber-500/25 h-12 px-7 rounded-2xl gap-2 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+              : "bg-teal-500 hover:bg-teal-600 text-white shadow-lg shadow-teal-500/20 h-12 px-7 rounded-2xl gap-2"
+          }
         >
           {isLoading ? (
             <>
               <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-              Queuing Generation...
+              <span>Generating Materials...</span>
+            </>
+          ) : userTier === "ultra" ? (
+            <>
+              <Crown className="w-5 h-5 text-amber-200" />
+              <span>Generate All Materials (Instant)</span>
             </>
           ) : (
             <>
               <Sparkles className="w-5 h-5 mr-2" />
-              Generate Study Guide
+              <span>Generate Study Guide</span>
             </>
           )}
         </Button>
       </div>
     );
   }
+
+  const formattedContent = React.useMemo(() => {
+    if (!content) return "";
+    let text = content;
+
+    // 1. Unescape literal \r\n, \n, and \t string escape sequences
+    text = text
+      .replace(/\\r\\n/g, "\n")
+      .replace(/\\n/g, "\n")
+      .replace(/\\t/g, "  ");
+
+    // 2. Fix numbered headings missing markdown formatting (e.g. "1. Why This Matters")
+    text = text.replace(/^(\d+\.\s+[^\n]+)$/gm, (match) => {
+      if (match.startsWith("#")) return match;
+      return `## ${match.trim()}`;
+    });
+
+    return text;
+  }, [content]);
 
   return (
     <div className="p-6 md:p-8 bg-card/5 rounded-3xl border border-border/30">
@@ -239,7 +269,7 @@ export function LearnTab({
             ),
           }}
         >
-          {content}
+          {formattedContent}
         </ReactMarkdown>
       </div>
     </div>

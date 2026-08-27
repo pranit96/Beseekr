@@ -28,6 +28,8 @@ interface QuizTabProps {
   onSubmit: (answers: ExamAnswer[]) => void;
   isQueuedForOffPeak?: boolean;
   onUpgradeClick?: () => void;
+  onNextChapter?: () => void;
+  nextTopicName?: string;
 }
 
 export function QuizTab({
@@ -40,13 +42,21 @@ export function QuizTab({
   onSubmit,
   isQueuedForOffPeak = false,
   onUpgradeClick,
+  onNextChapter,
+  nextTopicName,
 }: QuizTabProps) {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0);
 
   // If there's a submission, show the results view
   if (submission) {
-    return <ExamResultsView submission={submission} />;
+    return (
+      <ExamResultsView
+        submission={submission}
+        onNextChapter={onNextChapter}
+        nextTopicName={nextTopicName}
+      />
+    );
   }
 
   // Off-Peak Scheduled Queue State for Free Tier

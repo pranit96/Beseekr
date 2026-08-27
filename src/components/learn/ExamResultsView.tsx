@@ -1,7 +1,8 @@
 import React from "react";
 import { ExamSubmission } from "@/types/education";
 import { PlanProgressRing } from "./PlanProgressRing";
-import { CheckCircle2, XCircle, TrendingUp, AlertTriangle } from "lucide-react";
+import { CheckCircle2, XCircle, TrendingUp, AlertTriangle, ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import ReactMarkdown from "react-markdown";
 import {
   Accordion,
@@ -12,9 +13,15 @@ import {
 
 interface ExamResultsViewProps {
   submission: ExamSubmission;
+  onNextChapter?: () => void;
+  nextTopicName?: string;
 }
 
-export function ExamResultsView({ submission }: ExamResultsViewProps) {
+export function ExamResultsView({
+  submission,
+  onNextChapter,
+  nextTopicName,
+}: ExamResultsViewProps) {
   const { percentage, ai_feedback } = submission;
 
   let scoreColor = "text-red-500";
@@ -39,6 +46,30 @@ export function ExamResultsView({ submission }: ExamResultsViewProps) {
           </div>
         </div>
       </div>
+
+      {/* Next Chapter Action Banner */}
+      {onNextChapter && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-6 rounded-3xl bg-gradient-to-r from-teal-500/15 via-cyan-500/15 to-emerald-500/15 border border-teal-500/30 shadow-xl shadow-teal-500/10">
+          <div className="flex items-center gap-3 text-center sm:text-left">
+            <div className="w-10 h-10 rounded-2xl bg-teal-500/20 text-teal-400 flex items-center justify-center shrink-0">
+              <CheckCircle2 className="w-6 h-6 text-teal-400" />
+            </div>
+            <div>
+              <h4 className="font-bold text-foreground text-base">Chapter Cleared & Unlocked! 🎉</h4>
+              <p className="text-xs text-muted-foreground">
+                You completed the quiz! {nextTopicName ? `Next up: "${nextTopicName}"` : "You're ready to proceed."}
+              </p>
+            </div>
+          </div>
+          <Button
+            onClick={onNextChapter}
+            className="bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white font-semibold shadow-lg shadow-teal-500/20 h-11 px-6 rounded-xl gap-2 transition-all duration-200 hover:scale-[1.02] shrink-0"
+          >
+            <span>Continue to Next Chapter</span>
+            <ArrowRight className="w-4 h-4" />
+          </Button>
+        </div>
+      )}
 
       {/* Strengths & Weaknesses */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
