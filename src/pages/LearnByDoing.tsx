@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React from "react";
+import { useSearchParams } from "react-router-dom";
 import { GlobalHeader } from "@/components/GlobalHeader";
 import { Button } from "@/components/ui/button";
 import { PlanDashboard } from "@/components/learn/PlanDashboard";
@@ -19,11 +20,23 @@ type ViewState = "dashboard" | "create" | "detail" | "study";
 export default function LearnByDoing() {
   const { toast } = useToast();
   const { user } = useAuth();
-  const isUltra = user?.tier === "ultra";
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const [view, setView] = useState<ViewState>("dashboard");
-  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
-  const [selectedTopicId, setSelectedTopicId] = useState<string | null>(null);
+  // Read state directly from URL search parameters for persistent reloads & back button
+  const selectedPlanId = searchParams.get("planId");
+  const selectedTopicId = searchParams.get("topicId");
+  const urlView = searchParams.get("view");
+
+  let view: ViewState = "dashboard";
+  if (urlView === "create") {
+    view = "create";
+  } else if (selectedPlanId && selectedTopicId) {
+    view = "study";
+  } else if (selectedPlanId) {
+    view = "detail";
+  } else {
+    view = "dashboard";
+  }
 
   // Queries for detail/study views
   const { data: planData, isLoading: isPlanLoading } = useLearningPlan(
@@ -35,17 +48,14 @@ export default function LearnByDoing() {
   const updateStatusMutation = useUpdateTopicStatus(selectedPlanId || "");
 
   const handleCreatePlanSuccess = (planId: string) => {
-    setSelectedPlanId(planId);
-    setView("detail");
+    setSearchParams({ planId });
   };
 
   const handlePlanSelect = (planId: string, topicId?: string) => {
-    setSelectedPlanId(planId);
     if (topicId) {
-      setSelectedTopicId(topicId);
-      setView("study");
+      setSearchParams({ planId, topicId });
     } else {
-      setView("detail");
+      setSearchParams({ planId });
     }
   };
 
@@ -70,26 +80,27 @@ export default function LearnByDoing() {
       }
     }
 
-    setSelectedTopicId(topicId);
-
     // Auto-mark as in_progress when starting a pending topic
     const topic = topics[topicIdx];
-    if (topic && topic.status === "pending") {
+    if (topic && topic.status === "pending" && selectedPlanId) {
       updateStatusMutation.mutate({ topicId, status: "in_progress" });
     }
 
-    setView("study");
+    if (selectedPlanId) {
+      setSearchParams({ planId: selectedPlanId, topicId });
+    }
   };
 
   const handleBackToDashboard = () => {
-    setSelectedPlanId(null);
-    setSelectedTopicId(null);
-    setView("dashboard");
+    setSearchParams({});
   };
 
   const handleBackToDetail = () => {
-    setSelectedTopicId(null);
-    setView("detail");
+    if (selectedPlanId) {
+      setSearchParams({ planId: selectedPlanId });
+    } else {
+      setSearchParams({});
+    }
   };
 
   return (
@@ -107,7 +118,7 @@ export default function LearnByDoing() {
           <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 pb-32">
             {view === "dashboard" && (
               <PlanDashboard
-                onCreateClick={() => setView("create")}
+                onCreateClick={() => setSearchParams({ view: "create" })}
                 onPlanSelect={handlePlanSelect}
               />
             )}

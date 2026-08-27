@@ -1,5 +1,5 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -58,6 +58,18 @@ export function TopicStudyView({
   onTopicSelect,
 }: TopicStudyViewProps) {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const rawTab = searchParams.get("tab") || "learn";
+  const activeTab = ["learn", "cards", "build", "quiz"].includes(rawTab)
+    ? rawTab
+    : "learn";
+
+  const handleTabChange = (val: string) => {
+    const next = new URLSearchParams(searchParams);
+    next.set("tab", val);
+    setSearchParams(next, { replace: true });
+  };
+
   const { user } = useAuth();
   const userTier = user?.tier || "free";
 
@@ -614,7 +626,11 @@ export function TopicStudyView({
         </div>
       )}
 
-      <Tabs defaultValue="learn" className="w-full">
+      <Tabs
+        value={activeTab}
+        onValueChange={handleTabChange}
+        className="w-full"
+      >
         <TabsList className="grid w-full grid-cols-4 max-w-2xl mx-auto mb-8 bg-card/10 border border-border/30 p-1 rounded-2xl h-14">
           <TabsTrigger
             value="learn"
