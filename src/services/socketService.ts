@@ -103,6 +103,7 @@ interface OrchestrationControl {
 class SocketService {
   private socket: Socket | null = null;
   private connected: boolean = false;
+  private connecting: boolean = false; // true during handshake phase — prevents duplicate io() calls
   private listeners: Map<string, ((...args: any[]) => void)[]> = new Map();
   private reconnectAttempts: number = 0;
   private maxReconnectAttempts: number = 5;
@@ -128,7 +129,12 @@ class SocketService {
    * Connect to socket server with enhanced security
    */
   connect(): Socket {
+    // Guard 1: Already fully connected
     if (this.socket?.connected) return this.socket;
+    // Guard 2: Handshake in progress — socket exists but hasn't fired "connect" yet.
+    // Without this guard, concurrent callers each create a new io() instance
+    // during the brief window between io() call and the "connect" event.
+    if (this.connecting && this.socket) return this.socket;
 
     const SOCKET_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -150,6 +156,7 @@ class SocketService {
       rejectUnauthorized: true,
     };
 
+    this.connecting = true; // Set BEFORE io() so concurrent calls see it immediately
     this.socket = io(SOCKET_URL, opts);
     this.setupEventHandlers();
     this.startHeartbeat();
@@ -165,6 +172,7 @@ class SocketService {
 
     this.socket.on("connect", () => {
       this.connected = true;
+      this.connecting = false; // Handshake complete — clear the in-progress flag
       this.reconnectAttempts = 0;
       this.clearConnectionTimeout();
 
@@ -203,6 +211,7 @@ class SocketService {
     });
 
     this.socket.on("connect_error", (error: Error) => {
+      this.connecting = false; // Clear in-progress flag on error so retry can reconnect
       this.reconnectAttempts++;
 
       // Check if it's an auth error
@@ -355,6 +364,7 @@ class SocketService {
       }
       this.socket = null;
       this.connected = false;
+      this.connecting = false;
       this.listeners.clear();
     }
   }
