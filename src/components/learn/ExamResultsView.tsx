@@ -13,12 +13,35 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+
+const formatMath = (str: string) => {
+  if (!str) return "";
+  return str
+    .replace(/\\r\\n/g, "\n")
+    .replace(/\\n/g, "\n")
+    .replace(/[\t ]ext\{/g, " \\text{")
+    .replace(/[\t ]imes\b/g, " \\times")
+    .replace(/[\t ]rac\{/g, " \\frac{")
+    .replace(/[\t ]eta\b/g, " \\beta")
+    .replace(/[\t ]heta\b/g, " \\theta")
+    .replace(/[\t ]au\b/g, " \\tau")
+    .replace(/[\t ]igma\b/g, " \\sigma")
+    .replace(/[\t ]um\b/g, " \\sum")
+    .replace(/[\t ]mathbf\{/g, " \\mathbf{")
+    .replace(/[\t ]mathbb\{/g, " \\mathbb{")
+    .replace(/[\t ]mathcal\{/g, " \\mathcal{")
+    .replace(/\\\(([\s\S]*?)\\\)/g, "$$1$")
+    .replace(/\\\[([\s\S]*?)\\\]/g, "\n\n$$$$$1$$$$\n\n");
+};
 
 interface ExamResultsViewProps {
   submission: ExamSubmission;
@@ -81,7 +104,12 @@ export function ExamResultsView({
             </span>
           </div>
           <div className="prose prose-invert prose-teal max-w-none text-muted-foreground text-sm">
-            <ReactMarkdown>{ai_feedback.general_summary}</ReactMarkdown>
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm, remarkMath]}
+              rehypePlugins={[rehypeKatex]}
+            >
+              {formatMath(ai_feedback.general_summary)}
+            </ReactMarkdown>
           </div>
         </div>
       </div>
@@ -302,7 +330,12 @@ export function ExamResultsView({
                           Explanation & Key Takeaway:
                         </span>
                         <div className="prose prose-invert prose-sm text-muted-foreground leading-relaxed max-w-none">
-                          <ReactMarkdown>{q.feedback}</ReactMarkdown>
+                          <ReactMarkdown
+                            remarkPlugins={[remarkGfm, remarkMath]}
+                            rehypePlugins={[rehypeKatex]}
+                          >
+                            {formatMath(q.feedback)}
+                          </ReactMarkdown>
                         </div>
                       </div>
                     )}
