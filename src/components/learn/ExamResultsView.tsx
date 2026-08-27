@@ -148,10 +148,18 @@ export function ExamResultsView({
                   <Loader2 className="w-4 h-4 animate-spin" />
                   <span>Generating New Quiz...</span>
                 </>
+              ) : retriesRemaining === 0 ? (
+                <>
+                  <RotateCcw className="w-4 h-4" />
+                  <span>No Attempts Left</span>
+                </>
               ) : (
                 <>
                   <RotateCcw className="w-4 h-4" />
-                  <span>Retake with New Questions</span>
+                  <span>
+                    Try Again ({retriesRemaining}{" "}
+                    {retriesRemaining === 1 ? "attempt" : "attempts"} left)
+                  </span>
                 </>
               )}
             </Button>
