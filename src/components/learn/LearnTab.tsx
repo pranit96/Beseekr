@@ -30,6 +30,43 @@ export function LearnTab({
   onUpgradeClick,
   userTier,
 }: LearnTabProps) {
+  const formattedContent = React.useMemo(() => {
+    if (!content) return "";
+    let text = content;
+
+    // 1. Safely unescape literal newlines without touching LaTeX \text, \times, \tau, \theta, etc.
+    text = text
+      .replace(/\\r\\n/g, "\n")
+      .replace(/\\n/g, "\n");
+
+    // 2. Repair damaged LaTeX tokens from unescaped JSON tabs or missing backslashes
+    text = text
+      .replace(/[\t ]ext\{/g, " \\text{")
+      .replace(/[\t ]imes\b/g, " \\times")
+      .replace(/[\t ]rac\{/g, " \\frac{")
+      .replace(/[\t ]eta\b/g, " \\beta")
+      .replace(/[\t ]heta\b/g, " \\theta")
+      .replace(/[\t ]au\b/g, " \\tau")
+      .replace(/[\t ]igma\b/g, " \\sigma")
+      .replace(/[\t ]um\b/g, " \\sum")
+      .replace(/[\t ]mathbf\{/g, " \\mathbf{")
+      .replace(/[\t ]mathbb\{/g, " \\mathbb{")
+      .replace(/[\t ]mathcal\{/g, " \\mathcal{");
+
+    // 3. Convert LaTeX delimiters \( ... \) to $ ... $ and \[ ... \] to $$ ... $$ for remark-math
+    text = text
+      .replace(/\\\(([\s\S]*?)\\\)/g, "$$1$")
+      .replace(/\\\[([\s\S]*?)\\\]/g, "\n\n$$$$$1$$$$\n\n");
+
+    // 4. Fix numbered headings missing markdown formatting (e.g. "1. Why This Matters")
+    text = text.replace(/^(\d+\.\s+[^\n]+)$/gm, (match) => {
+      if (match.startsWith("#")) return match;
+      return `## ${match.trim()}`;
+    });
+
+    return text;
+  }, [content]);
+
   // Off-Peak Scheduled Queue State for Free Tier
   if (isQueuedForOffPeak && !content) {
     return (
@@ -159,43 +196,6 @@ export function LearnTab({
       </div>
     );
   }
-
-  const formattedContent = React.useMemo(() => {
-    if (!content) return "";
-    let text = content;
-
-    // 1. Safely unescape literal newlines without touching LaTeX \text, \times, \tau, \theta, etc.
-    text = text
-      .replace(/\\r\\n/g, "\n")
-      .replace(/\\n/g, "\n");
-
-    // 2. Repair damaged LaTeX tokens from unescaped JSON tabs or missing backslashes
-    text = text
-      .replace(/[\t ]ext\{/g, " \\text{")
-      .replace(/[\t ]imes\b/g, " \\times")
-      .replace(/[\t ]rac\{/g, " \\frac{")
-      .replace(/[\t ]eta\b/g, " \\beta")
-      .replace(/[\t ]heta\b/g, " \\theta")
-      .replace(/[\t ]au\b/g, " \\tau")
-      .replace(/[\t ]igma\b/g, " \\sigma")
-      .replace(/[\t ]um\b/g, " \\sum")
-      .replace(/[\t ]mathbf\{/g, " \\mathbf{")
-      .replace(/[\t ]mathbb\{/g, " \\mathbb{")
-      .replace(/[\t ]mathcal\{/g, " \\mathcal{");
-
-    // 3. Convert LaTeX delimiters \( ... \) to $ ... $ and \[ ... \] to $$ ... $$ for remark-math
-    text = text
-      .replace(/\\\(([\s\S]*?)\\\)/g, "$$1$")
-      .replace(/\\\[([\s\S]*?)\\\]/g, "\n\n$$$$$1$$$$\n\n");
-
-    // 4. Fix numbered headings missing markdown formatting (e.g. "1. Why This Matters")
-    text = text.replace(/^(\d+\.\s+[^\n]+)$/gm, (match) => {
-      if (match.startsWith("#")) return match;
-      return `## ${match.trim()}`;
-    });
-
-    return text;
-  }, [content]);
 
   return (
     <div className="p-6 md:p-8 bg-card/5 rounded-3xl border border-border/30">

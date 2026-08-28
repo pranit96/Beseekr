@@ -118,34 +118,8 @@ export function TopicStudyView({
   const [isHandsOnQueuedOffPeak, setIsHandsOnQueuedOffPeak] = React.useState(false);
   const [isQuizQueuedOffPeak, setIsQuizQueuedOffPeak] = React.useState(false);
 
-  if (!topic) {
-    return (
-      <div className="max-w-6xl mx-auto p-8 space-y-6">
-        <Button variant="ghost" onClick={onBack} className="gap-2 -ml-2">
-          <ArrowLeft className="w-4 h-4" /> Back to Topics
-        </Button>
-        <div className="p-12 text-center border border-border/40 rounded-3xl bg-card/10 space-y-4">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto text-teal-400" />
-          <p className="text-muted-foreground text-sm">Loading topic details...</p>
-        </div>
-      </div>
-    );
-  }
-  const currentIdx = allTopics.findIndex((t) => t.id === topic.id);
-  const nextTopic =
-    currentIdx >= 0 && currentIdx < allTopics.length - 1
-      ? allTopics[currentIdx + 1]
-      : null;
-  const previousTopic = currentIdx > 0 ? allTopics[currentIdx - 1] : null;
-
-  // Chapter is unlocked only if it's the first chapter or all preceding chapters have status === "completed"
-  const isUnlocked =
-    currentIdx === 0 ||
-    allTopics.slice(0, currentIdx).every((t) => t.status === "completed");
-
-  const isCompleted = topic.status === "completed";
-
   // Auto-connect to active background jobs and attached exams; reset on topic switch
+  // (Always call hooks unconditionally at the top level)
   React.useEffect(() => {
     setExamId(topic?.exam_id || topic?.exam?.id || undefined);
     setSubmission(null);
@@ -172,6 +146,33 @@ export function TopicStudyView({
       setHandsOnJobId(null);
     }
   }, [topic?.id, topic?.active_jobs, topic?.exam_id, topic?.exam?.id, userTier]);
+
+  if (!topic) {
+    return (
+      <div className="max-w-6xl mx-auto p-8 space-y-6">
+        <Button variant="ghost" onClick={onBack} className="gap-2 -ml-2">
+          <ArrowLeft className="w-4 h-4" /> Back to Topics
+        </Button>
+        <div className="p-12 text-center border border-border/40 rounded-3xl bg-card/10 space-y-4">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto text-teal-400" />
+          <p className="text-muted-foreground text-sm">Loading topic details...</p>
+        </div>
+      </div>
+    );
+  }
+  const currentIdx = allTopics.findIndex((t) => t.id === topic.id);
+  const nextTopic =
+    currentIdx >= 0 && currentIdx < allTopics.length - 1
+      ? allTopics[currentIdx + 1]
+      : null;
+  const previousTopic = currentIdx > 0 ? allTopics[currentIdx - 1] : null;
+
+  // Chapter is unlocked only if it's the first chapter or all preceding chapters have status === "completed"
+  const isUnlocked =
+    currentIdx === 0 ||
+    allTopics.slice(0, currentIdx).every((t) => t.status === "completed");
+
+  const isCompleted = topic.status === "completed";
 
   if (!isUnlocked && currentIdx > 0 && previousTopic) {
     return (
