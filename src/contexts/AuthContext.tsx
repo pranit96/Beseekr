@@ -79,6 +79,7 @@ interface User {
     weekly_digest: boolean;
     learn_by_doing?: boolean;
     enable_auto_job_apply?: boolean;
+    job_search?: boolean;
   };
 }
 
