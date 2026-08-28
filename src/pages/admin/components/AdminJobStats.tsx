@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiClient } from "@/lib/api";
+import { apiClient, type JobScraperStatsResponse } from "@/lib/api";
 import { toast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -81,7 +81,10 @@ export function AdminJobStats() {
     queryKey: ["admin", "jobScraperStats"],
     queryFn: async () => {
       const res = await apiClient.getJobScraperStats();
-      return res.data?.data;
+      // request<T>() is typed as ApiResponse<T> so res.data is typed as JobScraperStatsResponse,
+      // but at runtime res IS the raw JSON body so res.data is the inner payload.
+      // Cast through unknown to bridge the structural mismatch.
+      return res?.data as unknown as JobScraperStatsResponse["data"];
     },
     refetchInterval: autoRefresh ? 10000 : false,
   });
