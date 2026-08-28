@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
   Tooltip as UITooltip,
@@ -40,6 +41,7 @@ import {
   ShieldAlert,
   Gauge,
   ArrowUpRight,
+  Briefcase,
 } from "lucide-react";
 
 const StatCard = ({
@@ -99,9 +101,19 @@ const formatUptime = (seconds: number) => {
 
 export function AdminMonitoring() {
   const { toast } = useToast();
+  const [, setSearchParams] = useSearchParams();
   const [isCleaning, setIsCleaning] = useState(false);
   const [isTriggering, setIsTriggering] = useState(false);
   const [history, setHistory] = useState<any[]>([]);
+
+  // Fetch Job Scraper Stats
+  const { data: jobStatsRes } = useQuery({
+    queryKey: ["admin", "monitoring", "jobScraper"],
+    queryFn: () => apiClient.getJobScraperStats().then((res) => res.data),
+    refetchInterval: 10000,
+  });
+  const jobStats = jobStatsRes?.summary || null;
+  const jobSources = jobStatsRes?.sources || null;
 
   // Fetch Memory Stats
   const { data: memStats } = useQuery({
@@ -473,6 +485,89 @@ export function AdminMonitoring() {
             </div>
           ))}
         </div>
+
+        {/* JOB SCRAPER & INGESTION TELEMETRY OVERVIEW */}
+        {jobStats && (
+          <div className="bg-white/[0.02] border border-white/[0.07] rounded-2xl p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400">
+                  <Briefcase className="w-3.5 h-3.5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                    Job Scraper Ingestion Engine
+                    <span className="text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full font-semibold">
+                      Hourly Cron Active
+                    </span>
+                  </h3>
+                  <p className="text-[11px] text-zinc-500 mt-0.5">
+                    Multi-source ATS ingestion (Greenhouse, Lever, Ashby, Workable, RemoteOK, JSearch)
+                  </p>
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSearchParams({ tab: "jobs" })}
+                className="border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.07] text-xs font-bold text-white"
+              >
+                View Full Telemetry
+                <ArrowUpRight className="w-3.5 h-3.5 ml-1 text-zinc-400" />
+              </Button>
+            </div>
+
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 pt-1">
+              <div className="bg-white/[0.02] rounded-xl p-3.5 border border-white/[0.04]">
+                <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block">
+                  Total in DB
+                </span>
+                <span className="text-xl font-black text-white block mt-0.5">
+                  {jobStats.totalInDb?.toLocaleString() || 0}
+                </span>
+                <span className="text-[10px] text-emerald-400 block mt-1">
+                  Greenhouse: {jobSources?.inDb?.greenhouse || 0} | Lever: {jobSources?.inDb?.lever || 0}
+                </span>
+              </div>
+
+              <div className="bg-white/[0.02] rounded-xl p-3.5 border border-white/[0.04]">
+                <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block">
+                  Latest Run Fetched
+                </span>
+                <span className="text-xl font-black text-indigo-400 block mt-0.5">
+                  {jobStats.latestRun?.fetched?.total || 0}
+                </span>
+                <span className="text-[10px] text-zinc-500 block mt-1">
+                  Deduped to {jobStats.latestRun?.afterDedup || 0}
+                </span>
+              </div>
+
+              <div className="bg-white/[0.02] rounded-xl p-3.5 border border-white/[0.04]">
+                <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block">
+                  Stored (Latest Run)
+                </span>
+                <span className="text-xl font-black text-emerald-400 block mt-0.5">
+                  +{jobStats.latestRun?.storedInDb || 0}
+                </span>
+                <span className="text-[10px] text-zinc-500 block mt-1">
+                  Lifetime: {jobStats.lifetime?.totalStored?.toLocaleString() || 0}
+                </span>
+              </div>
+
+              <div className="bg-white/[0.02] rounded-xl p-3.5 border border-white/[0.04]">
+                <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block">
+                  Cleared / Expired
+                </span>
+                <span className="text-xl font-black text-amber-400 block mt-0.5">
+                  {jobStats.latestRun?.clearedFromDb || 0}
+                </span>
+                <span className="text-[10px] text-zinc-500 block mt-1">
+                  Retention horizon: 3 days
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* LLM & AI OPERATIONS */}
         <div>

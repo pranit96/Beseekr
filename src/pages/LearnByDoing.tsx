@@ -153,7 +153,7 @@ export default function LearnByDoing() {
                 <TopicStudyView
                   planId={selectedPlanId}
                   topic={
-                    planData?.data?.topics.find(
+                    planData?.data?.topics?.find(
                       (t) => t.id === selectedTopicId,
                     ) || null
                   }

@@ -17,6 +17,7 @@ import {
   BookOpen,
   Radio,
   GraduationCap,
+  Briefcase,
 } from "lucide-react";
 import {
   AdminMonitoring,
@@ -24,6 +25,7 @@ import {
   AdminBlogs,
   AdminPodcasts,
   AdminEducation,
+  AdminJobStats,
 } from "./components";
 
 const NAV = [
@@ -32,6 +34,12 @@ const NAV = [
     label: "Monitoring",
     icon: Activity,
     description: "Memory & system health",
+  },
+  {
+    id: "jobs",
+    label: "Job Scraper Telemetry",
+    icon: Briefcase,
+    description: "Hourly cron scraper cycles, fetched/stored DB metrics, source breakdown & cleanup",
   },
   {
     id: "education",
@@ -171,6 +179,7 @@ export default function AdminDashboard() {
               transition={{ duration: 0.15 }}
             >
               {activeTab === "overview" && <AdminMonitoring />}
+              {activeTab === "jobs" && <AdminJobStats />}
               {activeTab === "education" && <AdminEducation />}
               {activeTab === "settings" && <AdminSettings />}
               {activeTab === "blogs" && <AdminBlogs />}

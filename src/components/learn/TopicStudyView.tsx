@@ -274,7 +274,7 @@ export function TopicStudyView({
       (topic.is_queued || topic.status !== "completed"));
 
   // Unified multi-tab generation: on Ultra tier (or when generating missing tabs), trigger all components in parallel!
-  const handleGenerateAll = React.useCallback(() => {
+  const handleGenerateAll = () => {
     // 1. Prep / Study Guide & Flashcards
     if (!hasPrepContent) {
       if (queuePrepMutation) {
@@ -357,21 +357,7 @@ export function TopicStudyView({
         );
       }
     }
-  }, [
-    hasPrepContent,
-    hasHandsOnContent,
-    hasQuizContent,
-    queuePrepMutation,
-    generatePrepMutation,
-    queueHandsOnMutation,
-    generateHandsOnMutation,
-    generateExamMutation,
-    topic.id,
-    topic.topic_name,
-    planId,
-    userTier,
-    queryClient,
-  ]);
+  };
 
   const handleGeneratePrep = () => {
     if (userTier === "ultra") {
