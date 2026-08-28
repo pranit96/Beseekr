@@ -109,7 +109,7 @@ export function AdminMonitoring() {
   // Fetch Job Scraper Stats
   const { data: jobStatsRes } = useQuery({
     queryKey: ["admin", "monitoring", "jobScraper"],
-    queryFn: () => apiClient.getJobScraperStats().then((res) => res.data),
+    queryFn: () => apiClient.getJobScraperStats().then((res) => res.data?.data),
     refetchInterval: 10000,
   });
   const jobStats = jobStatsRes?.summary || null;

@@ -81,7 +81,7 @@ export function AdminJobStats() {
     queryKey: ["admin", "jobScraperStats"],
     queryFn: async () => {
       const res = await apiClient.getJobScraperStats();
-      return res.data;
+      return res.data?.data;
     },
     refetchInterval: autoRefresh ? 10000 : false,
   });

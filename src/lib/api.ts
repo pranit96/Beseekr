@@ -38,6 +38,87 @@ interface ApiResponse<T> {
   };
 }
 
+export interface JobScraperStatsResponse {
+  success: boolean;
+  data: {
+    summary: {
+      totalInDb: number;
+      latestRun: any;
+      lifetime: {
+        totalRuns: number;
+        totalFetched: number;
+        totalStored: number;
+        totalCleared: number;
+        lastRunAt?: string;
+      };
+      nextScheduledRun: string;
+      cronSchedule: string;
+    };
+    sources: {
+      inDb: {
+        greenhouse: number;
+        lever: number;
+        ashby: number;
+        workable: number;
+        remoteok: number;
+        jsearch: number;
+        other: number;
+      };
+      targets: {
+        greenhouseCompaniesCount: number;
+        leverCompaniesCount: number;
+        ashbyCompaniesCount: number;
+        workableCompaniesCount: number;
+        jsearchQueriesCount: number;
+        regionFiltersCount: number;
+      };
+      lastRunFetched: {
+        greenhouse: number;
+        lever: number;
+        ashby: number;
+        workable: number;
+        remoteok: number;
+        jsearch: number;
+        total: number;
+      };
+    };
+    freshness: {
+      last24h: number;
+      last48h: number;
+      last72h: number;
+      older: number;
+    };
+    runs: Array<{
+      id: string;
+      timestamp: string;
+      startedAt: string;
+      completedAt: string;
+      durationMs: number;
+      trigger: string;
+      status: "success" | "partial" | "failed";
+      errorMessage?: string | null;
+      fetched: {
+        greenhouse: number;
+        lever: number;
+        ashby: number;
+        workable: number;
+        remoteok: number;
+        jsearch: number;
+        total: number;
+      };
+      afterFreshnessFilter: number;
+      afterRegionFilter: number;
+      afterDedup: number;
+      storedInDb: number;
+      batchErrors: number;
+      clearedFromDb: number;
+      totalInDb: number;
+      jsearchQueryUsed?: string | null;
+    }>;
+  };
+  timestamp: string;
+}
+
 interface PendingRequest<T = any> {
   resolve: (value: ApiResponse<T>) => void;
   reject: (error: any) => void;
@@ -1540,88 +1621,15 @@ class ApiClient {
     });
   }
 
+  async triggerAdminPipeline() {
+    return this.request<any>("/api/admin/pipeline/trigger", {
+      method: "POST",
+    });
+  }
+
   // ─── Job Scraper & Cron Telemetry Admin Endpoints ─────────────────────────
   async getJobScraperStats() {
-    return this.request<{
-      success: boolean;
-      data: {
-        summary: {
-          totalInDb: number;
-          latestRun: any;
-          lifetime: {
-            totalRuns: number;
-            totalFetched: number;
-            totalStored: number;
-            totalCleared: number;
-            lastRunAt?: string;
-          };
-          nextScheduledRun: string;
-          cronSchedule: string;
-        };
-        sources: {
-          inDb: {
-            greenhouse: number;
-            lever: number;
-            ashby: number;
-            workable: number;
-            remoteok: number;
-            jsearch: number;
-            other: number;
-          };
-          targets: {
-            greenhouseCompaniesCount: number;
-            leverCompaniesCount: number;
-            ashbyCompaniesCount: number;
-            workableCompaniesCount: number;
-            jsearchQueriesCount: number;
-            regionFiltersCount: number;
-          };
-          lastRunFetched: {
-            greenhouse: number;
-            lever: number;
-            ashby: number;
-            workable: number;
-            remoteok: number;
-            jsearch: number;
-            total: number;
-          };
-        };
-        freshness: {
-          last24h: number;
-          last48h: number;
-          last72h: number;
-          older: number;
-        };
-        runs: Array<{
-          id: string;
-          timestamp: string;
-          startedAt: string;
-          completedAt: string;
-          durationMs: number;
-          trigger: string;
-          status: "success" | "partial" | "failed";
-          errorMessage?: string | null;
-          fetched: {
-            greenhouse: number;
-            lever: number;
-            ashby: number;
-            workable: number;
-            remoteok: number;
-            jsearch: number;
-            total: number;
-          };
-          afterFreshnessFilter: number;
-          afterRegionFilter: number;
-          afterDedup: number;
-          storedInDb: number;
-          batchErrors: number;
-          clearedFromDb: number;
-          totalInDb: number;
-          jsearchQueryUsed?: string | null;
-        }>;
-      };
-      timestamp: string;
-    }>("/api/admin/job-scraper/stats");
+    return this.request<JobScraperStatsResponse>("/api/admin/job-scraper/stats");
   }
 
   async triggerJobScraper(options?: { forceJSearch?: boolean }) {
