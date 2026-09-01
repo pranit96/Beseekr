@@ -3,8 +3,10 @@ import React, { useState, useRef, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
+import remarkMath from "remark-math";
 import rehypeRaw from "rehype-raw";
 import rehypeSanitize from "rehype-sanitize";
+import rehypeKatex from "rehype-katex";
 import { createLogger } from "@/services/logging";
 import { X, ArrowUp, Check, Copy, ExternalLink } from "lucide-react";
 import { MermaidDiagram } from "@/components/ui/MermaidDiagram";
@@ -46,7 +48,7 @@ export default function MarkdownRenderer({
   } | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
-  // Preprocess: strip code fences, fix tables, and convert plain text headings into markdown headings
+  // Preprocess: strip code fences, fix tables, repair LaTeX math equations, and convert plain text headings into markdown headings
   const normalizeContent = (text: string) => {
     if (!text) return "";
 
@@ -59,9 +61,44 @@ export default function MarkdownRenderer({
       cleaned = cleaned.replace(/\n?```\s*$/, "");
     }
 
+    // 1. Safely unescape literal newlines without corrupting LaTeX tokens
+    cleaned = cleaned.replace(/\\r\\n/g, "\n").replace(/\\n/g, "\n");
+
+    // 2. Repair damaged LaTeX tokens from unescaped JSON tabs or missing backslashes
+    cleaned = cleaned
+      .replace(/[\t ]ext\{/g, " \\text{")
+      .replace(/[\t ]imes\b/g, " \\times")
+      .replace(/[\t ]rac\{/g, " \\frac{")
+      .replace(/[\t ]eta\b/g, " \\beta")
+      .replace(/[\t ]heta\b/g, " \\theta")
+      .replace(/[\t ]au\b/g, " \\tau")
+      .replace(/[\t ]igma\b/g, " \\sigma")
+      .replace(/[\t ]um\b/g, " \\sum")
+      .replace(/[\t ]mathbf\{/g, " \\mathbf{")
+      .replace(/[\t ]mathbb\{/g, " \\mathbb{")
+      .replace(/[\t ]mathcal\{/g, " \\mathcal{");
+
+    // 3. Convert LaTeX standard delimiters \( ... \) to $ ... $ and \[ ... \] to $$ ... $$ for remark-math
+    cleaned = cleaned.replace(/\\\(([\s\S]*?)\\\)/g, (_m, p1) => `$${p1.trim()}$`);
+    cleaned = cleaned.replace(/\\\[([\s\S]*?)\\\]/g, (_m, p1) => `\n\n$$\n${p1.trim()}\n$$\n\n`);
+
+    // 4. Convert isolated bracket equations: [ \n <equation> \n ] (e.g., Bellman equation, Q-Learning)
+    cleaned = cleaned.replace(/(^|\n)\[\s*\n([\s\S]*?)\n\s*\](?=\n|$)/g, (match, prefix, mathContent) => {
+      if (/[=+\-*/\\_{}^\$\alpha-\omega\mathbb\mathcal\max\min\sum\int\leftarrow\rightarrow\approx\le\ge\in\forall\exists\partial\nabla]/.test(mathContent)) {
+        return `${prefix}\n\n$$\n${mathContent.trim()}\n$$\n\n`;
+      }
+      return match;
+    });
+
+    // 5. Convert standalone \begin{...} ... \end{...} blocks if not already in $$
+    cleaned = cleaned.replace(/(^|\n)(\\begin\{(?:equation|align|aligned|gather|matrix|pmatrix|bmatrix|vmatrix|cases|split)\*?\}[\s\S]*?\\end\{(?:equation|align|aligned|gather|matrix|pmatrix|bmatrix|vmatrix|cases|split)\*?\})/g, (_match, prefix, env) => {
+      return `${prefix}\n\n$$\n${env.trim()}\n$$\n\n`;
+    });
+
     const lines = cleaned.replace(/\r/g, "").split("\n");
     const out: string[] = [];
     let inCodeBlock = false;
+    let inMathBlock = false;
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
@@ -74,6 +111,17 @@ export default function MarkdownRenderer({
       }
 
       if (inCodeBlock) {
+        out.push(line);
+        continue;
+      }
+
+      if (trimmedLine.startsWith("$$")) {
+        inMathBlock = !inMathBlock;
+        out.push(line);
+        continue;
+      }
+
+      if (inMathBlock) {
         out.push(line);
         continue;
       }
@@ -116,11 +164,13 @@ export default function MarkdownRenderer({
         }
       }
 
-      // Auto-convert lines ending in colon to h3, UNLESS they are too long or have markdown formatting
+      // Auto-convert lines ending in colon to h3, UNLESS they are too long, have markdown formatting, or contain math
       if (
         /:$/.test(trimmedLine) &&
         trimmedLine.length <= 60 &&
-        !/^([#\-\*]|\d+\.)/.test(trimmedLine)
+        !/^([#\-\*]|\d+\.)/.test(trimmedLine) &&
+        !trimmedLine.includes("$") &&
+        !trimmedLine.includes("\\")
       ) {
         out.push(`### ${trimmedLine.replace(/:$/, "")}`);
         out.push("");
@@ -133,6 +183,8 @@ export default function MarkdownRenderer({
         /^[A-Z][A-Za-z0-9 ',\-()\/&]+$/.test(trimmedLine) &&
         !/[.?!]$/.test(trimmedLine) &&
         !/^([#\-\*]|\d+\.)/.test(trimmedLine) &&
+        !trimmedLine.includes("$") &&
+        !trimmedLine.includes("\\") &&
         nextLine &&
         /^[A-Z0-9"']/.test(nextLine) &&
         nextLine.length > 10;
@@ -496,8 +548,8 @@ export default function MarkdownRenderer({
         style={outerStyle}
       >
         <ReactMarkdown
-          remarkPlugins={[remarkGfm, remarkBreaks]}
-          rehypePlugins={[rehypeRaw, rehypeSanitize]}
+          remarkPlugins={[remarkGfm, remarkBreaks, remarkMath]}
+          rehypePlugins={[rehypeRaw, rehypeSanitize, rehypeKatex]}
           components={components}
         >
           {processed}
@@ -559,9 +611,10 @@ export default function MarkdownRenderer({
           remarkPlugins={[
             remarkGfm,
             remarkBreaks,
+            remarkMath,
             [() => remarkToc({ tight: true })],
           ]}
-          rehypePlugins={[rehypeRaw, rehypeSanitize]}
+          rehypePlugins={[rehypeRaw, rehypeSanitize, rehypeKatex]}
           components={components}
         >
           {processed}

@@ -20,6 +20,8 @@ import {
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
 import { useTheme } from "@/hooks/use-theme";
 
 function fmt(d?: string) {
@@ -627,7 +629,8 @@ export default function BlogPost() {
             }}
           >
             <ReactMarkdown
-              remarkPlugins={[remarkGfm, remarkBreaks]}
+              remarkPlugins={[remarkGfm, remarkBreaks, remarkMath]}
+              rehypePlugins={[rehypeKatex]}
               components={{
                 h1: ({ children }) => (
                   <h1

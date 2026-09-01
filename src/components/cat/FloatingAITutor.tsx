@@ -31,6 +31,8 @@ import { catApi } from "@/api/cat";
 import type { AskDoubtPayload, AskDoubtResponse } from "@/types/cat";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
 
 interface ChatMessage {
   id: string;
@@ -352,7 +354,8 @@ export default function FloatingAITutor() {
                       >
                         <div className="prose prose-sm dark:prose-invert max-w-none prose-p:leading-relaxed prose-pre:bg-muted/50 prose-pre:p-2 prose-pre:rounded-lg">
                           <ReactMarkdown
-                            remarkPlugins={[remarkGfm]}
+                            remarkPlugins={[remarkGfm, remarkMath]}
+                            rehypePlugins={[rehypeKatex]}
                             components={{
                               p: ({ node, ...props }) => (
                                 <p className="mb-2 last:mb-0" {...props} />

@@ -1998,4 +1998,32 @@
   .selection-active .react-flow__pane {
     cursor: crosshair !important;
   }
+
+  /* ── KaTeX Math Equation Styling ─────────────────── */
+  .katex-display {
+    margin: 1.25rem 0 !important;
+    padding: 0.75rem 1rem !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    background: hsla(var(--muted) / 0.4);
+    border: 1px solid hsla(var(--border) / 0.5);
+    border-radius: 0.75rem;
+    max-width: 100%;
+  }
+
+  .katex-display > .katex {
+    max-width: 100%;
+    text-align: center;
+  }
+
+  .dark .katex-display {
+    background: hsla(240, 10%, 6%, 0.6);
+    border-color: hsla(240, 10%, 20%, 0.4);
+  }
+
+  .katex {
+    font-size: 1.05em;
+    text-rendering: auto;
+  }
 }
+
