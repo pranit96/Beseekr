@@ -86,3 +86,23 @@ export function getIsLearnByDoingEnabled(): boolean {
 
   return envFlag;
 }
+
+export function getIsDhetEnabled(): boolean {
+  // Defaults to false unless explicitly enabled via env or cookie
+  const envFlag =
+    import.meta.env.VITE_ENABLE_DHET === "true" ||
+    import.meta.env.VITE_DHET === "true";
+
+  if (typeof document !== "undefined") {
+    const cookieMatch = document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("EnableDhet="))
+      ?.split("=")[1];
+
+    if (cookieMatch === "true") return true;
+    if (cookieMatch === "false") return false;
+  }
+
+  return envFlag;
+}
+

@@ -25,6 +25,7 @@ import {
   getIsSecondBrainEnabled,
   getIsWeeklyDigestEnabled,
   getIsLearnByDoingEnabled,
+  getIsDhetEnabled,
 } from "@/utils/envFlags";
 
 // Critical page imports (loaded immediately)
@@ -164,6 +165,14 @@ const VisionBoard = lazyRetry(
   () => import("./pages/VisionBoard"),
   "VisionBoard",
 );
+const DhetStudio = lazyRetry(
+  () => import("@/pages/dhet/DhetStudio"),
+  "DhetStudio",
+);
+const DhetHistory = lazyRetry(
+  () => import("@/pages/dhet/DhetHistory"),
+  "DhetHistory",
+);
 
 // Loading fallback for lazy components
 const PageLoader = () => (
@@ -218,7 +227,7 @@ const FeatureGuard = ({
   featureKey,
 }: {
   children: React.ReactNode;
-  featureKey: "learn_by_doing" | "second_brain" | "weekly_digest";
+  featureKey: "learn_by_doing" | "second_brain" | "weekly_digest" | "dhet";
 }) => {
   const { user, loading } = useAuth();
 
@@ -237,6 +246,10 @@ const FeatureGuard = ({
   // Fallback to envFlags if we are specifically checking learn_by_doing
   // (to support unauthenticated global marketing state)
   if (featureKey === "learn_by_doing" && getIsLearnByDoingEnabled()) {
+    return <>{children}</>;
+  }
+
+  if (featureKey === "dhet" && getIsDhetEnabled()) {
     return <>{children}</>;
   }
 
@@ -265,10 +278,13 @@ const App = () => {
           .getFeatureFlags()
           .then((res) => {
             if (res.success && res.data) {
-              const { second_brain, weekly_digest, learn_by_doing } = res.data;
+              const { second_brain, weekly_digest, learn_by_doing, dhet } = res.data;
               document.cookie = `EnableSecondBrain=${second_brain}; path=/; max-age=86400; SameSite=Lax`;
               document.cookie = `EnableWeeklyDigest=${weekly_digest}; path=/; max-age=86400; SameSite=Lax`;
               document.cookie = `EnableLearnByDoing=${learn_by_doing}; path=/; max-age=86400; SameSite=Lax`;
+              if (dhet !== undefined) {
+                document.cookie = `EnableDhet=${dhet}; path=/; max-age=86400; SameSite=Lax`;
+              }
             }
           })
           .catch((err) => {
@@ -616,6 +632,31 @@ const App = () => {
                           <FeatureGuard featureKey="learn_by_doing">
                             <Suspense fallback={<PageLoader />}>
                               <LearnByDoing />
+                            </Suspense>
+                          </FeatureGuard>
+                        </ProtectedRoute>
+                      }
+                    />
+                    {/* Design Human Everyday Things (DHET) */}
+                    <Route
+                      path="/dhet"
+                      element={
+                        <ProtectedRoute>
+                          <FeatureGuard featureKey="dhet">
+                            <Suspense fallback={<PageLoader />}>
+                              <DhetStudio />
+                            </Suspense>
+                          </FeatureGuard>
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/dhet/history"
+                      element={
+                        <ProtectedRoute>
+                          <FeatureGuard featureKey="dhet">
+                            <Suspense fallback={<PageLoader />}>
+                              <DhetHistory />
                             </Suspense>
                           </FeatureGuard>
                         </ProtectedRoute>

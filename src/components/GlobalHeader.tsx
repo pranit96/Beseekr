@@ -38,6 +38,9 @@ import {
   GraduationCap,
   Brain,
   Mail,
+  Layers,
+  Wand2,
+  History,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -49,7 +52,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
-import { getIsBudgetEnabled } from "@/utils/envFlags";
+import { getIsBudgetEnabled, getIsDhetEnabled } from "@/utils/envFlags";
 
 const NAV_ITEMS = {
   home: {
@@ -236,6 +239,30 @@ const NAV_ITEMS = {
     color: "from-indigo-500 to-blue-500",
     exact: false,
   },
+  dhet: {
+    key: "dhet",
+    name: "Design",
+    href: "/dhet",
+    icon: Layers,
+    color: "from-amber-500 to-indigo-600",
+    exact: false,
+  },
+  dhetStudio: {
+    key: "dhetStudio",
+    name: "Studio",
+    href: "/dhet",
+    icon: Wand2,
+    color: "from-amber-500 to-indigo-600",
+    exact: true,
+  },
+  dhetHistory: {
+    key: "dhetHistory",
+    name: "Saved Designs",
+    href: "/dhet/history",
+    icon: History,
+    color: "from-blue-500 to-cyan-500",
+    exact: false,
+  },
 };
 
 function isPathActive(pathname: string, href: string, exact?: boolean) {
@@ -247,6 +274,7 @@ function getNavigationContext(
   pathname: string,
   isPremium: boolean,
   isBudgetEnabled: boolean,
+  isDhetEnabled: boolean = false,
 ) {
   const isChatContext =
     pathname.startsWith("/chat") ||
@@ -259,6 +287,12 @@ function getNavigationContext(
   const isLearnContext = pathname.startsWith("/learn");
   const isBrainContext = pathname.startsWith("/brain");
   const isDigestContext = pathname.startsWith("/digest");
+  const isDhetContext = pathname.startsWith("/dhet");
+
+  // DHET: Home + Studio + Saved Designs
+  if (isDhetContext) {
+    return [NAV_ITEMS.home, NAV_ITEMS.dhetStudio, NAV_ITEMS.dhetHistory];
+  }
 
   // Vision Board: Home + Board only
   if (isBoardContext) {
@@ -297,6 +331,9 @@ function getNavigationContext(
   const items = [NAV_ITEMS.chat, NAV_ITEMS.discover, NAV_ITEMS.blog];
   if (isBudgetEnabled) {
     items.push(NAV_ITEMS.budget);
+  }
+  if (isDhetEnabled) {
+    items.push(NAV_ITEMS.dhet);
   }
   items.push(NAV_ITEMS.visionboard);
   return items;
@@ -450,8 +487,14 @@ export function GlobalHeader() {
   const currentNavigation = useMemo(() => {
     const isPremium = plansData?.user?.is_premium === true;
     const isBudgetEnabled = getIsBudgetEnabled();
-    return getNavigationContext(location.pathname, isPremium, isBudgetEnabled);
-  }, [location.pathname, plansData?.user?.is_premium]);
+    const isDhetEnabled = getIsDhetEnabled() || user?.feature_flags?.dhet;
+    return getNavigationContext(
+      location.pathname,
+      isPremium,
+      isBudgetEnabled,
+      isDhetEnabled,
+    );
+  }, [location.pathname, plansData?.user?.is_premium, user?.feature_flags?.dhet]);
 
   return (
     <>

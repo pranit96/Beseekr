@@ -30,6 +30,7 @@ import {
   getIsSecondBrainEnabled,
   getIsWeeklyDigestEnabled,
   getIsLearnByDoingEnabled,
+  getIsDhetEnabled,
 } from "@/utils/envFlags";
 
 interface TopBarProps {
@@ -54,6 +55,7 @@ export const TopBar = ({
   const isWeeklyDigestEnabled = getIsWeeklyDigestEnabled();
   const isLearnByDoingEnabled =
     getIsLearnByDoingEnabled() || user?.feature_flags?.learn_by_doing;
+  const isDhetEnabled = getIsDhetEnabled() || user?.feature_flags?.dhet;
 
   const navigation = [
     { key: "home", name: "Home", href: "/" },
@@ -68,6 +70,9 @@ export const TopBar = ({
       : []),
     ...(isLearnByDoingEnabled
       ? [{ key: "learn", name: "Learn", href: "/learn" }]
+      : []),
+    ...(isDhetEnabled
+      ? [{ key: "dhet", name: "Design", href: "/dhet" }]
       : []),
     { key: "analytics", name: "Analytics", href: "/analytics" },
     ...(isBudgetEnabled

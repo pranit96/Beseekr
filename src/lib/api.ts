@@ -20,6 +20,11 @@ import type {
   ExamAnswer,
   ExamSubmission,
 } from "@/types/education";
+import type {
+  ClarifyingOptionsData,
+  DhetDesignRecord,
+  CreateProposalPayload,
+} from "@/types/dhet";
 
 const logger = createLogger("APIClient");
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -1964,6 +1969,7 @@ class ApiClient {
       second_brain: boolean;
       weekly_digest: boolean;
       learn_by_doing: boolean;
+      dhet?: boolean;
     }>("/api/system/features");
   }
 
@@ -2088,6 +2094,34 @@ class ApiClient {
     return this.request<ExamSubmission[]>(
       `/api/education/submissions${examId ? `?exam_id=${examId}` : ""}`,
     );
+  }
+
+  // ─── Design Human Everyday Things (DHET) API ──────────────────────────────
+
+  async getDhetClarifyingOptions(prompt: string) {
+    return this.post<ClarifyingOptionsData>("/api/dhet/clarify", { prompt });
+  }
+
+  async generateDhetProposal(data: CreateProposalPayload) {
+    return this.post<DhetDesignRecord>("/api/dhet/propose", data);
+  }
+
+  async getDhetDesigns(page: number = 1, limit: number = 20) {
+    return this.request<DhetDesignRecord[]>(
+      `/api/dhet/designs?page=${page}&limit=${limit}`,
+    );
+  }
+
+  async getDhetDesign(id: string) {
+    return this.request<DhetDesignRecord>(`/api/dhet/designs/${id}`);
+  }
+
+  async deleteDhetDesign(id: string) {
+    return this.delete<{ message: string }>(`/api/dhet/designs/${id}`);
+  }
+
+  getDhetExportPdfUrl(id: string) {
+    return `${API_BASE_URL || ""}/api/dhet/designs/${id}/export-pdf`;
   }
 }
 
