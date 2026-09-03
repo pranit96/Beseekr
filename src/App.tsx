@@ -166,11 +166,17 @@ const VisionBoard = lazyRetry(
   "VisionBoard",
 );
 const DhetStudio = lazyRetry(
-  () => import("@/pages/dhet/DhetStudio"),
+  () =>
+    import("@/pages/dhet/DhetStudio").then((m) => ({
+      default: m.default || (m as any).DhetStudio,
+    })),
   "DhetStudio",
 );
 const DhetHistory = lazyRetry(
-  () => import("@/pages/dhet/DhetHistory"),
+  () =>
+    import("@/pages/dhet/DhetHistory").then((m) => ({
+      default: m.default || (m as any).DhetHistory,
+    })),
   "DhetHistory",
 );
 

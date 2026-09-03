@@ -18,6 +18,8 @@ import { Input } from "@/components/ui/input";
 import { DhetDesignRecord } from "@/types/dhet";
 import { apiClient } from "@/lib/api";
 import { toast } from "sonner";
+import { GlobalHeader } from "@/components/GlobalHeader";
+import { GlobalFooter } from "@/components/GlobalFooter";
 
 export const DhetHistory: React.FC = () => {
   const navigate = useNavigate();
@@ -85,7 +87,9 @@ export const DhetHistory: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
-      <div className="max-w-5xl mx-auto w-full px-4 py-8 md:py-12 flex flex-col gap-8">
+      <GlobalHeader />
+
+      <main className="flex-1 max-w-5xl mx-auto w-full px-4 py-8 md:py-12 flex flex-col gap-8">
         {/* ── HEADER ──────────────────────────────────────────────────────── */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex flex-col gap-1">
@@ -212,7 +216,9 @@ export const DhetHistory: React.FC = () => {
             ))}
           </div>
         )}
-      </div>
+      </main>
+
+      <GlobalFooter />
     </div>
   );
 };

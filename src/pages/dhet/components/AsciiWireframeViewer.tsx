@@ -177,49 +177,49 @@ export const AsciiWireframeViewer: React.FC<AsciiWireframeViewerProps> = ({
       </div>
 
       {/* ── CANVAS & DEVICE FRAME CONTAINER ──────────────────────────────── */}
-      <div className="w-full bg-[#07090E] rounded-3xl p-4 sm:p-8 border border-slate-800/80 shadow-2xl flex items-center justify-center overflow-hidden min-h-[440px]">
+      <div className="w-full bg-muted/40 dark:bg-muted/10 rounded-3xl p-4 sm:p-8 border border-border/80 shadow-2xl flex items-center justify-center overflow-hidden min-h-[440px]">
         {/* MOBILE FRAME (9:16) */}
         {viewMode === "device" && aspect === "9:16" && (
-          <div className="relative w-full max-w-[360px] rounded-[44px] border-[6px] border-slate-700/80 bg-[#0F1422] shadow-2xl overflow-hidden flex flex-col transition-all duration-300">
+          <div className="relative w-full max-w-[360px] rounded-[44px] border-[6px] border-muted-foreground/30 bg-card shadow-2xl overflow-hidden flex flex-col transition-all duration-300">
             {/* Phone Speaker & Dynamic Island */}
-            <div className="h-6 w-full bg-[#0F1422] flex items-center justify-center pt-2 select-none">
-              <div className="w-20 h-4 bg-black rounded-full flex items-center justify-end px-2">
-                <div className="w-2 h-2 rounded-full bg-slate-900 border border-slate-700/40" />
+            <div className="h-6 w-full bg-muted/60 border-b border-border/50 flex items-center justify-center pt-2 select-none">
+              <div className="w-20 h-4 bg-background/80 rounded-full flex items-center justify-end px-2 border border-border/40">
+                <div className="w-2 h-2 rounded-full bg-foreground/40" />
               </div>
             </div>
 
             {/* Screen Content */}
             <div
-              className="p-4 overflow-x-auto overflow-y-auto max-h-[580px] custom-scrollbar text-sky-300 font-mono text-[11px] leading-tight select-text whitespace-pre flex-1"
+              className="p-4 overflow-x-auto overflow-y-auto max-h-[580px] custom-scrollbar text-foreground font-mono text-[11px] leading-tight select-text whitespace-pre flex-1"
               style={{ fontSize: `${(11 * zoom) / 100}px` }}
             >
               {wireframe || "No wireframe generated."}
             </div>
 
             {/* Home Indicator Bar */}
-            <div className="h-5 w-full bg-[#0F1422] flex items-center justify-center pb-1.5 select-none">
-              <div className="w-28 h-1 bg-slate-600/70 rounded-full" />
+            <div className="h-5 w-full bg-muted/60 border-t border-border/50 flex items-center justify-center pb-1.5 select-none">
+              <div className="w-28 h-1 bg-muted-foreground/40 rounded-full" />
             </div>
           </div>
         )}
 
         {/* DESKTOP BROWSER FRAME (16:9 or Default) */}
         {viewMode === "device" && aspect === "16:9" && (
-          <div className="relative w-full max-w-4xl rounded-2xl border border-slate-700/60 bg-[#0B0F19] shadow-2xl overflow-hidden flex flex-col transition-all duration-300">
+          <div className="relative w-full max-w-4xl rounded-2xl border border-border/80 bg-card shadow-2xl overflow-hidden flex flex-col transition-all duration-300">
             {/* Desktop Window Titlebar */}
-            <div className="flex items-center justify-between px-4 py-2.5 bg-[#111625] border-b border-slate-800">
+            <div className="flex items-center justify-between px-4 py-2.5 bg-muted/60 dark:bg-muted/30 border-b border-border">
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-1.5">
                   <div className="w-3 h-3 rounded-full bg-rose-500/80" />
                   <div className="w-3 h-3 rounded-full bg-amber-500/80" />
                   <div className="w-3 h-3 rounded-full bg-emerald-500/80" />
                 </div>
-                <div className="ml-3 px-3 py-0.5 rounded-md bg-black/40 border border-slate-800 text-[11px] font-mono text-slate-400 select-none">
+                <div className="ml-3 px-3 py-0.5 rounded-md bg-background border border-border/60 text-[11px] font-mono text-muted-foreground select-none">
                   viewport: 1440x900 • 16:9
                 </div>
               </div>
 
-              <span className="text-[11px] font-mono text-slate-500 select-none">
+              <span className="text-[11px] font-mono text-muted-foreground select-none">
                 Desktop Web Canvas
               </span>
             </div>
@@ -227,7 +227,7 @@ export const AsciiWireframeViewer: React.FC<AsciiWireframeViewerProps> = ({
             {/* Canvas Viewport */}
             <div
               className={cn(
-                "p-5 md:p-7 overflow-x-auto overflow-y-auto transition-all font-mono text-sky-300/95 leading-tight select-text whitespace-pre",
+                "p-5 md:p-7 overflow-x-auto overflow-y-auto transition-all font-mono text-foreground leading-tight select-text whitespace-pre",
                 isExpanded ? "max-h-none" : "max-h-[550px]"
               )}
               style={{ fontSize: `${(12 * zoom) / 100}px` }}
@@ -239,33 +239,33 @@ export const AsciiWireframeViewer: React.FC<AsciiWireframeViewerProps> = ({
 
         {/* TABLET FRAME (4:3) */}
         {viewMode === "device" && aspect === "4:3" && (
-          <div className="relative w-full max-w-[620px] rounded-[32px] border-[6px] border-slate-700/80 bg-[#0B0F19] shadow-2xl overflow-hidden flex flex-col transition-all duration-300">
+          <div className="relative w-full max-w-[620px] rounded-[32px] border-[6px] border-muted-foreground/30 bg-card shadow-2xl overflow-hidden flex flex-col transition-all duration-300">
             {/* Tablet Camera dot */}
-            <div className="h-5 w-full bg-[#111625] flex items-center justify-center select-none">
-              <div className="w-2 h-2 rounded-full bg-black/80 border border-slate-700/50" />
+            <div className="h-5 w-full bg-muted/60 border-b border-border/50 flex items-center justify-center select-none">
+              <div className="w-2 h-2 rounded-full bg-muted-foreground/40" />
             </div>
 
             {/* Screen Content */}
             <div
-              className="p-6 overflow-x-auto overflow-y-auto max-h-[540px] custom-scrollbar text-sky-300 font-mono text-xs leading-tight select-text whitespace-pre"
+              className="p-6 overflow-x-auto overflow-y-auto max-h-[540px] custom-scrollbar text-foreground font-mono text-xs leading-tight select-text whitespace-pre"
               style={{ fontSize: `${(11.5 * zoom) / 100}px` }}
             >
               {wireframe || "No wireframe generated."}
             </div>
 
             {/* Bottom Margin */}
-            <div className="h-4 w-full bg-[#111625] flex items-center justify-center select-none" />
+            <div className="h-4 w-full bg-muted/60 border-t border-border/50 flex items-center justify-center select-none" />
           </div>
         )}
 
         {/* SQUARE (1:1) */}
         {viewMode === "device" && aspect === "1:1" && (
-          <div className="relative w-full max-w-[500px] aspect-square rounded-2xl border border-slate-700/80 bg-[#0B0F19] shadow-2xl overflow-hidden flex flex-col transition-all duration-300">
-            <div className="px-4 py-2 bg-[#111625] border-b border-slate-800 text-xs font-mono text-slate-400">
+          <div className="relative w-full max-w-[500px] aspect-square rounded-2xl border border-border bg-card shadow-2xl overflow-hidden flex flex-col transition-all duration-300">
+            <div className="px-4 py-2 bg-muted/60 border-b border-border text-xs font-mono text-muted-foreground">
               smart_display_1x1.txt
             </div>
             <div
-              className="p-5 overflow-auto flex-1 font-mono text-xs text-sky-300 leading-tight whitespace-pre select-text"
+              className="p-5 overflow-auto flex-1 font-mono text-xs text-foreground leading-tight whitespace-pre select-text"
               style={{ fontSize: `${(11.5 * zoom) / 100}px` }}
             >
               {wireframe || "No wireframe generated."}
@@ -275,7 +275,7 @@ export const AsciiWireframeViewer: React.FC<AsciiWireframeViewerProps> = ({
 
         {/* TERMINAL MODE (Pure Monospace, No Bezel) */}
         {viewMode === "terminal" && (
-          <div className="w-full max-w-4xl p-4 md:p-6 overflow-x-auto font-mono text-xs md:text-sm text-emerald-400/90 leading-tight select-text whitespace-pre bg-black/80 rounded-2xl border border-emerald-950/60 shadow-inner">
+          <div className="w-full max-w-4xl p-4 md:p-6 overflow-x-auto font-mono text-xs md:text-sm text-foreground bg-muted/30 dark:bg-card/40 rounded-2xl border border-border shadow-inner leading-tight select-text whitespace-pre">
             {wireframe || "No wireframe generated."}
           </div>
         )}

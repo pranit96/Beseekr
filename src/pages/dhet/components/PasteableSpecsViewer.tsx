@@ -181,7 +181,7 @@ export const PasteableSpecsViewer: React.FC<PasteableSpecsViewerProps> = ({
                 </Button>
               </div>
 
-              <div className="p-4 rounded-xl bg-[#0B0F19] text-slate-300 font-mono text-xs md:text-sm leading-relaxed overflow-x-auto select-text whitespace-pre border border-slate-800 min-h-[220px]">
+              <div className="p-4 rounded-xl bg-muted/40 dark:bg-card/40 text-foreground font-mono text-xs md:text-sm leading-relaxed overflow-x-auto select-text whitespace-pre border border-border/80 min-h-[220px]">
                 {plainTextSpec || "No layout spec provided."}
               </div>
             </div>
@@ -256,7 +256,7 @@ export const PasteableSpecsViewer: React.FC<PasteableSpecsViewerProps> = ({
             </Button>
           </div>
 
-          <div className="p-5 rounded-xl bg-[#0B0F19] text-slate-300 font-mono text-xs md:text-sm leading-relaxed overflow-x-auto select-text whitespace-pre border border-slate-800">
+          <div className="p-5 rounded-xl bg-muted/40 dark:bg-card/40 text-foreground font-mono text-xs md:text-sm leading-relaxed overflow-x-auto select-text whitespace-pre border border-border/80">
             {plainTextSpec || "No layout spec provided."}
           </div>
         </div>
