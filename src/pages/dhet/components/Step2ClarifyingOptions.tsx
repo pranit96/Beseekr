@@ -28,7 +28,7 @@ export const Step2ClarifyingOptions: React.FC<Step2ClarifyingOptionsProps> = ({
   // Initialize selections with user defaults or provided defaults
   const [selections, setSelections] = useState<Record<string, string>>(() => {
     const initial: Record<string, string> = { ...initialSelections };
-    optionsData.questions.forEach((q) => {
+    (optionsData?.questions || []).forEach((q) => {
       if (!initial[q.id]) {
         initial[q.id] = q.default_option_id || q.options[0]?.id || "";
       }
@@ -65,7 +65,7 @@ export const Step2ClarifyingOptions: React.FC<Step2ClarifyingOptionsProps> = ({
           <span>Strategic Clarification</span>
         </div>
         <h1 className="text-2xl md:text-4xl font-extrabold tracking-tight text-foreground">
-          {optionsData.title || "Refine Your Design Direction"}
+          {optionsData?.title || "Refine Your Design Direction"}
         </h1>
         <p className="text-muted-foreground text-sm md:text-base leading-relaxed">
           Based on your concept, choose the architectural nuances that fit best. We'll use these to ground the design decisions and tokens.
@@ -80,7 +80,7 @@ export const Step2ClarifyingOptions: React.FC<Step2ClarifyingOptionsProps> = ({
 
       {/* ── QUESTIONS LIST ─────────────────────────────────────────────────── */}
       <div className="flex flex-col gap-6">
-        {optionsData.questions.map((question, qIdx) => {
+        {(optionsData?.questions || []).map((question, qIdx) => {
           const selectedOptionId = selections[question.id];
 
           return (

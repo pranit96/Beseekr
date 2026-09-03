@@ -96,7 +96,7 @@ export const DesignDecisionsViewer: React.FC<DesignDecisionsViewerProps> = ({
                 </div>
 
                 <h4 className="text-base font-bold text-foreground group-hover:text-primary transition-colors">
-                  {decision.title}
+                  {decision?.title || `Decision ${idx + 1}`}
                 </h4>
 
                 <div className="text-xs font-semibold text-primary/90 flex items-center gap-1.5">

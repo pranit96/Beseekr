@@ -38,7 +38,7 @@ export const InteractiveMockupPreview: React.FC<InteractiveMockupPreviewProps> =
   const textPrimary = colors.text_primary || "#212121";
   const textSecondary = colors.text_secondary || "#666666";
 
-  const rawContext = `${proposal.title} ${proposal.ai_image_prompt} ${proposal.plain_text_spec}`.toLowerCase();
+  const rawContext = `${proposal?.title || ""} ${proposal?.ai_image_prompt || ""} ${proposal?.plain_text_spec || ""}`.toLowerCase();
 
   // Dynamic context detection
   const isSpoon = rawContext.includes("spoon") || rawContext.includes("horse") || rawContext.includes("equi");
@@ -111,7 +111,7 @@ export const InteractiveMockupPreview: React.FC<InteractiveMockupPreviewProps> =
           className="text-sm font-bold tracking-tight text-center truncate max-w-[200px]"
           style={{ color: textPrimary }}
         >
-          {proposal.title || "EquiSpoon Companion"}
+          {proposal?.title || "EquiSpoon Companion"}
         </h2>
 
         <button

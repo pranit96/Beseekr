@@ -39,7 +39,7 @@ export const Step3ProposalView: React.FC<Step3ProposalViewProps> = ({
   const [activeTab, setActiveTab] = useState<MainTab>("blueprint");
   const [isExporting, setIsExporting] = useState(false);
 
-  const proposal = design.proposal;
+  const proposal = design?.proposal;
   const decisions = proposal?.design_decisions || [];
   const tokens = proposal?.design_tokens;
   const colors: Record<string, string> = tokens?.colors || {};
@@ -54,7 +54,8 @@ export const Step3ProposalView: React.FC<Step3ProposalViewProps> = ({
       // Trigger download
       const link = document.createElement("a");
       link.href = url;
-      link.setAttribute("download", `DHET_${design.title.replace(/\s+/g, "_")}.pdf`);
+      const safeTitle = (design?.title || proposal?.title || "Design").replace(/\s+/g, "_");
+      link.setAttribute("download", `DHET_${safeTitle}.pdf`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -65,6 +66,26 @@ export const Step3ProposalView: React.FC<Step3ProposalViewProps> = ({
       setIsExporting(false);
     }
   };
+
+  if (!proposal) {
+    return (
+      <div className="max-w-4xl mx-auto w-full px-4 py-20 flex flex-col items-center justify-center gap-4 text-center">
+        <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+          <Sparkles className="w-6 h-6 animate-pulse" />
+        </div>
+        <div className="flex flex-col gap-1">
+          <h2 className="text-xl font-bold text-foreground">Loading Proposal Details...</h2>
+          <p className="text-xs md:text-sm text-muted-foreground max-w-md">
+            Retrieving the complete design blueprint, heuristic decisions, and synchronized production specs.
+          </p>
+        </div>
+        <Button variant="outline" size="sm" onClick={onReset} className="rounded-xl mt-2">
+          <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
+          Back to Studio
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <motion.div
@@ -86,10 +107,10 @@ export const Step3ProposalView: React.FC<Step3ProposalViewProps> = ({
           </div>
 
           <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-foreground">
-            {proposal.title || design.title || "Human-Centered Design Solution"}
+            {proposal?.title || design?.title || "Human-Centered Design Solution"}
           </h1>
 
-          {proposal.summary && (
+          {proposal?.summary && (
             <p className="text-muted-foreground text-xs sm:text-sm leading-relaxed">
               {proposal.summary}
             </p>
@@ -97,7 +118,7 @@ export const Step3ProposalView: React.FC<Step3ProposalViewProps> = ({
 
           {/* Context Strip (Nielsen Heuristics: Recognition over Recall) */}
           <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
-            {proposal.device_frame && (
+            {proposal?.device_frame && (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-primary/10 text-primary font-semibold border border-primary/20">
                 <span className="capitalize">{proposal.device_frame.device_type || "Desktop"}</span>
                 <span className="opacity-40">•</span>
@@ -213,8 +234,8 @@ export const Step3ProposalView: React.FC<Step3ProposalViewProps> = ({
         <div className="flex flex-col gap-6">
           {/* Main Full-Width Stage for the Dual Viewer */}
           <AsciiWireframeViewer
-            wireframe={proposal.ascii_wireframe}
-            deviceFrame={proposal.device_frame}
+            wireframe={proposal?.ascii_wireframe || ""}
+            deviceFrame={proposal?.device_frame}
             proposal={proposal}
           />
 
@@ -431,8 +452,8 @@ export const Step3ProposalView: React.FC<Step3ProposalViewProps> = ({
           </div>
 
           <PasteableSpecsViewer
-            aiImagePrompt={proposal.ai_image_prompt}
-            plainTextSpec={proposal.plain_text_spec}
+            aiImagePrompt={proposal?.ai_image_prompt || ""}
+            plainTextSpec={proposal?.plain_text_spec || ""}
           />
         </div>
       )}

@@ -29,6 +29,11 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   handleReset = () => {
+    try {
+      localStorage.removeItem("dhet_studio_session");
+    } catch (e) {
+      // ignore
+    }
     this.setState({ hasError: false, error: null });
   };
 

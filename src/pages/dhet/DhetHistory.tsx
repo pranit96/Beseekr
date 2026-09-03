@@ -65,15 +65,16 @@ export const DhetHistory: React.FC = () => {
   };
 
   const handleOpenInStudio = (design: DhetDesignRecord) => {
-    navigate("/dhet", { state: { design } });
+    navigate(`/dhet?id=${design.id}`, { state: { design } });
   };
 
-  const handleExportPdf = (e: React.MouseEvent, id: string, title: string) => {
+  const handleExportPdf = (e: React.MouseEvent, id: string, title?: string) => {
     e.stopPropagation();
     const url = apiClient.getDhetExportPdfUrl(id);
     const link = document.createElement("a");
     link.href = url;
-    link.setAttribute("download", `DHET_${title.replace(/\s+/g, "_")}.pdf`);
+    const safeTitle = (title || "design_proposal").replace(/\s+/g, "_");
+    link.setAttribute("download", `DHET_${safeTitle}.pdf`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -81,8 +82,8 @@ export const DhetHistory: React.FC = () => {
 
   const filteredDesigns = designs.filter(
     (d) =>
-      d.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      d.initial_prompt.toLowerCase().includes(searchQuery.toLowerCase())
+      (d.title || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (d.initial_prompt || "").toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -173,7 +174,7 @@ export const DhetHistory: React.FC = () => {
                   </div>
 
                   <h3 className="text-lg font-bold text-foreground group-hover:text-primary transition-colors line-clamp-1">
-                    {design.title}
+                    {design.title || "Untitled Design"}
                   </h3>
 
                   <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">

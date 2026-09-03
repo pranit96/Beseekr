@@ -35,7 +35,13 @@ function loadSavedSession(): DhetSavedSession | null {
   try {
     const raw = localStorage.getItem(DHET_SESSION_STORAGE_KEY);
     if (!raw) return null;
-    return JSON.parse(raw);
+    const session = JSON.parse(raw);
+    // If step is 3 but currentDesign has no proposal and no id, clear broken design state
+    if (session.step === 3 && session.currentDesign && !session.currentDesign.proposal && !session.currentDesign.id) {
+      session.step = 1;
+      session.currentDesign = null;
+    }
+    return session;
   } catch (err) {
     console.warn("Could not parse saved DHET session:", err);
     return null;
@@ -80,6 +86,7 @@ export const DhetStudio: React.FC = () => {
   const [isLoadingOptions, setIsLoadingOptions] = useState<boolean>(false);
   const [isGeneratingProposal, setIsGeneratingProposal] =
     useState<boolean>(false);
+  const [isLoadingDesign, setIsLoadingDesign] = useState<boolean>(false);
   const [loadingMessageIdx, setLoadingMessageIdx] = useState<number>(0);
 
   // Rotate loading heuristic messages for transparent, rich user feedback
@@ -115,12 +122,15 @@ export const DhetStudio: React.FC = () => {
     }
   }, [step, prompt, optionsData, selections, currentDesign]);
 
-  // Load design from URL query param ?id=... if present
+  // Load design from URL query param ?id=... or if currentDesign is missing proposal
   useEffect(() => {
     const idFromUrl = searchParams.get("id");
-    if (idFromUrl && (!currentDesign || currentDesign.id !== idFromUrl)) {
+    const targetId = idFromUrl || (currentDesign?.id && !currentDesign?.proposal ? currentDesign.id : null);
+
+    if (targetId && (!currentDesign || currentDesign.id !== targetId || !currentDesign.proposal)) {
+      setIsLoadingDesign(true);
       apiClient
-        .getDhetDesign(idFromUrl)
+        .getDhetDesign(targetId)
         .then((res) => {
           if (res.success && res.data) {
             setCurrentDesign(res.data);
@@ -130,10 +140,14 @@ export const DhetStudio: React.FC = () => {
           }
         })
         .catch((err) => {
-          console.warn("Failed to load design from URL id", err);
+          console.warn("Failed to load design from ID", err);
+          toast.error("Failed to load design proposal details.");
+        })
+        .finally(() => {
+          setIsLoadingDesign(false);
         });
     }
-  }, [searchParams]);
+  }, [searchParams, currentDesign?.id, currentDesign?.proposal]);
 
   // Synchronize URL query param when viewing a proposal (Step 3)
   useEffect(() => {
@@ -151,12 +165,37 @@ export const DhetStudio: React.FC = () => {
   // If redirected from Saved Designs with state
   useEffect(() => {
     if (location.state?.design) {
-      setCurrentDesign(location.state.design);
-      setPrompt(location.state.design.initial_prompt || "");
-      if (location.state.design.selected_options) {
-        setSelections(location.state.design.selected_options);
+      const designFromState = location.state.design;
+      setPrompt(designFromState.initial_prompt || "");
+      if (designFromState.selected_options) {
+        setSelections(designFromState.selected_options);
       }
       setStep(3);
+
+      if (designFromState.proposal) {
+        setCurrentDesign(designFromState);
+      } else if (designFromState.id) {
+        // Fetch full design if proposal was omitted in list
+        setIsLoadingDesign(true);
+        apiClient
+          .getDhetDesign(designFromState.id)
+          .then((res) => {
+            if (res.success && res.data) {
+              setCurrentDesign(res.data);
+            } else {
+              setCurrentDesign(designFromState);
+            }
+          })
+          .catch((err) => {
+            console.warn("Failed to load full design from state id:", err);
+            setCurrentDesign(designFromState);
+          })
+          .finally(() => {
+            setIsLoadingDesign(false);
+          });
+      } else {
+        setCurrentDesign(designFromState);
+      }
     }
   }, [location.state]);
 
@@ -388,7 +427,17 @@ export const DhetStudio: React.FC = () => {
             />
           )}
 
-          {step === 3 && currentDesign && (
+          {step === 3 && (isLoadingDesign || (currentDesign && !currentDesign.proposal)) && (
+            <div className="flex-1 flex flex-col items-center justify-center py-24 gap-4 text-center">
+              <Loader2 className="w-10 h-10 animate-spin text-primary" />
+              <div className="flex flex-col gap-1">
+                <h2 className="text-lg font-bold text-foreground">Loading Design Proposal...</h2>
+                <p className="text-xs text-muted-foreground">Retrieving full specification and architectural blueprint.</p>
+              </div>
+            </div>
+          )}
+
+          {step === 3 && currentDesign && currentDesign.proposal && !isLoadingDesign && (
             <Step3ProposalView
               key="step-3"
               design={currentDesign}
