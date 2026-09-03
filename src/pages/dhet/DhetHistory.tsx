@@ -46,22 +46,41 @@ export const DhetHistory: React.FC = () => {
     fetchDesigns();
   }, []);
 
-  const handleDelete = async (e: React.MouseEvent, id: string) => {
-    e.stopPropagation();
-    if (!window.confirm("Are you sure you want to delete this design proposal?")) {
-      return;
-    }
-
+  const executeDelete = async (id: string, title?: string) => {
     try {
       setDeletingId(id);
       await apiClient.deleteDhetDesign(id);
       setDesigns((prev) => prev.filter((d) => d.id !== id));
-      toast.success("Design deleted");
+      toast.success(`"${title || "Design proposal"}" deleted successfully`);
     } catch (err: any) {
       toast.error("Failed to delete design: " + (err.message || "Unknown error"));
     } finally {
       setDeletingId(null);
     }
+  };
+
+  const handleDelete = (e: React.MouseEvent, design: DhetDesignRecord) => {
+    e.stopPropagation();
+
+    toast(`Delete "${design.title || "Design Proposal"}"?`, {
+      description: "This design proposal will be permanently removed. This action cannot be undone.",
+      duration: 10000,
+      action: {
+        label: "Delete",
+        onClick: () => executeDelete(design.id, design.title),
+      },
+      cancel: {
+        label: "Cancel",
+        onClick: () => {
+          toast.info("Deletion canceled");
+        },
+      },
+      actionButtonStyle: {
+        backgroundColor: "#dc2626",
+        color: "#ffffff",
+        fontWeight: "600",
+      },
+    });
   };
 
   const handleOpenInStudio = (design: DhetDesignRecord) => {
@@ -206,7 +225,7 @@ export const DhetHistory: React.FC = () => {
                       variant="ghost"
                       size="sm"
                       disabled={deletingId === design.id}
-                      onClick={(e) => handleDelete(e, design.id)}
+                      onClick={(e) => handleDelete(e, design)}
                       className="h-8 text-xs text-destructive hover:text-destructive hover:bg-destructive/10 rounded-lg px-2"
                     >
                       <Trash2 className="w-3.5 h-3.5" />

@@ -16,6 +16,7 @@ import {
   Sliders,
   Type,
   Maximize2,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DhetDesignRecord } from "@/types/dhet";
@@ -38,6 +39,7 @@ export const Step3ProposalView: React.FC<Step3ProposalViewProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<MainTab>("blueprint");
   const [isExporting, setIsExporting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const proposal = design?.proposal;
   const decisions = proposal?.design_decisions || [];
@@ -65,6 +67,41 @@ export const Step3ProposalView: React.FC<Step3ProposalViewProps> = ({
     } finally {
       setIsExporting(false);
     }
+  };
+
+  const handleDeleteProposal = () => {
+    if (!design?.id) return;
+
+    toast(`Delete "${proposal?.title || design?.title || "Design Proposal"}"?`, {
+      description: "This design proposal will be permanently removed. This action cannot be undone.",
+      duration: 10000,
+      action: {
+        label: "Delete",
+        onClick: async () => {
+          try {
+            setIsDeleting(true);
+            await apiClient.deleteDhetDesign(design.id);
+            toast.success("Design proposal deleted successfully");
+            onReset();
+          } catch (err: any) {
+            toast.error("Failed to delete design: " + (err.message || "Unknown error"));
+          } finally {
+            setIsDeleting(false);
+          }
+        },
+      },
+      cancel: {
+        label: "Cancel",
+        onClick: () => {
+          toast.info("Deletion canceled");
+        },
+      },
+      actionButtonStyle: {
+        backgroundColor: "#dc2626",
+        color: "#ffffff",
+        fontWeight: "600",
+      },
+    });
   };
 
   if (!proposal) {
@@ -174,6 +211,19 @@ export const Step3ProposalView: React.FC<Step3ProposalViewProps> = ({
             <Download className="w-4 h-4" />
             <span>{isExporting ? "Compiling LaTeX PDF..." : "Export LaTeX PDF"}</span>
           </Button>
+
+          {design?.id && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleDeleteProposal}
+              disabled={isDeleting}
+              className="rounded-xl flex items-center gap-1.5 text-xs h-9 text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30 transition-colors"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>{isDeleting ? "Deleting..." : "Delete"}</span>
+            </Button>
+          )}
         </div>
       </div>
 
