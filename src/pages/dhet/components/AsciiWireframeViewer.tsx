@@ -1,19 +1,58 @@
 // src/pages/dhet/components/AsciiWireframeViewer.tsx
-import React, { useState } from "react";
-import { Copy, Check, Terminal, Maximize2, Minimize2 } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import {
+  Copy,
+  Check,
+  Smartphone,
+  Monitor,
+  Tablet,
+  Maximize2,
+  Minimize2,
+  ZoomIn,
+  ZoomOut,
+  SlidersHorizontal,
+  Sparkles,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { DeviceFrame } from "@/types/dhet";
 
 interface AsciiWireframeViewerProps {
   wireframe: string;
+  deviceFrame?: DeviceFrame;
 }
+
+type AspectOption = "16:9" | "9:16" | "4:3" | "1:1";
 
 export const AsciiWireframeViewer: React.FC<AsciiWireframeViewerProps> = ({
   wireframe,
+  deviceFrame,
 }) => {
-  const [copied, setCopied] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(false);
+  // Normalize aspect ratio from proposal or default to 16:9
+  const initialAspect: AspectOption = (() => {
+    const raw = deviceFrame?.aspect_ratio?.toLowerCase() || "";
+    if (raw.includes("9:16") || raw.includes("mobile")) return "9:16";
+    if (raw.includes("4:3") || raw.includes("tablet")) return "4:3";
+    if (raw.includes("1:1")) return "1:1";
+    return "16:9";
+  })();
+
+  const [aspect, setAspect] = useState<AspectOption>(initialAspect);
+  const [viewMode, setViewMode] = useState<"device" | "terminal">("device");
+  const [zoom, setZoom] = useState<number>(100);
+  const [copied, setCopied] = useState<boolean>(false);
+  const [isExpanded, setIsExpanded] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (deviceFrame?.aspect_ratio) {
+      const raw = deviceFrame.aspect_ratio.toLowerCase();
+      if (raw.includes("9:16")) setAspect("9:16");
+      else if (raw.includes("4:3")) setAspect("4:3");
+      else if (raw.includes("1:1")) setAspect("1:1");
+      else setAspect("16:9");
+    }
+  }, [deviceFrame?.aspect_ratio]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(wireframe);
@@ -22,49 +61,110 @@ export const AsciiWireframeViewer: React.FC<AsciiWireframeViewerProps> = ({
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleZoomChange = (delta: number) => {
+    setZoom((prev) => Math.min(140, Math.max(70, prev + delta)));
+  };
+
   return (
-    <div className="rounded-2xl border border-slate-800 bg-[#0B0F19] shadow-2xl overflow-hidden flex flex-col">
-      {/* Terminal Titlebar */}
-      <div className="flex items-center justify-between px-4 py-3 bg-[#0F172A] border-b border-slate-800/80">
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded-full bg-rose-500/80" />
-            <div className="w-3 h-3 rounded-full bg-amber-500/80" />
-            <div className="w-3 h-3 rounded-full bg-emerald-500/80" />
-          </div>
-          <span className="text-xs font-mono text-slate-400 flex items-center gap-1.5 ml-2">
-            <Terminal className="w-3.5 h-3.5 text-sky-400" />
-            ascii_layout_wireframe.txt
+    <div className="flex flex-col gap-3">
+      {/* ── ASPECT RATIO & CONTROLS TOOLBAR ───────────────────────────────── */}
+      <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-2xl bg-card border border-border/80 shadow-sm">
+        {/* Left: Device & Aspect Ratio Presets */}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className="text-xs font-semibold text-muted-foreground mr-1 flex items-center gap-1">
+            <SlidersHorizontal className="w-3.5 h-3.5" />
+            <span>Aspect Ratio:</span>
           </span>
+
+          <button
+            type="button"
+            onClick={() => setAspect("16:9")}
+            className={cn(
+              "px-2.5 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 border",
+              aspect === "16:9"
+                ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                : "bg-muted/40 hover:bg-muted text-muted-foreground border-transparent"
+            )}
+          >
+            <Monitor className="w-3.5 h-3.5" />
+            <span>Desktop 16:9</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setAspect("9:16")}
+            className={cn(
+              "px-2.5 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 border",
+              aspect === "9:16"
+                ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                : "bg-muted/40 hover:bg-muted text-muted-foreground border-transparent"
+            )}
+          >
+            <Smartphone className="w-3.5 h-3.5" />
+            <span>Mobile 9:16</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setAspect("4:3")}
+            className={cn(
+              "px-2.5 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 border",
+              aspect === "4:3"
+                ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                : "bg-muted/40 hover:bg-muted text-muted-foreground border-transparent"
+            )}
+          >
+            <Tablet className="w-3.5 h-3.5" />
+            <span>Tablet 4:3</span>
+          </button>
         </div>
 
+        {/* Right: Mode, Zoom & Copy */}
         <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="h-7 text-xs text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg px-2"
-          >
-            {isExpanded ? (
-              <Minimize2 className="w-3.5 h-3.5 mr-1" />
-            ) : (
-              <Maximize2 className="w-3.5 h-3.5 mr-1" />
-            )}
-            {isExpanded ? "Collapse" : "Expand"}
-          </Button>
+          {/* Zoom Buttons */}
+          <div className="hidden sm:flex items-center gap-1 bg-muted/40 border border-border/50 rounded-lg p-0.5">
+            <button
+              type="button"
+              onClick={() => handleZoomChange(-15)}
+              className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              title="Zoom out"
+            >
+              <ZoomOut className="w-3.5 h-3.5" />
+            </button>
+            <span className="text-[11px] font-mono font-medium px-1 text-muted-foreground select-none">
+              {zoom}%
+            </span>
+            <button
+              type="button"
+              onClick={() => handleZoomChange(15)}
+              className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              title="Zoom in"
+            >
+              <ZoomIn className="w-3.5 h-3.5" />
+            </button>
+          </div>
 
+          {/* View Mode Toggle */}
+          <button
+            type="button"
+            onClick={() => setViewMode(viewMode === "device" ? "terminal" : "device")}
+            className="text-xs px-2.5 py-1 rounded-lg border border-border/60 bg-muted/30 hover:bg-muted text-foreground transition-all"
+          >
+            {viewMode === "device" ? "Raw Terminal" : "Device Frame"}
+          </button>
+
+          {/* Copy Button */}
           <Button
             type="button"
-            variant="secondary"
+            variant="outline"
             size="sm"
             onClick={handleCopy}
-            className="h-7 text-xs bg-slate-800 hover:bg-slate-700 text-white rounded-lg px-2.5 flex items-center gap-1.5 border border-slate-700"
+            className="h-8 text-xs rounded-xl flex items-center gap-1.5 shadow-sm"
           >
             {copied ? (
               <>
-                <Check className="w-3.5 h-3.5 text-emerald-400" />
-                <span className="text-emerald-400 font-medium">Copied</span>
+                <Check className="w-3.5 h-3.5 text-emerald-500" />
+                <span className="text-emerald-500 font-medium">Copied</span>
               </>
             ) : (
               <>
@@ -76,14 +176,109 @@ export const AsciiWireframeViewer: React.FC<AsciiWireframeViewerProps> = ({
         </div>
       </div>
 
-      {/* Monospace ASCII viewport */}
-      <div
-        className={cn(
-          "p-4 md:p-6 overflow-x-auto transition-all duration-300 font-mono text-xs md:text-sm text-sky-300/90 leading-tight select-text whitespace-pre",
-          isExpanded ? "max-h-none" : "max-h-[500px]"
+      {/* ── CANVAS & DEVICE FRAME CONTAINER ──────────────────────────────── */}
+      <div className="w-full bg-[#07090E] rounded-3xl p-4 sm:p-8 border border-slate-800/80 shadow-2xl flex items-center justify-center overflow-hidden min-h-[440px]">
+        {/* MOBILE FRAME (9:16) */}
+        {viewMode === "device" && aspect === "9:16" && (
+          <div className="relative w-full max-w-[360px] rounded-[44px] border-[6px] border-slate-700/80 bg-[#0F1422] shadow-2xl overflow-hidden flex flex-col transition-all duration-300">
+            {/* Phone Speaker & Dynamic Island */}
+            <div className="h-6 w-full bg-[#0F1422] flex items-center justify-center pt-2 select-none">
+              <div className="w-20 h-4 bg-black rounded-full flex items-center justify-end px-2">
+                <div className="w-2 h-2 rounded-full bg-slate-900 border border-slate-700/40" />
+              </div>
+            </div>
+
+            {/* Screen Content */}
+            <div
+              className="p-4 overflow-x-auto overflow-y-auto max-h-[580px] custom-scrollbar text-sky-300 font-mono text-[11px] leading-tight select-text whitespace-pre flex-1"
+              style={{ fontSize: `${(11 * zoom) / 100}px` }}
+            >
+              {wireframe || "No wireframe generated."}
+            </div>
+
+            {/* Home Indicator Bar */}
+            <div className="h-5 w-full bg-[#0F1422] flex items-center justify-center pb-1.5 select-none">
+              <div className="w-28 h-1 bg-slate-600/70 rounded-full" />
+            </div>
+          </div>
         )}
-      >
-        {wireframe || "No wireframe generated."}
+
+        {/* DESKTOP BROWSER FRAME (16:9 or Default) */}
+        {viewMode === "device" && aspect === "16:9" && (
+          <div className="relative w-full max-w-4xl rounded-2xl border border-slate-700/60 bg-[#0B0F19] shadow-2xl overflow-hidden flex flex-col transition-all duration-300">
+            {/* Desktop Window Titlebar */}
+            <div className="flex items-center justify-between px-4 py-2.5 bg-[#111625] border-b border-slate-800">
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-3 h-3 rounded-full bg-rose-500/80" />
+                  <div className="w-3 h-3 rounded-full bg-amber-500/80" />
+                  <div className="w-3 h-3 rounded-full bg-emerald-500/80" />
+                </div>
+                <div className="ml-3 px-3 py-0.5 rounded-md bg-black/40 border border-slate-800 text-[11px] font-mono text-slate-400 select-none">
+                  viewport: 1440x900 • 16:9
+                </div>
+              </div>
+
+              <span className="text-[11px] font-mono text-slate-500 select-none">
+                Desktop Web Canvas
+              </span>
+            </div>
+
+            {/* Canvas Viewport */}
+            <div
+              className={cn(
+                "p-5 md:p-7 overflow-x-auto overflow-y-auto transition-all font-mono text-sky-300/95 leading-tight select-text whitespace-pre",
+                isExpanded ? "max-h-none" : "max-h-[550px]"
+              )}
+              style={{ fontSize: `${(12 * zoom) / 100}px` }}
+            >
+              {wireframe || "No wireframe generated."}
+            </div>
+          </div>
+        )}
+
+        {/* TABLET FRAME (4:3) */}
+        {viewMode === "device" && aspect === "4:3" && (
+          <div className="relative w-full max-w-[620px] rounded-[32px] border-[6px] border-slate-700/80 bg-[#0B0F19] shadow-2xl overflow-hidden flex flex-col transition-all duration-300">
+            {/* Tablet Camera dot */}
+            <div className="h-5 w-full bg-[#111625] flex items-center justify-center select-none">
+              <div className="w-2 h-2 rounded-full bg-black/80 border border-slate-700/50" />
+            </div>
+
+            {/* Screen Content */}
+            <div
+              className="p-6 overflow-x-auto overflow-y-auto max-h-[540px] custom-scrollbar text-sky-300 font-mono text-xs leading-tight select-text whitespace-pre"
+              style={{ fontSize: `${(11.5 * zoom) / 100}px` }}
+            >
+              {wireframe || "No wireframe generated."}
+            </div>
+
+            {/* Bottom Margin */}
+            <div className="h-4 w-full bg-[#111625] flex items-center justify-center select-none" />
+          </div>
+        )}
+
+        {/* SQUARE (1:1) */}
+        {viewMode === "device" && aspect === "1:1" && (
+          <div className="relative w-full max-w-[500px] aspect-square rounded-2xl border border-slate-700/80 bg-[#0B0F19] shadow-2xl overflow-hidden flex flex-col transition-all duration-300">
+            <div className="px-4 py-2 bg-[#111625] border-b border-slate-800 text-xs font-mono text-slate-400">
+              smart_display_1x1.txt
+            </div>
+            <div
+              className="p-5 overflow-auto flex-1 font-mono text-xs text-sky-300 leading-tight whitespace-pre select-text"
+              style={{ fontSize: `${(11.5 * zoom) / 100}px` }}
+            >
+              {wireframe || "No wireframe generated."}
+            </div>
+          </div>
+        )}
+
+        {/* TERMINAL MODE (Pure Monospace, No Bezel) */}
+        {viewMode === "terminal" && (
+          <div className="w-full max-w-4xl p-4 md:p-6 overflow-x-auto font-mono text-xs md:text-sm text-emerald-400/90 leading-tight select-text whitespace-pre bg-black/80 rounded-2xl border border-emerald-950/60 shadow-inner">
+            {wireframe || "No wireframe generated."}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -46,9 +46,19 @@ export interface DesignTokens {
   };
 }
 
+export interface DeviceFrame {
+  device_type?: "mobile" | "desktop" | "tablet" | "smart_device" | "kiosk" | string;
+  aspect_ratio?: "9:16" | "16:9" | "4:3" | "1:1" | "21:9" | string;
+  viewport?: {
+    width?: string;
+    height?: string;
+  };
+}
+
 export interface DesignProposal {
   title: string;
   summary: string;
+  device_frame?: DeviceFrame;
   ascii_wireframe: string;
   design_decisions: DesignDecision[];
   design_tokens: DesignTokens;
