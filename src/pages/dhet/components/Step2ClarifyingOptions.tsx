@@ -12,6 +12,7 @@ interface Step2ClarifyingOptionsProps {
   initialSelections: Record<string, string>;
   onBack: () => void;
   onSubmit: (selections: Record<string, string>) => void;
+  onSelectionChange?: (selections: Record<string, string>) => void;
   isLoading: boolean;
 }
 
@@ -21,6 +22,7 @@ export const Step2ClarifyingOptions: React.FC<Step2ClarifyingOptionsProps> = ({
   initialSelections,
   onBack,
   onSubmit,
+  onSelectionChange,
   isLoading,
 }) => {
   // Initialize selections with user defaults or provided defaults
@@ -35,10 +37,12 @@ export const Step2ClarifyingOptions: React.FC<Step2ClarifyingOptionsProps> = ({
   });
 
   const handleSelect = (questionId: string, optionId: string) => {
-    setSelections((prev) => ({
-      ...prev,
+    const updated = {
+      ...selections,
       [questionId]: optionId,
-    }));
+    };
+    setSelections(updated);
+    onSelectionChange?.(updated);
   };
 
   const handleGenerate = () => {

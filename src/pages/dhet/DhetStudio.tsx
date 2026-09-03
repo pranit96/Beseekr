@@ -1,6 +1,6 @@
 // src/pages/dhet/DhetStudio.tsx
-import React, { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import React, { useState, useEffect, useMemo } from "react";
+import { useLocation, useSearchParams } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Step1PromptInput } from "./components/Step1PromptInput";
 import { Step2ClarifyingOptions } from "./components/Step2ClarifyingOptions";
@@ -21,18 +21,61 @@ const DESIGN_PROGRESS_MESSAGES = [
   "Ensuring 1:1 twin parity between AI image prompt & Figma auto-layout...",
 ];
 
+const DHET_SESSION_STORAGE_KEY = "dhet_studio_session";
+
+interface DhetSavedSession {
+  step?: 1 | 2 | 3;
+  prompt?: string;
+  optionsData?: ClarifyingOptionsData | null;
+  selections?: Record<string, string>;
+  currentDesign?: DhetDesignRecord | null;
+}
+
+function loadSavedSession(): DhetSavedSession | null {
+  try {
+    const raw = localStorage.getItem(DHET_SESSION_STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch (err) {
+    console.warn("Could not parse saved DHET session:", err);
+    return null;
+  }
+}
+
 export const DhetStudio: React.FC = () => {
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const [step, setStep] = useState<1 | 2 | 3>(1);
-  const [prompt, setPrompt] = useState<string>("");
-  const [optionsData, setOptionsData] = useState<ClarifyingOptionsData | null>(
-    null,
-  );
-  const [selections, setSelections] = useState<Record<string, string>>({});
-  const [currentDesign, setCurrentDesign] = useState<DhetDesignRecord | null>(
-    null,
-  );
+  // Load session from localStorage once on component mount
+  const savedSession = useMemo(() => loadSavedSession(), []);
+
+  // Initialize state with persistence fallbacks
+  const [step, setStep] = useState<1 | 2 | 3>(() => {
+    if (location.state?.design) return 3;
+    if (savedSession?.currentDesign) return 3;
+    if (savedSession?.optionsData && savedSession?.step === 2) return 2;
+    if (savedSession?.step) return savedSession.step;
+    return 1;
+  });
+
+  const [prompt, setPrompt] = useState<string>(() => {
+    if (location.state?.design?.initial_prompt) return location.state.design.initial_prompt;
+    return savedSession?.prompt || "";
+  });
+
+  const [optionsData, setOptionsData] = useState<ClarifyingOptionsData | null>(() => {
+    return savedSession?.optionsData || null;
+  });
+
+  const [selections, setSelections] = useState<Record<string, string>>(() => {
+    if (location.state?.design?.selected_options) return location.state.design.selected_options;
+    return savedSession?.selections || {};
+  });
+
+  const [currentDesign, setCurrentDesign] = useState<DhetDesignRecord | null>(() => {
+    if (location.state?.design) return location.state.design;
+    return savedSession?.currentDesign || null;
+  });
 
   const [isLoadingOptions, setIsLoadingOptions] = useState<boolean>(false);
   const [isGeneratingProposal, setIsGeneratingProposal] =
@@ -52,11 +95,67 @@ export const DhetStudio: React.FC = () => {
     return () => clearInterval(interval);
   }, [isLoadingOptions, isGeneratingProposal]);
 
+  // Persist session to localStorage on every meaningful state change
+  useEffect(() => {
+    try {
+      if (!prompt && !optionsData && !currentDesign && step === 1) {
+        localStorage.removeItem(DHET_SESSION_STORAGE_KEY);
+      } else {
+        const payload: DhetSavedSession = {
+          step,
+          prompt,
+          optionsData,
+          selections,
+          currentDesign,
+        };
+        localStorage.setItem(DHET_SESSION_STORAGE_KEY, JSON.stringify(payload));
+      }
+    } catch (err) {
+      console.warn("Failed to save DHET session to localStorage:", err);
+    }
+  }, [step, prompt, optionsData, selections, currentDesign]);
+
+  // Load design from URL query param ?id=... if present
+  useEffect(() => {
+    const idFromUrl = searchParams.get("id");
+    if (idFromUrl && (!currentDesign || currentDesign.id !== idFromUrl)) {
+      apiClient
+        .getDhetDesign(idFromUrl)
+        .then((res) => {
+          if (res.success && res.data) {
+            setCurrentDesign(res.data);
+            setPrompt(res.data.initial_prompt || "");
+            if (res.data.selected_options) setSelections(res.data.selected_options);
+            setStep(3);
+          }
+        })
+        .catch((err) => {
+          console.warn("Failed to load design from URL id", err);
+        });
+    }
+  }, [searchParams]);
+
+  // Synchronize URL query param when viewing a proposal (Step 3)
+  useEffect(() => {
+    if (currentDesign?.id && step === 3) {
+      if (searchParams.get("id") !== currentDesign.id) {
+        setSearchParams({ id: currentDesign.id }, { replace: true });
+      }
+    } else if (step < 3 && searchParams.has("id")) {
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete("id");
+      setSearchParams(newParams, { replace: true });
+    }
+  }, [currentDesign?.id, step]);
+
   // If redirected from Saved Designs with state
   useEffect(() => {
     if (location.state?.design) {
       setCurrentDesign(location.state.design);
       setPrompt(location.state.design.initial_prompt || "");
+      if (location.state.design.selected_options) {
+        setSelections(location.state.design.selected_options);
+      }
       setStep(3);
     }
   }, [location.state]);
@@ -115,11 +214,18 @@ export const DhetStudio: React.FC = () => {
   };
 
   const handleReset = () => {
+    try {
+      localStorage.removeItem(DHET_SESSION_STORAGE_KEY);
+    } catch (err) {
+      console.warn("Failed to clear DHET session from localStorage:", err);
+    }
     setStep(1);
     setPrompt("");
     setOptionsData(null);
     setSelections({});
     setCurrentDesign(null);
+    setSearchParams({}, { replace: true });
+    toast.info("Studio reset. Starting fresh design concept.");
   };
 
   return (
@@ -277,6 +383,7 @@ export const DhetStudio: React.FC = () => {
               initialSelections={selections}
               onBack={() => setStep(1)}
               onSubmit={handleOptionsSubmit}
+              onSelectionChange={(updated) => setSelections(updated)}
               isLoading={isGeneratingProposal}
             />
           )}
