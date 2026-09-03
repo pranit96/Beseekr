@@ -30,7 +30,7 @@ interface Step3ProposalViewProps {
   onReset: () => void;
 }
 
-type MainTab = "blueprint" | "twin-specs";
+type MainTab = "blueprint" | "heuristics" | "twin-specs";
 
 export const Step3ProposalView: React.FC<Step3ProposalViewProps> = ({
   design,
@@ -156,7 +156,7 @@ export const Step3ProposalView: React.FC<Step3ProposalViewProps> = ({
         </div>
       </div>
 
-      {/* ── TOP PRIMARY TABS: BLUEPRINT vs REAL-LIFE TWIN SPECS ───────────────── */}
+      {/* ── TOP PRIMARY TABS: BLUEPRINT, HEURISTICS, PRODUCTION TWIN ─────── */}
       <div className="flex items-center justify-between border-b border-border/70 pb-3 flex-wrap gap-3">
         <div className="flex items-center gap-2 p-1 rounded-2xl bg-muted/50 border border-border/60">
           <button
@@ -170,7 +170,21 @@ export const Step3ProposalView: React.FC<Step3ProposalViewProps> = ({
             )}
           >
             <Terminal className="w-4 h-4 text-primary" />
-            <span>1. Design Blueprint & Annotations</span>
+            <span>1. Architectural Blueprint & Visual Twin</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("heuristics")}
+            className={cn(
+              "px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2",
+              activeTab === "heuristics"
+                ? "bg-background text-foreground shadow-md border border-border/50"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <PenTool className="w-4 h-4 text-amber-500" />
+            <span>2. Tokens & Heuristics</span>
           </button>
 
           <button
@@ -183,183 +197,217 @@ export const Step3ProposalView: React.FC<Step3ProposalViewProps> = ({
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
-            <Sparkles className="w-4 h-4 text-amber-500" />
-            <span>2. Real-Life Twin: Figma & AI Image Prompt</span>
+            <Sparkles className="w-4 h-4 text-emerald-500" />
+            <span>3. Figma Specs & AI Prompt</span>
           </button>
         </div>
 
         <span className="text-xs text-muted-foreground hidden md:inline-flex items-center gap-1">
           <Lightbulb className="w-3.5 h-3.5 text-amber-500" />
-          <span>Switch tabs to toggle between structural blueprint and production assets</span>
+          <span>Switch tabs to toggle between structural blueprints, heuristic rationales, and production specs</span>
         </span>
       </div>
 
-      {/* ── TAB 1: ASCII WIREFRAME CENTER STAGE WITH REVOLVING ANNOTATIONS ──── */}
+      {/* ── TAB 1: ASCII WIREFRAME & LIVE UI TWIN CENTER STAGE ──────────────── */}
       {activeTab === "blueprint" && (
-        <div className="flex flex-col gap-8">
-          {/* Main Layout: Center stage Wireframe + Flanking Margin Annotations */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-            {/* LEFT COLUMN: Color Psychology & Palettes ("What colour suits and why") */}
-            <div className="lg:col-span-3 flex flex-col gap-4 order-2 lg:order-1">
-              <div className="p-5 rounded-2xl bg-card border border-border/80 shadow-sm flex flex-col gap-4 relative">
-                {/* Visual marker / sticky note header */}
-                <div className="flex items-center justify-between pb-2 border-b border-border/60">
-                  <div className="flex items-center gap-2">
-                    <Palette className="w-4 h-4 text-primary" />
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">
-                      Color Reasoning
-                    </h3>
-                  </div>
-                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
-                    Token Harmony
-                  </span>
-                </div>
+        <div className="flex flex-col gap-6">
+          {/* Main Full-Width Stage for the Dual Viewer */}
+          <AsciiWireframeViewer
+            wireframe={proposal.ascii_wireframe}
+            deviceFrame={proposal.device_frame}
+            proposal={proposal}
+          />
 
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  Tailored specifically to this product's archetype and emotional tone:
-                </p>
-
-                {/* Color Swatch List with In-depth Explanations */}
-                <div className="flex flex-col gap-3">
-                  {Object.entries(colors).slice(0, 5).map(([role, hexValue]) => {
-                    const hex: string = typeof hexValue === "string" ? hexValue : String(hexValue || "");
-                    const isBg = role === "background" || role === "surface";
-                    const isPrimary = role === "primary";
-
-                    let reason = "Selected for accessibility and visual rhythm.";
-                    if (isPrimary) {
-                      reason = "Dominant interactive color, engineered for high affordance and unambiguous CTA signifiers.";
-                    } else if (isBg) {
-                      reason = "Canvas base that eliminates eye strain and provides generous breathing room.";
-                    } else if (role === "accent") {
-                      reason = "High-contrast spark for micro-milestones and status notifications.";
-                    }
-
-                    return (
-                      <div
-                        key={role}
-                        className="p-3 rounded-xl bg-muted/30 border border-border/50 flex flex-col gap-1.5"
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <div
-                              className="w-4 h-4 rounded-full border border-black/20 shadow-inner"
-                              style={{ backgroundColor: hex }}
-                            />
-                            <span className="text-xs font-semibold capitalize text-foreground">
-                              {role.replace(/_/g, " ")}
-                            </span>
-                          </div>
-                          <span className="text-[11px] font-mono text-muted-foreground uppercase">
-                            {hex}
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-muted-foreground leading-relaxed">
-                          {reason}
-                        </p>
-                      </div>
-                    );
-                  })}
-                </div>
+          {/* Quick Context Summary Below Viewport */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+            {/* Form Factor Constraints */}
+            <div className="p-4 rounded-2xl bg-card border border-border/80 shadow-sm flex flex-col gap-2">
+              <div className="flex items-center justify-between text-xs font-bold text-foreground">
+                <span className="flex items-center gap-1.5 text-primary">
+                  <Maximize2 className="w-3.5 h-3.5" />
+                  <span>Device Form Factor</span>
+                </span>
+                <span className="font-mono text-[11px] px-2 py-0.5 rounded bg-muted text-muted-foreground capitalize">
+                  {proposal.device_frame?.device_type || "Mobile"}
+                </span>
               </div>
-
-              {/* Typography Specs Card */}
-              <div className="p-5 rounded-2xl bg-card border border-border/80 shadow-sm flex flex-col gap-3">
-                <div className="flex items-center gap-2 pb-2 border-b border-border/60">
-                  <Type className="w-4 h-4 text-primary" />
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">
-                    Typographic Scale
-                  </h3>
-                </div>
-                <div className="flex flex-col gap-2 text-xs">
-                  <div>
-                    <span className="text-muted-foreground text-[11px]">Heading Font:</span>
-                    <p className="font-semibold text-foreground">{typography.heading_font || "Inter, sans-serif"}</p>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground text-[11px]">Body Text:</span>
-                    <p className="font-semibold text-foreground">{typography.body_font || "Inter, system-ui"}</p>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground text-[11px]">Monospace:</span>
-                    <p className="font-mono font-medium text-foreground">{typography.mono_font || "JetBrains Mono"}</p>
-                  </div>
-                </div>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <span>Aspect Ratio:</span>
+                <span className="font-bold text-foreground font-mono">
+                  {proposal.device_frame?.aspect_ratio || "9:16"}
+                </span>
+                <span>•</span>
+                <span>Viewport:</span>
+                <span className="font-bold text-foreground font-mono">
+                  {proposal.device_frame?.viewport?.width || "390px"} × {proposal.device_frame?.viewport?.height || "844px"}
+                </span>
               </div>
             </div>
 
-            {/* CENTER STAGE: ASCII WIREFRAME IN DEVICE VIEWPORT (Primary Focal Point) */}
-            <div className="lg:col-span-6 flex flex-col gap-3 order-1 lg:order-2">
-              <div className="flex items-center justify-between">
-                <h2 className="text-sm font-bold uppercase tracking-wider text-primary flex items-center gap-2">
-                  <Terminal className="w-4 h-4" />
-                  <span>Center Stage Layout Blueprint</span>
-                </h2>
-                <span className="text-xs text-muted-foreground font-mono">
-                  {proposal.device_frame?.aspect_ratio || "16:9"} • Monospace Vector
+            {/* Token Palette Preview */}
+            <div className="p-4 rounded-2xl bg-card border border-border/80 shadow-sm flex flex-col gap-2">
+              <div className="flex items-center justify-between text-xs font-bold text-foreground">
+                <span className="flex items-center gap-1.5 text-primary">
+                  <Palette className="w-3.5 h-3.5" />
+                  <span>Brand Harmony</span>
+                </span>
+                <span className="text-[10px] text-muted-foreground">Click to inspect</span>
+              </div>
+              <div className="flex items-center gap-2 pt-1">
+                {Object.entries(colors).slice(0, 6).map(([role, hex]) => (
+                  <div
+                    key={role}
+                    title={`${role}: ${hex}`}
+                    className="w-7 h-7 rounded-xl border border-black/20 shadow-sm cursor-pointer hover:scale-110 transition-transform"
+                    style={{ backgroundColor: String(hex) }}
+                    onClick={() => {
+                      navigator.clipboard.writeText(String(hex));
+                      toast.success(`Copied ${role}: ${hex}`);
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Core Heuristic Principle */}
+            <div className="p-4 rounded-2xl bg-card border border-border/80 shadow-sm flex flex-col gap-1.5">
+              <div className="flex items-center justify-between text-xs font-bold text-foreground">
+                <span className="flex items-center gap-1.5 text-amber-500">
+                  <Compass className="w-3.5 h-3.5" />
+                  <span>Dominant Heuristic</span>
+                </span>
+                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 font-bold">
+                  {decisions[0]?.attribution?.split(" ")[0] || "Norman"}
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground leading-relaxed italic line-clamp-2">
+                "{decisions[0]?.rationale || "Immediate tactile confirmation eliminates doubt."}"
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── TAB 2: DESIGN TOKENS & HEURISTIC RATIONALE ───────────────────────── */}
+      {activeTab === "heuristics" && (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          {/* LEFT: Color Psychology & Design Tokens */}
+          <div className="lg:col-span-5 flex flex-col gap-4">
+            <div className="p-5 rounded-2xl bg-card border border-border/80 shadow-sm flex flex-col gap-4">
+              <div className="flex items-center justify-between pb-2 border-b border-border/60">
+                <div className="flex items-center gap-2">
+                  <Palette className="w-4 h-4 text-primary" />
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">
+                    Color Reasoning & Semantics
+                  </h3>
+                </div>
+                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                  Token Harmony
                 </span>
               </div>
 
-              {/* Responsive Center Wireframe with Device Aspect Toggles */}
-              <AsciiWireframeViewer
-                wireframe={proposal.ascii_wireframe}
-                deviceFrame={proposal.device_frame}
-              />
-            </div>
-
-            {/* RIGHT COLUMN: Hand-Written Style Heuristic Margin Notes (Norman, Rams, Nielsen) */}
-            <div className="lg:col-span-3 flex flex-col gap-4 order-3">
-              <div className="p-5 rounded-2xl bg-card border border-border/80 shadow-sm flex flex-col gap-4">
-                <div className="flex items-center justify-between pb-2 border-b border-border/60">
-                  <div className="flex items-center gap-2">
-                    <PenTool className="w-4 h-4 text-primary" />
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">
-                      Designer Annotations
-                    </h3>
-                  </div>
-                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-primary/10 text-primary font-bold">
-                    Why Made
-                  </span>
-                </div>
-
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  Margin notes detailing why each structural decision was formed:
-                </p>
-
-                {/* Hand-Notated Decision Cards */}
-                <div className="flex flex-col gap-3">
-                  {decisions.slice(0, 5).map((decision, idx) => (
+              <div className="flex flex-col gap-3">
+                {Object.entries(colors).map(([role, hexValue]) => {
+                  const hex = String(hexValue || "");
+                  return (
                     <div
-                      key={idx}
-                      className="p-3.5 rounded-xl border border-amber-500/30 bg-amber-500/[0.04] dark:bg-amber-500/[0.03] shadow-sm flex flex-col gap-1.5 relative overflow-hidden"
+                      key={role}
+                      onClick={() => {
+                        navigator.clipboard.writeText(hex);
+                        toast.success(`Copied ${role}: ${hex}`);
+                      }}
+                      className="p-3 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors border border-border/50 flex items-center justify-between cursor-pointer"
                     >
-                      <div className="flex items-start justify-between gap-1">
-                        <span className="text-xs font-bold text-foreground leading-tight">
-                          {decision.title}
-                        </span>
-                        <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded shrink-0">
-                          {decision.attribution.split(" ")[0]}
+                      <div className="flex items-center gap-2.5">
+                        <div
+                          className="w-5 h-5 rounded-full border border-black/20 shadow-inner"
+                          style={{ backgroundColor: hex }}
+                        />
+                        <span className="text-xs font-semibold capitalize text-foreground">
+                          {role.replace(/_/g, " ")}
                         </span>
                       </div>
-
-                      <span className="text-[10px] font-semibold text-primary flex items-center gap-1">
-                        <Compass className="w-3 h-3" />
-                        {decision.principle}
+                      <span className="text-xs font-mono text-muted-foreground uppercase font-medium">
+                        {hex}
                       </span>
-
-                      <p className="text-xs text-muted-foreground leading-relaxed italic">
-                        "{decision.rationale}"
-                      </p>
                     </div>
-                  ))}
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Typography Specs Card */}
+            <div className="p-5 rounded-2xl bg-card border border-border/80 shadow-sm flex flex-col gap-3">
+              <div className="flex items-center gap-2 pb-2 border-b border-border/60">
+                <Type className="w-4 h-4 text-primary" />
+                <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">
+                  Typographic Scale
+                </h3>
+              </div>
+              <div className="flex flex-col gap-2.5 text-xs">
+                <div>
+                  <span className="text-muted-foreground text-[11px]">Heading Font:</span>
+                  <p className="font-semibold text-foreground text-sm">{typography.heading_font || "Inter, sans-serif"}</p>
                 </div>
+                <div>
+                  <span className="text-muted-foreground text-[11px]">Body Text:</span>
+                  <p className="font-semibold text-foreground">{typography.body_font || "Inter, system-ui"}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground text-[11px]">Monospace:</span>
+                  <p className="font-mono font-medium text-foreground">{typography.mono_font || "JetBrains Mono"}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* RIGHT: Heuristic Margin Notes */}
+          <div className="lg:col-span-7 flex flex-col gap-4">
+            <div className="p-5 rounded-2xl bg-card border border-border/80 shadow-sm flex flex-col gap-4">
+              <div className="flex items-center justify-between pb-2 border-b border-border/60">
+                <div className="flex items-center gap-2">
+                  <PenTool className="w-4 h-4 text-primary" />
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">
+                    Foundational UX & Heuristic Rationales
+                  </h3>
+                </div>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-primary/10 text-primary font-bold">
+                  {decisions.length} Decisions Documented
+                </span>
+              </div>
+
+              <div className="flex flex-col gap-3.5">
+                {decisions.map((decision, idx) => (
+                  <div
+                    key={idx}
+                    className="p-4 rounded-xl border border-amber-500/30 bg-amber-500/[0.04] dark:bg-amber-500/[0.03] shadow-sm flex flex-col gap-2"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="text-xs sm:text-sm font-bold text-foreground leading-tight">
+                        {decision.title}
+                      </span>
+                      <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded shrink-0">
+                        {decision.attribution}
+                      </span>
+                    </div>
+
+                    <span className="text-xs font-semibold text-primary flex items-center gap-1.5">
+                      <Compass className="w-3.5 h-3.5" />
+                      {decision.principle}
+                    </span>
+
+                    <p className="text-xs text-muted-foreground leading-relaxed italic">
+                      "{decision.rationale}"
+                    </p>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* ── TAB 2: FIGMA AUTO-LAYOUT & AI IMAGE PROMPT (Real-Life Twin) ──────── */}
+      {/* ── TAB 3: FIGMA AUTO-LAYOUT & AI IMAGE PROMPT (Real-Life Twin) ──────── */}
       {activeTab === "twin-specs" && (
         <div className="flex flex-col gap-6">
           <div className="p-4 rounded-2xl bg-primary/5 border border-primary/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
