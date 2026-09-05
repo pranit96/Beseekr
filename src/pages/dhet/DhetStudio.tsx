@@ -8,7 +8,6 @@ import { Step3ProposalView } from "./components/Step3ProposalView";
 import { ClarifyingOptionsData, DhetDesignRecord } from "@/types/dhet";
 import { apiClient } from "@/lib/api";
 import { toast } from "sonner";
-import { Layers, Check, Loader2, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { GlobalHeader } from "@/components/GlobalHeader";
 import { GlobalFooter } from "@/components/GlobalFooter";
@@ -19,6 +18,7 @@ const DESIGN_PROGRESS_MESSAGES = [
   "Jakob Nielsen: Guaranteeing visibility of system status & recognition...",
   "Steve Krug: Designing for effortless scanning (Don't Make Me Think)...",
   "Ensuring 1:1 twin parity between AI image prompt & Figma auto-layout...",
+  "Alan Cooper: Defining user goals and persona-driven interaction models...",
 ];
 
 const DHET_SESSION_STORAGE_KEY = "dhet_studio_session";
@@ -36,7 +36,6 @@ function loadSavedSession(): DhetSavedSession | null {
     const raw = localStorage.getItem(DHET_SESSION_STORAGE_KEY);
     if (!raw) return null;
     const session = JSON.parse(raw);
-    // If step is 3 but currentDesign has no proposal and no id, clear broken design state
     if (session.step === 3 && session.currentDesign && !session.currentDesign.proposal && !session.currentDesign.id) {
       session.step = 1;
       session.currentDesign = null;
@@ -52,10 +51,8 @@ export const DhetStudio: React.FC = () => {
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // Load session from localStorage once on component mount
   const savedSession = useMemo(() => loadSavedSession(), []);
 
-  // Initialize state with persistence fallbacks
   const [step, setStep] = useState<1 | 2 | 3>(() => {
     if (location.state?.design) return 3;
     if (savedSession?.currentDesign) return 3;
@@ -84,37 +81,26 @@ export const DhetStudio: React.FC = () => {
   });
 
   const [isLoadingOptions, setIsLoadingOptions] = useState<boolean>(false);
-  const [isGeneratingProposal, setIsGeneratingProposal] =
-    useState<boolean>(false);
+  const [isGeneratingProposal, setIsGeneratingProposal] = useState<boolean>(false);
   const [isLoadingDesign, setIsLoadingDesign] = useState<boolean>(false);
   const [loadingMessageIdx, setLoadingMessageIdx] = useState<number>(0);
 
-  // Rotate loading heuristic messages for transparent, rich user feedback
   useEffect(() => {
     let interval: any;
     if (isLoadingOptions || isGeneratingProposal) {
       interval = setInterval(() => {
-        setLoadingMessageIdx(
-          (prev) => (prev + 1) % DESIGN_PROGRESS_MESSAGES.length,
-        );
-      }, 2500);
+        setLoadingMessageIdx((prev) => (prev + 1) % DESIGN_PROGRESS_MESSAGES.length);
+      }, 2200);
     }
     return () => clearInterval(interval);
   }, [isLoadingOptions, isGeneratingProposal]);
 
-  // Persist session to localStorage on every meaningful state change
   useEffect(() => {
     try {
       if (!prompt && !optionsData && !currentDesign && step === 1) {
         localStorage.removeItem(DHET_SESSION_STORAGE_KEY);
       } else {
-        const payload: DhetSavedSession = {
-          step,
-          prompt,
-          optionsData,
-          selections,
-          currentDesign,
-        };
+        const payload: DhetSavedSession = { step, prompt, optionsData, selections, currentDesign };
         localStorage.setItem(DHET_SESSION_STORAGE_KEY, JSON.stringify(payload));
       }
     } catch (err) {
@@ -122,11 +108,9 @@ export const DhetStudio: React.FC = () => {
     }
   }, [step, prompt, optionsData, selections, currentDesign]);
 
-  // Load design from URL query param ?id=... or if currentDesign is missing proposal
   useEffect(() => {
     const idFromUrl = searchParams.get("id");
     const targetId = idFromUrl || (currentDesign?.id && !currentDesign?.proposal ? currentDesign.id : null);
-
     if (targetId && (!currentDesign || currentDesign.id !== targetId || !currentDesign.proposal)) {
       setIsLoadingDesign(true);
       apiClient
@@ -143,13 +127,10 @@ export const DhetStudio: React.FC = () => {
           console.warn("Failed to load design from ID", err);
           toast.error("Failed to load design proposal details.");
         })
-        .finally(() => {
-          setIsLoadingDesign(false);
-        });
+        .finally(() => setIsLoadingDesign(false));
     }
   }, [searchParams, currentDesign?.id, currentDesign?.proposal]);
 
-  // Synchronize URL query param when viewing a proposal (Step 3)
   useEffect(() => {
     if (currentDesign?.id && step === 3) {
       if (searchParams.get("id") !== currentDesign.id) {
@@ -162,49 +143,33 @@ export const DhetStudio: React.FC = () => {
     }
   }, [currentDesign?.id, step]);
 
-  // If redirected from Saved Designs with state
   useEffect(() => {
     if (location.state?.design) {
       const designFromState = location.state.design;
       setPrompt(designFromState.initial_prompt || "");
-      if (designFromState.selected_options) {
-        setSelections(designFromState.selected_options);
-      }
+      if (designFromState.selected_options) setSelections(designFromState.selected_options);
       setStep(3);
-
       if (designFromState.proposal) {
         setCurrentDesign(designFromState);
       } else if (designFromState.id) {
-        // Fetch full design if proposal was omitted in list
         setIsLoadingDesign(true);
         apiClient
           .getDhetDesign(designFromState.id)
           .then((res) => {
-            if (res.success && res.data) {
-              setCurrentDesign(res.data);
-            } else {
-              setCurrentDesign(designFromState);
-            }
+            setCurrentDesign(res.success && res.data ? res.data : designFromState);
           })
-          .catch((err) => {
-            console.warn("Failed to load full design from state id:", err);
-            setCurrentDesign(designFromState);
-          })
-          .finally(() => {
-            setIsLoadingDesign(false);
-          });
+          .catch(() => setCurrentDesign(designFromState))
+          .finally(() => setIsLoadingDesign(false));
       } else {
         setCurrentDesign(designFromState);
       }
     }
   }, [location.state]);
 
-  // Step 1 -> Step 2
   const handlePromptSubmit = async (submittedPrompt: string) => {
     try {
       setIsLoadingOptions(true);
       setPrompt(submittedPrompt);
-
       const res = await apiClient.getDhetClarifyingOptions(submittedPrompt);
       if (res.success && res.data) {
         setOptionsData(res.data);
@@ -213,29 +178,21 @@ export const DhetStudio: React.FC = () => {
         throw new Error(res.error || "Failed to clarify prompt.");
       }
     } catch (err: any) {
-      toast.error(
-        err.message ||
-          "Failed to generate clarifying options. Please try again.",
-      );
+      toast.error(err.message || "Failed to generate clarifying options. Please try again.");
     } finally {
       setIsLoadingOptions(false);
     }
   };
 
-  // Step 2 -> Step 3
-  const handleOptionsSubmit = async (
-    selectedChoices: Record<string, string>,
-  ) => {
+  const handleOptionsSubmit = async (selectedChoices: Record<string, string>) => {
     try {
       setIsGeneratingProposal(true);
       setSelections(selectedChoices);
-
       const res = await apiClient.generateDhetProposal({
         prompt,
         selections: selectedChoices,
         clarifying_options: optionsData?.questions || [],
       });
-
       if (res.success && res.data) {
         setCurrentDesign(res.data);
         setStep(3);
@@ -244,20 +201,14 @@ export const DhetStudio: React.FC = () => {
         throw new Error(res.error || "Failed to generate design proposal.");
       }
     } catch (err: any) {
-      toast.error(
-        err.message || "Failed to generate design proposal. Please try again.",
-      );
+      toast.error(err.message || "Failed to generate design proposal. Please try again.");
     } finally {
       setIsGeneratingProposal(false);
     }
   };
 
   const handleReset = () => {
-    try {
-      localStorage.removeItem(DHET_SESSION_STORAGE_KEY);
-    } catch (err) {
-      console.warn("Failed to clear DHET session from localStorage:", err);
-    }
+    try { localStorage.removeItem(DHET_SESSION_STORAGE_KEY); } catch {}
     setStep(1);
     setPrompt("");
     setOptionsData(null);
@@ -267,187 +218,184 @@ export const DhetStudio: React.FC = () => {
     toast.info("Studio reset. Starting fresh design concept.");
   };
 
+  const isLoading = isLoadingOptions || isGeneratingProposal;
+
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col">
-      <GlobalHeader />
+    <div className="min-h-screen flex flex-col relative overflow-hidden" style={{ background: "hsl(222 47% 3%)", color: "hsl(214 32% 91%)" }}>
+      {/* ── AMBIENT GRAIN TEXTURE ─────────────────────────────────────────── */}
+      <div
+        className="pointer-events-none fixed inset-0 z-0 opacity-[0.035]"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E")`,
+          backgroundRepeat: "repeat",
+        }}
+      />
 
-      {/* ── STEP PROGRESS & NAV BAR (Norman Affordances & Nielsen System Status) ─ */}
-      <div className="w-full border-b border-border/50 bg-card/60 backdrop-blur-md sticky top-14 z-20">
-        <div className="max-w-5xl mx-auto px-4 py-2.5 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="p-1.5 rounded-xl bg-primary/10 text-primary">
-              <Layers className="w-4 h-4" />
-            </span>
-            <span className="text-xs font-bold text-foreground">
-              Everyday Things Studio
-            </span>
+      {/* ── AMBIENT RADIAL GLOW ───────────────────────────────────────────── */}
+      <div
+        className="pointer-events-none fixed top-0 left-1/2 -translate-x-1/2 w-[900px] h-[500px] z-0"
+        style={{
+          background: "radial-gradient(ellipse at 50% 0%, rgba(139,92,246,0.12) 0%, transparent 70%)",
+        }}
+      />
+
+      <div className="relative z-10 flex flex-col min-h-screen">
+        <GlobalHeader />
+
+        {/* ── FLOATING VERTICAL STEP DOTS (Left Edge) ─────────────────────── */}
+        {step < 3 && (
+          <div className="fixed left-5 top-1/2 -translate-y-1/2 z-30 hidden lg:flex flex-col items-center gap-3">
+            {[1, 2, 3].map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => {
+                  if (s === 1) setStep(1);
+                  if (s === 2 && optionsData) setStep(2);
+                  if (s === 3 && currentDesign) setStep(3);
+                }}
+                disabled={(s === 2 && !optionsData) || (s === 3 && !currentDesign)}
+                title={["Concept", "Clarify", "Proposal"][s - 1]}
+                className={cn(
+                  "transition-all duration-300 rounded-full border",
+                  step === s
+                    ? "w-2.5 h-8 bg-violet-500 border-violet-400 shadow-[0_0_12px_rgba(139,92,246,0.7)]"
+                    : s < step
+                    ? "w-2 h-2 bg-violet-600/60 border-violet-500/40"
+                    : "w-2 h-2 bg-white/10 border-white/10"
+                )}
+              />
+            ))}
           </div>
+        )}
 
-          {/* Interactive Navigation Steps */}
-          <nav
-            className="flex items-center gap-1.5 sm:gap-3 text-xs"
-            aria-label="Studio Progress"
-          >
-            {/* Step 1: Concept */}
-            <button
-              type="button"
-              onClick={() => setStep(1)}
-              className={cn(
-                "flex items-center gap-1.5 px-2.5 py-1 rounded-xl transition-all cursor-pointer",
-                step === 1
-                  ? "bg-primary text-primary-foreground font-bold shadow-sm"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/60",
-              )}
+        {/* ── CINEMATIC LOADING OVERLAY ─────────────────────────────────────── */}
+        <AnimatePresence>
+          {isLoading && (
+            <motion.div
+              key="loading-overlay"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="fixed inset-0 z-50 flex flex-col items-center justify-center"
+              style={{ background: "rgba(8, 10, 18, 0.92)", backdropFilter: "blur(16px)" }}
             >
-              <span
-                className={cn(
-                  "w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold",
-                  step === 1
-                    ? "bg-primary-foreground/20 text-primary-foreground"
-                    : "bg-muted text-muted-foreground",
-                )}
-              >
-                {optionsData ? (
-                  <Check className="w-2.5 h-2.5 stroke-[3]" />
-                ) : (
-                  "1"
-                )}
-              </span>
-              <span>1. Concept</span>
-            </button>
-
-            <span className="w-3 h-[1px] bg-border/80" />
-
-            {/* Step 2: Clarify */}
-            <button
-              type="button"
-              disabled={!optionsData}
-              onClick={() => optionsData && setStep(2)}
-              className={cn(
-                "flex items-center gap-1.5 px-2.5 py-1 rounded-xl transition-all",
-                optionsData
-                  ? "cursor-pointer"
-                  : "cursor-not-allowed opacity-40",
-                step === 2
-                  ? "bg-primary text-primary-foreground font-bold shadow-sm"
-                  : optionsData
-                    ? "text-muted-foreground hover:text-foreground hover:bg-muted/60"
-                    : "text-muted-foreground",
-              )}
-            >
-              <span
-                className={cn(
-                  "w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold",
-                  step === 2
-                    ? "bg-primary-foreground/20 text-primary-foreground"
-                    : "bg-muted text-muted-foreground",
-                )}
-              >
-                {currentDesign ? (
-                  <Check className="w-2.5 h-2.5 stroke-[3]" />
-                ) : (
-                  "2"
-                )}
-              </span>
-              <span>2. Clarify</span>
-            </button>
-
-            <span className="w-3 h-[1px] bg-border/80" />
-
-            {/* Step 3: Proposal */}
-            <button
-              type="button"
-              disabled={!currentDesign}
-              onClick={() => currentDesign && setStep(3)}
-              className={cn(
-                "flex items-center gap-1.5 px-2.5 py-1 rounded-xl transition-all",
-                currentDesign
-                  ? "cursor-pointer"
-                  : "cursor-not-allowed opacity-40",
-                step === 3
-                  ? "bg-primary text-primary-foreground font-bold shadow-sm"
-                  : currentDesign
-                    ? "text-muted-foreground hover:text-foreground hover:bg-muted/60"
-                    : "text-muted-foreground",
-              )}
-            >
-              <span
-                className={cn(
-                  "w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold",
-                  step === 3
-                    ? "bg-primary-foreground/20 text-primary-foreground"
-                    : "bg-muted text-muted-foreground",
-                )}
-              >
-                3
-              </span>
-              <span>3. Proposal</span>
-            </button>
-          </nav>
-        </div>
-      </div>
-
-      {/* ── LIVE HEURISTIC FEEDBACK BANNER (During Generation) ─────────────── */}
-      {(isLoadingOptions || isGeneratingProposal) && (
-        <motion.div
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: "auto" }}
-          exit={{ opacity: 0, height: 0 }}
-          className="bg-primary/10 border-b border-primary/20 px-4 py-3 flex items-center justify-center gap-2.5 text-xs text-primary font-medium"
-        >
-          <Loader2 className="w-4 h-4 animate-spin shrink-0" />
-          <span className="truncate">
-            {DESIGN_PROGRESS_MESSAGES[loadingMessageIdx]}
-          </span>
-        </motion.div>
-      )}
-
-      {/* ── STEP CONTENT ─────────────────────────────────────────────────── */}
-      <main className="flex-1 flex flex-col pb-16">
-        <AnimatePresence mode="wait">
-          {step === 1 && (
-            <Step1PromptInput
-              key="step-1"
-              initialValue={prompt}
-              onSubmit={handlePromptSubmit}
-              isLoading={isLoadingOptions}
-            />
-          )}
-
-          {step === 2 && optionsData && (
-            <Step2ClarifyingOptions
-              key="step-2"
-              initialPrompt={prompt}
-              optionsData={optionsData}
-              initialSelections={selections}
-              onBack={() => setStep(1)}
-              onSubmit={handleOptionsSubmit}
-              onSelectionChange={(updated) => setSelections(updated)}
-              isLoading={isGeneratingProposal}
-            />
-          )}
-
-          {step === 3 && (isLoadingDesign || (currentDesign && !currentDesign.proposal)) && (
-            <div className="flex-1 flex flex-col items-center justify-center py-24 gap-4 text-center">
-              <Loader2 className="w-10 h-10 animate-spin text-primary" />
-              <div className="flex flex-col gap-1">
-                <h2 className="text-lg font-bold text-foreground">Loading Design Proposal...</h2>
-                <p className="text-xs text-muted-foreground">Retrieving full specification and architectural blueprint.</p>
+              {/* Animated glow ring */}
+              <div className="relative w-24 h-24 mb-8">
+                <div className="absolute inset-0 rounded-full border-2 border-violet-500/20 animate-ping" style={{ animationDuration: "2s" }} />
+                <div className="absolute inset-2 rounded-full border border-violet-400/30 animate-pulse" />
+                <div
+                  className="absolute inset-0 rounded-full"
+                  style={{
+                    background: "conic-gradient(from 0deg, transparent 0%, rgba(139,92,246,0.6) 30%, transparent 60%)",
+                    animation: "spin 1.4s linear infinite",
+                  }}
+                />
+                <div
+                  className="absolute inset-1.5 rounded-full"
+                  style={{ background: "hsl(222 47% 5%)" }}
+                />
+                <div
+                  className="absolute inset-0 flex items-center justify-center"
+                >
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" className="text-violet-400">
+                    <path d="M12 3L4 9v6l8 6 8-6V9l-8-6z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+                    <path d="M12 3v18M4 9l8 6 8-6" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+                  </svg>
+                </div>
               </div>
-            </div>
-          )}
 
-          {step === 3 && currentDesign && currentDesign.proposal && !isLoadingDesign && (
-            <Step3ProposalView
-              key="step-3"
-              design={currentDesign}
-              onReset={handleReset}
-            />
+              {/* Linear progress bar */}
+              <div className="w-64 h-[2px] rounded-full bg-white/5 mb-6 overflow-hidden">
+                <motion.div
+                  className="h-full rounded-full"
+                  style={{ background: "linear-gradient(90deg, #6d28d9, #8b5cf6, #a78bfa)" }}
+                  initial={{ x: "-100%" }}
+                  animate={{ x: "200%" }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                />
+              </div>
+
+              <AnimatePresence mode="wait">
+                <motion.p
+                  key={loadingMessageIdx}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.35 }}
+                  className="text-sm text-center max-w-xs font-medium"
+                  style={{ color: "rgba(196,181,253,0.85)" }}
+                >
+                  {DESIGN_PROGRESS_MESSAGES[loadingMessageIdx]}
+                </motion.p>
+              </AnimatePresence>
+            </motion.div>
           )}
         </AnimatePresence>
-      </main>
 
-      <GlobalFooter />
+        {/* ── STEP CONTENT ────────────────────────────────────────────────── */}
+        <main className="flex-1 flex flex-col pb-16">
+          <AnimatePresence mode="wait">
+            {step === 1 && (
+              <Step1PromptInput
+                key="step-1"
+                initialValue={prompt}
+                onSubmit={handlePromptSubmit}
+                isLoading={isLoadingOptions}
+              />
+            )}
+
+            {step === 2 && optionsData && (
+              <Step2ClarifyingOptions
+                key="step-2"
+                initialPrompt={prompt}
+                optionsData={optionsData}
+                initialSelections={selections}
+                onBack={() => setStep(1)}
+                onSubmit={handleOptionsSubmit}
+                onSelectionChange={(updated) => setSelections(updated)}
+                isLoading={isGeneratingProposal}
+              />
+            )}
+
+            {step === 3 && (isLoadingDesign || (currentDesign && !currentDesign.proposal)) && (
+              <motion.div
+                key="step-3-loading"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="flex-1 flex flex-col items-center justify-center py-24 gap-6 text-center"
+              >
+                <div className="w-16 h-16 rounded-2xl flex items-center justify-center relative">
+                  <div className="absolute inset-0 rounded-2xl animate-pulse" style={{ background: "rgba(139,92,246,0.15)" }} />
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" className="relative z-10" style={{ color: "rgb(167,139,250)" }}>
+                    <path d="M12 3L4 9v6l8 6 8-6V9l-8-6z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+                  </svg>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <h2 className="text-lg font-bold" style={{ color: "hsl(214 32% 91%)" }}>Loading Design Proposal...</h2>
+                  <p className="text-sm" style={{ color: "rgba(196,181,253,0.6)" }}>Retrieving full specification and architectural blueprint.</p>
+                </div>
+              </motion.div>
+            )}
+
+            {step === 3 && currentDesign && currentDesign.proposal && !isLoadingDesign && (
+              <Step3ProposalView
+                key="step-3"
+                design={currentDesign}
+                onReset={handleReset}
+              />
+            )}
+          </AnimatePresence>
+        </main>
+
+        <GlobalFooter />
+      </div>
+
+      <style>{`
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+      `}</style>
     </div>
   );
 };

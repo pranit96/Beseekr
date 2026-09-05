@@ -1,7 +1,7 @@
 // src/pages/dhet/components/DesignTokensViewer.tsx
 import React, { useState } from "react";
 import { DesignTokens } from "@/types/dhet";
-import { Palette, Type, LayoutGrid, Check, Copy } from "lucide-react";
+import { Palette, Type, LayoutGrid, Check } from "lucide-react";
 import { toast } from "sonner";
 
 interface DesignTokensViewerProps {
@@ -26,24 +26,19 @@ export const DesignTokensViewer: React.FC<DesignTokensViewerProps> = ({ tokens }
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-1">
-        <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
-          <Palette className="w-5 h-5 text-primary" />
-          <span>Concrete Design Tokens</span>
-        </h3>
-        <p className="text-xs md:text-sm text-muted-foreground leading-relaxed">
-          Real, production-ready values for design systems, stylesheets, and Figma variables.
-        </p>
-      </div>
+      {/* ── COLOR PALETTE ────────────────────────────────────────────────── */}
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center gap-2">
+          <Palette className="w-4 h-4" style={{ color: "rgb(167,139,250)" }} />
+          <h3 className="text-sm font-bold uppercase tracking-wider" style={{ color: "hsl(214 32% 82%)" }}>
+            Color Palette
+          </h3>
+          <span className="text-[11px] font-mono px-2 py-0.5 rounded" style={{ background: "rgba(139,92,246,0.1)", color: "rgba(167,139,250,0.7)" }}>
+            {Object.keys(colors).length} tokens
+          </span>
+        </div>
 
-      {/* ── COLORS ──────────────────────────────────────────────────────────── */}
-      <div className="p-5 rounded-2xl border border-border/60 bg-card shadow-sm flex flex-col gap-3">
-        <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-primary" />
-          <span>Color Palette (Hex Tokens)</span>
-        </h4>
-
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
           {Object.entries(colors).map(([key, hexVal]) => {
             const cleanHex = String(hexVal).startsWith("#") ? String(hexVal) : `#${hexVal}`;
             const isCopied = copiedHex === cleanHex;
@@ -53,24 +48,40 @@ export const DesignTokensViewer: React.FC<DesignTokensViewerProps> = ({ tokens }
                 key={key}
                 type="button"
                 onClick={() => handleCopy(cleanHex, key)}
-                className="p-2.5 rounded-xl border border-border/50 bg-muted/20 hover:bg-muted/50 hover:border-primary/40 transition-all flex flex-col gap-2 text-left group"
+                className="flex flex-col gap-2 rounded-2xl overflow-hidden group transition-all duration-200"
+                style={{
+                  border: `1px solid ${isCopied ? "rgba(16,185,129,0.4)" : "rgba(255,255,255,0.06)"}`,
+                  background: "rgba(255,255,255,0.02)",
+                  transform: "scale(1)",
+                  boxShadow: isCopied ? "0 0 16px rgba(16,185,129,0.2)" : "none",
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLElement).style.transform = "scale(1.05)";
+                  (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.12)";
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLElement).style.transform = "scale(1)";
+                  (e.currentTarget as HTMLElement).style.borderColor = isCopied ? "rgba(16,185,129,0.4)" : "rgba(255,255,255,0.06)";
+                }}
               >
+                {/* Color swatch */}
                 <div
-                  className="w-full h-12 rounded-lg border border-black/10 shadow-inner flex items-center justify-center transition-transform group-hover:scale-[1.02]"
+                  className="w-full h-14 relative flex items-center justify-center"
                   style={{ backgroundColor: cleanHex }}
                 >
                   {isCopied && (
-                    <span className="p-1 rounded-full bg-black/60 text-white backdrop-blur-sm">
-                      <Check className="w-3.5 h-3.5" />
-                    </span>
+                    <div className="w-6 h-6 rounded-full flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                      <Check className="w-3.5 h-3.5 text-white" />
+                    </div>
                   )}
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-foreground capitalize truncate">
+                {/* Label */}
+                <div className="px-2 pb-2 flex flex-col gap-0.5">
+                  <span className="text-[11px] font-semibold capitalize truncate" style={{ color: "hsl(214 32% 80%)" }}>
                     {key.replace(/_/g, " ")}
                   </span>
-                  <span className="text-[11px] font-mono text-muted-foreground group-hover:text-primary transition-colors">
+                  <span className="text-[10px] font-mono" style={{ color: "rgba(196,181,253,0.4)" }}>
                     {cleanHex}
                   </span>
                 </div>
@@ -80,39 +91,55 @@ export const DesignTokensViewer: React.FC<DesignTokensViewerProps> = ({ tokens }
         </div>
       </div>
 
-      {/* ── TYPOGRAPHY ──────────────────────────────────────────────────────── */}
-      <div className="p-5 rounded-2xl border border-border/60 bg-card shadow-sm flex flex-col gap-3">
-        <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
-          <Type className="w-4 h-4 text-primary" />
-          <span>Typography Architecture</span>
-        </h4>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="p-3.5 rounded-xl border border-border/50 bg-muted/20 flex flex-col gap-1">
-            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Heading Font</span>
-            <span className="text-base font-bold text-foreground">{typography.heading_font || "Inter"}</span>
-            <span className="text-xs text-muted-foreground font-mono">scale: 2xl, xl, lg</span>
-          </div>
-
-          <div className="p-3.5 rounded-xl border border-border/50 bg-muted/20 flex flex-col gap-1">
-            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Body Font</span>
-            <span className="text-base font-bold text-foreground">{typography.body_font || "Inter"}</span>
-            <span className="text-xs text-muted-foreground font-mono">base, sm, xs</span>
-          </div>
-
-          <div className="p-3.5 rounded-xl border border-border/50 bg-muted/20 flex flex-col gap-1">
-            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Monospace Font</span>
-            <span className="text-base font-bold text-foreground">{typography.mono_font || "Courier"}</span>
-            <span className="text-xs text-muted-foreground font-mono">tokens, code, specs</span>
-          </div>
+      {/* ── TYPOGRAPHY ─────────────────────────────────────────────────────── */}
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center gap-2">
+          <Type className="w-4 h-4" style={{ color: "rgb(167,139,250)" }} />
+          <h3 className="text-sm font-bold uppercase tracking-wider" style={{ color: "hsl(214 32% 82%)" }}>
+            Typography Architecture
+          </h3>
         </div>
 
-        {/* Font Scale if available */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {[
+            { label: "Heading Font", value: typography.heading_font || "Inter", scale: "2xl, xl, lg" },
+            { label: "Body Font", value: typography.body_font || "Inter", scale: "base, sm, xs" },
+            { label: "Monospace", value: typography.mono_font || "Courier", scale: "tokens, code, specs" },
+          ].map((item, idx) => (
+            <div
+              key={idx}
+              className="p-4 rounded-2xl flex flex-col gap-1.5 border"
+              style={{ background: "rgba(255,255,255,0.02)", borderColor: "rgba(255,255,255,0.06)" }}
+            >
+              <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: "rgba(196,181,253,0.45)" }}>
+                {item.label}
+              </span>
+              <span
+                className="text-base font-bold leading-tight"
+                style={{ color: "hsl(214 32% 91%)", fontFamily: idx === 2 ? "monospace" : "inherit" }}
+              >
+                {item.value}
+              </span>
+              <span className="text-[11px] font-mono" style={{ color: "rgba(196,181,253,0.3)" }}>
+                scale: {item.scale}
+              </span>
+            </div>
+          ))}
+        </div>
+
         {typography.scale && (
-          <div className="flex flex-wrap gap-2 pt-2 border-t border-border/40">
+          <div className="flex flex-wrap gap-2 pt-1">
             {Object.entries(typography.scale).map(([name, size]) => (
-              <span key={name} className="px-2.5 py-1 rounded-md bg-muted/40 text-xs font-mono text-muted-foreground border border-border/40">
-                <span className="font-semibold text-foreground mr-1">{name}:</span>
+              <span
+                key={name}
+                className="px-2.5 py-1 rounded-lg text-xs font-mono border"
+                style={{
+                  background: "rgba(139,92,246,0.06)",
+                  borderColor: "rgba(139,92,246,0.15)",
+                  color: "rgba(196,181,253,0.6)",
+                }}
+              >
+                <span className="font-bold" style={{ color: "rgb(167,139,250)" }}>{name}:</span>{" "}
                 {String(size)}
               </span>
             ))}
@@ -120,56 +147,69 @@ export const DesignTokensViewer: React.FC<DesignTokensViewerProps> = ({ tokens }
         )}
       </div>
 
-      {/* ── SPACING & GEOMETRY ──────────────────────────────────────────────── */}
+      {/* ── SPACING & GRID ──────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Spacing & Radius */}
-        <div className="p-5 rounded-2xl border border-border/60 bg-card shadow-sm flex flex-col gap-3">
-          <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-amber-500" />
-            <span>Spacing & Radii</span>
+        {/* Spacing & Radii */}
+        <div
+          className="p-4 rounded-2xl flex flex-col gap-3 border"
+          style={{ background: "rgba(255,255,255,0.02)", borderColor: "rgba(255,255,255,0.06)" }}
+        >
+          <h4 className="text-xs font-bold uppercase tracking-wider flex items-center gap-2" style={{ color: "hsl(214 32% 80%)" }}>
+            <span className="w-2 h-2 rounded-full bg-amber-400" />
+            Spacing & Radii
           </h4>
-
-          <div className="flex flex-col gap-2">
-            <span className="text-xs font-semibold text-muted-foreground">Spacing Scale:</span>
-            <div className="flex flex-wrap gap-2">
-              {Object.entries(spacing).map(([k, v]) => (
-                <span key={k} className="px-2 py-0.5 rounded bg-muted text-xs font-mono text-foreground border border-border/50">
-                  {k}: {String(v)}
-                </span>
-              ))}
-            </div>
-
-            <span className="text-xs font-semibold text-muted-foreground mt-2">Corner Radii:</span>
-            <div className="flex flex-wrap gap-2">
-              {Object.entries(radius).map(([k, v]) => (
-                <span key={k} className="px-2 py-0.5 rounded bg-muted text-xs font-mono text-foreground border border-border/50">
-                  {k}: {String(v)}
-                </span>
-              ))}
-            </div>
+          <div className="flex flex-col gap-2 text-xs">
+            {Object.keys(spacing).length > 0 && (
+              <div className="flex flex-col gap-1">
+                <span className="font-semibold" style={{ color: "rgba(196,181,253,0.5)" }}>Spacing Scale:</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {Object.entries(spacing).map(([k, v]) => (
+                    <span key={k} className="px-2 py-0.5 rounded font-mono" style={{ background: "rgba(255,255,255,0.05)", color: "rgba(196,181,253,0.7)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                      {k}: {String(v)}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {Object.keys(radius).length > 0 && (
+              <div className="flex flex-col gap-1">
+                <span className="font-semibold" style={{ color: "rgba(196,181,253,0.5)" }}>Corner Radii:</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {Object.entries(radius).map(([k, v]) => (
+                    <span key={k} className="px-2 py-0.5 rounded font-mono" style={{ background: "rgba(255,255,255,0.05)", color: "rgba(196,181,253,0.7)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                      {k}: {String(v)}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Grid Architecture */}
-        <div className="p-5 rounded-2xl border border-border/60 bg-card shadow-sm flex flex-col gap-3">
-          <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
-            <LayoutGrid className="w-4 h-4 text-emerald-500" />
-            <span>Grid System</span>
+        <div
+          className="p-4 rounded-2xl flex flex-col gap-3 border"
+          style={{ background: "rgba(255,255,255,0.02)", borderColor: "rgba(255,255,255,0.06)" }}
+        >
+          <h4 className="text-xs font-bold uppercase tracking-wider flex items-center gap-2" style={{ color: "hsl(214 32% 80%)" }}>
+            <LayoutGrid className="w-3.5 h-3.5" style={{ color: "rgb(52,211,153)" }} />
+            Grid System
           </h4>
-
-          <div className="flex flex-col gap-2 text-xs font-mono">
-            <div className="flex items-center justify-between p-2 rounded-lg bg-muted/30">
-              <span className="text-muted-foreground font-sans">Columns:</span>
-              <span className="font-bold text-foreground">{grid.columns || 12} Col Layout</span>
-            </div>
-            <div className="flex items-center justify-between p-2 rounded-lg bg-muted/30">
-              <span className="text-muted-foreground font-sans">Gutter Width:</span>
-              <span className="font-bold text-foreground">{grid.gutter || "24px"}</span>
-            </div>
-            <div className="flex items-center justify-between p-2 rounded-lg bg-muted/30">
-              <span className="text-muted-foreground font-sans">Max Container Width:</span>
-              <span className="font-bold text-foreground">{grid.max_width || "1280px"}</span>
-            </div>
+          <div className="flex flex-col gap-2 text-xs">
+            {[
+              { label: "Columns", value: `${grid.columns || 12} Col Layout` },
+              { label: "Gutter Width", value: grid.gutter || "24px" },
+              { label: "Max Container", value: grid.max_width || "1280px" },
+            ].map((row) => (
+              <div
+                key={row.label}
+                className="flex items-center justify-between p-2 rounded-xl"
+                style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.04)" }}
+              >
+                <span style={{ color: "rgba(196,181,253,0.5)" }}>{row.label}</span>
+                <span className="font-mono font-bold" style={{ color: "hsl(214 32% 88%)" }}>{row.value}</span>
+              </div>
+            ))}
           </div>
         </div>
       </div>
