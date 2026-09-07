@@ -7,7 +7,6 @@ import {
   Search,
   Sparkles,
   Loader2,
-  Workflow,
   Wrench,
   FileText,
   Mail,
@@ -47,7 +46,6 @@ import {
   useUpdateAgent,
   useDeleteAgent,
 } from "@/hooks/use-api-queries";
-import { WorkflowBuilder } from "@/components/WorkflowBuilder";
 import { AgentQuickChat } from "@/components/AgentQuickChat";
 import { ShareAgentModal } from "@/components/ShareAgentModal";
 import React from "react";
@@ -75,7 +73,6 @@ const Agents = () => {
   const [templates, setTemplates] = useState<AgentTemplate[]>([]);
   const [loadingTemplates, setLoadingTemplates] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
-  const [workflowBuilderOpen, setWorkflowBuilderOpen] = useState(false);
   const [quickChatAgent, setQuickChatAgent] = useState<Agent | null>(null);
   const [sharingAgent, setSharingAgent] = useState<Agent | null>(null);
   const { toast } = useToast();
@@ -405,7 +402,7 @@ const Agents = () => {
 
             <p className="text-sm sm:text-base font-medium text-muted-foreground/70 max-w-2xl tracking-tight leading-relaxed">
               Create, customize, and orchestrate intelligent agents to perform
-              specialized tasks or chain them in autonomous workflows.
+              specialized tasks for your workspace.
             </p>
           </section>
 
@@ -426,14 +423,6 @@ const Agents = () => {
 
             {/* Actions on the Right */}
             <div className="flex flex-wrap items-center gap-2.5">
-              <button
-                onClick={() => setWorkflowBuilderOpen(true)}
-                disabled={agents.length === 0}
-                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold border border-border/40 bg-card/10 hover:bg-muted/60 text-muted-foreground hover:text-foreground transition-all disabled:opacity-35 disabled:cursor-not-allowed"
-              >
-                <Workflow className="w-3.5 h-3.5" />
-                <span>Workflows</span>
-              </button>
               <button
                 onClick={() => navigate("/canvas")}
                 className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold border border-violet-500/30 bg-violet-500/10 hover:bg-violet-500/20 text-violet-400 hover:text-violet-300 transition-all"
@@ -599,18 +588,6 @@ const Agents = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      <WorkflowBuilder
-        open={workflowBuilderOpen}
-        onOpenChange={setWorkflowBuilderOpen}
-        agents={agents}
-        onExecute={(workflow) =>
-          toast({
-            title: "Workflow started",
-            description: `Running "${workflow.name}"…`,
-          })
-        }
-      />
 
       {quickChatAgent && (
         <AgentQuickChat
