@@ -30,6 +30,7 @@ import { Agent, AgentTemplate } from "@/types/agent";
 import { useToast } from "@/hooks/use-toast";
 import { GlobalHeader } from "@/components/GlobalHeader";
 import { apiClient } from "@/lib/api";
+import { cn } from "@/lib/utils";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -144,6 +145,16 @@ const Agents = () => {
 
   const handleDeleteAgent = async () => {
     if (!deleteAgentId) return;
+    const targetAgent = agents.find((a) => a.id === deleteAgentId);
+    if (targetAgent?.is_default) {
+      toast({
+        title: "Action not allowed",
+        description: "Default agents cannot be deleted.",
+        variant: "destructive",
+      });
+      setDeleteAgentId(null);
+      return;
+    }
     try {
       await deleteAgentMutation.mutateAsync(deleteAgentId);
       apiClient.invalidateCache("/api/agents");
@@ -309,10 +320,23 @@ const Agents = () => {
               <Share2 className="w-3.5 h-3.5" />
             </button>
             <button
-              onClick={() => setDeleteAgentId(agent.id)}
-              className="p-2 rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
-              title="Delete"
-              aria-label={`Delete ${agent.name}`}
+              disabled={agent.is_default}
+              onClick={() => {
+                if (agent.is_default) return;
+                setDeleteAgentId(agent.id);
+              }}
+              className={cn(
+                "p-2 rounded-lg transition-colors",
+                agent.is_default
+                  ? "opacity-30 cursor-not-allowed text-muted-foreground/40 hover:bg-transparent"
+                  : "text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+              )}
+              title={agent.is_default ? "Default agents cannot be deleted" : "Delete"}
+              aria-label={
+                agent.is_default
+                  ? `Default agent ${agent.name} cannot be deleted`
+                  : `Delete ${agent.name}`
+              }
             >
               <Trash2 className="w-3.5 h-3.5" />
             </button>
