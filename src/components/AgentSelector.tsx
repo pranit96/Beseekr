@@ -15,6 +15,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Users, Search, Plus, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -296,7 +301,14 @@ export const AgentSelector = ({
   if (isNewUI) {
     return (
       <Dialog>
-        <DialogTrigger asChild>{trigger}</DialogTrigger>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <DialogTrigger asChild>{trigger}</DialogTrigger>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="text-xs font-medium">
+            {compactMode ? "Agents" : "Select Agents"}
+          </TooltipContent>
+        </Tooltip>
         <DialogContent className="w-full max-w-4xl p-6 bg-background/95 border-border/50 shadow-2xl rounded-2xl backdrop-blur-3xl outline-none">
           <DialogHeader className="hidden">
             <DialogTitle>Select Agents</DialogTitle>
@@ -310,7 +322,14 @@ export const AgentSelector = ({
 
   return (
     <Popover>
-      <PopoverTrigger asChild>{trigger}</PopoverTrigger>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <PopoverTrigger asChild>{trigger}</PopoverTrigger>
+        </TooltipTrigger>
+        <TooltipContent side="bottom" className="text-xs font-medium">
+          {compactMode ? "Agents" : "Select Agents"}
+        </TooltipContent>
+      </Tooltip>
       <PopoverContent
         className="w-[680px] max-w-[95vw] p-5 bg-popover/95 border-border/50 shadow-2xl rounded-2xl backdrop-blur-2xl overflow-y-auto max-h-[80vh] custom-scrollbar"
         align="start"

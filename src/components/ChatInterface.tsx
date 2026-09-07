@@ -1166,50 +1166,63 @@ export const ChatInterface: React.FC<{
                 (a) => a.id === agent.id,
               );
               return (
-                <button
-                  key={agent.id}
-                  onClick={() => {
-                    setSelectedAgents((prev) =>
-                      prev.filter((a) => a.id !== agent.id),
-                    );
-                  }}
-                  className="flex-shrink-0 flex items-center gap-1.5 px-2 py-1 rounded-full border transition-all text-[11px] font-bold bg-primary/10 border-primary/30 text-foreground shadow-sm animate-in fade-in slide-in-from-left-1 duration-300"
-                >
-                  <span className="w-3.5 h-3.5 flex items-center justify-center bg-primary text-primary-foreground text-[9px] font-black rounded-full">
-                    {selectionIndex + 1}
-                  </span>
-                  <span
-                    className="w-1.5 h-1.5 rounded-full"
-                    style={{ backgroundColor: agent.color || "#d1d5db" }}
-                  />
-                  {agent.name}
-                </button>
+                <Tooltip key={agent.id}>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => {
+                        setSelectedAgents((prev) =>
+                          prev.filter((a) => a.id !== agent.id),
+                        );
+                      }}
+                      className="flex-shrink-0 flex items-center gap-1.5 px-2 py-1 rounded-full border transition-all text-[11px] font-bold bg-primary/10 border-primary/30 text-foreground shadow-sm animate-in fade-in slide-in-from-left-1 duration-300"
+                    >
+                      <span className="w-3.5 h-3.5 flex items-center justify-center bg-primary text-primary-foreground text-[9px] font-black rounded-full">
+                        {selectionIndex + 1}
+                      </span>
+                      <span
+                        className="w-1.5 h-1.5 rounded-full"
+                        style={{ backgroundColor: agent.color || "#d1d5db" }}
+                      />
+                      {agent.name}
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="text-xs font-medium">
+                    Remove {agent.name}
+                  </TooltipContent>
+                </Tooltip>
               );
             })}
 
             {/* New Integrated Chevron & Dynamic Expansion Flow */}
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => setAgentsToolbarExpanded(!agentsToolbarExpanded)}
-                className={cn(
-                  "h-6 w-6 flex items-center justify-center rounded-full transition-all duration-300",
-                  "hover:bg-primary/20 border border-border/50 text-muted-foreground hover:text-primary shadow-sm",
-                  agentsToolbarExpanded
-                    ? "bg-primary/10 text-primary rotate-180 border-primary/30"
-                    : "bg-muted/20 hover:scale-110",
-                )}
-                title={
-                  agentsToolbarExpanded
-                    ? "Collapse available agents"
-                    : "Expand available agents"
-                }
-              >
-                {agentsToolbarExpanded ? (
-                  <ChevronLeft className="w-3.5 h-3.5" />
-                ) : (
-                  <ChevronRight className="w-3.5 h-3.5" />
-                )}
-              </button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => setAgentsToolbarExpanded(!agentsToolbarExpanded)}
+                    className={cn(
+                      "h-6 w-6 flex items-center justify-center rounded-full transition-all duration-300",
+                      "hover:bg-primary/20 border border-border/50 text-muted-foreground hover:text-primary shadow-sm",
+                      agentsToolbarExpanded
+                        ? "bg-primary/10 text-primary rotate-180 border-primary/30"
+                        : "bg-muted/20 hover:scale-110",
+                    )}
+                    aria-label={
+                      agentsToolbarExpanded
+                        ? "Collapse available agents"
+                        : "Expand available agents"
+                    }
+                  >
+                    {agentsToolbarExpanded ? (
+                      <ChevronLeft className="w-3.5 h-3.5" />
+                    ) : (
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    )}
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="text-xs font-medium">
+                  {agentsToolbarExpanded ? "Collapse agents" : "Expand agents"}
+                </TooltipContent>
+              </Tooltip>
 
               {/* Conditionally render based on user requirement */}
               {(() => {
@@ -1223,21 +1236,27 @@ export const ChatInterface: React.FC<{
                   return (
                     <div className="flex items-center gap-2 animate-in slide-in-from-left-2 fade-in duration-300">
                       {available.map((agent) => (
-                        <button
-                          key={agent.id}
-                          onClick={() =>
-                            setSelectedAgents((prev) => [...prev, agent])
-                          }
-                          className="flex-shrink-0 flex items-center gap-1.5 px-2 py-1 rounded-full border border-transparent bg-transparent opacity-60 hover:opacity-100 hover:bg-muted/30 text-muted-foreground transition-all text-[11px] font-medium"
-                        >
-                          <span
-                            className="w-1.5 h-1.5 rounded-full"
-                            style={{
-                              backgroundColor: agent.color || "#d1d5db",
-                            }}
-                          />
-                          {agent.name}
-                        </button>
+                        <Tooltip key={agent.id}>
+                          <TooltipTrigger asChild>
+                            <button
+                              onClick={() =>
+                                setSelectedAgents((prev) => [...prev, agent])
+                              }
+                              className="flex-shrink-0 flex items-center gap-1.5 px-2 py-1 rounded-full border border-transparent bg-transparent opacity-60 hover:opacity-100 hover:bg-muted/30 text-muted-foreground transition-all text-[11px] font-medium"
+                            >
+                              <span
+                                className="w-1.5 h-1.5 rounded-full"
+                                style={{
+                                  backgroundColor: agent.color || "#d1d5db",
+                                }}
+                              />
+                              {agent.name}
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent side="bottom" className="text-xs font-medium max-w-xs">
+                            {agent.description ? `${agent.name} — ${agent.description}` : agent.name}
+                          </TooltipContent>
+                        </Tooltip>
                       ))}
                     </div>
                   );
@@ -1246,23 +1265,30 @@ export const ChatInterface: React.FC<{
                   const cyclingAgent =
                     available[cyclingAgentIndex % available.length];
                   return (
-                    <button
-                      key={`cycle-${cyclingAgent.id}`}
-                      onClick={() =>
-                        setSelectedAgents((prev) => [...prev, cyclingAgent])
-                      }
-                      className="flex-shrink-0 flex items-center gap-1.5 px-2 py-1 rounded-full border border-transparent bg-transparent opacity-50 hover:opacity-100 hover:bg-muted/30 text-muted-foreground transition-all duration-700 text-[11px] font-medium animate-in fade-in zoom-in-95"
-                    >
-                      <span
-                        className="w-1.5 h-1.5 rounded-full animate-pulse"
-                        style={{
-                          backgroundColor: cyclingAgent.color || "#d1d5db",
-                        }}
-                      />
-                      <span className="text-red-500 font-bold">
-                        {cyclingAgent.name}
-                      </span>
-                    </button>
+                    <Tooltip key={`cycle-${cyclingAgent.id}`}>
+                      <TooltipTrigger asChild>
+                        <button
+                          key={`cycle-${cyclingAgent.id}`}
+                          onClick={() =>
+                            setSelectedAgents((prev) => [...prev, cyclingAgent])
+                          }
+                          className="flex-shrink-0 flex items-center gap-1.5 px-2 py-1 rounded-full border border-transparent bg-transparent opacity-50 hover:opacity-100 hover:bg-muted/30 text-muted-foreground transition-all duration-700 text-[11px] font-medium animate-in fade-in zoom-in-95"
+                        >
+                          <span
+                            className="w-1.5 h-1.5 rounded-full animate-pulse"
+                            style={{
+                              backgroundColor: cyclingAgent.color || "#d1d5db",
+                            }}
+                          />
+                          <span className="text-red-500 font-bold">
+                            {cyclingAgent.name}
+                          </span>
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" className="text-xs font-medium max-w-xs">
+                        {cyclingAgent.description ? `${cyclingAgent.name} — ${cyclingAgent.description}` : cyclingAgent.name}
+                      </TooltipContent>
+                    </Tooltip>
                   );
                 }
               })()}
@@ -1274,36 +1300,52 @@ export const ChatInterface: React.FC<{
             <div className="flex items-center gap-2 border-r border-border/40 pr-3 mr-1.5">
               {/* Mini Execution Mode Toggle */}
               <div className="hidden sm:flex bg-muted/50 p-0.5 rounded-md border border-border/30">
-                <button
-                  onClick={() => setExecutionMode("sequential")}
-                  className={`px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded transition-all ${executionMode === "sequential" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground/60 hover:text-foreground"}`}
-                >
-                  Seq
-                </button>
-                <button
-                  onClick={() => setExecutionMode("parallel")}
-                  className={`px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded transition-all ${executionMode === "parallel" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground/60 hover:text-foreground"}`}
-                >
-                  Par
-                </button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => setExecutionMode("sequential")}
+                      className={`px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded transition-all ${executionMode === "sequential" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground/60 hover:text-foreground"}`}
+                    >
+                      Seq
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="text-xs font-medium">
+                    Sequential Mode
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => setExecutionMode("parallel")}
+                      className={`px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded transition-all ${executionMode === "parallel" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground/60 hover:text-foreground"}`}
+                    >
+                      Par
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="text-xs font-medium">
+                    Parallel Mode
+                  </TooltipContent>
+                </Tooltip>
               </div>
 
               {/* Private Mode */}
-              <button
-                onClick={togglePrivateChat}
-                className={`h-6 w-6 flex items-center justify-center rounded border transition-colors ${!saveToConversation ? "bg-amber-500/10 border-amber-500/30 text-amber-500" : "bg-transparent border-border/30 text-muted-foreground hover:text-foreground"}`}
-                title={
-                  saveToConversation
-                    ? "Enable private mode"
-                    : "Disable private mode"
-                }
-              >
-                {saveToConversation ? (
-                  <LockOpen className="w-3 h-3" />
-                ) : (
-                  <Lock className="w-3 h-3" />
-                )}
-              </button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={togglePrivateChat}
+                    className={`h-6 w-6 flex items-center justify-center rounded border transition-colors ${!saveToConversation ? "bg-amber-500/10 border-amber-500/30 text-amber-500" : "bg-transparent border-border/30 text-muted-foreground hover:text-foreground"}`}
+                  >
+                    {saveToConversation ? (
+                      <LockOpen className="w-3 h-3" />
+                    ) : (
+                      <Lock className="w-3 h-3" />
+                    )}
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="text-xs font-medium">
+                  {saveToConversation ? "Save to History (Click for Private)" : "Private Mode (Not Saved)"}
+                </TooltipContent>
+              </Tooltip>
             </div>
 
             {/* Actual Dynamic Socket Streaming Status */}
