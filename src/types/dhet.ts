@@ -59,7 +59,7 @@ export interface DesignProposal {
   title: string;
   summary: string;
   device_frame?: DeviceFrame;
-  ascii_wireframe: string;
+  ascii_wireframe: string | string[];
   design_decisions: DesignDecision[];
   design_tokens: DesignTokens;
   ai_image_prompt: string;

@@ -19,7 +19,7 @@ import { DeviceFrame, DesignProposal } from "@/types/dhet";
 import { InteractiveMockupPreview } from "./InteractiveMockupPreview";
 
 interface AsciiWireframeViewerProps {
-  wireframe: string;
+  wireframe: string | string[];
   deviceFrame?: DeviceFrame;
   proposal?: DesignProposal;
 }
@@ -129,15 +129,19 @@ export const AsciiWireframeViewer: React.FC<AsciiWireframeViewerProps> = ({
     }
   }, [deviceFrame?.aspect_ratio]);
 
+  const wireframeText = Array.isArray(wireframe)
+    ? wireframe.join("\n")
+    : (wireframe || "");
+
   const handleCopy = () => {
-    navigator.clipboard.writeText(wireframe);
+    navigator.clipboard.writeText(wireframeText);
     setCopied(true);
     toast.success("ASCII Wireframe copied to clipboard");
     setTimeout(() => setCopied(false), 2000);
   };
 
   const handleDownloadTxt = () => {
-    const blob = new Blob([wireframe], { type: "text/plain;charset=utf-8" });
+    const blob = new Blob([wireframeText], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
@@ -156,7 +160,9 @@ export const AsciiWireframeViewer: React.FC<AsciiWireframeViewerProps> = ({
   };
 
   const handleZoom = (delta: number) => setZoom((p) => Math.min(140, Math.max(70, p + delta)));
-  const lines = wireframe ? wireframe.split("\n") : ["No wireframe available."];
+  const lines = Array.isArray(wireframe)
+    ? wireframe
+    : (wireframe ? wireframe.split("\n") : ["No wireframe available."]);
 
   const CurrentAspectIcon = ASPECT_ICONS[aspect as keyof typeof ASPECT_ICONS] || Smartphone;
 
