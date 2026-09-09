@@ -1,7 +1,15 @@
 // src/pages/dhet/components/Step1PromptInput.tsx
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Loader2, Coffee, Thermometer, Music, Train, ChevronRight } from "lucide-react";
+import {
+  ArrowRight,
+  Loader2,
+  Coffee,
+  Thermometer,
+  Music,
+  Train,
+  ChevronRight,
+} from "lucide-react";
 
 interface Step1PromptInputProps {
   initialValue: string;
@@ -40,7 +48,13 @@ const INSPIRATION_EXAMPLES = [
   },
 ];
 
-const PRINCIPLES = ["Don Norman", "Dieter Rams", "Nielsen", "Steve Krug", "Alan Cooper"];
+const PRINCIPLES = [
+  "Don Norman",
+  "Dieter Rams",
+  "Nielsen",
+  "Steve Krug",
+  "Alan Cooper",
+];
 
 export const Step1PromptInput: React.FC<Step1PromptInputProps> = ({
   initialValue,
@@ -115,7 +129,8 @@ export const Step1PromptInput: React.FC<Step1PromptInputProps> = ({
             <h1
               className="text-5xl md:text-7xl font-black tracking-tighter leading-none"
               style={{
-                background: "linear-gradient(135deg, #8b5cf6 0%, #a78bfa 40%, #c4b5fd 100%)",
+                background:
+                  "linear-gradient(135deg, #8b5cf6 0%, #a78bfa 40%, #c4b5fd 100%)",
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent",
                 backgroundClip: "text",
@@ -125,9 +140,13 @@ export const Step1PromptInput: React.FC<Step1PromptInputProps> = ({
             </h1>
           </div>
 
-          <p className="text-base max-w-xl leading-relaxed" style={{ color: "rgba(196,181,253,0.6)" }}>
-            Describe any screen, app, or everyday human-facing tool. We'll clarify the core
-            dimensions and construct a full UX specification grounded in timeless principles.
+          <p
+            className="text-base max-w-xl leading-relaxed"
+            style={{ color: "rgba(196,181,253,0.6)" }}
+          >
+            Describe any screen, app, or everyday human-facing tool. We'll
+            clarify the core dimensions and construct a full UX specification
+            grounded in timeless principles.
           </p>
 
           {/* Principle chips */}
@@ -190,7 +209,10 @@ export const Step1PromptInput: React.FC<Step1PromptInputProps> = ({
               className="flex items-center justify-between px-6 py-4 border-t"
               style={{ borderColor: "rgba(255,255,255,0.05)" }}
             >
-              <span className="text-xs font-mono" style={{ color: "rgba(196,181,253,0.35)" }}>
+              <span
+                className="text-xs font-mono"
+                style={{ color: "rgba(196,181,253,0.35)" }}
+              >
                 {prompt.length} chars
               </span>
 
@@ -205,7 +227,9 @@ export const Step1PromptInput: React.FC<Step1PromptInputProps> = ({
                     ? "linear-gradient(135deg, #6d28d9, #8b5cf6)"
                     : "rgba(139,92,246,0.15)",
                   color: canSubmit ? "#fff" : "rgba(196,181,253,0.4)",
-                  boxShadow: canSubmit ? "0 0 24px rgba(139,92,246,0.35)" : "none",
+                  boxShadow: canSubmit
+                    ? "0 0 24px rgba(139,92,246,0.35)"
+                    : "none",
                   cursor: canSubmit ? "pointer" : "not-allowed",
                 }}
               >
@@ -233,21 +257,45 @@ export const Step1PromptInput: React.FC<Step1PromptInputProps> = ({
           className="flex flex-col gap-4"
         >
           <div className="flex items-center gap-2">
-            <div className="h-[1px] flex-1" style={{ background: "rgba(255,255,255,0.05)" }} />
-            <span className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: "rgba(196,181,253,0.4)" }}>
+            <div
+              className="h-[1px] flex-1"
+              style={{ background: "rgba(255,255,255,0.05)" }}
+            />
+            <span
+              className="text-[11px] font-semibold uppercase tracking-widest"
+              style={{ color: "rgba(196,181,253,0.4)" }}
+            >
               Or start with an archetype
             </span>
-            <div className="h-[1px] flex-1" style={{ background: "rgba(255,255,255,0.05)" }} />
+            <div
+              className="h-[1px] flex-1"
+              style={{ background: "rgba(255,255,255,0.05)" }}
+            />
           </div>
 
           {/* Horizontal scroll rail */}
           <div className="relative">
             {/* Left fade */}
-            <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-8 z-10" style={{ background: "linear-gradient(90deg, hsl(222 47% 3%), transparent)" }} />
+            <div
+              className="pointer-events-none absolute left-0 top-0 bottom-0 w-8 z-10"
+              style={{
+                background:
+                  "linear-gradient(90deg, hsl(222 47% 3%), transparent)",
+              }}
+            />
             {/* Right fade */}
-            <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 z-10" style={{ background: "linear-gradient(-90deg, hsl(222 47% 3%), transparent)" }} />
+            <div
+              className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 z-10"
+              style={{
+                background:
+                  "linear-gradient(-90deg, hsl(222 47% 3%), transparent)",
+              }}
+            />
 
-            <div className="flex gap-3 overflow-x-auto pb-2 px-2 scroll-smooth" style={{ scrollbarWidth: "none" }}>
+            <div
+              className="flex gap-3 overflow-x-auto pb-2 px-2 scroll-smooth"
+              style={{ scrollbarWidth: "none" }}
+            >
               {INSPIRATION_EXAMPLES.map((item, idx) => {
                 const Icon = item.icon;
                 return (
@@ -264,29 +312,45 @@ export const Step1PromptInput: React.FC<Step1PromptInputProps> = ({
                       borderColor: "rgba(255,255,255,0.07)",
                     }}
                     onMouseEnter={(e) => {
-                      (e.currentTarget as HTMLElement).style.borderColor = `${item.accent}50`;
-                      (e.currentTarget as HTMLElement).style.background = `${item.accent}08`;
+                      (e.currentTarget as HTMLElement).style.borderColor =
+                        `${item.accent}50`;
+                      (e.currentTarget as HTMLElement).style.background =
+                        `${item.accent}08`;
                     }}
                     onMouseLeave={(e) => {
-                      (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.07)";
-                      (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.02)";
+                      (e.currentTarget as HTMLElement).style.borderColor =
+                        "rgba(255,255,255,0.07)";
+                      (e.currentTarget as HTMLElement).style.background =
+                        "rgba(255,255,255,0.02)";
                     }}
                   >
                     <div
                       className="w-8 h-8 rounded-xl flex items-center justify-center"
-                      style={{ background: `${item.accent}18`, color: item.accent }}
+                      style={{
+                        background: `${item.accent}18`,
+                        color: item.accent,
+                      }}
                     >
                       <Icon className="w-4 h-4" />
                     </div>
                     <div className="flex flex-col gap-1">
-                      <span className="text-sm font-bold" style={{ color: "hsl(214 32% 91%)" }}>
+                      <span
+                        className="text-sm font-bold"
+                        style={{ color: "hsl(214 32% 91%)" }}
+                      >
                         {item.title}
                       </span>
-                      <span className="text-[11px] leading-relaxed line-clamp-3" style={{ color: "rgba(196,181,253,0.5)" }}>
+                      <span
+                        className="text-[11px] leading-relaxed line-clamp-3"
+                        style={{ color: "rgba(196,181,253,0.5)" }}
+                      >
                         {item.prompt}
                       </span>
                     </div>
-                    <div className="flex items-center gap-1 text-[11px] font-semibold" style={{ color: item.accent }}>
+                    <div
+                      className="flex items-center gap-1 text-[11px] font-semibold"
+                      style={{ color: item.accent }}
+                    >
                       <span>Use this</span>
                       <ChevronRight className="w-3 h-3" />
                     </div>

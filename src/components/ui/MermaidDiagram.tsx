@@ -154,11 +154,7 @@ function repairMermaidSyntax(rawCode: string): string {
   return repairedLines.join("\n");
 }
 
-function MermaidDiagramBase({
-  chart,
-  className,
-  title,
-}: MermaidDiagramProps) {
+function MermaidDiagramBase({ chart, className, title }: MermaidDiagramProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [svgHtml, setSvgHtml] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
@@ -171,7 +167,9 @@ function MermaidDiagramBase({
   // Generate unique valid ID for Mermaid render — must be stable across renders
   // Using useRef so Math.random() is only called once, preventing an infinite
   // useEffect re-run loop (new id → effect fires → setIsLoading → re-render → repeat).
-  const diagramIdRef = useRef(`mermaid-${Math.random().toString(36).substring(2, 9)}-${Math.random().toString(36).substring(2, 7)}`);
+  const diagramIdRef = useRef(
+    `mermaid-${Math.random().toString(36).substring(2, 9)}-${Math.random().toString(36).substring(2, 7)}`,
+  );
   const diagramId = diagramIdRef.current;
 
   const cleanChart = React.useMemo(() => {
@@ -214,8 +212,8 @@ function MermaidDiagramBase({
     return () => {
       isMounted = false;
     };
-  // diagramId is intentionally omitted from deps — it's stable (from useRef)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // diagramId is intentionally omitted from deps — it's stable (from useRef)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cleanChart, retryCount]);
 
   const handleCopy = async () => {

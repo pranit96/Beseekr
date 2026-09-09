@@ -94,17 +94,23 @@ export function TopicStudyView({
   const onPrepComplete = React.useCallback(() => {
     setPrepJobId(null);
     queryClient.invalidateQueries({ queryKey: educationKeys.plan(planId) });
-    queryClient.invalidateQueries({ queryKey: educationKeys.planResume(planId) });
+    queryClient.invalidateQueries({
+      queryKey: educationKeys.planResume(planId),
+    });
   }, [queryClient, planId]);
 
   const onHandsOnComplete = React.useCallback(() => {
     setHandsOnJobId(null);
     queryClient.invalidateQueries({ queryKey: educationKeys.plan(planId) });
-    queryClient.invalidateQueries({ queryKey: educationKeys.planResume(planId) });
+    queryClient.invalidateQueries({
+      queryKey: educationKeys.planResume(planId),
+    });
   }, [queryClient, planId]);
 
   const prepJob = useJobStatus(prepJobId, { onComplete: onPrepComplete });
-  const handsOnJob = useJobStatus(handsOnJobId, { onComplete: onHandsOnComplete });
+  const handsOnJob = useJobStatus(handsOnJobId, {
+    onComplete: onHandsOnComplete,
+  });
 
   const [examId, setExamId] = React.useState<string | undefined>();
   const { data: examRes, isLoading: isExamLoading } = useExam(examId);
@@ -113,9 +119,12 @@ export function TopicStudyView({
 
   const [submission, setSubmission] = React.useState<any>(null);
   const [isPricingOpen, setIsPricingOpen] = React.useState(false);
-  const [pricingTier, setPricingTier] = React.useState<"pro" | "ultra">("ultra");
+  const [pricingTier, setPricingTier] = React.useState<"pro" | "ultra">(
+    "ultra",
+  );
   const [isPrepQueuedOffPeak, setIsPrepQueuedOffPeak] = React.useState(false);
-  const [isHandsOnQueuedOffPeak, setIsHandsOnQueuedOffPeak] = React.useState(false);
+  const [isHandsOnQueuedOffPeak, setIsHandsOnQueuedOffPeak] =
+    React.useState(false);
   const [isQuizQueuedOffPeak, setIsQuizQueuedOffPeak] = React.useState(false);
 
   // Auto-connect to active background jobs and attached exams; reset on topic switch
@@ -127,7 +136,11 @@ export function TopicStudyView({
     setIsHandsOnQueuedOffPeak(false);
     setIsQuizQueuedOffPeak(false);
 
-    if (topic?.active_jobs && topic.active_jobs.length > 0 && userTier !== "free") {
+    if (
+      topic?.active_jobs &&
+      topic.active_jobs.length > 0 &&
+      userTier !== "free"
+    ) {
       const activePrep = topic.active_jobs.find(
         (j: any) =>
           j.job_type === "prep_content" &&
@@ -145,7 +158,13 @@ export function TopicStudyView({
       setPrepJobId(null);
       setHandsOnJobId(null);
     }
-  }, [topic?.id, topic?.active_jobs, topic?.exam_id, topic?.exam?.id, userTier]);
+  }, [
+    topic?.id,
+    topic?.active_jobs,
+    topic?.exam_id,
+    topic?.exam?.id,
+    userTier,
+  ]);
 
   if (!topic) {
     return (
@@ -155,7 +174,9 @@ export function TopicStudyView({
         </Button>
         <div className="p-12 text-center border border-border/40 rounded-3xl bg-card/10 space-y-4">
           <Loader2 className="w-8 h-8 animate-spin mx-auto text-teal-400" />
-          <p className="text-muted-foreground text-sm">Loading topic details...</p>
+          <p className="text-muted-foreground text-sm">
+            Loading topic details...
+          </p>
         </div>
       </div>
     );
@@ -194,10 +215,12 @@ export function TopicStudyView({
               Chapter Locked
             </div>
             <h2 className="text-2xl sm:text-3xl font-bold text-foreground">
-              Complete Quiz for Chapter {currentIdx}: "{previousTopic.topic_name}"
+              Complete Quiz for Chapter {currentIdx}: "
+              {previousTopic.topic_name}"
             </h2>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              To ensure mastery before progressing, you must complete and submit the quiz for the previous chapter before unlocking this chapter.
+              To ensure mastery before progressing, you must complete and submit
+              the quiz for the previous chapter before unlocking this chapter.
             </p>
           </div>
           <div className="pt-2">
@@ -227,11 +250,11 @@ export function TopicStudyView({
 
   const hasActualContent = Boolean(
     (topic.prep_summary && topic.prep_summary.trim().length > 0) ||
-      (topic.hands_on_exercises && topic.hands_on_exercises.length > 0) ||
-      (topic.flashcards && topic.flashcards.length > 0) ||
-      (topic.key_concepts && topic.key_concepts.length > 0) ||
-      topic.exam_id ||
-      topic.exam,
+    (topic.hands_on_exercises && topic.hands_on_exercises.length > 0) ||
+    (topic.flashcards && topic.flashcards.length > 0) ||
+    (topic.key_concepts && topic.key_concepts.length > 0) ||
+    topic.exam_id ||
+    topic.exam,
   );
 
   const hasPrepContent = Boolean(
@@ -245,7 +268,7 @@ export function TopicStudyView({
   );
   const hasQuizContent = Boolean(
     (examRes?.data?.questions && examRes.data.questions.length > 0) ||
-      (topic.exam?.questions && topic.exam.questions.length > 0),
+    (topic.exam?.questions && topic.exam.questions.length > 0),
   );
 
   // Auto-display off-peak queued state across all tabs on free tier when content is pending
@@ -472,8 +495,12 @@ export function TopicStudyView({
       { topicId: topic.id, status: "completed" },
       {
         onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: educationKeys.plan(planId) });
-          queryClient.invalidateQueries({ queryKey: educationKeys.planResume(planId) });
+          queryClient.invalidateQueries({
+            queryKey: educationKeys.plan(planId),
+          });
+          queryClient.invalidateQueries({
+            queryKey: educationKeys.planResume(planId),
+          });
           if (nextTopic && onTopicSelect) {
             onTopicSelect(nextTopic.id);
           }
@@ -500,12 +527,14 @@ export function TopicStudyView({
             <div className="space-y-1.5 min-w-0 flex-1">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-xs font-mono font-semibold px-2.5 py-0.5 rounded-full bg-teal-500/15 border border-teal-500/30 text-teal-300">
-                  Chapter {currentIdx >= 0 ? currentIdx + 1 : 1} of {allTopics.length || 1}
+                  Chapter {currentIdx >= 0 ? currentIdx + 1 : 1} of{" "}
+                  {allTopics.length || 1}
                 </span>
                 <TopicStatusBadge status={topic.status} />
                 {userTier === "ultra" ? (
                   <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-300 border border-amber-500/30 shadow-sm shadow-amber-500/10">
-                    <Crown className="w-3.5 h-3.5 text-amber-300" /> Ultra (Claude Sonnet)
+                    <Crown className="w-3.5 h-3.5 text-amber-300" /> Ultra
+                    (Claude Sonnet)
                   </span>
                 ) : userTier === "pro" ? (
                   <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-teal-500/10 text-teal-400 border border-teal-500/30">
@@ -531,7 +560,8 @@ export function TopicStudyView({
             {isCompleted ? (
               <div className="flex items-center gap-2">
                 <span className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-sm font-semibold shadow-sm">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Completed
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />{" "}
+                  Completed
                 </span>
                 {nextTopic && onTopicSelect ? (
                   <Button
@@ -550,7 +580,8 @@ export function TopicStudyView({
             ) : (
               <div className="flex items-center gap-2">
                 <span className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-300/90 text-xs font-medium">
-                  <CheckSquare className="w-3.5 h-3.5 text-amber-400" /> Complete Quiz to unlock next chapter
+                  <CheckSquare className="w-3.5 h-3.5 text-amber-400" />{" "}
+                  Complete Quiz to unlock next chapter
                 </span>
               </div>
             )}

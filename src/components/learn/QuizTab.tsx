@@ -64,7 +64,10 @@ export function QuizTab({
   }
 
   // Off-Peak Scheduled Queue State for Free Tier
-  if (isQueuedForOffPeak && (!exam || !exam.questions || exam.questions.length === 0)) {
+  if (
+    isQueuedForOffPeak &&
+    (!exam || !exam.questions || exam.questions.length === 0)
+  ) {
     return (
       <div className="flex flex-col items-center justify-center p-6 sm:p-12 text-center min-h-[420px]">
         <div className="p-8 max-w-xl w-full rounded-3xl bg-gradient-to-b from-teal-500/10 via-card/40 to-card/20 border border-teal-500/30 shadow-2xl backdrop-blur-sm space-y-6">
@@ -81,7 +84,9 @@ export function QuizTab({
               Quiz Queued for Off-Peak Generation at 4:00 AM IST
             </h3>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Assessment quizzes are generated alongside your study guide in our nightly off-peak batch. Your topic quiz will be ready tomorrow morning!
+              Assessment quizzes are generated alongside your study guide in our
+              nightly off-peak batch. Your topic quiz will be ready tomorrow
+              morning!
             </p>
           </div>
 
@@ -117,12 +122,16 @@ export function QuizTab({
                 Generating Topic Quiz
               </h4>
               <p className="text-xs text-muted-foreground mt-1">
-                Creating AI multiple-choice and conceptual assessment questions...
+                Creating AI multiple-choice and conceptual assessment
+                questions...
               </p>
             </div>
           </div>
 
-          <Button disabled className="bg-teal-500/30 text-teal-300 border border-teal-500/40 cursor-not-allowed shrink-0">
+          <Button
+            disabled
+            className="bg-teal-500/30 text-teal-300 border border-teal-500/40 cursor-not-allowed shrink-0"
+          >
             <Loader2 className="w-4 h-4 animate-spin mr-2" />
             Generating...
           </Button>

@@ -163,7 +163,9 @@ export interface GenerateRecipeResponse {
 
 export const healthPlusApi = {
   getStatus: () =>
-    apiClient.get<{ success: boolean; data: HealthPlusStatus }>("/api/health/plus/status"),
+    apiClient.get<{ success: boolean; data: HealthPlusStatus }>(
+      "/api/health/plus/status",
+    ),
 
   getProfile: () =>
     apiClient.get<{
@@ -187,11 +189,19 @@ export const healthPlusApi = {
       data: GenerateRecipeResponse;
     }>("/api/health/plus/recipes/generate", payload),
 
-  buildInstamartCart: (ingredients: IngredientItem[], addressId?: string | null, includePantry?: boolean) =>
+  buildInstamartCart: (
+    ingredients: IngredientItem[],
+    addressId?: string | null,
+    includePantry?: boolean,
+  ) =>
     apiClient.post<{
       success: boolean;
       data: InstamartCart;
-    }>("/api/health/plus/swiggy/instamart-cart", { ingredients, addressId, includePantry }),
+    }>("/api/health/plus/swiggy/instamart-cart", {
+      ingredients,
+      addressId,
+      includePantry,
+    }),
 
   syncInstamartCart: (items: any[], addressId?: string | null) =>
     apiClient.post<{
@@ -209,13 +219,17 @@ export const healthPlusApi = {
     apiClient.get<{
       success: boolean;
       data: FoodDeliveryDish[];
-    }>("/api/health/plus/swiggy/food-options", { params: { query, addressId } }),
+    }>("/api/health/plus/swiggy/food-options", {
+      params: { query, addressId },
+    }),
 
   getDineoutOptions: (query: string, addressId?: string | null) =>
     apiClient.get<{
       success: boolean;
       data: DineoutSpot[];
-    }>("/api/health/plus/swiggy/dineout-options", { params: { query, addressId } }),
+    }>("/api/health/plus/swiggy/dineout-options", {
+      params: { query, addressId },
+    }),
 };
 
 export default healthPlusApi;

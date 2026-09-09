@@ -180,10 +180,7 @@ const DhetHistory = lazyRetry(
     })),
   "DhetHistory",
 );
-const HealthPlus = lazyRetry(
-  () => import("./pages/HealthPlus"),
-  "HealthPlus",
-);
+const HealthPlus = lazyRetry(() => import("./pages/HealthPlus"), "HealthPlus");
 
 // Loading fallback for lazy components
 const PageLoader = () => (
@@ -301,7 +298,8 @@ const App = () => {
           .getFeatureFlags()
           .then((res) => {
             if (res.success && res.data) {
-              const { second_brain, weekly_digest, learn_by_doing, dhet } = res.data;
+              const { second_brain, weekly_digest, learn_by_doing, dhet } =
+                res.data;
               document.cookie = `EnableSecondBrain=${second_brain}; path=/; max-age=86400; SameSite=Lax`;
               document.cookie = `EnableWeeklyDigest=${weekly_digest}; path=/; max-age=86400; SameSite=Lax`;
               document.cookie = `EnableLearnByDoing=${learn_by_doing}; path=/; max-age=86400; SameSite=Lax`;

@@ -237,14 +237,16 @@ export function ExamResultsView({
         <div className="flex items-center justify-between gap-4 mb-6">
           <h3 className="text-xl font-bold">Detailed Question Review</h3>
           <span className="text-xs text-muted-foreground">
-            {ai_feedback.graded_questions.filter((q) => q.score > 0).length} of {ai_feedback.graded_questions.length} Correct
+            {ai_feedback.graded_questions.filter((q) => q.score > 0).length} of{" "}
+            {ai_feedback.graded_questions.length} Correct
           </span>
         </div>
         <Accordion type="multiple" className="space-y-4">
           {ai_feedback.graded_questions.map((q, i) => {
             const isCorrect = q.score > 0;
             const studentText = q.student_answer || "No answer provided";
-            const correctText = q.correct_answer || "Reference answer not specified";
+            const correctText =
+              q.correct_answer || "Reference answer not specified";
 
             return (
               <AccordionItem
@@ -302,7 +304,9 @@ export function ExamResultsView({
                           Your Answer:
                         </span>
                         <span className="text-xs font-medium opacity-70">
-                          {isCorrect ? "✓ Matches correct solution" : "✗ Needs review"}
+                          {isCorrect
+                            ? "✓ Matches correct solution"
+                            : "✗ Needs review"}
                         </span>
                       </div>
                       <p className="text-foreground text-sm leading-relaxed font-medium">

@@ -70,7 +70,9 @@ export function HandsOnTab({
               Hands-On Lab Queued for Off-Peak Generation at 4:00 AM IST
             </h3>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Coding challenges and mini-projects are generated alongside your study guide in our nightly off-peak batch. You'll find them ready when you log in tomorrow morning!
+              Coding challenges and mini-projects are generated alongside your
+              study guide in our nightly off-peak batch. You'll find them ready
+              when you log in tomorrow morning!
             </p>
           </div>
 
@@ -116,7 +118,10 @@ export function HandsOnTab({
             </div>
           </div>
 
-          <Button disabled className="bg-teal-500/30 text-teal-300 border border-teal-500/40 cursor-not-allowed shrink-0">
+          <Button
+            disabled
+            className="bg-teal-500/30 text-teal-300 border border-teal-500/40 cursor-not-allowed shrink-0"
+          >
             <Loader2 className="w-4 h-4 animate-spin mr-2" />
             Generating...
           </Button>

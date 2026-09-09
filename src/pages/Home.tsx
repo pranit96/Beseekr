@@ -47,8 +47,7 @@ export default function Home() {
   const isBudgetEnabled = getIsBudgetEnabled();
   const isLearnByDoingEnabled =
     getIsLearnByDoingEnabled() || user?.feature_flags?.learn_by_doing;
-  const isDhetEnabled =
-    getIsDhetEnabled() || user?.feature_flags?.dhet;
+  const isDhetEnabled = getIsDhetEnabled() || user?.feature_flags?.dhet;
   const isHealthPlusEnabled =
     getIsHealthPlusEnabled() ||
     user?.feature_flags?.health_plus ||
@@ -275,7 +274,8 @@ export default function Home() {
               </h3>
 
               <p className="text-muted-foreground/80 mb-6 text-sm leading-relaxed">
-                Personalized metabolic recipes mapped to Swiggy Instamart groceries, healthy food delivery, and clean dining spots.
+                Personalized metabolic recipes mapped to Swiggy Instamart
+                groceries, healthy food delivery, and clean dining spots.
               </p>
 
               <div className="text-xs font-bold tracking-wider uppercase flex items-center gap-1 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all">

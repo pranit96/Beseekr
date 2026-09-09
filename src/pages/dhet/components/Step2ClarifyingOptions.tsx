@@ -17,12 +17,12 @@ interface Step2ClarifyingOptionsProps {
 
 // Author → accent color mapping
 const QUESTION_ACCENTS = [
-  "rgba(139,92,246,1)",    // violet
-  "rgba(6,182,212,1)",     // cyan
-  "rgba(245,158,11,1)",    // amber
-  "rgba(16,185,129,1)",    // emerald
-  "rgba(239,68,68,1)",     // rose
-  "rgba(99,102,241,1)",    // indigo
+  "rgba(139,92,246,1)", // violet
+  "rgba(6,182,212,1)", // cyan
+  "rgba(245,158,11,1)", // amber
+  "rgba(16,185,129,1)", // emerald
+  "rgba(239,68,68,1)", // rose
+  "rgba(99,102,241,1)", // indigo
 ];
 
 export const Step2ClarifyingOptions: React.FC<Step2ClarifyingOptionsProps> = ({
@@ -82,7 +82,10 @@ export const Step2ClarifyingOptions: React.FC<Step2ClarifyingOptionsProps> = ({
           className="flex flex-col gap-5"
         >
           <div className="flex flex-col gap-1">
-            <span className="text-[11px] font-bold uppercase tracking-widest" style={{ color: "rgba(139,92,246,0.7)" }}>
+            <span
+              className="text-[11px] font-bold uppercase tracking-widest"
+              style={{ color: "rgba(139,92,246,0.7)" }}
+            >
               Step 02 / Clarify Direction
             </span>
             <h1
@@ -107,10 +110,16 @@ export const Step2ClarifyingOptions: React.FC<Step2ClarifyingOptionsProps> = ({
               className="absolute top-4 right-4 w-8 h-8 opacity-10"
               style={{ color: "rgb(167,139,250)" }}
             />
-            <p className="text-sm leading-relaxed italic pr-8" style={{ color: "rgba(196,181,253,0.75)" }}>
+            <p
+              className="text-sm leading-relaxed italic pr-8"
+              style={{ color: "rgba(196,181,253,0.75)" }}
+            >
               "{initialPrompt}"
             </p>
-            <p className="text-[11px] font-semibold mt-2" style={{ color: "rgba(139,92,246,0.6)" }}>
+            <p
+              className="text-[11px] font-semibold mt-2"
+              style={{ color: "rgba(139,92,246,0.6)" }}
+            >
               — Your Design Brief
             </p>
           </div>
@@ -135,7 +144,11 @@ export const Step2ClarifyingOptions: React.FC<Step2ClarifyingOptionsProps> = ({
                   {/* Giant faded number */}
                   <span
                     className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 text-8xl font-black leading-none select-none pointer-events-none"
-                    style={{ color: accent, opacity: 0.07, fontVariantNumeric: "tabular-nums" }}
+                    style={{
+                      color: accent,
+                      opacity: 0.07,
+                      fontVariantNumeric: "tabular-nums",
+                    }}
                   >
                     {String(qIdx + 1).padStart(2, "0")}
                   </span>
@@ -146,10 +159,16 @@ export const Step2ClarifyingOptions: React.FC<Step2ClarifyingOptionsProps> = ({
                     style={{ background: accent, opacity: 0.5 }}
                   />
 
-                  <h3 className="text-base md:text-lg font-bold pl-2" style={{ color: "hsl(214 32% 91%)" }}>
+                  <h3
+                    className="text-base md:text-lg font-bold pl-2"
+                    style={{ color: "hsl(214 32% 91%)" }}
+                  >
                     {question.label}
                   </h3>
-                  <p className="text-sm pl-2" style={{ color: "rgba(196,181,253,0.5)" }}>
+                  <p
+                    className="text-sm pl-2"
+                    style={{ color: "rgba(196,181,253,0.5)" }}
+                  >
                     {question.question}
                   </p>
                 </div>
@@ -185,14 +204,20 @@ export const Step2ClarifyingOptions: React.FC<Step2ClarifyingOptionsProps> = ({
                         {isSelected && (
                           <div
                             className="absolute inset-0 opacity-5"
-                            style={{ background: `radial-gradient(ellipse at 0% 0%, ${accent}, transparent)` }}
+                            style={{
+                              background: `radial-gradient(ellipse at 0% 0%, ${accent}, transparent)`,
+                            }}
                           />
                         )}
 
                         <div className="relative z-10 flex items-start justify-between gap-2">
                           <span
                             className="text-sm font-bold leading-tight"
-                            style={{ color: isSelected ? "hsl(214 32% 94%)" : "hsl(214 32% 75%)" }}
+                            style={{
+                              color: isSelected
+                                ? "hsl(214 32% 94%)"
+                                : "hsl(214 32% 75%)",
+                            }}
                           >
                             {option.label}
                           </span>
@@ -215,8 +240,12 @@ export const Step2ClarifyingOptions: React.FC<Step2ClarifyingOptionsProps> = ({
                               className="w-5 h-5 rounded-full flex items-center justify-center border transition-all duration-200"
                               style={{
                                 background: isSelected ? accent : "transparent",
-                                borderColor: isSelected ? accent : "rgba(255,255,255,0.15)",
-                                boxShadow: isSelected ? `0 0 10px ${accent}50` : "none",
+                                borderColor: isSelected
+                                  ? accent
+                                  : "rgba(255,255,255,0.15)",
+                                boxShadow: isSelected
+                                  ? `0 0 10px ${accent}50`
+                                  : "none",
                               }}
                             >
                               <AnimatePresence>
@@ -225,7 +254,11 @@ export const Step2ClarifyingOptions: React.FC<Step2ClarifyingOptionsProps> = ({
                                     initial={{ scale: 0, opacity: 0 }}
                                     animate={{ scale: 1, opacity: 1 }}
                                     exit={{ scale: 0, opacity: 0 }}
-                                    transition={{ duration: 0.15, type: "spring", stiffness: 500 }}
+                                    transition={{
+                                      duration: 0.15,
+                                      type: "spring",
+                                      stiffness: 500,
+                                    }}
                                   >
                                     <Check className="w-3 h-3 text-white stroke-[3]" />
                                   </motion.div>
@@ -236,7 +269,10 @@ export const Step2ClarifyingOptions: React.FC<Step2ClarifyingOptionsProps> = ({
                         </div>
 
                         {option.description && (
-                          <p className="relative z-10 text-xs leading-relaxed" style={{ color: "rgba(196,181,253,0.45)" }}>
+                          <p
+                            className="relative z-10 text-xs leading-relaxed"
+                            style={{ color: "rgba(196,181,253,0.45)" }}
+                          >
                             {option.description}
                           </p>
                         )}
@@ -253,7 +289,9 @@ export const Step2ClarifyingOptions: React.FC<Step2ClarifyingOptionsProps> = ({
       {/* ── STICKY FOOTER CTA ─────────────────────────────────────────────── */}
       <div
         className="fixed bottom-0 left-0 right-0 z-40 px-4 py-4"
-        style={{ background: "linear-gradient(0deg, hsl(222 47% 3%) 60%, transparent)" }}
+        style={{
+          background: "linear-gradient(0deg, hsl(222 47% 3%) 60%, transparent)",
+        }}
       >
         <div
           className="max-w-3xl mx-auto flex items-center justify-between p-4 rounded-2xl border"
@@ -266,7 +304,10 @@ export const Step2ClarifyingOptions: React.FC<Step2ClarifyingOptionsProps> = ({
         >
           {/* Progress indicator */}
           <div className="flex flex-col gap-0.5">
-            <span className="text-xs font-semibold" style={{ color: "hsl(214 32% 91%)" }}>
+            <span
+              className="text-xs font-semibold"
+              style={{ color: "hsl(214 32% 91%)" }}
+            >
               {answeredCount} of {questions.length} answered
             </span>
             <div className="flex items-center gap-1">

@@ -296,8 +296,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             }
             const fetchedUser = response.data.user;
             if (fetchedUser?.feature_flags) {
-              const { second_brain, weekly_digest, health_plus, healthplusenable } =
-                fetchedUser.feature_flags;
+              const {
+                second_brain,
+                weekly_digest,
+                health_plus,
+                healthplusenable,
+              } = fetchedUser.feature_flags;
               document.cookie = `EnableSecondBrain=${second_brain}; path=/; max-age=86400; SameSite=Lax`;
               document.cookie = `EnableWeeklyDigest=${weekly_digest}; path=/; max-age=86400; SameSite=Lax`;
               const isHp = health_plus ?? healthplusenable;
@@ -359,7 +363,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           // Retry only for transient errors, not for auth or rate-limit errors
           if (retries > 0 && !isDefiniteAuthError && !isTransient) {
             const backoffMs = 2000 * (2 - retries + 1);
-            logger.info("Retrying refresh", { retriesLeft: retries, backoffMs });
+            logger.info("Retrying refresh", {
+              retriesLeft: retries,
+              backoffMs,
+            });
             await new Promise((resolve) => setTimeout(resolve, backoffMs));
             refreshingRef.current = false;
             return refreshAuth(silent, retries - 1);
@@ -428,18 +435,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (tokenRefreshIntervalRef.current)
         clearInterval(tokenRefreshIntervalRef.current);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
   // Keep a stable ref to refreshAuth so handleTokensRefreshed never changes its
   // reference — preventing the socket useEffect from firing on every silent token refresh.
   const refreshAuthRef = useRef(refreshAuth);
-  useEffect(() => { refreshAuthRef.current = refreshAuth; }, [refreshAuth]);
+  useEffect(() => {
+    refreshAuthRef.current = refreshAuth;
+  }, [refreshAuth]);
 
   // Socket token refresh callback — stable ref, safe to pass to socketService once
   const handleTokensRefreshed = useCallback(
     (_tokens: { access_token: string; refresh_token: string }) => {
-      logger.info("Socket tokens refreshed by server handshake, updating activity");
+      logger.info(
+        "Socket tokens refreshed by server handshake, updating activity",
+      );
       lastActivityRef.current = Date.now();
       // Server has already updated the session cookies during handshake.
       // Do NOT trigger an HTTP refreshAuth() call here to prevent recursive connect/disconnect loops.
@@ -451,7 +462,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Dependency is user?.id only — connect/disconnect on real login/logout events,
   // NOT on every callback reference change (which caused the rapid reconnect loop).
   const handleTokensRefreshedRef = useRef(handleTokensRefreshed);
-  useEffect(() => { handleTokensRefreshedRef.current = handleTokensRefreshed; }, [handleTokensRefreshed]);
+  useEffect(() => {
+    handleTokensRefreshedRef.current = handleTokensRefreshed;
+  }, [handleTokensRefreshed]);
 
   useEffect(() => {
     if (!user) {
@@ -508,7 +521,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       socketService.off("auth_error", onAuthError);
       socketService.off("forced_disconnect", onForcedDisconnect);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]); // Only react to actual login/logout
 
   // ENHANCED: Initial auth check with optimistic loading
@@ -601,7 +614,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       window.removeEventListener("focus", handleFocus);
       window.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchCurrentUser = async () => {

@@ -52,7 +52,10 @@ export const Step3ProposalView: React.FC<Step3ProposalViewProps> = ({
       const url = apiClient.getDhetExportPdfUrl(design.id);
       const link = document.createElement("a");
       link.href = url;
-      const safeTitle = (design?.title || proposal?.title || "Design").replace(/\s+/g, "_");
+      const safeTitle = (design?.title || proposal?.title || "Design").replace(
+        /\s+/g,
+        "_",
+      );
       link.setAttribute("download", `DHET_${safeTitle}.pdf`);
       document.body.appendChild(link);
       link.click();
@@ -67,34 +70,40 @@ export const Step3ProposalView: React.FC<Step3ProposalViewProps> = ({
 
   const handleDeleteProposal = () => {
     if (!design?.id) return;
-    toast(`Delete "${proposal?.title || design?.title || "Design Proposal"}"?`, {
-      description: "This design proposal will be permanently removed. This action cannot be undone.",
-      duration: 10000,
-      action: {
-        label: "Delete",
-        onClick: async () => {
-          try {
-            setIsDeleting(true);
-            await apiClient.deleteDhetDesign(design.id);
-            toast.success("Design proposal deleted successfully");
-            onReset();
-          } catch (err: any) {
-            toast.error("Failed to delete design: " + (err.message || "Unknown error"));
-          } finally {
-            setIsDeleting(false);
-          }
+    toast(
+      `Delete "${proposal?.title || design?.title || "Design Proposal"}"?`,
+      {
+        description:
+          "This design proposal will be permanently removed. This action cannot be undone.",
+        duration: 10000,
+        action: {
+          label: "Delete",
+          onClick: async () => {
+            try {
+              setIsDeleting(true);
+              await apiClient.deleteDhetDesign(design.id);
+              toast.success("Design proposal deleted successfully");
+              onReset();
+            } catch (err: any) {
+              toast.error(
+                "Failed to delete design: " + (err.message || "Unknown error"),
+              );
+            } finally {
+              setIsDeleting(false);
+            }
+          },
+        },
+        cancel: {
+          label: "Cancel",
+          onClick: () => toast.info("Deletion canceled"),
+        },
+        actionButtonStyle: {
+          backgroundColor: "#dc2626",
+          color: "#ffffff",
+          fontWeight: "600",
         },
       },
-      cancel: {
-        label: "Cancel",
-        onClick: () => toast.info("Deletion canceled"),
-      },
-      actionButtonStyle: {
-        backgroundColor: "#dc2626",
-        color: "#ffffff",
-        fontWeight: "600",
-      },
-    });
+    );
   };
 
   if (!proposal) {
@@ -104,14 +113,24 @@ export const Step3ProposalView: React.FC<Step3ProposalViewProps> = ({
           className="w-16 h-16 rounded-2xl flex items-center justify-center relative"
           style={{ background: "rgba(139,92,246,0.1)" }}
         >
-          <Sparkles className="w-8 h-8 animate-pulse" style={{ color: "rgb(167,139,250)" }} />
+          <Sparkles
+            className="w-8 h-8 animate-pulse"
+            style={{ color: "rgb(167,139,250)" }}
+          />
         </div>
         <div className="flex flex-col gap-1.5">
-          <h2 className="text-lg font-bold" style={{ color: "hsl(214 32% 91%)" }}>
+          <h2
+            className="text-lg font-bold"
+            style={{ color: "hsl(214 32% 91%)" }}
+          >
             Loading Proposal Details...
           </h2>
-          <p className="text-sm max-w-sm" style={{ color: "rgba(196,181,253,0.5)" }}>
-            Retrieving the complete design blueprint, heuristic decisions, and synchronized production specs.
+          <p
+            className="text-sm max-w-sm"
+            style={{ color: "rgba(196,181,253,0.5)" }}
+          >
+            Retrieving the complete design blueprint, heuristic decisions, and
+            synchronized production specs.
           </p>
         </div>
         <button
@@ -130,10 +149,30 @@ export const Step3ProposalView: React.FC<Step3ProposalViewProps> = ({
     );
   }
 
-  const drawerTabs: { key: DrawerTab; label: string; icon: React.ElementType; accent: string }[] = [
-    { key: "tokens", label: "Design Tokens", icon: Palette, accent: "rgb(139,92,246)" },
-    { key: "decisions", label: "UX Decisions", icon: PenTool, accent: "rgb(245,158,11)" },
-    { key: "export", label: "Export & Specs", icon: Sparkles, accent: "rgb(16,185,129)" },
+  const drawerTabs: {
+    key: DrawerTab;
+    label: string;
+    icon: React.ElementType;
+    accent: string;
+  }[] = [
+    {
+      key: "tokens",
+      label: "Design Tokens",
+      icon: Palette,
+      accent: "rgb(139,92,246)",
+    },
+    {
+      key: "decisions",
+      label: "UX Decisions",
+      icon: PenTool,
+      accent: "rgb(245,158,11)",
+    },
+    {
+      key: "export",
+      label: "Export & Specs",
+      icon: Sparkles,
+      accent: "rgb(16,185,129)",
+    },
   ];
 
   return (
@@ -147,10 +186,17 @@ export const Step3ProposalView: React.FC<Step3ProposalViewProps> = ({
       {/* ── TOP TITLE BAR ─────────────────────────────────────────────────── */}
       <div
         className="w-full px-4 md:px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b"
-        style={{ borderColor: "rgba(255,255,255,0.06)", background: "rgba(14,16,26,0.8)", backdropFilter: "blur(12px)" }}
+        style={{
+          borderColor: "rgba(255,255,255,0.06)",
+          background: "rgba(14,16,26,0.8)",
+          backdropFilter: "blur(12px)",
+        }}
       >
         <div className="flex flex-col gap-1 flex-1 min-w-0">
-          <div className="flex items-center gap-2 text-xs font-semibold" style={{ color: "rgb(52,211,153)" }}>
+          <div
+            className="flex items-center gap-2 text-xs font-semibold"
+            style={{ color: "rgb(52,211,153)" }}
+          >
             <CheckCircle2 className="w-3.5 h-3.5" />
             <span>Human-Centered Design Proposal</span>
             {proposal?.device_frame && (
@@ -158,9 +204,13 @@ export const Step3ProposalView: React.FC<Step3ProposalViewProps> = ({
                 <span style={{ color: "rgba(255,255,255,0.15)" }}>·</span>
                 <span
                   className="px-2 py-0.5 rounded font-semibold capitalize"
-                  style={{ background: "rgba(139,92,246,0.12)", color: "rgb(167,139,250)" }}
+                  style={{
+                    background: "rgba(139,92,246,0.12)",
+                    color: "rgb(167,139,250)",
+                  }}
                 >
-                  {proposal.device_frame.device_type || "Mobile"} · {proposal.device_frame.aspect_ratio || "9:16"}
+                  {proposal.device_frame.device_type || "Mobile"} ·{" "}
+                  {proposal.device_frame.aspect_ratio || "9:16"}
                 </span>
               </>
             )}
@@ -169,10 +219,15 @@ export const Step3ProposalView: React.FC<Step3ProposalViewProps> = ({
             className="text-xl md:text-2xl font-black tracking-tight truncate"
             style={{ color: "hsl(214 32% 94%)" }}
           >
-            {proposal?.title || design?.title || "Human-Centered Design Solution"}
+            {proposal?.title ||
+              design?.title ||
+              "Human-Centered Design Solution"}
           </h1>
           {proposal?.summary && (
-            <p className="text-sm line-clamp-1" style={{ color: "rgba(196,181,253,0.5)" }}>
+            <p
+              className="text-sm line-clamp-1"
+              style={{ color: "rgba(196,181,253,0.5)" }}
+            >
               {proposal.summary}
             </p>
           )}
@@ -184,7 +239,11 @@ export const Step3ProposalView: React.FC<Step3ProposalViewProps> = ({
             type="button"
             onClick={onReset}
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold border transition-all"
-            style={{ borderColor: "rgba(255,255,255,0.08)", color: "rgba(196,181,253,0.6)", background: "transparent" }}
+            style={{
+              borderColor: "rgba(255,255,255,0.08)",
+              color: "rgba(196,181,253,0.6)",
+              background: "transparent",
+            }}
           >
             <RotateCcw className="w-3.5 h-3.5" />
             <span>New</span>
@@ -232,24 +291,33 @@ export const Step3ProposalView: React.FC<Step3ProposalViewProps> = ({
       >
         {/* Canvas title overlay */}
         <div className="flex items-center gap-2 mb-4">
-          <Terminal className="w-4 h-4" style={{ color: "rgba(139,92,246,0.6)" }} />
-          <span className="text-xs font-mono font-semibold" style={{ color: "rgba(196,181,253,0.4)" }}>
-            canvas · {proposal?.device_frame?.viewport?.width || "390"}×{proposal?.device_frame?.viewport?.height || "844"}
+          <Terminal
+            className="w-4 h-4"
+            style={{ color: "rgba(139,92,246,0.6)" }}
+          />
+          <span
+            className="text-xs font-mono font-semibold"
+            style={{ color: "rgba(196,181,253,0.4)" }}
+          >
+            canvas · {proposal?.device_frame?.viewport?.width || "390"}×
+            {proposal?.device_frame?.viewport?.height || "844"}
           </span>
           {/* Color swatch strip */}
           <div className="flex items-center gap-1 ml-3">
-            {Object.entries(colors).slice(0, 7).map(([role, hex]) => (
-              <div
-                key={role}
-                title={`${role}: ${hex}`}
-                className="w-4 h-4 rounded-full border border-black/30 cursor-pointer transition-transform hover:scale-125"
-                style={{ backgroundColor: String(hex) }}
-                onClick={() => {
-                  navigator.clipboard.writeText(String(hex));
-                  toast.success(`Copied ${role}: ${hex}`);
-                }}
-              />
-            ))}
+            {Object.entries(colors)
+              .slice(0, 7)
+              .map(([role, hex]) => (
+                <div
+                  key={role}
+                  title={`${role}: ${hex}`}
+                  className="w-4 h-4 rounded-full border border-black/30 cursor-pointer transition-transform hover:scale-125"
+                  style={{ backgroundColor: String(hex) }}
+                  onClick={() => {
+                    navigator.clipboard.writeText(String(hex));
+                    toast.success(`Copied ${role}: ${hex}`);
+                  }}
+                />
+              ))}
           </div>
         </div>
 
@@ -278,7 +346,10 @@ export const Step3ProposalView: React.FC<Step3ProposalViewProps> = ({
         >
           <div className="flex items-center gap-3">
             <Layers className="w-4 h-4" style={{ color: "rgb(167,139,250)" }} />
-            <span className="text-xs font-bold uppercase tracking-wider" style={{ color: "rgba(196,181,253,0.7)" }}>
+            <span
+              className="text-xs font-bold uppercase tracking-wider"
+              style={{ color: "rgba(196,181,253,0.7)" }}
+            >
               Intelligence Drawer
             </span>
             {/* Tab pills */}
@@ -310,9 +381,15 @@ export const Step3ProposalView: React.FC<Step3ProposalViewProps> = ({
             </div>
           </div>
           {drawerOpen ? (
-            <ChevronDown className="w-4 h-4" style={{ color: "rgba(196,181,253,0.4)" }} />
+            <ChevronDown
+              className="w-4 h-4"
+              style={{ color: "rgba(196,181,253,0.4)" }}
+            />
           ) : (
-            <ChevronUp className="w-4 h-4" style={{ color: "rgba(196,181,253,0.4)" }} />
+            <ChevronUp
+              className="w-4 h-4"
+              style={{ color: "rgba(196,181,253,0.4)" }}
+            />
           )}
         </button>
 
@@ -325,10 +402,15 @@ export const Step3ProposalView: React.FC<Step3ProposalViewProps> = ({
               <button
                 key={tab.key}
                 type="button"
-                onClick={() => { setDrawerTab(tab.key); setDrawerOpen(true); }}
+                onClick={() => {
+                  setDrawerTab(tab.key);
+                  setDrawerOpen(true);
+                }}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex-1 justify-center"
                 style={{
-                  background: isActive ? `${tab.accent}18` : "rgba(255,255,255,0.03)",
+                  background: isActive
+                    ? `${tab.accent}18`
+                    : "rgba(255,255,255,0.03)",
                   color: isActive ? tab.accent : "rgba(196,181,253,0.4)",
                   border: `1px solid ${isActive ? `${tab.accent}40` : "rgba(255,255,255,0.05)"}`,
                 }}
@@ -398,14 +480,25 @@ export const Step3ProposalView: React.FC<Step3ProposalViewProps> = ({
                             className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
                             style={{ background: "rgba(16,185,129,0.12)" }}
                           >
-                            <FileCode className="w-5 h-5" style={{ color: "rgb(52,211,153)" }} />
+                            <FileCode
+                              className="w-5 h-5"
+                              style={{ color: "rgb(52,211,153)" }}
+                            />
                           </div>
                           <div className="flex flex-col gap-0.5">
-                            <span className="text-sm font-bold" style={{ color: "hsl(214 32% 91%)" }}>
+                            <span
+                              className="text-sm font-bold"
+                              style={{ color: "hsl(214 32% 91%)" }}
+                            >
                               Real-Life Twin Production Blueprints
                             </span>
-                            <span className="text-xs" style={{ color: "rgba(196,181,253,0.5)" }}>
-                              Drop the prompt into Midjourney v6/DALL-E for a photorealistic render, or paste the Figma spec into ChatGPT to construct real auto-layout frames.
+                            <span
+                              className="text-xs"
+                              style={{ color: "rgba(196,181,253,0.5)" }}
+                            >
+                              Drop the prompt into Midjourney v6/DALL-E for a
+                              photorealistic render, or paste the Figma spec
+                              into ChatGPT to construct real auto-layout frames.
                             </span>
                           </div>
                           <span

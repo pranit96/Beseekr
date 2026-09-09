@@ -47,7 +47,13 @@ export interface DesignTokens {
 }
 
 export interface DeviceFrame {
-  device_type?: "mobile" | "desktop" | "tablet" | "smart_device" | "kiosk" | string;
+  device_type?:
+    | "mobile"
+    | "desktop"
+    | "tablet"
+    | "smart_device"
+    | "kiosk"
+    | string;
   aspect_ratio?: "9:16" | "16:9" | "4:3" | "1:1" | "21:9" | string;
   viewport?: {
     width?: string;

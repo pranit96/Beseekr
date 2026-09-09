@@ -277,7 +277,9 @@ class ApiClient {
         const timeoutId = setTimeout(() => controller.abort(), 120000);
 
         const normalizedEndpoint =
-          endpoint.startsWith("/api/") || endpoint.startsWith("http") || endpoint === "/api"
+          endpoint.startsWith("/api/") ||
+          endpoint.startsWith("http") ||
+          endpoint === "/api"
             ? endpoint
             : `/api${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`;
 
@@ -1634,7 +1636,9 @@ class ApiClient {
 
   // ─── Job Scraper & Cron Telemetry Admin Endpoints ─────────────────────────
   async getJobScraperStats() {
-    return this.request<JobScraperStatsResponse>("/api/admin/job-scraper/stats");
+    return this.request<JobScraperStatsResponse>(
+      "/api/admin/job-scraper/stats",
+    );
   }
 
   async triggerJobScraper(options?: { forceJSearch?: boolean }) {

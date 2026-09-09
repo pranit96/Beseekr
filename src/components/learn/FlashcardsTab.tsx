@@ -2,7 +2,16 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Flashcard, FlashcardRating } from "@/types/education";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Check, X, RotateCcw, Loader2, Moon, Crown, Clock } from "lucide-react";
+import {
+  RefreshCw,
+  Check,
+  X,
+  RotateCcw,
+  Loader2,
+  Moon,
+  Crown,
+  Clock,
+} from "lucide-react";
 
 interface FlashcardsTabProps {
   flashcards: Flashcard[] | null;
@@ -41,7 +50,8 @@ export function FlashcardsTab({
               Flashcards Queued for 4:00 AM IST
             </h3>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Flashcards are scheduled in our nightly off-peak batch alongside your study guide. They'll be ready tomorrow morning!
+              Flashcards are scheduled in our nightly off-peak batch alongside
+              your study guide. They'll be ready tomorrow morning!
             </p>
           </div>
 
@@ -70,7 +80,8 @@ export function FlashcardsTab({
         </div>
         <h3 className="text-xl font-bold mb-2">Generating Flashcards...</h3>
         <p className="text-muted-foreground max-w-md">
-          Flashcards are being synthesized alongside your study guide in the background.
+          Flashcards are being synthesized alongside your study guide in the
+          background.
         </p>
       </div>
     );
@@ -172,7 +183,8 @@ export function FlashcardsTab({
               {currentCard.question}
             </h3>
             <p className="mt-8 text-xs md:text-sm text-muted-foreground flex items-center gap-2">
-              <RefreshCw className="w-3.5 h-3.5" /> Click to flip & reveal answer
+              <RefreshCw className="w-3.5 h-3.5" /> Click to flip & reveal
+              answer
             </p>
           </div>
 

@@ -54,14 +54,30 @@ export function AdminEducation() {
   const [queueingPlanId, setQueueingPlanId] = useState<string | null>(null);
 
   // ─── 1. Queries ─────────────────────────────────────────────────────────────
-  const { data: metricsData, isLoading: metricsLoading, refetch: refetchMetrics } = useQuery({
+  const {
+    data: metricsData,
+    isLoading: metricsLoading,
+    refetch: refetchMetrics,
+  } = useQuery({
     queryKey: ["admin", "education", "metrics"],
     queryFn: () => apiClient.getEducationQueueMetrics(),
     refetchInterval: 10000,
   });
 
-  const { data: jobsData, isLoading: jobsLoading, refetch: refetchJobs } = useQuery({
-    queryKey: ["admin", "education", "jobs", statusFilter, typeFilter, searchQuery, page],
+  const {
+    data: jobsData,
+    isLoading: jobsLoading,
+    refetch: refetchJobs,
+  } = useQuery({
+    queryKey: [
+      "admin",
+      "education",
+      "jobs",
+      statusFilter,
+      typeFilter,
+      searchQuery,
+      page,
+    ],
     queryFn: () =>
       apiClient.getEducationQueueJobs({
         status: statusFilter,
@@ -73,7 +89,11 @@ export function AdminEducation() {
     refetchInterval: 10000,
   });
 
-  const { data: plansData, isLoading: plansLoading, refetch: refetchPlans } = useQuery({
+  const {
+    data: plansData,
+    isLoading: plansLoading,
+    refetch: refetchPlans,
+  } = useQuery({
     queryKey: ["admin", "education", "plans", planSearch, planPage],
     queryFn: () =>
       apiClient.getEducationAdminPlans({
@@ -84,9 +104,16 @@ export function AdminEducation() {
     refetchInterval: 15000,
   });
 
-  const { data: planDetailsData, isLoading: planDetailsLoading, refetch: refetchPlanDetails } = useQuery({
+  const {
+    data: planDetailsData,
+    isLoading: planDetailsLoading,
+    refetch: refetchPlanDetails,
+  } = useQuery({
     queryKey: ["admin", "education", "planDetails", selectedPlanId],
-    queryFn: () => (selectedPlanId ? apiClient.getEducationAdminPlanDetails(selectedPlanId) : null),
+    queryFn: () =>
+      selectedPlanId
+        ? apiClient.getEducationAdminPlanDetails(selectedPlanId)
+        : null,
     enabled: !!selectedPlanId,
   });
 
@@ -166,7 +193,8 @@ export function AdminEducation() {
   });
 
   const cleanJobsMutation = useMutation({
-    mutationFn: (daysToKeep: number) => apiClient.cleanEducationJobs(daysToKeep),
+    mutationFn: (daysToKeep: number) =>
+      apiClient.cleanEducationJobs(daysToKeep),
     onSuccess: (res) => {
       toast({
         title: "Completed Jobs Cleared",
@@ -209,7 +237,8 @@ export function AdminEducation() {
     onSuccess: () => {
       toast({
         title: "Plan Deleted",
-        description: "Study plan, topics, exams, and queue jobs have been purged.",
+        description:
+          "Study plan, topics, exams, and queue jobs have been purged.",
       });
       setSelectedPlanId(null);
       setDeletingPlanId(null);
@@ -236,9 +265,17 @@ export function AdminEducation() {
   };
 
   const jobsList = jobsData?.data || [];
-  const jobsPagination = jobsData?.pagination || { page: 1, total: 0, totalPages: 1 };
+  const jobsPagination = jobsData?.pagination || {
+    page: 1,
+    total: 0,
+    totalPages: 1,
+  };
   const plansList = plansData?.data || [];
-  const plansPagination = plansData?.pagination || { page: 1, total: 0, totalPages: 1 };
+  const plansPagination = plansData?.pagination || {
+    page: 1,
+    total: 0,
+    totalPages: 1,
+  };
 
   return (
     <div className="flex-1 overflow-y-auto p-6 space-y-6 max-w-screen-2xl mx-auto w-full">
@@ -250,7 +287,9 @@ export function AdminEducation() {
             <Layers className="w-4 h-4 text-zinc-500" />
           </div>
           <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-2xl font-black text-white">{metrics.total}</span>
+            <span className="text-2xl font-black text-white">
+              {metrics.total}
+            </span>
             <span className="text-[10px] text-zinc-500 font-mono">records</span>
           </div>
         </div>
@@ -261,8 +300,12 @@ export function AdminEducation() {
             <Clock className="w-4 h-4 text-amber-400" />
           </div>
           <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-2xl font-black text-amber-400">{metrics.pending}</span>
-            <span className="text-[10px] text-amber-400/60 font-mono">awaiting worker</span>
+            <span className="text-2xl font-black text-amber-400">
+              {metrics.pending}
+            </span>
+            <span className="text-[10px] text-amber-400/60 font-mono">
+              awaiting worker
+            </span>
           </div>
         </div>
 
@@ -272,8 +315,12 @@ export function AdminEducation() {
             <Zap className="w-4 h-4 text-blue-400 animate-pulse" />
           </div>
           <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-2xl font-black text-blue-400">{metrics.processing}</span>
-            <span className="text-[10px] text-blue-400/60 font-mono">active LLM</span>
+            <span className="text-2xl font-black text-blue-400">
+              {metrics.processing}
+            </span>
+            <span className="text-[10px] text-blue-400/60 font-mono">
+              active LLM
+            </span>
           </div>
         </div>
 
@@ -283,8 +330,12 @@ export function AdminEducation() {
             <CheckCircle2 className="w-4 h-4 text-emerald-400" />
           </div>
           <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-2xl font-black text-emerald-400">{metrics.completed}</span>
-            <span className="text-[10px] text-emerald-400/60 font-mono">generated</span>
+            <span className="text-2xl font-black text-emerald-400">
+              {metrics.completed}
+            </span>
+            <span className="text-[10px] text-emerald-400/60 font-mono">
+              generated
+            </span>
           </div>
         </div>
 
@@ -294,8 +345,12 @@ export function AdminEducation() {
             <AlertTriangle className="w-4 h-4 text-red-400" />
           </div>
           <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-2xl font-black text-red-400">{metrics.failed}</span>
-            <span className="text-[10px] text-red-400/60 font-mono">needs retry</span>
+            <span className="text-2xl font-black text-red-400">
+              {metrics.failed}
+            </span>
+            <span className="text-[10px] text-red-400/60 font-mono">
+              needs retry
+            </span>
           </div>
         </div>
       </div>
@@ -337,7 +392,9 @@ export function AdminEducation() {
                 disabled={metrics.failed === 0 || retryAllMutation.isPending}
                 className="h-8 text-xs border-amber-500/30 text-amber-400 hover:bg-amber-500/10"
               >
-                <RotateCw className={`w-3.5 h-3.5 mr-1.5 ${retryAllMutation.isPending ? "animate-spin" : ""}`} />
+                <RotateCw
+                  className={`w-3.5 h-3.5 mr-1.5 ${retryAllMutation.isPending ? "animate-spin" : ""}`}
+                />
                 Retry All Failed ({metrics.failed})
               </Button>
               <Button
@@ -440,23 +497,35 @@ export function AdminEducation() {
                 <tbody className="divide-y divide-white/[0.04]">
                   {jobsLoading ? (
                     <tr>
-                      <td colSpan={7} className="py-12 text-center text-zinc-500">
+                      <td
+                        colSpan={7}
+                        className="py-12 text-center text-zinc-500"
+                      >
                         <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-zinc-400" />
                         Loading queue telemetry...
                       </td>
                     </tr>
                   ) : jobsList.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="py-12 text-center text-zinc-500">
+                      <td
+                        colSpan={7}
+                        className="py-12 text-center text-zinc-500"
+                      >
                         No queue jobs match the current filters.
                       </td>
                     </tr>
                   ) : (
                     jobsList.map((job: any) => {
                       const isTriggering = triggeringJobId === job.id;
-                      const topicName = job.payload?.topic_name || job.payload?.subject || "Topic";
+                      const topicName =
+                        job.payload?.topic_name ||
+                        job.payload?.subject ||
+                        "Topic";
                       return (
-                        <tr key={job.id} className="hover:bg-white/[0.02] transition-colors">
+                        <tr
+                          key={job.id}
+                          className="hover:bg-white/[0.02] transition-colors"
+                        >
                           <td className="py-3 px-4">
                             <Badge
                               variant="outline"
@@ -464,18 +533,22 @@ export function AdminEducation() {
                                 job.job_type === "prep_content"
                                   ? "border-purple-500/30 text-purple-400 bg-purple-500/10"
                                   : job.job_type === "hands_on"
-                                  ? "border-emerald-500/30 text-emerald-400 bg-emerald-500/10"
-                                  : job.job_type === "exam"
-                                  ? "border-blue-500/30 text-blue-400 bg-blue-500/10"
-                                  : "border-zinc-500/30 text-zinc-400 bg-zinc-500/10"
+                                    ? "border-emerald-500/30 text-emerald-400 bg-emerald-500/10"
+                                    : job.job_type === "exam"
+                                      ? "border-blue-500/30 text-blue-400 bg-blue-500/10"
+                                      : "border-zinc-500/30 text-zinc-400 bg-zinc-500/10"
                               }`}
                             >
                               {job.job_type.replace("_", " ")}
                             </Badge>
                           </td>
                           <td className="py-3 px-4">
-                            <div className="font-semibold text-white truncate max-w-xs">{topicName}</div>
-                            <div className="text-[10px] text-zinc-500 font-mono">Job: {job.id.slice(0, 13)}...</div>
+                            <div className="font-semibold text-white truncate max-w-xs">
+                              {topicName}
+                            </div>
+                            <div className="text-[10px] text-zinc-500 font-mono">
+                              Job: {job.id.slice(0, 13)}...
+                            </div>
                           </td>
                           <td className="py-3 px-4">
                             <span
@@ -483,19 +556,19 @@ export function AdminEducation() {
                                 job.priority === 0
                                   ? "bg-red-500/15 text-red-400 border border-red-500/20"
                                   : job.priority === 1
-                                  ? "bg-amber-500/15 text-amber-400 border border-amber-500/20"
-                                  : job.priority === 2
-                                  ? "bg-blue-500/15 text-blue-400 border border-blue-500/20"
-                                  : "bg-zinc-800 text-zinc-400"
+                                    ? "bg-amber-500/15 text-amber-400 border border-amber-500/20"
+                                    : job.priority === 2
+                                      ? "bg-blue-500/15 text-blue-400 border border-blue-500/20"
+                                      : "bg-zinc-800 text-zinc-400"
                               }`}
                             >
                               {job.priority === 0
                                 ? "P0 (Ultra)"
                                 : job.priority === 1
-                                ? "P1 (Retry)"
-                                : job.priority === 2
-                                ? "P2 (Pro)"
-                                : "P3 (Free)"}
+                                  ? "P1 (Retry)"
+                                  : job.priority === 2
+                                    ? "P2 (Pro)"
+                                    : "P3 (Free)"}
                             </span>
                           </td>
                           <td className="py-3 px-4">
@@ -504,10 +577,10 @@ export function AdminEducation() {
                                 job.status === "completed"
                                   ? "text-emerald-400"
                                   : job.status === "processing"
-                                  ? "text-blue-400"
-                                  : job.status === "failed"
-                                  ? "text-red-400"
-                                  : "text-amber-400"
+                                    ? "text-blue-400"
+                                    : job.status === "failed"
+                                      ? "text-red-400"
+                                      : "text-amber-400"
                               }`}
                             >
                               <span
@@ -515,10 +588,10 @@ export function AdminEducation() {
                                   job.status === "completed"
                                     ? "bg-emerald-400"
                                     : job.status === "processing"
-                                    ? "bg-blue-400 animate-pulse"
-                                    : job.status === "failed"
-                                    ? "bg-red-400"
-                                    : "bg-amber-400"
+                                      ? "bg-blue-400 animate-pulse"
+                                      : job.status === "failed"
+                                        ? "bg-red-400"
+                                        : "bg-amber-400"
                                 }`}
                               />
                               {job.status}
@@ -545,20 +618,28 @@ export function AdminEducation() {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => triggerJobMutation.mutate(job.id)}
+                                onClick={() =>
+                                  triggerJobMutation.mutate(job.id)
+                                }
                                 disabled={isTriggering}
                                 className="h-7 px-2.5 text-[10px] font-bold border-white/[0.08] text-white hover:bg-white/[0.06]"
                                 title="Execute this AI generation job immediately"
                               >
-                                <Play className={`w-3 h-3 mr-1 text-emerald-400 ${isTriggering ? "animate-spin" : ""}`} />
-                                {isTriggering ? "Generating..." : "Generate Now"}
+                                <Play
+                                  className={`w-3 h-3 mr-1 text-emerald-400 ${isTriggering ? "animate-spin" : ""}`}
+                                />
+                                {isTriggering
+                                  ? "Generating..."
+                                  : "Generate Now"}
                               </Button>
 
                               {job.status === "failed" && (
                                 <Button
                                   size="sm"
                                   variant="ghost"
-                                  onClick={() => retryJobMutation.mutate(job.id)}
+                                  onClick={() =>
+                                    retryJobMutation.mutate(job.id)
+                                  }
                                   className="h-7 w-7 p-0 text-amber-400 hover:bg-amber-500/10 rounded-md"
                                   title="Reset to pending"
                                 >
@@ -589,7 +670,9 @@ export function AdminEducation() {
             {jobsPagination.totalPages > 1 && (
               <div className="p-3 border-t border-white/[0.06] flex items-center justify-between text-xs text-zinc-500">
                 <span>
-                  Showing page {jobsPagination.page} of {jobsPagination.totalPages} ({jobsPagination.total} total jobs)
+                  Showing page {jobsPagination.page} of{" "}
+                  {jobsPagination.totalPages} ({jobsPagination.total} total
+                  jobs)
                 </span>
                 <div className="flex items-center gap-1.5">
                   <Button
@@ -634,7 +717,10 @@ export function AdminEducation() {
               />
             </div>
             <div className="text-xs text-zinc-500">
-              Total active student plans: <span className="font-bold text-white">{plansPagination.total}</span>
+              Total active student plans:{" "}
+              <span className="font-bold text-white">
+                {plansPagination.total}
+              </span>
             </div>
           </div>
 
@@ -654,14 +740,20 @@ export function AdminEducation() {
                 <tbody className="divide-y divide-white/[0.04]">
                   {plansLoading ? (
                     <tr>
-                      <td colSpan={6} className="py-12 text-center text-zinc-500">
+                      <td
+                        colSpan={6}
+                        className="py-12 text-center text-zinc-500"
+                      >
                         <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-zinc-400" />
                         Loading study plans...
                       </td>
                     </tr>
                   ) : plansList.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="py-12 text-center text-zinc-500">
+                      <td
+                        colSpan={6}
+                        className="py-12 text-center text-zinc-500"
+                      >
                         No study plans found.
                       </td>
                     </tr>
@@ -669,14 +761,22 @@ export function AdminEducation() {
                     plansList.map((plan: any) => {
                       const isQueueing = queueingPlanId === plan.id;
                       return (
-                        <tr key={plan.id} className="hover:bg-white/[0.02] transition-colors">
+                        <tr
+                          key={plan.id}
+                          className="hover:bg-white/[0.02] transition-colors"
+                        >
                           <td className="py-3 px-4">
-                            <div className="font-bold text-white text-sm">{plan.subject}</div>
+                            <div className="font-bold text-white text-sm">
+                              {plan.subject}
+                            </div>
                             <div className="flex items-center gap-2 text-[11px] text-zinc-400 mt-0.5">
                               <User className="w-3 h-3 text-zinc-500" />
                               <span>{plan.user?.email || "student"}</span>
                               {plan.user?.role === "admin" && (
-                                <Badge variant="outline" className="text-[9px] h-4 border-red-500/30 text-red-400">
+                                <Badge
+                                  variant="outline"
+                                  className="text-[9px] h-4 border-red-500/30 text-red-400"
+                                >
                                   Admin
                                 </Badge>
                               )}
@@ -685,9 +785,12 @@ export function AdminEducation() {
                           <td className="py-3 px-4">
                             <div className="flex items-center justify-between text-[11px] text-zinc-300 mb-1">
                               <span>
-                                {plan.completed_topics} / {plan.total_topics} completed
+                                {plan.completed_topics} / {plan.total_topics}{" "}
+                                completed
                               </span>
-                              <span className="font-bold">{plan.progress}%</span>
+                              <span className="font-bold">
+                                {plan.progress}%
+                              </span>
                             </div>
                             <div className="w-36 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
                               <div
@@ -700,17 +803,26 @@ export function AdminEducation() {
                             {plan.has_missing_content ? (
                               <div className="flex items-center gap-1.5 flex-wrap">
                                 {plan.missing_prep_count > 0 && (
-                                  <Badge variant="outline" className="text-[10px] border-amber-500/30 text-amber-400">
+                                  <Badge
+                                    variant="outline"
+                                    className="text-[10px] border-amber-500/30 text-amber-400"
+                                  >
                                     {plan.missing_prep_count} Prep
                                   </Badge>
                                 )}
                                 {plan.missing_handson_count > 0 && (
-                                  <Badge variant="outline" className="text-[10px] border-amber-500/30 text-amber-400">
+                                  <Badge
+                                    variant="outline"
+                                    className="text-[10px] border-amber-500/30 text-amber-400"
+                                  >
                                     {plan.missing_handson_count} Hands-on
                                   </Badge>
                                 )}
                                 {plan.missing_exam_count > 0 && (
-                                  <Badge variant="outline" className="text-[10px] border-amber-500/30 text-amber-400">
+                                  <Badge
+                                    variant="outline"
+                                    className="text-[10px] border-amber-500/30 text-amber-400"
+                                  >
                                     {plan.missing_exam_count} Quiz
                                   </Badge>
                                 )}
@@ -728,11 +840,15 @@ export function AdminEducation() {
                                 {plan.active_jobs_count} queued
                               </Badge>
                             ) : (
-                              <span className="text-zinc-500 text-[11px]">Idle</span>
+                              <span className="text-zinc-500 text-[11px]">
+                                Idle
+                              </span>
                             )}
                           </td>
                           <td className="py-3 px-4 text-zinc-400 font-mono text-[11px]">
-                            {plan.exam_date ? new Date(plan.exam_date).toLocaleDateString() : "Flexible"}
+                            {plan.exam_date
+                              ? new Date(plan.exam_date).toLocaleDateString()
+                              : "Flexible"}
                           </td>
                           <td className="py-3 px-4 text-right">
                             <div className="flex items-center justify-end gap-1.5">
@@ -750,12 +866,19 @@ export function AdminEducation() {
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  onClick={() => queueMissingMutation.mutate({ planId: plan.id, priority: 1 })}
+                                  onClick={() =>
+                                    queueMissingMutation.mutate({
+                                      planId: plan.id,
+                                      priority: 1,
+                                    })
+                                  }
                                   disabled={isQueueing}
                                   className="h-7 px-2 text-[10px] border-amber-500/30 text-amber-400 hover:bg-amber-500/10"
                                   title="Queue all missing materials for this plan"
                                 >
-                                  <Sparkles className={`w-3 h-3 mr-1 ${isQueueing ? "animate-spin" : ""}`} />
+                                  <Sparkles
+                                    className={`w-3 h-3 mr-1 ${isQueueing ? "animate-spin" : ""}`}
+                                  />
                                   {isQueueing ? "Queueing..." : "Queue Missing"}
                                 </Button>
                               )}
@@ -783,7 +906,9 @@ export function AdminEducation() {
             {plansPagination.totalPages > 1 && (
               <div className="p-3 border-t border-white/[0.06] flex items-center justify-between text-xs text-zinc-500">
                 <span>
-                  Showing page {plansPagination.page} of {plansPagination.totalPages} ({plansPagination.total} total plans)
+                  Showing page {plansPagination.page} of{" "}
+                  {plansPagination.totalPages} ({plansPagination.total} total
+                  plans)
                 </span>
                 <div className="flex items-center gap-1.5">
                   <Button
@@ -830,7 +955,10 @@ export function AdminEducation() {
               <div className="p-6 border-b border-white/[0.06] flex items-center justify-between bg-zinc-900/60">
                 <div>
                   <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="border-blue-500/30 text-blue-400 text-[10px]">
+                    <Badge
+                      variant="outline"
+                      className="border-blue-500/30 text-blue-400 text-[10px]"
+                    >
                       Syllabus Inspector
                     </Badge>
                     <span className="text-zinc-500 text-xs font-mono">
@@ -838,17 +966,26 @@ export function AdminEducation() {
                     </span>
                   </div>
                   <h2 className="text-xl font-bold text-white mt-1">
-                    {planDetailsData?.data?.plan?.subject || "Study Plan Details"}
+                    {planDetailsData?.data?.plan?.subject ||
+                      "Study Plan Details"}
                   </h2>
                   <p className="text-zinc-400 text-xs mt-0.5">
-                    User: <span className="text-white font-medium">{planDetailsData?.data?.user?.email}</span>
+                    User:{" "}
+                    <span className="text-white font-medium">
+                      {planDetailsData?.data?.user?.email}
+                    </span>
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => queueMissingMutation.mutate({ planId: selectedPlanId, priority: 1 })}
+                    onClick={() =>
+                      queueMissingMutation.mutate({
+                        planId: selectedPlanId,
+                        priority: 1,
+                      })
+                    }
                     disabled={queueingPlanId === selectedPlanId}
                     className="h-8 text-xs border-amber-500/30 text-amber-400 hover:bg-amber-500/10"
                   >
@@ -885,15 +1022,17 @@ export function AdminEducation() {
                             <span className="w-5 h-5 rounded-full bg-zinc-800 text-zinc-300 font-bold text-[10px] flex items-center justify-center">
                               {topic.index}
                             </span>
-                            <span className="font-bold text-white text-sm">{topic.topic_name}</span>
+                            <span className="font-bold text-white text-sm">
+                              {topic.topic_name}
+                            </span>
                             <Badge
                               variant="outline"
                               className={`text-[9px] capitalize ${
                                 topic.status === "completed"
                                   ? "border-emerald-500/30 text-emerald-400 bg-emerald-500/10"
                                   : topic.status === "in_progress"
-                                  ? "border-blue-500/30 text-blue-400 bg-blue-500/10"
-                                  : "border-zinc-700 text-zinc-400"
+                                    ? "border-blue-500/30 text-blue-400 bg-blue-500/10"
+                                    : "border-zinc-700 text-zinc-400"
                               }`}
                             >
                               {topic.status.replace("_", " ")}
@@ -904,30 +1043,48 @@ export function AdminEducation() {
                             {/* Prep summary indicator */}
                             <span
                               className={`inline-flex items-center gap-1 text-[11px] ${
-                                topic.has_prep ? "text-emerald-400" : "text-amber-400 font-medium"
+                                topic.has_prep
+                                  ? "text-emerald-400"
+                                  : "text-amber-400 font-medium"
                               }`}
                             >
-                              {topic.has_prep ? <Check className="w-3.5 h-3.5" /> : <AlertTriangle className="w-3.5 h-3.5" />}
+                              {topic.has_prep ? (
+                                <Check className="w-3.5 h-3.5" />
+                              ) : (
+                                <AlertTriangle className="w-3.5 h-3.5" />
+                              )}
                               Prep Notes ({topic.flashcard_count} flashcards)
                             </span>
 
                             {/* Hands-on indicator */}
                             <span
                               className={`inline-flex items-center gap-1 text-[11px] ${
-                                topic.has_handson ? "text-emerald-400" : "text-amber-400 font-medium"
+                                topic.has_handson
+                                  ? "text-emerald-400"
+                                  : "text-amber-400 font-medium"
                               }`}
                             >
-                              {topic.has_handson ? <Check className="w-3.5 h-3.5" /> : <AlertTriangle className="w-3.5 h-3.5" />}
+                              {topic.has_handson ? (
+                                <Check className="w-3.5 h-3.5" />
+                              ) : (
+                                <AlertTriangle className="w-3.5 h-3.5" />
+                              )}
                               Hands-On ({topic.hands_on_count} exercises)
                             </span>
 
                             {/* Quiz indicator */}
                             <span
                               className={`inline-flex items-center gap-1 text-[11px] ${
-                                topic.has_exam ? "text-emerald-400" : "text-amber-400 font-medium"
+                                topic.has_exam
+                                  ? "text-emerald-400"
+                                  : "text-amber-400 font-medium"
                               }`}
                             >
-                              {topic.has_exam ? <Check className="w-3.5 h-3.5" /> : <AlertTriangle className="w-3.5 h-3.5" />}
+                              {topic.has_exam ? (
+                                <Check className="w-3.5 h-3.5" />
+                              ) : (
+                                <AlertTriangle className="w-3.5 h-3.5" />
+                              )}
                               Quiz ({topic.exam?.question_count || 5} questions)
                             </span>
                           </div>
@@ -969,13 +1126,19 @@ export function AdminEducation() {
                   <AlertTriangle className="w-5 h-5 text-red-400" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-white text-base">Delete Study Plan?</h3>
-                  <p className="text-xs text-zinc-400">This action cannot be undone.</p>
+                  <h3 className="font-bold text-white text-base">
+                    Delete Study Plan?
+                  </h3>
+                  <p className="text-xs text-zinc-400">
+                    This action cannot be undone.
+                  </p>
                 </div>
               </div>
 
               <p className="text-xs text-zinc-400 leading-relaxed">
-                Deleting this study plan will permanently cascade-delete all of its syllabus topics, flashcards, hands-on exercises, generated exams, and active queue jobs.
+                Deleting this study plan will permanently cascade-delete all of
+                its syllabus topics, flashcards, hands-on exercises, generated
+                exams, and active queue jobs.
               </p>
 
               <div className="flex items-center justify-end gap-2 pt-2">
@@ -995,7 +1158,9 @@ export function AdminEducation() {
                   disabled={deletePlanMutation.isPending}
                   className="h-8 text-xs bg-red-600 hover:bg-red-700 font-bold"
                 >
-                  {deletePlanMutation.isPending ? "Deleting..." : "Delete Plan Permanently"}
+                  {deletePlanMutation.isPending
+                    ? "Deleting..."
+                    : "Delete Plan Permanently"}
                 </Button>
               </div>
             </motion.div>

@@ -502,7 +502,8 @@ export function AdminMonitoring() {
                     </span>
                   </h3>
                   <p className="text-[11px] text-zinc-500 mt-0.5">
-                    Multi-source ATS ingestion (Greenhouse, Lever, Ashby, Workable, RemoteOK, JSearch)
+                    Multi-source ATS ingestion (Greenhouse, Lever, Ashby,
+                    Workable, RemoteOK, JSearch)
                   </p>
                 </div>
               </div>
@@ -526,7 +527,8 @@ export function AdminMonitoring() {
                   {jobStats.totalInDb?.toLocaleString() || 0}
                 </span>
                 <span className="text-[10px] text-emerald-400 block mt-1">
-                  Greenhouse: {jobSources?.inDb?.greenhouse || 0} | Lever: {jobSources?.inDb?.lever || 0}
+                  Greenhouse: {jobSources?.inDb?.greenhouse || 0} | Lever:{" "}
+                  {jobSources?.inDb?.lever || 0}
                 </span>
               </div>
 
@@ -550,7 +552,8 @@ export function AdminMonitoring() {
                   +{jobStats.latestRun?.storedInDb || 0}
                 </span>
                 <span className="text-[10px] text-zinc-500 block mt-1">
-                  Lifetime: {jobStats.lifetime?.totalStored?.toLocaleString() || 0}
+                  Lifetime:{" "}
+                  {jobStats.lifetime?.totalStored?.toLocaleString() || 0}
                 </span>
               </div>
 

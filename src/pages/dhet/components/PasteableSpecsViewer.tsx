@@ -14,7 +14,9 @@ export const PasteableSpecsViewer: React.FC<PasteableSpecsViewerProps> = ({
   aiImagePrompt,
   plainTextSpec,
 }) => {
-  const [activeTab, setActiveTab] = useState<"side-by-side" | "image" | "spec">("side-by-side");
+  const [activeTab, setActiveTab] = useState<"side-by-side" | "image" | "spec">(
+    "side-by-side",
+  );
   const [copied, setCopied] = useState<string | null>(null);
 
   const handleCopy = (text: string, label: string) => {
@@ -43,7 +45,10 @@ export const PasteableSpecsViewer: React.FC<PasteableSpecsViewerProps> = ({
       {/* ── HEADER ─────────────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
-          <h3 className="text-sm font-bold" style={{ color: "hsl(214 32% 88%)" }}>
+          <h3
+            className="text-sm font-bold"
+            style={{ color: "hsl(214 32% 88%)" }}
+          >
             Ready-to-Paste Specifications
           </h3>
           <span
@@ -63,7 +68,10 @@ export const PasteableSpecsViewer: React.FC<PasteableSpecsViewerProps> = ({
           {/* Tab switcher */}
           <div
             className="flex items-center gap-1 p-1 rounded-xl"
-            style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}
+            style={{
+              background: "rgba(255,255,255,0.04)",
+              border: "1px solid rgba(255,255,255,0.06)",
+            }}
           >
             {tabs.map((tab) => {
               const Icon = tab.icon;
@@ -75,9 +83,15 @@ export const PasteableSpecsViewer: React.FC<PasteableSpecsViewerProps> = ({
                   onClick={() => setActiveTab(tab.key)}
                   className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all"
                   style={{
-                    background: isActive ? "rgba(139,92,246,0.2)" : "transparent",
-                    color: isActive ? "rgb(196,181,253)" : "rgba(196,181,253,0.4)",
-                    border: isActive ? "1px solid rgba(139,92,246,0.3)" : "1px solid transparent",
+                    background: isActive
+                      ? "rgba(139,92,246,0.2)"
+                      : "transparent",
+                    color: isActive
+                      ? "rgb(196,181,253)"
+                      : "rgba(196,181,253,0.4)",
+                    border: isActive
+                      ? "1px solid rgba(139,92,246,0.3)"
+                      : "1px solid transparent",
                   }}
                 >
                   <Icon className="w-3 h-3" />
@@ -93,12 +107,23 @@ export const PasteableSpecsViewer: React.FC<PasteableSpecsViewerProps> = ({
             onClick={handleCopyBoth}
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition-all"
             style={{
-              background: copied === "both" ? "rgba(16,185,129,0.12)" : "rgba(255,255,255,0.03)",
-              borderColor: copied === "both" ? "rgba(16,185,129,0.3)" : "rgba(255,255,255,0.07)",
-              color: copied === "both" ? "rgb(52,211,153)" : "rgba(196,181,253,0.6)",
+              background:
+                copied === "both"
+                  ? "rgba(16,185,129,0.12)"
+                  : "rgba(255,255,255,0.03)",
+              borderColor:
+                copied === "both"
+                  ? "rgba(16,185,129,0.3)"
+                  : "rgba(255,255,255,0.07)",
+              color:
+                copied === "both" ? "rgb(52,211,153)" : "rgba(196,181,253,0.6)",
             }}
           >
-            {copied === "both" ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+            {copied === "both" ? (
+              <Check className="w-3.5 h-3.5" />
+            ) : (
+              <Copy className="w-3.5 h-3.5" />
+            )}
             <span>{copied === "both" ? "Copied All" : "Copy Both"}</span>
           </button>
         </div>
@@ -117,7 +142,12 @@ export const PasteableSpecsViewer: React.FC<PasteableSpecsViewerProps> = ({
           >
             <CodeBlock
               label="Midjourney v6 / DALL-E 3"
-              labelIcon={<Sparkles className="w-3.5 h-3.5" style={{ color: "rgb(251,191,36)" }} />}
+              labelIcon={
+                <Sparkles
+                  className="w-3.5 h-3.5"
+                  style={{ color: "rgb(251,191,36)" }}
+                />
+              }
               content={aiImagePrompt || "No image prompt provided."}
               copyLabel="AI Image Prompt"
               copied={copied}
@@ -127,7 +157,12 @@ export const PasteableSpecsViewer: React.FC<PasteableSpecsViewerProps> = ({
             />
             <CodeBlock
               label="Figma Auto-Layout & ChatGPT Spec"
-              labelIcon={<FileCode className="w-3.5 h-3.5" style={{ color: "rgb(167,139,250)" }} />}
+              labelIcon={
+                <FileCode
+                  className="w-3.5 h-3.5"
+                  style={{ color: "rgb(167,139,250)" }}
+                />
+              }
               content={plainTextSpec || "No layout spec provided."}
               copyLabel="Figma Spec"
               copied={copied}
@@ -148,7 +183,12 @@ export const PasteableSpecsViewer: React.FC<PasteableSpecsViewerProps> = ({
           >
             <CodeBlock
               label="Midjourney v6 / DALL-E 3 Generation Prompt"
-              labelIcon={<Sparkles className="w-3.5 h-3.5" style={{ color: "rgb(251,191,36)" }} />}
+              labelIcon={
+                <Sparkles
+                  className="w-3.5 h-3.5"
+                  style={{ color: "rgb(251,191,36)" }}
+                />
+              }
               content={aiImagePrompt || "No image prompt provided."}
               copyLabel="AI Image Prompt"
               copied={copied}
@@ -169,7 +209,12 @@ export const PasteableSpecsViewer: React.FC<PasteableSpecsViewerProps> = ({
           >
             <CodeBlock
               label="Figma Auto-Layout & ChatGPT Spec"
-              labelIcon={<FileCode className="w-3.5 h-3.5" style={{ color: "rgb(167,139,250)" }} />}
+              labelIcon={
+                <FileCode
+                  className="w-3.5 h-3.5"
+                  style={{ color: "rgb(167,139,250)" }}
+                />
+              }
               content={plainTextSpec || "No layout spec provided."}
               copyLabel="Figma Spec"
               copied={copied}
@@ -213,16 +258,19 @@ function CodeBlock({
       className="flex flex-col gap-3 rounded-2xl overflow-hidden border"
       style={{
         background: "rgba(255,255,255,0.02)",
-        borderColor: isCopied ? "rgba(16,185,129,0.3)" : "rgba(255,255,255,0.06)",
+        borderColor: isCopied
+          ? "rgba(16,185,129,0.3)"
+          : "rgba(255,255,255,0.06)",
         transition: "border-color 0.3s",
         boxShadow: isCopied ? "0 0 16px rgba(16,185,129,0.1)" : "none",
       }}
     >
       {/* Header */}
-      <div
-        className="flex items-center justify-between px-4 pt-4"
-      >
-        <span className="text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5" style={{ color: "rgba(196,181,253,0.5)" }}>
+      <div className="flex items-center justify-between px-4 pt-4">
+        <span
+          className="text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5"
+          style={{ color: "rgba(196,181,253,0.5)" }}
+        >
           {labelIcon}
           {label}
         </span>
@@ -234,7 +282,9 @@ function CodeBlock({
           whileTap={{ scale: 0.95 }}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all"
           style={{
-            background: isCopied ? "rgba(16,185,129,0.15)" : "rgba(139,92,246,0.12)",
+            background: isCopied
+              ? "rgba(16,185,129,0.15)"
+              : "rgba(139,92,246,0.12)",
             color: isCopied ? "rgb(52,211,153)" : "rgb(167,139,250)",
             border: `1px solid ${isCopied ? "rgba(16,185,129,0.3)" : "rgba(139,92,246,0.25)"}`,
           }}
@@ -272,7 +322,9 @@ function CodeBlock({
         className={cn(
           "mx-4 rounded-xl border overflow-auto select-text",
           large ? "min-h-[300px]" : "min-h-[200px]",
-          isCode ? "font-mono text-xs leading-relaxed whitespace-pre" : "font-sans text-sm leading-relaxed"
+          isCode
+            ? "font-mono text-xs leading-relaxed whitespace-pre"
+            : "font-sans text-sm leading-relaxed",
         )}
         style={{
           background: isCode ? "rgba(6,8,16,0.6)" : "rgba(255,255,255,0.025)",
@@ -285,9 +337,18 @@ function CodeBlock({
         {/* Line numbers for code */}
         {isCode ? (
           <div className="flex gap-4">
-            <div className="flex flex-col" style={{ color: "rgba(196,181,253,0.2)", userSelect: "none", minWidth: "28px" }}>
+            <div
+              className="flex flex-col"
+              style={{
+                color: "rgba(196,181,253,0.2)",
+                userSelect: "none",
+                minWidth: "28px",
+              }}
+            >
               {content.split("\n").map((_, i) => (
-                <span key={i} className="leading-[1.6] text-right">{i + 1}</span>
+                <span key={i} className="leading-[1.6] text-right">
+                  {i + 1}
+                </span>
               ))}
             </div>
             <div className="flex-1" style={{ color: "rgba(196,181,253,0.75)" }}>

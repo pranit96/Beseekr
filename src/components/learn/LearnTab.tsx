@@ -5,7 +5,16 @@ import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Sparkles, AlertCircle, Loader2, Clock, Zap, Moon, Crown } from "lucide-react";
+import {
+  BookOpen,
+  Sparkles,
+  AlertCircle,
+  Loader2,
+  Clock,
+  Zap,
+  Moon,
+  Crown,
+} from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { MermaidDiagram } from "@/components/ui/MermaidDiagram";
 
@@ -35,9 +44,7 @@ export function LearnTab({
     let text = content;
 
     // 1. Safely unescape literal newlines without touching LaTeX \text, \times, \tau, \theta, etc.
-    text = text
-      .replace(/\\r\\n/g, "\n")
-      .replace(/\\n/g, "\n");
+    text = text.replace(/\\r\\n/g, "\n").replace(/\\n/g, "\n");
 
     // 2. Repair damaged LaTeX tokens from unescaped JSON tabs or missing backslashes
     text = text
@@ -85,7 +92,9 @@ export function LearnTab({
               Queued for Off-Peak Generation at 4:00 AM IST
             </h3>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Your comprehensive study guide & flashcards are scheduled in our nightly off-peak batch. You'll find them ready when you log in tomorrow morning!
+              Your comprehensive study guide & flashcards are scheduled in our
+              nightly off-peak batch. You'll find them ready when you log in
+              tomorrow morning!
             </p>
           </div>
 
@@ -115,7 +124,11 @@ export function LearnTab({
             </div>
             <div>
               <h4 className="text-base font-bold text-foreground flex items-center gap-2">
-                <span>{userTier === "ultra" ? "Generating All Topic Materials (Claude Sonnet)..." : "AI Study Guide Generation in Progress"}</span>
+                <span>
+                  {userTier === "ultra"
+                    ? "Generating All Topic Materials (Claude Sonnet)..."
+                    : "AI Study Guide Generation in Progress"}
+                </span>
                 {elapsedSeconds > 0 && (
                   <span className="inline-flex items-center gap-1 text-xs font-mono px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300">
                     <Clock className="w-3 h-3" /> {elapsedSeconds}s
@@ -132,7 +145,10 @@ export function LearnTab({
             </div>
           </div>
 
-          <Button disabled className="bg-teal-500/30 text-teal-300 border border-teal-500/40 cursor-not-allowed shrink-0">
+          <Button
+            disabled
+            className="bg-teal-500/30 text-teal-300 border border-teal-500/40 cursor-not-allowed shrink-0"
+          >
             <Loader2 className="w-4 h-4 animate-spin mr-2" />
             Generating...
           </Button>

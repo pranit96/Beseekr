@@ -79,21 +79,37 @@ export default function MarkdownRenderer({
       .replace(/[\t ]mathcal\{/g, " \\mathcal{");
 
     // 3. Convert LaTeX standard delimiters \( ... \) to $ ... $ and \[ ... \] to $$ ... $$ for remark-math
-    cleaned = cleaned.replace(/\\\(([\s\S]*?)\\\)/g, (_m, p1) => `$${p1.trim()}$`);
-    cleaned = cleaned.replace(/\\\[([\s\S]*?)\\\]/g, (_m, p1) => `\n\n$$\n${p1.trim()}\n$$\n\n`);
+    cleaned = cleaned.replace(
+      /\\\(([\s\S]*?)\\\)/g,
+      (_m, p1) => `$${p1.trim()}$`,
+    );
+    cleaned = cleaned.replace(
+      /\\\[([\s\S]*?)\\\]/g,
+      (_m, p1) => `\n\n$$\n${p1.trim()}\n$$\n\n`,
+    );
 
     // 4. Convert isolated bracket equations: [ \n <equation> \n ] (e.g., Bellman equation, Q-Learning)
-    cleaned = cleaned.replace(/(^|\n)\[\s*\n([\s\S]*?)\n\s*\](?=\n|$)/g, (match, prefix, mathContent) => {
-      if (/[=+\-*/\\_{}^\$\alpha-\omega\mathbb\mathcal\max\min\sum\int\leftarrow\rightarrow\approx\le\ge\in\forall\exists\partial\nabla]/.test(mathContent)) {
-        return `${prefix}\n\n$$\n${mathContent.trim()}\n$$\n\n`;
-      }
-      return match;
-    });
+    cleaned = cleaned.replace(
+      /(^|\n)\[\s*\n([\s\S]*?)\n\s*\](?=\n|$)/g,
+      (match, prefix, mathContent) => {
+        if (
+          /[=+\-*/\\_{}^\$\alpha-\omega\mathbb\mathcal\max\min\sum\int\leftarrow\rightarrow\approx\le\ge\in\forall\exists\partial\nabla]/.test(
+            mathContent,
+          )
+        ) {
+          return `${prefix}\n\n$$\n${mathContent.trim()}\n$$\n\n`;
+        }
+        return match;
+      },
+    );
 
     // 5. Convert standalone \begin{...} ... \end{...} blocks if not already in $$
-    cleaned = cleaned.replace(/(^|\n)(\\begin\{(?:equation|align|aligned|gather|matrix|pmatrix|bmatrix|vmatrix|cases|split)\*?\}[\s\S]*?\\end\{(?:equation|align|aligned|gather|matrix|pmatrix|bmatrix|vmatrix|cases|split)\*?\})/g, (_match, prefix, env) => {
-      return `${prefix}\n\n$$\n${env.trim()}\n$$\n\n`;
-    });
+    cleaned = cleaned.replace(
+      /(^|\n)(\\begin\{(?:equation|align|aligned|gather|matrix|pmatrix|bmatrix|vmatrix|cases|split)\*?\}[\s\S]*?\\end\{(?:equation|align|aligned|gather|matrix|pmatrix|bmatrix|vmatrix|cases|split)\*?\})/g,
+      (_match, prefix, env) => {
+        return `${prefix}\n\n$$\n${env.trim()}\n$$\n\n`;
+      },
+    );
 
     const lines = cleaned.replace(/\r/g, "").split("\n");
     const out: string[] = [];

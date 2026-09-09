@@ -39,13 +39,15 @@ const NAV = [
     id: "jobs",
     label: "Job Scraper Telemetry",
     icon: Briefcase,
-    description: "Hourly cron scraper cycles, fetched/stored DB metrics, source breakdown & cleanup",
+    description:
+      "Hourly cron scraper cycles, fetched/stored DB metrics, source breakdown & cleanup",
   },
   {
     id: "education",
     label: "Education & Learn AI",
     icon: GraduationCap,
-    description: "AI queue monitor, override generation, user plans & missing content inspector",
+    description:
+      "AI queue monitor, override generation, user plans & missing content inspector",
   },
   {
     id: "settings",

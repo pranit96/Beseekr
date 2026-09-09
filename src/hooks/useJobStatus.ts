@@ -61,7 +61,11 @@ export function useJobStatus(
   }, [jobId]);
 
   // React Query with dynamic refetchInterval
-  const { data: job, isPending, error: queryError } = useQuery({
+  const {
+    data: job,
+    isPending,
+    error: queryError,
+  } = useQuery({
     queryKey: ["education-ai-job", jobId],
     queryFn: async () => {
       const res = await apiClient.get(`/api/education/jobs/${jobId}`);
@@ -96,13 +100,17 @@ export function useJobStatus(
     }
   }, [job?.status, job?.result, jobId]);
 
-  const status: AiJobStatus = job?.status || (jobId && isPending ? "pending" : null);
-  const isLoading = !!jobId && (isPending || status === "pending" || status === "processing");
+  const status: AiJobStatus =
+    job?.status || (jobId && isPending ? "pending" : null);
+  const isLoading =
+    !!jobId && (isPending || status === "pending" || status === "processing");
 
   return {
     status,
     result: job?.result ?? null,
-    error: job?.error_msg || (queryError ? "Failed to check generation status" : null),
+    error:
+      job?.error_msg ||
+      (queryError ? "Failed to check generation status" : null),
     isLoading,
     elapsed,
   };

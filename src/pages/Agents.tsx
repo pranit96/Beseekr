@@ -326,9 +326,11 @@ const Agents = () => {
                 "p-2 rounded-lg transition-colors",
                 agent.is_default
                   ? "opacity-30 cursor-not-allowed text-muted-foreground/40 hover:bg-transparent"
-                  : "text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                  : "text-muted-foreground hover:bg-destructive/10 hover:text-destructive",
               )}
-              title={agent.is_default ? "Default agents cannot be deleted" : "Delete"}
+              title={
+                agent.is_default ? "Default agents cannot be deleted" : "Delete"
+              }
               aria-label={
                 agent.is_default
                   ? `Default agent ${agent.name} cannot be deleted`

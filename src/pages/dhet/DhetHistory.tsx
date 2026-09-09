@@ -32,13 +32,17 @@ export const DhetHistory: React.FC = () => {
       const res = await apiClient.getDhetDesigns(1, 50);
       if (res.success && res.data) setDesigns(res.data);
     } catch (err: any) {
-      toast.error("Failed to load saved designs: " + (err.message || "Unknown error"));
+      toast.error(
+        "Failed to load saved designs: " + (err.message || "Unknown error"),
+      );
     } finally {
       setIsLoading(false);
     }
   };
 
-  useEffect(() => { fetchDesigns(); }, []);
+  useEffect(() => {
+    fetchDesigns();
+  }, []);
 
   const executeDelete = async (id: string, title?: string) => {
     try {
@@ -47,7 +51,9 @@ export const DhetHistory: React.FC = () => {
       setDesigns((prev) => prev.filter((d) => d.id !== id));
       toast.success(`"${title || "Design proposal"}" deleted successfully`);
     } catch (err: any) {
-      toast.error("Failed to delete design: " + (err.message || "Unknown error"));
+      toast.error(
+        "Failed to delete design: " + (err.message || "Unknown error"),
+      );
     } finally {
       setDeletingId(null);
     }
@@ -56,11 +62,22 @@ export const DhetHistory: React.FC = () => {
   const handleDelete = (e: React.MouseEvent, design: DhetDesignRecord) => {
     e.stopPropagation();
     toast(`Delete "${design.title || "Design Proposal"}"?`, {
-      description: "This design proposal will be permanently removed. This action cannot be undone.",
+      description:
+        "This design proposal will be permanently removed. This action cannot be undone.",
       duration: 10000,
-      action: { label: "Delete", onClick: () => executeDelete(design.id, design.title) },
-      cancel: { label: "Cancel", onClick: () => toast.info("Deletion canceled") },
-      actionButtonStyle: { backgroundColor: "#dc2626", color: "#ffffff", fontWeight: "600" },
+      action: {
+        label: "Delete",
+        onClick: () => executeDelete(design.id, design.title),
+      },
+      cancel: {
+        label: "Cancel",
+        onClick: () => toast.info("Deletion canceled"),
+      },
+      actionButtonStyle: {
+        backgroundColor: "#dc2626",
+        color: "#ffffff",
+        fontWeight: "600",
+      },
     });
   };
 
@@ -83,15 +100,23 @@ export const DhetHistory: React.FC = () => {
   const filteredDesigns = designs.filter(
     (d) =>
       (d.title || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (d.initial_prompt || "").toLowerCase().includes(searchQuery.toLowerCase())
+      (d.initial_prompt || "")
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase()),
   );
 
   return (
-    <div className="min-h-screen flex flex-col relative overflow-hidden" style={{ background: "hsl(222 47% 3%)", color: "hsl(214 32% 91%)" }}>
+    <div
+      className="min-h-screen flex flex-col relative overflow-hidden"
+      style={{ background: "hsl(222 47% 3%)", color: "hsl(214 32% 91%)" }}
+    >
       {/* Ambient glow */}
       <div
         className="pointer-events-none fixed top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] z-0"
-        style={{ background: "radial-gradient(ellipse at 50% 0%, rgba(139,92,246,0.1) 0%, transparent 70%)" }}
+        style={{
+          background:
+            "radial-gradient(ellipse at 50% 0%, rgba(139,92,246,0.1) 0%, transparent 70%)",
+        }}
       />
       {/* Grain texture */}
       <div
@@ -124,7 +149,8 @@ export const DhetHistory: React.FC = () => {
                 Saved Proposals
               </h1>
               <p className="text-sm" style={{ color: "rgba(196,181,253,0.5)" }}>
-                Review, re-open, or export your human-centered design specifications.
+                Review, re-open, or export your human-centered design
+                specifications.
               </p>
             </div>
 
@@ -152,7 +178,10 @@ export const DhetHistory: React.FC = () => {
               borderColor: "rgba(255,255,255,0.07)",
             }}
           >
-            <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2" style={{ color: "rgba(196,181,253,0.4)" }} />
+            <Search
+              className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2"
+              style={{ color: "rgba(196,181,253,0.4)" }}
+            />
             <input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -165,13 +194,24 @@ export const DhetHistory: React.FC = () => {
           {/* ── DESIGNS GRID ────────────────────────────────────────────── */}
           {isLoading ? (
             <div className="py-20 flex flex-col items-center justify-center gap-4">
-              <Loader2 className="w-8 h-8 animate-spin" style={{ color: "rgb(167,139,250)" }} />
-              <span className="text-sm" style={{ color: "rgba(196,181,253,0.5)" }}>Loading design proposals...</span>
+              <Loader2
+                className="w-8 h-8 animate-spin"
+                style={{ color: "rgb(167,139,250)" }}
+              />
+              <span
+                className="text-sm"
+                style={{ color: "rgba(196,181,253,0.5)" }}
+              >
+                Loading design proposals...
+              </span>
             </div>
           ) : filteredDesigns.length === 0 ? (
             <div
               className="py-20 border border-dashed rounded-3xl p-10 flex flex-col items-center justify-center text-center gap-5"
-              style={{ borderColor: "rgba(139,92,246,0.15)", background: "rgba(139,92,246,0.03)" }}
+              style={{
+                borderColor: "rgba(139,92,246,0.15)",
+                background: "rgba(139,92,246,0.03)",
+              }}
             >
               {/* Empty state illustration */}
               <div className="relative w-20 h-20">
@@ -180,20 +220,32 @@ export const DhetHistory: React.FC = () => {
                   style={{ background: "rgba(139,92,246,0.1)" }}
                 />
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <Sparkles className="w-10 h-10" style={{ color: "rgb(167,139,250)" }} />
+                  <Sparkles
+                    className="w-10 h-10"
+                    style={{ color: "rgb(167,139,250)" }}
+                  />
                 </div>
                 {/* Orbiting dot */}
                 <div
                   className="absolute -top-1 -right-1 w-4 h-4 rounded-full border-2"
-                  style={{ background: "rgb(167,139,250)", borderColor: "hsl(222 47% 3%)" }}
+                  style={{
+                    background: "rgb(167,139,250)",
+                    borderColor: "hsl(222 47% 3%)",
+                  }}
                 />
               </div>
 
               <div className="flex flex-col gap-2 max-w-sm">
-                <h3 className="font-bold text-xl" style={{ color: "hsl(214 32% 91%)" }}>
+                <h3
+                  className="font-bold text-xl"
+                  style={{ color: "hsl(214 32% 91%)" }}
+                >
                   {searchQuery ? "No designs matched" : "No proposals yet"}
                 </h3>
-                <p className="text-sm leading-relaxed" style={{ color: "rgba(196,181,253,0.5)" }}>
+                <p
+                  className="text-sm leading-relaxed"
+                  style={{ color: "rgba(196,181,253,0.5)" }}
+                >
                   {searchQuery
                     ? "Try a different search term or clear your filter."
                     : "Describe your first product idea in the Studio and generate a full human-centered design specification."}
@@ -217,7 +269,8 @@ export const DhetHistory: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <AnimatePresence>
                 {filteredDesigns.map((design, idx) => {
-                  const colors: Record<string, string> = design.proposal?.design_tokens?.colors || {};
+                  const colors: Record<string, string> =
+                    design.proposal?.design_tokens?.colors || {};
                   const swatchEntries = Object.entries(colors).slice(0, 6);
 
                   return (
@@ -235,12 +288,16 @@ export const DhetHistory: React.FC = () => {
                         borderColor: "rgba(255,255,255,0.07)",
                       }}
                       onMouseEnter={(e) => {
-                        (e.currentTarget as HTMLElement).style.borderColor = "rgba(139,92,246,0.3)";
-                        (e.currentTarget as HTMLElement).style.boxShadow = "0 8px 32px rgba(139,92,246,0.1)";
+                        (e.currentTarget as HTMLElement).style.borderColor =
+                          "rgba(139,92,246,0.3)";
+                        (e.currentTarget as HTMLElement).style.boxShadow =
+                          "0 8px 32px rgba(139,92,246,0.1)";
                       }}
                       onMouseLeave={(e) => {
-                        (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.07)";
-                        (e.currentTarget as HTMLElement).style.boxShadow = "none";
+                        (e.currentTarget as HTMLElement).style.borderColor =
+                          "rgba(255,255,255,0.07)";
+                        (e.currentTarget as HTMLElement).style.boxShadow =
+                          "none";
                       }}
                     >
                       {/* Color swatch strip at top */}
@@ -264,7 +321,10 @@ export const DhetHistory: React.FC = () => {
                             style={{ color: "rgba(196,181,253,0.4)" }}
                           >
                             <Calendar className="w-3.5 h-3.5" />
-                            {new Date(design.created_at).toLocaleDateString("en-US", { dateStyle: "medium" })}
+                            {new Date(design.created_at).toLocaleDateString(
+                              "en-US",
+                              { dateStyle: "medium" },
+                            )}
                           </span>
 
                           <span
@@ -286,7 +346,10 @@ export const DhetHistory: React.FC = () => {
                           {design.title || "Untitled Design"}
                         </h3>
 
-                        <p className="text-xs leading-relaxed line-clamp-2" style={{ color: "rgba(196,181,253,0.45)" }}>
+                        <p
+                          className="text-xs leading-relaxed line-clamp-2"
+                          style={{ color: "rgba(196,181,253,0.45)" }}
+                        >
                           {design.initial_prompt}
                         </p>
                       </div>
@@ -307,15 +370,24 @@ export const DhetHistory: React.FC = () => {
                         <div className="flex items-center gap-1">
                           <button
                             type="button"
-                            onClick={(e) => handleExportPdf(e, design.id, design.title)}
+                            onClick={(e) =>
+                              handleExportPdf(e, design.id, design.title)
+                            }
                             className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-all"
                             style={{
                               background: "transparent",
                               borderColor: "rgba(255,255,255,0.06)",
                               color: "rgba(196,181,253,0.5)",
                             }}
-                            onMouseEnter={(e) => { e.stopPropagation(); (e.currentTarget as HTMLElement).style.color = "rgb(167,139,250)"; }}
-                            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "rgba(196,181,253,0.5)"; }}
+                            onMouseEnter={(e) => {
+                              e.stopPropagation();
+                              (e.currentTarget as HTMLElement).style.color =
+                                "rgb(167,139,250)";
+                            }}
+                            onMouseLeave={(e) => {
+                              (e.currentTarget as HTMLElement).style.color =
+                                "rgba(196,181,253,0.5)";
+                            }}
                           >
                             <Download className="w-3 h-3" />
                             <span className="hidden sm:inline">PDF</span>
@@ -331,8 +403,15 @@ export const DhetHistory: React.FC = () => {
                               borderColor: "rgba(239,68,68,0.12)",
                               color: "rgba(252,165,165,0.5)",
                             }}
-                            onMouseEnter={(e) => { e.stopPropagation(); (e.currentTarget as HTMLElement).style.color = "rgba(252,165,165,0.9)"; }}
-                            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "rgba(252,165,165,0.5)"; }}
+                            onMouseEnter={(e) => {
+                              e.stopPropagation();
+                              (e.currentTarget as HTMLElement).style.color =
+                                "rgba(252,165,165,0.9)";
+                            }}
+                            onMouseLeave={(e) => {
+                              (e.currentTarget as HTMLElement).style.color =
+                                "rgba(252,165,165,0.5)";
+                            }}
                           >
                             <Trash2 className="w-3 h-3" />
                           </button>

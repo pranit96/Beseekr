@@ -76,9 +76,7 @@ export const TopBar = ({
     ...(isLearnByDoingEnabled
       ? [{ key: "learn", name: "Learn", href: "/learn" }]
       : []),
-    ...(isDhetEnabled
-      ? [{ key: "dhet", name: "Design", href: "/dhet" }]
-      : []),
+    ...(isDhetEnabled ? [{ key: "dhet", name: "Design", href: "/dhet" }] : []),
     ...(isHealthPlusEnabled
       ? [{ key: "health_plus", name: "Health+", href: "/health-plus" }]
       : []),

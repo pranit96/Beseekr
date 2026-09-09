@@ -8,7 +8,10 @@ interface DesignDecisionsViewerProps {
   decisions: DesignDecision[];
 }
 
-const AUTHOR_CONFIG: Record<string, { color: string; bg: string; stripe: string; initials: string }> = {
+const AUTHOR_CONFIG: Record<
+  string,
+  { color: string; bg: string; stripe: string; initials: string }
+> = {
   "Don Norman": {
     color: "rgb(251,191,36)",
     bg: "rgba(245,158,11,0.12)",
@@ -59,13 +62,18 @@ const getAuthorConfig = (attribution: string) => {
   };
 };
 
-export const DesignDecisionsViewer: React.FC<DesignDecisionsViewerProps> = ({ decisions }) => {
+export const DesignDecisionsViewer: React.FC<DesignDecisionsViewerProps> = ({
+  decisions,
+}) => {
   const [expandedIdx, setExpandedIdx] = useState<number | null>(0);
 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-bold uppercase tracking-wider" style={{ color: "hsl(214 32% 82%)" }}>
+        <h3
+          className="text-sm font-bold uppercase tracking-wider"
+          style={{ color: "hsl(214 32% 82%)" }}
+        >
           Foundational UX & Heuristic Decisions
         </h3>
         <span
@@ -91,7 +99,9 @@ export const DesignDecisionsViewer: React.FC<DesignDecisionsViewerProps> = ({ de
               className="rounded-2xl overflow-hidden border transition-all duration-200"
               style={{
                 background: isExpanded ? config.bg : "rgba(255,255,255,0.02)",
-                borderColor: isExpanded ? `${config.stripe}50` : "rgba(255,255,255,0.06)",
+                borderColor: isExpanded
+                  ? `${config.stripe}50`
+                  : "rgba(255,255,255,0.06)",
                 boxShadow: isExpanded ? `0 0 20px ${config.stripe}12` : "none",
               }}
             >
@@ -104,13 +114,19 @@ export const DesignDecisionsViewer: React.FC<DesignDecisionsViewerProps> = ({ de
                 {/* Left color stripe */}
                 <div
                   className="absolute left-0 top-0 bottom-0 w-[3px] rounded-l-2xl transition-all"
-                  style={{ background: isExpanded ? config.stripe : "transparent" }}
+                  style={{
+                    background: isExpanded ? config.stripe : "transparent",
+                  }}
                 />
 
                 {/* Author avatar circle */}
                 <div
                   className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-xs font-black"
-                  style={{ background: config.bg, color: config.color, border: `1px solid ${config.stripe}40` }}
+                  style={{
+                    background: config.bg,
+                    color: config.color,
+                    border: `1px solid ${config.stripe}40`,
+                  }}
                 >
                   {config.initials}
                 </div>
@@ -131,16 +147,25 @@ export const DesignDecisionsViewer: React.FC<DesignDecisionsViewerProps> = ({ de
                     </span>
                   </div>
 
-                  <span className="text-xs flex items-center gap-1" style={{ color: config.color, opacity: 0.8 }}>
+                  <span
+                    className="text-xs flex items-center gap-1"
+                    style={{ color: config.color, opacity: 0.8 }}
+                  >
                     <Compass className="w-3 h-3 shrink-0" />
                     {decision.principle}
                   </span>
                 </div>
 
                 {isExpanded ? (
-                  <ChevronDown className="w-4 h-4 shrink-0 mt-0.5" style={{ color: "rgba(196,181,253,0.4)" }} />
+                  <ChevronDown
+                    className="w-4 h-4 shrink-0 mt-0.5"
+                    style={{ color: "rgba(196,181,253,0.4)" }}
+                  />
                 ) : (
-                  <ChevronRight className="w-4 h-4 shrink-0 mt-0.5" style={{ color: "rgba(196,181,253,0.3)" }} />
+                  <ChevronRight
+                    className="w-4 h-4 shrink-0 mt-0.5"
+                    style={{ color: "rgba(196,181,253,0.3)" }}
+                  />
                 )}
               </button>
 

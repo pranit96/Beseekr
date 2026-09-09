@@ -155,12 +155,30 @@ export default function LearnByDoing() {
                   // avoids TopicStudyView receiving topic=null permanently.
                   <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
                     <div className="w-12 h-12 rounded-2xl bg-teal-500/20 flex items-center justify-center border border-teal-500/30 animate-pulse">
-                      <svg className="w-6 h-6 text-teal-400 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                      <svg
+                        className="w-6 h-6 text-teal-400 animate-spin"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8v8z"
+                        />
                       </svg>
                     </div>
-                    <p className="text-sm text-muted-foreground">Loading chapter...</p>
+                    <p className="text-sm text-muted-foreground">
+                      Loading chapter...
+                    </p>
                   </div>
                 ) : (
                   <TopicStudyView

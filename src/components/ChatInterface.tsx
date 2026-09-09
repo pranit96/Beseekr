@@ -1198,7 +1198,9 @@ export const ChatInterface: React.FC<{
               <Tooltip>
                 <TooltipTrigger asChild>
                   <button
-                    onClick={() => setAgentsToolbarExpanded(!agentsToolbarExpanded)}
+                    onClick={() =>
+                      setAgentsToolbarExpanded(!agentsToolbarExpanded)
+                    }
                     className={cn(
                       "h-6 w-6 flex items-center justify-center rounded-full transition-all duration-300",
                       "hover:bg-primary/20 border border-border/50 text-muted-foreground hover:text-primary shadow-sm",
@@ -1253,8 +1255,13 @@ export const ChatInterface: React.FC<{
                               {agent.name}
                             </button>
                           </TooltipTrigger>
-                          <TooltipContent side="bottom" className="text-xs font-medium max-w-xs">
-                            {agent.description ? `${agent.name} — ${agent.description}` : agent.name}
+                          <TooltipContent
+                            side="bottom"
+                            className="text-xs font-medium max-w-xs"
+                          >
+                            {agent.description
+                              ? `${agent.name} — ${agent.description}`
+                              : agent.name}
                           </TooltipContent>
                         </Tooltip>
                       ))}
@@ -1285,8 +1292,13 @@ export const ChatInterface: React.FC<{
                           </span>
                         </button>
                       </TooltipTrigger>
-                      <TooltipContent side="bottom" className="text-xs font-medium max-w-xs">
-                        {cyclingAgent.description ? `${cyclingAgent.name} — ${cyclingAgent.description}` : cyclingAgent.name}
+                      <TooltipContent
+                        side="bottom"
+                        className="text-xs font-medium max-w-xs"
+                      >
+                        {cyclingAgent.description
+                          ? `${cyclingAgent.name} — ${cyclingAgent.description}`
+                          : cyclingAgent.name}
                       </TooltipContent>
                     </Tooltip>
                   );
@@ -1343,7 +1355,9 @@ export const ChatInterface: React.FC<{
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="text-xs font-medium">
-                  {saveToConversation ? "Save to History (Click for Private)" : "Private Mode (Not Saved)"}
+                  {saveToConversation
+                    ? "Save to History (Click for Private)"
+                    : "Private Mode (Not Saved)"}
                 </TooltipContent>
               </Tooltip>
             </div>

@@ -77,12 +77,8 @@ function PlanCard({
   const [editExamDate, setEditExamDate] = useState(plan.exam_date || "");
 
   const progress =
-    resumeData?.data?.progress?.percentage ??
-    plan.progress?.percentage ??
-    0;
-  const resumeTopic =
-    resumeData?.data?.resume_topic ||
-    plan.resume_topic;
+    resumeData?.data?.progress?.percentage ?? plan.progress?.percentage ?? 0;
+  const resumeTopic = resumeData?.data?.resume_topic || plan.resume_topic;
 
   const handleOpenEdit = (e: React.MouseEvent) => {
     e.stopPropagation();

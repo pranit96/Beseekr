@@ -56,8 +56,12 @@ export function PricingDialog({
 }: PricingDialogProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("monthly");
-  const [selectedTier, setSelectedTier] = useState<"pro" | "ultra">(defaultTier);
+  const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">(
+    "monthly",
+  );
+  const [selectedTier, setSelectedTier] = useState<"pro" | "ultra">(
+    defaultTier,
+  );
   const [isCreatingLink, setIsCreatingLink] = useState(false);
   const [currency, setCurrency] = useState<Currency>("INR");
 
@@ -144,7 +148,8 @@ export function PricingDialog({
             Choose Your AI Learning Plan
           </DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground max-w-lg mx-auto">
-            Get instant Claude Sonnet AI generation, zero-wait study guides, prioritized hands-on challenges, and full market intelligence.
+            Get instant Claude Sonnet AI generation, zero-wait study guides,
+            prioritized hands-on challenges, and full market intelligence.
           </DialogDescription>
         </DialogHeader>
 
@@ -272,7 +277,9 @@ export function PricingDialog({
                 <ul className="space-y-2.5 mb-6 text-xs text-muted-foreground">
                   <li className="flex items-start gap-2 text-foreground">
                     <Check className="h-4 w-4 text-teal-400 shrink-0 mt-0.5" />
-                    <span><strong>Priority 1 Queue</strong> for Study Guides</span>
+                    <span>
+                      <strong>Priority 1 Queue</strong> for Study Guides
+                    </span>
                   </li>
                   <li className="flex items-start gap-2">
                     <Check className="h-4 w-4 text-teal-400 shrink-0 mt-0.5" />
@@ -368,7 +375,9 @@ export function PricingDialog({
                   </li>
                   <li className="flex items-start gap-2 text-foreground">
                     <Check className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
-                    <span><strong>Zero wait time</strong> — instant study guides</span>
+                    <span>
+                      <strong>Zero wait time</strong> — instant study guides
+                    </span>
                   </li>
                   <li className="flex items-start gap-2">
                     <Check className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />

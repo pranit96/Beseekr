@@ -125,4 +125,3 @@ export function getIsHealthPlusEnabled(): boolean {
 
   return envFlag;
 }
-

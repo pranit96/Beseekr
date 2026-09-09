@@ -168,7 +168,9 @@ export function AdminJobStats() {
         const q = searchQuery.toLowerCase();
         const matchesId = r.id.toLowerCase().includes(q);
         const matchesTrigger = r.trigger.toLowerCase().includes(q);
-        const matchesJSearch = (r.jsearchQueryUsed || "").toLowerCase().includes(q);
+        const matchesJSearch = (r.jsearchQueryUsed || "")
+          .toLowerCase()
+          .includes(q);
         if (!matchesId && !matchesTrigger && !matchesJSearch) return false;
       }
       return true;
@@ -195,14 +197,17 @@ export function AdminJobStats() {
               </Badge>
             </div>
             <p className="text-xs text-zinc-400">
-              Observability into hourly cron scraping cycles, ATS source ingestion, deduplication, DB persistence, and expiration pruning.
+              Observability into hourly cron scraping cycles, ATS source
+              ingestion, deduplication, DB persistence, and expiration pruning.
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
             {/* Auto-refresh Switch */}
             <div className="flex items-center gap-2 bg-white/[0.03] border border-white/[0.06] rounded-xl px-3 py-2">
-              <span className="text-[11px] font-bold text-zinc-400">Auto (10s)</span>
+              <span className="text-[11px] font-bold text-zinc-400">
+                Auto (10s)
+              </span>
               <Switch
                 checked={autoRefresh}
                 onCheckedChange={setAutoRefresh}
@@ -253,7 +258,8 @@ export function AdminJobStats() {
                   </label>
                 </TooltipTrigger>
                 <TooltipContent className="text-xs max-w-xs">
-                  Bypass the 4-hour quota throttle and execute JSearch RapidAPI query in this cycle.
+                  Bypass the 4-hour quota throttle and execute JSearch RapidAPI
+                  query in this cycle.
                 </TooltipContent>
               </Tooltip>
 
@@ -378,8 +384,13 @@ export function AdminJobStats() {
             {/* Greenhouse Card */}
             <div className="bg-white/[0.02] border border-white/[0.07] rounded-xl p-4 space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-emerald-400">Greenhouse</span>
-                <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-emerald-500/30 text-emerald-400 bg-emerald-500/10">
+                <span className="text-xs font-bold text-emerald-400">
+                  Greenhouse
+                </span>
+                <Badge
+                  variant="outline"
+                  className="text-[9px] px-1.5 py-0 border-emerald-500/30 text-emerald-400 bg-emerald-500/10"
+                >
                   ATS API
                 </Badge>
               </div>
@@ -411,7 +422,10 @@ export function AdminJobStats() {
             <div className="bg-white/[0.02] border border-white/[0.07] rounded-xl p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-blue-400">Lever</span>
-                <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-blue-500/30 text-blue-400 bg-blue-500/10">
+                <Badge
+                  variant="outline"
+                  className="text-[9px] px-1.5 py-0 border-blue-500/30 text-blue-400 bg-blue-500/10"
+                >
                   ATS API
                 </Badge>
               </div>
@@ -443,7 +457,10 @@ export function AdminJobStats() {
             <div className="bg-white/[0.02] border border-white/[0.07] rounded-xl p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-purple-400">Ashby</span>
-                <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-purple-500/30 text-purple-400 bg-purple-500/10">
+                <Badge
+                  variant="outline"
+                  className="text-[9px] px-1.5 py-0 border-purple-500/30 text-purple-400 bg-purple-500/10"
+                >
                   Public API
                 </Badge>
               </div>
@@ -474,8 +491,13 @@ export function AdminJobStats() {
             {/* Workable Card */}
             <div className="bg-white/[0.02] border border-white/[0.07] rounded-xl p-4 space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-amber-400">Workable</span>
-                <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-amber-500/30 text-amber-400 bg-amber-500/10">
+                <span className="text-xs font-bold text-amber-400">
+                  Workable
+                </span>
+                <Badge
+                  variant="outline"
+                  className="text-[9px] px-1.5 py-0 border-amber-500/30 text-amber-400 bg-amber-500/10"
+                >
                   Widget API
                 </Badge>
               </div>
@@ -506,8 +528,13 @@ export function AdminJobStats() {
             {/* RemoteOK Card */}
             <div className="bg-white/[0.02] border border-white/[0.07] rounded-xl p-4 space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-rose-400">RemoteOK</span>
-                <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-rose-500/30 text-rose-400 bg-rose-500/10">
+                <span className="text-xs font-bold text-rose-400">
+                  RemoteOK
+                </span>
+                <Badge
+                  variant="outline"
+                  className="text-[9px] px-1.5 py-0 border-rose-500/30 text-rose-400 bg-rose-500/10"
+                >
                   Board API
                 </Badge>
               </div>
@@ -537,7 +564,10 @@ export function AdminJobStats() {
             <div className="bg-white/[0.02] border border-white/[0.07] rounded-xl p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-cyan-400">JSearch</span>
-                <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-cyan-500/30 text-cyan-400 bg-cyan-500/10">
+                <Badge
+                  variant="outline"
+                  className="text-[9px] px-1.5 py-0 border-cyan-500/30 text-cyan-400 bg-cyan-500/10"
+                >
                   RapidAPI
                 </Badge>
               </div>
@@ -570,7 +600,8 @@ export function AdminJobStats() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-emerald-400" /> Job Age & Freshness Distribution
+                <Calendar className="w-4 h-4 text-emerald-400" /> Job Age &
+                Freshness Distribution
               </h3>
               <p className="text-xs text-zinc-500 mt-0.5">
                 Jobs strictly kept within the 3-day retention horizon
@@ -639,10 +670,12 @@ export function AdminJobStats() {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <Clock className="w-4 h-4 text-indigo-400" /> Cron Execution History
+                <Clock className="w-4 h-4 text-indigo-400" /> Cron Execution
+                History
               </h3>
               <p className="text-xs text-zinc-500 mt-0.5">
-                Column-wise telemetry breakdown for every cron & manual scraper run ({filteredRuns.length} runs shown)
+                Column-wise telemetry breakdown for every cron & manual scraper
+                run ({filteredRuns.length} runs shown)
               </p>
             </div>
 
@@ -666,10 +699,18 @@ export function AdminJobStats() {
                 onChange={(e) => setTriggerFilter(e.target.value)}
                 className="bg-white/[0.03] border border-white/[0.08] rounded-xl px-2.5 py-1.5 text-xs text-zinc-300 focus:outline-none"
               >
-                <option value="all" className="bg-zinc-900">All Triggers</option>
-                <option value="cron" className="bg-zinc-900">Cron (Hourly)</option>
-                <option value="manual" className="bg-zinc-900">Manual</option>
-                <option value="startup" className="bg-zinc-900">Startup</option>
+                <option value="all" className="bg-zinc-900">
+                  All Triggers
+                </option>
+                <option value="cron" className="bg-zinc-900">
+                  Cron (Hourly)
+                </option>
+                <option value="manual" className="bg-zinc-900">
+                  Manual
+                </option>
+                <option value="startup" className="bg-zinc-900">
+                  Startup
+                </option>
               </select>
 
               {/* Status Filter */}
@@ -678,10 +719,18 @@ export function AdminJobStats() {
                 onChange={(e) => setStatusFilter(e.target.value)}
                 className="bg-white/[0.03] border border-white/[0.08] rounded-xl px-2.5 py-1.5 text-xs text-zinc-300 focus:outline-none"
               >
-                <option value="all" className="bg-zinc-900">All Statuses</option>
-                <option value="success" className="bg-zinc-900">Success</option>
-                <option value="partial" className="bg-zinc-900">Partial</option>
-                <option value="failed" className="bg-zinc-900">Failed</option>
+                <option value="all" className="bg-zinc-900">
+                  All Statuses
+                </option>
+                <option value="success" className="bg-zinc-900">
+                  Success
+                </option>
+                <option value="partial" className="bg-zinc-900">
+                  Partial
+                </option>
+                <option value="failed" className="bg-zinc-900">
+                  Failed
+                </option>
               </select>
 
               {/* Clear History */}
@@ -707,26 +756,52 @@ export function AdminJobStats() {
                     <th className="py-3 px-4">Run Time</th>
                     <th className="py-3 px-3">Trigger</th>
                     <th className="py-3 px-3">Status</th>
-                    <th className="py-3 px-2 text-center text-emerald-400">GH</th>
-                    <th className="py-3 px-2 text-center text-blue-400">Lever</th>
-                    <th className="py-3 px-2 text-center text-purple-400">Ashby</th>
-                    <th className="py-3 px-2 text-center text-amber-400">Workable</th>
-                    <th className="py-3 px-2 text-center text-rose-400">RemoteOK</th>
-                    <th className="py-3 px-2 text-center text-cyan-400">JSearch</th>
-                    <th className="py-3 px-3 text-right font-black text-white">Fetched</th>
-                    <th className="py-3 px-3 text-right text-emerald-400 font-black">Stored in DB</th>
-                    <th className="py-3 px-3 text-right text-amber-400 font-black">Cleared</th>
-                    <th className="py-3 px-4 text-right font-black text-sky-400">Total in DB</th>
+                    <th className="py-3 px-2 text-center text-emerald-400">
+                      GH
+                    </th>
+                    <th className="py-3 px-2 text-center text-blue-400">
+                      Lever
+                    </th>
+                    <th className="py-3 px-2 text-center text-purple-400">
+                      Ashby
+                    </th>
+                    <th className="py-3 px-2 text-center text-amber-400">
+                      Workable
+                    </th>
+                    <th className="py-3 px-2 text-center text-rose-400">
+                      RemoteOK
+                    </th>
+                    <th className="py-3 px-2 text-center text-cyan-400">
+                      JSearch
+                    </th>
+                    <th className="py-3 px-3 text-right font-black text-white">
+                      Fetched
+                    </th>
+                    <th className="py-3 px-3 text-right text-emerald-400 font-black">
+                      Stored in DB
+                    </th>
+                    <th className="py-3 px-3 text-right text-amber-400 font-black">
+                      Cleared
+                    </th>
+                    <th className="py-3 px-4 text-right font-black text-sky-400">
+                      Total in DB
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/[0.04] text-zinc-300">
                   {filteredRuns.length === 0 ? (
                     <tr>
-                      <td colSpan={13} className="py-12 text-center text-zinc-500">
+                      <td
+                        colSpan={13}
+                        className="py-12 text-center text-zinc-500"
+                      >
                         <Briefcase className="w-8 h-8 mx-auto text-zinc-600 mb-2 opacity-50" />
-                        <p className="font-semibold text-sm">No scraper execution logs yet</p>
+                        <p className="font-semibold text-sm">
+                          No scraper execution logs yet
+                        </p>
                         <p className="text-[11px] text-zinc-600 mt-1">
-                          Click "Run Scraper Now" above or wait for the next scheduled hourly cron cycle.
+                          Click "Run Scraper Now" above or wait for the next
+                          scheduled hourly cron cycle.
                         </p>
                       </td>
                     </tr>
@@ -864,7 +939,8 @@ export function AdminJobStats() {
               <div className="flex items-center justify-between border-b border-white/[0.08] pb-4">
                 <div>
                   <h4 className="text-base font-bold text-white flex items-center gap-2">
-                    <Briefcase className="w-4 h-4 text-sky-400" /> Run Telemetry Inspector
+                    <Briefcase className="w-4 h-4 text-sky-400" /> Run Telemetry
+                    Inspector
                   </h4>
                   <p className="text-xs text-zinc-500 font-mono mt-0.5">
                     {selectedRun.id}
@@ -882,36 +958,70 @@ export function AdminJobStats() {
 
               <div className="grid grid-cols-2 gap-3 text-xs">
                 <div className="bg-white/[0.02] border border-white/[0.05] p-3 rounded-xl">
-                  <span className="text-zinc-500 font-bold uppercase text-[10px] block">Trigger Type</span>
-                  <span className="text-white font-bold capitalize">{selectedRun.trigger}</span>
+                  <span className="text-zinc-500 font-bold uppercase text-[10px] block">
+                    Trigger Type
+                  </span>
+                  <span className="text-white font-bold capitalize">
+                    {selectedRun.trigger}
+                  </span>
                 </div>
                 <div className="bg-white/[0.02] border border-white/[0.05] p-3 rounded-xl">
-                  <span className="text-zinc-500 font-bold uppercase text-[10px] block">Duration</span>
-                  <span className="text-white font-bold">{selectedRun.durationMs} ms ({(selectedRun.durationMs / 1000).toFixed(2)}s)</span>
+                  <span className="text-zinc-500 font-bold uppercase text-[10px] block">
+                    Duration
+                  </span>
+                  <span className="text-white font-bold">
+                    {selectedRun.durationMs} ms (
+                    {(selectedRun.durationMs / 1000).toFixed(2)}s)
+                  </span>
                 </div>
                 <div className="bg-white/[0.02] border border-white/[0.05] p-3 rounded-xl">
-                  <span className="text-zinc-500 font-bold uppercase text-[10px] block">After 24h Filter</span>
-                  <span className="text-emerald-400 font-bold">{selectedRun.afterFreshnessFilter} jobs</span>
+                  <span className="text-zinc-500 font-bold uppercase text-[10px] block">
+                    After 24h Filter
+                  </span>
+                  <span className="text-emerald-400 font-bold">
+                    {selectedRun.afterFreshnessFilter} jobs
+                  </span>
                 </div>
                 <div className="bg-white/[0.02] border border-white/[0.05] p-3 rounded-xl">
-                  <span className="text-zinc-500 font-bold uppercase text-[10px] block">After Dedup</span>
-                  <span className="text-sky-400 font-bold">{selectedRun.afterDedup} jobs</span>
+                  <span className="text-zinc-500 font-bold uppercase text-[10px] block">
+                    After Dedup
+                  </span>
+                  <span className="text-sky-400 font-bold">
+                    {selectedRun.afterDedup} jobs
+                  </span>
                 </div>
               </div>
 
               <div className="bg-white/[0.02] border border-white/[0.05] p-4 rounded-xl space-y-2 text-xs">
-                <span className="text-zinc-400 font-bold block">Source Breakdown (Fetched in this cycle):</span>
+                <span className="text-zinc-400 font-bold block">
+                  Source Breakdown (Fetched in this cycle):
+                </span>
                 <div className="grid grid-cols-3 gap-2 pt-1 font-mono">
-                  <div className="text-emerald-400">GH: {selectedRun.fetched.greenhouse}</div>
-                  <div className="text-blue-400">Lever: {selectedRun.fetched.lever}</div>
-                  <div className="text-purple-400">Ashby: {selectedRun.fetched.ashby}</div>
-                  <div className="text-amber-400">Workable: {selectedRun.fetched.workable}</div>
-                  <div className="text-rose-400">RemoteOK: {selectedRun.fetched.remoteok}</div>
-                  <div className="text-cyan-400">JSearch: {selectedRun.fetched.jsearch}</div>
+                  <div className="text-emerald-400">
+                    GH: {selectedRun.fetched.greenhouse}
+                  </div>
+                  <div className="text-blue-400">
+                    Lever: {selectedRun.fetched.lever}
+                  </div>
+                  <div className="text-purple-400">
+                    Ashby: {selectedRun.fetched.ashby}
+                  </div>
+                  <div className="text-amber-400">
+                    Workable: {selectedRun.fetched.workable}
+                  </div>
+                  <div className="text-rose-400">
+                    RemoteOK: {selectedRun.fetched.remoteok}
+                  </div>
+                  <div className="text-cyan-400">
+                    JSearch: {selectedRun.fetched.jsearch}
+                  </div>
                 </div>
                 {selectedRun.jsearchQueryUsed && (
                   <div className="pt-2 text-[11px] text-zinc-400">
-                    JSearch Query: <span className="text-cyan-400 font-semibold">"{selectedRun.jsearchQueryUsed}"</span>
+                    JSearch Query:{" "}
+                    <span className="text-cyan-400 font-semibold">
+                      "{selectedRun.jsearchQueryUsed}"
+                    </span>
                   </div>
                 )}
               </div>

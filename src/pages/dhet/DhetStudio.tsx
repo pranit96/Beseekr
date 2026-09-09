@@ -36,7 +36,12 @@ function loadSavedSession(): DhetSavedSession | null {
     const raw = localStorage.getItem(DHET_SESSION_STORAGE_KEY);
     if (!raw) return null;
     const session = JSON.parse(raw);
-    if (session.step === 3 && session.currentDesign && !session.currentDesign.proposal && !session.currentDesign.id) {
+    if (
+      session.step === 3 &&
+      session.currentDesign &&
+      !session.currentDesign.proposal &&
+      !session.currentDesign.id
+    ) {
       session.step = 1;
       session.currentDesign = null;
     }
@@ -62,26 +67,33 @@ export const DhetStudio: React.FC = () => {
   });
 
   const [prompt, setPrompt] = useState<string>(() => {
-    if (location.state?.design?.initial_prompt) return location.state.design.initial_prompt;
+    if (location.state?.design?.initial_prompt)
+      return location.state.design.initial_prompt;
     return savedSession?.prompt || "";
   });
 
-  const [optionsData, setOptionsData] = useState<ClarifyingOptionsData | null>(() => {
-    return savedSession?.optionsData || null;
-  });
+  const [optionsData, setOptionsData] = useState<ClarifyingOptionsData | null>(
+    () => {
+      return savedSession?.optionsData || null;
+    },
+  );
 
   const [selections, setSelections] = useState<Record<string, string>>(() => {
-    if (location.state?.design?.selected_options) return location.state.design.selected_options;
+    if (location.state?.design?.selected_options)
+      return location.state.design.selected_options;
     return savedSession?.selections || {};
   });
 
-  const [currentDesign, setCurrentDesign] = useState<DhetDesignRecord | null>(() => {
-    if (location.state?.design) return location.state.design;
-    return savedSession?.currentDesign || null;
-  });
+  const [currentDesign, setCurrentDesign] = useState<DhetDesignRecord | null>(
+    () => {
+      if (location.state?.design) return location.state.design;
+      return savedSession?.currentDesign || null;
+    },
+  );
 
   const [isLoadingOptions, setIsLoadingOptions] = useState<boolean>(false);
-  const [isGeneratingProposal, setIsGeneratingProposal] = useState<boolean>(false);
+  const [isGeneratingProposal, setIsGeneratingProposal] =
+    useState<boolean>(false);
   const [isLoadingDesign, setIsLoadingDesign] = useState<boolean>(false);
   const [loadingMessageIdx, setLoadingMessageIdx] = useState<number>(0);
 
@@ -89,7 +101,9 @@ export const DhetStudio: React.FC = () => {
     let interval: any;
     if (isLoadingOptions || isGeneratingProposal) {
       interval = setInterval(() => {
-        setLoadingMessageIdx((prev) => (prev + 1) % DESIGN_PROGRESS_MESSAGES.length);
+        setLoadingMessageIdx(
+          (prev) => (prev + 1) % DESIGN_PROGRESS_MESSAGES.length,
+        );
       }, 2200);
     }
     return () => clearInterval(interval);
@@ -100,7 +114,13 @@ export const DhetStudio: React.FC = () => {
       if (!prompt && !optionsData && !currentDesign && step === 1) {
         localStorage.removeItem(DHET_SESSION_STORAGE_KEY);
       } else {
-        const payload: DhetSavedSession = { step, prompt, optionsData, selections, currentDesign };
+        const payload: DhetSavedSession = {
+          step,
+          prompt,
+          optionsData,
+          selections,
+          currentDesign,
+        };
         localStorage.setItem(DHET_SESSION_STORAGE_KEY, JSON.stringify(payload));
       }
     } catch (err) {
@@ -110,8 +130,15 @@ export const DhetStudio: React.FC = () => {
 
   useEffect(() => {
     const idFromUrl = searchParams.get("id");
-    const targetId = idFromUrl || (currentDesign?.id && !currentDesign?.proposal ? currentDesign.id : null);
-    if (targetId && (!currentDesign || currentDesign.id !== targetId || !currentDesign.proposal)) {
+    const targetId =
+      idFromUrl ||
+      (currentDesign?.id && !currentDesign?.proposal ? currentDesign.id : null);
+    if (
+      targetId &&
+      (!currentDesign ||
+        currentDesign.id !== targetId ||
+        !currentDesign.proposal)
+    ) {
       setIsLoadingDesign(true);
       apiClient
         .getDhetDesign(targetId)
@@ -119,7 +146,8 @@ export const DhetStudio: React.FC = () => {
           if (res.success && res.data) {
             setCurrentDesign(res.data);
             setPrompt(res.data.initial_prompt || "");
-            if (res.data.selected_options) setSelections(res.data.selected_options);
+            if (res.data.selected_options)
+              setSelections(res.data.selected_options);
             setStep(3);
           }
         })
@@ -147,7 +175,8 @@ export const DhetStudio: React.FC = () => {
     if (location.state?.design) {
       const designFromState = location.state.design;
       setPrompt(designFromState.initial_prompt || "");
-      if (designFromState.selected_options) setSelections(designFromState.selected_options);
+      if (designFromState.selected_options)
+        setSelections(designFromState.selected_options);
       setStep(3);
       if (designFromState.proposal) {
         setCurrentDesign(designFromState);
@@ -156,7 +185,9 @@ export const DhetStudio: React.FC = () => {
         apiClient
           .getDhetDesign(designFromState.id)
           .then((res) => {
-            setCurrentDesign(res.success && res.data ? res.data : designFromState);
+            setCurrentDesign(
+              res.success && res.data ? res.data : designFromState,
+            );
           })
           .catch(() => setCurrentDesign(designFromState))
           .finally(() => setIsLoadingDesign(false));
@@ -178,13 +209,18 @@ export const DhetStudio: React.FC = () => {
         throw new Error(res.error || "Failed to clarify prompt.");
       }
     } catch (err: any) {
-      toast.error(err.message || "Failed to generate clarifying options. Please try again.");
+      toast.error(
+        err.message ||
+          "Failed to generate clarifying options. Please try again.",
+      );
     } finally {
       setIsLoadingOptions(false);
     }
   };
 
-  const handleOptionsSubmit = async (selectedChoices: Record<string, string>) => {
+  const handleOptionsSubmit = async (
+    selectedChoices: Record<string, string>,
+  ) => {
     try {
       setIsGeneratingProposal(true);
       setSelections(selectedChoices);
@@ -201,14 +237,18 @@ export const DhetStudio: React.FC = () => {
         throw new Error(res.error || "Failed to generate design proposal.");
       }
     } catch (err: any) {
-      toast.error(err.message || "Failed to generate design proposal. Please try again.");
+      toast.error(
+        err.message || "Failed to generate design proposal. Please try again.",
+      );
     } finally {
       setIsGeneratingProposal(false);
     }
   };
 
   const handleReset = () => {
-    try { localStorage.removeItem(DHET_SESSION_STORAGE_KEY); } catch {}
+    try {
+      localStorage.removeItem(DHET_SESSION_STORAGE_KEY);
+    } catch {}
     setStep(1);
     setPrompt("");
     setOptionsData(null);
@@ -221,7 +261,10 @@ export const DhetStudio: React.FC = () => {
   const isLoading = isLoadingOptions || isGeneratingProposal;
 
   return (
-    <div className="min-h-screen flex flex-col relative overflow-hidden" style={{ background: "hsl(222 47% 3%)", color: "hsl(214 32% 91%)" }}>
+    <div
+      className="min-h-screen flex flex-col relative overflow-hidden"
+      style={{ background: "hsl(222 47% 3%)", color: "hsl(214 32% 91%)" }}
+    >
       {/* ── AMBIENT GRAIN TEXTURE ─────────────────────────────────────────── */}
       <div
         className="pointer-events-none fixed inset-0 z-0 opacity-[0.035]"
@@ -235,7 +278,8 @@ export const DhetStudio: React.FC = () => {
       <div
         className="pointer-events-none fixed top-0 left-1/2 -translate-x-1/2 w-[900px] h-[500px] z-0"
         style={{
-          background: "radial-gradient(ellipse at 50% 0%, rgba(139,92,246,0.12) 0%, transparent 70%)",
+          background:
+            "radial-gradient(ellipse at 50% 0%, rgba(139,92,246,0.12) 0%, transparent 70%)",
         }}
       />
 
@@ -254,15 +298,17 @@ export const DhetStudio: React.FC = () => {
                   if (s === 2 && optionsData) setStep(2);
                   if (s === 3 && currentDesign) setStep(3);
                 }}
-                disabled={(s === 2 && !optionsData) || (s === 3 && !currentDesign)}
+                disabled={
+                  (s === 2 && !optionsData) || (s === 3 && !currentDesign)
+                }
                 title={["Concept", "Clarify", "Proposal"][s - 1]}
                 className={cn(
                   "transition-all duration-300 rounded-full border",
                   step === s
                     ? "w-2.5 h-8 bg-violet-500 border-violet-400 shadow-[0_0_12px_rgba(139,92,246,0.7)]"
                     : s < step
-                    ? "w-2 h-2 bg-violet-600/60 border-violet-500/40"
-                    : "w-2 h-2 bg-white/10 border-white/10"
+                      ? "w-2 h-2 bg-violet-600/60 border-violet-500/40"
+                      : "w-2 h-2 bg-white/10 border-white/10",
                 )}
               />
             ))}
@@ -279,16 +325,23 @@ export const DhetStudio: React.FC = () => {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
               className="fixed inset-0 z-50 flex flex-col items-center justify-center"
-              style={{ background: "rgba(8, 10, 18, 0.92)", backdropFilter: "blur(16px)" }}
+              style={{
+                background: "rgba(8, 10, 18, 0.92)",
+                backdropFilter: "blur(16px)",
+              }}
             >
               {/* Animated glow ring */}
               <div className="relative w-24 h-24 mb-8">
-                <div className="absolute inset-0 rounded-full border-2 border-violet-500/20 animate-ping" style={{ animationDuration: "2s" }} />
+                <div
+                  className="absolute inset-0 rounded-full border-2 border-violet-500/20 animate-ping"
+                  style={{ animationDuration: "2s" }}
+                />
                 <div className="absolute inset-2 rounded-full border border-violet-400/30 animate-pulse" />
                 <div
                   className="absolute inset-0 rounded-full"
                   style={{
-                    background: "conic-gradient(from 0deg, transparent 0%, rgba(139,92,246,0.6) 30%, transparent 60%)",
+                    background:
+                      "conic-gradient(from 0deg, transparent 0%, rgba(139,92,246,0.6) 30%, transparent 60%)",
                     animation: "spin 1.4s linear infinite",
                   }}
                 />
@@ -296,12 +349,26 @@ export const DhetStudio: React.FC = () => {
                   className="absolute inset-1.5 rounded-full"
                   style={{ background: "hsl(222 47% 5%)" }}
                 />
-                <div
-                  className="absolute inset-0 flex items-center justify-center"
-                >
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" className="text-violet-400">
-                    <path d="M12 3L4 9v6l8 6 8-6V9l-8-6z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
-                    <path d="M12 3v18M4 9l8 6 8-6" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <svg
+                    width="28"
+                    height="28"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    className="text-violet-400"
+                  >
+                    <path
+                      d="M12 3L4 9v6l8 6 8-6V9l-8-6z"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinejoin="round"
+                    />
+                    <path
+                      d="M12 3v18M4 9l8 6 8-6"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinejoin="round"
+                    />
                   </svg>
                 </div>
               </div>
@@ -310,7 +377,10 @@ export const DhetStudio: React.FC = () => {
               <div className="w-64 h-[2px] rounded-full bg-white/5 mb-6 overflow-hidden">
                 <motion.div
                   className="h-full rounded-full"
-                  style={{ background: "linear-gradient(90deg, #6d28d9, #8b5cf6, #a78bfa)" }}
+                  style={{
+                    background:
+                      "linear-gradient(90deg, #6d28d9, #8b5cf6, #a78bfa)",
+                  }}
                   initial={{ x: "-100%" }}
                   animate={{ x: "200%" }}
                   transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
@@ -359,34 +429,64 @@ export const DhetStudio: React.FC = () => {
               />
             )}
 
-            {step === 3 && (isLoadingDesign || (currentDesign && !currentDesign.proposal)) && (
-              <motion.div
-                key="step-3-loading"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="flex-1 flex flex-col items-center justify-center py-24 gap-6 text-center"
-              >
-                <div className="w-16 h-16 rounded-2xl flex items-center justify-center relative">
-                  <div className="absolute inset-0 rounded-2xl animate-pulse" style={{ background: "rgba(139,92,246,0.15)" }} />
-                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" className="relative z-10" style={{ color: "rgb(167,139,250)" }}>
-                    <path d="M12 3L4 9v6l8 6 8-6V9l-8-6z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
-                  </svg>
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <h2 className="text-lg font-bold" style={{ color: "hsl(214 32% 91%)" }}>Loading Design Proposal...</h2>
-                  <p className="text-sm" style={{ color: "rgba(196,181,253,0.6)" }}>Retrieving full specification and architectural blueprint.</p>
-                </div>
-              </motion.div>
-            )}
+            {step === 3 &&
+              (isLoadingDesign ||
+                (currentDesign && !currentDesign.proposal)) && (
+                <motion.div
+                  key="step-3-loading"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="flex-1 flex flex-col items-center justify-center py-24 gap-6 text-center"
+                >
+                  <div className="w-16 h-16 rounded-2xl flex items-center justify-center relative">
+                    <div
+                      className="absolute inset-0 rounded-2xl animate-pulse"
+                      style={{ background: "rgba(139,92,246,0.15)" }}
+                    />
+                    <svg
+                      width="32"
+                      height="32"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      className="relative z-10"
+                      style={{ color: "rgb(167,139,250)" }}
+                    >
+                      <path
+                        d="M12 3L4 9v6l8 6 8-6V9l-8-6z"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <h2
+                      className="text-lg font-bold"
+                      style={{ color: "hsl(214 32% 91%)" }}
+                    >
+                      Loading Design Proposal...
+                    </h2>
+                    <p
+                      className="text-sm"
+                      style={{ color: "rgba(196,181,253,0.6)" }}
+                    >
+                      Retrieving full specification and architectural blueprint.
+                    </p>
+                  </div>
+                </motion.div>
+              )}
 
-            {step === 3 && currentDesign && currentDesign.proposal && !isLoadingDesign && (
-              <Step3ProposalView
-                key="step-3"
-                design={currentDesign}
-                onReset={handleReset}
-              />
-            )}
+            {step === 3 &&
+              currentDesign &&
+              currentDesign.proposal &&
+              !isLoadingDesign && (
+                <Step3ProposalView
+                  key="step-3"
+                  design={currentDesign}
+                  onReset={handleReset}
+                />
+              )}
           </AnimatePresence>
         </main>
 

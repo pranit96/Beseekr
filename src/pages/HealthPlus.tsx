@@ -54,7 +54,11 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { healthPlusApi, type RecipeData, type GenerateRecipeResponse } from "@/api/healthPlus";
+import {
+  healthPlusApi,
+  type RecipeData,
+  type GenerateRecipeResponse,
+} from "@/api/healthPlus";
 
 const MEAL_SLOTS = [
   { id: "breakfast", label: "Breakfast", icon: "🌅", hours: [5, 11] },
@@ -151,7 +155,8 @@ export default function HealthPlus() {
   }, [profile?.dietary_preference]);
 
   // 2. Recipe Generation Mutation
-  const [recipeResult, setRecipeResult] = useState<GenerateRecipeResponse | null>(null);
+  const [recipeResult, setRecipeResult] =
+    useState<GenerateRecipeResponse | null>(null);
 
   const generateMutation = useMutation({
     mutationFn: (overrideSlot?: string | void) =>
@@ -174,23 +179,35 @@ export default function HealthPlus() {
     onError: (err: any) => {
       toast({
         title: "Recipe Generation Failed",
-        description: err.message || "Failed to generate recipe. Please try again.",
+        description:
+          err.message || "Failed to generate recipe. Please try again.",
         variant: "destructive",
       });
     },
   });
 
   // 3. Update Profile Mutation
-  const [editWeight, setEditWeight] = useState<number>(profile?.current_weight_kg || 70);
-  const [editTargetWeight, setEditTargetWeight] = useState<number>(profile?.target_weight_kg || 68);
-  const [editHeight, setEditHeight] = useState<number>(profile?.height_cm || 175);
-  const [editGoal, setEditGoal] = useState<string>(profile?.primary_goal || "lean_muscle");
-  const [editActivity, setEditActivity] = useState<string>(profile?.activity_level || "moderately_active");
+  const [editWeight, setEditWeight] = useState<number>(
+    profile?.current_weight_kg || 70,
+  );
+  const [editTargetWeight, setEditTargetWeight] = useState<number>(
+    profile?.target_weight_kg || 68,
+  );
+  const [editHeight, setEditHeight] = useState<number>(
+    profile?.height_cm || 175,
+  );
+  const [editGoal, setEditGoal] = useState<string>(
+    profile?.primary_goal || "lean_muscle",
+  );
+  const [editActivity, setEditActivity] = useState<string>(
+    profile?.activity_level || "moderately_active",
+  );
 
   useEffect(() => {
     if (profile) {
       if (profile.current_weight_kg) setEditWeight(profile.current_weight_kg);
-      if (profile.target_weight_kg) setEditTargetWeight(profile.target_weight_kg);
+      if (profile.target_weight_kg)
+        setEditTargetWeight(profile.target_weight_kg);
       if (profile.height_cm) setEditHeight(profile.height_cm);
       if (profile.primary_goal) setEditGoal(profile.primary_goal);
       if (profile.activity_level) setEditActivity(profile.activity_level);
@@ -212,7 +229,8 @@ export default function HealthPlus() {
       setProfileModalOpen(false);
       toast({
         title: "Metabolic Profile Updated",
-        description: "Your BMR, TDEE, and daily macro targets have been recalculated.",
+        description:
+          "Your BMR, TDEE, and daily macro targets have been recalculated.",
       });
     },
   });
@@ -222,8 +240,11 @@ export default function HealthPlus() {
     mutationFn: (items: any[]) => healthPlusApi.syncInstamartCart(items),
     onSuccess: (res) => {
       toast({
-        title: res.data?.syncedViaMcp ? "Synced with Swiggy Instamart!" : "Instamart Cart Ready!",
-        description: res.data?.message || "Items mapped and ready for checkout.",
+        title: res.data?.syncedViaMcp
+          ? "Synced with Swiggy Instamart!"
+          : "Instamart Cart Ready!",
+        description:
+          res.data?.message || "Items mapped and ready for checkout.",
       });
     },
   });
@@ -297,7 +318,8 @@ export default function HealthPlus() {
                     )}
                   </div>
                   <p className="text-sm sm:text-base text-muted-foreground mt-1">
-                    Precision metabolic recipe planner synced to Swiggy Instamart groceries, Food delivery & clean dining.
+                    Precision metabolic recipe planner synced to Swiggy
+                    Instamart groceries, Food delivery & clean dining.
                   </p>
                 </div>
               </div>
@@ -322,7 +344,10 @@ export default function HealthPlus() {
                 </Link>
               )}
 
-              <Dialog open={profileModalOpen} onOpenChange={setProfileModalOpen}>
+              <Dialog
+                open={profileModalOpen}
+                onOpenChange={setProfileModalOpen}
+              >
                 <DialogTrigger asChild>
                   <Button
                     id="edit-metabolic-profile-btn"
@@ -335,9 +360,12 @@ export default function HealthPlus() {
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-[480px]">
                   <DialogHeader>
-                    <DialogTitle>Metabolic Profile & Nutrition Goals</DialogTitle>
+                    <DialogTitle>
+                      Metabolic Profile & Nutrition Goals
+                    </DialogTitle>
                     <DialogDescription>
-                      Recalibrate your Mifflin-St Jeor BMR, TDEE, and daily macro targets.
+                      Recalibrate your Mifflin-St Jeor BMR, TDEE, and daily
+                      macro targets.
                     </DialogDescription>
                   </DialogHeader>
                   <div className="grid gap-4 py-4">
@@ -348,7 +376,9 @@ export default function HealthPlus() {
                           id="weight"
                           type="number"
                           value={editWeight}
-                          onChange={(e) => setEditWeight(Number(e.target.value))}
+                          onChange={(e) =>
+                            setEditWeight(Number(e.target.value))
+                          }
                         />
                       </div>
                       <div>
@@ -357,7 +387,9 @@ export default function HealthPlus() {
                           id="targetWeight"
                           type="number"
                           value={editTargetWeight}
-                          onChange={(e) => setEditTargetWeight(Number(e.target.value))}
+                          onChange={(e) =>
+                            setEditTargetWeight(Number(e.target.value))
+                          }
                         />
                       </div>
                     </div>
@@ -369,20 +401,33 @@ export default function HealthPlus() {
                           id="height"
                           type="number"
                           value={editHeight}
-                          onChange={(e) => setEditHeight(Number(e.target.value))}
+                          onChange={(e) =>
+                            setEditHeight(Number(e.target.value))
+                          }
                         />
                       </div>
                       <div>
                         <Label htmlFor="activity">Activity Level</Label>
-                        <Select value={editActivity} onValueChange={setEditActivity}>
+                        <Select
+                          value={editActivity}
+                          onValueChange={setEditActivity}
+                        >
                           <SelectTrigger id="activity">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="sedentary">Sedentary (Desk Job)</SelectItem>
-                            <SelectItem value="lightly_active">Lightly Active (1-2 days)</SelectItem>
-                            <SelectItem value="moderately_active">Moderately Active (3-5 days)</SelectItem>
-                            <SelectItem value="very_active">Very Active (6-7 days)</SelectItem>
+                            <SelectItem value="sedentary">
+                              Sedentary (Desk Job)
+                            </SelectItem>
+                            <SelectItem value="lightly_active">
+                              Lightly Active (1-2 days)
+                            </SelectItem>
+                            <SelectItem value="moderately_active">
+                              Moderately Active (3-5 days)
+                            </SelectItem>
+                            <SelectItem value="very_active">
+                              Very Active (6-7 days)
+                            </SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -395,10 +440,18 @@ export default function HealthPlus() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="lean_muscle">Hypertrophy / Lean Muscle (+ surplus)</SelectItem>
-                          <SelectItem value="fat_loss">Fat Loss & Definition (- deficit)</SelectItem>
-                          <SelectItem value="maintenance">Metabolic Health & Maintenance</SelectItem>
-                          <SelectItem value="longevity">Longevity & Anti-Inflammatory</SelectItem>
+                          <SelectItem value="lean_muscle">
+                            Hypertrophy / Lean Muscle (+ surplus)
+                          </SelectItem>
+                          <SelectItem value="fat_loss">
+                            Fat Loss & Definition (- deficit)
+                          </SelectItem>
+                          <SelectItem value="maintenance">
+                            Metabolic Health & Maintenance
+                          </SelectItem>
+                          <SelectItem value="longevity">
+                            Longevity & Anti-Inflammatory
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -410,7 +463,9 @@ export default function HealthPlus() {
                       disabled={updateProfileMutation.isPending}
                       className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl"
                     >
-                      {updateProfileMutation.isPending ? "Recalculating..." : "Save & Update Targets"}
+                      {updateProfileMutation.isPending
+                        ? "Recalculating..."
+                        : "Save & Update Targets"}
                     </Button>
                   </DialogFooter>
                 </DialogContent>
@@ -427,10 +482,13 @@ export default function HealthPlus() {
               </div>
               <div className="text-2xl font-extrabold tracking-tight text-foreground">
                 {metabolic?.targetCalories || 2150}{" "}
-                <span className="text-xs font-normal text-muted-foreground">kcal</span>
+                <span className="text-xs font-normal text-muted-foreground">
+                  kcal
+                </span>
               </div>
               <div className="text-[11px] text-muted-foreground mt-1">
-                BMR: {metabolic?.bmr || 1650} kcal · TDEE: {metabolic?.tdee || 2100}
+                BMR: {metabolic?.bmr || 1650} kcal · TDEE:{" "}
+                {metabolic?.tdee || 2100}
               </div>
             </div>
 
@@ -441,10 +499,13 @@ export default function HealthPlus() {
               </div>
               <div className="text-2xl font-extrabold tracking-tight text-emerald-600 dark:text-emerald-400">
                 {metabolic?.targetProteinG || 135}{" "}
-                <span className="text-xs font-normal text-muted-foreground">g</span>
+                <span className="text-xs font-normal text-muted-foreground">
+                  g
+                </span>
               </div>
               <div className="text-[11px] text-muted-foreground mt-1">
-                ~{Math.round((metabolic?.targetProteinG || 135) * 0.35)}g per main meal
+                ~{Math.round((metabolic?.targetProteinG || 135) * 0.35)}g per
+                main meal
               </div>
             </div>
 
@@ -468,7 +529,9 @@ export default function HealthPlus() {
               </div>
               <div className="flex items-center gap-1.5 mt-1">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-sm font-semibold text-foreground">3-Way Action</span>
+                <span className="text-sm font-semibold text-foreground">
+                  3-Way Action
+                </span>
               </div>
               <div className="text-[11px] text-muted-foreground mt-1">
                 Instamart · Food · Dineout
@@ -489,15 +552,21 @@ export default function HealthPlus() {
                 Personalized Recipe Studio
               </h2>
               <p className="text-xs sm:text-sm text-muted-foreground">
-                Select your meal slot, prep time, and dietary preference to synthesize an optimal dish.
+                Select your meal slot, prep time, and dietary preference to
+                synthesize an optimal dish.
               </p>
             </div>
 
             {/* Dietary Style Selector */}
             <div className="flex items-center gap-2">
-              <span className="text-xs font-medium text-muted-foreground">Diet:</span>
+              <span className="text-xs font-medium text-muted-foreground">
+                Diet:
+              </span>
               <Select value={selectedDiet} onValueChange={setSelectedDiet}>
-                <SelectTrigger id="diet-type-trigger" className="w-[180px] rounded-xl bg-muted/30">
+                <SelectTrigger
+                  id="diet-type-trigger"
+                  className="w-[180px] rounded-xl bg-muted/30"
+                >
                   <SelectValue placeholder="Diet Type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -558,10 +627,14 @@ export default function HealthPlus() {
                     }`}
                   >
                     <div className="flex items-center justify-between">
-                      <span className="font-semibold text-sm text-foreground">{prep.label}</span>
+                      <span className="font-semibold text-sm text-foreground">
+                        {prep.label}
+                      </span>
                       <Clock className="w-4 h-4 opacity-60" />
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1">{prep.desc}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {prep.desc}
+                    </p>
                   </button>
                 );
               })}
@@ -571,7 +644,9 @@ export default function HealthPlus() {
           {/* Servings & Generate CTA */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 pt-4 border-t border-border/30">
             <div className="flex items-center gap-3">
-              <span className="text-xs text-muted-foreground font-medium">Servings:</span>
+              <span className="text-xs text-muted-foreground font-medium">
+                Servings:
+              </span>
               {[1, 2, 4].map((s) => (
                 <Button
                   key={s}
@@ -632,11 +707,15 @@ export default function HealthPlus() {
                   className="group p-5 rounded-3xl border border-border/50 bg-card/60 hover:bg-card hover:border-emerald-500/40 backdrop-blur-xl transition-all cursor-pointer space-y-3 shadow-sm hover:shadow-md"
                 >
                   <div className="flex items-center justify-between">
-                    <Badge variant="outline" className="border-emerald-500/30 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 text-[10px]">
+                    <Badge
+                      variant="outline"
+                      className="border-emerald-500/30 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 text-[10px]"
+                    >
                       {insp.badge}
                     </Badge>
                     <span className="text-xs text-muted-foreground group-hover:text-emerald-600 dark:group-hover:text-emerald-400 flex items-center gap-1 transition-colors">
-                      Quick Craft <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+                      Quick Craft{" "}
+                      <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
                     </span>
                   </div>
                   <h4 className="font-bold text-base text-foreground group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
@@ -653,19 +732,31 @@ export default function HealthPlus() {
 
         {/* ─── Recipe Showcase & Swiggy Action Hub ─────────────────────────── */}
         {recipe && (
-          <section id="recipe-results-section" className="space-y-8 animate-in fade-in duration-500">
+          <section
+            id="recipe-results-section"
+            className="space-y-8 animate-in fade-in duration-500"
+          >
             {/* Main Recipe Card */}
             <div className="rounded-3xl border border-border/50 bg-card/80 backdrop-blur-xl p-6 sm:p-8 shadow-xl shadow-black/5 space-y-6">
               <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                 <div className="space-y-2">
                   <div className="flex flex-wrap items-center gap-2">
-                    <Badge variant="outline" className="border-emerald-500/40 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10">
+                    <Badge
+                      variant="outline"
+                      className="border-emerald-500/40 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10"
+                    >
                       {recipe.cuisine}
                     </Badge>
-                    <Badge variant="outline" className="border-teal-500/40 text-teal-600 dark:text-teal-400 bg-teal-500/10">
+                    <Badge
+                      variant="outline"
+                      className="border-teal-500/40 text-teal-600 dark:text-teal-400 bg-teal-500/10"
+                    >
                       {recipe.difficulty}
                     </Badge>
-                    <Badge variant="outline" className="border-amber-500/40 text-amber-600 dark:text-amber-400 bg-amber-500/10">
+                    <Badge
+                      variant="outline"
+                      className="border-amber-500/40 text-amber-600 dark:text-amber-400 bg-amber-500/10"
+                    >
                       ⏱️ {recipe.prepTimeMinutes + recipe.cookTimeMinutes} mins
                     </Badge>
                   </div>
@@ -681,31 +772,44 @@ export default function HealthPlus() {
               {/* Macro Gauges Bar */}
               <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 p-4 rounded-2xl bg-muted/30 border border-border/40">
                 <div className="text-center">
-                  <span className="text-xs text-muted-foreground font-medium">Energy</span>
+                  <span className="text-xs text-muted-foreground font-medium">
+                    Energy
+                  </span>
                   <div className="text-xl sm:text-2xl font-extrabold text-foreground mt-0.5">
-                    {recipe.caloriesKcal} <span className="text-xs font-normal text-muted-foreground">kcal</span>
+                    {recipe.caloriesKcal}{" "}
+                    <span className="text-xs font-normal text-muted-foreground">
+                      kcal
+                    </span>
                   </div>
                 </div>
                 <div className="text-center">
-                  <span className="text-xs text-muted-foreground font-medium">Protein</span>
+                  <span className="text-xs text-muted-foreground font-medium">
+                    Protein
+                  </span>
                   <div className="text-xl sm:text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-0.5">
                     {recipe.proteinG}g
                   </div>
                 </div>
                 <div className="text-center">
-                  <span className="text-xs text-muted-foreground font-medium">Net Carbs</span>
+                  <span className="text-xs text-muted-foreground font-medium">
+                    Net Carbs
+                  </span>
                   <div className="text-xl sm:text-2xl font-extrabold text-amber-600 dark:text-amber-400 mt-0.5">
                     {recipe.carbsG}g
                   </div>
                 </div>
                 <div className="text-center">
-                  <span className="text-xs text-muted-foreground font-medium">Dietary Fiber</span>
+                  <span className="text-xs text-muted-foreground font-medium">
+                    Dietary Fiber
+                  </span>
                   <div className="text-xl sm:text-2xl font-extrabold text-teal-600 dark:text-teal-400 mt-0.5">
                     {recipe.fiberG}g
                   </div>
                 </div>
                 <div className="text-center col-span-2 sm:col-span-1">
-                  <span className="text-xs text-muted-foreground font-medium">Healthy Fats</span>
+                  <span className="text-xs text-muted-foreground font-medium">
+                    Healthy Fats
+                  </span>
                   <div className="text-xl sm:text-2xl font-extrabold text-indigo-600 dark:text-indigo-400 mt-0.5">
                     {recipe.fatG}g
                   </div>
@@ -716,7 +820,9 @@ export default function HealthPlus() {
               <div className="p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/20 flex items-start gap-3.5">
                 <ShieldCheck className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
                 <div className="text-xs sm:text-sm text-foreground space-y-1">
-                  <span className="font-semibold text-emerald-600 dark:text-emerald-400">Metabolic Rationale: </span>
+                  <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                    Metabolic Rationale:{" "}
+                  </span>
                   <span>{recipe.metabolicMatchReason}</span>
                 </div>
               </div>
@@ -750,7 +856,9 @@ export default function HealthPlus() {
                         >
                           {isDone && <CheckCircle2 className="w-3.5 h-3.5" />}
                         </button>
-                        <span className="text-xs sm:text-sm leading-relaxed">{step}</span>
+                        <span className="text-xs sm:text-sm leading-relaxed">
+                          {step}
+                        </span>
                       </div>
                     );
                   })}
@@ -787,12 +895,17 @@ export default function HealthPlus() {
                     Swiggy 3-Way Realistic Action Hub
                   </h3>
                   <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-                    Cook fresh via Instamart, order ready-made on Swiggy Food, or reserve a clean-eating table via Dineout.
+                    Cook fresh via Instamart, order ready-made on Swiggy Food,
+                    or reserve a clean-eating table via Dineout.
                   </p>
                 </div>
               </div>
 
-              <Tabs value={activeSwiggyTab} onValueChange={setActiveSwiggyTab} className="w-full">
+              <Tabs
+                value={activeSwiggyTab}
+                onValueChange={setActiveSwiggyTab}
+                className="w-full"
+              >
                 <TabsList className="grid grid-cols-3 w-full rounded-2xl bg-muted/40 p-1 border border-border/30">
                   <TabsTrigger
                     value="instamart"
@@ -831,13 +944,18 @@ export default function HealthPlus() {
                         onChange={(e) => setIncludePantry(e.target.checked)}
                         className="rounded border-border/50 text-emerald-600 focus:ring-emerald-500 w-4 h-4"
                       />
-                      <Label htmlFor="pantry-toggle" className="text-xs text-muted-foreground cursor-pointer">
+                      <Label
+                        htmlFor="pantry-toggle"
+                        className="text-xs text-muted-foreground cursor-pointer"
+                      >
                         Include common pantry staples (oil, basic spices, salt)
                       </Label>
                     </div>
 
                     <div className="flex items-center gap-3">
-                      <span className="text-xs text-muted-foreground">Estimated Basket:</span>
+                      <span className="text-xs text-muted-foreground">
+                        Estimated Basket:
+                      </span>
                       <span className="text-base sm:text-lg font-bold text-foreground">
                         ₹{swiggy?.instamart?.totalEstimatedPrice || 140}
                       </span>
@@ -848,7 +966,9 @@ export default function HealthPlus() {
                   <div className="rounded-2xl border border-border/30 overflow-hidden divide-y divide-border/20">
                     {displayedIngredients.map((ing, idx) => {
                       const matchedItem = swiggy?.instamart?.items?.find(
-                        (i) => i.ingredientName.toLowerCase() === ing.name.toLowerCase()
+                        (i) =>
+                          i.ingredientName.toLowerCase() ===
+                          ing.name.toLowerCase(),
                       );
                       const product = matchedItem?.product;
 
@@ -865,7 +985,10 @@ export default function HealthPlus() {
                               <div className="text-sm font-semibold text-foreground flex items-center gap-2">
                                 {ing.name}
                                 {ing.isPantryStaple && (
-                                  <Badge variant="outline" className="text-[10px] py-0 px-1.5 text-muted-foreground border-border/40">
+                                  <Badge
+                                    variant="outline"
+                                    className="text-[10px] py-0 px-1.5 text-muted-foreground border-border/40"
+                                  >
                                     Pantry
                                   </Badge>
                                 )}
@@ -884,7 +1007,10 @@ export default function HealthPlus() {
                               ₹{product?.price || 55}
                             </span>
                             <a
-                              href={product?.deepLink || `https://www.swiggy.com/instamart/search?query=${encodeURIComponent(ing.instamartQuery || ing.name)}`}
+                              href={
+                                product?.deepLink ||
+                                `https://www.swiggy.com/instamart/search?query=${encodeURIComponent(ing.instamartQuery || ing.name)}`
+                              }
                               target="_blank"
                               rel="noopener noreferrer"
                               className="p-1.5 rounded-lg border border-border/40 hover:bg-muted/30 text-muted-foreground hover:text-foreground transition-colors"
@@ -902,12 +1028,16 @@ export default function HealthPlus() {
                   <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
                     <Button
                       id="sync-instamart-cart-btn"
-                      onClick={() => syncCartMutation.mutate(swiggy?.instamart?.items || [])}
+                      onClick={() =>
+                        syncCartMutation.mutate(swiggy?.instamart?.items || [])
+                      }
                       disabled={syncCartMutation.isPending}
                       className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl px-5 flex items-center gap-2"
                     >
                       <ShoppingCart className="w-4 h-4" />
-                      {syncCartMutation.isPending ? "Syncing via MCP..." : "Add All to Swiggy Instamart Cart"}
+                      {syncCartMutation.isPending
+                        ? "Syncing via MCP..."
+                        : "Add All to Swiggy Instamart Cart"}
                     </Button>
 
                     <a
@@ -916,7 +1046,10 @@ export default function HealthPlus() {
                       rel="noopener noreferrer"
                       className="w-full sm:w-auto"
                     >
-                      <Button variant="outline" className="w-full rounded-xl border-border/50 flex items-center gap-2 text-foreground">
+                      <Button
+                        variant="outline"
+                        className="w-full rounded-xl border-border/50 flex items-center gap-2 text-foreground"
+                      >
                         <span>Open Swiggy Instamart Web</span>
                         <ExternalLink className="w-3.5 h-3.5" />
                       </Button>
@@ -929,7 +1062,8 @@ export default function HealthPlus() {
                   <div className="p-3.5 rounded-2xl bg-orange-500/5 border border-orange-500/20 text-xs text-orange-600 dark:text-orange-400 flex items-center gap-2">
                     <Bike className="w-4 h-4 shrink-0" />
                     <span>
-                      Don't have 30 minutes to cook? Here are top-rated dishes nearby with verified nutrition profiles.
+                      Don't have 30 minutes to cook? Here are top-rated dishes
+                      nearby with verified nutrition profiles.
                     </span>
                   </div>
 
@@ -955,14 +1089,22 @@ export default function HealthPlus() {
                               ★ {dish.rating}
                             </span>
                           </div>
-                          <h4 className="font-bold text-sm text-foreground line-clamp-2">{dish.dishName}</h4>
-                          <p className="text-xs text-muted-foreground">{dish.restaurantName}</p>
+                          <h4 className="font-bold text-sm text-foreground line-clamp-2">
+                            {dish.dishName}
+                          </h4>
+                          <p className="text-xs text-muted-foreground">
+                            {dish.restaurantName}
+                          </p>
                         </div>
 
                         <div className="pt-2 border-t border-border/20 flex items-center justify-between">
                           <div>
-                            <span className="text-base font-bold text-foreground">₹{dish.price}</span>
-                            <span className="text-[10px] text-muted-foreground block">{dish.deliveryTimeMin}</span>
+                            <span className="text-base font-bold text-foreground">
+                              ₹{dish.price}
+                            </span>
+                            <span className="text-[10px] text-muted-foreground block">
+                              {dish.deliveryTimeMin}
+                            </span>
                           </div>
 
                           <a
@@ -970,7 +1112,10 @@ export default function HealthPlus() {
                             target="_blank"
                             rel="noopener noreferrer"
                           >
-                            <Button size="sm" className="bg-orange-600 hover:bg-orange-500 text-white rounded-xl text-xs flex items-center gap-1.5">
+                            <Button
+                              size="sm"
+                              className="bg-orange-600 hover:bg-orange-500 text-white rounded-xl text-xs flex items-center gap-1.5"
+                            >
                               <span>Order Now</span>
                               <ExternalLink className="w-3 h-3" />
                             </Button>
@@ -986,7 +1131,8 @@ export default function HealthPlus() {
                   <div className="p-3.5 rounded-2xl bg-purple-500/5 border border-purple-500/20 text-xs text-purple-600 dark:text-purple-400 flex items-center gap-2">
                     <UtensilsCrossed className="w-4 h-4 shrink-0" />
                     <span>
-                      Planning a dinner or meeting friends? These healthy, clean-eating spots match your dietary goals.
+                      Planning a dinner or meeting friends? These healthy,
+                      clean-eating spots match your dietary goals.
                     </span>
                   </div>
 
@@ -1001,13 +1147,22 @@ export default function HealthPlus() {
                             <span className="text-xs font-semibold text-amber-500 flex items-center gap-1">
                               ★ {spot.rating}
                             </span>
-                            <Badge variant="outline" className="border-purple-500/30 text-purple-600 dark:text-purple-400 text-[10px]">
+                            <Badge
+                              variant="outline"
+                              className="border-purple-500/30 text-purple-600 dark:text-purple-400 text-[10px]"
+                            >
                               {spot.dealText}
                             </Badge>
                           </div>
-                          <h4 className="font-bold text-sm text-foreground line-clamp-1">{spot.name}</h4>
-                          <p className="text-xs text-muted-foreground">{spot.locality} · {spot.costForTwo}</p>
-                          <p className="text-[11px] text-muted-foreground/80 line-clamp-1">{spot.cuisine}</p>
+                          <h4 className="font-bold text-sm text-foreground line-clamp-1">
+                            {spot.name}
+                          </h4>
+                          <p className="text-xs text-muted-foreground">
+                            {spot.locality} · {spot.costForTwo}
+                          </p>
+                          <p className="text-[11px] text-muted-foreground/80 line-clamp-1">
+                            {spot.cuisine}
+                          </p>
                         </div>
 
                         <div className="pt-2 border-t border-border/20">
