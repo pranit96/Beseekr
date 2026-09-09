@@ -31,6 +31,7 @@ import {
   getIsWeeklyDigestEnabled,
   getIsLearnByDoingEnabled,
   getIsDhetEnabled,
+  getIsHealthPlusEnabled,
 } from "@/utils/envFlags";
 
 interface TopBarProps {
@@ -56,6 +57,10 @@ export const TopBar = ({
   const isLearnByDoingEnabled =
     getIsLearnByDoingEnabled() || user?.feature_flags?.learn_by_doing;
   const isDhetEnabled = getIsDhetEnabled() || user?.feature_flags?.dhet;
+  const isHealthPlusEnabled =
+    getIsHealthPlusEnabled() ||
+    user?.feature_flags?.health_plus ||
+    user?.feature_flags?.healthplusenable;
 
   const navigation = [
     { key: "home", name: "Home", href: "/" },
@@ -73,6 +78,9 @@ export const TopBar = ({
       : []),
     ...(isDhetEnabled
       ? [{ key: "dhet", name: "Design", href: "/dhet" }]
+      : []),
+    ...(isHealthPlusEnabled
+      ? [{ key: "health_plus", name: "Health+", href: "/health-plus" }]
       : []),
     { key: "analytics", name: "Analytics", href: "/analytics" },
     ...(isBudgetEnabled

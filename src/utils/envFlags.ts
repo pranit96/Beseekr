@@ -106,3 +106,23 @@ export function getIsDhetEnabled(): boolean {
   return envFlag;
 }
 
+export function getIsHealthPlusEnabled(): boolean {
+  // Check VITE_HEALTH_PLUS_ENABLED, VITE_HEALTHPLUSENABLE, or VITE_ENABLE_HEALTH_PLUS
+  const envFlag =
+    import.meta.env.VITE_HEALTH_PLUS_ENABLED === "true" ||
+    import.meta.env.VITE_HEALTHPLUSENABLE === "true" ||
+    import.meta.env.VITE_ENABLE_HEALTH_PLUS === "true";
+
+  if (typeof document !== "undefined") {
+    const cookieMatch = document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("EnableHealthPlus="))
+      ?.split("=")[1];
+
+    if (cookieMatch === "true") return true;
+    if (cookieMatch === "false") return false;
+  }
+
+  return envFlag;
+}
+

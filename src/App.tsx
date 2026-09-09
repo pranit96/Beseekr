@@ -26,6 +26,7 @@ import {
   getIsWeeklyDigestEnabled,
   getIsLearnByDoingEnabled,
   getIsDhetEnabled,
+  getIsHealthPlusEnabled,
 } from "@/utils/envFlags";
 
 // Critical page imports (loaded immediately)
@@ -179,6 +180,10 @@ const DhetHistory = lazyRetry(
     })),
   "DhetHistory",
 );
+const HealthPlus = lazyRetry(
+  () => import("./pages/HealthPlus"),
+  "HealthPlus",
+);
 
 // Loading fallback for lazy components
 const PageLoader = () => (
@@ -233,7 +238,12 @@ const FeatureGuard = ({
   featureKey,
 }: {
   children: React.ReactNode;
-  featureKey: "learn_by_doing" | "second_brain" | "weekly_digest" | "dhet";
+  featureKey:
+    | "learn_by_doing"
+    | "second_brain"
+    | "weekly_digest"
+    | "dhet"
+    | "health_plus";
 }) => {
   const { user, loading } = useAuth();
 
@@ -256,6 +266,13 @@ const FeatureGuard = ({
   }
 
   if (featureKey === "dhet" && getIsDhetEnabled()) {
+    return <>{children}</>;
+  }
+
+  if (
+    featureKey === "health_plus" &&
+    (getIsHealthPlusEnabled() || user?.feature_flags?.healthplusenable)
+  ) {
     return <>{children}</>;
   }
 
@@ -667,6 +684,23 @@ const App = () => {
                           </FeatureGuard>
                         </ProtectedRoute>
                       }
+                    />
+                    {/* Health+ — Personalized Recipe & Nutrition Planner with Swiggy Action Hub */}
+                    <Route
+                      path="/health-plus"
+                      element={
+                        <ProtectedRoute>
+                          <FeatureGuard featureKey="health_plus">
+                            <Suspense fallback={<PageLoader />}>
+                              <HealthPlus />
+                            </Suspense>
+                          </FeatureGuard>
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/health"
+                      element={<Navigate to="/health-plus" replace />}
                     />
                     {/* <Route
                     path="/metaLayer"

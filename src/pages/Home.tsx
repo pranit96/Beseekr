@@ -4,6 +4,7 @@ import {
   getIsBudgetEnabled,
   getIsLearnByDoingEnabled,
   getIsDhetEnabled,
+  getIsHealthPlusEnabled,
 } from "@/utils/envFlags";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -18,6 +19,7 @@ import {
   ScrollText,
   GraduationCap,
   Layers,
+  Salad,
 } from "lucide-react";
 import { GlobalHeader } from "@/components/GlobalHeader";
 import { motion } from "framer-motion";
@@ -47,6 +49,10 @@ export default function Home() {
     getIsLearnByDoingEnabled() || user?.feature_flags?.learn_by_doing;
   const isDhetEnabled =
     getIsDhetEnabled() || user?.feature_flags?.dhet;
+  const isHealthPlusEnabled =
+    getIsHealthPlusEnabled() ||
+    user?.feature_flags?.health_plus ||
+    user?.feature_flags?.healthplusenable;
 
   if (!isNewMode) {
     return (
@@ -241,6 +247,39 @@ export default function Home() {
 
               <div className="text-xs font-bold tracking-wider uppercase flex items-center gap-1 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all">
                 {t("home.openLearn", "Start Learning")}
+                <ArrowRight className="w-3 h-3" />
+              </div>
+            </motion.div>
+          )}
+
+          {/* CARD: HEALTH+ */}
+          {isHealthPlusEnabled && (
+            <motion.div
+              onClick={() => go("/health-plus")}
+              whileHover={{ y: -4 }}
+              transition={{ type: "spring", stiffness: 220, damping: 20 }}
+              className="border border-border/30 rounded-2xl p-8 cursor-pointer transition
+                                  bg-muted/10 backdrop-blur-md
+                                  hover:bg-emerald-500/5
+                                  hover:border-emerald-500/30 group shadow-2xl shadow-black/5"
+            >
+              <div className="h-10 w-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 mb-4 group-hover:scale-110 transition-transform">
+                <Salad className="w-5 h-5" />
+              </div>
+
+              <h3 className="text-xl font-bold mb-2 tracking-tight text-foreground flex items-center gap-2">
+                Health+
+                <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  Swiggy MCP
+                </span>
+              </h3>
+
+              <p className="text-muted-foreground/80 mb-6 text-sm leading-relaxed">
+                Personalized metabolic recipes mapped to Swiggy Instamart groceries, healthy food delivery, and clean dining spots.
+              </p>
+
+              <div className="text-xs font-bold tracking-wider uppercase flex items-center gap-1 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all">
+                Explore Health+
                 <ArrowRight className="w-3 h-3" />
               </div>
             </motion.div>

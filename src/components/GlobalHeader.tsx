@@ -41,6 +41,7 @@ import {
   Layers,
   Wand2,
   History,
+  Salad,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -52,7 +53,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
-import { getIsBudgetEnabled, getIsDhetEnabled } from "@/utils/envFlags";
+import {
+  getIsBudgetEnabled,
+  getIsDhetEnabled,
+  getIsHealthPlusEnabled,
+} from "@/utils/envFlags";
 
 const NAV_ITEMS = {
   home: {
@@ -263,6 +268,14 @@ const NAV_ITEMS = {
     color: "from-blue-500 to-cyan-500",
     exact: false,
   },
+  healthPlus: {
+    key: "healthPlus",
+    name: "Health+",
+    href: "/health-plus",
+    icon: Salad,
+    color: "from-emerald-500 to-teal-500",
+    exact: false,
+  },
 };
 
 function isPathActive(pathname: string, href: string, exact?: boolean) {
@@ -275,6 +288,7 @@ function getNavigationContext(
   isPremium: boolean,
   isBudgetEnabled: boolean,
   isDhetEnabled: boolean = false,
+  isHealthPlusEnabled: boolean = false,
 ) {
   const isChatContext =
     pathname.startsWith("/chat") ||
@@ -288,6 +302,13 @@ function getNavigationContext(
   const isBrainContext = pathname.startsWith("/brain");
   const isDigestContext = pathname.startsWith("/digest");
   const isDhetContext = pathname.startsWith("/dhet");
+  const isHealthContext =
+    pathname.startsWith("/health-plus") || pathname.startsWith("/health");
+
+  // Health+: Home + Chat + Health+
+  if (isHealthContext) {
+    return [NAV_ITEMS.home, NAV_ITEMS.chat, NAV_ITEMS.healthPlus];
+  }
 
   // DHET: Home + Studio + Saved Designs
   if (isDhetContext) {
@@ -334,6 +355,9 @@ function getNavigationContext(
   }
   if (isDhetEnabled) {
     items.push(NAV_ITEMS.dhet);
+  }
+  if (isHealthPlusEnabled) {
+    items.push(NAV_ITEMS.healthPlus);
   }
   items.push(NAV_ITEMS.visionboard);
   return items;
@@ -488,13 +512,24 @@ export function GlobalHeader() {
     const isPremium = plansData?.user?.is_premium === true;
     const isBudgetEnabled = getIsBudgetEnabled();
     const isDhetEnabled = getIsDhetEnabled() || user?.feature_flags?.dhet;
+    const isHealthPlusEnabled =
+      getIsHealthPlusEnabled() ||
+      user?.feature_flags?.health_plus ||
+      user?.feature_flags?.healthplusenable;
     return getNavigationContext(
       location.pathname,
       isPremium,
       isBudgetEnabled,
       isDhetEnabled,
+      isHealthPlusEnabled,
     );
-  }, [location.pathname, plansData?.user?.is_premium, user?.feature_flags?.dhet]);
+  }, [
+    location.pathname,
+    plansData?.user?.is_premium,
+    user?.feature_flags?.dhet,
+    user?.feature_flags?.health_plus,
+    user?.feature_flags?.healthplusenable,
+  ]);
 
   return (
     <>

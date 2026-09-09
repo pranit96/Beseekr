@@ -23,6 +23,8 @@ export interface User {
     enable_auto_job_apply?: boolean;
     job_search?: boolean;
     dhet?: boolean;
+    health_plus?: boolean;
+    healthplusenable?: boolean;
   };
 }
 

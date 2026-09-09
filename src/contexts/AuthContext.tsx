@@ -81,6 +81,8 @@ interface User {
     enable_auto_job_apply?: boolean;
     job_search?: boolean;
     dhet?: boolean;
+    health_plus?: boolean;
+    healthplusenable?: boolean;
   };
 }
 
@@ -294,9 +296,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             }
             const fetchedUser = response.data.user;
             if (fetchedUser?.feature_flags) {
-              const { second_brain, weekly_digest } = fetchedUser.feature_flags;
+              const { second_brain, weekly_digest, health_plus, healthplusenable } =
+                fetchedUser.feature_flags;
               document.cookie = `EnableSecondBrain=${second_brain}; path=/; max-age=86400; SameSite=Lax`;
               document.cookie = `EnableWeeklyDigest=${weekly_digest}; path=/; max-age=86400; SameSite=Lax`;
+              const isHp = health_plus ?? healthplusenable;
+              if (isHp !== undefined) {
+                document.cookie = `EnableHealthPlus=${isHp}; path=/; max-age=86400; SameSite=Lax`;
+              }
             }
             const wasNull = !user;
             setUser(fetchedUser);
@@ -610,9 +617,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
         const fetchedUser = response.data.user;
         if (fetchedUser?.feature_flags) {
-          const { second_brain, weekly_digest } = fetchedUser.feature_flags;
+          const { second_brain, weekly_digest, health_plus, healthplusenable } =
+            fetchedUser.feature_flags;
           document.cookie = `EnableSecondBrain=${second_brain}; path=/; max-age=86400; SameSite=Lax`;
           document.cookie = `EnableWeeklyDigest=${weekly_digest}; path=/; max-age=86400; SameSite=Lax`;
+          const isHp = health_plus ?? healthplusenable;
+          if (isHp !== undefined) {
+            document.cookie = `EnableHealthPlus=${isHp}; path=/; max-age=86400; SameSite=Lax`;
+          }
         }
         setUser(fetchedUser);
         setCachedUser(fetchedUser); // Update cache
