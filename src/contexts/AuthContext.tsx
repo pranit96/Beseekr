@@ -11,7 +11,9 @@ import {
 import { apiClient } from "@/lib/api";
 import { useToast, toast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import socketService from "@/services/socketService";
+import guestSessionService from "@/services/guestSessionService";
 import { createLogger } from "@/services/logging";
 import { useTranslation } from "react-i18next";
 
@@ -154,7 +156,34 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(() => !getCachedUser());
   const [socketConnected, setSocketConnected] = useState(false);
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { i18n } = useTranslation();
+
+  const syncPendingGuestData = useCallback(async () => {
+    if (guestSessionService.getIsSyncing() || !guestSessionService.hasPendingSyncData()) {
+      return;
+    }
+    guestSessionService.setIsSyncing(true);
+    try {
+      const payload = guestSessionService.getSyncPayload();
+      const res = await apiClient.syncGuestSession(payload);
+      if (res?.success) {
+        guestSessionService.clearGuestSession();
+        apiClient.invalidateCache("/api/agents");
+        apiClient.invalidateCache("/api/conversations");
+        queryClient.invalidateQueries({ queryKey: ["agents"] });
+        queryClient.invalidateQueries({ queryKey: ["conversations"] });
+        toast({
+          title: "Guest Session Synced! ✨",
+          description: "All your guest chats and custom agents have been saved to your account.",
+        });
+      }
+    } catch (err) {
+      console.warn("[AuthContext] Guest session sync error:", err);
+    } finally {
+      guestSessionService.setIsSyncing(false);
+    }
+  }, [queryClient]);
 
   const refreshingRef = useRef(false);
   const refreshPromiseRef = useRef<Promise<any> | null>(null);
@@ -467,22 +496,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [handleTokensRefreshed]);
 
   useEffect(() => {
-    if (!user) {
-      if (socketService.isConnected()) {
-        logger.info("User logged out, disconnecting socket");
-        socketService.disconnect();
-        setSocketConnected(false);
-      }
-      return;
-    }
-
     socketService.setTokenRefreshCallback(handleTokensRefreshedRef.current);
 
     const onConnectionStatus = (data: any) => {
       setSocketConnected(data.connected);
 
       if (data.connected) {
-        logger.info("Socket connected", { socketId: data.socketId });
+        logger.info("Socket connected", { socketId: data.socketId, isGuest: !user });
         lastActivityRef.current = Date.now();
       } else {
         logger.warn("Socket disconnected", { reason: data.reason });
@@ -491,7 +511,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const onAuthError = (data: any) => {
       logger.error("Socket authentication failed", { error: data.error });
-      if (!authErrorShownRef.current) {
+      if (user && !authErrorShownRef.current) {
         authErrorShownRef.current = true;
         handleAuthError();
       }
@@ -499,24 +519,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const onForcedDisconnect = (data: any) => {
       logger.warn("Socket force disconnected", { message: data.message });
-      toast({
-        title: "Connection Lost",
-        description: data.message || "Please refresh and log in again.",
-        variant: "destructive",
-      });
-      handleAuthError();
+      if (user) {
+        toast({
+          title: "Connection Lost",
+          description: data.message || "Please refresh and log in again.",
+          variant: "destructive",
+        });
+        handleAuthError();
+      }
     };
 
     socketService.on("connection_status", onConnectionStatus);
     socketService.on("auth_error", onAuthError);
     socketService.on("forced_disconnect", onForcedDisconnect);
 
-    // Connect if not already connected
+    // Reconnect socket on auth state transition (guest <-> user)
+    if (socketService.isConnected()) {
+      socketService.disconnect();
+    }
     socketService.connect();
 
     return () => {
       // Clean up event listeners on unmount/re-render, but DO NOT disconnect the singleton socket
-      // while the user is still authenticated.
+      // while the user is still active.
       socketService.off("connection_status", onConnectionStatus);
       socketService.off("auth_error", onAuthError);
       socketService.off("forced_disconnect", onForcedDisconnect);
@@ -643,6 +668,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setCachedUser(fetchedUser); // Update cache
         lastActivityRef.current = Date.now();
 
+        // Sync pending guest session data idempotently
+        syncPendingGuestData();
+
         if (fetchedUser.language && fetchedUser.language !== i18n.language) {
           i18n.changeLanguage(fetchedUser.language);
         }
@@ -705,6 +733,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           description: "Successfully logged in.",
         });
 
+        // Sync pending guest session data idempotently on login
+        syncPendingGuestData();
+
         const redirectUrl = sessionStorage.getItem("auth-redirect") || "/";
         sessionStorage.removeItem("auth-redirect");
         navigate(redirectUrl);
@@ -742,6 +773,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           title: "Account created!",
           description: "Welcome to beseekr.",
         });
+
+        // Sync pending guest session data idempotently on signup
+        syncPendingGuestData();
 
         // Redirect to intended page or default to home
         const redirectUrl = sessionStorage.getItem("auth-redirect") || "/";

@@ -36,6 +36,11 @@ export default function Home() {
 
   const go = (route: string) => {
     if (loading) return;
+    // Allow direct guest access to AI Chat and Agents with limits
+    if (route === "/chat" || route === "/agents" || route.startsWith("/blogs")) {
+      navigate(route);
+      return;
+    }
     if (!user) {
       sessionStorage.setItem("auth-redirect", route);
       navigate("/auth");

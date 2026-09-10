@@ -57,6 +57,12 @@ interface OrchestrationCallbacks {
     reason: string;
     [key: string]: any;
   }) => void;
+  onGuestUsage?: (data: {
+    used: number;
+    remaining: number;
+    limit: number;
+    [key: string]: any;
+  }) => void;
   onProgress?: (data: {
     requestId: string;
     step: number;
@@ -158,8 +164,16 @@ class SocketService {
       throw new Error("Invalid socket URL configuration");
     }
 
+    const guestId = typeof window !== "undefined" ? localStorage.getItem("pw_guest_id") : null;
+
     const opts: any = {
       withCredentials: true, // ✅ this sends HttpOnly cookies automatically
+      auth: {
+        guestId,
+      },
+      query: {
+        guestId,
+      },
       transports: ["websocket", "polling"],
       reconnection: true,
       reconnectionDelay: 1000,
@@ -570,14 +584,20 @@ class SocketService {
     };
 
     const onRateLimit = (data: any) => {
-      // Only trigger when server explicitly says you're blocked
+      // Trigger when server explicitly says you're blocked or guest limit is reached
       if (
         (!data.requestId || data.requestId === requestId) &&
         (data.reason === "rate_limit_exceeded" ||
-          data.reason === "temporarily_blocked")
+          data.reason === "temporarily_blocked" ||
+          data.reason === "GUEST_LIMIT_REACHED" ||
+          data.requiresAuth)
       ) {
         callbacks.onRateLimit?.(data);
       }
+    };
+
+    const onGuestUsage = (data: any) => {
+      callbacks.onGuestUsage?.(data);
     };
 
     const onToolStart = (data: any) => {
@@ -603,6 +623,7 @@ class SocketService {
       this.socket?.off("orchestration:error", onError);
       this.socket?.off("orchestration:warning", onWarning);
       this.socket?.off("orchestration:rate_limit", onRateLimit);
+      this.socket?.off("orchestration:guest_usage", onGuestUsage);
       this.socket?.off("orchestration:progress", onProgress);
       this.socket?.off("orchestration:cancelled", onCancelled);
       this.socket?.off("orchestration:tool_start", onToolStart);
@@ -634,6 +655,7 @@ class SocketService {
     this.socket.on("orchestration:error", onError);
     this.socket.on("orchestration:warning", onWarning);
     this.socket.on("orchestration:rate_limit", onRateLimit);
+    this.socket.on("orchestration:guest_usage", onGuestUsage);
     this.socket.on("orchestration:progress", onProgress);
     this.socket.on("orchestration:cancelled", onCancelled);
     this.socket.on("orchestration:tool_start", onToolStart);

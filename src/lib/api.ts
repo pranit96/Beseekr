@@ -261,9 +261,16 @@ class ApiClient {
       }
     }
 
-    const headers: HeadersInit = {
-      ...options.headers,
+    const headers: Record<string, string> = {
+      ...(options.headers as Record<string, string>),
     };
+
+    if (typeof window !== "undefined") {
+      const guestId = localStorage.getItem("pw_guest_id");
+      if (guestId && !headers["x-guest-id"]) {
+        headers["x-guest-id"] = guestId;
+      }
+    }
 
     // Only set default Content-Type if not overridden and not a FormData object
     if (!headers["Content-Type"] && !(options.body instanceof FormData)) {
@@ -557,6 +564,35 @@ class ApiClient {
         refresh_token: refreshToken,
       }),
     });
+  }
+
+  // Sync guest conversations and agents to authenticated account
+  async syncGuestSession(payload: {
+    guestId: string;
+    agents: any[];
+    conversations: any[];
+  }) {
+    this.clearCache();
+    return this.request<{
+      syncedAgentsCount: number;
+      syncedConversationsCount: number;
+      primaryConversationId: string | null;
+      agentMapping: Record<string, string>;
+    }>("/api/auth/sync-guest-session", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  // Guest rate limit and usage status
+  async getGuestStatus() {
+    return this.request<{
+      chatLimit: number;
+      messagesUsed: number;
+      messagesRemaining: number;
+      resetAt: string;
+      agentLimit: number;
+    }>("/api/agents/guest-status");
   }
 
   async getAgents(params?: {

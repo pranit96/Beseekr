@@ -41,6 +41,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import guestSessionService from "@/services/guestSessionService";
+import { LoginPromptModal } from "@/components/LoginPromptModal";
 
 const logger = createLogger("ChatInterface");
 
@@ -282,8 +284,18 @@ export const ChatInterface: React.FC<{
   const scrolledConversationRef = useRef<string | null>(null);
 
   const { toast } = useToast();
-  const { socketConnected } = useAuth();
+  const { user, socketConnected } = useAuth();
   const queryClient = useQueryClient();
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [guestMessageCount, setGuestMessageCount] = useState(() =>
+    !user ? guestSessionService.getDailyMessageCount() : 0,
+  );
+
+  useEffect(() => {
+    if (!user) {
+      setGuestMessageCount(guestSessionService.getDailyMessageCount());
+    }
+  }, [user]);
 
   const {
     messages,
@@ -474,6 +486,11 @@ export const ChatInterface: React.FC<{
       return;
     }
 
+    if (!user && guestSessionService.isDailyMessageLimitReached()) {
+      setShowLoginModal(true);
+      return;
+    }
+
     if (!overrideMessage) setInput("");
     retryMessageRef.current = messageText;
     if (isActiveOrchestrationRef) isActiveOrchestrationRef.current = true;
@@ -512,25 +529,33 @@ export const ChatInterface: React.FC<{
       ) {
         isCreatingConversationRef.current = true;
         try {
-          const { apiClient } = await import("@/lib/api");
-          const title = generateConversationTitle(messageText, finalAgents);
-          const res = await apiClient.createConversation({
-            agent_id: finalAgents[0]?.id || null,
-            title,
-          });
-          if (res.success && res.data?.id) {
-            convId = res.data.id;
-            // Pre-seed the cache with an empty array BEFORE activating the query.
-            // Without this, React Query sees no cached data for the new key and
-            // immediately fires an API fetch that returns [] (messages not saved yet),
-            // overwriting the in-progress streaming messages.
+          if (!user) {
+            const title = generateConversationTitle(messageText, finalAgents);
+            const guestConv = guestSessionService.createGuestConversation(title, finalAgents[0]?.id);
+            convId = guestConv.id;
             queryClient.setQueryData(["messages", convId], []);
             setConversationId(convId);
             setTimeout(() => {
               onConversationChange?.(convId);
               onConversationCreated?.(convId);
-              queryClient.invalidateQueries({ queryKey: ["conversations"] });
-            }, 200);
+            }, 100);
+          } else {
+            const { apiClient } = await import("@/lib/api");
+            const title = generateConversationTitle(messageText, finalAgents);
+            const res = await apiClient.createConversation({
+              agent_id: finalAgents[0]?.id || null,
+              title,
+            });
+            if (res.success && res.data?.id) {
+              convId = res.data.id;
+              queryClient.setQueryData(["messages", convId], []);
+              setConversationId(convId);
+              setTimeout(() => {
+                onConversationChange?.(convId);
+                onConversationCreated?.(convId);
+                queryClient.invalidateQueries({ queryKey: ["conversations"] });
+              }, 200);
+            }
           }
         } catch (err) {
           logger.error("Failed to create conversation", { error: err });
@@ -579,12 +604,21 @@ export const ChatInterface: React.FC<{
 
       await new Promise((r) => setTimeout(r, 100));
 
+      if (!user) {
+        guestSessionService.incrementDailyMessageCount();
+        setGuestMessageCount(guestSessionService.getDailyMessageCount());
+      }
+
       const payload: any = {
         agent_ids: finalAgents.map((a) => a.id),
         message: messageText,
         mode: executionMode,
         save_to_conversation: saveToConversation,
       };
+      if (!user) {
+        payload.custom_agents = guestSessionService.getGuestAgents();
+        payload.guest_agents = payload.custom_agents;
+      }
       if (saveToConversation && convId) payload.conversation_id = convId;
       if (attachedFiles.length > 0) {
         payload.attached_files = attachedFiles.map((f) => ({
@@ -687,9 +721,22 @@ export const ChatInterface: React.FC<{
           ),
         onWarning: () => {},
         onRateLimit: (rl) => {
+          if (rl?.reason === "GUEST_LIMIT_REACHED" || rl?.requiresAuth) {
+            setShowLoginModal(true);
+            return;
+          }
           const r = Number(rl?.retryAfter ?? 30);
           toast({ title: "Rate limit", description: `Retry in ${r}s.` });
           startRateLimitCountdown(r);
+        },
+        onGuestUsage: (usage) => {
+          if (usage && typeof usage.used === "number") {
+            guestSessionService.setDailyMessageCount(usage.used);
+            setGuestMessageCount(usage.used);
+            if (usage.used >= (usage.limit || 5)) {
+              setShowLoginModal(true);
+            }
+          }
         },
         onCancelReady: (fn) => {
           cancelRef.current = fn;
@@ -1449,6 +1496,23 @@ export const ChatInterface: React.FC<{
 
       {/* Bottom input area — always rendered */}
       <div className="flex-shrink-0 border-t border-border/30 bg-background/80 backdrop-blur-md pb-4">
+        {!user && (
+          <div className={`max-w-${messages.length === 0 ? "2xl" : "5xl"} 2xl:max-w-${messages.length === 0 ? "3xl" : "6xl"} mx-auto w-full px-4 pt-2.5 pb-1 flex items-center justify-between text-xs text-muted-foreground`}>
+            <div className="flex items-center gap-2">
+              <span className={`w-2 h-2 rounded-full ${guestMessageCount >= 5 ? "bg-amber-500" : "bg-primary animate-pulse"}`} />
+              <span className="font-semibold text-foreground">Guest Sandbox Mode:</span>
+              <span className="font-medium text-muted-foreground">
+                {guestMessageCount}/5 free messages used today
+              </span>
+            </div>
+            <button
+              onClick={() => setShowLoginModal(true)}
+              className="text-primary hover:text-primary/80 font-bold text-[11px] underline underline-offset-4 decoration-primary/40 hover:decoration-primary transition-all"
+            >
+              Sign in for unlimited
+            </button>
+          </div>
+        )}
         <div
           className={`max-w-${messages.length === 0 ? "2xl" : "5xl"} 2xl:max-w-${messages.length === 0 ? "3xl" : "6xl"} mx-auto w-full`}
         >
@@ -1473,6 +1537,13 @@ export const ChatInterface: React.FC<{
           }}
         />
       )}
+
+      {/* Guest Login / Signup Prompt Modal */}
+      <LoginPromptModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        reason="message_limit"
+      />
     </div>
   );
 };

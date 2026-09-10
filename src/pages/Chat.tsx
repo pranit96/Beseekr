@@ -27,6 +27,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useTranslation } from "react-i18next";
+import guestSessionService from "@/services/guestSessionService";
 
 const logger = createLogger("Chat");
 
@@ -213,7 +214,7 @@ const Chat = () => {
 
   // Main Query for Conversations
   const {
-    data: conversations = [],
+    data: serverConversations = [],
     isLoading: loadingConversations,
     isError: hasQueryError,
     error: queryError,
@@ -267,6 +268,35 @@ const Chat = () => {
     },
   });
 
+  const [guestConversations, setGuestConversations] = useState<Conversation[]>(() => {
+    if (typeof window === "undefined") return [];
+    return guestSessionService.getGuestConversations().map((c) => ({
+      id: c.id,
+      title: c.title,
+      status: c.status,
+      last_message_at: c.updated_at || c.created_at || new Date().toISOString(),
+      last_message: c.last_message,
+    }));
+  });
+
+  const conversations = useMemo(() => {
+    if (!user) return guestConversations;
+    return serverConversations;
+  }, [user, guestConversations, serverConversations]);
+
+  // For guests, restore last active conversation or pick first
+  useEffect(() => {
+    if (!user) {
+      const activeId = guestSessionService.getActiveConversationId();
+      const currentGuestConvs = guestSessionService.getGuestConversations();
+      if (activeId && currentGuestConvs.some((c) => c.id === activeId)) {
+        setCurrentConversationId(activeId);
+      } else if (currentGuestConvs.length > 0) {
+        setCurrentConversationId(currentGuestConvs[0].id);
+      }
+    }
+  }, [user]);
+
   const handleRetryAuth = useCallback(async () => {
     setRetrying(true);
     try {
@@ -301,6 +331,8 @@ const Chat = () => {
           `lastActiveConversation_${user.id}`,
           conversationId,
         );
+      } else {
+        guestSessionService.setActiveConversationId(conversationId);
       }
     },
     [user?.id],
@@ -312,7 +344,25 @@ const Chat = () => {
   }, []);
 
   const handleNewSession = useCallback(async () => {
-    if (!user) return;
+    if (!user) {
+      const newConv = guestSessionService.createGuestConversation(t("chat.newConversation", "New Conversation"));
+      const updated = guestSessionService.getGuestConversations().map((c) => ({
+        id: c.id,
+        title: c.title,
+        status: c.status,
+        last_message_at: c.updated_at || c.created_at || new Date().toISOString(),
+        last_message: c.last_message,
+      }));
+      setGuestConversations(updated);
+      setCurrentConversationId(newConv.id);
+      setKey((prev) => prev + 1);
+      setIsChatActive(false);
+      toast({
+        title: t("chat.newChatStarted", "New chat started"),
+        description: t("chat.newChatStartedDesc", "Start a new conversation in guest mode"),
+      });
+      return;
+    }
 
     if (getEmptyCurrentConversation(conversations)) {
       setCurrentConversationId(currentConversationId);
@@ -413,6 +463,20 @@ const Chat = () => {
 
   const handleConversationCreated = useCallback(
     async (conversationId: string) => {
+      if (!user) {
+        const updated = guestSessionService.getGuestConversations().map((c) => ({
+          id: c.id,
+          title: c.title,
+          status: c.status,
+          last_message_at: c.updated_at || c.created_at || new Date().toISOString(),
+          last_message: c.last_message,
+        }));
+        setGuestConversations(updated);
+        setCurrentConversationId(conversationId);
+        guestSessionService.setActiveConversationId(conversationId);
+        return;
+      }
+
       // Pre-seed messages cache before updating currentConversationId so the
       // prop change doesn't trigger an immediate empty API fetch that wipes
       // any messages already in the cache from the current streaming session.
@@ -477,6 +541,30 @@ const Chat = () => {
 
   const handleConversationDeleted = useCallback(
     (deletedId?: string) => {
+      if (!user) {
+        const deletedConvId = deletedId || currentConversationId;
+        if (deletedConvId) {
+          const convs = guestSessionService.getGuestConversations().filter((c) => c.id !== deletedConvId);
+          localStorage.setItem("pw_guest_conversations", JSON.stringify(convs));
+          setGuestConversations(convs.map((c) => ({
+            id: c.id,
+            title: c.title,
+            status: c.status,
+            last_message_at: c.updated_at || c.created_at || new Date().toISOString(),
+            last_message: c.last_message,
+          })));
+          if (deletedConvId === currentConversationId) {
+            setCurrentConversationId(undefined);
+            setKey((prev) => prev + 1);
+          }
+          toast({
+            title: t("chat.convDeleted", "Conversation deleted"),
+            description: t("chat.convDeletedDesc", "The conversation has been removed."),
+          });
+        }
+        return;
+      }
+
       const deletedConvId = deletedId || currentConversationId;
       if (deletedConvId === currentConversationId) {
         setCurrentConversationId(undefined);
@@ -500,16 +588,38 @@ const Chat = () => {
       });
     },
     [
+      user,
       currentConversationId,
       fetchConversations,
       queryClient,
       toast,
-      user?.id,
       t,
     ],
   );
 
   const handleConversationArchived = useCallback(() => {
+    if (!user) {
+      if (currentConversationId) {
+        const convs = guestSessionService.getGuestConversations().map((c) =>
+          c.id === currentConversationId ? { ...c, status: "archived" as const } : c,
+        );
+        localStorage.setItem("pw_guest_conversations", JSON.stringify(convs));
+        setGuestConversations(convs.map((c) => ({
+          id: c.id,
+          title: c.title,
+          status: c.status,
+          last_message_at: c.updated_at || c.created_at || new Date().toISOString(),
+          last_message: c.last_message,
+        })));
+        setCurrentConversationId(undefined);
+        toast({
+          title: t("chat.convArchived", "Conversation archived"),
+          description: t("chat.convArchivedDesc", "The conversation has been archived."),
+        });
+      }
+      return;
+    }
+
     fetchConversations();
     setCurrentConversationId(undefined);
     if (user?.id) {
@@ -519,7 +629,7 @@ const Chat = () => {
       title: t("chat.convArchived"),
       description: t("chat.convArchivedDesc"),
     });
-  }, [fetchConversations, toast, user?.id, t]);
+  }, [user, currentConversationId, fetchConversations, toast, t]);
 
   const isLoading = loadingAgents || loadingConversations;
 

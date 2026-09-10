@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import type { ChatMessage, AgentResponse } from "@/types/agent";
+import guestSessionService from "@/services/guestSessionService";
 import { createLogger } from "@/services/logging";
 
 const logger = createLogger("useConversation");
@@ -64,6 +65,13 @@ export function useConversation(
     refetchOnMount: false, // Only fetch when there is no cached data
     queryFn: async () => {
       if (!conversationId) return [];
+
+      // If this is a guest conversation, load directly from guestSessionService
+      if (conversationId.startsWith("guest_conv_")) {
+        const guestMsgs = guestSessionService.getGuestChatMessages(conversationId);
+        if (guestMsgs.length > 0) setHasStarted(true);
+        return guestMsgs;
+      }
 
       // Guard: if orchestration is active, the cache already has the correct
       // in-progress streaming messages. Returning them here prevents the
@@ -196,6 +204,9 @@ export function useConversation(
               typeof updater === "function" ? updater(old) : updater;
             if (newMessages.length > 0) setHasStarted(true);
             localMessagesRef.current = newMessages;
+            if (targetId.startsWith("guest_conv_")) {
+              guestSessionService.saveGuestChatMessages(targetId, newMessages);
+            }
             return newMessages;
           },
         );

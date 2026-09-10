@@ -48,6 +48,9 @@ import {
 } from "@/hooks/use-api-queries";
 import { AgentQuickChat } from "@/components/AgentQuickChat";
 import { ShareAgentModal } from "@/components/ShareAgentModal";
+import { LoginPromptModal } from "@/components/LoginPromptModal";
+import { useAuth } from "@/contexts/AuthContext";
+import guestSessionService from "@/services/guestSessionService";
 import React from "react";
 
 const TOOL_ICON_MAP: Record<string, React.ElementType> = {
@@ -66,6 +69,7 @@ const TOOL_ICON_MAP: Record<string, React.ElementType> = {
 };
 
 const Agents = () => {
+  const { user } = useAuth();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingAgent, setEditingAgent] = useState<Agent | undefined>();
   const [deleteAgentId, setDeleteAgentId] = useState<string | null>(null);
@@ -75,6 +79,10 @@ const Agents = () => {
   const [showTemplates, setShowTemplates] = useState(false);
   const [quickChatAgent, setQuickChatAgent] = useState<Agent | null>(null);
   const [sharingAgent, setSharingAgent] = useState<Agent | null>(null);
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+  const [guestAgents, setGuestAgents] = useState<Agent[]>(() =>
+    !user ? guestSessionService.getGuestAgents() : [],
+  );
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -89,22 +97,32 @@ const Agents = () => {
   const deleteAgentMutation = useDeleteAgent();
 
   const agents = useMemo(() => {
+    if (!user) {
+      return guestAgents;
+    }
     if (!agentsResponse) return [];
     const d = agentsResponse.data as any;
     if (Array.isArray(d)) return d;
     if (d && Array.isArray(d.agents)) return d.agents;
     if (d && Array.isArray(d.data)) return d.data;
     return [];
-  }, [agentsResponse]);
+  }, [user, guestAgents, agentsResponse]);
+
+  // Auto load templates for guests so they have immediate agents to explore
+  useEffect(() => {
+    if (!user && templates.length === 0) {
+      fetchTemplates();
+    }
+  }, [user]);
 
   useEffect(() => {
-    if (error)
+    if (error && user)
       toast({
         title: "Failed to load agents",
         description: (error as any).message,
         variant: "destructive",
       });
-  }, [error, toast]);
+  }, [error, toast, user]);
 
   const fetchTemplates = async () => {
     if (templates.length > 0) {
@@ -132,7 +150,47 @@ const Agents = () => {
     }
   };
 
+  const handleOpenCreateDialog = () => {
+    if (!user && guestSessionService.isGuestAgentLimitReached()) {
+      setShowLoginPrompt(true);
+      return;
+    }
+    setEditingAgent(undefined);
+    setIsDialogOpen(true);
+  };
+
   const handleSaveAgent = async (agent: Agent) => {
+    if (!user) {
+      if (editingAgent?.id) {
+        const existing = guestSessionService.getGuestAgents();
+        const updated = existing.map((a) =>
+          a.id === editingAgent.id
+            ? { ...a, ...agent, updated_at: new Date().toISOString() }
+            : a,
+        );
+        localStorage.setItem("pw_guest_agents", JSON.stringify(updated));
+        setGuestAgents(updated);
+        toast({
+          title: "Agent updated",
+          description: `${agent.name} has been updated.`,
+        });
+      } else {
+        if (guestSessionService.isGuestAgentLimitReached()) {
+          setShowLoginPrompt(true);
+          return;
+        }
+        const created = guestSessionService.saveGuestAgent(agent);
+        setGuestAgents(guestSessionService.getGuestAgents());
+        toast({
+          title: "Agent created in guest mode",
+          description: `${created.name} created (${guestSessionService.getGuestAgents().length}/3 guest agents). Sign in to save permanently.`,
+        });
+      }
+      setIsDialogOpen(false);
+      setEditingAgent(undefined);
+      return;
+    }
+
     if (editingAgent?.id)
       await updateAgentMutation.mutateAsync({ id: editingAgent.id, agent });
     else await createAgentMutation.mutateAsync(agent);
@@ -164,6 +222,10 @@ const Agents = () => {
   };
 
   const handleCreateFromTemplate = (t: AgentTemplate) => {
+    if (!user && guestSessionService.isGuestAgentLimitReached()) {
+      setShowLoginPrompt(true);
+      return;
+    }
     setEditingAgent({
       id: "",
       name: t.name,
@@ -406,6 +468,36 @@ const Agents = () => {
               Create, customize, and orchestrate intelligent agents to perform
               specialized tasks for your workspace.
             </p>
+
+            {/* Guest Banner */}
+            {!user && (
+              <div className="mt-6 p-4 rounded-2xl border border-primary/20 bg-primary/5 backdrop-blur-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold shrink-0">
+                    <Sparkles className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <p className="text-xs font-bold text-foreground">
+                        Guest Sandbox Mode
+                      </p>
+                      <span className="text-[10px] font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full border border-primary/20">
+                        {guestAgents.length}/3 Agents Created
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      Explore template agents freely or create up to 3 custom agents. Sign in anytime to sync and keep your agents permanently!
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => navigate("/auth")}
+                  className="shrink-0 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-all shadow-sm shadow-primary/20"
+                >
+                  Sign In to Sync
+                </button>
+              </div>
+            )}
           </section>
 
           {/* Unified Control Deck / Toolbar */}
@@ -444,10 +536,7 @@ const Agents = () => {
                 <span>Templates</span>
               </button>
               <button
-                onClick={() => {
-                  setEditingAgent(undefined);
-                  setIsDialogOpen(true);
-                }}
+                onClick={handleOpenCreateDialog}
                 className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground transition-all shadow-md shadow-primary/10 hover:-translate-y-0.5 active:translate-y-0 duration-300"
               >
                 <Plus className="w-3.5 h-3.5" />
@@ -546,7 +635,7 @@ const Agents = () => {
                 intelligent conversations.
               </p>
               <button
-                onClick={() => setIsDialogOpen(true)}
+                onClick={handleOpenCreateDialog}
                 className="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold bg-primary hover:bg-primary/90 text-primary-foreground transition-all shadow-md shadow-primary/10 hover:-translate-y-0.5 active:translate-y-0 duration-300"
               >
                 <Plus className="w-4 h-4" /> Create your first agent
@@ -603,6 +692,12 @@ const Agents = () => {
         open={!!sharingAgent}
         onOpenChange={(open) => !open && setSharingAgent(null)}
         agent={sharingAgent}
+      />
+
+      <LoginPromptModal
+        isOpen={showLoginPrompt}
+        onClose={() => setShowLoginPrompt(false)}
+        reason="agent_limit"
       />
     </div>
   );

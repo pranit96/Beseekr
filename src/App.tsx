@@ -546,16 +546,26 @@ const App = () => {
                     {/* =============================================
                       PROTECTED ROUTES - Legacy routes requiring auth
                       ============================================= */}
+                    {/* AI Chat - Accessible to guests with 5-messages/day limit */}
                     <Route
                       path="/chat"
                       element={
-                        <ProtectedRoute>
-                          <Suspense fallback={<PageLoader />}>
-                            <Chat />
-                          </Suspense>
-                        </ProtectedRoute>
+                        <Suspense fallback={<PageLoader />}>
+                          <Chat />
+                        </Suspense>
                       }
                     />
+
+                    {/* Agents - Accessible to guests to view templates and create up to 3 agents */}
+                    <Route
+                      path="/agents"
+                      element={
+                        <Suspense fallback={<PageLoader />}>
+                          <Agents />
+                        </Suspense>
+                      }
+                    />
+
                     <Route
                       path="/brain"
                       element={
@@ -582,16 +592,6 @@ const App = () => {
                         ) : (
                           <Navigate to="/" replace />
                         )
-                      }
-                    />
-                    <Route
-                      path="/agents"
-                      element={
-                        <ProtectedRoute>
-                          <Suspense fallback={<PageLoader />}>
-                            <Agents />
-                          </Suspense>
-                        </ProtectedRoute>
                       }
                     />
                     <Route

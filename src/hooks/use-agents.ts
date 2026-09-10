@@ -5,6 +5,8 @@ import { Agent } from "@/types/agent";
 import { useAuth } from "@/contexts/AuthContext";
 import { createLogger } from "@/services/logging";
 
+import guestSessionService from "@/services/guestSessionService";
+
 const logger = createLogger("useAgents");
 
 export const useAgents = () => {
@@ -17,8 +19,8 @@ export const useAgents = () => {
     error,
     refetch,
   } = useQuery({
-    queryKey: ["agents", user?.id],
-    enabled: !!user,
+    queryKey: ["agents", user?.id || "guest"],
+    enabled: true,
     staleTime: 1000 * 60 * 10, // 10 minutes cache
     retry: (failureCount, error: any) => {
       const msg = error?.message || "";
@@ -26,21 +28,49 @@ export const useAgents = () => {
       return failureCount < 3;
     },
     queryFn: async () => {
-      logger.info("Fetching agents via React Query");
-      const res = await apiClient.getMyAgents();
+      if (user) {
+        logger.info("Fetching user agents via React Query");
+        const res = await apiClient.getMyAgents();
 
-      let agentList: Agent[] = [];
-      if (res.success && res.data) {
-        if (Array.isArray(res.data)) agentList = res.data;
-        else if (Array.isArray(res.data.agents)) agentList = res.data.agents;
-        else if (Array.isArray(res.data.data)) agentList = res.data.data;
-      }
+        let agentList: Agent[] = [];
+        if (res.success && res.data) {
+          if (Array.isArray(res.data)) agentList = res.data;
+          else if (Array.isArray(res.data.agents)) agentList = res.data.agents;
+          else if (Array.isArray(res.data.data)) agentList = res.data.data;
+        }
 
-      if (agentList.length > 0 || res.success) {
         return agentList;
-      } else {
-        throw new Error(res.error || "Failed to fetch agents");
       }
+
+      // Guest flow: load templates + custom guest agents
+      logger.info("Fetching guest agents (templates + local)");
+      const guestAgents = guestSessionService.getGuestAgents();
+      let templateAgents: Agent[] = [];
+
+      try {
+        const tRes = await apiClient.getAgentTemplates();
+        if (tRes.success && Array.isArray(tRes.data)) {
+          templateAgents = tRes.data.map((t: any) => ({
+            id: t.id,
+            name: t.name,
+            description: t.description,
+            domain: t.domain,
+            system_prompt: t.system_prompt,
+            temperature: t.temperature ?? 0.7,
+            max_tokens: t.max_tokens ?? 2000,
+            is_active: true,
+            is_public: true,
+            is_template: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            metadata: { icon: t.icon },
+          } as Agent));
+        }
+      } catch (tErr) {
+        logger.warn("Failed to load templates for guest:", tErr);
+      }
+
+      return [...guestAgents, ...templateAgents];
     },
   });
 

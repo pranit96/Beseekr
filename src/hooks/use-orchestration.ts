@@ -25,6 +25,7 @@ interface OrchestrationCallbacks {
   onError?: (error: any) => void;
   onWarning?: (data: any) => void;
   onRateLimit?: (data: any) => void;
+  onGuestUsage?: (data: { used: number; remaining: number; limit: number; [key: string]: any }) => void;
   onCancelReady?: (cancelFn: () => void) => void;
   onProgress?: (data: {
     step: number;
@@ -97,6 +98,9 @@ const useOrchestration = () => {
             },
             onRateLimit: (data) => {
               callbacks.onRateLimit?.(data);
+            },
+            onGuestUsage: (data) => {
+              callbacks.onGuestUsage?.(data);
             },
             onDone: (data) => {
               callbacks.onDone?.(data);
