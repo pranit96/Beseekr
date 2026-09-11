@@ -157,10 +157,10 @@ const Auth = () => {
   ]);
   const [currentMsg, setCurrentMsg] = useState(0);
 
-  // Bubble animation setup
+  // Bubble animation setup — reduced count for performance in proxied/isolated environments
   useEffect(() => {
     const createBubbles = () => {
-      const arr = Array.from({ length: 20 }).map((_, i) => ({
+      const arr = Array.from({ length: 8 }).map((_, i) => ({
         id: i,
         x: Math.random() * 100,
         y: Math.random() * 100,
@@ -179,21 +179,28 @@ const Auth = () => {
     return () => clearInterval(interval);
   }, [messages]);
 
-  // Parallax effect (subtle)
+  // Parallax effect — throttled via rAF for smooth performance in proxied/isolated environments
   useEffect(() => {
+    let rafId: number;
     const handleMouseMove = (e: MouseEvent) => {
-      const { innerWidth, innerHeight } = window;
-      document.documentElement.style.setProperty(
-        "--mouse-x",
-        `${(e.clientX / innerWidth - 0.5) * 12}px`,
-      );
-      document.documentElement.style.setProperty(
-        "--mouse-y",
-        `${(e.clientY / innerHeight - 0.5) * 12}px`,
-      );
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        const { innerWidth, innerHeight } = window;
+        document.documentElement.style.setProperty(
+          "--mouse-x",
+          `${(e.clientX / innerWidth - 0.5) * 8}px`,
+        );
+        document.documentElement.style.setProperty(
+          "--mouse-y",
+          `${(e.clientY / innerHeight - 0.5) * 8}px`,
+        );
+      });
     };
-    window.addEventListener("mousemove", handleMouseMove);
-    return () => window.removeEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mousemove", handleMouseMove, { passive: true });
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      cancelAnimationFrame(rafId);
+    };
   }, []);
 
   // Countdown timer for resend verification
@@ -422,33 +429,39 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen flex relative overflow-hidden bg-white text-slate-900 dark:bg-background dark:text-foreground">
-      {/* LEFT SIDE - Visuals */}
-      <div className="hidden lg:flex lg:w-[60%] relative justify-center items-center overflow-hidden">
+      {/* LEFT SIDE - Visuals — isolated compositing layer for Zscaler/proxy perf */}
+      <div
+        className="hidden lg:flex lg:w-[60%] relative justify-center items-center overflow-hidden"
+        style={{ contain: "strict", willChange: "transform" }}
+      >
         <img
           src="/images/kid-smiling-toy.jpg"
           alt="Creative AI experience"
-          className="absolute inset-0 w-full h-full object-cover object-center scale-105 animate-fade-in"
+          className="absolute inset-0 w-full h-full object-cover object-center animate-fade-in"
+          loading="eager"
+          decoding="sync"
         />
 
-        {/* Overlay */}
+        {/* Overlay — plain opacity, no mix-blend-multiply (forces expensive compositing) */}
         <div
-          className="absolute inset-0 mix-blend-multiply pointer-events-none
-                        bg-gradient-to-br from-primary/30 via-white/60 to-white/90
-                        dark:from-primary/50 dark:via-background/70 dark:to-background/90"
+          className="absolute inset-0 pointer-events-none
+                        bg-gradient-to-br from-primary/40 via-white/50 to-white/85
+                        dark:from-primary/60 dark:via-background/65 dark:to-background/90"
+          style={{ opacity: 0.92 }}
         />
 
-        {/* Bubbles */}
+        {/* Bubbles — no backdrop-blur (GPU filter per element kills perf in isolation mode) */}
         {bubbles.map((b) => (
           <div
             key={b.id}
-            className="absolute rounded-full bg-primary/20 backdrop-blur-xs animate-float-slow"
+            className="absolute rounded-full bg-primary/15 animate-float-slow"
             style={{
               width: `${b.size}px`,
               height: `${b.size}px`,
               left: `${b.x}%`,
               top: `${b.y}%`,
-              transform: `translate(var(--mouse-x), var(--mouse-y))`,
-              boxShadow: "0 6px 18px rgba(0,0,0,0.06)",
+              transform: `translate(var(--mouse-x, 0px), var(--mouse-y, 0px))`,
+              willChange: "transform",
             }}
           />
         ))}
@@ -456,7 +469,7 @@ const Auth = () => {
         {/* Floating Text */}
         <div className="absolute z-20 text-center px-6 animate-fade-in max-w-4xl">
           <h1
-            className="text-4xl md:text-5xl lg:text-6xl font-extrabold drop-shadow-md mb-3 transition-all duration-700 text-slate-900 dark:text-white"
+            className="text-4xl md:text-5xl lg:text-6xl font-extrabold drop-shadow-md mb-3 transition-opacity duration-700 text-slate-900 dark:text-white"
             aria-live="polite"
           >
             {messages[currentMsg]}
@@ -468,9 +481,6 @@ const Auth = () => {
             )}
           </p>
         </div>
-
-        {/* Sparkle overlay */}
-        <div className="absolute inset-0 pointer-events-none animate-shimmer bg-[linear-gradient(110deg,rgba(255,255,255,0.06),rgba(255,255,255,0.03),rgba(255,255,255,0.06))] bg-[length:200%_100%] opacity-60 dark:opacity-30" />
       </div>
 
       {/* RIGHT SIDE - Auth Form */}
