@@ -429,57 +429,112 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen flex relative overflow-hidden bg-white text-slate-900 dark:bg-background dark:text-foreground">
-      {/* LEFT SIDE - Visuals — isolated compositing layer for Zscaler/proxy perf */}
-      <div
-        className="hidden lg:flex lg:w-[60%] relative justify-center items-center overflow-hidden"
-        style={{ contain: "strict", willChange: "transform" }}
-      >
-        <img
-          src="/images/kid-smiling-toy.jpg"
-          alt="Creative AI experience"
-          className="absolute inset-0 w-full h-full object-cover object-center animate-fade-in"
-          loading="eager"
-          decoding="sync"
-        />
+      {/* LEFT SIDE – Premium gradient panel, no external image dependency */}
+      <div className="hidden lg:flex lg:w-[60%] relative justify-center items-center overflow-hidden">
 
-        {/* Overlay — plain opacity, no mix-blend-multiply (forces expensive compositing) */}
+        {/* Base gradient background */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,hsl(263,80%,18%)_0%,hsl(240,60%,8%)_45%,hsl(220,50%,4%)_100%)]" />
+
+        {/* Secondary mesh layer */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,hsl(280,70%,22%)_0%,transparent_60%)] opacity-70" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,hsl(220,80%,25%)_0%,transparent_50%)] opacity-40" />
+
+        {/* Ambient orbs — GPU-friendly, transform-only animations */}
         <div
-          className="absolute inset-0 pointer-events-none
-                        bg-gradient-to-br from-primary/40 via-white/50 to-white/85
-                        dark:from-primary/60 dark:via-background/65 dark:to-background/90"
-          style={{ opacity: 0.92 }}
+          className="absolute w-[480px] h-[480px] rounded-full opacity-20 animate-float-slow"
+          style={{
+            background: "radial-gradient(circle, hsl(263,80%,60%) 0%, transparent 70%)",
+            top: "-10%", left: "-5%",
+            willChange: "transform",
+          }}
+        />
+        <div
+          className="absolute w-[320px] h-[320px] rounded-full opacity-15 animate-float-slow"
+          style={{
+            background: "radial-gradient(circle, hsl(220,80%,60%) 0%, transparent 70%)",
+            bottom: "5%", right: "-5%",
+            animationDelay: "2s",
+            willChange: "transform",
+          }}
+        />
+        <div
+          className="absolute w-[200px] h-[200px] rounded-full opacity-10 animate-float-slow"
+          style={{
+            background: "radial-gradient(circle, hsl(300,70%,60%) 0%, transparent 70%)",
+            top: "55%", left: "15%",
+            animationDelay: "4s",
+            willChange: "transform",
+          }}
         />
 
-        {/* Bubbles — no backdrop-blur (GPU filter per element kills perf in isolation mode) */}
+        {/* Floating bubbles — parallax with mouse */}
         {bubbles.map((b) => (
           <div
             key={b.id}
-            className="absolute rounded-full bg-primary/15 animate-float-slow"
+            className="absolute rounded-full animate-float-slow"
             style={{
               width: `${b.size}px`,
               height: `${b.size}px`,
               left: `${b.x}%`,
               top: `${b.y}%`,
+              background: "hsl(263 80% 70% / 0.12)",
+              border: "1px solid hsl(263 80% 70% / 0.15)",
               transform: `translate(var(--mouse-x, 0px), var(--mouse-y, 0px))`,
               willChange: "transform",
+              animationDelay: `${b.id * 0.7}s`,
             }}
           />
         ))}
 
-        {/* Floating Text */}
-        <div className="absolute z-20 text-center px-6 animate-fade-in max-w-4xl">
+        {/* Subtle grid overlay */}
+        <div
+          className="absolute inset-0 opacity-[0.04]"
+          style={{
+            backgroundImage: "linear-gradient(hsl(263 80% 80%) 1px, transparent 1px), linear-gradient(90deg, hsl(263 80% 80%) 1px, transparent 1px)",
+            backgroundSize: "60px 60px",
+          }}
+        />
+
+        {/* Main content */}
+        <div className="relative z-10 text-center px-10 max-w-2xl animate-fade-in">
+          {/* Icon badge */}
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 text-white/90 text-sm font-medium mb-8 backdrop-blur-sm">
+            <Sparkles className="w-4 h-4 text-violet-300" />
+            AI-Powered Opportunity Engine
+          </div>
+
+          {/* Rotating headline */}
           <h1
-            className="text-4xl md:text-5xl lg:text-6xl font-extrabold drop-shadow-md mb-3 transition-opacity duration-700 text-slate-900 dark:text-white"
+            className="text-5xl lg:text-6xl font-extrabold text-white mb-4 leading-tight transition-opacity duration-500"
             aria-live="polite"
+            style={{ textShadow: "0 0 60px hsl(263 80% 60% / 0.4)" }}
           >
             {messages[currentMsg]}
           </h1>
-          <p className="text-base md:text-lg text-slate-700 dark:text-white/80 max-w-2xl mx-auto">
+
+          <p className="text-lg text-white/60 max-w-lg mx-auto leading-relaxed mb-10">
             {t(
               "auth.bannerDesc",
               "Discover validated startup problems from real conversations. Turn market insights into your next big idea.",
             )}
           </p>
+
+          {/* Feature pills */}
+          <div className="flex flex-wrap justify-center gap-3">
+            {[
+              "🔍 Real Problem Discovery",
+              "✅ Validated Demand",
+              "🤖 Multi-Agent AI",
+              "⚡ Instant Insights",
+            ].map((f) => (
+              <span
+                key={f}
+                className="px-4 py-2 rounded-full bg-white/8 border border-white/15 text-white/75 text-sm font-medium"
+              >
+                {f}
+              </span>
+            ))}
+          </div>
         </div>
       </div>
 
