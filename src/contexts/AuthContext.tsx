@@ -154,7 +154,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // preventing the socket effect from observing a transient null and disconnecting!
   const [user, setUser] = useState<User | null>(() => getCachedUser());
   const [loading, setLoading] = useState(() => !getCachedUser());
-  const [socketConnected, setSocketConnected] = useState(false);
+  const [socketConnected, setSocketConnected] = useState(() => socketService.isConnected());
+  const prevUserIdRef = useRef<string | undefined>(undefined);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { i18n } = useTranslation();
@@ -274,7 +275,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       currentPath.startsWith("/pricing") ||
       currentPath.startsWith("/payment") ||
       currentPath.startsWith("/reset-password") ||
-      currentPath.startsWith("/blog");
+      currentPath.startsWith("/blog") ||
+      currentPath.startsWith("/chat") ||
+      currentPath.startsWith("/agents");
 
     // Only redirect to auth for protected routes
     if (!isPublicPath) {
@@ -534,10 +537,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     socketService.on("forced_disconnect", onForcedDisconnect);
 
     // Reconnect socket on auth state transition (guest <-> user)
-    if (socketService.isConnected()) {
-      socketService.disconnect();
+    const prevUserId = prevUserIdRef.current;
+    prevUserIdRef.current = user?.id;
+
+    if (prevUserId !== undefined && prevUserId !== user?.id) {
+      if (socketService.isConnected()) {
+        socketService.disconnect();
+      }
+      socketService.connect();
+    } else if (!socketService.isConnected()) {
+      socketService.connect();
+    } else {
+      setSocketConnected(true);
     }
-    socketService.connect();
 
     return () => {
       // Clean up event listeners on unmount/re-render, but DO NOT disconnect the singleton socket

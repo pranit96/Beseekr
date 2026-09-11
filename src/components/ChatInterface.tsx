@@ -42,6 +42,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import guestSessionService from "@/services/guestSessionService";
+import socketService from "@/services/socketService";
 import { LoginPromptModal } from "@/components/LoginPromptModal";
 
 const logger = createLogger("ChatInterface");
@@ -313,20 +314,18 @@ export const ChatInterface: React.FC<{
   const { execute, ensureConnected, getStatus } = useOrchestration();
 
   useEffect(() => {
-    setConnectionStatus(socketConnected ? "connected" : "disconnected");
+    const isOnline = socketConnected || socketService.isConnected();
+    setConnectionStatus(isOnline ? "connected" : "connecting");
   }, [socketConnected]);
 
   useEffect(() => {
-    const id = setInterval(() => {
+    const checkConnection = () => {
       const s = getStatus();
-      setConnectionStatus(
-        !socketConnected
-          ? "disconnected"
-          : s.connected
-            ? "connected"
-            : "connecting",
-      );
-    }, 2000);
+      const isOnline = socketConnected || s.connected || socketService.isConnected();
+      setConnectionStatus(isOnline ? "connected" : "connecting");
+    };
+    checkConnection();
+    const id = setInterval(checkConnection, 1500);
     return () => clearInterval(id);
   }, [getStatus, socketConnected]);
 
@@ -469,12 +468,14 @@ export const ChatInterface: React.FC<{
       });
       return;
     }
-    if (!socketConnected) {
+    const isConnected = socketConnected || socketService.isConnected();
+    if (!isConnected) {
       toast({
-        title: "Not connected",
-        description: "Waiting for connection…",
+        title: "Connecting to server",
+        description: "Waiting for connection… Please try again in a moment.",
         variant: "destructive",
       });
+      socketService.connect();
       return;
     }
     if (rateLimitedUntil && Date.now() < rateLimitedUntil) {
@@ -980,16 +981,21 @@ export const ChatInterface: React.FC<{
     isCancelling ||
     preparingMessage ||
     (!!rateLimitedUntil && Date.now() < rateLimitedUntil) ||
-    !socketConnected;
+    (!socketConnected && connectionStatus !== "connected" && !socketService.isConnected());
   const isActive = isExecuting || preparingMessage;
 
   // ── Inline status line — only system-level states, not execution progress ───
   let statusLineNode = null;
-  if (connectionStatus === "disconnected") {
+  const isCurrentlyConnected =
+    socketConnected ||
+    connectionStatus === "connected" ||
+    socketService.isConnected();
+
+  if (!isCurrentlyConnected && connectionStatus === "disconnected") {
     statusLineNode = (
       <div className="status-line status-line-error">
         <WifiOff className="w-3 h-3" />
-        <span>Reconnecting…</span>
+        <span>Connecting…</span>
       </div>
     );
   } else if (rateLimitedUntil && Date.now() < rateLimitedUntil) {

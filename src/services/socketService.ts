@@ -1,6 +1,7 @@
 // frontend src/services/socketService.ts
 import { io, Socket } from "socket.io-client";
 import { createLogger } from "@/services/logging";
+import guestSessionService from "./guestSessionService";
 
 const logger = createLogger("SocketService");
 
@@ -145,26 +146,44 @@ class SocketService {
    * Connect to socket server with enhanced security
    */
   connect(): Socket {
-    // Guard 1: Already fully connected or in-flight handshake
-    if (this.socket?.connected || this.connecting) {
+    const guestId =
+      typeof window !== "undefined"
+        ? localStorage.getItem("pw_guest_id") || guestSessionService.getGuestId()
+        : null;
+
+    // Guard 1: Already fully connected
+    if (this.socket?.connected) {
+      this._emitLocal("connection_status", {
+        connected: true,
+        socketId: this.socket.id,
+      });
+      return this.socket;
+    }
+
+    if (this.connecting) {
       return this.socket!;
     }
 
     // Guard 2: Socket instance exists but is disconnected — reuse it!
     if (this.socket) {
+      if (guestId) {
+        if (!this.socket.auth) this.socket.auth = {};
+        (this.socket.auth as any).guestId = guestId;
+      }
       this.connecting = true;
       this.socket.connect();
       this.startHeartbeat();
       return this.socket;
     }
 
-    const SOCKET_URL = import.meta.env.VITE_API_BASE_URL;
+    const SOCKET_URL =
+      import.meta.env.VITE_SOCKET_URL ||
+      import.meta.env.VITE_API_BASE_URL ||
+      (typeof window !== "undefined" ? window.location.origin : "http://localhost:3000");
 
     if (!SOCKET_URL || !this.isValidUrl(SOCKET_URL)) {
       throw new Error("Invalid socket URL configuration");
     }
-
-    const guestId = typeof window !== "undefined" ? localStorage.getItem("pw_guest_id") : null;
 
     const opts: any = {
       withCredentials: true, // ✅ this sends HttpOnly cookies automatically
