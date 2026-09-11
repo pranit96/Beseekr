@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import { getIsNewMode } from "@/utils/envFlags";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChatInterface } from "@/components/ChatInterface";
@@ -38,25 +39,19 @@ const ChatSkeleton = ({ isNewMode = false }: { isNewMode?: boolean }) => {
         {/* Header mockup skeleton */}
         <div className="flex-shrink-0 px-4 pt-3 pb-2">
           <div className="max-w-7xl mx-auto h-14 rounded-2xl border border-white/[0.03] bg-white/[0.02] backdrop-blur-xl flex items-center justify-between px-5 animate-pulse">
-            <div className="flex items-center gap-3">
-              <div className="h-6 w-24 rounded-md bg-white/[0.05]" />
+            <div className="flex items-center gap-4">
+              <div className="w-8 h-8 rounded-xl bg-white/[0.05]" />
+              <div className="h-4 w-32 rounded-md bg-white/[0.05]" />
             </div>
-            <div className="hidden md:flex h-8 w-80 rounded-xl bg-white/[0.03]" />
-            <div className="flex gap-2">
+            <div className="flex items-center gap-3">
+              <div className="h-8 w-20 rounded-xl bg-white/[0.03] border border-white/[0.05]" />
               <div className="h-8 w-8 rounded-full bg-white/[0.05]" />
             </div>
           </div>
         </div>
 
-        {/* Hero & Workspace Skeleton */}
-        <div className="flex-1 flex flex-col max-w-6xl mx-auto w-full px-6 pt-12 md:pt-20 gap-12 animate-pulse">
-          <div className="flex flex-col gap-4 max-w-2xl">
-            <div className="h-3 w-32 rounded bg-primary/20" />
-            <div className="h-12 w-full md:w-3/4 rounded-lg bg-white/[0.05]" />
-            <div className="h-8 w-2/3 rounded-md bg-white/[0.03]" />
-          </div>
-
-          {/* The Central Rounded Framed Container */}
+        {/* Framing box matching new modern layout */}
+        <div className="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 flex gap-6 overflow-hidden">
           <div className="flex-1 min-h-[500px] rounded-3xl border border-white/[0.05] bg-white/[0.01] backdrop-blur-sm p-8 flex flex-col justify-between">
             <div className="flex flex-col gap-6">
               <div className="flex gap-3 justify-center md:justify-start flex-wrap">
@@ -161,6 +156,8 @@ interface Conversation {
 
 const Chat = () => {
   const queryClient = useQueryClient();
+  const [searchParams] = useSearchParams();
+  const urlAgentId = searchParams.get("agent");
   const [currentConversationId, setCurrentConversationId] = useState<string>();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [key, setKey] = useState(0);
@@ -808,6 +805,7 @@ const Chat = () => {
               <ChatInterface
                 key={key}
                 agents={agents}
+                initialAgentId={urlAgentId}
                 activeConversationId={currentConversationId}
                 onNewSession={handleNewSession}
                 onConversationChange={handleConversationChange}
@@ -962,6 +960,7 @@ const Chat = () => {
             <ChatInterface
               key={key}
               agents={agents}
+              initialAgentId={urlAgentId}
               activeConversationId={currentConversationId}
               onNewSession={handleNewSession}
               onConversationChange={handleConversationChange}

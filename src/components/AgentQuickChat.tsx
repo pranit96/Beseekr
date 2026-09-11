@@ -10,6 +10,9 @@ import useOrchestration from "@/hooks/use-orchestration";
 import { Agent } from "@/types/agent";
 import { cn } from "@/lib/utils";
 import { createLogger } from "@/services/logging";
+import socketService from "@/services/socketService";
+import guestSessionService from "@/services/guestSessionService";
+import { useToast } from "@/hooks/use-toast";
 
 const logger = createLogger("AgentQuickChat");
 
@@ -42,7 +45,8 @@ export const AgentQuickChat: React.FC<AgentQuickChatProps> = ({
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const cancelRef = useRef<null | (() => void)>(null);
 
-  const { socketConnected } = useAuth();
+  const { user, socketConnected } = useAuth();
+  const { toast } = useToast();
   const { execute, ensureConnected } = useOrchestration();
 
   // Auto-scroll to bottom on new messages
@@ -50,12 +54,15 @@ export const AgentQuickChat: React.FC<AgentQuickChatProps> = ({
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Auto-focus textarea when opened
+  // Auto-focus textarea and ensure socket connection when opened
   useEffect(() => {
-    if (open && !isExecuting) {
-      setTimeout(() => textareaRef.current?.focus(), 300);
+    if (open) {
+      ensureConnected();
+      if (!isExecuting) {
+        setTimeout(() => textareaRef.current?.focus(), 300);
+      }
     }
-  }, [open, isExecuting]);
+  }, [open, isExecuting, ensureConnected]);
 
   // Elapsed time counter
   useEffect(() => {
@@ -84,10 +91,26 @@ export const AgentQuickChat: React.FC<AgentQuickChatProps> = ({
   }, [agent.id]);
 
   const handleSend = useCallback(async () => {
-    if (!input.trim() || isExecuting || !socketConnected) return;
+    if (!input.trim() || isExecuting) return;
+
+    if (!user && guestSessionService.isDailyMessageLimitReached()) {
+      toast({
+        title: "Daily guest limit reached",
+        description:
+          "You've used all 5 free guest messages today. Sign in to continue chatting!",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    ensureConnected();
 
     const messageText = input.trim();
     setInput("");
+
+    if (!user) {
+      guestSessionService.incrementDailyMessageCount();
+    }
 
     const userMsg: Message = {
       id: `msg-${Date.now()}-user`,
@@ -118,8 +141,18 @@ export const AgentQuickChat: React.FC<AgentQuickChatProps> = ({
           message: messageText,
           mode: "sequential",
           save_to_conversation: false,
+          custom_agents: [agent],
         },
         {
+          onAgentToken: (_agentId: string, token: string) => {
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantMsgId
+                  ? { ...m, content: m.content + token, status: "streaming" }
+                  : m,
+              ),
+            );
+          },
           onToken: (_agentId: string, token: string) => {
             setMessages((prev) =>
               prev.map((m) =>
@@ -193,7 +226,7 @@ export const AgentQuickChat: React.FC<AgentQuickChatProps> = ({
       setIsExecuting(false);
       cancelRef.current = null;
     }
-  }, [input, isExecuting, socketConnected, agent.id, execute, ensureConnected]);
+  }, [input, isExecuting, socketConnected, agent, user, toast, execute, ensureConnected]);
 
   if (!open) return null;
 
@@ -335,14 +368,15 @@ export const AgentQuickChat: React.FC<AgentQuickChatProps> = ({
               }}
               placeholder={`Message ${agent.name}...`}
               className="flex-1 resize-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 min-h-[36px] max-h-[120px] text-sm"
-              disabled={isExecuting || !socketConnected}
+              disabled={isExecuting}
               rows={1}
             />
             <Button
               onClick={handleSend}
-              disabled={!input.trim() || isExecuting || !socketConnected}
+              disabled={!input.trim() || isExecuting}
               size="icon"
               className="h-8 w-8 rounded-lg bg-primary hover:bg-primary/90 transition flex-shrink-0"
+              aria-label="Send message"
             >
               {isExecuting ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -351,6 +385,14 @@ export const AgentQuickChat: React.FC<AgentQuickChatProps> = ({
               )}
             </Button>
           </div>
+          {!user && (
+            <div className="text-[11px] text-muted-foreground/70 flex items-center justify-between mt-2 px-1">
+              <span>Guest Mode</span>
+              <span className="font-semibold text-primary">
+                {guestSessionService.getDailyMessageCount()}/5 free messages used
+              </span>
+            </div>
+          )}
           {isExecuting && (
             <div className="text-xs text-muted-foreground text-center mt-2 flex items-center justify-center gap-2">
               <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />

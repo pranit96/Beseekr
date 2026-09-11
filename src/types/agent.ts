@@ -4,6 +4,8 @@ export interface Agent {
   description: string;
   color?: string;
   is_default?: boolean;
+  is_template?: boolean;
+  is_guest?: boolean;
   domain?: string;
   system_prompt?: string;
   model?: string;

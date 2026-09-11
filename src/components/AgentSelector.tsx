@@ -44,11 +44,11 @@ export const AgentSelector = ({
   const isNewUI = getIsNewMode();
 
   const customAgents = useMemo(
-    () => agents.filter((a) => !a.is_default),
+    () => agents.filter((a) => !a.is_default && !a.is_template),
     [agents],
   );
   const defaultAgents = useMemo(
-    () => agents.filter((a) => a.is_default),
+    () => agents.filter((a) => a.is_default || a.is_template),
     [agents],
   );
 
@@ -109,10 +109,11 @@ export const AgentSelector = ({
     <Button
       variant="ghost"
       size="sm"
-      className="h-7 w-7 p-0 rounded-full bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 shrink-0"
+      className="h-7 px-2.5 gap-1.5 rounded-full bg-primary/10 text-primary border border-primary/25 hover:bg-primary/20 shrink-0 text-xs font-semibold"
       aria-label="Select more agents"
     >
-      <Sparkles className="w-4 h-4" />
+      <Sparkles className="w-3.5 h-3.5" />
+      <span className="hidden sm:inline text-[11px]">Agents</span>
     </Button>
   ) : (
     <Button

@@ -71,12 +71,13 @@ export function useAgents(params?: {
   });
 }
 
-export function useMyAgents() {
+export function useMyAgents(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: queryKeys.myAgents,
     queryFn: () => apiClient.getMyAgents(),
     staleTime: 2 * 60 * 1000, // 2 minutes - agents don't change often
     gcTime: 10 * 60 * 1000,
+    ...options,
   });
 }
 

@@ -5,7 +5,7 @@ import { Agent } from "@/types/agent";
 import { useAuth } from "@/contexts/AuthContext";
 import { createLogger } from "@/services/logging";
 
-import guestSessionService from "@/services/guestSessionService";
+import guestSessionService, { DEFAULT_AGENT_TEMPLATES } from "@/services/guestSessionService";
 
 const logger = createLogger("useAgents");
 
@@ -34,9 +34,10 @@ export const useAgents = () => {
 
         let agentList: Agent[] = [];
         if (res.success && res.data) {
-          if (Array.isArray(res.data)) agentList = res.data;
-          else if (Array.isArray(res.data.agents)) agentList = res.data.agents;
-          else if (Array.isArray(res.data.data)) agentList = res.data.data;
+          const d = res.data as any;
+          if (Array.isArray(d)) agentList = d;
+          else if (Array.isArray(d.agents)) agentList = d.agents;
+          else if (Array.isArray(d.data)) agentList = d.data;
         }
 
         return agentList;
@@ -45,11 +46,11 @@ export const useAgents = () => {
       // Guest flow: load templates + custom guest agents
       logger.info("Fetching guest agents (templates + local)");
       const guestAgents = guestSessionService.getGuestAgents();
-      let templateAgents: Agent[] = [];
+      let templateAgents: Agent[] = DEFAULT_AGENT_TEMPLATES;
 
       try {
         const tRes = await apiClient.getAgentTemplates();
-        if (tRes.success && Array.isArray(tRes.data)) {
+        if (tRes.success && Array.isArray(tRes.data) && tRes.data.length > 0) {
           templateAgents = tRes.data.map((t: any) => ({
             id: t.id,
             name: t.name,
@@ -60,6 +61,7 @@ export const useAgents = () => {
             max_tokens: t.max_tokens ?? 2000,
             is_active: true,
             is_public: true,
+            is_default: true,
             is_template: true,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
@@ -67,7 +69,7 @@ export const useAgents = () => {
           } as Agent));
         }
       } catch (tErr) {
-        logger.warn("Failed to load templates for guest:", tErr);
+        logger.warn("Failed to load live templates for guest, using defaults:", tErr);
       }
 
       return [...guestAgents, ...templateAgents];

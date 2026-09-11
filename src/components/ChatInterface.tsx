@@ -207,6 +207,7 @@ const AgentLoadingCard = ({
 
 export const ChatInterface: React.FC<{
   agents: Agent[];
+  initialAgentId?: string | null;
   activeConversationId?: string;
   onConversationChange?: (conversationId: string | null) => void;
   onConversationCreated?: (conversationId: string) => void;
@@ -216,6 +217,7 @@ export const ChatInterface: React.FC<{
   renderHistoryButton?: React.ReactNode;
 }> = ({
   agents,
+  initialAgentId,
   activeConversationId,
   onConversationChange,
   onConversationCreated,
@@ -436,6 +438,30 @@ export const ChatInterface: React.FC<{
     }
   }, [messages, agents, activeConversationId]);
 
+  // Ensure default agent is selected when agents become available
+  useEffect(() => {
+    if (selectedAgents.length === 0 && agents.length > 0 && !hasRestoredAgentsRef.current) {
+      const defaultAgent =
+        (initialAgentId && agents.find((a) => a.id === initialAgentId)) ||
+        agents.find((a) => a.id === "tutor") ||
+        agents.find((a) => a.is_default || a.is_template) ||
+        agents[0];
+      if (defaultAgent) {
+        setSelectedAgents([defaultAgent]);
+      }
+    }
+  }, [agents, selectedAgents.length, initialAgentId]);
+
+  // When initialAgentId changes (e.g. user selects an agent from /agents to open in AI Chat)
+  useEffect(() => {
+    if (initialAgentId && agents.length > 0) {
+      const target = agents.find((a) => a.id === initialAgentId);
+      if (target) {
+        setSelectedAgents([target]);
+      }
+    }
+  }, [initialAgentId, agents]);
+
   const startRateLimitCountdown = (seconds: number) => {
     const until = Date.now() + seconds * 1000;
     setRateLimitedUntil(until);
@@ -456,26 +482,45 @@ export const ChatInterface: React.FC<{
     overrideMessage?: string,
     overrideAgents?: Agent[],
   ) => {
-    const finalAgents = overrideAgents || selectedAgents;
+    let finalAgents = overrideAgents || selectedAgents;
+    if (finalAgents.length === 0 && agents.length > 0) {
+      const defaultAgent =
+        agents.find((a) => a.id === "tutor") ||
+        agents.find((a) => a.is_default || a.is_template) ||
+        agents[0];
+      if (defaultAgent) {
+        finalAgents = [defaultAgent];
+        setSelectedAgents([defaultAgent]);
+      }
+    }
     const messageText = overrideMessage || input;
 
     if (!messageText.trim() && attachedFiles.length === 0) return;
     if (finalAgents.length === 0) {
       toast({
-        title: "No agents selected",
-        description: "Select at least one agent.",
+        title: "No agents available",
+        description: "Please select or create an agent to start chatting.",
         variant: "destructive",
       });
       return;
     }
-    const isConnected = socketConnected || socketService.isConnected();
+    let isConnected = socketConnected || socketService.isConnected();
+    if (!isConnected) {
+      socketService.connect();
+      for (let i = 0; i < 20; i++) {
+        if (socketConnected || socketService.isConnected()) {
+          isConnected = true;
+          break;
+        }
+        await new Promise((r) => setTimeout(r, 100));
+      }
+    }
     if (!isConnected) {
       toast({
         title: "Connecting to server",
         description: "Waiting for connection… Please try again in a moment.",
         variant: "destructive",
       });
-      socketService.connect();
       return;
     }
     if (rateLimitedUntil && Date.now() < rateLimitedUntil) {
@@ -975,13 +1020,14 @@ export const ChatInterface: React.FC<{
     }
   };
 
-  const sendDisabled =
+  const isInputDisabled =
     isLoadingLocal ||
     isExecuting ||
     isCancelling ||
     preparingMessage ||
-    (!!rateLimitedUntil && Date.now() < rateLimitedUntil) ||
-    (!socketConnected && connectionStatus !== "connected" && !socketService.isConnected());
+    (!!rateLimitedUntil && Date.now() < rateLimitedUntil);
+
+  const sendDisabled = isInputDisabled;
   const isActive = isExecuting || preparingMessage;
 
   // ── Inline status line — only system-level states, not execution progress ───
@@ -1093,7 +1139,7 @@ export const ChatInterface: React.FC<{
           onRemoveFile={(id) =>
             setAttachedFiles((prev) => prev.filter((f) => f.id !== id))
           }
-          disabled={sendDisabled}
+          disabled={isInputDisabled}
         />
         <Textarea
           ref={textareaRef}
@@ -1109,7 +1155,7 @@ export const ChatInterface: React.FC<{
             isExecuting ? "Agents are working…" : "Message your agents…"
           }
           className="flex-1 resize-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 min-h-[44px] max-h-[180px] text-sm placeholder:text-muted-foreground/40 py-3"
-          disabled={sendDisabled}
+          disabled={isInputDisabled}
           rows={1}
           aria-label="Message input"
         />
@@ -1340,7 +1386,7 @@ export const ChatInterface: React.FC<{
                               backgroundColor: cyclingAgent.color || "#d1d5db",
                             }}
                           />
-                          <span className="text-red-500 font-bold">
+                          <span className="text-muted-foreground/80 hover:text-foreground font-medium">
                             {cyclingAgent.name}
                           </span>
                         </button>

@@ -46,11 +46,14 @@ import {
   useUpdateAgent,
   useDeleteAgent,
 } from "@/hooks/use-api-queries";
+import { useQueryClient } from "@tanstack/react-query";
 import { AgentQuickChat } from "@/components/AgentQuickChat";
 import { ShareAgentModal } from "@/components/ShareAgentModal";
 import { LoginPromptModal } from "@/components/LoginPromptModal";
 import { useAuth } from "@/contexts/AuthContext";
-import guestSessionService from "@/services/guestSessionService";
+import guestSessionService, {
+  DEFAULT_AGENT_TEMPLATES,
+} from "@/services/guestSessionService";
 import React from "react";
 
 const TOOL_ICON_MAP: Record<string, React.ElementType> = {
@@ -74,7 +77,9 @@ const Agents = () => {
   const [editingAgent, setEditingAgent] = useState<Agent | undefined>();
   const [deleteAgentId, setDeleteAgentId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [templates, setTemplates] = useState<AgentTemplate[]>([]);
+  const [templates, setTemplates] = useState<Agent[]>(
+    () => DEFAULT_AGENT_TEMPLATES,
+  );
   const [loadingTemplates, setLoadingTemplates] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
   const [quickChatAgent, setQuickChatAgent] = useState<Agent | null>(null);
@@ -85,20 +90,43 @@ const Agents = () => {
   );
   const { toast } = useToast();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const {
     data: agentsResponse,
     isLoading: loading,
     error,
     refetch,
-  } = useMyAgents();
+  } = useMyAgents({ enabled: !!user });
   const createAgentMutation = useCreateAgent();
   const updateAgentMutation = useUpdateAgent();
   const deleteAgentMutation = useDeleteAgent();
 
+  const templateAgents = useMemo(() => {
+    if (templates.length > 0) {
+      return templates.map((t) => ({
+        id: t.id,
+        name: t.name,
+        description: t.description,
+        domain: t.domain || "General",
+        system_prompt: t.system_prompt,
+        temperature: t.temperature ?? 0.7,
+        max_tokens: t.max_tokens ?? 2000,
+        is_active: true,
+        is_public: true,
+        is_default: true,
+        is_template: true,
+        created_at: "2026-01-01T00:00:00Z",
+        updated_at: "2026-01-01T00:00:00Z",
+        metadata: { icon: t.metadata?.icon },
+      } as Agent));
+    }
+    return DEFAULT_AGENT_TEMPLATES;
+  }, [templates]);
+
   const agents = useMemo(() => {
     if (!user) {
-      return guestAgents;
+      return [...guestAgents, ...templateAgents];
     }
     if (!agentsResponse) return [];
     const d = agentsResponse.data as any;
@@ -106,12 +134,23 @@ const Agents = () => {
     if (d && Array.isArray(d.agents)) return d.agents;
     if (d && Array.isArray(d.data)) return d.data;
     return [];
-  }, [user, guestAgents, agentsResponse]);
+  }, [user, guestAgents, templateAgents, agentsResponse]);
 
-  // Auto load templates for guests so they have immediate agents to explore
+  // Silently refresh live templates in background without auto-opening drawer
   useEffect(() => {
-    if (!user && templates.length === 0) {
-      fetchTemplates();
+    if (!user) {
+      apiClient
+        .getAgentTemplates()
+        .then((res) => {
+          if (res.success && res.data) {
+            const resData = res.data as any;
+            const list = Array.isArray(resData)
+              ? resData
+              : resData.templates || [];
+            if (list.length > 0) setTemplates(list);
+          }
+        })
+        .catch(() => {});
     }
   }, [user]);
 
@@ -125,26 +164,23 @@ const Agents = () => {
   }, [error, toast, user]);
 
   const fetchTemplates = async () => {
-    if (templates.length > 0) {
-      setShowTemplates((p) => !p);
+    if (showTemplates) {
+      setShowTemplates(false);
       return;
     }
-    setLoadingTemplates(true);
     setShowTemplates(true);
+    setLoadingTemplates(true);
     try {
       const res = await apiClient.getAgentTemplates();
       if (res.success && res.data) {
         const resData = res.data as any;
-        setTemplates(
-          Array.isArray(resData) ? resData : resData.templates || [],
-        );
+        const list = Array.isArray(resData)
+          ? resData
+          : resData.templates || [];
+        if (list.length > 0) setTemplates(list);
       }
     } catch (err: any) {
-      toast({
-        title: "Failed to load templates",
-        description: err.message,
-        variant: "destructive",
-      });
+      console.warn("Could not load templates:", err);
     } finally {
       setLoadingTemplates(false);
     }
@@ -186,6 +222,7 @@ const Agents = () => {
           description: `${created.name} created (${guestSessionService.getGuestAgents().length}/3 guest agents). Sign in to save permanently.`,
         });
       }
+      queryClient.invalidateQueries({ queryKey: ["agents"] });
       setIsDialogOpen(false);
       setEditingAgent(undefined);
       return;
@@ -201,7 +238,7 @@ const Agents = () => {
   const handleDeleteAgent = async () => {
     if (!deleteAgentId) return;
     const targetAgent = agents.find((a) => a.id === deleteAgentId);
-    if (targetAgent?.is_default) {
+    if (targetAgent?.is_default || targetAgent?.is_template) {
       toast({
         title: "Action not allowed",
         description: "Default agents cannot be deleted.",
@@ -210,6 +247,19 @@ const Agents = () => {
       setDeleteAgentId(null);
       return;
     }
+
+    if (!user) {
+      guestSessionService.deleteGuestAgent(deleteAgentId);
+      setGuestAgents(guestSessionService.getGuestAgents());
+      queryClient.invalidateQueries({ queryKey: ["agents"] });
+      toast({
+        title: "Agent deleted",
+        description: "Guest agent removed.",
+      });
+      setDeleteAgentId(null);
+      return;
+    }
+
     try {
       await deleteAgentMutation.mutateAsync(deleteAgentId);
       apiClient.invalidateCache("/api/agents");
@@ -221,7 +271,7 @@ const Agents = () => {
     }
   };
 
-  const handleCreateFromTemplate = (t: AgentTemplate) => {
+  const handleCreateFromTemplate = (t: Agent) => {
     if (!user && guestSessionService.isGuestAgentLimitReached()) {
       setShowLoginPrompt(true);
       return;
@@ -231,7 +281,7 @@ const Agents = () => {
       name: t.name,
       description: t.description,
       domain: t.domain || "",
-      system_prompt: t.system_prompt,
+      system_prompt: t.system_prompt || "",
       color: t.color || "hsl(var(--primary))",
       is_default: false,
     } as Agent);
@@ -348,15 +398,26 @@ const Agents = () => {
 
         {/* Action control footer (Always Visible, Touch-Friendly, Responsive) */}
         <div className="border-t border-border/20 p-4 bg-muted/10 flex items-center justify-between mt-auto">
-          <button
-            onClick={() => setQuickChatAgent(agent)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-primary/10 border border-primary/20 text-primary hover:bg-primary hover:text-primary-foreground transition-all duration-300"
-            title="Quick chat"
-            aria-label={`Quick chat with ${agent.name}`}
-          >
-            <MessageSquare className="w-3.5 h-3.5" />
-            <span>Chat</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setQuickChatAgent(agent)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-primary/10 border border-primary/20 text-primary hover:bg-primary hover:text-primary-foreground transition-all duration-300"
+              title="Quick chat drawer"
+              aria-label={`Quick chat with ${agent.name}`}
+            >
+              <MessageSquare className="w-3.5 h-3.5" />
+              <span>Quick Chat</span>
+            </button>
+            <button
+              onClick={() => navigate(`/chat?agent=${agent.id}`)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-muted/30 border border-border/30 text-muted-foreground hover:bg-primary/20 hover:text-primary transition-all duration-300"
+              title="Open full AI Chat"
+              aria-label={`Open ${agent.name} in AI Chat`}
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>AI Chat</span>
+            </button>
+          </div>
 
           <div className="flex items-center gap-1">
             <button
@@ -580,8 +641,8 @@ const Agents = () => {
                       <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full blur-[35px] -mr-8 -mt-8 pointer-events-none group-hover:bg-primary/10 transition-colors duration-500" />
 
                       <div>
-                        {t.icon && (
-                          <span className="text-2xl mb-3 block">{t.icon}</span>
+                        {t.metadata?.icon && (
+                          <span className="text-2xl mb-3 block">{t.metadata.icon}</span>
                         )}
                         <h4 className="text-sm font-bold text-foreground mb-1 group-hover:text-primary transition-colors">
                           {t.name}

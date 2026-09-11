@@ -54,10 +54,8 @@ const useOrchestration = () => {
    */
   const ensureConnected = useCallback(() => {
     if (!socketService.isConnected()) {
-      logger.warn("Socket not connected when executing orchestration");
-      throw new Error(
-        "Connection to server not established. Please wait a moment or log in again.",
-      );
+      logger.info("Connecting socket on demand in useOrchestration");
+      socketService.connect();
     }
   }, []);
 
@@ -65,14 +63,27 @@ const useOrchestration = () => {
    * Execute orchestration
    */
   const execute = useCallback(
-    (
+    async (
       payload: OrchestrationPayload,
       callbacks: OrchestrationCallbacks = {},
     ): Promise<any> => {
+      // Ensure connection before execution with short grace period
+      if (!socketService.isConnected()) {
+        socketService.connect();
+        for (let i = 0; i < 30; i++) {
+          if (socketService.isConnected()) break;
+          await new Promise((r) => setTimeout(r, 100));
+        }
+      }
+
       return new Promise((resolve, reject) => {
         try {
-          // Ensure connection before execution
-          ensureConnected();
+          if (!socketService.isConnected()) {
+            const err = { error: "Connection to server not established. Please wait a moment or try again." };
+            callbacks.onError?.(err);
+            reject(err);
+            return;
+          }
 
           const control = socketService.executeOrchestration(payload, {
             onAck: (data) => {
