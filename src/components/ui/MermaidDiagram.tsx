@@ -100,7 +100,14 @@ function repairMermaidSyntax(rawCode: string): string {
     .replace(/--\s*>/g, "-->")
     .replace(/->\s*>/g, "-->");
 
-  // 3. Process line-by-line to safely quote unquoted node labels containing special chars
+  // 3. Fix nested double-quotes inside already-quoted labels (e.g. A["O("1")"] -> A["O(1)"])
+  code = code.replace(
+    /\b([A-Za-z0-9_]+)(\[\[?|\(\(?|\{\{?|\[\(|\(\[)"([\s\S]*?)"(\]\]?|\)\)?|\}\}?|\)\]|\]\))(?=\s*(?:-->|---|==>|-\.-|--\s*\||\.->|===|&|\)|\]|\}|\n|$))/gm,
+    (_m, id, open, inner, close) => `${id}${open}"${inner.replace(/"/g, "")}"${close}`,
+  );
+
+  // 4. Process line-by-line: protect quoted strings with placeholders so math/Big-O notations
+  // like O(n) or function calls inside labels are NEVER mangled as round nodes
   const lines = code.split("\n");
   const repairedLines = lines.map((line) => {
     let l = line;
@@ -113,39 +120,42 @@ function repairMermaidSyntax(rawCode: string): string {
       return l;
     }
 
-    // Match node definitions with square brackets: id[content]
-    // e.g. A[Start: Define Goal (Weight loss, etc.)] -> A["Start: Define Goal (Weight loss, etc.)"]
+    // Protect all already-quoted strings with placeholders
+    const quotes: string[] = [];
+    l = l.replace(/"([^"\\]*(?:\\.[^"\\]*)*)"/g, (match) => {
+      quotes.push(match);
+      return `__Q${quotes.length - 1}__`;
+    });
+
+    // Square brackets: id[content] — only unquoted
+    l = l.replace(/\b([A-Za-z0-9_]+)\[([^\]]+)\]/g, (match, id, text) => {
+      if (text.startsWith("__Q") && text.endsWith("__")) return match;
+      return `${id}["${text.replace(/"/g, "").trim()}"]`;
+    });
+
+    // Curly braces: id{content} — only unquoted
+    l = l.replace(/\b([A-Za-z0-9_]+)\{([^\}]+)\}/g, (match, id, text) => {
+      if (text.startsWith("__Q") && text.endsWith("__")) return match;
+      return `${id}{"${text.replace(/"/g, "").trim()}"}`;
+    });
+
+    // Round parens: id(content) — only standalone / unquoted Mermaid nodes
     l = l.replace(
-      /\b([A-Za-z0-9_]+)\[(?!\s*")([^\]]+)\]/g,
-      (_match, id, text) => {
-        const safeText = text.replace(/"/g, '\\"');
-        return `${id}["${safeText.trim()}"]`;
+      /(^|[\s;&]|-->|---|==>|-\.-)(\s*)([A-Za-z0-9_]+)\((?!\s*[\("\[])([^\)]+)\)/g,
+      (match, prefix, spacing, id, text) => {
+        if (text.startsWith("__Q") && text.endsWith("__")) return match;
+        return `${prefix || ""}${spacing || ""}${id}("${text.replace(/"/g, "").trim()}")`;
       },
     );
 
-    // Match node definitions with curly braces: id{content}
-    // e.g. B{Choose IF Protocol} -> B{"Choose IF Protocol"}
-    l = l.replace(
-      /\b([A-Za-z0-9_]+)\{(?!\s*")([^\}]+)\}/g,
-      (_match, id, text) => {
-        const safeText = text.replace(/"/g, '\\"');
-        return `${id}{"${safeText.trim()}"}`;
-      },
-    );
+    // Edge labels: -->|text| — unquoted
+    l = l.replace(/-->\|([^\s"][^\|]*)\|/g, (_match, text) => {
+      return `-->|"${text.replace(/"/g, "").trim()}"|`;
+    });
 
-    // Match node definitions with round parens: id(content)
-    l = l.replace(
-      /\b([A-Za-z0-9_]+)\((?!\s*[\("])([^\)]+)\)/g,
-      (_match, id, text) => {
-        const safeText = text.replace(/"/g, '\\"');
-        return `${id}("${safeText.trim()}")`;
-      },
-    );
-
-    // Match edge labels: -->|text| e.g. -->|16/8| or -->|label with (parens)|
-    l = l.replace(/-->\|(?!\s*")([^\|]+)\|/g, (_match, text) => {
-      const safeText = text.replace(/"/g, '\\"');
-      return `-->|"${safeText.trim()}"|`;
+    // Restore protected quotes
+    quotes.forEach((q, idx) => {
+      l = l.replace(`__Q${idx}__`, q);
     });
 
     return l;

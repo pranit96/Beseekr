@@ -41,8 +41,9 @@ export function CreatePlanForm({ onSuccess }: CreatePlanFormProps) {
       },
       {
         onSuccess: (res) => {
-          if (res.data?.plan.id) {
-            onSuccess(res.data.plan.id);
+          const planId = res.data?.plan?.id || (res.data as any)?.id;
+          if (planId) {
+            onSuccess(planId);
           }
         },
       },
@@ -52,8 +53,9 @@ export function CreatePlanForm({ onSuccess }: CreatePlanFormProps) {
   const handleImport = (data: ImportPlanPayload) => {
     importPlanMutation.mutate(data, {
       onSuccess: (res) => {
-        if (res.data?.plan.id) {
-          onSuccess(res.data.plan.id);
+        const planId = res.data?.plan?.id || (res.data as any)?.id;
+        if (planId) {
+          onSuccess(planId);
         }
       },
     });
