@@ -253,10 +253,16 @@ export function LearnTab({
                 {...props}
               />
             ),
-            code: ({ node, inline, className, children, ...props }: any) => {
+            pre: ({ children }: any) => <>{children}</>,
+            code: ({ node, className, children, ...props }: any) => {
               const codeContent = String(children || "").replace(/\n$/, "");
               const match = /language-(\w+)/.exec(className || "");
               const language = match ? match[1] : "";
+              const isBlock = Boolean(
+                match ||
+                  (node?.tagName === "code" && node?.parent?.tagName === "pre") ||
+                  codeContent.includes("\n"),
+              );
               const isMermaid =
                 language === "mermaid" ||
                 className?.includes("mermaid") ||
@@ -264,25 +270,77 @@ export function LearnTab({
                   codeContent.trim(),
                 );
 
-              if (!inline && isMermaid) {
+              if (isBlock && isMermaid) {
                 return <MermaidDiagram chart={codeContent} />;
               }
 
-              return inline ? (
+              if (isBlock) {
+                return (
+                  <div className="relative my-4 rounded-2xl overflow-hidden border border-border/40 bg-muted/30">
+                    {language && (
+                      <div className="flex items-center justify-between px-4 py-1.5 bg-muted/60 border-b border-border/30 text-[11px] font-mono text-muted-foreground uppercase tracking-wider">
+                        <span>{language}</span>
+                      </div>
+                    )}
+                    <pre className="p-4 overflow-x-auto text-sm font-mono custom-scrollbar leading-relaxed">
+                      <code className={className || "text-sm font-mono"} {...props}>
+                        {children}
+                      </code>
+                    </pre>
+                  </div>
+                );
+              }
+
+              return (
                 <code
-                  className="bg-muted px-1.5 py-0.5 rounded text-sm text-teal-200 font-mono"
+                  className="bg-muted/80 text-teal-300 dark:text-teal-200 px-1.5 py-0.5 rounded-md text-[13px] font-mono border border-border/30 inline align-baseline"
                   {...props}
                 >
                   {children}
                 </code>
-              ) : (
-                <pre className="bg-muted/50 p-4 rounded-xl border border-border/50 overflow-x-auto my-4 custom-scrollbar">
-                  <code className={className || "text-sm font-mono"} {...props}>
-                    {children}
-                  </code>
-                </pre>
               );
             },
+            table: ({ children, ...props }: any) => (
+              <div className="my-6 overflow-x-auto rounded-2xl border border-border/40 bg-card/20 shadow-sm">
+                <table className="w-full border-collapse text-left" {...props}>
+                  {children}
+                </table>
+              </div>
+            ),
+            thead: ({ children, ...props }: any) => (
+              <thead
+                className="bg-muted/50 border-b border-border/40 text-xs font-semibold text-teal-400 uppercase tracking-wider"
+                {...props}
+              >
+                {children}
+              </thead>
+            ),
+            tbody: ({ children, ...props }: any) => (
+              <tbody className="divide-y divide-border/20 text-sm" {...props}>
+                {children}
+              </tbody>
+            ),
+            tr: ({ children, ...props }: any) => (
+              <tr className="hover:bg-muted/20 transition-colors" {...props}>
+                {children}
+              </tr>
+            ),
+            th: ({ children, ...props }: any) => (
+              <th
+                className="px-5 py-3.5 font-semibold text-foreground/90 text-xs tracking-wider"
+                {...props}
+              >
+                {children}
+              </th>
+            ),
+            td: ({ children, ...props }: any) => (
+              <td
+                className="px-5 py-3.5 text-foreground/80 align-top leading-relaxed text-sm"
+                {...props}
+              >
+                {children}
+              </td>
+            ),
             ul: ({ node, ...props }) => (
               <ul
                 className="list-disc pl-6 space-y-2 my-4 marker:text-teal-500"
