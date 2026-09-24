@@ -2,9 +2,24 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
+import { compression } from "vite-plugin-compression2";
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    // Pre-compress with brotli at build time (.br files) — nginx serves via brotli_static
+    compression({
+      algorithm: "brotliCompress",
+      exclude: /\.(avif|webp|png|jpg|jpeg|gif|ico|svg|mp4|webm|mp3|woff2)$/,
+      threshold: 1024,
+    }),
+    // Pre-compress with gzip at build time (.gz files) — nginx serves via gzip_static
+    compression({
+      algorithm: "gzip",
+      exclude: /\.(avif|webp|png|jpg|jpeg|gif|ico|svg|mp4|webm|mp3|woff2)$/,
+      threshold: 1024,
+    }),
+  ],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
