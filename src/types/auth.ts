@@ -25,6 +25,8 @@ export interface User {
     dhet?: boolean;
     health_plus?: boolean;
     healthplusenable?: boolean;
+    healing?: boolean;
+    healing_ai?: boolean;
   };
 }
 

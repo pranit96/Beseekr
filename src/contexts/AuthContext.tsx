@@ -85,6 +85,8 @@ interface User {
     dhet?: boolean;
     health_plus?: boolean;
     healthplusenable?: boolean;
+    healing?: boolean;
+    healing_ai?: boolean;
   };
 }
 
@@ -118,6 +120,42 @@ const CACHED_USER_KEY = "beseekr_cached_user";
 const CACHE_EXPIRY_KEY = "beseekr_cache_expiry";
 const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
 
+export const syncFeatureFlagsCookies = (flags?: User["feature_flags"]) => {
+  if (!flags || typeof document === "undefined") return;
+  const {
+    second_brain,
+    weekly_digest,
+    learn_by_doing,
+    dhet,
+    health_plus,
+    healthplusenable,
+    healing,
+    healing_ai,
+  } = flags;
+  if (second_brain !== undefined) {
+    document.cookie = `EnableSecondBrain=${second_brain}; path=/; max-age=86400; SameSite=Lax`;
+  }
+  if (weekly_digest !== undefined) {
+    document.cookie = `EnableWeeklyDigest=${weekly_digest}; path=/; max-age=86400; SameSite=Lax`;
+  }
+  if (learn_by_doing !== undefined) {
+    document.cookie = `EnableLearnByDoing=${learn_by_doing}; path=/; max-age=86400; SameSite=Lax`;
+  }
+  if (dhet !== undefined) {
+    document.cookie = `EnableDhet=${dhet}; path=/; max-age=86400; SameSite=Lax`;
+  }
+  const isHp = health_plus ?? healthplusenable;
+  if (isHp !== undefined) {
+    document.cookie = `EnableHealthPlus=${isHp}; path=/; max-age=86400; SameSite=Lax`;
+  }
+  if (healing !== undefined) {
+    document.cookie = `EnableHealing=${healing}; path=/; max-age=86400; SameSite=Lax`;
+  }
+  if (healing_ai !== undefined) {
+    document.cookie = `EnableHealingAi=${healing_ai}; path=/; max-age=86400; SameSite=Lax`;
+  }
+};
+
 const getCachedUser = (): User | null => {
   try {
     const expiry = localStorage.getItem(CACHE_EXPIRY_KEY);
@@ -129,7 +167,13 @@ const getCachedUser = (): User | null => {
     const cached = localStorage.getItem(CACHED_USER_KEY);
     if (!cached) return null;
     const parsed = JSON.parse(cached);
-    return parsed?.role ? parsed : null;
+    if (parsed?.role) {
+      if (parsed.feature_flags) {
+        syncFeatureFlagsCookies(parsed.feature_flags);
+      }
+      return parsed;
+    }
+    return null;
   } catch {
     return null;
   }
@@ -328,18 +372,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             }
             const fetchedUser = response.data.user;
             if (fetchedUser?.feature_flags) {
-              const {
-                second_brain,
-                weekly_digest,
-                health_plus,
-                healthplusenable,
-              } = fetchedUser.feature_flags;
-              document.cookie = `EnableSecondBrain=${second_brain}; path=/; max-age=86400; SameSite=Lax`;
-              document.cookie = `EnableWeeklyDigest=${weekly_digest}; path=/; max-age=86400; SameSite=Lax`;
-              const isHp = health_plus ?? healthplusenable;
-              if (isHp !== undefined) {
-                document.cookie = `EnableHealthPlus=${isHp}; path=/; max-age=86400; SameSite=Lax`;
-              }
+              syncFeatureFlagsCookies(fetchedUser.feature_flags);
             }
             const wasNull = !user;
             setUser(fetchedUser);
@@ -667,14 +700,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
         const fetchedUser = response.data.user;
         if (fetchedUser?.feature_flags) {
-          const { second_brain, weekly_digest, health_plus, healthplusenable } =
-            fetchedUser.feature_flags;
-          document.cookie = `EnableSecondBrain=${second_brain}; path=/; max-age=86400; SameSite=Lax`;
-          document.cookie = `EnableWeeklyDigest=${weekly_digest}; path=/; max-age=86400; SameSite=Lax`;
-          const isHp = health_plus ?? healthplusenable;
-          if (isHp !== undefined) {
-            document.cookie = `EnableHealthPlus=${isHp}; path=/; max-age=86400; SameSite=Lax`;
-          }
+          syncFeatureFlagsCookies(fetchedUser.feature_flags);
         }
         setUser(fetchedUser);
         setCachedUser(fetchedUser); // Update cache
@@ -730,6 +756,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
 
         const fetchedUser = response.data.user;
+        if (fetchedUser?.feature_flags) {
+          syncFeatureFlagsCookies(fetchedUser.feature_flags);
+        }
         setUser(fetchedUser);
         setCachedUser(fetchedUser);
         localStorage.setItem("auth_login", Date.now().toString());

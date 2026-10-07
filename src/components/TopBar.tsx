@@ -32,6 +32,7 @@ import {
   getIsLearnByDoingEnabled,
   getIsDhetEnabled,
   getIsHealthPlusEnabled,
+  getIsHealingEnabled,
 } from "@/utils/envFlags";
 
 interface TopBarProps {
@@ -61,6 +62,8 @@ export const TopBar = ({
     getIsHealthPlusEnabled() ||
     user?.feature_flags?.health_plus ||
     user?.feature_flags?.healthplusenable;
+  const isHealingEnabled =
+    user?.feature_flags?.healing ?? getIsHealingEnabled();
 
   const navigation = [
     { key: "home", name: "Home", href: "/" },
@@ -80,6 +83,7 @@ export const TopBar = ({
     ...(isHealthPlusEnabled
       ? [{ key: "health_plus", name: "Health+", href: "/health-plus" }]
       : []),
+    ...(isHealingEnabled ? [{ key: "healing", name: "Healing", href: "/healing" }] : []),
     { key: "analytics", name: "Analytics", href: "/analytics" },
     ...(isBudgetEnabled
       ? [{ key: "budget", name: "Budget", href: "/dashboard/budget" }]

@@ -27,7 +27,9 @@ import {
   getIsLearnByDoingEnabled,
   getIsDhetEnabled,
   getIsHealthPlusEnabled,
+  getIsHealingEnabled,
 } from "@/utils/envFlags";
+
 
 // Critical page imports (loaded immediately)
 import Auth from "./pages/Auth";
@@ -181,6 +183,15 @@ const DhetHistory = lazyRetry(
   "DhetHistory",
 );
 const HealthPlus = lazyRetry(() => import("./pages/HealthPlus"), "HealthPlus");
+// ── Healing (CBT self-help) ────────────────────────────────────────────────
+const HealingHub = lazyRetry(() => import("./pages/healing/HealingHub"), "HealingHub");
+const ThoughtRecordWizard = lazyRetry(() => import("./pages/healing/ThoughtRecordWizard"), "ThoughtRecordWizard");
+const QuickCalm = lazyRetry(() => import("./pages/healing/QuickCalm"), "QuickCalm");
+const WorryTime = lazyRetry(() => import("./pages/healing/WorryTime"), "WorryTime");
+const BehavioralExperiment = lazyRetry(() => import("./pages/healing/BehavioralExperiment"), "BehavioralExperiment");
+const MoodProgress = lazyRetry(() => import("./pages/healing/MoodProgress"), "MoodProgress");
+const RecordHistory = lazyRetry(() => import("./pages/healing/RecordHistory"), "RecordHistory");
+const HealingSettings = lazyRetry(() => import("./pages/healing/HealingSettings"), "HealingSettings");
 
 // Loading fallback for lazy components
 const PageLoader = () => (
@@ -240,7 +251,8 @@ const FeatureGuard = ({
     | "second_brain"
     | "weekly_digest"
     | "dhet"
-    | "health_plus";
+    | "health_plus"
+    | "healing";
 }) => {
   const { user, loading } = useAuth();
 
@@ -273,6 +285,13 @@ const FeatureGuard = ({
     return <>{children}</>;
   }
 
+  if (
+    featureKey === "healing" &&
+    (user?.feature_flags?.healing ?? getIsHealingEnabled())
+  ) {
+    return <>{children}</>;
+  }
+
   return <Navigate to="/" replace />;
 };
 
@@ -298,13 +317,25 @@ const App = () => {
           .getFeatureFlags()
           .then((res) => {
             if (res.success && res.data) {
-              const { second_brain, weekly_digest, learn_by_doing, dhet } =
-                res.data;
+              const {
+                second_brain,
+                weekly_digest,
+                learn_by_doing,
+                dhet,
+                health_plus,
+                healing,
+              } = res.data as any;
               document.cookie = `EnableSecondBrain=${second_brain}; path=/; max-age=86400; SameSite=Lax`;
               document.cookie = `EnableWeeklyDigest=${weekly_digest}; path=/; max-age=86400; SameSite=Lax`;
               document.cookie = `EnableLearnByDoing=${learn_by_doing}; path=/; max-age=86400; SameSite=Lax`;
               if (dhet !== undefined) {
                 document.cookie = `EnableDhet=${dhet}; path=/; max-age=86400; SameSite=Lax`;
+              }
+              if (health_plus !== undefined) {
+                document.cookie = `EnableHealthPlus=${health_plus}; path=/; max-age=86400; SameSite=Lax`;
+              }
+              if (healing !== undefined) {
+                document.cookie = `EnableHealing=${healing}; path=/; max-age=86400; SameSite=Lax`;
               }
             }
           })
@@ -699,6 +730,103 @@ const App = () => {
                     <Route
                       path="/health"
                       element={<Navigate to="/health-plus" replace />}
+                    />
+                    {/* ── Healing (CBT self-help exercises) ──────────────── */}
+                    <Route
+                      path="/healing"
+                      element={
+                        <ProtectedRoute>
+                          <FeatureGuard featureKey="healing">
+                            <Suspense fallback={<PageLoader />}>
+                              <HealingHub />
+                            </Suspense>
+                          </FeatureGuard>
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/healing/thought-record"
+                      element={
+                        <ProtectedRoute>
+                          <FeatureGuard featureKey="healing">
+                            <Suspense fallback={<PageLoader />}>
+                              <ThoughtRecordWizard />
+                            </Suspense>
+                          </FeatureGuard>
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/healing/quick-calm"
+                      element={
+                        <ProtectedRoute>
+                          <FeatureGuard featureKey="healing">
+                            <Suspense fallback={<PageLoader />}>
+                              <QuickCalm />
+                            </Suspense>
+                          </FeatureGuard>
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/healing/worry-time"
+                      element={
+                        <ProtectedRoute>
+                          <FeatureGuard featureKey="healing">
+                            <Suspense fallback={<PageLoader />}>
+                              <WorryTime />
+                            </Suspense>
+                          </FeatureGuard>
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/healing/experiments"
+                      element={
+                        <ProtectedRoute>
+                          <FeatureGuard featureKey="healing">
+                            <Suspense fallback={<PageLoader />}>
+                              <BehavioralExperiment />
+                            </Suspense>
+                          </FeatureGuard>
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/healing/progress"
+                      element={
+                        <ProtectedRoute>
+                          <FeatureGuard featureKey="healing">
+                            <Suspense fallback={<PageLoader />}>
+                              <MoodProgress />
+                            </Suspense>
+                          </FeatureGuard>
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/healing/history"
+                      element={
+                        <ProtectedRoute>
+                          <FeatureGuard featureKey="healing">
+                            <Suspense fallback={<PageLoader />}>
+                              <RecordHistory />
+                            </Suspense>
+                          </FeatureGuard>
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/healing/settings"
+                      element={
+                        <ProtectedRoute>
+                          <FeatureGuard featureKey="healing">
+                            <Suspense fallback={<PageLoader />}>
+                              <HealingSettings />
+                            </Suspense>
+                          </FeatureGuard>
+                        </ProtectedRoute>
+                      }
                     />
                     {/* <Route
                     path="/metaLayer"

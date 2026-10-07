@@ -2010,6 +2010,10 @@ class ApiClient {
       weekly_digest: boolean;
       learn_by_doing: boolean;
       dhet?: boolean;
+      health_plus?: boolean;
+      healthplusenable?: boolean;
+      healing?: boolean;
+      healing_ai?: boolean;
     }>("/api/system/features");
   }
 

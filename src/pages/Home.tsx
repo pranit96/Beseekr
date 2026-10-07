@@ -5,6 +5,7 @@ import {
   getIsLearnByDoingEnabled,
   getIsDhetEnabled,
   getIsHealthPlusEnabled,
+  getIsHealingEnabled,
 } from "@/utils/envFlags";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -20,6 +21,7 @@ import {
   GraduationCap,
   Layers,
   Salad,
+  Heart,
 } from "lucide-react";
 import { GlobalHeader } from "@/components/GlobalHeader";
 import { motion } from "framer-motion";
@@ -57,6 +59,8 @@ export default function Home() {
     getIsHealthPlusEnabled() ||
     user?.feature_flags?.health_plus ||
     user?.feature_flags?.healthplusenable;
+  const isHealingEnabled =
+    user?.feature_flags?.healing ?? getIsHealingEnabled();
 
   if (!isNewMode) {
     return (
@@ -285,6 +289,36 @@ export default function Home() {
 
               <div className="text-xs font-bold tracking-wider uppercase flex items-center gap-1 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all">
                 Explore Health+
+                <ArrowRight className="w-3 h-3" />
+              </div>
+            </motion.div>
+          )}
+
+          {/* CARD: HEALING */}
+          {isHealingEnabled && (
+            <motion.div
+              onClick={() => go("/healing")}
+              whileHover={{ y: -4 }}
+              transition={{ type: "spring", stiffness: 220, damping: 20 }}
+              className="border border-border/30 rounded-2xl p-8 cursor-pointer transition
+                                  bg-muted/10 backdrop-blur-md
+                                  hover:bg-rose-500/5
+                                  hover:border-rose-500/30 group shadow-2xl shadow-black/5"
+            >
+              <div className="h-10 w-10 rounded-xl bg-rose-500/10 flex items-center justify-center text-rose-400 mb-4 group-hover:scale-110 transition-transform">
+                <Heart className="w-5 h-5" />
+              </div>
+
+              <h3 className="text-xl font-bold mb-2 tracking-tight text-foreground flex items-center gap-2">
+                Healing
+              </h3>
+
+              <p className="text-muted-foreground/80 mb-6 text-sm leading-relaxed">
+                Evidence-based self-help CBT exercises, thought records, and worry management for anxiety and overthinking.
+              </p>
+
+              <div className="text-xs font-bold tracking-wider uppercase flex items-center gap-1 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all">
+                Start Healing
                 <ArrowRight className="w-3 h-3" />
               </div>
             </motion.div>

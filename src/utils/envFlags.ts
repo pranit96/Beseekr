@@ -125,3 +125,39 @@ export function getIsHealthPlusEnabled(): boolean {
 
   return envFlag;
 }
+
+export function getIsHealingEnabled(): boolean {
+  // Active by default unless VITE_ENABLE_HEALING is explicitly "false"
+  const envFlag = import.meta.env.VITE_ENABLE_HEALING !== "false";
+
+  if (typeof document !== "undefined") {
+    const cookieMatch = document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("EnableHealing="))
+      ?.split("=")[1];
+
+    if (cookieMatch === "true") return true;
+    if (cookieMatch === "false") return false;
+  }
+
+  return envFlag;
+}
+
+export function getIsHealingAiEnabled(): boolean {
+  const envFlag =
+    import.meta.env.VITE_ENABLE_HEALING_AI === "true" ||
+    import.meta.env.VITE_HEALING_AI_ENABLED === "true";
+
+  if (typeof document !== "undefined") {
+    const cookieMatch = document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("EnableHealingAi="))
+      ?.split("=")[1];
+
+    if (cookieMatch === "true") return true;
+    if (cookieMatch === "false") return false;
+  }
+
+  return envFlag;
+}
+

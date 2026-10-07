@@ -42,6 +42,7 @@ import {
   Wand2,
   History,
   Salad,
+  Heart,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -57,6 +58,7 @@ import {
   getIsBudgetEnabled,
   getIsDhetEnabled,
   getIsHealthPlusEnabled,
+  getIsHealingEnabled,
 } from "@/utils/envFlags";
 
 const NAV_ITEMS = {
@@ -276,6 +278,14 @@ const NAV_ITEMS = {
     color: "from-emerald-500 to-teal-500",
     exact: false,
   },
+  healing: {
+    key: "healing",
+    name: "Healing",
+    href: "/healing",
+    icon: Heart,
+    color: "from-rose-500 to-pink-500",
+    exact: false,
+  },
 };
 
 function isPathActive(pathname: string, href: string, exact?: boolean) {
@@ -289,6 +299,7 @@ function getNavigationContext(
   isBudgetEnabled: boolean,
   isDhetEnabled: boolean = false,
   isHealthPlusEnabled: boolean = false,
+  isHealingEnabled: boolean = false,
 ) {
   const isChatContext =
     pathname.startsWith("/chat") ||
@@ -304,6 +315,12 @@ function getNavigationContext(
   const isDhetContext = pathname.startsWith("/dhet");
   const isHealthContext =
     pathname.startsWith("/health-plus") || pathname.startsWith("/health");
+  const isHealingContext = pathname.startsWith("/healing");
+
+  // Healing: Home + Chat + Healing
+  if (isHealingContext) {
+    return [NAV_ITEMS.home, NAV_ITEMS.chat, NAV_ITEMS.healing];
+  }
 
   // Health+: Home + Chat + Health+
   if (isHealthContext) {
@@ -358,6 +375,9 @@ function getNavigationContext(
   }
   if (isHealthPlusEnabled) {
     items.push(NAV_ITEMS.healthPlus);
+  }
+  if (isHealingEnabled) {
+    items.push(NAV_ITEMS.healing);
   }
   items.push(NAV_ITEMS.visionboard);
   return items;
@@ -516,12 +536,15 @@ export function GlobalHeader() {
       getIsHealthPlusEnabled() ||
       user?.feature_flags?.health_plus ||
       user?.feature_flags?.healthplusenable;
+    const isHealingEnabled =
+      user?.feature_flags?.healing ?? getIsHealingEnabled();
     return getNavigationContext(
       location.pathname,
       isPremium,
       isBudgetEnabled,
       isDhetEnabled,
       isHealthPlusEnabled,
+      isHealingEnabled,
     );
   }, [
     location.pathname,
@@ -529,6 +552,7 @@ export function GlobalHeader() {
     user?.feature_flags?.dhet,
     user?.feature_flags?.health_plus,
     user?.feature_flags?.healthplusenable,
+    user?.feature_flags?.healing,
   ]);
 
   return (
