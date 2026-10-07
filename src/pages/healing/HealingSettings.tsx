@@ -2,7 +2,9 @@
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Save, Loader2, Info } from "lucide-react";
+import { ArrowLeft, Loader2, Info } from "lucide-react";
+import { GlobalHeader } from "@/components/GlobalHeader";
+import { GlobalFooter } from "@/components/GlobalFooter";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -23,7 +25,8 @@ export default function HealingSettings() {
   const settings = data?.data;
 
   const mutation = useMutation({
-    mutationFn: (updates: Partial<CbtSettings>) => healingApi.updateSettings(updates as any),
+    mutationFn: (updates: Partial<CbtSettings>) =>
+      healingApi.updateSettings(updates as any),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["healing-settings"] });
       toast({ title: t("healing.settings.saved", "Settings saved") });
@@ -32,8 +35,12 @@ export default function HealingSettings() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-secondary/10 to-background flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <div className="min-h-screen bg-background flex flex-col">
+        <GlobalHeader />
+        <div className="flex-1 flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+        <GlobalFooter />
       </div>
     );
   }
@@ -43,25 +50,45 @@ export default function HealingSettings() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-secondary/10 to-background">
-      <div className="mx-auto max-w-2xl px-4 py-6 pb-24">
-        <div className="mb-8 flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/healing")} aria-label={t("common.back", "Back")}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div>
-            <h1 className="text-xl font-bold text-foreground">
-              {t("healing.settings.title", "Healing Settings")}
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              {t("healing.settings.subtitle", "Configure your privacy and AI preferences.")}
-            </p>
+    <div className="min-h-screen bg-background text-foreground flex flex-col selection:bg-indigo-500/20">
+      <GlobalHeader />
+
+      <main className="relative z-10 flex-1 max-w-3xl w-full mx-auto px-4 sm:px-6 py-6 space-y-6">
+        {/* Breadcrumb & Sub Navigation Bar */}
+        <div className="flex items-center justify-between border-b border-border/40 pb-4">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate("/healing")}
+              className="gap-2 text-muted-foreground hover:text-foreground -ml-2 h-9 px-3"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Back to Healing</span>
+            </Button>
+            <div className="h-4 w-px bg-border/60 mx-1 hidden sm:block" />
+            <span className="text-xs text-muted-foreground hidden sm:inline">
+              Healing / <strong className="text-foreground">Settings</strong>
+            </span>
           </div>
         </div>
 
-        <div className="space-y-6">
+        {/* Header */}
+        <div className="space-y-1">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">
+            {t("healing.settings.title", "Healing Settings & Privacy")}
+          </h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">
+            {t(
+              "healing.settings.subtitle",
+              "Configure your AI reframe assistant and security preferences.",
+            )}
+          </p>
+        </div>
+
+        <div className="space-y-6 pt-2">
           {/* AI Consent */}
-          <section className="rounded-2xl border border-border bg-card p-5">
+          <section className="rounded-3xl border border-border/60 bg-card/70 backdrop-blur-sm p-6 sm:p-7 shadow-sm">
             <h2 className="text-base font-semibold text-foreground mb-4">
               {t("healing.settings.ai_title", "AI Suggestions")}
             </h2>
@@ -70,52 +97,49 @@ export default function HealingSettings() {
                 <Label htmlFor="ai-toggle" className="font-medium">
                   {t("healing.settings.ai_enable", "Enable AI Assistant")}
                 </Label>
-                <p className="text-muted-foreground leading-relaxed">
-                  {t("healing.settings.ai_desc",
-                    "Allow the AI to suggest thinking traps, balanced thoughts, and Socratic questions during exercises. Your data is sent to secure models and is never used for training.")}
+                <p className="text-muted-foreground leading-relaxed text-xs sm:text-sm">
+                  {t(
+                    "healing.settings.ai_desc",
+                    "Allow the AI to suggest thinking traps, balanced thoughts, and Socratic questions during exercises. Your data is sent to secure models and is never used for training.",
+                  )}
                 </p>
-                {settings?.ai_consent_given_at && (
-                  <p className="text-xs text-green-600 dark:text-green-400 mt-2">
-                    {t("healing.settings.ai_consented_at", "Consent given on ")}
-                    {new Date(settings.ai_consent_given_at).toLocaleDateString()}
-                  </p>
-                )}
               </div>
               <Switch
                 id="ai-toggle"
-                checked={settings?.ai_enabled ?? false}
+                checked={settings?.ai_enabled ?? true}
                 onCheckedChange={handleToggleAi}
                 disabled={mutation.isPending}
+                aria-label={t(
+                  "healing.settings.ai_enable",
+                  "Enable AI Assistant",
+                )}
               />
             </div>
-            {!settings?.ai_enabled && (
-              <div className="mt-4 flex gap-2 rounded-xl bg-muted/40 p-3 text-xs text-muted-foreground">
-                <Info className="h-4 w-4 shrink-0 text-muted-foreground" />
-                <p>
-                  {t("healing.settings.ai_disabled_hint",
-                    "AI suggestions are turned off. You can still use all exercises entirely on your own.")}
-                </p>
-              </div>
-            )}
           </section>
 
-          {/* Privacy & Data */}
-          <section className="rounded-2xl border border-border bg-card p-5">
-            <h2 className="text-base font-semibold text-foreground mb-4">
-              {t("healing.settings.privacy_title", "Privacy & Security")}
+          {/* Privacy Note */}
+          <section className="rounded-3xl border border-border/60 bg-card/70 backdrop-blur-sm p-6 sm:p-7 shadow-sm">
+            <h2 className="text-base font-semibold text-foreground mb-3 flex items-center gap-2">
+              <Info className="h-4 w-4 text-primary" />
+              {t("healing.settings.privacy_title", "Privacy Architecture")}
             </h2>
-            <div className="space-y-4 text-sm text-muted-foreground">
+            <div className="space-y-4 text-xs sm:text-sm text-muted-foreground">
               <div className="flex gap-3">
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 shrink-0">
                   <span className="text-primary font-bold">✓</span>
                 </div>
                 <div>
                   <p className="font-medium text-foreground">
-                    {t("healing.settings.encryption", "Field-Level Encryption")}
+                    {t(
+                      "healing.settings.encrypted",
+                      "At-Rest Encryption (AES-256-GCM)",
+                    )}
                   </p>
                   <p className="text-xs leading-relaxed mt-0.5">
-                    {t("healing.settings.encryption_desc",
-                      "All free-text inputs in your thought records are encrypted in the database using AES-256-GCM. We cannot read your entries.")}
+                    {t(
+                      "healing.settings.encrypted_desc",
+                      "Your situations, thoughts, and reflections are encrypted in the database before storage.",
+                    )}
                   </p>
                 </div>
               </div>
@@ -125,18 +149,22 @@ export default function HealingSettings() {
                 </div>
                 <div>
                   <p className="font-medium text-foreground">
-                    {t("healing.settings.safety", "Local Safety First")}
+                    {t("healing.settings.safety", "Local Safety Screening")}
                   </p>
                   <p className="text-xs leading-relaxed mt-0.5">
-                    {t("healing.settings.safety_desc",
-                      "Safety screening happens locally and via secure cloud checks before any AI processing.")}
+                    {t(
+                      "healing.settings.safety_desc",
+                      "Safety screening triggers immediately if crisis indicators are detected to guide you to 24/7 care.",
+                    )}
                   </p>
                 </div>
               </div>
             </div>
           </section>
         </div>
-      </div>
+      </main>
+
+      <GlobalFooter />
     </div>
   );
 }

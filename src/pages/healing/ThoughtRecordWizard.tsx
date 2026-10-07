@@ -15,6 +15,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, ArrowRight, Save, Loader2 } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+import { GlobalHeader } from "@/components/GlobalHeader";
+import { GlobalFooter } from "@/components/GlobalFooter";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { WizardProgress } from "./components/WizardProgress";
@@ -294,41 +296,54 @@ export default function ThoughtRecordWizard() {
         <CrisisScreen helplines={crisis} onContinue={() => setCrisis(null)} />
       )}
 
-      <div className="min-h-screen bg-gradient-to-br from-background via-secondary/10 to-background">
-        <div className="mx-auto max-w-2xl px-4 py-6 pb-24">
-          {/* Header */}
-          <div className="mb-6 flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate("/healing")}
-              aria-label={t("common.back", "Back")}
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <div className="flex-1">
-              <h1 className="text-base font-semibold text-foreground">
-                {t("healing.wizard.title", "Thought Record")}
-              </h1>
-              <p className="text-xs text-muted-foreground">
-                {t("healing.disclaimer_short", "Self-help tool — not medical advice")}
-              </p>
+      <div className="min-h-screen bg-background text-foreground flex flex-col selection:bg-indigo-500/20">
+        <GlobalHeader />
+
+        <main className="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 py-6 pb-28 space-y-6">
+          {/* Breadcrumb & Sub Navigation Bar */}
+          <div className="flex items-center justify-between border-b border-border/40 pb-4">
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate("/healing")}
+                className="gap-2 text-muted-foreground hover:text-foreground -ml-2 h-9 px-3"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span>Back to Healing</span>
+              </Button>
+              <div className="h-4 w-px bg-border/60 mx-1 hidden sm:block" />
+              <span className="text-xs text-muted-foreground hidden sm:inline">
+                Healing / <strong className="text-foreground">Thought Record Wizard</strong>
+              </span>
             </div>
+
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
               onClick={handleSaveDraft}
               disabled={isSaving}
-              className="gap-1.5 text-xs"
+              className="gap-1.5 text-xs h-9 rounded-xl border-border/60 shadow-sm"
               aria-label={t("healing.wizard.save_draft", "Save draft")}
             >
               {isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
-              {t("healing.wizard.save_draft", "Save draft")}
+              <span className="hidden sm:inline">{t("healing.wizard.save_draft", "Save draft")}</span>
+              <span className="sm:hidden">{t("common.save", "Save")}</span>
             </Button>
           </div>
 
+          {/* Header */}
+          <div className="space-y-1">
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">
+              {t("healing.wizard.title", "Thought Record")}
+            </h1>
+            <p className="text-xs sm:text-sm text-muted-foreground">
+              {t("healing.disclaimer_short", "Step-by-step cognitive reappraisal exercise — not medical advice")}
+            </p>
+          </div>
+
           {/* Progress */}
-          <div className="mb-8">
+          <div className="py-2">
             <WizardProgress
               currentStep={step}
               totalSteps={TOTAL_STEPS}
@@ -344,7 +359,7 @@ export default function ThoughtRecordWizard() {
               animate={slide.animate}
               exit={slide.exit}
               transition={{ duration: 0.25, ease: "easeInOut" }}
-              className="rounded-3xl border border-border bg-card p-6 shadow-sm"
+              className="rounded-3xl border border-border/60 bg-card/70 backdrop-blur-sm p-6 sm:p-8 shadow-sm"
             >
               {step === 1 && (
                 <Step1Situation value={state.situation} onChange={(v) => updateState({ situation: v })} />
@@ -409,13 +424,13 @@ export default function ThoughtRecordWizard() {
           </AnimatePresence>
 
           {/* Navigation */}
-          <div className="fixed bottom-0 left-0 right-0 z-10 border-t border-border bg-background/80 backdrop-blur-sm px-4 py-3 safe-area-inset-bottom">
-            <div className="mx-auto max-w-2xl flex items-center gap-3">
+          <div className="fixed bottom-0 left-0 right-0 z-20 border-t border-border/60 bg-background/85 backdrop-blur-md px-4 py-3 safe-area-inset-bottom">
+            <div className="mx-auto max-w-4xl flex items-center gap-3">
               <Button
                 variant="outline"
                 onClick={goBack}
                 disabled={step === 1}
-                className="flex-1 gap-2"
+                className="flex-1 gap-2 rounded-xl h-11"
                 id="wizard-back-btn"
               >
                 <ArrowLeft className="h-4 w-4" />
@@ -424,7 +439,7 @@ export default function ThoughtRecordWizard() {
               <Button
                 onClick={goNext}
                 disabled={!canProceed || completeMutation.isPending || saveMutation.isPending}
-                className="flex-[2] gap-2"
+                className="flex-[2] gap-2 rounded-xl h-11"
                 id="wizard-next-btn"
               >
                 {(completeMutation.isPending || saveMutation.isPending) && (
@@ -437,7 +452,9 @@ export default function ThoughtRecordWizard() {
               </Button>
             </div>
           </div>
-        </div>
+        </main>
+
+        <GlobalFooter />
       </div>
     </>
   );

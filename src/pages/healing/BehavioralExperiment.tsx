@@ -7,6 +7,8 @@ import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Plus, ChevronDown, ChevronUp, Trash2, Loader2, FlaskConical } from "lucide-react";
+import { GlobalHeader } from "@/components/GlobalHeader";
+import { GlobalFooter } from "@/components/GlobalFooter";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -78,7 +80,7 @@ function ExperimentCard({ exp, onUpdate, onDelete }: { exp: BExperiment; onUpdat
 
               {exp.confidence_before != null && (
                 <p className="text-xs text-muted-foreground">
-                  {t("healing.experiment.confidence_before_display", { v: exp.confidence_before }, `Confidence in prediction: ${exp.confidence_before}%`)}
+                  {t("healing.experiment.confidence_before_display", `Confidence in prediction: ${exp.confidence_before}%`, { v: exp.confidence_before })}
                 </p>
               )}
 
@@ -89,7 +91,7 @@ function ExperimentCard({ exp, onUpdate, onDelete }: { exp: BExperiment; onUpdat
                   <p className="text-sm text-foreground">{exp.outcome}</p>
                   {exp.confidence_after != null && (
                     <p className="text-xs text-muted-foreground mt-1">
-                      {t("healing.experiment.confidence_after_display", { v: exp.confidence_after }, `Confidence after: ${exp.confidence_after}%`)}
+                      {t("healing.experiment.confidence_after_display", `Confidence after: ${exp.confidence_after}%`, { v: exp.confidence_after })}
                     </p>
                   )}
                 </div>
@@ -186,27 +188,65 @@ export default function BehavioralExperiment() {
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-secondary/10 to-background">
-      <div className="mx-auto max-w-md px-4 py-6 pb-24">
-        <div className="mb-6 flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/healing")} aria-label={t("common.back", "Back")}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div>
-            <h1 className="text-base font-semibold text-foreground">{t("healing.experiment.title", "Behavioral Experiments")}</h1>
-            <p className="text-xs text-muted-foreground">{t("healing.disclaimer_short", "Self-help tool — not medical advice")}</p>
+    <div className="min-h-screen bg-background text-foreground flex flex-col selection:bg-violet-500/20">
+      <GlobalHeader />
+
+      <main className="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 py-6 pb-20 space-y-6">
+        {/* Breadcrumb & Sub Navigation Bar */}
+        <div className="flex items-center justify-between border-b border-border/40 pb-4">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate("/healing")}
+              className="gap-2 text-muted-foreground hover:text-foreground -ml-2 h-9 px-3"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Back to Healing</span>
+            </Button>
+            <div className="h-4 w-px bg-border/60 mx-1 hidden sm:block" />
+            <span className="text-xs text-muted-foreground hidden sm:inline">
+              Healing / <strong className="text-foreground">Behavioral Experiments</strong>
+            </span>
           </div>
         </div>
 
+        {/* Header */}
+        <div className="space-y-1">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">
+            {t("healing.experiment.title", "Behavioral Experiments")}
+          </h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">
+            {t("healing.disclaimer_short", "Self-help tool — not medical advice")}
+          </p>
+        </div>
+
         {/* Explainer */}
-        <div className="mb-5 rounded-2xl border border-border bg-card p-4 text-sm text-muted-foreground">
-          {t("healing.experiment.explainer",
-            "Test your anxious predictions in real life. Plan an experiment, do it, then record what actually happened — often much less catastrophic than predicted.")}
+        <div className="rounded-3xl border border-violet-500/20 bg-violet-500/10 backdrop-blur-sm p-5 sm:p-6 shadow-sm">
+          <div className="flex items-start gap-3">
+            <FlaskConical className="mt-0.5 h-5 w-5 shrink-0 text-violet-600 dark:text-violet-400" />
+            <div>
+              <p className="text-sm font-semibold text-foreground">
+                {t("healing.experiment.explainer_title", "Test anxious hypotheses in real life")}
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
+                {t(
+                  "healing.experiment.explainer",
+                  "Test your anxious predictions in real life. Plan an experiment, do it, then record what actually happened — often much less catastrophic than predicted.",
+                )}
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Add experiment form */}
         {!showForm ? (
-          <Button variant="outline" className="w-full gap-2 mb-5" onClick={() => setShowForm(true)} id="experiment-add-btn">
+          <Button
+            variant="outline"
+            className="w-full gap-2 border-dashed border-violet-500/40 hover:border-violet-500 hover:bg-violet-500/5 h-12 rounded-2xl"
+            onClick={() => setShowForm(true)}
+            id="experiment-add-btn"
+          >
             <Plus className="h-4 w-4" />
             {t("healing.experiment.add_btn", "New experiment")}
           </Button>
@@ -214,22 +254,30 @@ export default function BehavioralExperiment() {
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="rounded-2xl border border-border bg-card p-4 space-y-4 mb-5"
+            className="rounded-3xl border border-border/60 bg-card/70 backdrop-blur-sm p-6 space-y-4 shadow-md"
           >
             <p className="text-sm font-semibold text-foreground">{t("healing.experiment.new_title", "New Experiment")}</p>
 
             <div className="space-y-1.5">
               <Label className="text-xs">{t("healing.experiment.prediction_label", "My anxious prediction")}</Label>
-              <Textarea value={form.prediction} onChange={(e) => setForm((f) => ({ ...f, prediction: e.target.value.slice(0, 500) }))}
+              <Textarea
+                value={form.prediction}
+                onChange={(e) => setForm((f) => ({ ...f, prediction: e.target.value.slice(0, 500) }))}
                 placeholder={t("healing.experiment.prediction_placeholder", 'e.g. "If I speak up in the meeting, everyone will think I\'m stupid."')}
-                rows={2} className="text-sm resize-none" />
+                rows={2}
+                className="text-sm resize-none rounded-xl"
+              />
             </div>
 
             <div className="space-y-1.5">
               <Label className="text-xs">{t("healing.experiment.plan_label", "How I'll test it")}</Label>
-              <Textarea value={form.plan} onChange={(e) => setForm((f) => ({ ...f, plan: e.target.value.slice(0, 500) }))}
+              <Textarea
+                value={form.plan}
+                onChange={(e) => setForm((f) => ({ ...f, plan: e.target.value.slice(0, 500) }))}
                 placeholder={t("healing.experiment.plan_placeholder", 'e.g. "Ask one question in tomorrow\'s meeting."')}
-                rows={2} className="text-sm resize-none" />
+                rows={2}
+                className="text-sm resize-none rounded-xl"
+              />
             </div>
 
             <IntensitySlider
@@ -237,19 +285,31 @@ export default function BehavioralExperiment() {
               label={t("healing.experiment.confidence_before_label", "How strongly do you believe this prediction? (0–100%)")}
               value={form.confidence_before}
               onChange={(v) => setForm((f) => ({ ...f, confidence_before: v }))}
-              min={0} max={100}
+              min={0}
+              max={100}
             />
 
             <div className="space-y-1.5">
               <Label className="text-xs">{t("healing.experiment.scheduled_label", "Scheduled for (optional)")}</Label>
-              <Input type="date" value={form.scheduled_for} onChange={(e) => setForm((f) => ({ ...f, scheduled_for: e.target.value }))}
-                className="text-sm h-9" />
+              <Input
+                type="date"
+                value={form.scheduled_for}
+                onChange={(e) => setForm((f) => ({ ...f, scheduled_for: e.target.value }))}
+                className="text-sm h-10 rounded-xl"
+              />
             </div>
 
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" className="flex-1" onClick={() => setShowForm(false)}>{t("common.cancel", "Cancel")}</Button>
-              <Button size="sm" className="flex-1 gap-2" disabled={!form.prediction.trim() || !form.plan.trim() || createMutation.isPending}
-                onClick={() => createMutation.mutate()} id="experiment-create-btn">
+            <div className="flex gap-2 pt-2">
+              <Button variant="outline" size="sm" className="flex-1 rounded-xl" onClick={() => setShowForm(false)}>
+                {t("common.cancel", "Cancel")}
+              </Button>
+              <Button
+                size="sm"
+                className="flex-1 gap-2 rounded-xl"
+                disabled={!form.prediction.trim() || !form.plan.trim() || createMutation.isPending}
+                onClick={() => createMutation.mutate()}
+                id="experiment-create-btn"
+              >
                 {createMutation.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                 {t("healing.experiment.create_btn", "Plan it")}
               </Button>
@@ -258,11 +318,19 @@ export default function BehavioralExperiment() {
         )}
 
         {/* List */}
-        {isLoading && <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>}
+        {isLoading && (
+          <div className="flex justify-center py-12">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        )}
         {!isLoading && experiments.length === 0 && (
-          <p className="text-center text-sm text-muted-foreground py-8">
-            {t("healing.experiment.empty", "No experiments yet. Plan your first one above.")}
-          </p>
+          <div className="rounded-3xl border border-dashed border-border/70 p-12 text-center">
+            <FlaskConical className="h-10 w-10 text-muted-foreground/40 mx-auto mb-3" />
+            <p className="text-sm font-medium text-foreground">No experiments planned yet</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {t("healing.experiment.empty", "No experiments yet. Plan your first one above.")}
+            </p>
+          </div>
         )}
         <div className="space-y-3">
           <AnimatePresence>
@@ -276,7 +344,9 @@ export default function BehavioralExperiment() {
             ))}
           </AnimatePresence>
         </div>
-      </div>
+      </main>
+
+      <GlobalFooter />
     </div>
   );
 }

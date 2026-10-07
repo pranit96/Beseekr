@@ -7,6 +7,8 @@ import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Plus, Check, Trash2, Clock, Loader2 } from "lucide-react";
+import { GlobalHeader } from "@/components/GlobalHeader";
+import { GlobalFooter } from "@/components/GlobalFooter";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
@@ -35,18 +37,31 @@ export default function WorryTime() {
       qc.invalidateQueries({ queryKey: ["healing-worries"] });
       setDraft("");
       setShowAdd(false);
-      toast({ title: t("healing.worry.parked_title", "Worry parked"), description: t("healing.worry.parked_desc", "Come back to it at your scheduled worry time.") });
+      toast({
+        title: t("healing.worry.parked_title", "Worry parked"),
+        description: t(
+          "healing.worry.parked_desc",
+          "Come back to it at your scheduled worry time.",
+        ),
+      });
     },
   });
 
   const reviewMutation = useMutation({
     mutationFn: (id: string) => healingApi.reviewWorry(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["healing-worries"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["healing-worries"] });
+      toast({
+        title: t("healing.worry.reviewed_title", "Marked as reviewed"),
+      });
+    },
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => healingApi.deleteWorry(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["healing-worries"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["healing-worries"] });
+    },
   });
 
   const handlePark = () => {
@@ -58,75 +73,107 @@ export default function WorryTime() {
   const reviewed = worries.filter((w) => w.reviewed_at);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-secondary/10 to-background">
-      <div className="mx-auto max-w-md px-4 py-6 pb-24">
-        {/* Header */}
-        <div className="mb-6 flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/healing")} aria-label={t("common.back", "Back")}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div>
-            <h1 className="text-base font-semibold text-foreground">
-              {t("healing.worry.title", "Worry Time")}
-            </h1>
-            <p className="text-xs text-muted-foreground">
-              {t("healing.disclaimer_short", "Self-help tool — not medical advice")}
-            </p>
+    <div className="min-h-screen bg-background text-foreground flex flex-col selection:bg-amber-500/20">
+      <GlobalHeader />
+
+      <main className="relative z-10 flex-1 max-w-2xl w-full mx-auto px-4 sm:px-6 py-6 space-y-6">
+        {/* Breadcrumb & Sub Navigation Bar */}
+        <div className="flex items-center justify-between border-b border-border/40 pb-4">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate("/healing")}
+              className="gap-2 text-muted-foreground hover:text-foreground -ml-2 h-9 px-3"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Back to Healing</span>
+            </Button>
+            <div className="h-4 w-px bg-border/60 mx-1 hidden sm:block" />
+            <span className="text-xs text-muted-foreground hidden sm:inline">
+              Healing / <strong className="text-foreground">Worry Time</strong>
+            </span>
           </div>
         </div>
 
+        {/* Header */}
+        <div className="space-y-1">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">
+            {t("healing.worry.title", "Worry Time Vault")}
+          </h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">
+            {t(
+              "healing.disclaimer_short",
+              "Postpone intrusive worries to a focused 15-minute daily review window",
+            )}
+          </p>
+        </div>
+
         {/* Explainer */}
-        <div className="mb-6 rounded-2xl border border-border bg-card p-4">
+        <div className="rounded-3xl border border-amber-500/30 bg-amber-500/10 backdrop-blur-sm p-5 sm:p-6 shadow-sm">
           <div className="flex items-start gap-3">
-            <Clock className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+            <Clock
+              className="mt-0.5 h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400"
+              aria-hidden="true"
+            />
             <div>
               <p className="text-sm font-semibold text-foreground">
-                {t("healing.worry.how_it_works_title", "How it works")}
+                {t("healing.worry.how_it_works_title", "How worry postponement works")}
               </p>
               <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
-                {t("healing.worry.how_it_works",
-                  "When a worry appears outside your dedicated worry time, park it here. Then at a fixed 15-minute daily slot, open these and examine each one. Outside that slot, your mind is free.")}
+                {t(
+                  "healing.worry.how_it_works",
+                  "When an anxious thought appears outside your dedicated window, write it down here and set it aside. During your fixed 15-minute daily slot, examine each worry with clear eyes. Outside that window, your mind is free to focus.",
+                )}
               </p>
             </div>
           </div>
         </div>
 
         {/* Add worry */}
-        <div className="mb-4">
+        <div>
           {!showAdd ? (
             <Button
               variant="outline"
-              className="w-full gap-2"
+              className="w-full gap-2 border-dashed border-amber-500/40 hover:border-amber-500 hover:bg-amber-500/5 h-12 rounded-2xl"
               onClick={() => setShowAdd(true)}
               id="worry-add-btn"
             >
               <Plus className="h-4 w-4" />
-              {t("healing.worry.park_btn", "Park a worry")}
+              {t("healing.worry.park_btn", "Park a new worry")}
             </Button>
           ) : (
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="rounded-2xl border border-border bg-card p-4 space-y-3"
+              className="rounded-3xl border border-border/60 bg-card/70 backdrop-blur-sm p-5 space-y-3 shadow-md"
             >
               <p className="text-sm font-medium text-foreground">
-                {t("healing.worry.park_prompt", "What's the worry? Write it down, then set it aside.")}
+                {t(
+                  "healing.worry.park_prompt",
+                  "What's on your mind? Deposit it now, review it later.",
+                )}
               </p>
               <Textarea
                 value={draft}
                 onChange={(e) => setDraft(e.target.value.slice(0, 500))}
-                placeholder={t("healing.worry.placeholder", "e.g. What if I don't get the job?")}
+                placeholder={t(
+                  "healing.worry.placeholder",
+                  "e.g. What if the client interview goes terribly wrong tomorrow?",
+                )}
                 rows={3}
-                className="resize-none text-sm"
+                className="resize-none text-sm rounded-2xl bg-background/60"
                 autoFocus
                 aria-label={t("healing.worry.input_label", "Worry text")}
               />
-              <div className="flex gap-2">
+              <div className="flex gap-2 justify-end">
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
-                  onClick={() => { setShowAdd(false); setDraft(""); }}
-                  className="flex-1"
+                  onClick={() => {
+                    setShowAdd(false);
+                    setDraft("");
+                  }}
                 >
                   {t("common.cancel", "Cancel")}
                 </Button>
@@ -134,112 +181,150 @@ export default function WorryTime() {
                   size="sm"
                   onClick={handlePark}
                   disabled={!draft.trim() || createMutation.isPending}
-                  className="flex-1 gap-2"
+                  className="gap-2 bg-amber-600 hover:bg-amber-700 text-white"
                   id="worry-park-confirm-btn"
                 >
-                  {createMutation.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                  {t("healing.worry.park_confirm", "Park it")}
+                  {createMutation.isPending && (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  )}
+                  {t("healing.worry.deposit_btn", "Deposit Worry")}
                 </Button>
               </div>
             </motion.div>
           )}
         </div>
 
-        {/* Pending worries */}
+        {/* Loading */}
         {isLoading && (
-          <div className="flex justify-center py-8">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          <div className="flex justify-center py-12">
+            <Loader2 className="h-7 w-7 animate-spin text-muted-foreground" />
           </div>
         )}
 
-        {!isLoading && pending.length > 0 && (
-          <div className="mb-6">
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
-              {t("healing.worry.pending_label", "Parked ({count})", { count: pending.length })}
-            </p>
-            <ul className="space-y-2" aria-label={t("healing.worry.pending_label", "Parked worries")}>
-              <AnimatePresence>
-                {pending.map((w) => (
-                  <WorryItem
-                    key={w.id}
-                    worry={w}
-                    onReview={() => reviewMutation.mutate(w.id)}
-                    onDelete={() => deleteMutation.mutate(w.id)}
-                  />
-                ))}
-              </AnimatePresence>
-            </ul>
-          </div>
-        )}
+        {/* Pending worries */}
+        {!isLoading && (
+          <div className="space-y-6">
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-sm font-semibold text-foreground">
+                  {t("healing.worry.pending_title", "Parked Worries")}
+                </h2>
+                <span className="text-xs text-muted-foreground font-mono">
+                  {pending.length}
+                </span>
+              </div>
 
-        {/* Reviewed */}
-        {reviewed.length > 0 && (
-          <div>
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
-              {t("healing.worry.reviewed_label", "Reviewed")}
-            </p>
-            <ul className="space-y-2 opacity-60">
-              {reviewed.slice(0, 5).map((w) => (
-                <WorryItem
-                  key={w.id}
-                  worry={w}
-                  reviewed
-                  onReview={() => {}}
-                  onDelete={() => deleteMutation.mutate(w.id)}
-                />
-              ))}
-            </ul>
-          </div>
-        )}
+              {pending.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-border/60 p-6 text-center text-xs text-muted-foreground">
+                  {t(
+                    "healing.worry.empty_pending",
+                    "No pending worries parked. Your worry vault is clear! ✨",
+                  )}
+                </div>
+              ) : (
+                <ul className="space-y-2.5" role="list">
+                  <AnimatePresence>
+                    {pending.map((w) => (
+                      <WorryItem
+                        key={w.id}
+                        worry={w}
+                        onReview={() => reviewMutation.mutate(w.id)}
+                        onDelete={() => deleteMutation.mutate(w.id)}
+                      />
+                    ))}
+                  </AnimatePresence>
+                </ul>
+              )}
+            </div>
 
-        {!isLoading && worries.length === 0 && (
-          <div className="text-center py-12 text-muted-foreground">
-            <p className="text-sm">{t("healing.worry.empty", "No parked worries — your mind is clear right now.")}</p>
+            {/* Reviewed worries */}
+            {reviewed.length > 0 && (
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-sm font-semibold text-muted-foreground">
+                    {t("healing.worry.reviewed_section", "Examined & Let Go")}
+                  </h2>
+                  <span className="text-xs text-muted-foreground font-mono">
+                    {reviewed.length}
+                  </span>
+                </div>
+                <ul className="space-y-2 opacity-60" role="list">
+                  {reviewed.map((w) => (
+                    <WorryItem
+                      key={w.id}
+                      worry={w}
+                      reviewed
+                      onReview={() => {}}
+                      onDelete={() => deleteMutation.mutate(w.id)}
+                    />
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         )}
-      </div>
+      </main>
+
+      <GlobalFooter />
     </div>
   );
 }
 
-function WorryItem({ worry, reviewed, onReview, onDelete }: { worry: Worry; reviewed?: boolean; onReview: () => void; onDelete: () => void }) {
+function WorryItem({
+  worry,
+  reviewed,
+  onReview,
+  onDelete,
+}: {
+  worry: Worry;
+  reviewed?: boolean;
+  onReview: () => void;
+  onDelete: () => void;
+}) {
   const { t } = useTranslation();
   return (
     <motion.li
       layout
-      initial={{ opacity: 0, y: -8 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95 }}
-      className="rounded-2xl border border-border bg-card p-4"
+      className="rounded-2xl border border-border/60 bg-card/70 backdrop-blur-sm p-4 shadow-sm"
     >
-      <p className="text-sm text-foreground leading-snug mb-2">{worry.text}</p>
-      <div className="flex items-center justify-between">
-        <span className="text-xs text-muted-foreground">
-          {format(new Date(worry.parked_at), "MMM d, h:mm a")}
-        </span>
-        {!reviewed && (
-          <div className="flex gap-2">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex-1 min-w-0">
+          <p
+            className={`text-sm text-foreground break-words ${reviewed ? "line-through text-muted-foreground" : ""}`}
+          >
+            {worry.text}
+          </p>
+          <p className="mt-1 text-[11px] text-muted-foreground">
+            {format(new Date(worry.created_at), "MMM d, h:mm a")}
+          </p>
+        </div>
+
+        <div className="flex items-center gap-1 shrink-0">
+          {!reviewed && (
             <Button
               variant="ghost"
               size="sm"
               onClick={onReview}
-              className="h-7 gap-1 text-xs text-green-600 dark:text-green-400 hover:text-green-700"
+              className="h-8 gap-1 text-xs text-emerald-600 dark:text-emerald-400 hover:text-emerald-700"
               aria-label={t("healing.worry.mark_reviewed", "Mark as reviewed")}
             >
               <Check className="h-3.5 w-3.5" />
-              {t("healing.worry.reviewed_btn", "Reviewed")}
+              <span>Let Go</span>
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onDelete}
-              className="h-7 text-xs text-muted-foreground hover:text-destructive"
-              aria-label={t("healing.worry.delete_aria", "Delete worry")}
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </Button>
-          </div>
-        )}
+          )}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onDelete}
+            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+            aria-label={t("healing.worry.delete_aria", "Delete worry")}
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+        </div>
       </div>
     </motion.li>
   );

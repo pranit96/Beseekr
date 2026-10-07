@@ -6,6 +6,8 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, CheckCircle } from "lucide-react";
+import { GlobalHeader } from "@/components/GlobalHeader";
+import { GlobalFooter } from "@/components/GlobalFooter";
 import { Button } from "@/components/ui/button";
 import { BreathingCircle } from "./components/BreathingCircle";
 
@@ -67,7 +69,7 @@ function Grounding54321() {
               <span className="text-3xl">{current.icon}</span>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">
-                  {t("healing.quick_calm.name", { count: current.count }, `Name ${current.count} things you can`)}
+                  {t("healing.quick_calm.name", `Name ${current.count} things you can`, { count: current.count })}
                 </p>
                 <p className="text-base font-semibold text-foreground">
                   {t(current.key, current.sense)}
@@ -120,45 +122,72 @@ export default function QuickCalm() {
   const [tool, setTool] = useState<Tool | null>(null);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-secondary/10 to-background">
-      <div className="mx-auto max-w-md px-4 py-6">
-        {/* Header */}
-        <div className="mb-6 flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => tool ? setTool(null) : navigate("/healing")} aria-label={t("common.back", "Back")}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div>
-            <h1 className="text-base font-semibold text-foreground">
-              {t("healing.quick_calm.title", "Quick Calm")}
-            </h1>
-            <p className="text-xs text-muted-foreground">
-              {t("healing.disclaimer_short", "Self-help tool — not medical advice")}
-            </p>
+    <div className="min-h-screen bg-background text-foreground flex flex-col selection:bg-cyan-500/20">
+      <GlobalHeader />
+
+      <main className="relative z-10 flex-1 max-w-2xl w-full mx-auto px-4 sm:px-6 py-6 space-y-6">
+        {/* Breadcrumb & Sub Navigation Bar */}
+        <div className="flex items-center justify-between border-b border-border/40 pb-4">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => (tool ? setTool(null) : navigate("/healing"))}
+              className="gap-2 text-muted-foreground hover:text-foreground -ml-2 h-9 px-3"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>{tool ? "Back to Exercises" : "Back to Healing"}</span>
+            </Button>
+            <div className="h-4 w-px bg-border/60 mx-1 hidden sm:block" />
+            <span className="text-xs text-muted-foreground hidden sm:inline">
+              Healing / <strong className="text-foreground">Quick Calm</strong>
+            </span>
           </div>
+        </div>
+
+        {/* Header */}
+        <div className="space-y-1">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">
+            {t("healing.quick_calm.title", "Quick Calm")}
+          </h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">
+            {t(
+              "healing.disclaimer_short",
+              "Immediate physiological grounding — not medical advice",
+            )}
+          </p>
         </div>
 
         {/* Tool selector */}
         {!tool && (
-          <div className="space-y-3">
+          <div className="space-y-3 pt-2">
             <p className="text-sm text-muted-foreground mb-4">
-              {t("healing.quick_calm.choose", "Choose an exercise to help you feel calmer right now:")}
+              {t(
+                "healing.quick_calm.choose",
+                "Choose an exercise to help you feel calmer right now:",
+              )}
             </p>
 
             {/* Physiological Sigh */}
             <button
               type="button"
               onClick={() => setTool("sigh")}
-              className="w-full text-left rounded-2xl border border-border bg-card p-5 hover:border-primary/50 hover:bg-primary/5 transition-all"
+              className="w-full text-left rounded-2xl border border-border/60 bg-card/70 backdrop-blur-sm p-5 hover:border-cyan-500/50 hover:bg-cyan-500/5 transition-all shadow-sm group"
               id="quick-calm-sigh-btn"
             >
-              <div className="flex items-center gap-3">
-                <span className="text-2xl">🫁</span>
+              <div className="flex items-center gap-4">
+                <span className="text-3xl p-2.5 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 group-hover:scale-105 transition-transform">
+                  🫁
+                </span>
                 <div>
-                  <p className="font-semibold text-foreground">
+                  <p className="font-semibold text-foreground text-base">
                     {t("healing.quick_calm.sigh_title", "Physiological Sigh")}
                   </p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {t("healing.quick_calm.sigh_desc", "2 quick inhales + long exhale — activates your calm response in under 2 min.")}
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+                    {t(
+                      "healing.quick_calm.sigh_desc",
+                      "2 quick inhales + long exhale — activates your calm response in under 2 min.",
+                    )}
                   </p>
                 </div>
               </div>
@@ -168,17 +197,22 @@ export default function QuickCalm() {
             <button
               type="button"
               onClick={() => setTool("54321")}
-              className="w-full text-left rounded-2xl border border-border bg-card p-5 hover:border-primary/50 hover:bg-primary/5 transition-all"
+              className="w-full text-left rounded-2xl border border-border/60 bg-card/70 backdrop-blur-sm p-5 hover:border-emerald-500/50 hover:bg-emerald-500/5 transition-all shadow-sm group"
               id="quick-calm-54321-btn"
             >
-              <div className="flex items-center gap-3">
-                <span className="text-2xl">🌿</span>
+              <div className="flex items-center gap-4">
+                <span className="text-3xl p-2.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 group-hover:scale-105 transition-transform">
+                  🌿
+                </span>
                 <div>
-                  <p className="font-semibold text-foreground">
+                  <p className="font-semibold text-foreground text-base">
                     {t("healing.quick_calm.54321_short", "5-4-3-2-1 Grounding")}
                   </p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {t("healing.quick_calm.54321_short_desc", "Anchor yourself in the present moment using all 5 senses.")}
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+                    {t(
+                      "healing.quick_calm.54321_short_desc",
+                      "Anchor yourself in the present moment using all 5 senses.",
+                    )}
                   </p>
                 </div>
               </div>
@@ -191,7 +225,7 @@ export default function QuickCalm() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="space-y-4"
+            className="space-y-4 pt-2"
           >
             <h2 className="text-lg font-semibold">
               {t("healing.quick_calm.sigh_title", "Physiological Sigh")}
@@ -207,11 +241,17 @@ export default function QuickCalm() {
 
         {/* 5-4-3-2-1 */}
         {tool === "54321" && (
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="pt-2"
+          >
             <Grounding54321 />
           </motion.div>
         )}
-      </div>
+      </main>
+
+      <GlobalFooter />
     </div>
   );
 }
