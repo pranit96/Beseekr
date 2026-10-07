@@ -44,16 +44,33 @@ function ExperimentCard({ exp, onUpdate, onDelete }: { exp: BExperiment; onUpdat
         aria-expanded={expanded}
         aria-label={exp.prediction ?? t("healing.experiment.unnamed", "Experiment")}
       >
-        <FlaskConical className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+        <FlaskConical className="mt-0.5 h-4 w-4 shrink-0 text-violet-500" aria-hidden="true" />
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-foreground line-clamp-2">{exp.prediction ?? "—"}</p>
-          <div className="flex items-center gap-2 mt-1">
+          <p className="text-sm font-semibold text-foreground line-clamp-2">
+            {exp.prediction || exp.plan || t("healing.experiment.unnamed", "Untitled Experiment")}
+          </p>
+          {exp.plan && exp.prediction && (
+            <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
+              <span className="font-medium text-foreground/80">Plan:</span> {exp.plan}
+            </p>
+          )}
+          <div className="flex items-center gap-2 mt-1.5 flex-wrap">
             <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-medium", STATUS_COLOR[exp.status])}>
               {t(`healing.experiment.status.${exp.status}`, exp.status)}
             </span>
+            {exp.confidence_before != null && (
+              <span className="text-[11px] text-muted-foreground">
+                Initial Belief: <strong className="text-foreground">{exp.confidence_before}%</strong>
+              </span>
+            )}
+            {exp.confidence_after != null && (
+              <span className="text-[11px] text-emerald-600 dark:text-emerald-400">
+                • After: <strong>{exp.confidence_after}%</strong>
+              </span>
+            )}
             {exp.scheduled_for && (
-              <span className="text-xs text-muted-foreground">
-                {format(new Date(exp.scheduled_for), "MMM d")}
+              <span className="text-[11px] text-muted-foreground">
+                • {format(new Date(exp.scheduled_for), "MMM d")}
               </span>
             )}
           </div>
@@ -221,19 +238,53 @@ export default function BehavioralExperiment() {
           </p>
         </div>
 
-        {/* Explainer */}
-        <div className="rounded-3xl border border-violet-500/20 bg-violet-500/10 backdrop-blur-sm p-5 sm:p-6 shadow-sm">
-          <div className="flex items-start gap-3">
-            <FlaskConical className="mt-0.5 h-5 w-5 shrink-0 text-violet-600 dark:text-violet-400" />
+        {/* Explainer: What is a Behavioral Experiment? */}
+        <div className="rounded-3xl border border-violet-500/25 bg-violet-500/10 backdrop-blur-sm p-5 sm:p-6 shadow-sm space-y-4">
+          <div className="flex items-start gap-3.5">
+            <div className="p-2.5 rounded-2xl bg-violet-500/20 text-violet-600 dark:text-violet-400 shrink-0 mt-0.5">
+              <FlaskConical className="h-5 w-5" />
+            </div>
             <div>
-              <p className="text-sm font-semibold text-foreground">
-                {t("healing.experiment.explainer_title", "Test anxious hypotheses in real life")}
+              <p className="text-sm font-bold text-foreground">
+                What is a Behavioral Experiment?
               </p>
               <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
-                {t(
-                  "healing.experiment.explainer",
-                  "Test your anxious predictions in real life. Plan an experiment, do it, then record what actually happened — often much less catastrophic than predicted.",
-                )}
+                Anxious thoughts often feel like absolute facts (e.g. <em>&ldquo;If I speak up in the meeting, everyone will think I&apos;m stupid&rdquo;</em>). Because we believe them, we avoid situations, which reinforces the fear.
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
+                A <strong>behavioral experiment</strong> turns that fear into a testable <strong>hypothesis</strong>. Instead of accepting the catastrophic prediction, you test it in the real world like a scientist.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1 border-t border-violet-500/15">
+            <div className="rounded-2xl bg-background/60 border border-border/50 p-3 text-xs space-y-1">
+              <div className="font-semibold text-violet-600 dark:text-violet-400 flex items-center gap-1.5">
+                <span className="w-5 h-5 rounded-full bg-violet-500/20 text-violet-600 dark:text-violet-400 flex items-center justify-center text-[10px] font-bold">1</span>
+                The Prediction
+              </div>
+              <p className="text-muted-foreground text-[11px] leading-relaxed">
+                State what catastrophic thing you expect to happen and rate your belief (0–100%).
+              </p>
+            </div>
+
+            <div className="rounded-2xl bg-background/60 border border-border/50 p-3 text-xs space-y-1">
+              <div className="font-semibold text-violet-600 dark:text-violet-400 flex items-center gap-1.5">
+                <span className="w-5 h-5 rounded-full bg-violet-500/20 text-violet-600 dark:text-violet-400 flex items-center justify-center text-[10px] font-bold">2</span>
+                The Test Action
+              </div>
+              <p className="text-muted-foreground text-[11px] leading-relaxed">
+                Pick a concrete, manageable action to test it (e.g. <em>&ldquo;Ask 1 question in tomorrow&apos;s meeting&rdquo;</em>).
+              </p>
+            </div>
+
+            <div className="rounded-2xl bg-background/60 border border-border/50 p-3 text-xs space-y-1">
+              <div className="font-semibold text-violet-600 dark:text-violet-400 flex items-center gap-1.5">
+                <span className="w-5 h-5 rounded-full bg-violet-500/20 text-violet-600 dark:text-violet-400 flex items-center justify-center text-[10px] font-bold">3</span>
+                The Reality
+              </div>
+              <p className="text-muted-foreground text-[11px] leading-relaxed">
+                Record what actually occurred. In almost every case, reality is far milder than predicted.
               </p>
             </div>
           </div>

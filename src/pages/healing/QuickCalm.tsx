@@ -11,7 +11,7 @@ import { GlobalFooter } from "@/components/GlobalFooter";
 import { Button } from "@/components/ui/button";
 import { BreathingCircle } from "./components/BreathingCircle";
 
-type Tool = "sigh" | "54321";
+type Tool = "breathing" | "54321";
 
 const SENSES_54321 = [
   { count: 5, sense: "see",   icon: "👀", key: "healing.quick_calm.see" },
@@ -120,12 +120,13 @@ export default function QuickCalm() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [tool, setTool] = useState<Tool | null>(null);
+  const [initialMode, setInitialMode] = useState<string>("sigh");
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col selection:bg-cyan-500/20">
       <GlobalHeader />
 
-      <main className="relative z-10 flex-1 max-w-2xl w-full mx-auto px-4 sm:px-6 py-6 space-y-6">
+      <main className="relative z-10 flex-1 max-w-3xl w-full mx-auto px-4 sm:px-6 py-6 space-y-6">
         {/* Breadcrumb & Sub Navigation Bar */}
         <div className="flex items-center justify-between border-b border-border/40 pb-4">
           <div className="flex items-center gap-2">
@@ -136,7 +137,7 @@ export default function QuickCalm() {
               className="gap-2 text-muted-foreground hover:text-foreground -ml-2 h-9 px-3"
             >
               <ArrowLeft className="w-4 h-4" />
-              <span>{tool ? "Back to Exercises" : "Back to Healing"}</span>
+              <span>{tool ? "Back to All Modes" : "Back to Healing"}</span>
             </Button>
             <div className="h-4 w-px bg-border/60 mx-1 hidden sm:block" />
             <span className="text-xs text-muted-foreground hidden sm:inline">
@@ -148,71 +149,109 @@ export default function QuickCalm() {
         {/* Header */}
         <div className="space-y-1">
           <h1 className="text-2xl font-bold tracking-tight text-foreground">
-            {t("healing.quick_calm.title", "Quick Calm")}
+            {t("healing.quick_calm.title", "Quick Calm Studio")}
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground">
             {t(
               "healing.disclaimer_short",
-              "Immediate physiological grounding — not medical advice",
+              "Immediate somatic downregulation & sensory grounding protocols",
             )}
           </p>
         </div>
 
         {/* Tool selector */}
         {!tool && (
-          <div className="space-y-3 pt-2">
-            <p className="text-sm text-muted-foreground mb-4">
+          <div className="space-y-4 pt-2">
+            <p className="text-sm text-muted-foreground">
               {t(
                 "healing.quick_calm.choose",
-                "Choose an exercise to help you feel calmer right now:",
+                "Choose a calming protocol to lower physiological arousal right now:",
               )}
             </p>
 
-            {/* Physiological Sigh */}
-            <button
-              type="button"
-              onClick={() => setTool("sigh")}
-              className="w-full text-left rounded-2xl border border-border/60 bg-card/70 backdrop-blur-sm p-5 hover:border-cyan-500/50 hover:bg-cyan-500/5 transition-all shadow-sm group"
-              id="quick-calm-sigh-btn"
-            >
-              <div className="flex items-center gap-4">
-                <span className="text-3xl p-2.5 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 group-hover:scale-105 transition-transform">
+            {/* Breathing Studio */}
+            <div className="rounded-3xl border border-cyan-500/30 bg-gradient-to-br from-cyan-500/10 via-card to-card p-6 shadow-sm space-y-4">
+              <div className="flex items-start gap-4">
+                <span className="text-3xl p-3 rounded-2xl bg-cyan-500/15 border border-cyan-500/20">
                   🫁
                 </span>
-                <div>
-                  <p className="font-semibold text-foreground text-base">
-                    {t("healing.quick_calm.sigh_title", "Physiological Sigh")}
-                  </p>
-                  <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-                    {t(
-                      "healing.quick_calm.sigh_desc",
-                      "2 quick inhales + long exhale — activates your calm response in under 2 min.",
-                    )}
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <h2 className="font-bold text-foreground text-lg">
+                      Breathing Studio
+                    </h2>
+                    <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border border-cyan-500/30">
+                      5 Protocols
+                    </span>
+                  </div>
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+                    Guided rhythm pacing with zero-flicker animations, phase timers, and optional harmonic chimes.
                   </p>
                 </div>
               </div>
-            </button>
 
-            {/* 5-4-3-2-1 */}
+              {/* Protocol Quick-Start Pills */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-1">
+                {[
+                  { id: "sigh", name: "Physiological Sigh", desc: "Instant stress reset" },
+                  { id: "478", name: "4-7-8 Relax & Sleep", desc: "Deep rest & bedtime" },
+                  { id: "box", name: "Box Breathing", desc: "Focus & concentration" },
+                  { id: "coherent", name: "Resonant Coherence", desc: "Cleanse & balance HRV" },
+                  { id: "energize", name: "Awaken & Energize", desc: "Morning oxygen boost" },
+                ].map((proto) => (
+                  <button
+                    key={proto.id}
+                    type="button"
+                    onClick={() => {
+                      setInitialMode(proto.id);
+                      setTool("breathing");
+                    }}
+                    className="p-3 text-left rounded-2xl border border-border/60 bg-background/60 hover:border-cyan-500/50 hover:bg-cyan-500/5 transition-all text-xs group"
+                  >
+                    <p className="font-semibold text-foreground group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors">
+                      {proto.name}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                      {proto.desc}
+                    </p>
+                  </button>
+                ))}
+              </div>
+
+              <Button
+                onClick={() => {
+                  setInitialMode("sigh");
+                  setTool("breathing");
+                }}
+                className="w-full h-11 rounded-2xl bg-cyan-600 hover:bg-cyan-700 text-white font-medium"
+                id="quick-calm-sigh-btn"
+              >
+                Open Breathing Studio
+              </Button>
+            </div>
+
+            {/* 5-4-3-2-1 Grounding */}
             <button
               type="button"
               onClick={() => setTool("54321")}
-              className="w-full text-left rounded-2xl border border-border/60 bg-card/70 backdrop-blur-sm p-5 hover:border-emerald-500/50 hover:bg-emerald-500/5 transition-all shadow-sm group"
+              className="w-full text-left rounded-3xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 via-card to-card p-6 hover:border-emerald-500/50 hover:bg-emerald-500/5 transition-all shadow-sm group"
               id="quick-calm-54321-btn"
             >
-              <div className="flex items-center gap-4">
-                <span className="text-3xl p-2.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 group-hover:scale-105 transition-transform">
+              <div className="flex items-start gap-4">
+                <span className="text-3xl p-3 rounded-2xl bg-emerald-500/15 border border-emerald-500/20 group-hover:scale-105 transition-transform">
                   🌿
                 </span>
                 <div>
-                  <p className="font-semibold text-foreground text-base">
-                    {t("healing.quick_calm.54321_short", "5-4-3-2-1 Grounding")}
-                  </p>
-                  <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-                    {t(
-                      "healing.quick_calm.54321_short_desc",
-                      "Anchor yourself in the present moment using all 5 senses.",
-                    )}
+                  <div className="flex items-center gap-2">
+                    <p className="font-bold text-foreground text-lg">
+                      {t("healing.quick_calm.54321_short", "5-4-3-2-1 Sensory Grounding")}
+                    </p>
+                    <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                      Mindfulness
+                    </span>
+                  </div>
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-1 leading-relaxed">
+                    Anchor yourself in the tangible present moment by actively observing 5 sights, 4 touches, 3 sounds, 2 smells, and 1 taste.
                   </p>
                 </div>
               </div>
@@ -220,31 +259,28 @@ export default function QuickCalm() {
           </div>
         )}
 
-        {/* Physiological Sigh */}
-        {tool === "sigh" && (
+        {/* Breathing Studio */}
+        {tool === "breathing" && (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
-            className="space-y-4 pt-2"
+            className="rounded-3xl border border-border/60 bg-card/70 backdrop-blur-sm p-6 sm:p-8 shadow-md"
           >
-            <h2 className="text-lg font-semibold">
-              {t("healing.quick_calm.sigh_title", "Physiological Sigh")}
-            </h2>
             <BreathingCircle
-              totalCycles={3}
+              initialModeId={initialMode}
               onComplete={() => {
-                setTimeout(() => setTool(null), 3000);
+                // Completed session
               }}
             />
           </motion.div>
         )}
 
-        {/* 5-4-3-2-1 */}
+        {/* 5-4-3-2-1 Grounding */}
         {tool === "54321" && (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
-            className="pt-2"
+            className="rounded-3xl border border-border/60 bg-card/70 backdrop-blur-sm p-6 sm:p-8 shadow-md"
           >
             <Grounding54321 />
           </motion.div>

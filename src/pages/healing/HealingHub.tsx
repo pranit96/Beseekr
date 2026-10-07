@@ -106,19 +106,24 @@ export default function HealingHub() {
   const totalCompleted = progressData?.data?.total_completed ?? 0;
   const weekly = progressData?.data?.weekly ?? [];
 
-  // Compute average emotional relief delta
+  // Compute average emotional relief delta only from sessions with both before & after ratings
+  const validWeeks = weekly.filter(
+    (w) => w.avg_intensity_before != null && w.avg_intensity_after != null,
+  );
   const avgBefore =
-    weekly.length > 0
-      ? weekly.reduce((acc, w) => acc + (w.avg_intensity_before ?? 0), 0) /
-        weekly.length
+    validWeeks.length > 0
+      ? validWeeks.reduce((acc, w) => acc + (w.avg_intensity_before as number), 0) /
+        validWeeks.length
       : 0;
   const avgAfter =
-    weekly.length > 0
-      ? weekly.reduce((acc, w) => acc + (w.avg_intensity_after ?? 0), 0) /
-        weekly.length
+    validWeeks.length > 0
+      ? validWeeks.reduce((acc, w) => acc + (w.avg_intensity_after as number), 0) /
+        validWeeks.length
       : 0;
   const deltaPercent =
-    avgBefore > 0 ? Math.round(((avgBefore - avgAfter) / avgBefore) * 100) : null;
+    validWeeks.length > 0 && avgBefore > 0
+      ? Math.round(((avgBefore - avgAfter) / avgBefore) * 100)
+      : null;
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col selection:bg-indigo-500/20">
@@ -231,12 +236,20 @@ export default function HealingHub() {
                   <span>Avg Relief Delta</span>
                 </div>
                 <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-                  {deltaPercent != null && deltaPercent > 0
-                    ? `-${deltaPercent}%`
-                    : "Calm"}
+                  {deltaPercent != null ? (
+                    deltaPercent > 0 ? (
+                      `-${deltaPercent}%`
+                    ) : deltaPercent === 0 ? (
+                      "0%"
+                    ) : (
+                      `+${Math.abs(deltaPercent)}%`
+                    )
+                  ) : (
+                    <span className="text-muted-foreground text-xl font-normal">—</span>
+                  )}
                 </div>
                 <div className="text-[11px] text-muted-foreground mt-0.5">
-                  Post-reframe intensity
+                  {deltaPercent != null ? "Post-reframe shift" : "No re-ratings yet"}
                 </div>
               </div>
             </div>
@@ -390,17 +403,17 @@ export default function HealingHub() {
                   variant="outline"
                   className="border-cyan-500/40 text-cyan-600 dark:text-cyan-400 bg-cyan-500/10 text-[10px]"
                 >
-                  &lt; 2 Minutes
+                  5 Breath Modes
                 </Badge>
               </div>
 
               <div>
                 <h2 className="text-lg font-bold text-foreground">
-                  Quick Calm
+                  Quick Calm &amp; Breathing
                 </h2>
                 <p className="text-xs sm:text-sm text-muted-foreground mt-1 leading-relaxed">
-                  Fast physiological interventions to immediately lower autonomic
-                  nervous arousal when feeling flooded.
+                  Fast physiological protocols to immediately lower autonomic
+                  nervous arousal, improve sleep, or sharpen focus.
                 </p>
               </div>
 
@@ -409,10 +422,10 @@ export default function HealingHub() {
                   <span className="text-lg">🫁</span>
                   <div>
                     <div className="font-semibold text-foreground">
-                      Physiological Sigh
+                      Multi-Mode Breathing Studio
                     </div>
                     <div className="text-[11px] text-muted-foreground">
-                      Dual inhale + extended exhale
+                      Sigh • 4-7-8 Sleep • Box Focus • Cleanse
                     </div>
                   </div>
                 </div>
@@ -436,7 +449,7 @@ export default function HealingHub() {
               onClick={() => navigate("/healing/quick-calm")}
               className="mt-5 w-full border-cyan-500/30 text-cyan-700 dark:text-cyan-300 hover:bg-cyan-500/10 gap-1.5"
             >
-              Start Quick Calm
+              Open Calm Studio
               <ArrowUpRight className="w-4 h-4 ml-auto" />
             </Button>
           </motion.div>
@@ -516,19 +529,19 @@ export default function HealingHub() {
                   Behavioral Experiments
                 </h2>
                 <p className="text-xs sm:text-sm text-muted-foreground mt-1 leading-relaxed">
-                  Test catastrophic predictions like a scientist. Turn vague fears
-                  into concrete tests and record what really happened.
+                  Test anxious predictions like a scientist. Instead of accepting worst-case thoughts as truth, test them with small real-world actions to discover what actually happens.
                 </p>
               </div>
 
               <div className="p-3 rounded-2xl border border-border/50 bg-background/40 text-xs space-y-1.5">
                 <div className="font-semibold text-foreground flex items-center justify-between">
-                  <span>Confidence Gauge</span>
-                  <span className="text-violet-500 text-[11px]">0% – 100%</span>
+                  <span>3-Step Scientific Loop</span>
+                  <span className="text-violet-500 text-[11px]">Hypothesis → Action → Truth</span>
                 </div>
                 <p className="text-[11px] text-muted-foreground leading-relaxed">
-                  Record belief confidence before vs after the real-world experiment
-                  to dismantle fear conditioning.
+                  1. Predict: <em>&ldquo;If I speak up, they&apos;ll judge me&rdquo;</em> (80% belief)<br />
+                  2. Test: Ask 1 question in tomorrow&apos;s meeting.<br />
+                  3. Reality: Nobody judged; fear belief drops to 20%.
                 </p>
               </div>
             </div>
@@ -580,7 +593,7 @@ export default function HealingHub() {
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Relief Factor:</span>
                   <span className="font-bold text-emerald-600 dark:text-emerald-400">
-                    {deltaPercent ? `${deltaPercent}% shift` : "Active"}
+                    {deltaPercent != null ? `${deltaPercent}% shift` : "Pending data"}
                   </span>
                 </div>
               </div>

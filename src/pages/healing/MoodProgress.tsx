@@ -4,7 +4,7 @@
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, TrendingDown, TrendingUp, Minus, Loader2 } from "lucide-react";
+import { ArrowLeft, TrendingDown, TrendingUp, Minus, Loader2, Sparkles } from "lucide-react";
 import { GlobalHeader } from "@/components/GlobalHeader";
 import { GlobalFooter } from "@/components/GlobalFooter";
 import { Button } from "@/components/ui/button";
@@ -49,8 +49,8 @@ export default function MoodProgress() {
   // Prepare chart data
   const chartData = weekly.map((w) => ({
     week: format(parseISO(w.week), "MMM d"),
-    Before: w.avg_intensity_before ?? 0,
-    After: w.avg_intensity_after ?? 0,
+    Before: w.avg_intensity_before,
+    After: w.avg_intensity_after,
     records: w.count,
   }));
 
@@ -66,11 +66,11 @@ export default function MoodProgress() {
     .slice(0, 5)
     .map(([trap, count]) => ({ trap: TRAP_LABELS[trap] ?? trap, count }));
 
-  // Trend indicator
+  // Trend indicator (requires at least 2 sessions)
   const latestBefore = weekly[weekly.length - 1]?.avg_intensity_before;
   const firstBefore = weekly[0]?.avg_intensity_before;
   const trend =
-    latestBefore == null || firstBefore == null
+    weekly.length < 2 || latestBefore == null || firstBefore == null
       ? null
       : latestBefore < firstBefore
         ? "down"
@@ -157,8 +157,8 @@ export default function MoodProgress() {
                     />
                   )}
                   {trend === null && (
-                    <Minus
-                      className="h-6 w-6 text-muted-foreground"
+                    <Sparkles
+                      className="h-6 w-6 text-indigo-400"
                       aria-hidden="true"
                     />
                   )}
@@ -167,7 +167,9 @@ export default function MoodProgress() {
                       ? "Improving"
                       : trend === "up"
                         ? "Increasing"
-                        : "Stable"}
+                        : trend === "flat"
+                          ? "Stable"
+                          : "1st Session"}
                   </span>
                 </div>
                 <p className="text-xs sm:text-sm text-muted-foreground">
@@ -181,10 +183,15 @@ export default function MoodProgress() {
                           "healing.progress.increasing",
                           "Intensity trending up — consider grounding exercises",
                         )
-                      : t(
-                          "healing.progress.stable",
-                          "Stable intensity baseline across sessions",
-                        )}
+                      : trend === "flat"
+                        ? t(
+                            "healing.progress.stable",
+                            "Consistent intensity baseline across sessions",
+                          )
+                        : t(
+                            "healing.progress.initial_session",
+                            "Initial baseline established. Complete another session to view your progress trend.",
+                          )}
                 </p>
               </div>
             </div>
@@ -198,12 +205,22 @@ export default function MoodProgress() {
                     "Average Intensity: Before vs After Reframe",
                   )}
                 </h2>
-                <p className="text-xs text-muted-foreground mb-6">
+                <p className="text-xs text-muted-foreground mb-4">
                   {t(
                     "healing.progress.chart_hint",
                     "Comparing average distress (0–10) before and after completing thought records.",
                   )}
                 </p>
+
+                {weekly.length === 1 && (
+                  <div className="rounded-2xl border border-indigo-500/20 bg-indigo-500/10 p-3 mb-4 text-xs text-indigo-700 dark:text-indigo-300 flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-indigo-500 shrink-0" />
+                    <span>
+                      <strong>1 session on record:</strong> Continuous curves appear once you log sessions across 2+ weeks.
+                      {weekly[0]?.avg_intensity_after == null && " (Note: Emotion re-rating in Step 7 was skipped for this record, so only initial intensity is shown.)"}
+                    </span>
+                  </div>
+                )}
                 <ResponsiveContainer width="100%" height={240}>
                   <AreaChart
                     data={chartData}
@@ -276,6 +293,8 @@ export default function MoodProgress() {
                       stroke="#f97316"
                       strokeWidth={2}
                       fill="url(#gradBefore)"
+                      dot={{ r: 5, fill: "#f97316", strokeWidth: 2, stroke: "#fff" }}
+                      activeDot={{ r: 7 }}
                       name={t("healing.progress.legend_before", "Before (0–10)")}
                     />
                     <Area
@@ -284,6 +303,9 @@ export default function MoodProgress() {
                       stroke="#10b981"
                       strokeWidth={2}
                       fill="url(#gradAfter)"
+                      dot={{ r: 5, fill: "#10b981", strokeWidth: 2, stroke: "#fff" }}
+                      activeDot={{ r: 7 }}
+                      connectNulls={false}
                       name={t("healing.progress.legend_after", "After (0–10)")}
                     />
                   </AreaChart>
@@ -322,8 +344,8 @@ export default function MoodProgress() {
                     "Patterns you spot most often — awareness is the first step toward balanced thinking.",
                   )}
                 </p>
-                <ResponsiveContainer width="100%" height={200}>
-                  <BarChart data={trapData} layout="vertical">
+                <ResponsiveContainer width="100%" height={Math.max(90, trapData.length * 52)}>
+                  <BarChart data={trapData} layout="vertical" margin={{ top: 5, right: 30, left: 10, bottom: 5 }}>
                     <CartesianGrid
                       strokeDasharray="3 3"
                       stroke="hsl(var(--border))"
@@ -331,14 +353,16 @@ export default function MoodProgress() {
                     />
                     <XAxis
                       type="number"
+                      allowDecimals={false}
+                      domain={[0, (dataMax: number) => Math.max(1, Math.ceil(dataMax))]}
                       tick={{ fontSize: 11 }}
                       stroke="hsl(var(--muted-foreground))"
                     />
                     <YAxis
                       type="category"
                       dataKey="trap"
-                      width={130}
-                      tick={{ fontSize: 11 }}
+                      width={140}
+                      tick={{ fontSize: 12 }}
                       stroke="hsl(var(--muted-foreground))"
                     />
                     <Tooltip
@@ -351,8 +375,9 @@ export default function MoodProgress() {
                     />
                     <Bar
                       dataKey="count"
-                      fill="hsl(var(--primary))"
+                      fill="#8b5cf6"
                       radius={[0, 8, 8, 0]}
+                      maxBarSize={28}
                     />
                   </BarChart>
                 </ResponsiveContainer>
