@@ -1085,7 +1085,3 @@ export function BreathingCircle({
   );
 }
 
-
-    </div>
-  );
-}
