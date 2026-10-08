@@ -717,33 +717,32 @@ export function BreathingCircle({
   const isExhalePhase = currentPhase.name === "exhale" || currentPhase.name === "holdEmpty";
 
   return (
-    <div className={cn("flex flex-col gap-0 w-full", className)}>
+    <div className={cn("flex flex-col w-full", className)}>
 
-      {/* ─── Mode Selector ─────────────────────────────────────────────────── */}
-      <div className="w-full mb-5">
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">
-            Choose Your Practice
+      {/* ─── Mode Selector Row ─────────────────────────────────────────────────── */}
+      <div className="w-full mb-2">
+        <div className="flex items-center justify-between mb-1.5">
+          <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">
+            Protocol
           </span>
           <button
             type="button"
             onClick={() => setSoundEnabled((v) => !v)}
             className={cn(
-              "flex items-center gap-1.5 h-8 px-3 rounded-full text-xs font-medium border transition-all",
+              "flex items-center gap-1 h-6 px-2.5 rounded-full text-[10px] font-medium border transition-all",
               soundEnabled
                 ? "border-emerald-500/40 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10"
-                : "border-border/50 text-muted-foreground bg-transparent",
+                : "border-border/50 text-muted-foreground",
             )}
-            title={soundEnabled ? "Mute chimes" : "Enable chimes"}
           >
-            {soundEnabled ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
-            <span>{soundEnabled ? "Chimes On" : "Chimes Off"}</span>
+            {soundEnabled ? <Volume2 className="w-3 h-3" /> : <VolumeX className="w-3 h-3" />}
+            <span>{soundEnabled ? "Chimes" : "Muted"}</span>
           </button>
         </div>
 
-        <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+        {/* 6 mode pills in a single scrollable row */}
+        <div className="flex gap-1.5 overflow-x-auto pb-0.5 scrollbar-none">
           {BREATHING_MODES.map((mode) => {
-            const Icon = mode.icon;
             const active = mode.id === selectedModeId;
             return (
               <button
@@ -751,395 +750,342 @@ export function BreathingCircle({
                 type="button"
                 onClick={() => handleSelectMode(mode.id)}
                 className={cn(
-                  "flex flex-col items-center gap-1 p-2.5 rounded-2xl border text-center transition-all duration-200",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring text-xs",
+                  "flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-[11px] whitespace-nowrap shrink-0 transition-all duration-200",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                   active
-                    ? cn("font-semibold shadow-md", mode.colors.pillActive)
-                    : "border-border/40 bg-card/60 text-muted-foreground hover:bg-muted/30 hover:text-foreground hover:border-border/70",
+                    ? cn("font-semibold shadow-sm", mode.colors.pillActive)
+                    : "border-border/40 bg-card/60 text-muted-foreground hover:bg-muted/30 hover:text-foreground",
                 )}
                 aria-pressed={active}
               >
-                <span className="text-base leading-none">{mode.emoji}</span>
-                <span className="leading-tight line-clamp-2 text-[10px]">{mode.subtitle.split("&")[0].split("–")[0].trim()}</span>
+                <span className="text-sm leading-none">{mode.emoji}</span>
+                <span>{mode.name.split(" ").slice(0, 2).join(" ")}</span>
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* ─── Mode Header ────────────────────────────────────────────────────── */}
+      {/* ─── Mode Header (compact, 1 line) ──────────────────────────────────── */}
       <AnimatePresence mode="wait">
         <motion.div
           key={activeMode.id}
-          initial={{ opacity: 0, y: 8 }}
+          initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -8 }}
-          transition={{ duration: 0.25 }}
-          className="text-center mb-4 space-y-1.5"
+          exit={{ opacity: 0, y: -4 }}
+          transition={{ duration: 0.2 }}
+          className="flex items-center gap-2 mb-2 flex-wrap"
         >
-          <div className="flex items-center justify-center gap-2.5 flex-wrap">
-            <h2 className="text-xl font-bold text-foreground tracking-tight">
-              {activeMode.emoji} {activeMode.name}
-            </h2>
-            <span className={cn("text-[10px] font-semibold px-2.5 py-1 rounded-full border", activeMode.colors.badge)}>
-              {activeMode.subtitle}
-            </span>
-          </div>
-          <p className={cn("text-xs font-medium", activeMode.colors.accent)}>
+          <h2 className="text-base font-bold text-foreground tracking-tight">
+            {activeMode.name}
+          </h2>
+          <span className={cn("text-[10px] font-semibold px-2 py-0.5 rounded-full border", activeMode.colors.badge)}>
+            {activeMode.subtitle.split("&")[0].split("–")[0].trim()}
+          </span>
+          <p className={cn("text-[11px] font-medium ml-auto", activeMode.colors.accent)}>
             {activeMode.tagline}
           </p>
-          {!isRunning && !isCompleted && (
-            <p className="text-xs text-muted-foreground max-w-sm mx-auto leading-relaxed px-2">
-              {activeMode.description}
-            </p>
-          )}
         </motion.div>
       </AnimatePresence>
 
-      {/* ─── Preparation Tip (when idle) ──────────────────────────────────── */}
-      <AnimatePresence>
-        {!isRunning && !isCompleted && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            className="overflow-hidden"
-          >
-            <div className="flex items-start gap-2.5 rounded-2xl bg-muted/30 border border-border/40 px-4 py-3 mb-4 text-xs text-muted-foreground">
-              <Info className="w-3.5 h-3.5 shrink-0 mt-0.5 text-primary/60" />
-              <p className="leading-relaxed"><strong className="text-foreground/80">Prepare:</strong> {activeMode.preparationTip}</p>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* ─── Main Interaction Area: Orb Left + Controls Right ────────────────── */}
+      <div className="flex items-center gap-4 w-full">
 
-      {/* ─── Orb + SVG Ring ─────────────────────────────────────────────────── */}
-      <div className="relative flex items-center justify-center w-full mb-4" style={{ height: 310 }}>
-        {/* Ambient glow layer */}
-        <div
-          className="absolute rounded-full blur-3xl opacity-25 pointer-events-none transition-all duration-1000"
-          style={{
-            width: 280, height: 280,
-            background: `radial-gradient(circle, ${activeMode.colors.orbGlow}, transparent 70%)`,
-          }}
-        />
-
-        {/* Floating particles */}
-        {!shouldReduceMotion && isRunning && [...Array(8)].map((_, i) => (
-          <FloatingParticle key={i} color={activeMode.colors.particle} delay={i * 0.7} />
-        ))}
-
-        {/* SVG progress ring */}
-        <svg
-          className="absolute pointer-events-none z-10"
-          width={SIZE}
-          height={SIZE}
-          style={{ transform: "rotate(-90deg)" }}
-          aria-hidden="true"
-        >
-          {/* Track */}
-          <circle
-            cx={SIZE / 2} cy={SIZE / 2} r={RADIUS}
-            className="stroke-muted/20"
-            strokeWidth={STROKE}
-            fill="transparent"
+        {/* Orb + SVG Ring (smaller, fixed 220px) */}
+        <div className="relative flex items-center justify-center shrink-0" style={{ width: 220, height: 220 }}>
+          {/* Ambient glow */}
+          <div
+            className="absolute rounded-full blur-2xl opacity-20 pointer-events-none transition-all duration-1000"
+            style={{
+              width: 200, height: 200,
+              background: `radial-gradient(circle, ${activeMode.colors.orbGlow}, transparent 70%)`,
+            }}
           />
-          {/* Progress */}
-          {(isRunning || isCompleted) && (
+
+          {/* Floating particles */}
+          {!shouldReduceMotion && isRunning && [...Array(6)].map((_, i) => (
+            <FloatingParticle key={i} color={activeMode.colors.particle} delay={i * 0.8} />
+          ))}
+
+          {/* SVG ring */}
+          <svg
+            className="absolute pointer-events-none z-10"
+            width={SIZE}
+            height={SIZE}
+            style={{ transform: "rotate(-90deg)" }}
+            aria-hidden="true"
+          >
             <circle
               cx={SIZE / 2} cy={SIZE / 2} r={RADIUS}
-              className={cn("transition-[stroke-dashoffset] duration-100 ease-linear", activeMode.colors.ring)}
+              className="stroke-muted/20"
               strokeWidth={STROKE}
-              strokeDasharray={CIRC}
-              strokeDashoffset={isCompleted ? 0 : dashOffset}
-              strokeLinecap="round"
               fill="transparent"
             />
-          )}
-          {/* Subtle tick marks for cycle progress */}
-          {!isRunning && !isCompleted && Array.from({ length: targetCycles }).map((_, i) => {
-            const angle = (i / targetCycles) * 360;
-            const rad = (angle * Math.PI) / 180;
-            const x1 = SIZE / 2 + (RADIUS - 4) * Math.cos(rad);
-            const y1 = SIZE / 2 + (RADIUS - 4) * Math.sin(rad);
-            const x2 = SIZE / 2 + (RADIUS + 4) * Math.cos(rad);
-            const y2 = SIZE / 2 + (RADIUS + 4) * Math.sin(rad);
-            return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} className="stroke-muted/30" strokeWidth={1.5} />;
-          })}
-        </svg>
-
-        {/* Breathing orb */}
-        <div
-          className="absolute rounded-full pointer-events-none transition-colors duration-1000"
-          style={{
-            width: 196,
-            height: 196,
-            background: `radial-gradient(circle at 38% 38%, ${activeMode.colors.orbFrom}, ${activeMode.colors.orbTo})`,
-            boxShadow: isRunning
-              ? `0 0 ${40 + currentScale * 30}px ${activeMode.colors.orbGlow}, 0 0 ${80 + currentScale * 40}px ${activeMode.colors.orbGlow.replace("0.45", "0.2")}`
-              : `0 0 30px ${activeMode.colors.orbGlow.replace("0.45", "0.25")}`,
-            transform: shouldReduceMotion ? "scale(1)" : `scale(${currentScale})`,
-            willChange: "transform, box-shadow",
-            transition: "transform 80ms linear, box-shadow 300ms ease",
-          }}
-          aria-hidden="true"
-        />
-
-        {/* Center text capsule */}
-        <div className="relative z-20 flex flex-col items-center justify-center text-center select-none"
-          style={{ width: 150, height: 150 }}
-        >
-          <AnimatePresence mode="wait">
-            {isCompleted ? (
-              <motion.div
-                key="done"
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                className="flex flex-col items-center gap-1"
-              >
-                <CheckCircle2 className="w-9 h-9 text-emerald-400" />
-                <p className="text-sm font-bold text-foreground">Complete</p>
-                <p className="text-[10px] text-muted-foreground">Feel the shift</p>
-              </motion.div>
-            ) : isRunning ? (
-              <motion.div
-                key={`${phaseIndex}-running`}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.15 }}
-                className="flex flex-col items-center gap-0.5"
-              >
-                <span className={cn("text-[10px] font-bold uppercase tracking-widest", activeMode.colors.accent)}>
-                  {currentPhase.label}
-                </span>
-                <div className="text-4xl font-black text-white leading-none tabular-nums drop-shadow-lg">
-                  {secondsRemaining}
-                </div>
-                <span className="text-[9px] text-white/60 font-medium">
-                  {currentCycle + 1} / {targetCycles}
-                </span>
-                <span className={cn(
-                  "text-[9px] font-semibold mt-1 px-2 py-0.5 rounded-full",
-                  isExhalePhase ? "bg-white/10 text-white/70" : "bg-white/20 text-white/90"
-                )}>
-                  {isExhalePhase ? "↓ releasing" : "↑ expanding"}
-                </span>
-              </motion.div>
-            ) : (
-              <motion.div
-                key="idle"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="flex flex-col items-center gap-1.5"
-              >
-                <span className="text-3xl">{activeMode.emoji}</span>
-                <p className="text-xs font-semibold text-white/90">{targetCycles} cycles</p>
-                <p className="text-[10px] text-white/60">{formatTime(estimatedSeconds)}</p>
-              </motion.div>
+            {(isRunning || isCompleted) && (
+              <circle
+                cx={SIZE / 2} cy={SIZE / 2} r={RADIUS}
+                className={cn("transition-[stroke-dashoffset] duration-100 ease-linear", activeMode.colors.ring)}
+                strokeWidth={STROKE}
+                strokeDasharray={CIRC}
+                strokeDashoffset={isCompleted ? 0 : dashOffset}
+                strokeLinecap="round"
+                fill="transparent"
+              />
             )}
-          </AnimatePresence>
-        </div>
-      </div>
+            {/* Cycle tick marks when idle */}
+            {!isRunning && !isCompleted && Array.from({ length: targetCycles }).map((_, i) => {
+              const angle = (i / targetCycles) * 360;
+              const rad = (angle * Math.PI) / 180;
+              const x1 = SIZE / 2 + (RADIUS - 4) * Math.cos(rad);
+              const y1 = SIZE / 2 + (RADIUS - 4) * Math.sin(rad);
+              const x2 = SIZE / 2 + (RADIUS + 4) * Math.cos(rad);
+              const y2 = SIZE / 2 + (RADIUS + 4) * Math.sin(rad);
+              return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} className="stroke-muted/25" strokeWidth={1.5} />;
+            })}
+          </svg>
 
-      {/* ─── Live Instruction Panel ─────────────────────────────────────────── */}
-      <div
-        className="min-h-[64px] text-center px-2 mb-4 flex flex-col items-center justify-center gap-1"
-        aria-live="polite"
-      >
-        <AnimatePresence mode="wait">
-          {isRunning ? (
-            <motion.div
-              key={`inst-${phaseIndex}`}
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              transition={{ duration: 0.2 }}
-              className="flex flex-col items-center gap-1"
-            >
-              <p className="text-sm font-semibold text-foreground leading-snug">
-                {currentPhase.instruction}
-              </p>
-              <p className="text-xs text-muted-foreground italic leading-relaxed max-w-xs">
-                {currentPhase.bodyCue}
-              </p>
-            </motion.div>
-          ) : isCompleted ? (
-            <motion.div
-              key="completed-msg"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="flex flex-col items-center gap-1 max-w-sm"
-            >
-              <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400 leading-relaxed">
-                {activeMode.completionMessage}
-              </p>
-            </motion.div>
-          ) : (
-            <motion.p key="idle-desc" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-xs text-muted-foreground">
-              Press Begin to start your guided session
-            </motion.p>
-          )}
-        </AnimatePresence>
-      </div>
+          {/* Orb */}
+          <div
+            className="absolute rounded-full pointer-events-none transition-colors duration-1000"
+            style={{
+              width: 155,
+              height: 155,
+              background: `radial-gradient(circle at 38% 38%, ${activeMode.colors.orbFrom}, ${activeMode.colors.orbTo})`,
+              boxShadow: isRunning
+                ? `0 0 ${30 + currentScale * 20}px ${activeMode.colors.orbGlow}, 0 0 ${60 + currentScale * 30}px ${activeMode.colors.orbGlow.replace(/[\d.]+\)$/, "0.15)")}`
+                : `0 0 20px ${activeMode.colors.orbGlow.replace(/[\d.]+\)$/, "0.2)")}`,
+              transform: shouldReduceMotion ? "scale(1)" : `scale(${currentScale})`,
+              willChange: "transform, box-shadow",
+              transition: "transform 80ms linear, box-shadow 300ms ease",
+            }}
+            aria-hidden="true"
+          />
 
-      {/* ─── Phase Sequence Preview (idle only) ───────────────────────────── */}
-      {!isRunning && !isCompleted && (
-        <div className="flex items-center justify-center gap-1.5 mb-4 flex-wrap px-2">
-          {activeMode.phases.map((phase, i) => (
-            <div key={i} className="flex items-center gap-1">
-              <div className={cn(
-                "flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl border text-[10px]",
-                "border-border/40 bg-card/60 text-muted-foreground"
-              )}>
-                <span className="font-semibold text-foreground/80">{phase.label}</span>
-                <span>{phase.duration}s</span>
-              </div>
-              {i < activeMode.phases.length - 1 && (
-                <div className="w-3 h-px bg-border/50" />
+          {/* Center text */}
+          <div className="relative z-20 flex flex-col items-center justify-center text-center select-none" style={{ width: 120, height: 120 }}>
+            <AnimatePresence mode="wait">
+              {isCompleted ? (
+                <motion.div key="done" initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex flex-col items-center gap-1">
+                  <CheckCircle2 className="w-8 h-8 text-emerald-400" />
+                  <p className="text-xs font-bold text-white">Complete</p>
+                </motion.div>
+              ) : isRunning ? (
+                <motion.div
+                  key={`${phaseIndex}-running`}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.15 }}
+                  className="flex flex-col items-center gap-0.5"
+                >
+                  <span className={cn("text-[9px] font-bold uppercase tracking-widest", activeMode.colors.accent)}>
+                    {currentPhase.label}
+                  </span>
+                  <div className="text-3xl font-black text-white leading-none tabular-nums drop-shadow-lg">
+                    {secondsRemaining}
+                  </div>
+                  <span className="text-[9px] text-white/60">{currentCycle + 1} / {targetCycles}</span>
+                  <span className={cn("text-[9px] font-semibold mt-0.5 px-1.5 py-0.5 rounded-full",
+                    isExhalePhase ? "bg-white/10 text-white/70" : "bg-white/20 text-white/90"
+                  )}>
+                    {isExhalePhase ? "↓" : "↑"}
+                  </span>
+                </motion.div>
+              ) : (
+                <motion.div key="idle" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center gap-1">
+                  <span className="text-2xl">{activeMode.emoji}</span>
+                  <p className="text-[11px] font-semibold text-white/90">{targetCycles} cycles</p>
+                  <p className="text-[10px] text-white/60">{formatTime(estimatedSeconds)}</p>
+                </motion.div>
               )}
-            </div>
-          ))}
-          <div className="flex items-center gap-1">
-            <div className="w-3 h-px bg-border/30 border-dashed" />
-            <div className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl border border-dashed border-border/30 text-[10px] text-muted-foreground/60">
-              <span>repeat</span>
-            </div>
+            </AnimatePresence>
           </div>
         </div>
-      )}
 
-      {/* ─── Cycle Selector ─────────────────────────────────────────────────── */}
-      {!isRunning && (
-        <div className="flex items-center justify-center gap-1 mb-5">
-          <span className="text-[11px] text-muted-foreground mr-1 font-medium">Cycles:</span>
-          {[3, 4, 5, 6, 8, 10].map((c) => (
-            <button
-              key={c}
-              type="button"
-              onClick={() => setTargetCycles(c)}
-              className={cn(
-                "w-8 h-8 rounded-full text-xs font-semibold transition-all border",
-                targetCycles === c
-                  ? cn("shadow-sm", activeMode.colors.pillActive)
-                  : "border-border/40 text-muted-foreground hover:text-foreground hover:border-border/70 bg-transparent",
+        {/* Right-side controls panel */}
+        <div className="flex flex-col justify-center flex-1 gap-3 min-w-0">
+
+          {/* Live instruction (running) or phase sequence (idle) */}
+          <div className="min-h-[52px]" aria-live="polite">
+            <AnimatePresence mode="wait">
+              {isRunning ? (
+                <motion.div
+                  key={`inst-${phaseIndex}`}
+                  initial={{ opacity: 0, x: 6 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -6 }}
+                  transition={{ duration: 0.18 }}
+                >
+                  <p className="text-sm font-semibold text-foreground leading-snug">
+                    {currentPhase.instruction}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground italic leading-snug mt-0.5">
+                    {currentPhase.bodyCue}
+                  </p>
+                </motion.div>
+              ) : isCompleted ? (
+                <motion.div key="completed-msg" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                  <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400 leading-snug">
+                    {activeMode.completionMessage}
+                  </p>
+                </motion.div>
+              ) : (
+                <motion.div key="idle-phase" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                  {/* Phase sequence chips */}
+                  <div className="flex items-center gap-1 flex-wrap mb-1">
+                    {activeMode.phases.map((phase, i) => (
+                      <div key={i} className="flex items-center gap-1">
+                        <span className="text-[10px] px-2 py-0.5 rounded-lg border border-border/40 bg-card/60 text-muted-foreground whitespace-nowrap">
+                          <span className="font-medium text-foreground/80">{phase.label}</span> {phase.duration}s
+                        </span>
+                        {i < activeMode.phases.length - 1 && <span className="text-muted-foreground/40 text-[10px]">→</span>}
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">{activeMode.description}</p>
+                </motion.div>
               )}
-            >
-              {c}
-            </button>
-          ))}
-          <span className="ml-2 text-[10px] text-muted-foreground">
-            ≈ {formatTime(estimatedSeconds)}
-          </span>
-        </div>
-      )}
+            </AnimatePresence>
+          </div>
 
-      {/* ─── Action Buttons ─────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-center gap-3 mb-5">
-        {!isRunning ? (
-          <Button
-            size="lg"
-            onClick={startExercise}
-            className="gap-2 rounded-2xl px-10 h-12 font-semibold shadow-lg text-white"
-            style={{
-              background: `linear-gradient(135deg, ${activeMode.colors.orbFrom}, ${activeMode.colors.orbTo})`,
-            }}
-            id="breathing-start-btn"
-          >
-            <Play className="w-4 h-4 fill-current" />
-            {isCompleted ? "Practice Again" : "Begin Session"}
-          </Button>
-        ) : (
+          {/* Cycle selector */}
+          {!isRunning && (
+            <div className="flex items-center gap-1 flex-wrap">
+              <span className="text-[10px] text-muted-foreground font-medium mr-0.5">Cycles:</span>
+              {[3, 4, 5, 6, 8, 10].map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => setTargetCycles(c)}
+                  className={cn(
+                    "w-7 h-7 rounded-full text-[11px] font-semibold transition-all border",
+                    targetCycles === c
+                      ? cn("shadow-sm", activeMode.colors.pillActive)
+                      : "border-border/40 text-muted-foreground hover:text-foreground hover:border-border/70",
+                  )}
+                >
+                  {c}
+                </button>
+              ))}
+              <span className="text-[10px] text-muted-foreground ml-1">≈{formatTime(estimatedSeconds)}</span>
+            </div>
+          )}
+
+          {/* Action buttons */}
+          <div className="flex items-center gap-2">
+            {!isRunning ? (
+              <Button
+                onClick={startExercise}
+                className="gap-1.5 rounded-xl px-6 h-10 font-semibold text-sm shadow-md text-white"
+                style={{ background: `linear-gradient(135deg, ${activeMode.colors.orbFrom}, ${activeMode.colors.orbTo})` }}
+                id="breathing-start-btn"
+              >
+                <Play className="w-3.5 h-3.5 fill-current" />
+                {isCompleted ? "Again" : "Begin"}
+              </Button>
+            ) : (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={stopExercise}
+                  className="gap-1.5 rounded-xl px-4 h-10 border-border/60 hover:bg-muted text-sm"
+                >
+                  <Square className="w-3 h-3 fill-current" />
+                  Stop
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => { stopExercise(); setTimeout(() => startExercise(), 50); }}
+                  className="h-10 w-10 rounded-xl"
+                  title="Restart"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                </Button>
+              </>
+            )}
+          </div>
+
+          {/* Prep tip — inline, compact */}
+          {!isRunning && !isCompleted && (
+            <div className="flex items-start gap-1.5 text-[10px] text-muted-foreground">
+              <Info className="w-3 h-3 shrink-0 mt-0.5 text-primary/50" />
+              <span className="leading-snug line-clamp-2">{activeMode.preparationTip}</span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ─── Below-the-fold: Situations + Science (scrollable secondary content) */}
+      <div className="mt-4 space-y-3">
+        {/* When-to-use grid */}
+        {!isRunning && (
+          <AnimatePresence>
+            <motion.div
+              key={`sit-${activeMode.id}`}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.25 }}
+              className="border border-border/40 rounded-2xl overflow-hidden"
+            >
+              <div className="px-3 py-2 bg-muted/20 border-b border-border/30">
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Best used when…</p>
+              </div>
+              <div className="grid grid-cols-2 gap-0">
+                {activeMode.situations.map((s, i) => (
+                  <div
+                    key={i}
+                    className={cn(
+                      "flex items-start gap-2 p-2.5 text-[11px]",
+                      i % 2 === 0 && i < activeMode.situations.length - 1 ? "border-r border-border/30" : "",
+                      i < activeMode.situations.length - 2 ? "border-b border-border/30" : "",
+                    )}
+                  >
+                    <span className="text-sm leading-none shrink-0">{s.emoji}</span>
+                    <div className="min-w-0">
+                      <p className="font-semibold text-foreground leading-snug truncate">{s.title}</p>
+                      <p className="text-muted-foreground leading-snug mt-0.5 line-clamp-2">{s.when}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          </AnimatePresence>
+        )}
+
+        {/* Expandable science */}
+        {!isRunning && (
           <>
-            <Button
-              variant="outline"
-              size="lg"
-              onClick={stopExercise}
-              className="gap-2 rounded-2xl px-6 h-12 border-border/60 hover:bg-muted"
+            <button
+              type="button"
+              onClick={() => setShowScience((v) => !v)}
+              className="flex items-center justify-between w-full text-left px-0.5 text-[11px] text-muted-foreground hover:text-foreground transition-colors group"
             >
-              <Square className="w-3.5 h-3.5 fill-current" />
-              Stop
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => {
-                stopExercise();
-                setTimeout(() => startExercise(), 50);
-              }}
-              className="h-12 w-12 rounded-2xl"
-              title="Restart"
-            >
-              <RefreshCw className="w-4 h-4" />
-            </Button>
+              <span className="font-medium group-hover:underline">🔬 Why this works — the science</span>
+              {showScience ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+            </button>
+            <AnimatePresence>
+              {showScience && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.18 }}
+                  className="overflow-hidden"
+                >
+                  <div className="px-3 py-2.5 rounded-xl bg-muted/20 border border-border/40 text-[11px] text-muted-foreground leading-relaxed">
+                    {activeMode.science}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </>
         )}
       </div>
+    </div>
+  );
+}
 
-      {/* ─── When-to-Use Situations ─────────────────────────────────────────── */}
-      {!isRunning && (
-        <AnimatePresence>
-          <motion.div
-            key={activeMode.id}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.1 }}
-            className="w-full border border-border/50 rounded-2xl overflow-hidden"
-          >
-            <div className="px-4 py-3 bg-muted/20 border-b border-border/40">
-              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">
-                Best Used When…
-              </p>
-            </div>
-            <div className="grid grid-cols-2 gap-0">
-              {activeMode.situations.map((s, i) => (
-                <div
-                  key={i}
-                  className={cn(
-                    "flex items-start gap-2.5 p-3 text-xs",
-                    i % 2 === 0 && i < activeMode.situations.length - 1 ? "border-r border-border/40" : "",
-                    i < activeMode.situations.length - 2 ? "border-b border-border/40" : "",
-                  )}
-                >
-                  <span className="text-base leading-none shrink-0 mt-0.5">{s.emoji}</span>
-                  <div>
-                    <p className="font-semibold text-foreground leading-snug">{s.title}</p>
-                    <p className="text-muted-foreground mt-0.5 leading-relaxed">{s.when}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-        </AnimatePresence>
-      )}
 
-      {/* ─── Expandable Science Notes ─────────────────────────────────────── */}
-      {!isRunning && (
-        <button
-          type="button"
-          onClick={() => setShowScience((v) => !v)}
-          className="flex items-center justify-between w-full text-left mt-3 px-1 text-xs text-muted-foreground hover:text-foreground transition-colors group"
-        >
-          <span className="font-medium group-hover:underline">
-            🔬 Why this works — the science
-          </span>
-          {showScience ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-        </button>
-      )}
-      <AnimatePresence>
-        {showScience && !isRunning && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="overflow-hidden"
-          >
-            <div className="mt-2 px-4 py-3 rounded-2xl bg-muted/20 border border-border/40 text-xs text-muted-foreground leading-relaxed">
-              {activeMode.science}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }
