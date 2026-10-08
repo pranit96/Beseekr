@@ -68,11 +68,14 @@ function ExperimentCard({ exp, onUpdate, onDelete }: { exp: BExperiment; onUpdat
                 • After: <strong>{exp.confidence_after}%</strong>
               </span>
             )}
-            {exp.scheduled_for && (
-              <span className="text-[11px] text-muted-foreground">
-                • {format(new Date(exp.scheduled_for), "MMM d")}
-              </span>
-            )}
+            {exp.scheduled_for && (() => {
+              const d = new Date(exp.scheduled_for);
+              return !isNaN(d.getTime()) ? (
+                <span className="text-[11px] text-muted-foreground">
+                  • {format(d, "MMM d")}
+                </span>
+              ) : null;
+            })()}
           </div>
         </div>
         {expanded ? <ChevronUp className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" /> : <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />}

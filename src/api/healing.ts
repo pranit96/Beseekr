@@ -61,6 +61,7 @@ export interface Worry {
   text: string;
   parked_at: string;
   reviewed_at?: string | null;
+  created_at?: string;
 }
 
 export interface BehavioralExperiment {

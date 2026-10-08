@@ -298,7 +298,12 @@ function WorryItem({
             {worry.text}
           </p>
           <p className="mt-1 text-[11px] text-muted-foreground">
-            {format(new Date(worry.created_at), "MMM d, h:mm a")}
+            {(() => {
+              const rawDate = worry.parked_at || (worry as any).created_at;
+              if (!rawDate) return "";
+              const d = new Date(rawDate);
+              return !isNaN(d.getTime()) ? format(d, "MMM d, h:mm a") : "";
+            })()}
           </p>
         </div>
 
