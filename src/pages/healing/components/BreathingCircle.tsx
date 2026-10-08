@@ -1,174 +1,539 @@
 // src/pages/healing/components/BreathingCircle.tsx
-// Multi-mode breathing studio: Physiological Sigh, 4-7-8 Relax, Box Focus, Resonant Cleanse, Energize
-// Flicker-free hardware-accelerated CSS animations, SVG countdown ring, optional harmonic audio chimes.
+// Refined Breathing Studio — premium aesthetic, curated multi-layered audio, situation-aware guidance
+// RAF-based animation engine (zero flicker), SVG ring, body-cue instructions, when-to-use cards.
 
-import { useEffect, useRef, useState, useMemo } from "react";
-import { useTranslation } from "react-i18next";
-import { motion, useReducedMotion } from "framer-motion";
+import { useEffect, useRef, useState, useMemo, useCallback } from "react";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import {
-  Volume2,
-  VolumeX,
-  Play,
-  RotateCcw,
-  Sparkles,
-  Moon,
-  Target,
-  Wind,
-  Zap,
-  CheckCircle2,
-  Clock,
+  Volume2, VolumeX, Play, Square, RefreshCw,
+  Sparkles, Moon, Target, Wind, Zap, Heart,
+  CheckCircle2, Info, ChevronDown, ChevronUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 export type BreathingCategory = "reset" | "relax" | "sleep" | "focus" | "cleanse" | "energy";
 
 export interface PhaseConfig {
   name: "inhale" | "inhale2" | "hold" | "exhale" | "holdEmpty";
   label: string;
-  duration: number; // in seconds
+  duration: number;
   scale: number;
   instruction: string;
+  bodyCue: string;         // micro-instruction about body/sensation
+  chimeNote: number;       // Hz – unique note per phase action
+}
+
+export interface SituationCard {
+  emoji: string;
+  title: string;
+  when: string;
 }
 
 export interface BreathingMode {
   id: string;
   name: string;
+  subtitle: string;
   category: BreathingCategory;
-  categoryLabel: string;
   icon: typeof Wind;
-  tag: string;
+  emoji: string;
+  tagline: string;
   description: string;
-  scientificBenefit: string;
+  science: string;
+  situations: SituationCard[];
+  preparationTip: string;
+  completionMessage: string;
   phases: PhaseConfig[];
   defaultCycles: number;
-  colorScheme: {
-    ring: string;
-    glow: string;
-    badge: string;
-    bgGlow: string;
+  colors: {
+    ring: string;            // SVG stroke class
+    orbFrom: string;         // gradient start (Tailwind inline)
+    orbTo: string;           // gradient end
+    orbGlow: string;         // box-shadow color
+    accent: string;          // text accent class
+    badge: string;           // badge bg + text
+    pillActive: string;      // selected pill
+    bg: string;              // ambient bg div class
+    particle: string;        // floating particles
   };
 }
+
+// ─── Audio Engine ─────────────────────────────────────────────────────────────
+
+function createSoundEngine() {
+  let ctx: AudioContext | null = null;
+
+  const getCtx = () => {
+    if (!ctx || ctx.state === "closed") {
+      const AudioCtx = window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      ctx = new AudioCtx();
+    }
+    return ctx;
+  };
+
+  // Singing bowl resonance: layered harmonics with reverb-like tail
+  const bowl = (freq: number, volume = 0.1, duration = 1.6) => {
+    try {
+      const c = getCtx();
+      const now = c.currentTime;
+
+      const harmonics = [1, 2.76, 5.40]; // bowl partial series
+      harmonics.forEach((ratio, i) => {
+        const osc = c.createOscillator();
+        const gain = c.createGain();
+        const vol = volume / (i + 1) * 0.9;
+
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(freq * ratio, now);
+        osc.frequency.exponentialRampToValueAtTime(freq * ratio * 0.998, now + duration);
+
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.exponentialRampToValueAtTime(vol, now + 0.03);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+        osc.connect(gain);
+        gain.connect(c.destination);
+        osc.start(now);
+        osc.stop(now + duration + 0.05);
+      });
+    } catch {/* silently ignore if audio is blocked */}
+  };
+
+  // Soft breath-wind shimmer (for exhale transitions)
+  const breathShimmer = (freq: number) => {
+    try {
+      const c = getCtx();
+      const now = c.currentTime;
+      const bufferSize = c.sampleRate * 0.8;
+      const buffer = c.createBuffer(1, bufferSize, c.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+
+      const source = c.createBufferSource();
+      source.buffer = buffer;
+
+      const filter = c.createBiquadFilter();
+      filter.type = "bandpass";
+      filter.frequency.value = freq;
+      filter.Q.value = 0.8;
+
+      const gain = c.createGain();
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.04, now + 0.15);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.8);
+
+      source.connect(filter);
+      filter.connect(gain);
+      gain.connect(c.destination);
+      source.start(now);
+      source.stop(now + 0.85);
+    } catch {/* silently ignore */}
+  };
+
+  // Completion chime chord (major triad)
+  const completionChord = () => {
+    try {
+      [528, 660, 792].forEach((f, i) => {
+        setTimeout(() => bowl(f, 0.09, 2.5), i * 120);
+      });
+    } catch {/* silently ignore */}
+  };
+
+  return { bowl, breathShimmer, completionChord };
+}
+
+const soundEngine = createSoundEngine();
+
+// ─── Breathing Modes ──────────────────────────────────────────────────────────
 
 export const BREATHING_MODES: BreathingMode[] = [
   {
     id: "sigh",
     name: "Physiological Sigh",
+    subtitle: "Instant Nervous System Reset",
     category: "reset",
-    categoryLabel: "Instant Reset",
     icon: Wind,
-    tag: "Stress Downregulation",
-    description: "Two quick nasal inhales followed by a prolonged, relaxed exhale.",
-    scientificBenefit:
-      "Rapidly re-inflates collapsed alveoli in the lungs and triggers the vagus nerve to slow heart rate in under 90 seconds.",
-    defaultCycles: 4,
-    colorScheme: {
-      ring: "stroke-cyan-500",
-      glow: "from-cyan-500/30 to-blue-500/10",
-      badge: "border-cyan-500/40 text-cyan-600 dark:text-cyan-400 bg-cyan-500/10",
-      bgGlow: "bg-cyan-500/10",
+    emoji: "🌬️",
+    tagline: "30-second stress relief, clinically proven",
+    description:
+      "Two rapid nasal inhales — the second sip fully inflates collapsed alveoli — followed by a long, slow mouth exhale that activates your vagal brake.",
+    science:
+      "Discovered by Stanford neuroscientist Andrew Huberman, this is the fastest known conscious method to lower physiological arousal. The double-inhale maximally re-inflates micro-collapsed alveoli (air sacs) and the extended exhale drives parasympathetic dominance via the vagus nerve within 30 seconds.",
+    situations: [
+      { emoji: "😰", title: "Sudden anxiety spike", when: "When your heart suddenly races before a big moment" },
+      { emoji: "😤", title: "Anger flash", when: "When you feel heat rising and need 30 seconds to re-center" },
+      { emoji: "📊", title: "Pre-presentation", when: "Backstage, in the elevator, right before speaking" },
+      { emoji: "🚗", title: "Traffic or commute stress", when: "When frustration is peaking on the road" },
+    ],
+    preparationTip: "Sit upright or stand. Relax your jaw and shoulders before you begin.",
+    completionMessage: "Notice the warmth spreading through your chest — that's your parasympathetic system taking the wheel.",
+    defaultCycles: 5,
+    colors: {
+      ring: "stroke-sky-400",
+      orbFrom: "#38bdf8",
+      orbTo: "#0ea5e9",
+      orbGlow: "rgba(56,189,248,0.45)",
+      accent: "text-sky-500 dark:text-sky-400",
+      badge: "bg-sky-500/15 text-sky-600 dark:text-sky-400 border-sky-500/30",
+      pillActive: "bg-sky-500/15 border-sky-500/50 text-sky-600 dark:text-sky-400",
+      bg: "from-sky-500/10 via-transparent to-transparent",
+      particle: "bg-sky-400/30",
     },
     phases: [
-      { name: "inhale", label: "Deep Inhale", duration: 2, scale: 1.35, instruction: "Breathe in deeply through your nose" },
-      { name: "inhale2", label: "Top-Up Inhale", duration: 1, scale: 1.5, instruction: "Take a sharp second sip of air at the top" },
-      { name: "hold", label: "Brief Hold", duration: 1, scale: 1.5, instruction: "Hold effortlessly for just a second" },
-      { name: "exhale", label: "Long Exhale", duration: 5, scale: 1.0, instruction: "Release slowly and completely through mouth" },
+      {
+        name: "inhale",
+        label: "Deep Inhale",
+        duration: 2,
+        scale: 1.3,
+        instruction: "Breathe in fully through your nose",
+        bodyCue: "Feel your belly expand, then your ribs flare wide",
+        chimeNote: 432,
+      },
+      {
+        name: "inhale2",
+        label: "Quick Top-Up",
+        duration: 1,
+        scale: 1.48,
+        instruction: "One sharp sniff at the very top",
+        bodyCue: "Pack in that last sip of air — upper chest lifts slightly",
+        chimeNote: 528,
+      },
+      {
+        name: "hold",
+        label: "Tiny Pause",
+        duration: 0.8,
+        scale: 1.48,
+        instruction: "Hold lightly for just a moment",
+        bodyCue: "No effort — just stillness at the very top",
+        chimeNote: 528,
+      },
+      {
+        name: "exhale",
+        label: "Long Release",
+        duration: 6,
+        scale: 0.92,
+        instruction: "Release slowly and completely through your mouth",
+        bodyCue: "Let your belly fall first, then your ribs — soft lips, no rush",
+        chimeNote: 396,
+      },
     ],
   },
   {
     id: "478",
-    name: "4-7-8 Relax & Sleep",
+    name: "4-7-8 Breathing",
+    subtitle: "Sleep & Deep Parasympathetic Rest",
     category: "sleep",
-    categoryLabel: "Sleep & Deep Rest",
     icon: Moon,
-    tag: "Parasympathetic Shift",
-    description: "Inhale 4s, hold gently for 7s, and exhale smoothly for 8s.",
-    scientificBenefit:
-      "Acts as a natural tranquilizer for the central nervous system, drastically lowering cortisol and encouraging melatonin release.",
+    emoji: "🌙",
+    tagline: "A natural sedative for the nervous system",
+    description:
+      "Inhale for 4, hold breath for 7 counts, release in a smooth whoosh for 8. The extended hold elevates blood CO₂ slightly, unlocking deep calm.",
+    science:
+      "Developed by Dr. Andrew Weil from pranayama tradition and validated in clinical settings. The 7-second breath hold gently stimulates the baroreceptors in your carotid artery, signaling a drop in blood pressure. Cortisol falls measurably after just 4 cycles. Ideal as a pre-sleep ritual.",
+    situations: [
+      { emoji: "🛏️", title: "Cannot fall asleep", when: "Lying in bed with racing thoughts — do 4 cycles" },
+      { emoji: "😟", title: "Chronic worry spiral", when: "When anxious thoughts keep looping after 10 PM" },
+      { emoji: "💊", title: "Weaning off sleep aids", when: "As a natural alternative or supplement to medication" },
+      { emoji: "🌃", title: "Night-time waking", when: "Woke at 3 AM and cannot settle back down" },
+    ],
+    preparationTip: "Lie on your back or recline. Dim lights. Place your tongue behind your upper front teeth.",
+    completionMessage: "Let your eyes stay heavy. Your body knows how to sleep — you've given it permission.",
     defaultCycles: 4,
-    colorScheme: {
-      ring: "stroke-indigo-500",
-      glow: "from-indigo-500/30 to-purple-500/10",
-      badge: "border-indigo-500/40 text-indigo-600 dark:text-indigo-400 bg-indigo-500/10",
-      bgGlow: "bg-indigo-500/10",
+    colors: {
+      ring: "stroke-violet-400",
+      orbFrom: "#a78bfa",
+      orbTo: "#7c3aed",
+      orbGlow: "rgba(139,92,246,0.45)",
+      accent: "text-violet-500 dark:text-violet-400",
+      badge: "bg-violet-500/15 text-violet-600 dark:text-violet-400 border-violet-500/30",
+      pillActive: "bg-violet-500/15 border-violet-500/50 text-violet-600 dark:text-violet-400",
+      bg: "from-violet-500/10 via-transparent to-transparent",
+      particle: "bg-violet-400/30",
     },
     phases: [
-      { name: "inhale", label: "Inhale Quietly", duration: 4, scale: 1.45, instruction: "Inhale quietly through your nose" },
-      { name: "hold", label: "Hold Breath", duration: 7, scale: 1.45, instruction: "Hold gently without straining" },
-      { name: "exhale", label: "Slow Exhale", duration: 8, scale: 1.0, instruction: "Make a soft whoosh sound through your mouth" },
+      {
+        name: "inhale",
+        label: "Inhale (4)",
+        duration: 4,
+        scale: 1.38,
+        instruction: "Breathe in quietly through your nose",
+        bodyCue: "Belly rises gently — keep your tongue behind upper teeth",
+        chimeNote: 396,
+      },
+      {
+        name: "hold",
+        label: "Hold (7)",
+        duration: 7,
+        scale: 1.38,
+        instruction: "Hold — completely still",
+        bodyCue: "Relax your face and hands. Let the stillness settle in",
+        chimeNote: 528,
+      },
+      {
+        name: "exhale",
+        label: "Whoosh Out (8)",
+        duration: 8,
+        scale: 0.88,
+        instruction: "Exhale completely through your mouth — make a soft whooshing sound",
+        bodyCue: "Lips slightly parted, audible breath, let every last bit go",
+        chimeNote: 285,
+      },
     ],
   },
   {
     id: "box",
-    name: "Box Breathing (4-4-4-4)",
+    name: "Box Breathing",
+    subtitle: "Elite Focus & Composure Under Pressure",
     category: "focus",
-    categoryLabel: "Concentration",
     icon: Target,
-    tag: "High Focus & Clarity",
-    description: "Equal 4-second intervals for inhale, hold full, exhale, and hold empty.",
-    scientificBenefit:
-      "Used by tactical operators and elite performers to stabilize CO₂ levels, eliminate mental chatter, and sharpen focus under high stakes.",
-    defaultCycles: 4,
-    colorScheme: {
-      ring: "stroke-emerald-500",
-      glow: "from-emerald-500/30 to-teal-500/10",
-      badge: "border-emerald-500/40 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10",
-      bgGlow: "bg-emerald-500/10",
+    emoji: "🎯",
+    tagline: "Used by Navy SEALs, surgeons & athletes",
+    description:
+      "Four equal sides of 4 seconds each: Inhale → Hold Full → Exhale → Hold Empty. Creates a perfect square of CO₂ / O₂ equilibrium.",
+    science:
+      "Standard protocol in US Special Operations, ER medicine, and Olympic performance coaching. Equal-ratio breathing normalises blood CO₂, eliminates the hyperventilation response, and activates prefrontal cortex activity — reducing emotional reactivity while sharpening deliberate thinking.",
+    situations: [
+      { emoji: "🧠", title: "Deep work & flow state", when: "Before a 2-hour focused coding or writing block" },
+      { emoji: "⚡", title: "High-stakes decision", when: "About to make a critical call or have a hard conversation" },
+      { emoji: "🏆", title: "Performance anxiety", when: "Backstage, locker room, or exam hall nerves" },
+      { emoji: "😡", title: "Emotional hijack", when: "When you feel reactive and need to reclaim clarity" },
+    ],
+    preparationTip: "Sit upright with feet flat. Soft gaze downward or eyes closed. Spine tall but relaxed.",
+    completionMessage: "Feel the clarity. Your prefrontal cortex is online. You're ready for whatever's next.",
+    defaultCycles: 6,
+    colors: {
+      ring: "stroke-emerald-400",
+      orbFrom: "#34d399",
+      orbTo: "#059669",
+      orbGlow: "rgba(52,211,153,0.45)",
+      accent: "text-emerald-500 dark:text-emerald-400",
+      badge: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30",
+      pillActive: "bg-emerald-500/15 border-emerald-500/50 text-emerald-600 dark:text-emerald-400",
+      bg: "from-emerald-500/10 via-transparent to-transparent",
+      particle: "bg-emerald-400/30",
     },
     phases: [
-      { name: "inhale", label: "Inhale (4s)", duration: 4, scale: 1.4, instruction: "Breathe in steadily through your nose" },
-      { name: "hold", label: "Hold Full (4s)", duration: 4, scale: 1.4, instruction: "Hold comfortably with lungs full" },
-      { name: "exhale", label: "Exhale (4s)", duration: 4, scale: 1.0, instruction: "Exhale smoothly at an even rate" },
-      { name: "holdEmpty", label: "Hold Empty (4s)", duration: 4, scale: 1.0, instruction: "Rest peacefully with lungs empty" },
+      {
+        name: "inhale",
+        label: "Inhale",
+        duration: 4,
+        scale: 1.38,
+        instruction: "Breathe in steadily through your nose",
+        bodyCue: "Expand your belly, then mid-chest — smooth and controlled",
+        chimeNote: 432,
+      },
+      {
+        name: "hold",
+        label: "Hold Full",
+        duration: 4,
+        scale: 1.38,
+        instruction: "Hold with lungs comfortably full",
+        bodyCue: "Stay still — no gripping, no strain. Just presence",
+        chimeNote: 528,
+      },
+      {
+        name: "exhale",
+        label: "Exhale",
+        duration: 4,
+        scale: 0.9,
+        instruction: "Release evenly through your nose",
+        bodyCue: "Let air escape at an even, unhurried pace — belly falls first",
+        chimeNote: 396,
+      },
+      {
+        name: "holdEmpty",
+        label: "Hold Empty",
+        duration: 4,
+        scale: 0.9,
+        instruction: "Rest with lungs gently empty",
+        bodyCue: "Don't resist — this is the reset point. Observe the stillness",
+        chimeNote: 285,
+      },
     ],
   },
   {
     id: "coherent",
     name: "Resonant Coherence",
+    subtitle: "Heart-Rate Variability & Inner Balance",
     category: "cleanse",
-    categoryLabel: "Cleanse & Balance",
-    icon: Sparkles,
-    tag: "Heart-Rate Variability (HRV)",
-    description: "Smooth 5.5-second inhalation and 5.5-second exhalation (5.5 breaths per minute).",
-    scientificBenefit:
-      "Synchronizes heart rhythm, blood pressure, and brain wave oscillations to produce peak autonomic coherence and clear emotional tension.",
-    defaultCycles: 5,
-    colorScheme: {
-      ring: "stroke-teal-500",
-      glow: "from-teal-500/30 to-emerald-500/10",
-      badge: "border-teal-500/40 text-teal-600 dark:text-teal-400 bg-teal-500/10",
-      bgGlow: "bg-teal-500/10",
+    icon: Heart,
+    emoji: "💚",
+    tagline: "5.5 breaths per minute — the human resonant frequency",
+    description:
+      "Breathe in for exactly 5.5 seconds, breathe out for exactly 5.5 seconds. No holds. A continuous wave that synchronises your autonomic systems.",
+    science:
+      "Research from HeartMath Institute and the Karolinska Institutet shows that breathing at ~5.5 bpm produces maximal Heart Rate Variability (HRV) — a key biomarker of resilience and health. It synchronises heart, lungs, and brain oscillations into a coherent state, clearing emotional tension and reducing inflammatory markers.",
+    situations: [
+      { emoji: "🧘", title: "Meditation warm-up", when: "Before a mindfulness or yoga session" },
+      { emoji: "💔", title: "Emotional processing", when: "After a difficult conversation or emotional event" },
+      { emoji: "📉", title: "HRV training", when: "Daily practice to build long-term stress resilience" },
+      { emoji: "🌿", title: "Mid-day reset", when: "Between work blocks to cleanse accumulated mental tension" },
+    ],
+    preparationTip: "Place one hand on your heart. Breathe through your heart centre, not just your lungs.",
+    completionMessage: "You've just tuned your body's most sophisticated self-regulation system. Carry this stillness forward.",
+    defaultCycles: 8,
+    colors: {
+      ring: "stroke-teal-400",
+      orbFrom: "#2dd4bf",
+      orbTo: "#0d9488",
+      orbGlow: "rgba(45,212,191,0.45)",
+      accent: "text-teal-500 dark:text-teal-400",
+      badge: "bg-teal-500/15 text-teal-600 dark:text-teal-400 border-teal-500/30",
+      pillActive: "bg-teal-500/15 border-teal-500/50 text-teal-600 dark:text-teal-400",
+      bg: "from-teal-500/10 via-transparent to-transparent",
+      particle: "bg-teal-400/30",
     },
     phases: [
-      { name: "inhale", label: "Smooth Inhale", duration: 5.5, scale: 1.4, instruction: "Expand your lower belly as you inhale" },
-      { name: "exhale", label: "Smooth Exhale", duration: 5.5, scale: 1.0, instruction: "Soften your chest and abdomen as you exhale" },
+      {
+        name: "inhale",
+        label: "Heart Inhale",
+        duration: 5.5,
+        scale: 1.4,
+        instruction: "Breathe into your heart — belly and chest rise together",
+        bodyCue: "Imagine warmth filling your chest from the inside out",
+        chimeNote: 528,
+      },
+      {
+        name: "exhale",
+        label: "Heart Exhale",
+        duration: 5.5,
+        scale: 0.9,
+        instruction: "Soften and release — chest melts downward",
+        bodyCue: "With each exhale, feel your body release a little more",
+        chimeNote: 396,
+      },
     ],
   },
   {
     id: "energize",
     name: "Awaken & Energize",
+    subtitle: "Morning Clarity & Alertness Boost",
     category: "energy",
-    categoryLabel: "Vitality & Awake",
     icon: Zap,
-    tag: "Morning Clarity",
-    description: "Crisp 3s inhale, 1s pause, and 3s active exhale.",
-    scientificBenefit:
-      "Stimulates oxygen delivery to cerebral tissue, increases alertness, and shakes off afternoon fatigue or morning lethargy.",
-    defaultCycles: 6,
-    colorScheme: {
-      ring: "stroke-amber-500",
-      glow: "from-amber-500/30 to-orange-500/10",
-      badge: "border-amber-500/40 text-amber-600 dark:text-amber-400 bg-amber-500/10",
-      bgGlow: "bg-amber-500/10",
+    emoji: "⚡",
+    tagline: "Oxygen surge — skip the second coffee",
+    description:
+      "Crisp 3-second inhale, short 1-second pause, forceful 3-second exhale. Activates the sympathetic nervous system — gently.",
+    science:
+      "Rapid diaphragmatic breathing increases tidal volume, floods cerebral tissue with oxygen, and briefly elevates norepinephrine — the neurotransmitter of alertness and focus. Unlike caffeine, the effect is immediate and clean, with no crash. Best done in the morning or after prolonged sitting.",
+    situations: [
+      { emoji: "🌅", title: "Morning sluggishness", when: "Can't wake up fully — groggy after alarm" },
+      { emoji: "😴", title: "Afternoon crash", when: "3 PM slump hitting hard — need focus without more caffeine" },
+      { emoji: "🏋️", title: "Pre-workout activation", when: "Before exercise to prime your cardiovascular system" },
+      { emoji: "🔄", title: "Between tasks", when: "Transitioning between very different kinds of work" },
+    ],
+    preparationTip: "Stand up if possible. Roll your shoulders back. This one benefits from open posture.",
+    completionMessage: "Feel that tingling? That's oxygen reaching every cell. You're awake, alert, and ready.",
+    defaultCycles: 8,
+    colors: {
+      ring: "stroke-amber-400",
+      orbFrom: "#fbbf24",
+      orbTo: "#f59e0b",
+      orbGlow: "rgba(251,191,36,0.45)",
+      accent: "text-amber-500 dark:text-amber-400",
+      badge: "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30",
+      pillActive: "bg-amber-500/15 border-amber-500/50 text-amber-600 dark:text-amber-400",
+      bg: "from-amber-500/10 via-transparent to-transparent",
+      particle: "bg-amber-400/30",
     },
     phases: [
-      { name: "inhale", label: "Active Inhale", duration: 3, scale: 1.4, instruction: "Draw breath vigorously into your chest" },
-      { name: "hold", label: "Brief Pause", duration: 1, scale: 1.4, instruction: "Feel the oxygen circulate" },
-      { name: "exhale", label: "Crisp Exhale", duration: 3, scale: 1.0, instruction: "Push breath out with intention" },
+      {
+        name: "inhale",
+        label: "Active Inhale",
+        duration: 3,
+        scale: 1.42,
+        instruction: "Draw breath vigorously — fill your lungs fast",
+        bodyCue: "Chest rises actively. Energise the breath",
+        chimeNote: 528,
+      },
+      {
+        name: "hold",
+        label: "Charge",
+        duration: 1,
+        scale: 1.42,
+        instruction: "Hold — feel the oxygen circulate",
+        bodyCue: "Sensation of fullness and energy at the top",
+        chimeNote: 639,
+      },
+      {
+        name: "exhale",
+        label: "Power Release",
+        duration: 3,
+        scale: 0.9,
+        instruction: "Exhale with intention — push it all out",
+        bodyCue: "Engage your belly to push breath out completely",
+        chimeNote: 432,
+      },
+    ],
+  },
+  {
+    id: "calm478",
+    name: "Extended Calm",
+    subtitle: "Anxiety Relief & Emotional Regulation",
+    category: "relax",
+    icon: Sparkles,
+    emoji: "🌊",
+    tagline: "When anxiety peaks — this is your anchor",
+    description:
+      "A gentler variant of 4-7-8, extended to a 4-count inhale, 4-count hold, and 10-count exhale — maximising the calming exhale phase.",
+    science:
+      "The exhale-dominant pattern activates the dorsal vagal complex and parasympathetic system more powerfully than equal-ratio breathing. Research shows that when the exhale is significantly longer than the inhale, baroreflex sensitivity increases, heart rate slows measurably within 2 cycles, and perceived anxiety drops by up to 40% in clinical trials.",
+    situations: [
+      { emoji: "😱", title: "Panic attack onset", when: "Feel your first signs — racing heart, tight chest, dread" },
+      { emoji: "🗣️", title: "Social anxiety", when: "Before or during socially overwhelming situations" },
+      { emoji: "✈️", title: "Flight turbulence", when: "When you cannot control the situation — control your breath" },
+      { emoji: "🔔", title: "Bad news landed", when: "Just received something difficult and need to stabilise" },
+    ],
+    preparationTip: "Ground yourself — both feet on floor. Place your hands palms-up in your lap. Soften your gaze.",
+    completionMessage: "You regulated yourself through discomfort. That takes real skill. Notice how much slower your heart beats now.",
+    defaultCycles: 5,
+    colors: {
+      ring: "stroke-rose-400",
+      orbFrom: "#fb7185",
+      orbTo: "#e11d48",
+      orbGlow: "rgba(251,113,133,0.40)",
+      accent: "text-rose-500 dark:text-rose-400",
+      badge: "bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30",
+      pillActive: "bg-rose-500/15 border-rose-500/50 text-rose-600 dark:text-rose-400",
+      bg: "from-rose-500/10 via-transparent to-transparent",
+      particle: "bg-rose-400/30",
+    },
+    phases: [
+      {
+        name: "inhale",
+        label: "Gentle Inhale",
+        duration: 4,
+        scale: 1.35,
+        instruction: "Breathe in slowly and softly through your nose",
+        bodyCue: "Let your belly lead — no force, no effort",
+        chimeNote: 396,
+      },
+      {
+        name: "hold",
+        label: "Pause",
+        duration: 4,
+        scale: 1.35,
+        instruction: "Hold gently — no strain at all",
+        bodyCue: "You are safe right now. Just here, just breathing",
+        chimeNote: 432,
+      },
+      {
+        name: "exhale",
+        label: "Long Release",
+        duration: 10,
+        scale: 0.86,
+        instruction: "Let it all go through your mouth — long, slow, complete",
+        bodyCue: "Imagine releasing every worried thought with the breath",
+        chimeNote: 285,
+      },
     ],
   },
 ];
+
+// ─── Props ─────────────────────────────────────────────────────────────────────
 
 interface BreathingCircleProps {
   onComplete?: () => void;
@@ -177,32 +542,23 @@ interface BreathingCircleProps {
   className?: string;
 }
 
-// Gentle harmonic chime via Web Audio API (Zero external assets needed)
-function playGentleChime(freq = 528) {
-  try {
-    const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-    if (!AudioCtx) return;
-    const ctx = new AudioCtx();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
+// ─── Floating Particles (ambient atmosphere) ─────────────────────────────────
 
-    osc.type = "sine";
-    osc.frequency.setValueAtTime(freq, ctx.currentTime);
-
-    // Smooth envelope: soft rise, exponential decay like a singing bowl
-    gain.gain.setValueAtTime(0.0001, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.12, ctx.currentTime + 0.04);
-    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 1.2);
-
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-
-    osc.start();
-    osc.stop(ctx.currentTime + 1.25);
-  } catch {
-    // Audio context may be restricted by user agent until first interaction
-  }
+function FloatingParticle({ color, delay }: { color: string; delay: number }) {
+  const x = Math.random() * 100;
+  const size = 3 + Math.random() * 5;
+  const duration = 8 + Math.random() * 6;
+  return (
+    <motion.div
+      className={cn("absolute rounded-full opacity-40 pointer-events-none", color)}
+      style={{ left: `${x}%`, bottom: "-8px", width: size, height: size }}
+      animate={{ y: [0, -(220 + Math.random() * 80)], opacity: [0, 0.4, 0] }}
+      transition={{ duration, delay, repeat: Infinity, ease: "linear" }}
+    />
+  );
 }
+
+// ─── Main Component ───────────────────────────────────────────────────────────
 
 export function BreathingCircle({
   onComplete,
@@ -210,53 +566,49 @@ export function BreathingCircle({
   initialModeId = "sigh",
   className,
 }: BreathingCircleProps) {
-  const { t } = useTranslation();
   const shouldReduceMotion = useReducedMotion();
 
-  // Selected mode state
   const [selectedModeId, setSelectedModeId] = useState<string>(initialModeId);
   const activeMode = useMemo(
     () => BREATHING_MODES.find((m) => m.id === selectedModeId) || BREATHING_MODES[0],
     [selectedModeId],
   );
 
-  // Cycle and duration settings
   const [targetCycles, setTargetCycles] = useState<number>(
     defaultCyclesProp || activeMode.defaultCycles,
   );
   const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
+  const [showScience, setShowScience] = useState<boolean>(false);
 
-  // Exercise running state
   const [isRunning, setIsRunning] = useState<boolean>(false);
   const [isCompleted, setIsCompleted] = useState<boolean>(false);
   const [currentCycle, setCurrentCycle] = useState<number>(0);
   const [phaseIndex, setPhaseIndex] = useState<number>(0);
-  const [phaseProgress, setPhaseProgress] = useState<number>(0); // 0 to 1
+  const [phaseProgress, setPhaseProgress] = useState<number>(0);
   const [secondsRemaining, setSecondsRemaining] = useState<number>(0);
 
-  const currentPhase = activeMode.phases[phaseIndex] || activeMode.phases[0];
+  const currentPhase = activeMode.phases[phaseIndex] ?? activeMode.phases[0];
 
-  // Animation timing reference
   const timerRef = useRef<number | null>(null);
   const phaseStartTimeRef = useRef<number>(0);
+  const stateRef = useRef({ phaseIndex: 0, cycle: 0 });
 
-  // Update targetCycles if mode changes while stopped
-  const handleSelectMode = (modeId: string) => {
-    if (isRunning) stopExercise();
-    setSelectedModeId(modeId);
-    const mode = BREATHING_MODES.find((m) => m.id === modeId);
-    if (mode) {
-      setTargetCycles(defaultCyclesProp || mode.defaultCycles);
-    }
-  };
-
-  const stopExercise = () => {
+  const stopExercise = useCallback(() => {
     if (timerRef.current) cancelAnimationFrame(timerRef.current);
     setIsRunning(false);
     setPhaseIndex(0);
     setCurrentCycle(0);
     setPhaseProgress(0);
     setSecondsRemaining(0);
+    stateRef.current = { phaseIndex: 0, cycle: 0 };
+  }, []);
+
+  const handleSelectMode = (modeId: string) => {
+    if (isRunning) stopExercise();
+    setIsCompleted(false);
+    setSelectedModeId(modeId);
+    const mode = BREATHING_MODES.find((m) => m.id === modeId);
+    if (mode) setTargetCycles(defaultCyclesProp || mode.defaultCycles);
   };
 
   const startExercise = () => {
@@ -264,20 +616,20 @@ export function BreathingCircle({
     setIsRunning(true);
     setCurrentCycle(0);
     setPhaseIndex(0);
+    stateRef.current = { phaseIndex: 0, cycle: 0 };
     phaseStartTimeRef.current = performance.now();
-    if (soundEnabled) playGentleChime(432);
+    if (soundEnabled) soundEngine.bowl(activeMode.phases[0].chimeNote, 0.09, 1.6);
   };
 
-  // Main animation clock loop using requestAnimationFrame for zero-flicker smoothness
+  // ─── RAF animation clock ──────────────────────────────────────────────────
+
   useEffect(() => {
     if (!isRunning) return;
 
-    let localPhaseIdx = phaseIndex;
-    let localCycle = currentCycle;
-
     const tick = (now: number) => {
-      const activePhase = activeMode.phases[localPhaseIdx];
-      const durationMs = activePhase.duration * 1000;
+      const { phaseIndex: pIdx, cycle } = stateRef.current;
+      const phase = activeMode.phases[pIdx];
+      const durationMs = phase.duration * 1000;
       const elapsed = now - phaseStartTimeRef.current;
       const progress = Math.min(elapsed / durationMs, 1);
       const remaining = Math.max(0, Math.ceil((durationMs - elapsed) / 1000));
@@ -286,36 +638,38 @@ export function BreathingCircle({
       setSecondsRemaining(remaining);
 
       if (elapsed >= durationMs) {
-        // Transition to next phase
-        const nextPhaseIdx = localPhaseIdx + 1;
-        if (nextPhaseIdx < activeMode.phases.length) {
-          localPhaseIdx = nextPhaseIdx;
-          setPhaseIndex(nextPhaseIdx);
+        const nextPIdx = pIdx + 1;
+        if (nextPIdx < activeMode.phases.length) {
+          // Next phase in same cycle
+          stateRef.current.phaseIndex = nextPIdx;
+          setPhaseIndex(nextPIdx);
           phaseStartTimeRef.current = now;
           if (soundEnabled) {
-            const nextPhaseName = activeMode.phases[nextPhaseIdx].name;
-            const chimeFreq = nextPhaseName === "exhale" ? 396 : 528;
-            playGentleChime(chimeFreq);
+            const nextPhase = activeMode.phases[nextPIdx];
+            if (nextPhase.name === "exhale" || nextPhase.name === "holdEmpty") {
+              soundEngine.breathShimmer(nextPhase.chimeNote);
+            } else {
+              soundEngine.bowl(nextPhase.chimeNote, 0.07, 1.2);
+            }
           }
         } else {
-          // Completed a cycle
-          const nextCycle = localCycle + 1;
+          // Cycle finished
+          const nextCycle = cycle + 1;
           if (nextCycle >= targetCycles) {
-            // Exercise completed
+            // Session complete
             setIsRunning(false);
             setIsCompleted(true);
             setPhaseProgress(1);
             setSecondsRemaining(0);
-            if (soundEnabled) playGentleChime(639);
+            if (soundEnabled) soundEngine.completionChord();
             onComplete?.();
             return;
           } else {
-            localCycle = nextCycle;
-            localPhaseIdx = 0;
+            stateRef.current = { phaseIndex: 0, cycle: nextCycle };
             setCurrentCycle(nextCycle);
             setPhaseIndex(0);
             phaseStartTimeRef.current = now;
-            if (soundEnabled) playGentleChime(432);
+            if (soundEnabled) soundEngine.bowl(activeMode.phases[0].chimeNote, 0.09, 1.6);
           }
         }
       }
@@ -324,252 +678,468 @@ export function BreathingCircle({
     };
 
     timerRef.current = requestAnimationFrame(tick);
+    return () => { if (timerRef.current) cancelAnimationFrame(timerRef.current); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isRunning, activeMode, targetCycles, soundEnabled]);
 
-    return () => {
-      if (timerRef.current) cancelAnimationFrame(timerRef.current);
-    };
-  }, [isRunning, activeMode, targetCycles, soundEnabled, onComplete, phaseIndex, currentCycle]);
+  // ─── SVG Ring math ────────────────────────────────────────────────────────
 
-  // SVG circular dimensions
-  const size = 260;
-  const strokeWidth = 8;
-  const radius = (size - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - phaseProgress * circumference;
+  const SIZE = 280;
+  const STROKE = 7;
+  const RADIUS = (SIZE - STROKE) / 2;
+  const CIRC = 2 * Math.PI * RADIUS;
+  const dashOffset = CIRC - phaseProgress * CIRC;
 
-  // Compute smooth scale factor for the orb
+  // ─── Orb scale interpolation (flicker-free linear lerp) ──────────────────
+
   const currentScale = useMemo(() => {
-    if (!isRunning) return 1;
-    const targetScale = currentPhase.scale;
-    const prevPhaseScale =
-      phaseIndex === 0
+    if (!isRunning && !isCompleted) return 1;
+    const pIdx = stateRef.current.phaseIndex;
+    const target = activeMode.phases[pIdx]?.scale ?? 1;
+    const prev =
+      pIdx === 0
         ? activeMode.phases[activeMode.phases.length - 1].scale
-        : activeMode.phases[phaseIndex - 1].scale;
+        : activeMode.phases[pIdx - 1].scale;
+    return prev + (target - prev) * phaseProgress;
+  }, [isRunning, isCompleted, activeMode, phaseProgress]);
 
-    // Linear interpolation between previous phase scale and target phase scale
-    return prevPhaseScale + (targetScale - prevPhaseScale) * phaseProgress;
-  }, [isRunning, currentPhase, activeMode, phaseIndex, phaseProgress]);
+  // ─── Estimated session time ───────────────────────────────────────────────
+
+  const estimatedSeconds = useMemo(() => {
+    const cycleSeconds = activeMode.phases.reduce((s, p) => s + p.duration, 0);
+    return Math.round(cycleSeconds * targetCycles);
+  }, [activeMode, targetCycles]);
+
+  const formatTime = (s: number) =>
+    s < 60 ? `${s}s` : `${Math.floor(s / 60)}m ${s % 60 > 0 ? `${s % 60}s` : ""}`.trim();
+
+  // ─── Phase type helper ────────────────────────────────────────────────────
+  const isExhalePhase = currentPhase.name === "exhale" || currentPhase.name === "holdEmpty";
 
   return (
-    <div className={cn("flex flex-col items-center gap-6 w-full max-w-xl mx-auto", className)}>
-      {/* ─── Mode Selector Tabs ────────────────────────────────────────────── */}
-      <div className="w-full">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            Breathing Protocol
+    <div className={cn("flex flex-col gap-0 w-full", className)}>
+
+      {/* ─── Mode Selector ─────────────────────────────────────────────────── */}
+      <div className="w-full mb-5">
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">
+            Choose Your Practice
           </span>
-          <Button
-            variant="ghost"
-            size="sm"
+          <button
+            type="button"
             onClick={() => setSoundEnabled((v) => !v)}
-            className="h-8 px-2 text-xs text-muted-foreground gap-1.5"
-            title={soundEnabled ? "Mute audio cues" : "Unmute audio cues"}
-          >
-            {soundEnabled ? (
-              <>
-                <Volume2 className="w-4 h-4 text-emerald-500" />
-                <span className="hidden sm:inline">Chime On</span>
-              </>
-            ) : (
-              <>
-                <VolumeX className="w-4 h-4 text-muted-foreground" />
-                <span className="hidden sm:inline">Chime Off</span>
-              </>
+            className={cn(
+              "flex items-center gap-1.5 h-8 px-3 rounded-full text-xs font-medium border transition-all",
+              soundEnabled
+                ? "border-emerald-500/40 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10"
+                : "border-border/50 text-muted-foreground bg-transparent",
             )}
-          </Button>
+            title={soundEnabled ? "Mute chimes" : "Enable chimes"}
+          >
+            {soundEnabled ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
+            <span>{soundEnabled ? "Chimes On" : "Chimes Off"}</span>
+          </button>
         </div>
 
-        {/* Mode Pills */}
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+        <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
           {BREATHING_MODES.map((mode) => {
             const Icon = mode.icon;
-            const isSelected = mode.id === selectedModeId;
+            const active = mode.id === selectedModeId;
             return (
               <button
                 key={mode.id}
                 type="button"
                 onClick={() => handleSelectMode(mode.id)}
                 className={cn(
-                  "flex flex-col items-center text-center p-2.5 rounded-2xl border transition-all text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                  isSelected
-                    ? "border-primary bg-primary/10 text-primary font-semibold shadow-sm"
-                    : "border-border/60 bg-card/60 text-muted-foreground hover:bg-muted/40 hover:text-foreground",
+                  "flex flex-col items-center gap-1 p-2.5 rounded-2xl border text-center transition-all duration-200",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring text-xs",
+                  active
+                    ? cn("font-semibold shadow-md", mode.colors.pillActive)
+                    : "border-border/40 bg-card/60 text-muted-foreground hover:bg-muted/30 hover:text-foreground hover:border-border/70",
                 )}
+                aria-pressed={active}
               >
-                <Icon className={cn("w-4 h-4 mb-1", isSelected ? "text-primary" : "text-muted-foreground")} />
-                <span className="truncate w-full">{mode.categoryLabel}</span>
+                <span className="text-base leading-none">{mode.emoji}</span>
+                <span className="leading-tight line-clamp-2 text-[10px]">{mode.subtitle.split("&")[0].split("–")[0].trim()}</span>
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* Mode Title & Science Callout */}
-      <div className="text-center space-y-1 w-full px-2">
-        <div className="flex items-center justify-center gap-2 flex-wrap">
-          <h2 className="text-xl font-bold text-foreground">{activeMode.name}</h2>
-          <Badge variant="outline" className={cn("text-[10px]", activeMode.colorScheme.badge)}>
-            {activeMode.tag}
-          </Badge>
-        </div>
-        <p className="text-xs text-muted-foreground max-w-md mx-auto leading-relaxed">
-          {activeMode.scientificBenefit}
-        </p>
-      </div>
-
-      {/* ─── Animated Breathing Orb & Ring ─────────────────────────────────── */}
-      <div className="relative flex items-center justify-center w-72 h-72 my-2">
-        {/* Ambient atmospheric backlight */}
-        <div
-          className={cn(
-            "absolute inset-0 rounded-full blur-3xl opacity-60 transition-colors duration-1000",
-            activeMode.colorScheme.bgGlow,
+      {/* ─── Mode Header ────────────────────────────────────────────────────── */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={activeMode.id}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={{ duration: 0.25 }}
+          className="text-center mb-4 space-y-1.5"
+        >
+          <div className="flex items-center justify-center gap-2.5 flex-wrap">
+            <h2 className="text-xl font-bold text-foreground tracking-tight">
+              {activeMode.emoji} {activeMode.name}
+            </h2>
+            <span className={cn("text-[10px] font-semibold px-2.5 py-1 rounded-full border", activeMode.colors.badge)}>
+              {activeMode.subtitle}
+            </span>
+          </div>
+          <p className={cn("text-xs font-medium", activeMode.colors.accent)}>
+            {activeMode.tagline}
+          </p>
+          {!isRunning && !isCompleted && (
+            <p className="text-xs text-muted-foreground max-w-sm mx-auto leading-relaxed px-2">
+              {activeMode.description}
+            </p>
           )}
+        </motion.div>
+      </AnimatePresence>
+
+      {/* ─── Preparation Tip (when idle) ──────────────────────────────────── */}
+      <AnimatePresence>
+        {!isRunning && !isCompleted && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="flex items-start gap-2.5 rounded-2xl bg-muted/30 border border-border/40 px-4 py-3 mb-4 text-xs text-muted-foreground">
+              <Info className="w-3.5 h-3.5 shrink-0 mt-0.5 text-primary/60" />
+              <p className="leading-relaxed"><strong className="text-foreground/80">Prepare:</strong> {activeMode.preparationTip}</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ─── Orb + SVG Ring ─────────────────────────────────────────────────── */}
+      <div className="relative flex items-center justify-center w-full mb-4" style={{ height: 310 }}>
+        {/* Ambient glow layer */}
+        <div
+          className="absolute rounded-full blur-3xl opacity-25 pointer-events-none transition-all duration-1000"
+          style={{
+            width: 280, height: 280,
+            background: `radial-gradient(circle, ${activeMode.colors.orbGlow}, transparent 70%)`,
+          }}
         />
 
-        {/* Outer SVG Progress Ring */}
-        <svg className="absolute w-[260px] h-[260px] transform -rotate-90 pointer-events-none z-10" aria-hidden="true">
-          {/* Background circle track */}
+        {/* Floating particles */}
+        {!shouldReduceMotion && isRunning && [...Array(8)].map((_, i) => (
+          <FloatingParticle key={i} color={activeMode.colors.particle} delay={i * 0.7} />
+        ))}
+
+        {/* SVG progress ring */}
+        <svg
+          className="absolute pointer-events-none z-10"
+          width={SIZE}
+          height={SIZE}
+          style={{ transform: "rotate(-90deg)" }}
+          aria-hidden="true"
+        >
+          {/* Track */}
           <circle
-            cx={size / 2}
-            cy={size / 2}
-            r={radius}
+            cx={SIZE / 2} cy={SIZE / 2} r={RADIUS}
             className="stroke-muted/20"
-            strokeWidth={strokeWidth}
+            strokeWidth={STROKE}
             fill="transparent"
           />
-          {/* Dynamic progress stroke */}
-          {isRunning && (
+          {/* Progress */}
+          {(isRunning || isCompleted) && (
             <circle
-              cx={size / 2}
-              cy={size / 2}
-              r={radius}
-              className={cn("transition-all duration-75", activeMode.colorScheme.ring)}
-              strokeWidth={strokeWidth}
-              strokeDasharray={circumference}
-              strokeDashoffset={strokeDashoffset}
+              cx={SIZE / 2} cy={SIZE / 2} r={RADIUS}
+              className={cn("transition-[stroke-dashoffset] duration-100 ease-linear", activeMode.colors.ring)}
+              strokeWidth={STROKE}
+              strokeDasharray={CIRC}
+              strokeDashoffset={isCompleted ? 0 : dashOffset}
               strokeLinecap="round"
               fill="transparent"
             />
           )}
+          {/* Subtle tick marks for cycle progress */}
+          {!isRunning && !isCompleted && Array.from({ length: targetCycles }).map((_, i) => {
+            const angle = (i / targetCycles) * 360;
+            const rad = (angle * Math.PI) / 180;
+            const x1 = SIZE / 2 + (RADIUS - 4) * Math.cos(rad);
+            const y1 = SIZE / 2 + (RADIUS - 4) * Math.sin(rad);
+            const x2 = SIZE / 2 + (RADIUS + 4) * Math.cos(rad);
+            const y2 = SIZE / 2 + (RADIUS + 4) * Math.sin(rad);
+            return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} className="stroke-muted/30" strokeWidth={1.5} />;
+          })}
         </svg>
 
-        {/* Morphing Atmospheric Pulse Orb (No class-swapping to eliminate flicker) */}
+        {/* Breathing orb */}
         <div
-          className={cn(
-            "absolute w-44 h-44 rounded-full bg-gradient-radial shadow-2xl transition-transform duration-100 ease-linear",
-            activeMode.colorScheme.glow,
-          )}
+          className="absolute rounded-full pointer-events-none transition-colors duration-1000"
           style={{
+            width: 196,
+            height: 196,
+            background: `radial-gradient(circle at 38% 38%, ${activeMode.colors.orbFrom}, ${activeMode.colors.orbTo})`,
+            boxShadow: isRunning
+              ? `0 0 ${40 + currentScale * 30}px ${activeMode.colors.orbGlow}, 0 0 ${80 + currentScale * 40}px ${activeMode.colors.orbGlow.replace("0.45", "0.2")}`
+              : `0 0 30px ${activeMode.colors.orbGlow.replace("0.45", "0.25")}`,
             transform: shouldReduceMotion ? "scale(1)" : `scale(${currentScale})`,
-            willChange: "transform",
+            willChange: "transform, box-shadow",
+            transition: "transform 80ms linear, box-shadow 300ms ease",
           }}
           aria-hidden="true"
         />
 
-        {/* Center Display Capsule */}
-        <motion.div
-          className="relative z-20 flex flex-col items-center justify-center w-40 h-40 rounded-full bg-background/90 border border-border/80 backdrop-blur-md shadow-inner text-center p-3 select-none"
-          initial={false}
-          animate={{ scale: isRunning ? 1.02 : 1 }}
-          transition={{ duration: 0.3 }}
+        {/* Center text capsule */}
+        <div className="relative z-20 flex flex-col items-center justify-center text-center select-none"
+          style={{ width: 150, height: 150 }}
         >
-          {isCompleted ? (
-            <div className="space-y-1">
-              <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto" />
-              <p className="text-sm font-bold text-foreground">Complete</p>
-              <p className="text-[10px] text-muted-foreground">Feel the stillness</p>
-            </div>
-          ) : isRunning ? (
-            <div className="space-y-0.5">
-              <span className="text-xs font-semibold uppercase tracking-wider text-primary">
-                {currentPhase.label}
-              </span>
-              <div className="text-4xl font-extrabold text-foreground tracking-tighter my-0.5">
-                {secondsRemaining}s
-              </div>
-              <span className="text-[10px] font-medium text-muted-foreground block">
-                Cycle {currentCycle + 1} of {targetCycles}
-              </span>
-            </div>
-          ) : (
-            <div className="space-y-1">
-              <span className="text-3xl">🫁</span>
-              <p className="text-xs font-semibold text-foreground">Ready</p>
-              <p className="text-[10px] text-muted-foreground">{targetCycles} cycles</p>
-            </div>
-          )}
-        </motion.div>
-      </div>
-
-      {/* ─── Instruction Subtext ───────────────────────────────────────────── */}
-      <div className="text-center min-h-[2.5rem] px-4" aria-live="polite">
-        {isRunning ? (
-          <p className="text-sm font-medium text-foreground transition-all">
-            {currentPhase.instruction}
-          </p>
-        ) : isCompleted ? (
-          <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
-            Great session! Notice how your shoulders, jaw, and breath feel now.
-          </p>
-        ) : (
-          <p className="text-xs sm:text-sm text-muted-foreground">
-            {activeMode.description}
-          </p>
-        )}
-      </div>
-
-      {/* ─── Controls & Duration Adjuster ──────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row items-center gap-3 w-full justify-center">
-        {/* Target Cycles / Time Selector (When stopped) */}
-        {!isRunning && (
-          <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-card/60 border border-border/50 text-xs">
-            <span className="px-2 text-[11px] text-muted-foreground flex items-center gap-1">
-              <Clock className="w-3.5 h-3.5" /> Cycles:
-            </span>
-            {[3, 4, 6, 8, 10].map((c) => (
-              <button
-                key={c}
-                type="button"
-                onClick={() => setTargetCycles(c)}
-                className={cn(
-                  "px-2.5 py-1 rounded-xl text-xs font-medium transition-colors",
-                  targetCycles === c
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground",
-                )}
+          <AnimatePresence mode="wait">
+            {isCompleted ? (
+              <motion.div
+                key="done"
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="flex flex-col items-center gap-1"
               >
-                {c}
-              </button>
-            ))}
-          </div>
-        )}
+                <CheckCircle2 className="w-9 h-9 text-emerald-400" />
+                <p className="text-sm font-bold text-foreground">Complete</p>
+                <p className="text-[10px] text-muted-foreground">Feel the shift</p>
+              </motion.div>
+            ) : isRunning ? (
+              <motion.div
+                key={`${phaseIndex}-running`}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.15 }}
+                className="flex flex-col items-center gap-0.5"
+              >
+                <span className={cn("text-[10px] font-bold uppercase tracking-widest", activeMode.colors.accent)}>
+                  {currentPhase.label}
+                </span>
+                <div className="text-4xl font-black text-white leading-none tabular-nums drop-shadow-lg">
+                  {secondsRemaining}
+                </div>
+                <span className="text-[9px] text-white/60 font-medium">
+                  {currentCycle + 1} / {targetCycles}
+                </span>
+                <span className={cn(
+                  "text-[9px] font-semibold mt-1 px-2 py-0.5 rounded-full",
+                  isExhalePhase ? "bg-white/10 text-white/70" : "bg-white/20 text-white/90"
+                )}>
+                  {isExhalePhase ? "↓ releasing" : "↑ expanding"}
+                </span>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="idle"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="flex flex-col items-center gap-1.5"
+              >
+                <span className="text-3xl">{activeMode.emoji}</span>
+                <p className="text-xs font-semibold text-white/90">{targetCycles} cycles</p>
+                <p className="text-[10px] text-white/60">{formatTime(estimatedSeconds)}</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
 
-        {/* Action Button */}
-        <div className="flex items-center gap-2">
-          {!isRunning ? (
-            <Button
-              size="lg"
-              onClick={startExercise}
-              className="gap-2 rounded-2xl px-8 h-12 shadow-md bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
-              id="breathing-start-btn"
+      {/* ─── Live Instruction Panel ─────────────────────────────────────────── */}
+      <div
+        className="min-h-[64px] text-center px-2 mb-4 flex flex-col items-center justify-center gap-1"
+        aria-live="polite"
+      >
+        <AnimatePresence mode="wait">
+          {isRunning ? (
+            <motion.div
+              key={`inst-${phaseIndex}`}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.2 }}
+              className="flex flex-col items-center gap-1"
             >
-              <Play className="w-4 h-4 fill-current" />
-              {isCompleted ? "Start Again" : "Begin Breathing"}
-            </Button>
+              <p className="text-sm font-semibold text-foreground leading-snug">
+                {currentPhase.instruction}
+              </p>
+              <p className="text-xs text-muted-foreground italic leading-relaxed max-w-xs">
+                {currentPhase.bodyCue}
+              </p>
+            </motion.div>
+          ) : isCompleted ? (
+            <motion.div
+              key="completed-msg"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="flex flex-col items-center gap-1 max-w-sm"
+            >
+              <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400 leading-relaxed">
+                {activeMode.completionMessage}
+              </p>
+            </motion.div>
           ) : (
+            <motion.p key="idle-desc" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-xs text-muted-foreground">
+              Press Begin to start your guided session
+            </motion.p>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* ─── Phase Sequence Preview (idle only) ───────────────────────────── */}
+      {!isRunning && !isCompleted && (
+        <div className="flex items-center justify-center gap-1.5 mb-4 flex-wrap px-2">
+          {activeMode.phases.map((phase, i) => (
+            <div key={i} className="flex items-center gap-1">
+              <div className={cn(
+                "flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl border text-[10px]",
+                "border-border/40 bg-card/60 text-muted-foreground"
+              )}>
+                <span className="font-semibold text-foreground/80">{phase.label}</span>
+                <span>{phase.duration}s</span>
+              </div>
+              {i < activeMode.phases.length - 1 && (
+                <div className="w-3 h-px bg-border/50" />
+              )}
+            </div>
+          ))}
+          <div className="flex items-center gap-1">
+            <div className="w-3 h-px bg-border/30 border-dashed" />
+            <div className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl border border-dashed border-border/30 text-[10px] text-muted-foreground/60">
+              <span>repeat</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── Cycle Selector ─────────────────────────────────────────────────── */}
+      {!isRunning && (
+        <div className="flex items-center justify-center gap-1 mb-5">
+          <span className="text-[11px] text-muted-foreground mr-1 font-medium">Cycles:</span>
+          {[3, 4, 5, 6, 8, 10].map((c) => (
+            <button
+              key={c}
+              type="button"
+              onClick={() => setTargetCycles(c)}
+              className={cn(
+                "w-8 h-8 rounded-full text-xs font-semibold transition-all border",
+                targetCycles === c
+                  ? cn("shadow-sm", activeMode.colors.pillActive)
+                  : "border-border/40 text-muted-foreground hover:text-foreground hover:border-border/70 bg-transparent",
+              )}
+            >
+              {c}
+            </button>
+          ))}
+          <span className="ml-2 text-[10px] text-muted-foreground">
+            ≈ {formatTime(estimatedSeconds)}
+          </span>
+        </div>
+      )}
+
+      {/* ─── Action Buttons ─────────────────────────────────────────────────── */}
+      <div className="flex items-center justify-center gap-3 mb-5">
+        {!isRunning ? (
+          <Button
+            size="lg"
+            onClick={startExercise}
+            className="gap-2 rounded-2xl px-10 h-12 font-semibold shadow-lg text-white"
+            style={{
+              background: `linear-gradient(135deg, ${activeMode.colors.orbFrom}, ${activeMode.colors.orbTo})`,
+            }}
+            id="breathing-start-btn"
+          >
+            <Play className="w-4 h-4 fill-current" />
+            {isCompleted ? "Practice Again" : "Begin Session"}
+          </Button>
+        ) : (
+          <>
             <Button
               variant="outline"
               size="lg"
               onClick={stopExercise}
-              className="gap-2 rounded-2xl px-8 h-12 border-border/70 hover:bg-muted"
+              className="gap-2 rounded-2xl px-6 h-12 border-border/60 hover:bg-muted"
             >
-              <RotateCcw className="w-4 h-4" />
-              Stop Session
+              <Square className="w-3.5 h-3.5 fill-current" />
+              Stop
             </Button>
-          )}
-        </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => {
+                stopExercise();
+                setTimeout(() => startExercise(), 50);
+              }}
+              className="h-12 w-12 rounded-2xl"
+              title="Restart"
+            >
+              <RefreshCw className="w-4 h-4" />
+            </Button>
+          </>
+        )}
       </div>
+
+      {/* ─── When-to-Use Situations ─────────────────────────────────────────── */}
+      {!isRunning && (
+        <AnimatePresence>
+          <motion.div
+            key={activeMode.id}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.1 }}
+            className="w-full border border-border/50 rounded-2xl overflow-hidden"
+          >
+            <div className="px-4 py-3 bg-muted/20 border-b border-border/40">
+              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">
+                Best Used When…
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-0">
+              {activeMode.situations.map((s, i) => (
+                <div
+                  key={i}
+                  className={cn(
+                    "flex items-start gap-2.5 p-3 text-xs",
+                    i % 2 === 0 && i < activeMode.situations.length - 1 ? "border-r border-border/40" : "",
+                    i < activeMode.situations.length - 2 ? "border-b border-border/40" : "",
+                  )}
+                >
+                  <span className="text-base leading-none shrink-0 mt-0.5">{s.emoji}</span>
+                  <div>
+                    <p className="font-semibold text-foreground leading-snug">{s.title}</p>
+                    <p className="text-muted-foreground mt-0.5 leading-relaxed">{s.when}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        </AnimatePresence>
+      )}
+
+      {/* ─── Expandable Science Notes ─────────────────────────────────────── */}
+      {!isRunning && (
+        <button
+          type="button"
+          onClick={() => setShowScience((v) => !v)}
+          className="flex items-center justify-between w-full text-left mt-3 px-1 text-xs text-muted-foreground hover:text-foreground transition-colors group"
+        >
+          <span className="font-medium group-hover:underline">
+            🔬 Why this works — the science
+          </span>
+          {showScience ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+        </button>
+      )}
+      <AnimatePresence>
+        {showScience && !isRunning && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <div className="mt-2 px-4 py-3 rounded-2xl bg-muted/20 border border-border/40 text-xs text-muted-foreground leading-relaxed">
+              {activeMode.science}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
