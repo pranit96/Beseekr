@@ -26,7 +26,17 @@ const STATUS_COLOR = {
   cancelled: "bg-muted text-muted-foreground",
 };
 
-function ExperimentCard({ exp, onUpdate, onDelete }: { exp: BExperiment; onUpdate: (updates: Partial<BExperiment & { prediction: string; plan: string; outcome: string }>) => void; onDelete: () => void }) {
+function ExperimentCard({
+  exp,
+  onUpdate,
+  onDelete,
+  isUpdating,
+}: {
+  exp: BExperiment;
+  onUpdate: (updates: Partial<BExperiment & { prediction: string; plan: string; outcome: string }>) => void;
+  onDelete: () => void;
+  isUpdating?: boolean;
+}) {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const [outcomeText, setOutcomeText] = useState(exp.outcome ?? "");
@@ -138,10 +148,11 @@ function ExperimentCard({ exp, onUpdate, onDelete }: { exp: BExperiment; onUpdat
                   />
                   <Button
                     size="sm"
-                    className="w-full"
-                    disabled={!outcomeText.trim()}
+                    className="w-full gap-2 rounded-xl"
+                    disabled={!outcomeText.trim() || isUpdating}
                     onClick={() => onUpdate({ outcome: outcomeText, confidence_after: confAfter, status: "completed" })}
                   >
+                    {isUpdating && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                     {t("healing.experiment.save_outcome", "Save outcome")}
                   </Button>
                 </div>
@@ -199,12 +210,35 @@ export default function BehavioralExperiment() {
   const updateMutation = useMutation({
     mutationFn: ({ id, updates }: { id: string; updates: Partial<BExperiment & { prediction: string; plan: string; outcome: string }> }) =>
       healingApi.updateExperiment(id, updates),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["healing-experiments"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["healing-experiments"] });
+      toast({
+        title: t("healing.experiment.completed_title", "Outcome saved!"),
+        description: t("healing.experiment.completed_desc", "Great job testing your thought in reality."),
+      });
+    },
+    onError: (err: any) => {
+      toast({
+        title: t("common.error", "Failed to save outcome"),
+        description: err?.response?.data?.errors?.[0]?.msg || err?.response?.data?.error || err?.message || "Failed to update experiment",
+        variant: "destructive",
+      });
+    },
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => healingApi.deleteExperiment(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["healing-experiments"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["healing-experiments"] });
+      toast({ title: t("healing.experiment.deleted_title", "Experiment deleted") });
+    },
+    onError: (err: any) => {
+      toast({
+        title: t("common.error", "Failed to delete experiment"),
+        description: err?.response?.data?.error || err?.message || "Failed to delete experiment",
+        variant: "destructive",
+      });
+    },
   });
 
   return (
@@ -392,6 +426,7 @@ export default function BehavioralExperiment() {
               <ExperimentCard
                 key={exp.id}
                 exp={exp}
+                isUpdating={updateMutation.isPending}
                 onUpdate={(updates) => updateMutation.mutate({ id: exp.id, updates })}
                 onDelete={() => deleteMutation.mutate(exp.id)}
               />
