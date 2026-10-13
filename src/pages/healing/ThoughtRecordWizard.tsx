@@ -12,7 +12,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, ArrowRight, Save, Loader2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Save, Loader2, FileText } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { GlobalHeader } from "@/components/GlobalHeader";
@@ -21,6 +21,8 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { WizardProgress } from "./components/WizardProgress";
 import { CrisisScreen } from "./components/CrisisScreen";
+import { WizardContextAnchor } from "./components/WizardContextAnchor";
+import { ThoughtWorksheetModal } from "./components/ThoughtWorksheetModal";
 import { Step1Situation } from "./wizard/Step1Situation";
 import { Step2Emotions } from "./wizard/Step2Emotions";
 import { Step3AutoThought } from "./wizard/Step3AutoThought";
@@ -95,6 +97,7 @@ export default function ThoughtRecordWizard() {
   );
   const [crisis, setCrisis] = useState<Helpline[] | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [showWorksheetModal, setShowWorksheetModal] = useState(false);
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -318,18 +321,31 @@ export default function ThoughtRecordWizard() {
               </span>
             </div>
 
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleSaveDraft}
-              disabled={isSaving}
-              className="gap-1.5 text-xs h-9 rounded-xl border-border/60 shadow-sm"
-              aria-label={t("healing.wizard.save_draft", "Save draft")}
-            >
-              {isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
-              <span className="hidden sm:inline">{t("healing.wizard.save_draft", "Save draft")}</span>
-              <span className="sm:hidden">{t("common.save", "Save")}</span>
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowWorksheetModal(true)}
+                className="gap-1.5 text-xs h-9 rounded-xl border-border/60 shadow-sm"
+                title={t("healing.wizard.view_worksheet", "View Full Thought Worksheet")}
+              >
+                <FileText className="h-3.5 w-3.5 text-indigo-500" />
+                <span className="hidden sm:inline">{t("healing.wizard.worksheet", "Worksheet")}</span>
+              </Button>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSaveDraft}
+                disabled={isSaving}
+                className="gap-1.5 text-xs h-9 rounded-xl border-border/60 shadow-sm"
+                aria-label={t("healing.wizard.save_draft", "Save draft")}
+              >
+                {isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                <span className="hidden sm:inline">{t("healing.wizard.save_draft", "Save draft")}</span>
+                <span className="sm:hidden">{t("common.save", "Save")}</span>
+              </Button>
+            </div>
           </div>
 
           {/* Header */}
@@ -350,6 +366,21 @@ export default function ThoughtRecordWizard() {
               stepLabels={stepLabels}
             />
           </div>
+
+          {/* Persistent Context Anchor */}
+          <WizardContextAnchor
+            step={step}
+            situation={state.situation}
+            thought={state.thought}
+            emotions={state.emotions}
+            traps={state.traps}
+            evidenceFor={state.evidenceFor}
+            evidenceAgainst={state.evidenceAgainst}
+            balancedThought={state.balancedThought}
+            beliefBefore={state.beliefBefore}
+            beliefAfter={state.beliefAfter}
+            onOpenWorksheet={() => setShowWorksheetModal(true)}
+          />
 
           {/* Step content */}
           <AnimatePresence mode="wait" initial={false}>
@@ -390,6 +421,9 @@ export default function ThoughtRecordWizard() {
                   evidenceAgainst={state.evidenceAgainst}
                   onChangeFor={(v) => updateState({ evidenceFor: v })}
                   onChangeAgainst={(v) => updateState({ evidenceAgainst: v })}
+                  thought={state.thought}
+                  situation={state.situation}
+                  traps={state.traps}
                 />
               )}
               {step === 6 && (
@@ -412,12 +446,17 @@ export default function ThoughtRecordWizard() {
                   onChange={(v) => updateState({ emotions: v })}
                   beliefAfter={state.beliefAfter}
                   onBeliefAfterChange={(v) => updateState({ beliefAfter: v })}
+                  thought={state.thought}
+                  beliefBefore={state.beliefBefore}
+                  balancedThought={state.balancedThought}
                 />
               )}
               {step === 8 && (
                 <Step8NextAction
                   value={state.nextAction}
                   onChange={(v) => updateState({ nextAction: v })}
+                  balancedThought={state.balancedThought}
+                  thought={state.thought}
                 />
               )}
             </motion.div>
@@ -456,6 +495,21 @@ export default function ThoughtRecordWizard() {
 
         <GlobalFooter />
       </div>
+
+      <ThoughtWorksheetModal
+        open={showWorksheetModal}
+        onOpenChange={setShowWorksheetModal}
+        situation={state.situation}
+        thought={state.thought}
+        emotions={state.emotions}
+        traps={state.traps}
+        evidenceFor={state.evidenceFor}
+        evidenceAgainst={state.evidenceAgainst}
+        balancedThought={state.balancedThought}
+        beliefBefore={state.beliefBefore}
+        beliefAfter={state.beliefAfter}
+        nextAction={state.nextAction}
+      />
     </>
   );
 }

@@ -7,6 +7,8 @@ import { CheckCircle } from "lucide-react";
 interface Step8Props {
   value: string;
   onChange: (v: string) => void;
+  balancedThought?: string;
+  thought?: string;
 }
 
 const EXAMPLES = [
@@ -20,7 +22,7 @@ const EXAMPLE_DEFAULTS = [
   'Remind myself of my balanced thought if I feel anxious before entering.',
 ];
 
-export function Step8NextAction({ value, onChange }: Step8Props) {
+export function Step8NextAction({ value, onChange, balancedThought }: Step8Props) {
   const { t } = useTranslation();
 
   return (
@@ -31,9 +33,21 @@ export function Step8NextAction({ value, onChange }: Step8Props) {
         </h2>
         <p className="mt-1 text-sm text-muted-foreground">
           {t("healing.wizard.s8.hint",
-            "What is one concrete, achievable action you can take today? Keep it small — something you can actually do in the next 24 hours.")}
+            "Turn your balanced perspective into a concrete, achievable action. Something small you can do in the next 24 hours.")}
         </p>
       </div>
+
+      {/* Balanced Perspective Anchor */}
+      {balancedThought?.trim() && (
+        <div className="rounded-2xl border border-emerald-300/60 dark:border-emerald-800/60 bg-emerald-50/40 dark:bg-emerald-950/20 p-4 space-y-1">
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-emerald-800 dark:text-emerald-300 block">
+            🌿 Grounded in your balanced perspective:
+          </span>
+          <p className="text-sm font-semibold text-foreground leading-snug">
+            &ldquo;{balancedThought}&rdquo;
+          </p>
+        </div>
+      )}
 
       {/* Suggestion chips */}
       <div className="space-y-2">
@@ -47,7 +61,7 @@ export function Step8NextAction({ value, onChange }: Step8Props) {
               type="button"
               onClick={() => onChange(t(key, EXAMPLE_DEFAULTS[i]))}
               className="text-left rounded-xl border border-border bg-muted/20 px-3 py-2 text-sm text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-              aria-label={t("healing.wizard.s8.use_idea", { text: t(key, EXAMPLE_DEFAULTS[i]) }, `Use: ${t(key, EXAMPLE_DEFAULTS[i])}`)}
+              aria-label={t("healing.wizard.s8.use_idea", `Use: ${t(key, EXAMPLE_DEFAULTS[i])}`, { text: t(key, EXAMPLE_DEFAULTS[i]) })}
             >
               {t(key, EXAMPLE_DEFAULTS[i])}
             </button>

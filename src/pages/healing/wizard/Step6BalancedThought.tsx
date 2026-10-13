@@ -5,8 +5,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Sparkles, Loader2, ChevronRight } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { AiSuggestionBadge } from "../components/AiSuggestionBadge";
 import { IntensitySlider } from "../components/IntensitySlider";
+import { TRAP_META } from "../components/ThinkingTrapCard";
 import healingApi from "@/api/healing";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -65,8 +67,67 @@ export function Step6BalancedThought({
         </h2>
         <p className="mt-1 text-sm text-muted-foreground">
           {t("healing.wizard.s6.hint",
-            "Not forced positivity — just a fairer, more realistic way of seeing this situation based on all the evidence.")}
+            "Not forced positivity — just a fairer, more realistic way of seeing this situation based on all the evidence you gathered.")}
         </p>
+      </div>
+
+      {/* Thought & Evidence Summary Anchor */}
+      <div className="rounded-2xl border border-indigo-200/70 dark:border-indigo-900/60 bg-gradient-to-br from-indigo-50/40 via-card to-card p-4 space-y-3">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-indigo-700 dark:text-indigo-400">
+            ⚖️ {t("healing.wizard.s6.summary_title", "Evidence & Thought Summary")}
+          </span>
+          {traps.length > 0 && (
+            <div className="flex gap-1 flex-wrap">
+              {traps.map((tr) => (
+                <Badge key={tr} variant="outline" className="text-[10px] py-0 bg-amber-500/10 text-amber-700 dark:text-amber-300">
+                  {TRAP_META[tr]?.label || tr}
+                </Badge>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {thought && (
+          <p className="text-sm font-semibold text-foreground leading-snug">
+            <span className="text-muted-foreground font-normal">Original Thought: </span>
+            &ldquo;{thought}&rdquo;
+          </p>
+        )}
+
+        {(evidenceAgainst.length > 0 || evidenceFor.length > 0) && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1 text-xs">
+            <div className="rounded-xl bg-sky-50/60 dark:bg-sky-950/20 p-2.5 border border-sky-200/50 dark:border-sky-900/40">
+              <span className="font-semibold text-sky-800 dark:text-sky-300 block mb-1">
+                Challenging Facts ({evidenceAgainst.length}):
+              </span>
+              {evidenceAgainst.length === 0 ? (
+                <p className="text-muted-foreground italic text-[11px]">None recorded</p>
+              ) : (
+                <ul className="list-disc list-inside space-y-0.5 text-foreground text-[11px]">
+                  {evidenceAgainst.map((item, idx) => (
+                    <li key={idx} className="line-clamp-2">{item}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            <div className="rounded-xl bg-amber-50/60 dark:bg-amber-950/20 p-2.5 border border-amber-200/50 dark:border-amber-900/40">
+              <span className="font-semibold text-amber-800 dark:text-amber-300 block mb-1">
+                Supporting Facts ({evidenceFor.length}):
+              </span>
+              {evidenceFor.length === 0 ? (
+                <p className="text-muted-foreground italic text-[11px]">None recorded</p>
+              ) : (
+                <ul className="list-disc list-inside space-y-0.5 text-foreground text-[11px]">
+                  {evidenceFor.map((item, idx) => (
+                    <li key={idx} className="line-clamp-2">{item}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Belief before */}
@@ -98,7 +159,7 @@ export function Step6BalancedThought({
                 "hover:border-primary/50 hover:bg-primary/5 transition-all duration-150",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
               )}
-              aria-label={t("healing.wizard.s6.use_option", { text: opt }, `Use: ${opt}`)}
+              aria-label={t("healing.wizard.s6.use_option", `Use: ${opt}`, { text: opt })}
             >
               <div className="flex items-start gap-2">
                 <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />

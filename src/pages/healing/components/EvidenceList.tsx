@@ -60,7 +60,7 @@ export function EvidenceList({ items, onChange, placeholder, maxItems = 10, labe
                 type="button"
                 onClick={() => removeItem(i)}
                 className="shrink-0 text-muted-foreground hover:text-destructive transition-colors mt-0.5"
-                aria-label={t("healing.evidence.remove", { text: item }, `Remove: ${item}`)}
+                aria-label={t("healing.evidence.remove", `Remove: ${item}`, { text: item })}
               >
                 <X className="h-3.5 w-3.5" />
               </button>
@@ -78,7 +78,7 @@ export function EvidenceList({ items, onChange, placeholder, maxItems = 10, labe
             onKeyDown={handleKeyDown}
             placeholder={placeholder ?? t("healing.evidence.add_placeholder", "Add a piece of evidence…")}
             className="flex-1 h-9 text-sm"
-            aria-label={t("healing.evidence.input_label", { label }, `Add to ${label}`)}
+            aria-label={t("healing.evidence.input_label", `Add to ${label}`, { label })}
             maxLength={300}
           />
           <Button
@@ -97,7 +97,7 @@ export function EvidenceList({ items, onChange, placeholder, maxItems = 10, labe
 
       {items.length >= maxItems && (
         <p className="text-xs text-muted-foreground">
-          {t("healing.evidence.max_reached", { max: maxItems }, `Max ${maxItems} items reached`)}
+          {t("healing.evidence.max_reached", `Max ${maxItems} items reached`, { max: maxItems })}
         </p>
       )}
     </div>

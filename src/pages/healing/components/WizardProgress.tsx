@@ -17,7 +17,7 @@ export function WizardProgress({ currentStep, totalSteps, stepLabels }: WizardPr
       {/* Step fraction */}
       <div className="flex justify-between items-center mb-2">
         <span className="text-xs text-muted-foreground">
-          {t("healing.wizard.step_of", { current: currentStep, total: totalSteps }, `Step ${currentStep} of ${totalSteps}`)}
+          {t("healing.wizard.step_of", `Step ${currentStep} of ${totalSteps}`, { current: currentStep, total: totalSteps })}
         </span>
         <span className="text-xs text-muted-foreground font-medium">
           {Math.round(((currentStep - 1) / totalSteps) * 100)}%

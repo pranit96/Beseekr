@@ -66,9 +66,26 @@ export function Step4ThinkingTraps({ selected, onChange, thought, situation, aiE
         </h2>
         <p className="mt-1 text-sm text-muted-foreground">
           {t("healing.wizard.s4.hint",
-            "These are common cognitive shortcuts that can distort how we see situations. Select any that feel familiar — or skip if none apply.")}
+            "Read your automatic thought below. Select any cognitive shortcuts that might be exaggerating or distorting it.")}
         </p>
       </div>
+
+      {/* Target Thought Card */}
+      {thought.trim() && (
+        <div className="rounded-2xl border border-indigo-200/70 dark:border-indigo-900/60 bg-indigo-50/50 dark:bg-indigo-950/20 p-4 space-y-1">
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-indigo-700 dark:text-indigo-400 block">
+            💭 {t("healing.wizard.s3.label", "Your Automatic Thought:")}
+          </span>
+          <p className="text-base font-semibold text-foreground leading-snug">
+            &ldquo;{thought}&rdquo;
+          </p>
+          {situation.trim() && (
+            <p className="text-xs text-muted-foreground line-clamp-1 pt-0.5">
+              <span className="font-medium text-foreground/80">Trigger:</span> {situation}
+            </p>
+          )}
+        </div>
+      )}
 
       {/* AI Reason */}
       {aiReason && aiSuggested.length > 0 && (
