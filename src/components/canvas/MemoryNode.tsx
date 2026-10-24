@@ -172,7 +172,7 @@ const MemoryNode = memo(({ data, selected }: NodeProps) => {
               <input
                 value={memoryKey}
                 onChange={(e) =>
-                  (data.onMemoryKeyChange as Function)?.(e.target.value)
+                  (data.onMemoryKeyChange as (val: string) => void)?.(e.target.value)
                 }
                 placeholder="e.g. customer_facts"
                 className="w-full px-2.5 py-1.5 rounded-lg text-xs font-mono bg-background/40 border border-violet-500/20 text-foreground placeholder:text-muted-foreground/40 focus:border-violet-400/50 focus:outline-none"
@@ -188,7 +188,7 @@ const MemoryNode = memo(({ data, selected }: NodeProps) => {
               <select
                 value={operation}
                 onChange={(e) =>
-                  (data.onOperationChange as Function)?.(e.target.value)
+                  (data.onOperationChange as (val: string) => void)?.(e.target.value)
                 }
                 className="w-full px-2.5 py-1.5 rounded-lg text-xs bg-background/40 border border-violet-500/20 text-foreground focus:border-violet-400/50 focus:outline-none"
               >

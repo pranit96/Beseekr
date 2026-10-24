@@ -1069,7 +1069,7 @@ const AgentCanvas: React.FC = () => {
 
                   const hasError = !!res.error;
 
-                  let updatedData: any = {
+                  const updatedData: any = {
                     ...n.data,
                     status: (hasError ? "error" : "done") as any,
                   };

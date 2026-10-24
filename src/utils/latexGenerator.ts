@@ -147,7 +147,7 @@ export function generateLatexResume(data: ResumeData): string {
     );
   }
   if (info.website) {
-    let cleanWeb = info.website.replace(/^https?:\/\//i, "");
+    const cleanWeb = info.website.replace(/^https?:\/\//i, "");
     contactParts.push(
       `\\href{${info.website}}{\\color{cvblue}${escapeLatex(cleanWeb)}}`,
     );
@@ -186,7 +186,7 @@ export function generateLatexResume(data: ResumeData): string {
         const isEmail = valStr.includes("@");
         const isLink =
           /^https?:\/\//i.test(valStr) ||
-          /^[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,5}(:[0-9]{1,5})?(\/.*)?$/i.test(
+          /^[a-z0-9]+([-.]{1}[a-z0-9]+)*\.[a-z]{2,5}(:[0-9]{1,5})?(\/.*)?$/i.test(
             valStr,
           );
 

@@ -14,17 +14,6 @@ export function SaasDashboardLayout() {
   // const isUpload = location.pathname.includes("/resume/upload");
   // const isTailor = location.pathname.includes("/resume/tailor");
 
-  // Full-screen pages that manage their own layout (no header/footer)
-  if (false) {
-    return (
-      <div className="h-screen bg-background text-foreground flex flex-col overflow-hidden selection:bg-primary/20">
-        <main className="flex-1 flex flex-col min-h-0 relative z-10">
-          <Outlet />
-        </main>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex flex-col">
       {/* Ambient Background */}

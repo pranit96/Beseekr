@@ -380,7 +380,7 @@ export function VisionCollage({
     }
   }
 
-  const useTemplate = (tpl: (typeof CARD_TEMPLATES)[number]) => {
+  const applyTemplate = (tpl: (typeof CARD_TEMPLATES)[number]) => {
     onAdd(tpl);
   };
 
@@ -560,7 +560,7 @@ export function VisionCollage({
               <button
                 key={t.title}
                 className="vb-template-chip"
-                onClick={() => useTemplate(t)}
+                onClick={() => applyTemplate(t)}
               >
                 {t.emoji} {t.title}
               </button>

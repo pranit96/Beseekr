@@ -168,7 +168,7 @@ const RetryNode = memo(({ data, selected }: NodeProps) => {
                   const selectedAgent = agents.find(
                     (a: any) => a.id === selectedId,
                   );
-                  (data.onAgentChange as Function)?.(
+                  (data.onAgentChange as (id: string, name: string) => void)?.(
                     selectedId,
                     selectedAgent ? selectedAgent.name : "Unknown",
                   );
@@ -193,7 +193,7 @@ const RetryNode = memo(({ data, selected }: NodeProps) => {
                 max={3}
                 value={maxRetries}
                 onChange={(e) =>
-                  (data.onMaxRetriesChange as Function)?.(
+                  (data.onMaxRetriesChange as (val: number) => void)?.(
                     parseInt(e.target.value),
                   )
                 }
@@ -207,7 +207,7 @@ const RetryNode = memo(({ data, selected }: NodeProps) => {
               <select
                 value={checkMode}
                 onChange={(e) =>
-                  (data.onCheckModeChange as Function)?.(e.target.value)
+                  (data.onCheckModeChange as (val: string) => void)?.(e.target.value)
                 }
                 className="w-full px-2.5 py-1.5 rounded-lg text-xs bg-background/40 border border-emerald-500/20 text-foreground focus:border-emerald-400/50 focus:outline-none"
               >
@@ -230,7 +230,7 @@ const RetryNode = memo(({ data, selected }: NodeProps) => {
                 <input
                   value={checkValue}
                   onChange={(e) =>
-                    (data.onCheckValueChange as Function)?.(e.target.value)
+                    (data.onCheckValueChange as (val: string) => void)?.(e.target.value)
                   }
                   placeholder={currentMode.placeholder}
                   className="w-full px-2.5 py-1.5 rounded-lg text-xs bg-background/40 border border-emerald-500/20 text-foreground placeholder:text-muted-foreground/40 focus:border-emerald-400/50 focus:outline-none"

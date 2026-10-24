@@ -128,7 +128,7 @@ const LoopNode = memo(({ data, selected }: NodeProps) => {
                   const selectedAgent = agents.find(
                     (a: any) => a.id === selectedId,
                   );
-                  (data.onAgentChange as Function)?.(
+                  (data.onAgentChange as (id: string, name: string) => void)?.(
                     selectedId,
                     selectedAgent ? selectedAgent.name : "Unknown",
                   );
@@ -153,7 +153,7 @@ const LoopNode = memo(({ data, selected }: NodeProps) => {
                 max={10}
                 value={maxIter}
                 onChange={(e) =>
-                  (data.onMaxIterationsChange as Function)?.(
+                  (data.onMaxIterationsChange as (val: number) => void)?.(
                     parseInt(e.target.value),
                   )
                 }
@@ -167,7 +167,7 @@ const LoopNode = memo(({ data, selected }: NodeProps) => {
               <select
                 value={mode}
                 onChange={(e) =>
-                  (data.onConvergenceModeChange as Function)?.(e.target.value)
+                  (data.onConvergenceModeChange as (val: string) => void)?.(e.target.value)
                 }
                 className="w-full px-2.5 py-1.5 rounded-lg text-xs bg-background/40 border border-amber-500/20 text-foreground focus:border-amber-400/50 focus:outline-none"
               >
@@ -186,7 +186,7 @@ const LoopNode = memo(({ data, selected }: NodeProps) => {
                 <textarea
                   value={(data.convergencePrompt as string) || ""}
                   onChange={(e) =>
-                    (data.onConvergencePromptChange as Function)?.(
+                    (data.onConvergencePromptChange as (val: string) => void)?.(
                       e.target.value,
                     )
                   }

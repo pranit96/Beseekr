@@ -532,7 +532,7 @@ export default function VisionBoard() {
         h.logs.filter((l) => l.status === "done").map((l) => l.log_date),
       );
       let streak = 0;
-      let cursor = new Date();
+      const cursor = new Date();
       while (doneDates.has(cursor.toISOString().slice(0, 10))) {
         streak += 1;
         cursor.setDate(cursor.getDate() - 1);

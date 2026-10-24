@@ -93,9 +93,8 @@ export default function MarkdownRenderer({
       /(^|\n)\[\s*\n([\s\S]*?)\n\s*\](?=\n|$)/g,
       (match, prefix, mathContent) => {
         if (
-          /[=+\-*/\\_{}^\$\alpha-\omega\mathbb\mathcal\max\min\sum\int\leftarrow\rightarrow\approx\le\ge\in\forall\exists\partial\nabla]/.test(
-            mathContent,
-          )
+          /[-=+*_{}^$/\\]/.test(mathContent) ||
+          /[α-ωΑ-Ω\u2190-\u2193\u2200-\u22FF]/.test(mathContent)
         ) {
           return `${prefix}\n\n$$\n${mathContent.trim()}\n$$\n\n`;
         }
@@ -184,7 +183,7 @@ export default function MarkdownRenderer({
       if (
         /:$/.test(trimmedLine) &&
         trimmedLine.length <= 60 &&
-        !/^([#\-\*]|\d+\.)/.test(trimmedLine) &&
+        !/^([#\-*]|\d+\.)/.test(trimmedLine) &&
         !trimmedLine.includes("$") &&
         !trimmedLine.includes("\\")
       ) {
@@ -196,9 +195,9 @@ export default function MarkdownRenderer({
       const looksLikeTitle =
         trimmedLine.length > 2 &&
         trimmedLine.length <= 60 &&
-        /^[A-Z][A-Za-z0-9 ',\-()\/&]+$/.test(trimmedLine) &&
+        /^[A-Z][A-Za-z0-9 ',\-()&/]+$/.test(trimmedLine) &&
         !/[.?!]$/.test(trimmedLine) &&
-        !/^([#\-\*]|\d+\.)/.test(trimmedLine) &&
+        !/^([#\-*]|\d+\.)/.test(trimmedLine) &&
         !trimmedLine.includes("$") &&
         !trimmedLine.includes("\\") &&
         nextLine &&

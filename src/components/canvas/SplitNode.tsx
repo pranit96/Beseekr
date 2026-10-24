@@ -45,19 +45,21 @@ const SplitNode = memo(({ data, selected }: NodeProps) => {
       ...branches,
       { label: `Branch ${branches.length + 1}`, instruction: "" },
     ];
-    (data.onBranchesChange as Function)?.(newBranches);
+    (data.onBranchesChange as (branches: Branch[]) => void)?.(newBranches);
   };
 
   const removeBranch = (idx: number) => {
     if (branches.length <= 1) return;
-    (data.onBranchesChange as Function)?.(branches.filter((_, i) => i !== idx));
+    (data.onBranchesChange as (branches: Branch[]) => void)?.(
+      branches.filter((_, i) => i !== idx),
+    );
   };
 
   const updateBranch = (idx: number, field: keyof Branch, value: string) => {
     const updated = branches.map((b, i) =>
       i === idx ? { ...b, [field]: value } : b,
     );
-    (data.onBranchesChange as Function)?.(updated);
+    (data.onBranchesChange as (branches: Branch[]) => void)?.(updated);
   };
 
   return (
@@ -129,7 +131,7 @@ const SplitNode = memo(({ data, selected }: NodeProps) => {
                 const selectedAgent = agents.find(
                   (a: any) => a.id === selectedId,
                 );
-                (data.onAgentChange as Function)?.(
+                (data.onAgentChange as (id: string, name: string) => void)?.(
                   selectedId,
                   selectedAgent ? selectedAgent.name : "None (Shared)",
                 );

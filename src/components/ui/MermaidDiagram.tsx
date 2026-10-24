@@ -134,14 +134,14 @@ function repairMermaidSyntax(rawCode: string): string {
     });
 
     // Curly braces: id{content} — only unquoted
-    l = l.replace(/\b([A-Za-z0-9_]+)\{([^\}]+)\}/g, (match, id, text) => {
+    l = l.replace(/\b([A-Za-z0-9_]+)\{([^}]+)\}/g, (match, id, text) => {
       if (text.startsWith("__Q") && text.endsWith("__")) return match;
       return `${id}{"${text.replace(/"/g, "").trim()}"}`;
     });
 
     // Round parens: id(content) — only standalone / unquoted Mermaid nodes
     l = l.replace(
-      /(^|[\s;&]|-->|---|==>|-\.-)(\s*)([A-Za-z0-9_]+)\((?!\s*[\("\[])([^\)]+)\)/g,
+      /(^|[\s;&]|-->|---|==>|-\.-)(\s*)([A-Za-z0-9_]+)\((?!\s*[("[]])([^)]+)\)/g,
       (match, prefix, spacing, id, text) => {
         if (text.startsWith("__Q") && text.endsWith("__")) return match;
         return `${prefix || ""}${spacing || ""}${id}("${text.replace(/"/g, "").trim()}")`;
@@ -149,7 +149,7 @@ function repairMermaidSyntax(rawCode: string): string {
     );
 
     // Edge labels: -->|text| — unquoted
-    l = l.replace(/-->\|([^\s"][^\|]*)\|/g, (_match, text) => {
+    l = l.replace(/-->\|([^\s"][^|]*)\|/g, (_match, text) => {
       return `-->|"${text.replace(/"/g, "").trim()}"|`;
     });
 

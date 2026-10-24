@@ -87,6 +87,7 @@ function sanitizeString(str: string): string {
   if (typeof str !== "string") return "";
   return str
     .replace(/\0/g, "") // Remove null bytes
+    // eslint-disable-next-line no-control-regex
     .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "") // Remove dangerous ASCII control characters
     .replace(/<[^>]*>/g, "") // Strip HTML tags
     .trim();
