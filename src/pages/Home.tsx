@@ -22,6 +22,7 @@ import {
   Layers,
   Salad,
   Heart,
+  Radio,
 } from "lucide-react";
 import { GlobalHeader } from "@/components/GlobalHeader";
 import { motion } from "framer-motion";
@@ -61,6 +62,10 @@ export default function Home() {
     user?.feature_flags?.healthplusenable;
   const isHealingEnabled =
     user?.feature_flags?.healing ?? getIsHealingEnabled();
+  const isInterviewerEnabled = Boolean(
+    user?.feature_flags?.interviewer ||
+    user?.feature_flags?.enable_interviewer,
+  );
 
   if (!isNewMode) {
     return (
@@ -386,6 +391,39 @@ export default function Home() {
               </div>
             </motion.div>
           )}
+
+          {/* CARD: AI INTERVIEWER */}
+          {isInterviewerEnabled && (
+            <motion.div
+              onClick={() => go("/interviewer")}
+              whileHover={{ y: -4 }}
+              transition={{ type: "spring", stiffness: 220, damping: 20 }}
+              className="border border-border/30 rounded-2xl p-8 cursor-pointer transition
+                                  bg-muted/10 backdrop-blur-md
+                                  hover:bg-violet-500/5
+                                  hover:border-violet-500/30 group shadow-2xl shadow-black/5"
+            >
+              <div className="h-10 w-10 rounded-xl bg-violet-500/10 flex items-center justify-center text-violet-400 mb-4 group-hover:scale-110 transition-transform">
+                <Radio className="w-5 h-5 animate-pulse" />
+              </div>
+
+              <h3 className="text-xl font-bold mb-2 tracking-tight text-foreground flex items-center gap-2">
+                AI Interviewer
+                <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-violet-500/10 text-violet-400 border border-violet-500/20">
+                  Voice AI
+                </span>
+              </h3>
+
+              <p className="text-muted-foreground/80 mb-6 text-sm leading-relaxed">
+                Practice realistic mock interviews with Whisper STT voice input, adaptive Claude follow-ups, and in-depth hiring reports.
+              </p>
+
+              <div className="text-xs font-bold tracking-wider uppercase flex items-center gap-1 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all">
+                Practice Interview
+                <ArrowRight className="w-3 h-3" />
+              </div>
+            </motion.div>
+          )}
         </section>
 
         {/* FOOTER */}
@@ -683,6 +721,38 @@ export default function Home() {
 
                 <div className="text-xs font-bold tracking-widest uppercase flex items-center gap-2 text-amber-500 group-hover:translate-x-1 transition-transform">
                   {t("home.openDhet", "Launch Studio")}
+                  <ArrowRight className="w-4 h-4" />
+                </div>
+              </motion.div>
+            )}
+
+            {/* CARD: AI INTERVIEWER */}
+            {isInterviewerEnabled && (
+              <motion.div
+                onClick={() => go("/interviewer")}
+                whileHover={{ y: -6 }}
+                transition={{ type: "spring", stiffness: 200, damping: 22 }}
+                className="border border-border/30 rounded-3xl p-10 cursor-pointer transition bg-card/5 backdrop-blur-xl hover:bg-violet-500/[0.04] hover:border-violet-500/25 group shadow-2xl shadow-black/20 relative overflow-hidden"
+              >
+                <div className="absolute top-0 right-0 w-40 h-40 bg-violet-500/10 rounded-full blur-[60px] -mr-10 -mt-10 pointer-events-none" />
+
+                <div className="h-14 w-14 rounded-2xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-violet-400 mb-8 group-hover:scale-110 transition-transform duration-500 shadow-lg shadow-violet-500/5">
+                  <Radio className="w-6 h-6 animate-pulse" />
+                </div>
+
+                <h3 className="text-xl font-bold mb-2 tracking-tight text-foreground flex items-center gap-2">
+                  AI Interviewer
+                  <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-violet-500/10 text-violet-400 border border-violet-500/20">
+                    Voice AI
+                  </span>
+                </h3>
+
+                <p className="text-muted-foreground/80 text-sm mb-8 leading-relaxed">
+                  Voice-first mock interviews with speech recognition, adaptive Claude follow-up questions, and comprehensive hiring committee feedback.
+                </p>
+
+                <div className="text-xs font-bold tracking-widest uppercase flex items-center gap-2 text-violet-400 group-hover:translate-x-1 transition-transform">
+                  Start Interview
                   <ArrowRight className="w-4 h-4" />
                 </div>
               </motion.div>

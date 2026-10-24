@@ -87,6 +87,8 @@ interface User {
     healthplusenable?: boolean;
     healing?: boolean;
     healing_ai?: boolean;
+    interviewer?: boolean;
+    enable_interviewer?: boolean;
   };
 }
 
@@ -131,6 +133,8 @@ export const syncFeatureFlagsCookies = (flags?: User["feature_flags"]) => {
     healthplusenable,
     healing,
     healing_ai,
+    interviewer,
+    enable_interviewer,
   } = flags;
   if (second_brain !== undefined) {
     document.cookie = `EnableSecondBrain=${second_brain}; path=/; max-age=86400; SameSite=Lax`;

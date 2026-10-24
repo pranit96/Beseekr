@@ -192,6 +192,10 @@ const BehavioralExperiment = lazyRetry(() => import("./pages/healing/BehavioralE
 const MoodProgress = lazyRetry(() => import("./pages/healing/MoodProgress"), "MoodProgress");
 const RecordHistory = lazyRetry(() => import("./pages/healing/RecordHistory"), "RecordHistory");
 const HealingSettings = lazyRetry(() => import("./pages/healing/HealingSettings"), "HealingSettings");
+// ── AI Interviewer ─────────────────────────────────────────────────────────
+const InterviewerLobby = lazyRetry(() => import("./pages/interviewer/InterviewerLobby"), "InterviewerLobby");
+const InterviewerSession = lazyRetry(() => import("./pages/interviewer/InterviewerSession"), "InterviewerSession");
+const InterviewerFeedback = lazyRetry(() => import("./pages/interviewer/InterviewerFeedback"), "InterviewerFeedback");
 
 // Loading fallback for lazy components
 const PageLoader = () => (
@@ -252,7 +256,8 @@ const FeatureGuard = ({
     | "weekly_digest"
     | "dhet"
     | "health_plus"
-    | "healing";
+    | "healing"
+    | "interviewer";
 }) => {
   const { user, loading } = useAuth();
 
@@ -288,6 +293,14 @@ const FeatureGuard = ({
   if (
     featureKey === "healing" &&
     (user?.feature_flags?.healing ?? getIsHealingEnabled())
+  ) {
+    return <>{children}</>;
+  }
+
+  if (
+    featureKey === "interviewer" &&
+    (user?.feature_flags?.interviewer ||
+      user?.feature_flags?.enable_interviewer)
   ) {
     return <>{children}</>;
   }
@@ -823,6 +836,43 @@ const App = () => {
                           <FeatureGuard featureKey="healing">
                             <Suspense fallback={<PageLoader />}>
                               <HealingSettings />
+                            </Suspense>
+                          </FeatureGuard>
+                        </ProtectedRoute>
+                      }
+                    />
+                    {/* ── AI Interviewer (Voice-first mock interviews) ───────────── */}
+                    <Route
+                      path="/interviewer"
+                      element={
+                        <ProtectedRoute>
+                          <FeatureGuard featureKey="interviewer">
+                            <Suspense fallback={<PageLoader />}>
+                              <InterviewerLobby />
+                            </Suspense>
+                          </FeatureGuard>
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/interviewer/session/:id"
+                      element={
+                        <ProtectedRoute>
+                          <FeatureGuard featureKey="interviewer">
+                            <Suspense fallback={<PageLoader />}>
+                              <InterviewerSession />
+                            </Suspense>
+                          </FeatureGuard>
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/interviewer/feedback/:id"
+                      element={
+                        <ProtectedRoute>
+                          <FeatureGuard featureKey="interviewer">
+                            <Suspense fallback={<PageLoader />}>
+                              <InterviewerFeedback />
                             </Suspense>
                           </FeatureGuard>
                         </ProtectedRoute>

@@ -96,6 +96,10 @@
     "budgetLedger": "Ledger",
     "budgetGoals": "Goals",
     "budgetInsights": "Insights",
+    "interviewer": "Interviewer",
+    "interviewerLobby": "Interviewer",
+    "interviewerSession": "Live Room",
+    "interviewerFeedback": "Scorecard",
     "trial": {
       "left": "left",
       "days_one": "{{count}} day",

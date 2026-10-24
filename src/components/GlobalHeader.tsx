@@ -43,6 +43,9 @@ import {
   History,
   Salad,
   Heart,
+  Radio,
+  Mic,
+  Award,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -286,6 +289,38 @@ const NAV_ITEMS = {
     color: "from-rose-500 to-pink-500",
     exact: false,
   },
+  interviewer: {
+    key: "interviewer",
+    name: "Interviewer",
+    href: "/interviewer",
+    icon: Radio,
+    color: "from-violet-500 to-indigo-600",
+    exact: false,
+  },
+  interviewerLobby: {
+    key: "interviewerLobby",
+    name: "Interviewer",
+    href: "/interviewer",
+    icon: Radio,
+    color: "from-violet-500 to-indigo-600",
+    exact: true,
+  },
+  interviewerSession: {
+    key: "interviewerSession",
+    name: "Live Room",
+    href: "/interviewer",
+    icon: Mic,
+    color: "from-emerald-500 to-teal-500",
+    exact: false,
+  },
+  interviewerFeedback: {
+    key: "interviewerFeedback",
+    name: "Scorecard",
+    href: "/interviewer",
+    icon: Award,
+    color: "from-amber-500 to-orange-500",
+    exact: false,
+  },
 };
 
 function isPathActive(pathname: string, href: string, exact?: boolean) {
@@ -300,6 +335,7 @@ function getNavigationContext(
   isDhetEnabled: boolean = false,
   isHealthPlusEnabled: boolean = false,
   isHealingEnabled: boolean = false,
+  isInterviewerEnabled: boolean = false,
 ) {
   const isChatContext =
     pathname.startsWith("/chat") ||
@@ -316,6 +352,26 @@ function getNavigationContext(
   const isHealthContext =
     pathname.startsWith("/health-plus") || pathname.startsWith("/health");
   const isHealingContext = pathname.startsWith("/healing");
+  const isInterviewerContext = pathname.startsWith("/interviewer");
+
+  // Interviewer: Feature-specific sub-navigation
+  if (isInterviewerContext) {
+    if (pathname.includes("/feedback/")) {
+      return [
+        NAV_ITEMS.home,
+        NAV_ITEMS.interviewerLobby,
+        { ...NAV_ITEMS.interviewerFeedback, href: pathname },
+      ];
+    }
+    if (pathname.includes("/session/")) {
+      return [
+        NAV_ITEMS.home,
+        NAV_ITEMS.interviewerLobby,
+        { ...NAV_ITEMS.interviewerSession, href: pathname },
+      ];
+    }
+    return [NAV_ITEMS.home, NAV_ITEMS.chat, NAV_ITEMS.interviewerLobby];
+  }
 
   // Healing: Home + Chat + Healing
   if (isHealingContext) {
@@ -378,6 +434,9 @@ function getNavigationContext(
   }
   if (isHealingEnabled) {
     items.push(NAV_ITEMS.healing);
+  }
+  if (isInterviewerEnabled) {
+    items.push(NAV_ITEMS.interviewer);
   }
   items.push(NAV_ITEMS.visionboard);
   return items;
@@ -538,6 +597,10 @@ export function GlobalHeader() {
       user?.feature_flags?.healthplusenable;
     const isHealingEnabled =
       user?.feature_flags?.healing ?? getIsHealingEnabled();
+    const isInterviewerEnabled = Boolean(
+      user?.feature_flags?.interviewer ||
+      user?.feature_flags?.enable_interviewer,
+    );
     return getNavigationContext(
       location.pathname,
       isPremium,
@@ -545,6 +608,7 @@ export function GlobalHeader() {
       isDhetEnabled,
       isHealthPlusEnabled,
       isHealingEnabled,
+      isInterviewerEnabled,
     );
   }, [
     location.pathname,
@@ -553,6 +617,8 @@ export function GlobalHeader() {
     user?.feature_flags?.health_plus,
     user?.feature_flags?.healthplusenable,
     user?.feature_flags?.healing,
+    user?.feature_flags?.interviewer,
+    user?.feature_flags?.enable_interviewer,
   ]);
 
   return (

@@ -2014,6 +2014,8 @@ class ApiClient {
       healthplusenable?: boolean;
       healing?: boolean;
       healing_ai?: boolean;
+      interviewer?: boolean;
+      enable_interviewer?: boolean;
     }>("/api/system/features");
   }
 

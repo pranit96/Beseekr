@@ -64,6 +64,10 @@ export const TopBar = ({
     user?.feature_flags?.healthplusenable;
   const isHealingEnabled =
     user?.feature_flags?.healing ?? getIsHealingEnabled();
+  const isInterviewerEnabled = Boolean(
+    user?.feature_flags?.interviewer ||
+    user?.feature_flags?.enable_interviewer,
+  );
 
   const navigation = [
     { key: "home", name: "Home", href: "/" },
@@ -84,6 +88,9 @@ export const TopBar = ({
       ? [{ key: "health_plus", name: "Health+", href: "/health-plus" }]
       : []),
     ...(isHealingEnabled ? [{ key: "healing", name: "Healing", href: "/healing" }] : []),
+    ...(isInterviewerEnabled
+      ? [{ key: "interviewer", name: "Interviewer", href: "/interviewer" }]
+      : []),
     { key: "analytics", name: "Analytics", href: "/analytics" },
     ...(isBudgetEnabled
       ? [{ key: "budget", name: "Budget", href: "/dashboard/budget" }]

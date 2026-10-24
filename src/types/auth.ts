@@ -27,6 +27,8 @@ export interface User {
     healthplusenable?: boolean;
     healing?: boolean;
     healing_ai?: boolean;
+    interviewer?: boolean;
+    enable_interviewer?: boolean;
   };
 }
 
