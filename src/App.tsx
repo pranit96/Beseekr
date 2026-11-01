@@ -28,6 +28,7 @@ import {
   getIsDhetEnabled,
   getIsHealthPlusEnabled,
   getIsHealingEnabled,
+  getIsNotebooksEnabled,
 } from "@/utils/envFlags";
 
 
@@ -196,6 +197,9 @@ const HealingSettings = lazyRetry(() => import("./pages/healing/HealingSettings"
 const InterviewerLobby = lazyRetry(() => import("./pages/interviewer/InterviewerLobby"), "InterviewerLobby");
 const InterviewerSession = lazyRetry(() => import("./pages/interviewer/InterviewerSession"), "InterviewerSession");
 const InterviewerFeedback = lazyRetry(() => import("./pages/interviewer/InterviewerFeedback"), "InterviewerFeedback");
+// ── Notebooks ──────────────────────────────────────────────────────────────
+const NotebooksPage = lazyRetry(() => import("./pages/notebooks"), "NotebooksPage");
+const NotebookDetail = lazyRetry(() => import("./pages/notebooks/NotebookDetail"), "NotebookDetail");
 
 // Loading fallback for lazy components
 const PageLoader = () => (
@@ -257,7 +261,8 @@ const FeatureGuard = ({
     | "dhet"
     | "health_plus"
     | "healing"
-    | "interviewer";
+    | "interviewer"
+    | "notebooks";
 }) => {
   const { user, loading } = useAuth();
 
@@ -301,6 +306,13 @@ const FeatureGuard = ({
     featureKey === "interviewer" &&
     (user?.feature_flags?.interviewer ||
       user?.feature_flags?.enable_interviewer)
+  ) {
+    return <>{children}</>;
+  }
+
+  if (
+    featureKey === "notebooks" &&
+    (user?.feature_flags?.notebooks ?? getIsNotebooksEnabled())
   ) {
     return <>{children}</>;
   }
@@ -873,6 +885,31 @@ const App = () => {
                           <FeatureGuard featureKey="interviewer">
                             <Suspense fallback={<PageLoader />}>
                               <InterviewerFeedback />
+                            </Suspense>
+                          </FeatureGuard>
+                        </ProtectedRoute>
+                      }
+                    />
+                    {/* ── Notebooks (AI Learning & Study Aids) ───────────────────── */}
+                    <Route
+                      path="/notebooks"
+                      element={
+                        <ProtectedRoute>
+                          <FeatureGuard featureKey="notebooks">
+                            <Suspense fallback={<PageLoader />}>
+                              <NotebooksPage />
+                            </Suspense>
+                          </FeatureGuard>
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/notebooks/:id"
+                      element={
+                        <ProtectedRoute>
+                          <FeatureGuard featureKey="notebooks">
+                            <Suspense fallback={<PageLoader />}>
+                              <NotebookDetail />
                             </Suspense>
                           </FeatureGuard>
                         </ProtectedRoute>

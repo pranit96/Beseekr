@@ -62,6 +62,7 @@ import {
   getIsDhetEnabled,
   getIsHealthPlusEnabled,
   getIsHealingEnabled,
+  getIsNotebooksEnabled,
 } from "@/utils/envFlags";
 
 const NAV_ITEMS = {
@@ -321,6 +322,14 @@ const NAV_ITEMS = {
     color: "from-amber-500 to-orange-500",
     exact: false,
   },
+  notebooks: {
+    key: "notebooks",
+    name: "Notebooks",
+    href: "/notebooks",
+    icon: BookOpen,
+    color: "from-indigo-500 to-purple-600",
+    exact: false,
+  },
 };
 
 function isPathActive(pathname: string, href: string, exact?: boolean) {
@@ -336,6 +345,7 @@ function getNavigationContext(
   isHealthPlusEnabled: boolean = false,
   isHealingEnabled: boolean = false,
   isInterviewerEnabled: boolean = false,
+  isNotebooksEnabled: boolean = false,
 ) {
   const isChatContext =
     pathname.startsWith("/chat") ||
@@ -353,6 +363,7 @@ function getNavigationContext(
     pathname.startsWith("/health-plus") || pathname.startsWith("/health");
   const isHealingContext = pathname.startsWith("/healing");
   const isInterviewerContext = pathname.startsWith("/interviewer");
+  const isNotebooksContext = pathname.startsWith("/notebooks");
 
   // Interviewer: Feature-specific sub-navigation
   if (isInterviewerContext) {
@@ -381,6 +392,11 @@ function getNavigationContext(
   // Health+: Home + Chat + Health+
   if (isHealthContext) {
     return [NAV_ITEMS.home, NAV_ITEMS.chat, NAV_ITEMS.healthPlus];
+  }
+
+  // Notebooks: Home + Chat + Notebooks
+  if (isNotebooksContext) {
+    return [NAV_ITEMS.home, NAV_ITEMS.chat, NAV_ITEMS.notebooks];
   }
 
   // DHET: Home + Studio + Saved Designs
@@ -437,6 +453,9 @@ function getNavigationContext(
   }
   if (isInterviewerEnabled) {
     items.push(NAV_ITEMS.interviewer);
+  }
+  if (isNotebooksEnabled) {
+    items.push(NAV_ITEMS.notebooks);
   }
   items.push(NAV_ITEMS.visionboard);
   return items;
@@ -601,6 +620,9 @@ export function GlobalHeader() {
       user?.feature_flags?.interviewer ||
       user?.feature_flags?.enable_interviewer,
     );
+    const isNotebooksEnabled = Boolean(
+      user?.feature_flags?.notebooks ?? getIsNotebooksEnabled(),
+    );
     return getNavigationContext(
       location.pathname,
       isPremium,
@@ -609,6 +631,7 @@ export function GlobalHeader() {
       isHealthPlusEnabled,
       isHealingEnabled,
       isInterviewerEnabled,
+      isNotebooksEnabled,
     );
   }, [
     location.pathname,
@@ -619,6 +642,7 @@ export function GlobalHeader() {
     user?.feature_flags?.healing,
     user?.feature_flags?.interviewer,
     user?.feature_flags?.enable_interviewer,
+    user?.feature_flags?.notebooks,
   ]);
 
   return (

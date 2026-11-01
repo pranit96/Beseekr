@@ -29,6 +29,7 @@ export interface User {
     healing_ai?: boolean;
     interviewer?: boolean;
     enable_interviewer?: boolean;
+    notebooks?: boolean;
   };
 }
 

@@ -2169,6 +2169,84 @@ class ApiClient {
   getDhetExportPdfUrl(id: string) {
     return `${API_BASE_URL || ""}/api/dhet/designs/${id}/export-pdf`;
   }
+
+  // ─── Notebooks API ────────────────────────────────────────────────────────
+
+  async listNotebooks(params?: { page?: number; limit?: number; search?: string }) {
+    const qs = new URLSearchParams();
+    if (params?.page) qs.set("page", String(params.page));
+    if (params?.limit) qs.set("limit", String(params.limit));
+    if (params?.search) qs.set("search", params.search);
+    const q = qs.toString();
+    return this.request<any>(`/api/notebooks${q ? `?${q}` : ""}`);
+  }
+
+  async createNotebook(data: {
+    title: string;
+    description?: string;
+    source_type?: string;
+    source_text?: string;
+    source_url?: string;
+    tags?: string[];
+  }) {
+    return this.post<any>("/api/notebooks", data);
+  }
+
+  async getNotebook(id: string) {
+    return this.request<any>(`/api/notebooks/${id}`);
+  }
+
+  async updateNotebook(id: string, data: Partial<{
+    title: string;
+    description: string;
+    source_text: string;
+    tags: string[];
+  }>) {
+    return this.put<any>(`/api/notebooks/${id}`, data);
+  }
+
+  async deleteNotebook(id: string) {
+    return this.delete<any>(`/api/notebooks/${id}`);
+  }
+
+  async getNotebookContent(id: string, type?: string) {
+    const q = type ? `?type=${type}` : "";
+    return this.request<any>(`/api/notebooks/${id}/content${q}`);
+  }
+
+  async generateNotebookContent(
+    id: string,
+    data: {
+      types?: string[];
+      difficulty?: "beginner" | "intermediate" | "advanced";
+    },
+  ) {
+    return this.post<any>(`/api/notebooks/${id}/generate`, data);
+  }
+
+  async generateSingleNotebookContent(
+    id: string,
+    data: {
+      type: "flashcards" | "quiz" | "interview_questions" | "mind_map";
+      difficulty?: "beginner" | "intermediate" | "advanced";
+    },
+  ) {
+    return this.post<any>(`/api/notebooks/${id}/generate-single`, data);
+  }
+
+  async uploadNotebookDocument(formData: FormData) {
+    return this.request<any>("/api/notebooks/upload", {
+      method: "POST",
+      body: formData,
+    });
+  }
+
+  async uploadDocumentToNotebook(id: string, formData: FormData) {
+    return this.request<any>(`/api/notebooks/${id}/upload`, {
+      method: "POST",
+      body: formData,
+    });
+  }
 }
 
 export const apiClient = new ApiClient(API_BASE_URL);

@@ -161,3 +161,20 @@ export function getIsHealingAiEnabled(): boolean {
   return envFlag;
 }
 
+export function getIsNotebooksEnabled(): boolean {
+  // Active by default unless VITE_ENABLE_NOTEBOOKS is explicitly "false"
+  const envFlag = import.meta.env.VITE_ENABLE_NOTEBOOKS !== "false";
+
+  if (typeof document !== "undefined") {
+    const cookieMatch = document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("EnableNotebooks="))
+      ?.split("=")[1];
+
+    if (cookieMatch === "true") return true;
+    if (cookieMatch === "false") return false;
+  }
+
+  return envFlag;
+}
+

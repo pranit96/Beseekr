@@ -89,6 +89,7 @@ interface User {
     healing_ai?: boolean;
     interviewer?: boolean;
     enable_interviewer?: boolean;
+    notebooks?: boolean;
   };
 }
 
@@ -157,6 +158,9 @@ export const syncFeatureFlagsCookies = (flags?: User["feature_flags"]) => {
   }
   if (healing_ai !== undefined) {
     document.cookie = `EnableHealingAi=${healing_ai}; path=/; max-age=86400; SameSite=Lax`;
+  }
+  if (flags.notebooks !== undefined) {
+    document.cookie = `EnableNotebooks=${flags.notebooks}; path=/; max-age=86400; SameSite=Lax`;
   }
 };
 
