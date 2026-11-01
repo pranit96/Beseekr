@@ -29,8 +29,8 @@ import {
   ChevronRight,
   ChevronDown,
   RotateCcw,
-  ChevronsCollapse,
-  ChevronsExpand,
+  ChevronsDownUp,
+  ChevronsUpDown,
   GitFork,
   Network,
 } from "lucide-react";
@@ -658,12 +658,12 @@ export function MindMapViewer({ data }: Props) {
                 >
                   {collapsedIds.size > 0 ? (
                     <>
-                      <ChevronsExpand className="h-3.5 w-3.5" />
+                      <ChevronsUpDown className="h-3.5 w-3.5" />
                       <span className="hidden md:inline">Expand All</span>
                     </>
                   ) : (
                     <>
-                      <ChevronsCollapse className="h-3.5 w-3.5" />
+                      <ChevronsDownUp className="h-3.5 w-3.5" />
                       <span className="hidden md:inline">Collapse All</span>
                     </>
                   )}
