@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Wand2, Loader2, Edit3, Save, X, RefreshCw,
   CreditCard, HelpCircle, Mic, Map, CheckCircle, AlertCircle, Sparkles,
-  Clock, Zap,
+  Clock, Zap, PanelLeftClose, PanelLeftOpen,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -54,6 +54,7 @@ export default function NotebookDetail() {
   const [editingText, setEditingText] = useState(false);
   const [draftText, setDraftText] = useState("");
   const [difficulty, setDifficulty] = useState<"beginner" | "intermediate" | "advanced">("intermediate");
+  const [isNoteCollapsed, setIsNoteCollapsed] = useState(false);
 
   const { data: notebookData, isLoading, error } = useQuery({
     queryKey: ["notebook", id],
@@ -171,6 +172,37 @@ export default function NotebookDetail() {
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
+            {/* Toggle Note Collapse button */}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsNoteCollapsed((prev) => !prev)}
+                    className="gap-1.5 text-xs h-8"
+                  >
+                    {isNoteCollapsed ? (
+                      <>
+                        <PanelLeftOpen className="h-3.5 w-3.5" />
+                        <span className="hidden sm:inline">Show Note</span>
+                      </>
+                    ) : (
+                      <>
+                        <PanelLeftClose className="h-3.5 w-3.5" />
+                        <span className="hidden sm:inline">Collapse Note</span>
+                      </>
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {isNoteCollapsed
+                    ? "Show source note editor"
+                    : "Collapse source note to maximize workspace"}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
             {/* Difficulty selector */}
             <Select value={difficulty} onValueChange={(v: any) => setDifficulty(v)}>
               <SelectTrigger className="w-36 h-8 text-xs">
@@ -212,99 +244,129 @@ export default function NotebookDetail() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+      <div className={cn("mx-auto px-4 sm:px-6 lg:px-8 py-6 transition-all duration-300", isNoteCollapsed ? "max-w-[1680px]" : "max-w-7xl")}>
+        <div className={cn("grid gap-6 transition-all duration-300", isNoteCollapsed ? "grid-cols-1" : "grid-cols-1 lg:grid-cols-5")}>
           {/* Left: Source content editor */}
-          <div className="lg:col-span-2 space-y-4">
-            <div className="rounded-2xl border bg-card overflow-hidden">
-              <div className="flex items-center justify-between px-4 py-3 border-b bg-muted/30">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium">Source Content</span>
-                  <Badge variant="outline" className="text-xs">
-                    {charCount.toLocaleString()} chars · {wordCount.toLocaleString()} words
-                  </Badge>
-                </div>
-                {!editingText ? (
-                  <Button variant="ghost" size="sm" onClick={startEdit} className="gap-1.5 h-7">
-                    <Edit3 className="h-3.5 w-3.5" /> Edit
-                  </Button>
-                ) : (
-                  <div className="flex gap-1.5">
-                    <Button variant="ghost" size="sm" onClick={() => setEditingText(false)} className="h-7 w-7 p-0">
-                      <X className="h-3.5 w-3.5" />
-                    </Button>
+          {!isNoteCollapsed && (
+            <motion.div
+              initial={{ opacity: 0, x: -15 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -15 }}
+              transition={{ duration: 0.2 }}
+              className="lg:col-span-2 space-y-4"
+            >
+              <div className="rounded-2xl border bg-card overflow-hidden">
+                <div className="flex items-center justify-between px-4 py-3 border-b bg-muted/30">
+                  <div className="flex items-center gap-2">
                     <Button
+                      variant="ghost"
                       size="sm"
-                      onClick={() => saveMutation.mutate(draftText)}
-                      disabled={saveMutation.isPending}
-                      className="h-7 gap-1 text-xs"
+                      onClick={() => setIsNoteCollapsed(true)}
+                      className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+                      title="Collapse note"
                     >
-                      {saveMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
-                      Save
+                      <PanelLeftClose className="h-3.5 w-3.5" />
                     </Button>
+                    <span className="text-sm font-medium">Source Content</span>
+                    <Badge variant="outline" className="text-xs">
+                      {charCount.toLocaleString()} chars · {wordCount.toLocaleString()} words
+                    </Badge>
+                  </div>
+                  {!editingText ? (
+                    <Button variant="ghost" size="sm" onClick={startEdit} className="gap-1.5 h-7">
+                      <Edit3 className="h-3.5 w-3.5" /> Edit
+                    </Button>
+                  ) : (
+                    <div className="flex gap-1.5">
+                      <Button variant="ghost" size="sm" onClick={() => setEditingText(false)} className="h-7 w-7 p-0">
+                        <X className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => saveMutation.mutate(draftText)}
+                        disabled={saveMutation.isPending}
+                        className="h-7 gap-1 text-xs"
+                      >
+                        {saveMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                        Save
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
+                {editingText ? (
+                  <Textarea
+                    value={draftText}
+                    onChange={(e) => setDraftText(e.target.value)}
+                    placeholder="Paste your content here (articles, notes, documentation...)..."
+                    className="min-h-[400px] rounded-none border-0 resize-y focus-visible:ring-0 text-sm"
+                  />
+                ) : (
+                  <div
+                    className={cn(
+                      "min-h-[400px] p-4 text-sm leading-relaxed whitespace-pre-wrap overflow-auto max-h-[600px]",
+                      !notebook.source_text && "text-muted-foreground italic",
+                    )}
+                    onClick={startEdit}
+                    style={{ cursor: "text" }}
+                  >
+                    {notebook.source_text || "Click to add content..."}
                   </div>
                 )}
               </div>
 
-              {editingText ? (
-                <Textarea
-                  value={draftText}
-                  onChange={(e) => setDraftText(e.target.value)}
-                  placeholder="Paste your content here (articles, notes, documentation...)..."
-                  className="min-h-[400px] rounded-none border-0 resize-y focus-visible:ring-0 text-sm"
-                />
-              ) : (
-                <div
-                  className={cn(
-                    "min-h-[400px] p-4 text-sm leading-relaxed whitespace-pre-wrap overflow-auto max-h-[600px]",
-                    !notebook.source_text && "text-muted-foreground italic",
+              {/* Stats / tier info */}
+              <div className="rounded-xl border bg-muted/20 p-4 space-y-3 text-xs text-muted-foreground">
+                <div className="flex items-center gap-2 font-medium text-foreground text-sm">
+                  {isUltra ? (
+                    <>
+                      <Sparkles className="h-4 w-4 text-indigo-500" />
+                      Ultra — Claude Sonnet 4.6
+                    </>
+                  ) : (
+                    <>
+                      <Zap className="h-4 w-4 text-amber-500" />
+                      {tier === "pro" ? "Pro" : "Free"} — Groq
+                    </>
                   )}
-                  onClick={startEdit}
-                  style={{ cursor: "text" }}
-                >
-                  {notebook.source_text || "Click to add content..."}
                 </div>
-              )}
-            </div>
-
-            {/* Stats / tier info */}
-            <div className="rounded-xl border bg-muted/20 p-4 space-y-3 text-xs text-muted-foreground">
-              <div className="flex items-center gap-2 font-medium text-foreground text-sm">
-                {isUltra ? (
-                  <>
-                    <Sparkles className="h-4 w-4 text-indigo-500" />
-                    Ultra — Claude Sonnet 4.6
-                  </>
-                ) : (
-                  <>
-                    <Zap className="h-4 w-4 text-amber-500" />
-                    {tier === "pro" ? "Pro" : "Free"} — Groq
-                  </>
-                )}
-              </div>
-              <div className="space-y-1.5">
-                <div className="flex justify-between">
-                  <span>Flashcards</span>
-                  <span className="font-medium text-foreground">{isUltra ? "50+ cards" : tier === "pro" ? "25 cards" : "15 cards"}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Quiz questions</span>
-                  <span className="font-medium text-foreground">{isUltra ? "50+ Qs" : tier === "pro" ? "25 Qs" : "15 Qs"}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Interview questions</span>
-                  <span className="font-medium text-foreground">{isUltra ? "50+ Qs" : tier === "pro" ? "25 Qs" : "15 Qs"}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Content limit</span>
-                  <span className="font-medium text-foreground">{isUltra ? "24k tokens (No cutoff)" : "12k tokens"}</span>
+                <div className="space-y-1.5">
+                  <div className="flex justify-between">
+                    <span>Flashcards</span>
+                    <span className="font-medium text-foreground">{isUltra ? "50+ cards" : tier === "pro" ? "25 cards" : "15 cards"}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Quiz questions</span>
+                    <span className="font-medium text-foreground">{isUltra ? "50+ Qs" : tier === "pro" ? "25 Qs" : "15 Qs"}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Interview questions</span>
+                    <span className="font-medium text-foreground">{isUltra ? "50+ Qs" : tier === "pro" ? "25 Qs" : "15 Qs"}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Content limit</span>
+                    <span className="font-medium text-foreground">{isUltra ? "24k tokens (No cutoff)" : "12k tokens"}</span>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
+            </motion.div>
+          )}
 
           {/* Right: AI output tabs */}
-          <div className="lg:col-span-3">
+          <div className={cn("transition-all duration-300", isNoteCollapsed ? "col-span-1 w-full" : "lg:col-span-3")}>
+            {isNoteCollapsed && (
+              <div className="flex items-center justify-between mb-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsNoteCollapsed(false)}
+                  className="gap-1.5 text-xs h-8 shadow-sm border-dashed hover:border-indigo-500 hover:text-indigo-600 dark:hover:text-indigo-400"
+                >
+                  <PanelLeftOpen className="h-3.5 w-3.5 text-indigo-500" />
+                  <span>Expand Source Note ({charCount.toLocaleString()} chars · {wordCount.toLocaleString()} words)</span>
+                </Button>
+              </div>
+            )}
             <div className="rounded-2xl border bg-card overflow-hidden">
               <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as TabId)}>
                 <div className="border-b bg-muted/20 px-4 pt-3">
