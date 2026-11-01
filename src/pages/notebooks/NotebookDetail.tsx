@@ -285,19 +285,19 @@ export default function NotebookDetail() {
               <div className="space-y-1.5">
                 <div className="flex justify-between">
                   <span>Flashcards</span>
-                  <span className="font-medium text-foreground">{isUltra ? "20" : tier === "pro" ? "15" : "10"} cards</span>
+                  <span className="font-medium text-foreground">{isUltra ? "50+ cards" : tier === "pro" ? "25 cards" : "15 cards"}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Quiz questions</span>
-                  <span className="font-medium text-foreground">{isUltra ? "15" : "12"} Qs</span>
+                  <span className="font-medium text-foreground">{isUltra ? "50+ Qs" : tier === "pro" ? "25 Qs" : "15 Qs"}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Interview questions</span>
-                  <span className="font-medium text-foreground">{isUltra ? "20" : "15"} Qs</span>
+                  <span className="font-medium text-foreground">{isUltra ? "50+ Qs" : tier === "pro" ? "25 Qs" : "15 Qs"}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Content limit</span>
-                  <span className="font-medium text-foreground">{isUltra ? "12k" : "8k"} tokens</span>
+                  <span className="font-medium text-foreground">{isUltra ? "24k tokens (No cutoff)" : "12k tokens"}</span>
                 </div>
               </div>
             </div>
